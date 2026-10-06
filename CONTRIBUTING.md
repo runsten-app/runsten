@@ -81,12 +81,8 @@ If unsure, ask in an issue first.
 
 ## Security
 
-Do not open a public issue for a vulnerability. Report it privately through GitHub's
-[Report a vulnerability](https://github.com/runsten-app/runsten/security/advisories/new) form.
-You will get an answer within a week; please give us a reasonable time to fix it before
-disclosing it.
+Do not open a public issue for a vulnerability: see [`SECURITY.md`](SECURITY.md).
 
 ## Conduct
 
-Be kind and assume good faith. Criticize code, not people. Harassment or abuse of any kind gets
-you removed from the project's spaces.
+Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).

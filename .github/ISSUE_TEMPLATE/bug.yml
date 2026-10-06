@@ -1,0 +1,35 @@
+name: Bug report
+description: Something does not work as the documentation says.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove VINs, tokens, API keys, addresses and positions from everything you paste here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "`RUNSTEN_VERSION` or the image tag, or the commit if you built it."
+      placeholder: v0.4.0
+    validations:
+      required: true
+  - type: input
+    id: car
+    attributes:
+      label: Car
+      description: Model and model year, if it matters.
+      placeholder: EX30, 2024
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: The relevant lines of `docker compose logs runsten-collector` or `runsten-api`.
+      render: text
