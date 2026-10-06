@@ -96,6 +96,9 @@ type Config struct {
 	APIHost bool
 	// Map shows maps with these tiles; nil: no map, nothing fetched from a third party.
 	Map *MapTiles
+	// NoIndex asks search engines to keep every response out of their index, relayed
+	// ones included: for an instance reachable from the internet that should not be found.
+	NoIndex bool
 }
 
 type server struct {
@@ -104,6 +107,7 @@ type server struct {
 	imgSrc string   // the raster tiles' origin, with its leading space, for the CSP
 	conSrc string   // the PMTiles file's origin, likewise
 	meta   []byte   // the map's metas, after the nonce's
+	noIdx  bool     // X-Robots-Tag on every response
 	proxy  *httputil.ReverseProxy
 	rand   io.Reader
 	log    *slog.Logger
@@ -128,6 +132,7 @@ func New(cfg Config) (http.Handler, error) {
 		index: bytes.SplitN(page, nonceTag, 2),
 		rand:  cfg.Rand,
 		log:   cfg.Log,
+		noIdx: cfg.NoIndex,
 	}
 	if s.rand == nil {
 		s.rand = rand.Reader
@@ -177,6 +182,9 @@ func basePath(p string) (string, error) {
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if s.noIdx {
+		w.Header().Set("X-Robots-Tag", "noindex, nofollow")
+	}
 	for _, prefix := range relayed {
 		if strings.HasPrefix(r.URL.Path, prefix) {
 			s.proxy.ServeHTTP(w, r)
