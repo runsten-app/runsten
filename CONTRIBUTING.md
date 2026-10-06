@@ -15,7 +15,15 @@ away from self-hosting.
 So that the hosted build may include contributed code, every contributor signs a Contributor
 License Agreement once, before their first pull request is merged: it grants the maintainer a
 broad licence on the contribution, with the right to sublicense, after the Apache Individual
-CLA. You keep the copyright of your work. The CLA bot asks for it on your first pull request.
+CLA. You keep the copyright of your work. Read [`CLA.md`](CLA.md); to sign it, post this comment
+on your pull request:
+
+```
+I have read the CLA Document and I hereby sign the CLA
+```
+
+A check named CLA tells which authors of a pull request's commits have yet to sign, and turns
+green once they all have. Each signature is recorded on the branch `cla-signatures`.
 
 ## Ways to contribute
 

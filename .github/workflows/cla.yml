@@ -1,0 +1,39 @@
+# CLA: every author of a pull request's commits has signed CLA.md (.github/scripts/cla.js),
+# reported as the commit status "CLA", which main's ruleset requires.
+# pull_request_target and issue_comment give a token that writes, also on a fork's pull
+# request: the job checks out the default branch only, runs its script, and reads the pull
+# request through the API, never its code. A comment's text is compared, never interpolated.
+name: cla
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  cla:
+    if: >-
+      github.event_name == 'pull_request_target' ||
+      (github.event.issue.pull_request &&
+        (contains(github.event.comment.body, 'I hereby sign the CLA') ||
+         contains(github.event.comment.body, 'recheck')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # the signatures, on the branch cla-signatures
+      pull-requests: write # the comment that says who is left
+      statuses: write # the status CLA
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const run = require('./.github/scripts/cla.js')
+            await run({ github, context, core })
