@@ -17,16 +17,16 @@ func env(m map[string]string) func(string) string {
 func TestLoadConfig(t *testing.T) {
 	cfg, err := loadConfig(env(nil))
 	if err != nil || cfg.addr != "127.0.0.1:8082" || cfg.api.String() != "http://127.0.0.1:8081" || cfg.dir != "/web" ||
-		cfg.basePath != "/" || cfg.apiHost || cfg.restricted || cfg.logLevel != slog.LevelInfo || cfg.mapTiles != nil {
+		cfg.basePath != "/" || cfg.apiHost || cfg.restricted || cfg.noIndex || cfg.logLevel != slog.LevelInfo || cfg.mapTiles != nil {
 		t.Fatalf("defaults: %+v, %v", cfg, err)
 	}
 	cfg, err = loadConfig(env(map[string]string{
 		"RUNSTEN_WEB_ADDR": "0.0.0.0:8082", "RUNSTEN_WEB_API_URL": "http://api:8081", "RUNSTEN_WEB_DIR": "/srv/web",
 		"RUNSTEN_WEB_BASE_PATH": "/runsten/", "RUNSTEN_WEB_API_HOST": "api", "RUNSTEN_ACCESS_RESTRICTED": "true",
-		"RUNSTEN_LOG_LEVEL": "debug",
+		"RUNSTEN_LOG_LEVEL": "debug", "RUNSTEN_WEB_NOINDEX": "true",
 	}))
 	if err != nil || cfg.addr != "0.0.0.0:8082" || cfg.api.Host != "api:8081" || cfg.dir != "/srv/web" ||
-		cfg.basePath != "/runsten/" || !cfg.apiHost || !cfg.restricted || cfg.logLevel != slog.LevelDebug {
+		cfg.basePath != "/runsten/" || !cfg.apiHost || !cfg.restricted || !cfg.noIndex || cfg.logLevel != slog.LevelDebug {
 		t.Fatalf("overrides: %+v, %v", cfg, err)
 	}
 	tiles := "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -45,6 +45,7 @@ func TestLoadConfig(t *testing.T) {
 		"api host":    {"RUNSTEN_WEB_API_HOST": "upstream"},
 		"restricted":  {"RUNSTEN_ACCESS_RESTRICTED": "yes please"},
 		"log level":   {"RUNSTEN_LOG_LEVEL": "loud"},
+		"noindex":     {"RUNSTEN_WEB_NOINDEX": "maybe"},
 	} {
 		if _, err := loadConfig(env(v)); err == nil {
 			t.Errorf("%s: no error", name)

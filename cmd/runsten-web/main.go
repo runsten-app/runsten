@@ -34,6 +34,9 @@
 //	                           address and the areas shown
 //	RUNSTEN_WEB_MAP_ATTRIBUTION  the attribution the tiles' provider requires, as plain
 //	                           text (default © OpenStreetMap contributors)
+//	RUNSTEN_WEB_NOINDEX        true: every response asks search engines not to index
+//	                           it (X-Robots-Tag), for an instance on the internet that
+//	                           should not be found (default false)
 //	RUNSTEN_ACCESS_RESTRICTED  true when the deployment only lets RUNSTEN_WEB_ADDR be
 //	                           reached through the host's loopback or an https reverse
 //	                           proxy: a non-loopback address is then not warned about
@@ -76,6 +79,7 @@ type config struct {
 	basePath   string
 	apiHost    bool
 	restricted bool
+	noIndex    bool
 	logLevel   slog.Level
 	mapTiles   *web.MapTiles
 }
@@ -114,7 +118,7 @@ func run(args []string) error {
 	}
 	httpserver.WarnIfExposed(log, cfg.addr, cfg.restricted,
 		"listening beyond this machine over plain http: put an https reverse proxy in front of runsten-web, passwords and session cookies travel in clear text otherwise")
-	log.Info("runsten-web started", "addr", cfg.addr, "api", cfg.api.String(), "api_host", cfg.apiHost, "dir", cfg.dir, "base_path", cfg.basePath, "maps", cfg.mapTiles != nil)
+	log.Info("runsten-web started", "addr", cfg.addr, "api", cfg.api.String(), "api_host", cfg.apiHost, "dir", cfg.dir, "base_path", cfg.basePath, "maps", cfg.mapTiles != nil, "noindex", cfg.noIndex)
 	if err := httpserver.Run(ctx, httpserver.New(cfg.addr, handler, log), log); err != nil {
 		return fmt.Errorf("server: %w", err)
 	}
@@ -124,6 +128,7 @@ func run(args []string) error {
 func newHandler(cfg config, log *slog.Logger) (http.Handler, error) {
 	app, err := web.New(web.Config{
 		Files: os.DirFS(cfg.dir), API: cfg.api, BasePath: cfg.basePath, Log: log, APIHost: cfg.apiHost, Map: cfg.mapTiles,
+		NoIndex: cfg.noIndex,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("front end in %s: %w", cfg.dir, err)
@@ -166,6 +171,13 @@ func loadConfig(getenv func(string) string) (config, error) {
 			errs = append(errs, fmt.Errorf("RUNSTEN_ACCESS_RESTRICTED %q: true or false expected", v))
 		}
 		cfg.restricted = b
+	}
+	if v := getenv("RUNSTEN_WEB_NOINDEX"); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("RUNSTEN_WEB_NOINDEX %q: true or false expected", v))
+		}
+		cfg.noIndex = b
 	}
 	if v := getenv("RUNSTEN_WEB_MAP_TILES"); v != "" {
 		cfg.mapTiles = &web.MapTiles{URL: v, Attribution: getenv("RUNSTEN_WEB_MAP_ATTRIBUTION")}

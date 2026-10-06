@@ -122,7 +122,7 @@ func TestStatic(t *testing.T) {
 				t.Fatalf("status %d, cache %q, body %q", res.StatusCode, res.Header.Get("Cache-Control"), rec.Body.String())
 			}
 			if res.Header.Get("X-Content-Type-Options") != "nosniff" || res.Header.Get("Referrer-Policy") != "no-referrer" ||
-				res.Header.Get("X-Robots-Tag") != "noindex, nofollow" {
+				res.Header.Get("X-Robots-Tag") != "" {
 				t.Errorf("headers %v", res.Header)
 			}
 			if csp := res.Header.Get("Content-Security-Policy"); (csp != "") != tc.app {
@@ -260,9 +260,6 @@ func TestRelay(t *testing.T) {
 	if rec.Header().Get("Content-Security-Policy") != "" {
 		t.Error("the relay adds the app's CSP to API responses")
 	}
-	if rec.Header().Get("X-Robots-Tag") != "noindex, nofollow" {
-		t.Error("relayed response indexable")
-	}
 
 	if rec := do(t, h, http.MethodPost, "http://runsten.example/api/v1/session", http.Header{"Origin": {"https://evil.example"}}); rec.Code != http.StatusForbidden {
 		t.Errorf("cross-origin POST through the relay: %d", rec.Code)
@@ -280,6 +277,23 @@ func TestRelay(t *testing.T) {
 	}
 	if rec := do(t, h, http.MethodGet, "http://runsten.example/.well-known/security.txt", nil); got.path == "/.well-known/security.txt" {
 		t.Errorf("another well-known path relayed: %d", rec.Code)
+	}
+}
+
+func TestNoIndex(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer backend.Close()
+	api, _ := url.Parse(backend.URL)
+	h, err := New(Config{Files: build(), API: api, Rand: bytes.NewReader(bytes.Repeat([]byte{7}, 1024)), Log: quiet, NoIndex: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []string{"/", "/assets/app-1a2b.js", "/assets/app-0000.js", "/api/v1/vehicles", "/auth/volvo/start"} {
+		if rec := do(t, h, http.MethodGet, p, nil); rec.Header().Get("X-Robots-Tag") != "noindex, nofollow" {
+			t.Errorf("%s: %d, X-Robots-Tag %q", p, rec.Code, rec.Header().Get("X-Robots-Tag"))
+		}
 	}
 }
 
