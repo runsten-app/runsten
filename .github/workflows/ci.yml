@@ -5,11 +5,7 @@
 # re-run alone. unit-go and unit-web run only when their side changed; integration and
 # system, which check the whole, always run. Task is the one pinned in tools/go.mod, so every
 # job sets Go up.
-# On a pull request, while the repository is private, the jobs run only while the
-# organization's included minutes last: changes reads the month's billed minutes (the
-# BILLING_TOKEN secret, read access to the organization's billing) and skips every job once
-# some are billed, or the usage cannot be read. main always runs them.
-# When the repository goes public: pin actions by SHA (Dependabot will keep them up to date).
+# Actions are pinned by SHA, kept up to date by Dependabot.
 name: ci
 
 on:
@@ -26,8 +22,7 @@ concurrency:
 
 jobs:
   # Which side a push or a pull request touches (against the commit before the push, or
-  # the pull request's base), and whether the minutes allow the jobs. A skipped job counts
-  # as passed for a required check.
+  # the pull request's base). A skipped job counts as passed for a required check.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -37,27 +32,9 @@ jobs:
     outputs:
       go: ${{ steps.filter.outputs.go }}
       web: ${{ steps.filter.outputs.web }}
-      run: ${{ steps.minutes.outputs.run }}
     steps:
-      - id: minutes
-        env:
-          GH_TOKEN: ${{ secrets.BILLING_TOKEN }}
-          PRIVATE: ${{ github.event.repository.private }}
-        run: |
-          if [ "$GITHUB_EVENT_NAME" != pull_request ] || [ "$PRIVATE" != true ]; then
-            echo run=true >> "$GITHUB_OUTPUT"
-          elif ! billed=$(gh api "/organizations/$GITHUB_REPOSITORY_OWNER/settings/billing/usage/summary?product=Actions&sku=actions_linux" \
-              --jq '[.usageItems[].netQuantity] | add // 0'); then
-            echo "::warning::Actions usage unreadable (BILLING_TOKEN): jobs skipped"
-            echo run=false >> "$GITHUB_OUTPUT"
-          elif awk -v b="$billed" 'BEGIN { exit !(b > 0) }'; then
-            echo "::notice::$billed minutes billed this month: jobs skipped, they run on main"
-            echo run=false >> "$GITHUB_OUTPUT"
-          else
-            echo run=true >> "$GITHUB_OUTPUT"
-          fi
-      # With its credentials: on a push, the filter fetches the commit before it, and the
-      # repository is private. The job runs nothing of the repository's.
+      # With its credentials: on a push, the filter fetches the commit before it. The job runs
+      # nothing of the repository's.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
@@ -82,7 +59,7 @@ jobs:
 
   unit-go:
     needs: changes
-    if: needs.changes.outputs.run == 'true' && needs.changes.outputs.go == 'true'
+    if: needs.changes.outputs.go == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -99,7 +76,7 @@ jobs:
 
   unit-web:
     needs: changes
-    if: needs.changes.outputs.run == 'true' && needs.changes.outputs.web == 'true'
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -121,7 +98,6 @@ jobs:
 
   integration:
     needs: changes
-    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -144,7 +120,6 @@ jobs:
 
   system:
     needs: changes
-    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
