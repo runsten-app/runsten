@@ -1,0 +1,17 @@
+.git
+.github
+bin
+docs
+coverage.out
+*.md
+.env
+.env.*
+*.env
+compose.yaml
+deploy
+scripts
+testdata
+web/node_modules
+web/dist
+web/coverage
+.task

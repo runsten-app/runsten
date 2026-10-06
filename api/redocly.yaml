@@ -1,0 +1,6 @@
+# Lint rules of openapi.yaml (make lint-api): Redocly's recommended set, warnings as errors.
+extends:
+  - recommended-strict
+rules:
+  no-invalid-schema-examples: error
+  no-invalid-parameter-examples: error

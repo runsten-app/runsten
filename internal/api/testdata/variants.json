@@ -1,0 +1,130 @@
+{
+  "items": [
+    {
+      "id": "ex30-er-2024",
+      "name": "EX30 Single Motor Extended Range",
+      "gross_kwh": 69,
+      "net_kwh": 64,
+      "ac_max_kw": 11,
+      "ac_option_kw": 22,
+      "dc_max_kw": 153,
+      "model_years": {
+        "from": 2024,
+        "to": 2026
+      },
+      "candidate": true,
+      "levels": {
+        "gross_kwh": "secondary",
+        "net_kwh": "secondary",
+        "ac_max_kw": "secondary",
+        "ac_option_kw": "secondary",
+        "dc_max_kw": "secondary"
+      }
+    },
+    {
+      "id": "ex30-twin-2024",
+      "name": "EX30 Twin Motor Performance / Cross Country",
+      "gross_kwh": 69,
+      "net_kwh": 64,
+      "ac_max_kw": 11,
+      "ac_option_kw": 22,
+      "dc_max_kw": 153,
+      "model_years": {
+        "from": 2024,
+        "to": 2026
+      },
+      "candidate": true,
+      "levels": {
+        "gross_kwh": "secondary",
+        "net_kwh": "secondary",
+        "ac_max_kw": "secondary",
+        "ac_option_kw": "secondary",
+        "dc_max_kw": "secondary"
+      }
+    },
+    {
+      "id": "ex30-lfp-2024",
+      "name": "EX30 Single Motor",
+      "gross_kwh": 51,
+      "net_kwh": 49,
+      "ac_max_kw": 11,
+      "ac_option_kw": null,
+      "dc_max_kw": 134,
+      "model_years": {
+        "from": 2024,
+        "to": 2026
+      },
+      "candidate": false,
+      "levels": {
+        "gross_kwh": "secondary",
+        "net_kwh": "secondary",
+        "ac_max_kw": "secondary",
+        "ac_option_kw": null,
+        "dc_max_kw": "secondary"
+      }
+    },
+    {
+      "id": "ex30-p5-2027",
+      "name": "EX30 P5",
+      "gross_kwh": 51,
+      "net_kwh": 49,
+      "ac_max_kw": 11,
+      "ac_option_kw": null,
+      "dc_max_kw": 134,
+      "model_years": {
+        "from": 2027,
+        "to": null
+      },
+      "candidate": false,
+      "levels": {
+        "gross_kwh": "secondary",
+        "net_kwh": "secondary",
+        "ac_max_kw": "secondary",
+        "ac_option_kw": null,
+        "dc_max_kw": "secondary"
+      }
+    },
+    {
+      "id": "ex30-p5-lr-2027",
+      "name": "EX30 P5 Long Range",
+      "gross_kwh": 69,
+      "net_kwh": 65,
+      "ac_max_kw": 11,
+      "ac_option_kw": 22,
+      "dc_max_kw": 158,
+      "model_years": {
+        "from": 2027,
+        "to": null
+      },
+      "candidate": false,
+      "levels": {
+        "gross_kwh": "secondary",
+        "net_kwh": "secondary",
+        "ac_max_kw": "secondary",
+        "ac_option_kw": "secondary",
+        "dc_max_kw": "secondary"
+      }
+    },
+    {
+      "id": "ex30-p8-2027",
+      "name": "EX30 P8 AWD",
+      "gross_kwh": 69,
+      "net_kwh": 65,
+      "ac_max_kw": 11,
+      "ac_option_kw": 22,
+      "dc_max_kw": 158,
+      "model_years": {
+        "from": 2027,
+        "to": null
+      },
+      "candidate": false,
+      "levels": {
+        "gross_kwh": "secondary",
+        "net_kwh": "secondary",
+        "ac_max_kw": "secondary",
+        "ac_option_kw": "secondary",
+        "dc_max_kw": "secondary"
+      }
+    }
+  ]
+}

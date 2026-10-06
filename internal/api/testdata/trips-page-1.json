@@ -1,0 +1,80 @@
+{
+  "items": [
+    {
+      "id": "2026-09-28T16:41:00.000000Z",
+      "detected_at": "2026-09-28T16:41:00Z",
+      "reconstructed": false,
+      "start": {
+        "after": "2026-09-28T16:35:00Z",
+        "before": "2026-09-28T16:41:00Z"
+      },
+      "end": {
+        "after": "2026-09-28T17:24:00Z",
+        "before": "2026-09-28T17:25:00Z"
+      },
+      "distance_km": 33,
+      "start_odometer_km": 12440,
+      "end_odometer_km": 12473,
+      "start_soc_pct": null,
+      "end_soc_pct": null,
+      "start_range_km": null,
+      "end_range_km": null,
+      "energy_kwh": null,
+      "capacity_kwh": 75,
+      "capacity_source": "catalog_net",
+      "start_position": {
+        "lat": 45.7797,
+        "lon": 4.927
+      },
+      "end_position": {
+        "lat": 45.764,
+        "lon": 4.8357
+      },
+      "start_place": null,
+      "end_place": {
+        "id": "5e1f0000-0000-4000-8000-000000000001",
+        "name": "Maison de Tante Agathe"
+      },
+      "start_address": null,
+      "end_address": null,
+      "vehicle_reported": {
+        "trip_meter_km": null,
+        "consumption_kwh_per_100km": null
+      }
+    },
+    {
+      "id": "2026-09-28T13:00:00.000000Z",
+      "detected_at": "2026-09-28T13:00:00Z",
+      "reconstructed": true,
+      "start": {
+        "after": "2026-09-28T12:00:00Z",
+        "before": "2026-09-28T13:00:00Z"
+      },
+      "end": {
+        "after": "2026-09-28T12:00:00Z",
+        "before": "2026-09-28T13:00:00Z"
+      },
+      "distance_km": 8,
+      "start_odometer_km": 12432,
+      "end_odometer_km": 12440,
+      "start_soc_pct": null,
+      "end_soc_pct": null,
+      "start_range_km": null,
+      "end_range_km": null,
+      "energy_kwh": null,
+      "capacity_kwh": null,
+      "capacity_source": null,
+      "start_position": null,
+      "end_position": null,
+      "start_place": null,
+      "end_place": null,
+      "start_address": null,
+      "end_address": null,
+      "vehicle_reported": {
+        "trip_meter_km": null,
+        "consumption_kwh_per_100km": null
+      }
+    }
+  ],
+  "next_cursor": "MTc5MDU5NjgwMDAwMDAwMC4xNzkwNjAwNDAwMDAwMDAw"
+}

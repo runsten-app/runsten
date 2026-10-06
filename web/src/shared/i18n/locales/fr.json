@@ -1,0 +1,1149 @@
+{
+  "locale": {
+    "label": "Langue"
+  },
+  "auth": {
+    "intro": "Connectez-vous au carnet de bord de votre voiture.",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "error": {
+      "invalidCredentials": "Nom d'utilisateur ou mot de passe incorrect.",
+      "tooManyAttempts": "Trop de tentatives. Réessayez dans {minutes} min.",
+      "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
+      "internal": "Une erreur est survenue. Réessayez plus tard."
+    }
+  },
+  "user": {
+    "menu": "Compte : {username}"
+  },
+  "common": {
+    "unknown": "Inconnu",
+    "openInOsm": "Ouvrir dans OpenStreetMap",
+    "atLeast": "Au moins",
+    "atMost": "Au plus"
+  },
+  "cost": {
+    "free": "Gratuit",
+    "range": "de {min} à {max}"
+  },
+  "home": {
+    "connectVolvo": "Connecter un Volvo ID",
+    "error": "Les véhicules n'ont pas pu être chargés. Réessayez dans un instant.",
+    "empty": {
+      "title": "Aucun véhicule pour l'instant",
+      "text": "Connectez votre Volvo ID : Runsten lira les véhicules du compte."
+    }
+  },
+  "vehicle": {
+    "title": "Véhicule",
+    "select": "Véhicule",
+    "notFound": "Ce véhicule n'existe pas.",
+    "home": "Retour à mes véhicules"
+  },
+  "reading": {
+    "checked": "vérifié {age}",
+    "since": "depuis {time}",
+    "stale": "périmé"
+  },
+  "state": {
+    "loading": "Chargement de l'état",
+    "error": "L'état n'a pas pu être chargé. Réessayez dans un instant.",
+    "refreshFailed": "L'état n'a pas pu être actualisé : les valeurs peuvent être dépassées.",
+    "lastChecked": "Dernier relevé {age}",
+    "neverChecked": "Rien n'a encore été relevé",
+    "mode": {
+      "parked": "Garé",
+      "driving": "En route",
+      "charging": "En charge",
+      "unknown": "Mode inconnu"
+    },
+    "battery": "Batterie",
+    "soc": "État de charge",
+    "range": "Autonomie",
+    "capacity": "Capacité de la batterie",
+    "charging": {
+      "title": "Charge",
+      "status": "Statut",
+      "power": "Puissance",
+      "type": "Type",
+      "cable": "Câble",
+      "target": "Cible"
+    },
+    "vehicle": "Véhicule",
+    "engine": "Moteur",
+    "odometer": "Odomètre",
+    "map": "Carte de la position",
+    "position": "Dernière position",
+    "coordinates": "Coordonnées"
+  },
+  "charging": {
+    "status": {
+      "idle": "Inactive",
+      "charging": "En charge",
+      "done": "Terminée",
+      "scheduled": "Programmée",
+      "discharging": "En décharge",
+      "error": "Erreur"
+    },
+    "cable": {
+      "connected": "Branché",
+      "disconnected": "Débranché",
+      "fault": "Défaut"
+    }
+  },
+  "engine": {
+    "running": "En marche",
+    "stopped": "Arrêté"
+  },
+  "nav": {
+    "label": "Véhicule",
+    "state": "État",
+    "battery": "Batterie",
+    "trips": "Trajets",
+    "charges": "Charges",
+    "stats": "Stats"
+  },
+  "event": {
+    "reconstructed": "Reconstitué",
+    "reconstructedHelp": "Non vu par le collecteur : révélé par le compteur kilométrique ou l'état de charge, il a eu lieu quelque part dans cet intervalle.",
+    "between": "A eu lieu entre {from} et {to}",
+    "span": "{start} → {end}",
+    "when": "Quand",
+    "start": "Début",
+    "end": "Fin",
+    "duration": "Durée",
+    "boundsNote": "Chaque heure est un intervalle : le collecteur a vu le changement entre deux relevés. La durée couvre toutes les valeurs qu'ils permettent."
+  },
+  "period": {
+    "from": "Du",
+    "to": "Au",
+    "clear": "Effacer",
+    "error": {
+      "invalidDate": "Date non valide.",
+      "inverted": "La fin précède le début.",
+      "rejected": "Cette période n'est pas valide."
+    },
+    "shortcut": {
+      "label": "Période",
+      "thisMonth": "Ce mois-ci",
+      "lastMonth": "Le mois dernier",
+      "thisYear": "Cette année",
+      "last12Months": "12 derniers mois",
+      "all": "Tout"
+    },
+    "choose": "Choisir une période",
+    "whole": "Tout l'historique",
+    "since": "Depuis le {day}",
+    "until": "Jusqu'au {day}",
+    "previous": "Période précédente",
+    "next": "Période suivante"
+  },
+  "trips": {
+    "title": "Trajets",
+    "loading": "Chargement des trajets",
+    "error": "Les trajets n'ont pas pu être chargés. Réessayez dans un instant.",
+    "empty": "Aucun trajet enregistré pour l'instant.",
+    "emptyPeriod": "Aucun trajet sur cette période.",
+    "loadMore": "Afficher plus",
+    "moreFailed": "La suite des trajets n'a pas pu être chargée. Réessayez.",
+    "end": "Il n'y a pas d'autre trajet.",
+    "csv": "Télécharger en CSV"
+  },
+  "trip": {
+    "title": "Trajet",
+    "loading": "Chargement du trajet",
+    "error": "Le trajet n'a pas pu être chargé. Réessayez dans un instant.",
+    "notFound": "Ce trajet n'existe pas.",
+    "back": "Trajets",
+    "distanceUnknown": "Distance inconnue",
+    "figures": "Chiffres",
+    "distance": "Distance",
+    "energy": "Énergie (estimée)",
+    "energyNote": "L'énergie est une estimation : la variation de l'état de charge multipliée par la capacité de la batterie. Aucun compteur n'est lu.",
+    "soc": "État de charge",
+    "range": "Autonomie",
+    "odometer": "Compteur kilométrique",
+    "map": "Carte du trajet",
+    "positions": "Positions",
+    "startPosition": "Départ",
+    "endPosition": "Arrivée",
+    "elsewhere": "Ailleurs",
+    "route": "{from} → {to}",
+    "routeSpoken": "De {from} à {to}",
+    "openPlace": "Ouvrir le lieu",
+    "createPlace": "Créer un lieu ici",
+    "vehicle": {
+      "title": "Chiffres du véhicule (pour comparaison)",
+      "tripMeter": "Compteur de trajet",
+      "consumption": "Consommation",
+      "note": "Les chiffres propres au véhicule, tels qu'il les donne : on ne sait pas exactement ce qu'ils couvrent."
+    },
+    "consumption": {
+      "title": "Consommation",
+      "own": "Ce trajet (estimée)",
+      "average": "Moyenne de {month}",
+      "similar": "Trajets de {band} en {month}",
+      "gap": "{pct} pour ce trajet",
+      "note": "Estimations d’après le niveau de charge, au point près : un trajet court peut s’écarter beaucoup de la moyenne.",
+      "statsLink": "Voir les statistiques de {month}"
+    }
+  },
+  "charges": {
+    "title": "Charges",
+    "loading": "Chargement des charges",
+    "error": "Les charges n'ont pas pu être chargées. Réessayez dans un instant.",
+    "empty": "Aucune charge enregistrée pour l'instant.",
+    "emptyPeriod": "Aucune charge sur cette période.",
+    "loadMore": "Afficher plus",
+    "moreFailed": "La suite des charges n'a pas pu être chargée. Réessayez.",
+    "end": "Il n'y a pas d'autre charge.",
+    "csv": "Télécharger en CSV"
+  },
+  "charge": {
+    "title": "Charge",
+    "loading": "Chargement de la charge",
+    "error": "La charge n'a pas pu être chargée. Réessayez dans un instant.",
+    "notFound": "Cette charge n'existe pas.",
+    "back": "Charges",
+    "socUnknown": "État de charge inconnu",
+    "figures": "Chiffres",
+    "type": "Type",
+    "soc": "État de charge",
+    "target": "Cible",
+    "energy": "Énergie",
+    "energySoc": "Énergie (d'après l'état de charge)",
+    "energyPower": "Énergie (d'après la puissance de charge)",
+    "energyNote": "Deux estimations distinctes, aucune n'est une mesure : le véhicule n'a pas de compteur d'énergie à lire.",
+    "position": "Position",
+    "address": "Adresse",
+    "map": "Carte de la charge",
+    "coordinates": "Coordonnées",
+    "cost": {
+      "title": "Coût",
+      "place": "Lieu",
+      "noPlace": "Hors de tout lieu",
+      "openPlace": "Ouvrir le lieu et son tarif",
+      "label": "Coût",
+      "unknown": "Ni un tarif ni un coût saisi ne le donne.",
+      "unpriced": "Le tarif de {place} ne donne aucun prix le jour de cette charge : elle a commencé avant son premier prix.",
+      "noCurrency": "Aucune devise choisie : les coûts ne peuvent pas être calculés.",
+      "chooseCurrency": "Choisir une devise",
+      "entered": "Saisi",
+      "billed": "{energy} facturés",
+      "note": "Note : {note}",
+      "tariff": "Estimé d'après le tarif de {place}",
+      "estimate": "{energy} facturés estimés, pour un rendement supposé de {efficiency}",
+      "range": "L'heure exacte de la charge n'est pas connue : son coût est dans cet intervalle.",
+      "createPlace": "Créer un lieu ici"
+    }
+  },
+  "chargeCost": {
+    "enter": "Saisir le coût",
+    "change": "Modifier le coût saisi",
+    "help": "Ce qui a été payé, comme sur le reçu : il remplace l'estimation du tarif.",
+    "amount": "Montant payé",
+    "amountHelp": "Taxes comprises ; 0 pour une charge gratuite.",
+    "energy": "Énergie facturée (facultatif)",
+    "energyHelp": "Telle que lue sur le reçu.",
+    "note": "Note (facultatif)",
+    "noteHelp": "L'opérateur ou le moyen de paiement, par exemple.",
+    "save": "Enregistrer le coût",
+    "cancel": "Annuler",
+    "saved": "Coût enregistré.",
+    "deleted": "Coût saisi supprimé.",
+    "delete": {
+      "button": "Supprimer le coût saisi",
+      "title": "Supprimer le coût saisi ?",
+      "text": "La charge reprend le coût du tarif de son lieu, si elle en a un.",
+      "error": "Le coût n'a pas pu être supprimé. Réessayez plus tard.",
+      "cancel": "Annuler",
+      "confirm": "Supprimer"
+    },
+    "error": {
+      "summary": "Le coût n'a pas pu être enregistré",
+      "item": "{field} : {message}",
+      "required": "Obligatoire.",
+      "notNumber": "Saisissez un montant, avec un point ou une virgule.",
+      "range": "Entre {min} et {max}.",
+      "decimals": "Sans décimales. | Au plus {n} décimale. | Au plus {n} décimales.",
+      "aboveZero": "Plus de 0, au plus {max} kWh.",
+      "tooLong": "Au plus {max} caractères.",
+      "invalidBody": "Runsten a refusé le coût : {message}",
+      "notFound": "Cette charge n'existe plus : les charges ont été redétectées. Revenez à la liste.",
+      "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
+      "internal": "Une erreur s'est produite. Réessayez plus tard."
+    }
+  },
+  "stats": {
+    "error": "Les totaux de la période n'ont pas pu être chargés.",
+    "trips": {
+      "inPeriod": "{n} trajet commencé dans la période | {n} trajets commencés dans la période",
+      "all": "{n} trajet en tout | {n} trajets en tout",
+      "reconstructed": "dont {n} reconstitué | dont {n} reconstitués",
+      "distanceUnknown": "distance inconnue pour {n} trajet | distance inconnue pour {n} trajets",
+      "consumption": "{value} (estimée)",
+      "consumptionUnknown": "consommation inconnue"
+    },
+    "charges": {
+      "inPeriod": "{n} charge commencée dans la période | {n} charges commencées dans la période",
+      "all": "{n} charge en tout | {n} charges en tout",
+      "reconstructed": "dont {n} reconstituée | dont {n} reconstituées",
+      "energy": "{value} (d'après l'état de charge)",
+      "energyUnknown": "énergie inconnue pour {n} charge | énergie inconnue pour {n} charges",
+      "types": "{ac} AC, {dc} DC",
+      "typeUnknown": "{n} de type inconnu | {n} de type inconnu",
+      "costUnknown": "coût inconnu pour {n} charge | coût inconnu pour {n} charges",
+      "costEntered": "{n} coût saisi | {n} coûts saisis"
+    },
+    "title": "Statistiques",
+    "scope": "Chaque trajet et chaque charge comptent une fois, dans le jour, la semaine ou le mois où ils ont commencé. Énergies, consommation et perte garée sont estimées d'après l'état de charge, à un point près.",
+    "loading": "Chargement des statistiques",
+    "tooMany": "Cette période a trop d'intervalles pour ce découpage : choisissez les semaines ou les mois.",
+    "bucket": {
+      "label": "Découpage",
+      "day": "Par jour",
+      "week": "Par semaine",
+      "month": "Par mois",
+      "dayHeader": "Jour",
+      "weekHeader": "Semaine du",
+      "monthHeader": "Mois"
+    },
+    "tile": {
+      "distance": "Distance",
+      "distanceUnknown": "inconnue pour {n} trajet | inconnue pour {n} trajets",
+      "trips": "Trajets",
+      "drivingTime": "Temps de conduite",
+      "withoutDuration": "{n} trajet reconstitué, sans durée | {n} trajets reconstitués, sans durée",
+      "consumption": "Consommation",
+      "consumptionNote": "Estimée, sur les trajets dont l'énergie et la distance sont connues",
+      "energy": "Énergie chargée",
+      "energySoc": "D'après l'état de charge",
+      "energyPower": "D'après la puissance de charge : {value}",
+      "energyPowerUnknown": "sans relevé de puissance pour {n} charge | sans relevé de puissance pour {n} charges",
+      "charges": "Charges",
+      "parked": "Perte garée",
+      "perDay": "{value} par jour",
+      "parkedNote": "L'état de charge perdu entre deux événements : significatif sur des semaines, pas sur une nuit",
+      "parkedUnknown": "inconnue pour {n} intervalle | inconnue pour {n} intervalles",
+      "cost": "Coût des charges",
+      "costNote": "Estimé d'après les tarifs, ou saisi ; un intervalle quand l'heure des charges n'est pas connue",
+      "costUnknown": "inconnu pour {n} charge | inconnu pour {n} charges"
+    },
+    "chart": {
+      "distance": {
+        "title": "Distance",
+        "series": "Distance",
+        "summary": "Distance : {total} en tout, le plus pour {at} ({max}).",
+        "none": "Aucune distance dans cette période.",
+        "hint": "Sélectionnez une barre pour voir les trajets de l'intervalle."
+      },
+      "energy": {
+        "title": "Énergie chargée (d'après l'état de charge)",
+        "ac": "AC",
+        "dc": "DC",
+        "unknown": "Type inconnu",
+        "summary": "Énergie chargée : {ac} en AC, {dc} en DC.",
+        "none": "Aucune charge dans cette période.",
+        "hint": "Sélectionnez une barre pour voir les charges de l'intervalle."
+      },
+      "consumption": {
+        "title": "Consommation (estimée)",
+        "series": "Consommation",
+        "summary": "Consommation : {average} en moyenne, de {min} à {max}.",
+        "none": "Aucune consommation connue dans cette période.",
+        "hint": "Sélectionnez un point pour voir les trajets de l'intervalle."
+      },
+      "cost": {
+        "title": "Coût des charges",
+        "min": "Coût le plus bas",
+        "uncertainty": "Incertitude, jusqu'au coût le plus haut",
+        "minHeader": "Coût le plus bas",
+        "maxHeader": "Coût le plus haut",
+        "summary": "Coût des charges : {total} en tout, le plus pour {at} ({max}).",
+        "total": "Coût des charges : {total} en tout.",
+        "none": "Aucun coût connu dans cette période.",
+        "hint": "Sélectionnez une barre pour voir les charges de l'intervalle."
+      },
+      "costPerDistance": {
+        "title": "Coût aux 100 km",
+        "min": "Coût le plus bas",
+        "range": "Fourchette, jusqu'au coût le plus haut",
+        "value": "{amount}/100 km",
+        "unit": "{currency}/100 km",
+        "summary": "Coût aux 100 km : {average} sur la période.",
+        "none": "Aucun coût aux 100 km connu dans cette période.",
+        "hint": "Sélectionnez un point pour voir les charges de l'intervalle."
+      },
+      "time": {
+        "title": "Temps de conduite et de charge",
+        "driving": "Conduite",
+        "drivingUncertainty": "Conduite, incertitude",
+        "charging": "Charge",
+        "chargingUncertainty": "Charge, incertitude",
+        "drivingMin": "Conduite, au moins",
+        "drivingMax": "Conduite, au plus",
+        "chargingMin": "Charge, au moins",
+        "chargingMax": "Charge, au plus",
+        "summary": "Temps de conduite : {driving} ; de charge : {charging}.",
+        "none": "Aucun trajet ni aucune charge dans cette période.",
+        "hint": "Sélectionnez une barre pour voir les trajets de l'intervalle."
+      },
+      "parked": {
+        "title": "Perte à l’arrêt",
+        "series": "Perte par jour",
+        "unit": "%/jour",
+        "summary": "Perte à l’arrêt : {average} en moyenne sur la période.",
+        "none": "Aucune perte à l’arrêt connue sur cette période.",
+        "hint": "La charge perdue entre deux événements, par jour : parlante sur des semaines, pas sur une nuit."
+      },
+      "byDistance": {
+        "title": "Trajets par distance",
+        "series": "Trajets",
+        "unit": "trajets",
+        "header": "Distance",
+        "summary": "Trajets par distance : le plus souvent {band} ({count} sur {n}).",
+        "none": "Aucun trajet de distance connue sur cette période.",
+        "leftOut": "{n} trajet écarté : reconstitué, il peut en regrouper plusieurs, ou sans distance. | {n} trajets écartés : reconstitués, ils peuvent en regrouper plusieurs, ou sans distance."
+      },
+      "byDistanceConsumption": {
+        "title": "Consommation selon la distance (estimée)",
+        "series": "Consommation",
+        "item": "{band}, {value}",
+        "summary": "Consommation selon la distance : {list}.",
+        "none": "Aucune consommation connue sur cette période.",
+        "hint": "Les trajets courts consomment souvent plus au kilomètre : batterie et habitacle à chauffer, conduite en ville."
+      },
+      "bySoC": {
+        "title": "Charge au début et à la fin des recharges",
+        "started": "Début",
+        "ended": "Fin",
+        "unit": "recharges",
+        "header": "Niveau de charge",
+        "summary": "Sur {n} recharges, {below} ont commencé sous 20 % et {above} ont fini au-dessus de 80 %.",
+        "none": "Aucune recharge de niveau connu sur cette période.",
+        "hint": "Chaque recharge compte deux fois : au niveau où elle a commencé, et à celui où elle a fini.",
+        "leftOut": "{n} recharge écartée : reconstituée, ou sans niveau de charge. | {n} recharges écartées : reconstituées, ou sans niveau de charge."
+      },
+      "byPlace": {
+        "title": "Énergie chargée par lieu (d'après l'état de charge)",
+        "series": "Énergie",
+        "charges": "Recharges",
+        "header": "Lieu",
+        "outsideAC": "Ailleurs, AC",
+        "outsideDC": "Ailleurs, DC",
+        "outsideUnknown": "Ailleurs, type inconnu",
+        "noPosition": "Sans position",
+        "summary": "Énergie chargée par lieu : {total} en tout, le plus pour {at} ({max}).",
+        "none": "Aucune recharge d'énergie connue sur cette période.",
+        "hint": "Une recharge compte au lieu de son coût : sans position, au lieu qui prend aussi celles-là, s'il y en a un.",
+        "reconstructed": "{n} recharge reconstituée comprise, comptée de la même façon. | {n} recharges reconstituées comprises, comptées de la même façon."
+      },
+      "costByPlace": {
+        "title": "Coût des recharges par lieu",
+        "item": "{place}, {amount}",
+        "summary": "Coût des recharges par lieu : {list}.",
+        "none": "Aucun coût connu dans cette période.",
+        "hint": "Hors de vos lieux, un coût n'est connu que s'il a été saisi."
+      }
+    },
+    "orphans": "{n} coût sans charge : {amount}, hors du total. | {n} coûts sans charge : {amount}, hors du total.",
+    "orphansLink": "Voir les réglages",
+    "band": {
+      "below": "moins de {max}",
+      "between": "{min} à {max}",
+      "atLeast": "{min} et plus",
+      "soc": "{min}–{max}"
+    },
+    "view": {
+      "label": "Graphiques",
+      "driving": "Conduite",
+      "charging": "Recharge",
+      "costs": "Coûts",
+      "noCurrency": "Aucune devise choisie : les coûts ne peuvent pas être calculés."
+    }
+  },
+  "battery": {
+    "title": "Batterie",
+    "intro": "Runsten estime la capacité de la batterie de votre voiture à partir de vos charges. Une estimation isolée est approximative : ce qui compte, c'est son évolution au fil des mois.",
+    "loading": "Chargement de la batterie",
+    "error": "La batterie n'a pas pu être chargée. Réessayez dans un instant.",
+    "tooMany": "Ce véhicule a plus de mois d'historique que les graphiques ne peuvent en dessiner.",
+    "axis": {
+      "label": "Axe",
+      "date": "Date",
+      "odometer": "Kilométrage"
+    },
+    "tile": {
+      "remaining": "Capacité restante",
+      "remainingValue": "≈ {pct}",
+      "estimated": "{kwh} estimés",
+      "gaugeText": "Environ {pct}, entre {low} et {high}",
+      "capacity": "Capacité estimée",
+      "between": "entre {q1} et {q3}",
+      "notEnough": "Pas encore assez de charges",
+      "need": "Encore {n} charge utilisable nécessaire | Encore {n} charges utilisables nécessaires",
+      "reference": "Capacité de référence",
+      "referenceCatalog": "D'après la fiche du modèle",
+      "referenceApi": "Telle que la voiture l'indique",
+      "change": "Évolution",
+      "since": "depuis le {date}",
+      "inTwelveMonths": "Dans 12 mois de données",
+      "cycles": "Cycles équivalents",
+      "cyclesNote": "L'énergie d'autant de charges complètes",
+      "kept": "Charges utilisées",
+      "setAside": "{n} charge non utilisée | {n} charges non utilisées",
+      "why": "Pourquoi ?"
+    },
+    "why": {
+      "title": "Pourquoi certaines charges ne donnent pas d'estimation",
+      "intro": "Chaque ligne dit pourquoi une charge n'a pas donné d'estimation, et combien.",
+      "reconstructed": "Charge non observée",
+      "noPower": "La voiture n'indique pas sa puissance de charge",
+      "highSoc": "Chargée au-dessus de 95 %",
+      "spanSoc": "Charge trop faible (moins de 20 %)",
+      "powerGap": "Relevés trop éloignés",
+      "lowPower": "Charge trop lente",
+      "implausible": "Résultat trop éloigné",
+      "close": "Fermer"
+    },
+    "chart": {
+      "capacity": {
+        "title": "Capacité estimée",
+        "power": "Puissance de charge",
+        "billed": "Énergie facturée",
+        "band": "La moitié centrale des estimations (Q1–Q3)",
+        "median": "Médiane mensuelle",
+        "reference": "Référence",
+        "summary": "Capacité estimée de {first} en {firstAt} à {last} en {lastAt}.",
+        "one": "Capacité estimée de {value} en {at}.",
+        "odometerSummary": "Capacité estimée : {first} à {firstKm}, jusqu'à {last} à {lastKm}.",
+        "odometerOne": "Capacité estimée de {value} à {km}.",
+        "hidden": "{n} estimation sans odomètre n'est pas tracée. | {n} estimations sans odomètre ne sont pas tracées.",
+        "noOdometer": "Aucune estimation n'a d'odomètre.",
+        "none": "Pas encore d'estimation : il faut une charge d'au moins 20 %.",
+        "hint": "Sélectionnez un point pour voir sa charge."
+      },
+      "range": {
+        "title": "Autonomie à 100 % (estimation de la voiture)",
+        "series": "Autonomie à 100 %",
+        "summary": "Autonomie à 100 % de {first} en {firstAt} à {last} en {lastAt}.",
+        "one": "Autonomie à 100 % de {value} en {at}.",
+        "none": "Aucune autonomie à 100 % pour l'instant.",
+        "hint": "L'estimation de la voiture, d'après votre conduite récente : elle baisse l'hiver, quelle que soit la batterie."
+      },
+      "header": {
+        "month": "Mois",
+        "median": "Médiane",
+        "q1": "Premier quartile",
+        "q3": "Troisième quartile",
+        "estimates": "Estimations",
+        "trips": "Trajets"
+      }
+    },
+    "state": {
+      "withDeviation": "{capacity}, {deviation} par rapport à la fiche",
+      "open": "Voir la page Batterie"
+    }
+  },
+  "timeline": {
+    "title": "Niveau de charge, 7 derniers jours",
+    "soc": "Niveau de charge",
+    "driving": "Conduite",
+    "charging": "Recharge",
+    "hint": "Les bandes sont les trajets et les recharges : pâles là où ils ont pu avoir lieu, plus marquées là où ils ont eu lieu à coup sûr. Entre elles, le véhicule était stationné. La ligne s'interrompt là où rien n'a été lu.",
+    "summary": "Sur les 7 derniers jours, de {first} à {last}, entre {min} et {max} ; {trips} et {charges}.",
+    "none": "Rien n'a été lu ces 7 derniers jours.",
+    "tripCount": "aucun trajet | {n} trajet | {n} trajets",
+    "chargeCount": "aucune recharge | {n} recharge | {n} recharges",
+    "day": "Jour",
+    "low": "Niveau de charge le plus bas",
+    "high": "Niveau de charge le plus haut",
+    "trips": "Trajets commencés",
+    "charges": "Recharges commencées"
+  },
+  "recent": {
+    "title": "30 derniers jours",
+    "stats": "Voir les statistiques",
+    "hint": "La distance de chaque jour. Appuyez sur un jour pour voir ses trajets."
+  },
+  "chargeCurve": {
+    "title": "Courbe de charge",
+    "power": "Puissance",
+    "soc": "Niveau de charge",
+    "time": "Heure",
+    "hint": "Telles que le véhicule les a données pendant la recharge ; la ligne s'interrompt là où rien n'a été lu.",
+    "summary": "Jusqu'à {peak} ; niveau de charge de {from} à {to}.",
+    "few": "Aucune lecture de la puissance pendant cette recharge : trop peu pour tracer sa courbe. | Une lecture de la puissance pendant cette recharge : trop peu pour tracer sa courbe. | {n} lectures de la puissance pendant cette recharge : trop peu pour tracer sa courbe."
+  },
+  "periodChart": {
+    "hint": "Sélectionnez une barre pour restreindre la liste à son intervalle."
+  },
+  "settings": {
+    "open": "Réglages",
+    "title": "Réglages",
+    "loading": "Chargement des réglages",
+    "error": "Les réglages n'ont pas pu être chargés. Réessayez dans un instant.",
+    "currency": {
+      "title": "Devise",
+      "label": "Devise",
+      "option": "{name} ({code})",
+      "help": "Tous les prix et les coûts sont dans cette devise, sans conversion. Dès qu'un prix ou un coût existe, elle ne peut plus changer.",
+      "none": "Aucune devise choisie : le coût des charges ne peut pas être calculé.",
+      "save": "Enregistrer la devise",
+      "saved": "Devise enregistrée.",
+      "inUse": "Des prix ou des coûts existent déjà dans une autre devise : la devise ne peut plus changer.",
+      "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
+      "error": "La devise n'a pas pu être enregistrée. Réessayez plus tard."
+    },
+    "vehicles": {
+      "title": "Véhicules",
+      "help": "Chaque véhicule a ses propres réglages : sa variante et son chargeur embarqué.",
+      "loading": "Chargement des véhicules",
+      "error": "Les véhicules n'ont pas pu être chargés. Réessayez dans un instant.",
+      "none": "Aucun véhicule pour l'instant : connectez d'abord votre Volvo ID."
+    },
+    "places": {
+      "title": "Lieux et tarifs",
+      "help": "Une charge prend le tarif du lieu le plus proche dont le cercle contient sa position.",
+      "loading": "Chargement des lieux",
+      "error": "Les lieux n'ont pas pu être chargés. Réessayez dans un instant.",
+      "empty": "Aucun lieu pour l'instant.",
+      "new": "Nouveau lieu",
+      "tooMany": "Un compte a au plus {max} lieux : supprimez-en un pour en ajouter un autre.",
+      "radius": "rayon de {radius} m",
+      "since": "{price} depuis le {date}",
+      "from": "{price} à partir du {date}",
+      "windows": "{n} plage horaire | {n} plages horaires",
+      "withoutPosition": "aussi pour les charges sans position"
+    }
+  },
+  "preferences": {
+    "open": "Préférences",
+    "title": "Préférences",
+    "intro": "Vos choix à vous, gardés dans ce navigateur.",
+    "language": "Langue",
+    "appearance": {
+      "title": "Apparence",
+      "system": "Automatique",
+      "light": "Clair",
+      "dark": "Sombre",
+      "hint": "Automatique suit votre appareil."
+    },
+    "maps": {
+      "title": "Cartes",
+      "hint": "Les cartes viennent d'un service tiers, qui voit votre adresse IP et les zones affichées.",
+      "on": "Affichées",
+      "off": "Masquées"
+    }
+  },
+  "shortcuts": {
+    "title": "Raccourcis clavier",
+    "hint": "Appuyez sur ? sur n'importe quelle page pour les voir. Désactivez-les si les touches seules vous gênent.",
+    "help": "Cette liste",
+    "shift": "Maj, maintenue",
+    "hints": "Montrer les touches sur la page",
+    "turnOff": "Pour les désactiver :",
+    "close": "Fermer",
+    "on": "Activés",
+    "off": "Désactivés"
+  },
+  "vehicleModel": {
+    "vin": "VIN",
+    "family": "Modèle transmis",
+    "modelYear": "Année modèle transmise",
+    "loading": "Chargement des variantes",
+    "loadError": "Les variantes n'ont pas pu être chargées. Réessayez dans un instant.",
+    "notRead": "Runsten n'a pas encore lu les détails de ce véhicule : sa variante pourra être choisie ensuite.",
+    "noVariant": "Le catalogue de Runsten n'a aucune variante du {family} : il ne liste que les Volvo et Polestar entièrement électriques.",
+    "variant": "Variante",
+    "variantHelp": "Les chiffres sont ceux du catalogue. Les variantes auxquelles correspondent les détails du véhicule viennent en premier.",
+    "automatic": "Reconnaissance automatique",
+    "automaticIs": "Reconnue : {name}",
+    "automaticNone": "Aucune variante reconnue : plusieurs correspondent, ou aucune. Choisissez la vôtre ci-dessous.",
+    "option": "{name}, {years}",
+    "recognized": "reconnue automatiquement",
+    "yearsSince": "depuis {from}",
+    "yearsRange": "de {from} à {to}",
+    "grossOnly": "batterie de {gross}",
+    "capacity": "batterie de {gross}, {net} utiles",
+    "ac": "AC {kw}",
+    "acOption": "AC {kw}, {option} en option",
+    "dc": "DC {kw}",
+    "fromManufacturer": "D'après le constructeur",
+    "fromPublic": "D'après des sources publiques",
+    "fromBoth": "D'après le constructeur ; {figures} : d'après des sources publiques",
+    "figure": {
+      "gross": "batterie",
+      "net": "capacité utile",
+      "ac": "chargeur AC",
+      "acOption": "chargeur en option",
+      "dc": "puissance DC"
+    },
+    "charger": "Chargeur embarqué",
+    "chargerHelp": "Le chargeur embarqué limite la puissance des charges AC, quelle que soit la borne. Tant que vous ne dites pas lequel équipe le véhicule, Runsten prend le plus puissant.",
+    "chargerUnknown": "Non précisé : {kw} supposés, le plus puissant",
+    "chargerStandard": "{kw}, de série",
+    "chargerOption": "{kw}, en option",
+    "save": "Enregistrer",
+    "saveNamed": "Enregistrer la variante de {vehicle}",
+    "saved": "Variante enregistrée.",
+    "error": {
+      "summary": "La variante n'a pas pu être enregistrée",
+      "item": "{field} : {message}",
+      "unknownVariant": "Cette variante n'est plus proposée : choisissez-en une autre.",
+      "notACharger": "Ce chargeur n'est pas l'un de ceux de la variante : choisissez-en un autre.",
+      "invalidBody": "Runsten a refusé le choix : {message}",
+      "notFound": "Ce véhicule n'existe plus.",
+      "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
+      "internal": "Une erreur s'est produite. Réessayez plus tard."
+    }
+  },
+  "vehicleSettings": {
+    "open": "Réglages du véhicule",
+    "title": "Réglages du véhicule",
+    "help": "Runsten reconnaît la variante du véhicule d'après ce qu'il transmet, quand une seule correspond. Votre choix prime sur la reconnaissance, et se voit partout où le véhicule apparaît.",
+    "loading": "Chargement du véhicule",
+    "error": "Le véhicule n'a pas pu être chargé. Réessayez dans un instant."
+  },
+  "orphans": {
+    "title": "Coûts sans charge",
+    "help": "Un coût saisi reste même quand sa charge est redétectée, après un changement des règles de détection. Quand aucune charge, ou plus d'une, ne lui correspond plus, il attend ici : rattachez-le à la bonne charge, ou supprimez-le. Il n'est jamais ajouté aux totaux, qui compteraient la charge deux fois.",
+    "error": "Les coûts sans charge n'ont pas pu être chargés. Réessayez dans un instant.",
+    "none": "Plus aucun coût sans charge.",
+    "window": "Charge du {window}",
+    "amount": "Montant",
+    "energy": "Énergie facturée",
+    "note": "Note",
+    "noEnergy": "Non saisie",
+    "noNote": "Aucune",
+    "noCurrency": "{n} unités mineures, aucune devise choisie",
+    "attached": "Coût rattaché à la charge.",
+    "deleted": "Coût supprimé.",
+    "attach": {
+      "button": "Rattacher à une charge",
+      "label": "Rattacher à une charge, {cost}",
+      "title": "Rattacher ce coût à une charge",
+      "help": "Les charges du véhicule autour du {window}, quand le coût a été saisi :",
+      "choose": "Charge",
+      "loading": "Chargement des charges",
+      "loadError": "Les charges n'ont pas pu être chargées. Réessayez dans un instant.",
+      "none": "Aucune charge à ce moment-là : supprimez le coût, ou gardez-le ici.",
+      "typeUnknown": "type inconnu",
+      "entered": "{cost} saisi",
+      "hasCost": "Cette charge a déjà un coût saisi : supprimez-le d'abord sur la charge, ou choisissez-en une autre.",
+      "notFound": "Ce coût ou cette charge n'existe plus.",
+      "error": "Le coût n'a pas pu être rattaché. Réessayez plus tard.",
+      "cancel": "Annuler",
+      "confirm": "Rattacher"
+    },
+    "delete": {
+      "button": "Supprimer",
+      "label": "Supprimer, {cost}",
+      "title": "Supprimer ce coût ?",
+      "text": "Le coût de {cost} est supprimé définitivement.",
+      "error": "Le coût n'a pas pu être supprimé. Réessayez plus tard.",
+      "cancel": "Annuler",
+      "confirm": "Supprimer"
+    }
+  },
+  "place": {
+    "newTitle": "Nouveau lieu",
+    "back": "Réglages",
+    "loading": "Chargement du lieu",
+    "notFound": "Ce lieu n'existe pas.",
+    "details": "Lieu",
+    "name": "Nom",
+    "position": "Position",
+    "lat": "Latitude",
+    "lon": "Longitude",
+    "map": "Carte du lieu : appuyez dessus pour y placer le lieu",
+    "mapHelp": "Ou appuyez sur la carte à l'endroit du lieu.",
+    "mapPicked": "Position prise sur la carte.",
+    "positionHelp": "En degrés décimaux, avec un point ou une virgule.",
+    "vehiclePosition": "Position actuelle de {vehicle}",
+    "positionFilled": "Position de {from} reprise.",
+    "radius": "Rayon",
+    "radiusHelp": "Une charge, ou le départ ou l'arrivée d'un trajet, à moins de cette distance est au lieu.",
+    "maxPower": "Puissance de la borne",
+    "maxPowerHelp": "Facultative : la puissance de la borne de ce lieu. Elle resserre le coût d'une charge à cheval sur plusieurs prix.",
+    "timeZone": "Fuseau horaire",
+    "timeZoneHelp": "Les jours et les heures du tarif sont dans ce fuseau.",
+    "withoutPosition": "Aussi pour les charges sans position",
+    "withoutPositionHelp": "Les charges AC et de type inconnu qui n'ont pas de position prennent ce tarif. Un seul lieu au plus.",
+    "advanced": "Avancé",
+    "efficiency": "Rendement de la charge",
+    "efficiencyHelp": "La part de l'énergie prise au réseau qui arrive dans la batterie. Vide pour la valeur par défaut : {ac} en AC, {dc} en DC.",
+    "save": "Enregistrer",
+    "saved": "Lieu enregistré.",
+    "leave": "Quitter sans enregistrer les modifications ?",
+    "tariff": {
+      "title": "Tarif",
+      "help": "Hors de toute plage horaire, le prix de base s'applique. Quand plusieurs plages couvrent la même heure, la dernière gagne : mettez la plus précise en dernier.",
+      "midnight": "Une plage peut passer minuit : 22:00–06:00 le lundi couvre la nuit du lundi au mardi.",
+      "versionFrom": "Prix à partir du {date}",
+      "versionNew": "Nouveau prix",
+      "validFrom": "À partir du",
+      "validFromHelp": "Les charges avant ce jour n'ont pas de prix par celui-ci.",
+      "price": "Prix de base",
+      "windows": "Plages horaires",
+      "noWindow": "Aucune plage horaire : le prix de base s'applique à toute heure.",
+      "addWindow": "Ajouter une plage horaire",
+      "tooManyWindows": "Au plus {max} plages horaires par prix.",
+      "removeVersion": "Supprimer ce prix",
+      "addVersion": "Nouveau prix à partir du…",
+      "unpriced": {
+        "text": "Aucun prix de ce tarif ne s'applique à une charge de ce lieu : elle a commencé avant le {date}, jour du premier prix. Son coût est inconnu. | Aucun prix de ce tarif ne s'applique à {n} charges de ce lieu : elles ont commencé avant le {date}, jour du premier prix. Leur coût est inconnu.",
+        "retroactive": "Les coûts sont recalculés à chaque lecture : un premier prix avancé s'applique aussi aux charges passées, une fois enregistré.",
+        "startOn": "Faire commencer le tarif le {date}",
+        "moved": "Le premier prix commence désormais le {date} : enregistrez pour chiffrer les charges."
+      }
+    },
+    "window": {
+      "legend": "Plage horaire {n}",
+      "days": "Jours",
+      "presets": "Jours de la plage horaire {n}",
+      "everyDay": "Tous les jours",
+      "weekdays": "Semaine",
+      "weekend": "Week-end",
+      "from": "De",
+      "to": "À",
+      "price": "Prix",
+      "overnight": "Passe minuit : finit le lendemain.",
+      "allDay": "Dure 24 heures.",
+      "months": "Mois",
+      "allYear": "Toute l'année",
+      "up": "Monter",
+      "upNamed": "Monter : plage horaire {n}",
+      "down": "Descendre",
+      "downNamed": "Descendre : plage horaire {n}",
+      "remove": "Supprimer",
+      "removeNamed": "Supprimer : plage horaire {n}"
+    },
+    "delete": {
+      "button": "Supprimer",
+      "title": "Supprimer {name} ?",
+      "text": "Le lieu et son tarif sont supprimés : ses charges perdent leur prix.",
+      "error": "Le lieu n'a pas pu être supprimé. Réessayez plus tard.",
+      "cancel": "Annuler",
+      "confirm": "Supprimer"
+    },
+    "error": {
+      "summary": "Le lieu n'a pas pu être enregistré",
+      "item": "{field} : {message}",
+      "load": "Le lieu n'a pas pu être chargé. Réessayez dans un instant.",
+      "required": "Obligatoire.",
+      "notNumber": "Saisissez un nombre, avec un point ou une virgule.",
+      "range": "Entre {min} et {max}.",
+      "aboveZero": "Plus de 0, au plus {max}.",
+      "tooLong": "Au plus {max} caractères.",
+      "decimals": "Au plus {max} décimales.",
+      "notDate": "Date non valide.",
+      "notTime": "Heure non valide.",
+      "sameDay": "Un autre prix commence le même jour.",
+      "noVersion": "Au moins un prix.",
+      "tooMany": "Au plus {max}.",
+      "noDay": "Choisissez au moins un jour.",
+      "noMonth": "Choisissez au moins un mois, ou toute l'année.",
+      "withoutPositionTaken": "Un autre lieu prend déjà les charges sans position.",
+      "tooManyPlaces": "Un compte a au plus {max} lieux.",
+      "invalidBody": "Runsten a refusé le lieu : {message}",
+      "notFound": "Ce lieu n'existe plus.",
+      "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
+      "internal": "Une erreur s'est produite. Réessayez plus tard."
+    }
+  },
+  "connection": {
+    "open": "Connexion",
+    "title": "Connexion",
+    "backToVehicle": "Retour au véhicule",
+    "attention": "La connexion demande votre attention",
+    "intro": "Runsten lit vos véhicules par l'API Volvo, en arrière-plan : c'est son collecteur. Cette page dit s'il les lit, et sinon pourquoi.",
+    "loading": "Chargement de la connexion",
+    "error": "La connexion n'a pas pu être chargée. Réessayez dans un instant.",
+    "refreshFailed": "La connexion n'a pas pu être actualisée : ce qu'elle montre peut être dépassé.",
+    "outcome": {
+      "connected": "Volvo ID connecté : le collecteur lit vos véhicules dès son prochain passage.",
+      "keyRefused": "Votre Volvo ID est connecté, mais Volvo a refusé votre clé : corrigez-la ci-dessous, les véhicules seront listés, sans vous reconnecter.",
+      "tooManyVehicles": "Votre Volvo ID donne accès à plus de véhicules que votre compte n'en permet : il n'a pas été connecté."
+    },
+    "volvoId": {
+      "title": "Volvo ID",
+      "none": "Aucun Volvo ID connecté : Runsten ne lit rien.",
+      "connect": "Connecter un Volvo ID",
+      "reconnect": "Reconnecter le Volvo ID",
+      "reconnectHelp": "Se reconnecter ne fait que renouveler l'autorisation : rien de ce qui a été lu n'est perdu.",
+      "status": "État",
+      "active": "Connecté",
+      "reauth": "Nouvelle authentification requise",
+      "authorizedAt": "Autorisé",
+      "pasted": "Inconnu (jeton collé à la main)",
+      "refreshedAt": "Autorisation renouvelée",
+      "lostAt": "Perdue",
+      "reason": "Raison",
+      "keyFirst": "Donnez d'abord votre clé Volvo, ci-dessus : le Volvo ID se connecte ensuite, et vos véhicules sont lus avec elle.",
+      "noVehicle": "Votre Volvo ID est connecté, mais aucun véhicule n'est encore listé : Volvo a refusé la clé. Donnez-en une nouvelle : les véhicules seront listés, sans vous reconnecter."
+    },
+    "vehicles": {
+      "title": "Véhicules",
+      "help": "Le collecteur lit chaque véhicule plus souvent quand il roule ou charge. Les heures sont celles de son dernier passage."
+    },
+    "state": {
+      "reauth": "Non lu : le Volvo ID doit être reconnecté",
+      "waiting": "En attente du premier passage du collecteur",
+      "stopped": "Le collecteur semble arrêté : dernier passage {age}",
+      "paused": "Mis en pause par Volvo jusqu'à {time}",
+      "quota": "Quota Volvo atteint jusqu'à {time} : {apis}",
+      "reading": "Lu normalement",
+      "keyRefused": "Non lu : Volvo a refusé la clé d'application",
+      "keyMissing": "Non lu : aucune clé Volvo donnée",
+      "unread": "Non lu pour votre compte"
+    },
+    "notice": {
+      "reauth": {
+        "title": "Nouvelle authentification requise",
+        "body": "Runsten ne lit plus ce véhicule : reconnectez son Volvo ID.",
+        "since": "Depuis {time}",
+        "reason": "raison : {reason}"
+      },
+      "stopped": "Rien de nouveau n'est lu tant que le collecteur ne tourne pas. Vérifiez que runsten-collector tourne et joint sa base de données.",
+      "paused": "Volvo a limité le nombre d'appels. La lecture reprend d'elle-même.",
+      "quota": "Le quota quotidien d'appels de Volvo est épuisé, pour tous les véhicules de cette instance. La lecture reprend d'elle-même.",
+      "details": "Voir la connexion",
+      "keyRefused": "Volvo a refusé la clé d'application avec laquelle ce véhicule est lu : régénérée, ou son application supprimée sur le portail développeur. Donnez-en une nouvelle sur la page Connexion : le Volvo ID reste connecté.",
+      "keyMissing": "Cette instance n'a pas de clé Volvo à elle : donnez la vôtre sur la page Connexion.",
+      "quotaOwnKey": "Le quota quotidien d'appels de votre clé Volvo est épuisé. La lecture reprend d'elle-même.",
+      "unread": "Votre compte ne lit pas ce véhicule : rien de nouveau n'en est lu, et ce qui a été lu reste."
+    },
+    "facts": {
+      "mode": "Mode de lecture",
+      "passedAt": "Dernier passage du collecteur",
+      "never": "Jamais",
+      "readAt": "Dernière lecture réussie",
+      "nextReadAt": "Prochaine lecture",
+      "due": "Au prochain passage",
+      "noneDue": "Aucune avant la reconnexion du Volvo ID",
+      "quota": "Quota atteint",
+      "quotaUntil": "{api} jusqu'à {time}",
+      "lastFailure": "Dernier échec",
+      "noFailure": "Aucun",
+      "noneDueKey": "Aucune tant qu'aucune clé Volvo n'est donnée"
+    },
+    "api": {
+      "connectedVehicle": "données du véhicule",
+      "energy": "batterie et charge",
+      "location": "position"
+    },
+    "failure": {
+      "quota": "Quota atteint",
+      "rateLimited": "Trop d'appels",
+      "unauthorized": "Jeton refusé",
+      "notFound": "Véhicule inconnu de Volvo",
+      "unavailable": "Volvo injoignable",
+      "token": "Volvo ID injoignable",
+      "other": "Appel refusé",
+      "keyRefused": "Clé Volvo refusée"
+    },
+    "key": {
+      "title": "Clé Volvo"
+    },
+    "app": {
+      "title": "Application Volvo",
+      "help": "L'application du portail développeur de Volvo avec laquelle cette instance lit, d'après sa configuration (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_API_KEY) : comparez-les à celles de votre application sur developer.volvocars.com. Sa clé lit tous les véhicules ; le secret n'est jamais affiché.",
+      "clientId": "Client ID",
+      "key": "Clé d'application"
+    }
+  },
+  "apiKey": {
+    "intro": "Volvo compte son quota quotidien d'appels par clé d'application. Cette instance n'en a pas à elle : donnez la clé d'une application que vous créez sur le portail développeur de Volvo. Son quota n'est qu'à vous, aucun autre compte ne le dépense.",
+    "refused": {
+      "title": "Votre clé Volvo a été refusée",
+      "body": "Volvo l'a refusée le {time} : régénérée, ou son application supprimée sur le portail développeur. Vos véhicules ne sont plus lus tant que vous n'en donnez pas une nouvelle ; le Volvo ID reste connecté."
+    },
+    "current": "Votre clé",
+    "last4": "Finissant par {last4}",
+    "setAt": "Donnée",
+    "replace": "Remplacer la clé",
+    "delete": {
+      "button": "Retirer la clé",
+      "title": "Retirer votre clé Volvo ?",
+      "text": "Cette instance n'a pas de clé à elle : vos véhicules ne seront plus lus tant que vous n'en donnez pas une autre.",
+      "error": "La clé n'a pas pu être retirée. Réessayez dans un instant.",
+      "cancel": "Annuler",
+      "confirm": "Retirer"
+    },
+    "steps": {
+      "title": "Créer votre clé",
+      "signIn": "Connectez-vous avec votre Volvo ID sur",
+      "newTab": "(s'ouvre dans un nouvel onglet)",
+      "create": "Sous « Your API applications », créez une application : n'importe quel nom convient.",
+      "unpublished": "Ne la publiez pas : il ne faut ni redirect URI, ni conditions, ni revue.",
+      "copy": "Copiez sa clé primaire VCC API.",
+      "paste": "Collez-la ci-dessous : elle n'est jamais réaffichée, seulement ses quatre derniers caractères."
+    },
+    "label": "Clé primaire VCC API",
+    "help": "Son quota : 10 000 appels par jour pour chaque API Volvo, environ sept fois ce qu'il faut à un véhicule qui roule dix heures par jour.",
+    "save": "Enregistrer la clé",
+    "cancel": "Annuler",
+    "saved": "Clé enregistrée.",
+    "deleted": "Clé retirée.",
+    "error": {
+      "summary": "La clé n'a pas été enregistrée",
+      "required": "Collez la clé.",
+      "spaces": "Une clé n'a pas d'espace : copiez-la de nouveau.",
+      "characters": "Une clé n'a que des lettres, des chiffres et des signes : copiez-la de nouveau.",
+      "tooShort": "Une clé a au moins {min} caractères : copiez-la en entier.",
+      "tooLong": "Une clé a au plus {max} caractères : copiez-la seule.",
+      "tooManyVehicles": "Votre Volvo ID donne accès à plus de véhicules que votre compte n'en permet : la clé n'a pas été enregistrée.",
+      "refused": "Volvo a refusé cette clé : vérifiez que c'est la clé primaire de votre application.",
+      "invalidBody": "Cette clé a été refusée : copiez-la de nouveau.",
+      "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
+      "internal": "La clé n'a pas pu être enregistrée. Réessayez dans un instant."
+    }
+  },
+  "history": {
+    "limited": "Historique affiché depuis le {day}. Les trajets et charges plus anciens sont conservés, mais pas affichés.",
+    "lift": "Afficher tout l'historique"
+  },
+  "limits": {
+    "costs": "Votre compte n'inclut pas les coûts des charges : ce qu'a coûté chaque charge, et les totaux.",
+    "stats": "Votre compte n'inclut pas les statistiques par jour, semaine et mois.",
+    "mqtt": "Votre compte n'inclut pas MQTT : publier l'état de vos véhicules vers Home Assistant ou une autre domotique.",
+    "lift": "Lever la limite"
+  },
+  "accessTokens": {
+    "title": "Accès à l'API",
+    "help": "Un jeton d'accès personnel permet à un programme de lire vos données par l'API, sans votre mot de passe : un script, Home Assistant, un assistant IA. Il ne fait que lire, et seulement ce que vous voyez ici. Révoquez-le quand le programme n'en a plus besoin.",
+    "loading": "Chargement des jetons d'accès",
+    "none": "Aucun jeton d'accès pour l'instant.",
+    "createdAt": "Créé {at}",
+    "lastUsed": "dernière utilisation {at}",
+    "neverUsed": "jamais",
+    "noExpiry": "n'expire jamais",
+    "expiresAt": "expire {at}",
+    "expiredAt": "a expiré {at}",
+    "new": "Nouveau jeton d'accès",
+    "name": "Nom",
+    "nameHelp": "Pour distinguer vos jetons, par exemple le programme qui l'utilise.",
+    "expiry": {
+      "label": "Expiration",
+      "30d": "Dans 30 jours",
+      "90d": "Dans 90 jours",
+      "365d": "Dans un an",
+      "never": "Jamais"
+    },
+    "create": "Créer le jeton",
+    "cancel": "Annuler",
+    "created": {
+      "title": "Jeton « {name} » créé",
+      "once": "Copiez-le maintenant : il ne sera plus affiché. Quiconque le détient peut lire vos données.",
+      "label": "Jeton d'accès",
+      "copy": "Copier",
+      "copied": "Jeton d'accès copié.",
+      "copyFailed": "Le jeton n'a pas pu être copié : sélectionnez-le et copiez-le à la main.",
+      "use": "Un programme l'envoie dans chaque requête à l'API :",
+      "done": "Je l'ai copié"
+    },
+    "revoke": {
+      "button": "Révoquer",
+      "label": "Révoquer le jeton {name}",
+      "title": "Révoquer « {name} » ?",
+      "text": "Les programmes qui l'utilisent perdent l'accès immédiatement. C'est définitif : il faudrait un nouveau jeton.",
+      "confirm": "Révoquer",
+      "error": "Le jeton n'a pas pu être révoqué. Réessayez.",
+      "done": "Jeton {name} révoqué."
+    },
+    "error": {
+      "summary": "Le jeton n'a pas pu être créé",
+      "required": "Donnez un nom au jeton.",
+      "tooLong": "{max} caractères au plus.",
+      "invalid": "Ce nom n'est pas accepté : utilisez des lettres, des chiffres et de la ponctuation.",
+      "unavailable": "Runsten est injoignable. Réessayez plus tard.",
+      "internal": "Le jeton n'a pas pu être créé. Réessayez.",
+      "list": "Les jetons d'accès n'ont pas pu être chargés."
+    }
+  },
+  "mqtt": {
+    "title": "MQTT",
+    "help": "Runsten publie l'état de vos véhicules (batterie, autonomie, charge, prise, position) vers votre broker MQTT, après chaque lecture : Home Assistant crée ses entités tout seul, Node-RED ou openHAB lisent les sujets.",
+    "loading": "Chargement du broker MQTT",
+    "loadError": "Le broker MQTT n'a pas pu être chargé.",
+    "connected": "Connecté depuis {time}.",
+    "waiting": "Pas encore connecté : Runsten se connecte d'ici une minute.",
+    "failure": {
+      "title": "Runsten ne peut pas publier vers votre broker",
+      "unreachable": "Le broker est injoignable : vérifiez son adresse et son port, et qu'il accepte les connexions de Runsten.",
+      "refusedAddress": "Cette instance ne publie pas vers cette adresse : le broker doit être joignable depuis Internet.",
+      "tls": "La connexion sécurisée a échoué : le certificat du broker n'est pas reconnu, ou pas pour son nom.",
+      "notAuthorized": "Le broker a refusé le nom d'utilisateur ou le mot de passe.",
+      "rejected": "Le broker a refusé la connexion : vérifiez l'identifiant client.",
+      "at": "Dernier échec {time}."
+    },
+    "url": "URL du broker",
+    "urlHelp": "mqtt://hôte:1883, ou mqtts://hôte:8883 en TLS. Pour le module de Home Assistant : mqtt://homeassistant.local:1883.",
+    "urlHelpPublic": "mqtts://hôte:8883 : cette instance ne publie qu'en TLS, vers un broker joignable depuis Internet.",
+    "username": "Nom d'utilisateur",
+    "usernameHelp": "Laissez vide si le broker n'en demande pas.",
+    "password": "Mot de passe",
+    "passwordHelp": "Jamais réaffiché.",
+    "passwordKept": "Laissez vide pour garder l'actuel ; redonnez-le pour un autre hôte.",
+    "passwordSet": "Défini",
+    "removePassword": "Supprimer le mot de passe",
+    "none": "Aucun",
+    "discovery": "Découverte Home Assistant",
+    "discoveryHelp": "Home Assistant crée un appareil par véhicule, avec ses entités.",
+    "discoveryOn": "Activée, sous {prefix}",
+    "publishLocation": "Publier la position",
+    "publishLocationHelp": "La latitude et la longitude de chaque véhicule, pour une carte ou une zone.",
+    "on": "Oui",
+    "off": "Non",
+    "advanced": "Avancé",
+    "topicPrefix": "Préfixe des sujets",
+    "topicPrefixHelp": "Les sujets sont dessous : runsten/vehicles/…",
+    "discoveryPrefix": "Préfixe de découverte",
+    "discoveryPrefixHelp": "homeassistant, sauf s'il a été changé dans l'intégration MQTT de Home Assistant.",
+    "clientId": "Identifiant client",
+    "clientIdHelp": "Laissez vide : Runsten en choisit un.",
+    "edit": "Modifier le broker",
+    "save": "Enregistrer le broker",
+    "cancel": "Annuler",
+    "saved": "Broker enregistré : Runsten s'y connecte d'ici une minute.",
+    "deleted": "Broker supprimé.",
+    "delete": {
+      "button": "Supprimer le broker",
+      "title": "Supprimer le broker MQTT ?",
+      "text": "Runsten n'y publiera plus, et efface ce qu'il y a publié : Home Assistant retire les entités des véhicules. Si le broker est injoignable à ce moment, ce qui a été publié y reste.",
+      "error": "Le broker n'a pas pu être supprimé. Réessayez dans un instant.",
+      "cancel": "Annuler",
+      "confirm": "Supprimer"
+    },
+    "error": {
+      "summary": "Le broker n'a pas été enregistré",
+      "item": "{field} : {message}",
+      "required": "Remplissez-le.",
+      "scheme": "Commencez par mqtt:// ou mqtts://.",
+      "tls": "Utilisez mqtts:// : cette instance ne publie qu'en TLS.",
+      "host": "Écrivez l'hôte du broker après mqtt://, comme mqtt://homeassistant.local:1883.",
+      "credentials": "Mettez le nom d'utilisateur et le mot de passe dans leurs champs, pas dans l'URL.",
+      "path": "Seulement l'hôte et le port : ni chemin, ni requête.",
+      "port": "Le port est un nombre de 1 à 65535.",
+      "tooLong": "{max} caractères au plus.",
+      "passwordAgain": "Redonnez le mot de passe pour un autre hôte, ou supprimez-le.",
+      "prefix": "Des niveaux séparés par /, sans + ni #, ni / au début ou à la fin.",
+      "clientId": "Seulement des lettres, des chiffres, - et _.",
+      "refused": "Cette instance ne publie pas vers cette adresse : le broker doit être joignable depuis Internet, en mqtts://.",
+      "invalidBody": "Ce broker a été refusé : vérifiez ses champs.",
+      "featureUnavailable": "Votre compte n'inclut pas MQTT.",
+      "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
+      "internal": "Le broker n'a pas pu être enregistré. Réessayez dans un instant."
+    }
+  },
+  "account": {
+    "title": "Vos données",
+    "export": {
+      "help": "Téléchargez tout ce que contient votre compte, relevés bruts de vos véhicules compris, en un seul fichier JSON.",
+      "button": "Télécharger mes données"
+    }
+  }
+}

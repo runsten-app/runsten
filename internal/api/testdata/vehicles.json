@@ -1,0 +1,115 @@
+{
+  "items": [
+    {
+      "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a01",
+      "vin": "YV1SMLT0000DT0001",
+      "model": {
+        "family": "XC40",
+        "model_year": 2021,
+        "variant": {
+          "id": "xc40-twin-2021",
+          "name": "XC40 Recharge Twin",
+          "gross_kwh": 78,
+          "net_kwh": 75,
+          "ac_max_kw": 11,
+          "ac_option_kw": null,
+          "dc_max_kw": 150
+        },
+        "variant_source": "detected",
+        "ac_max_kw": null
+      },
+      "connection": {
+        "status": "active",
+        "api_key": "instance",
+        "authorized_at": "2026-09-28T05:00:00Z",
+        "refreshed_at": "2026-09-28T06:00:00Z",
+        "reauth_at": null,
+        "reauth_reason": null
+      },
+      "collection": {
+        "passed_at": "2026-09-28T07:00:00Z",
+        "mode": "charging",
+        "read_at": "2026-09-28T06:59:00Z",
+        "next_read_at": "2026-09-28T07:01:00Z",
+        "paused_until": null,
+        "quota": [
+          {
+            "api": "energy",
+            "until": "2026-09-28T08:00:00Z"
+          },
+          {
+            "api": "location",
+            "until": "2026-09-28T09:00:00Z"
+          }
+        ],
+        "last_failure": {
+          "at": "2026-09-28T06:40:00Z",
+          "endpoint": "location",
+          "status": 403,
+          "kind": "quota"
+        }
+      }
+    },
+    {
+      "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a02",
+      "vin": "YV1SMLT0000DT0002",
+      "model": {
+        "family": null,
+        "model_year": null,
+        "variant": null,
+        "variant_source": null,
+        "ac_max_kw": null
+      },
+      "connection": {
+        "status": "reauth_required",
+        "api_key": "instance",
+        "authorized_at": "2026-09-28T05:00:00Z",
+        "refreshed_at": null,
+        "reauth_at": "2026-09-28T06:30:00Z",
+        "reauth_reason": "refresh token expired"
+      },
+      "collection": {
+        "passed_at": "2026-09-28T07:00:00Z",
+        "mode": "parked",
+        "read_at": "2026-09-28T06:20:00Z",
+        "next_read_at": null,
+        "paused_until": "2026-09-28T07:10:00Z",
+        "quota": [],
+        "last_failure": {
+          "at": "2026-09-28T06:30:00Z",
+          "endpoint": null,
+          "status": null,
+          "kind": "token"
+        }
+      }
+    },
+    {
+      "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a04",
+      "vin": "YV1SMLT0000DT0004",
+      "model": {
+        "family": "EX30",
+        "model_year": 2024,
+        "variant": {
+          "id": "ex30-er-2024",
+          "name": "EX30 Single Motor Extended Range",
+          "gross_kwh": 69,
+          "net_kwh": 64,
+          "ac_max_kw": 11,
+          "ac_option_kw": 22,
+          "dc_max_kw": 153
+        },
+        "variant_source": "chosen",
+        "ac_max_kw": 11
+      },
+      "connection": {
+        "status": "active",
+        "api_key": "instance",
+        "authorized_at": "2026-09-28T05:00:00Z",
+        "refreshed_at": null,
+        "reauth_at": null,
+        "reauth_reason": null
+      },
+      "collection": null
+    }
+  ]
+}

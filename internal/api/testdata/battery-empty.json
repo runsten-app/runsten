@@ -1,0 +1,74 @@
+{
+  "time_zone": "UTC",
+  "reference": {
+    "capacity_kwh": 75,
+    "source": "catalog_net"
+  },
+  "current": null,
+  "deviation_pct": null,
+  "change": null,
+  "cycles": 1.15,
+  "estimates": [
+    {
+      "charge": "2026-09-05T11:59:00.000000Z",
+      "at": "2026-09-05T12:00:00Z",
+      "odometer_km": 24000,
+      "source": "power",
+      "type": "AC",
+      "span_soc": 50,
+      "capacity_kwh": 75
+    },
+    {
+      "charge": "2026-09-12T11:59:00.000000Z",
+      "at": "2026-09-12T12:00:00Z",
+      "odometer_km": 24100,
+      "source": "power",
+      "type": "AC",
+      "span_soc": 25,
+      "capacity_kwh": 75
+    },
+    {
+      "charge": "2026-09-20T11:59:00.000000Z",
+      "at": "2026-09-20T12:00:00Z",
+      "odometer_km": 24200,
+      "source": "power",
+      "type": "DC",
+      "span_soc": 40,
+      "capacity_kwh": 75
+    },
+    {
+      "charge": "2026-09-20T11:59:00.000000Z",
+      "at": "2026-09-20T12:00:00Z",
+      "odometer_km": 24200,
+      "source": "billed",
+      "type": "DC",
+      "span_soc": 40,
+      "capacity_kwh": 76
+    }
+  ],
+  "excluded": {
+    "reconstructed": 0,
+    "no_power": 0,
+    "high_soc": 0,
+    "span_soc": 0,
+    "power_gap": 0,
+    "low_power": 0,
+    "implausible": 0
+  },
+  "months": [
+    {
+      "start": "2026-09-01T00:00:00Z",
+      "end": "2026-10-01T00:00:00Z",
+      "capacity": {
+        "capacity_kwh": 75,
+        "q1_kwh": 75,
+        "q3_kwh": 75.25,
+        "estimates": 4
+      },
+      "range_at_full": {
+        "median_km": 402,
+        "readings": 2
+      }
+    }
+  ]
+}

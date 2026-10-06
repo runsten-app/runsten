@@ -1,0 +1,33 @@
+{
+  "id": "2026-09-28T04:00:00.000000Z",
+  "detected_at": "2026-09-28T04:00:00Z",
+  "reconstructed": true,
+  "start": {
+    "after": "2026-09-28T01:00:00Z",
+    "before": "2026-09-28T04:00:00Z"
+  },
+  "end": {
+    "after": "2026-09-28T01:00:00Z",
+    "before": "2026-09-28T04:00:00Z"
+  },
+  "type": null,
+  "start_soc_pct": 40,
+  "end_soc_pct": 62,
+  "target_soc_pct": null,
+  "energy_soc_kwh": 17.6,
+  "energy_power_kwh": null,
+  "capacity_kwh": 80,
+  "capacity_source": "api",
+  "position": null,
+  "place": null,
+  "address": null,
+  "cost": {
+    "currency": "EUR",
+    "min_minor": 850,
+    "max_minor": 850,
+    "source": "entered",
+    "energy_kwh": 20.1,
+    "efficiency": null,
+    "note": "Borne du parking, carte Chargemap"
+  }
+}

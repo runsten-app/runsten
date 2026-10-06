@@ -1,0 +1,38 @@
+# A real model: an EX30 Single Motor Extended Range of 2024, which the catalog recognizes.
+# The other scenarios run EX-SIM, a family it does not have. Shows the variant in the
+# header and the selector, the choice in the settings (Settings → Vehicles), the energies
+# on the net capacity (64 kWh, capacity_source catalog_net, against the 69 the API
+# reports), and the onboard charger in the cost of the AC charge: its optional 22 kW
+# bounds the power until the user states 11 kW. The SoC runs over the usable 64 kWh
+# (usableKWh below), the assumption catalog_net makes: the energy a ΔSoC stands for is
+# the same on both sides, where the other scenarios' SoC spans their whole batteryKWh.
+#
+# The VIN is fictitious; its motor code (positions 4-5, EL) tells the Extended Range from
+# the Twin Motor (EK), which have the same battery. With another code (for instance
+# YV1SM00000EX30001), both remain candidates and nothing is recognized: the settings then
+# ask for the variant.
+# Fictitious coordinates (Lyon).
+vin: YV1EL00000EX30001
+start: 2026-09-28T05:00:00Z
+vehicle:
+  profile: bev-generic
+  model: EX30
+  modelYear: 2024
+  batteryKWh: 69
+  usableKWh: 64
+  consumptionKWhPer100km: 17
+  chargingCurrentLimitA: 16
+  soc: 58
+  targetSoc: 80
+  odometerKm: 9100
+  place: home
+places:
+  home: { lat: 45.7640, lon: 4.8357 }
+  work: { lat: 45.7797, lon: 4.9270 }
+steps:
+  - park: { duration: 2h }
+  - drive: { to: work, distanceKm: 32, duration: 40m }
+  - park: { duration: 9h }
+  - drive: { to: home, distanceKm: 33, duration: 45m }
+  - park: { duration: 1h }
+  - charge: { type: AC, powerKW: 11, untilSoc: 80 }

@@ -1,0 +1,34 @@
+{
+  "data": {
+    "distanceToService": {
+      "timestamp": "2026-09-25T15:37:22.628157678Z",
+      "unit": "km",
+      "value": 30
+    },
+    "engineHoursToService": {
+      "timestamp": "2026-09-25T15:37:22.628157678Z",
+      "unit": "h",
+      "value": 744
+    },
+    "serviceTrigger": {
+      "timestamp": "2026-09-25T15:37:22.628157678Z",
+      "unit": null,
+      "value": "CALENDAR_TIME"
+    },
+    "serviceWarning": {
+      "timestamp": "2026-09-25T15:37:22.628157678Z",
+      "unit": null,
+      "value": "REGULAR_MAINTENANCE_TIME_FOR_SERVICE"
+    },
+    "timeToService": {
+      "timestamp": "2026-09-25T15:37:22.628157678Z",
+      "unit": "months",
+      "value": 1
+    },
+    "washerFluidLevelWarning": {
+      "timestamp": "2026-09-25T15:37:22.628157678Z",
+      "unit": null,
+      "value": "UNSPECIFIED"
+    }
+  }
+}

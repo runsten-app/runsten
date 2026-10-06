@@ -1,0 +1,25 @@
+{
+  "vehicle_id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a02",
+  "connection": {
+    "status": "reauth_required",
+    "api_key": "instance",
+    "authorized_at": "2026-09-28T05:00:00Z",
+    "refreshed_at": null,
+    "reauth_at": "2026-09-28T06:30:00Z",
+    "reauth_reason": "refresh token expired"
+  },
+  "checked_at": null,
+  "engine": null,
+  "soc_pct": null,
+  "range_km": null,
+  "odometer_km": null,
+  "position": null,
+  "battery_capacity_kwh": null,
+  "charging": {
+    "status": null,
+    "cable": null,
+    "type": null,
+    "power_w": null,
+    "target_soc_pct": null
+  }
+}

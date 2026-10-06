@@ -1,0 +1,26 @@
+# Missed trip: the API is unavailable (503) for the whole outbound trip. The
+# collector never sees the vehicle driving; only the odometer and position, read
+# after the outage, reveal the trip.
+vin: YV1SMLT0000TM0001
+start: 2026-09-28T05:00:00Z
+vehicle:
+  profile: bev-generic
+  model: EX-SIM
+  modelYear: 2026
+  batteryKWh: 80
+  consumptionKWhPer100km: 18
+  chargingCurrentLimitA: 16
+  soc: 62
+  targetSoc: 80
+  odometerKm: 12400
+  place: home
+places:
+  home: { lat: 45.7640, lon: 4.8357 }
+  work: { lat: 45.7797, lon: 4.9270 }
+steps:
+  - park: { duration: 2h }
+  - drive: { to: work, distanceKm: 32, duration: 40m }
+  - park: { duration: 9h }
+api:
+  outages:
+    - { after: 1h55m, duration: 55m } # 06:55 → 07:50, the trip runs from 07:00 to 07:40

@@ -1,0 +1,14 @@
+{
+  "data": {
+    "engineCoolantLevelWarning": {
+      "timestamp": "2026-09-25T15:37:22.513699531Z",
+      "unit": null,
+      "value": "TOO_LOW"
+    },
+    "oilLevelWarning": {
+      "timestamp": "2026-09-25T15:37:22.513699531Z",
+      "unit": null,
+      "value": "TOO_HIGH"
+    }
+  }
+}

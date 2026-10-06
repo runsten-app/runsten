@@ -1,0 +1,25 @@
+# Long trip with DC fast charging at a motorway service area. Profile close to the
+# EX90: charging power is not uploaded (PROPERTY_NOT_FOUND).
+vin: YV1SMLT0000LD0001
+start: 2026-09-26T07:00:00Z
+vehicle:
+  profile: ex90-like
+  model: EX-SIM
+  modelYear: 2026
+  batteryKWh: 107
+  consumptionKWhPer100km: 22
+  chargingCurrentLimitA: 32
+  soc: 95
+  targetSoc: 90
+  odometerKm: 30200
+  place: lyon
+places:
+  lyon: { lat: 45.7640, lon: 4.8357 }
+  aire: { lat: 44.9334, lon: 4.8924 }
+  marseille: { lat: 43.2965, lon: 5.3698 }
+steps:
+  - park: { duration: 30m }
+  - drive: { to: aire, distanceKm: 280, duration: 2h40m }
+  - charge: { type: DC, powerKW: 150, untilSoc: 80 }
+  - drive: { to: marseille, distanceKm: 180, duration: 1h50m }
+  - park: { duration: 12h }

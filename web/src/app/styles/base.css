@@ -1,0 +1,195 @@
+/* The rules every view shares, from the theme's tokens only: a new theme changes the
+   variables, never this file. */
+
+html {
+  font-variant-numeric: tabular-nums;
+  /* The ground under a short page too; Vuetify sets the theme's variables on :root. */
+  background: rgb(var(--v-theme-background));
+}
+
+.v-application {
+  font-family: var(--v-font-body);
+  background: rgb(var(--v-theme-background));
+}
+
+/* Secondary text is its own color, never the text faded: it keeps 4.5:1. */
+.text-medium-emphasis,
+.v-list-item-subtitle,
+.v-card-subtitle,
+.v-messages:not(.v-messages--error),
+.v-field-label {
+  color: rgb(var(--v-theme-text-secondary)) !important;
+  opacity: 1 !important;
+}
+
+/* In Vuetify's reset layer: unlayered, it would beat the spacing utilities (mb-3...),
+   which Vuetify 4 layers without !important. */
+@layer vuetify-core.reset {
+  dl {
+    margin: 0;
+  }
+}
+
+/* Tiles: a filled surface on the ground, no border, no shadow. */
+.v-card {
+  border-radius: var(--v-tile-radius);
+  border: 0;
+}
+.v-card > .v-card-title,
+.v-card > .v-card-text,
+.v-card > .v-card-actions {
+  padding-inline: 20px;
+}
+.v-card > .v-card-title {
+  margin: 0;
+  padding-top: 18px;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.v-card > .v-card-text {
+  padding-bottom: 20px;
+}
+.v-card > .v-card-title + .v-card-text,
+.v-card > .v-card-title + p + .v-card-text {
+  padding-top: 8px;
+}
+@media (max-width: 599.98px) {
+  .v-card {
+    border-radius: var(--v-tile-radius-phone);
+  }
+  .v-card > .v-card-title,
+  .v-card > .v-card-text,
+  .v-card > .v-card-actions {
+    padding-inline: 16px;
+  }
+}
+
+/* Controls share one radius; words, never capitals. */
+.v-btn,
+.v-btn-group,
+.v-field,
+.v-alert,
+.v-list-item {
+  border-radius: var(--v-control-radius);
+}
+.v-btn {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+.v-btn-group .v-btn {
+  border-radius: 0;
+}
+.v-dialog > .v-overlay__content > .v-card {
+  border-radius: var(--v-tile-radius);
+}
+
+/* A filled field without its underline at rest: a step of color tells it apart. The
+   line comes back when it has the focus or an error. */
+.v-field--variant-filled .v-field__outline::before {
+  opacity: 0;
+}
+.v-field--variant-filled.v-field--focused .v-field__outline::before,
+.v-field--variant-filled.v-field--error .v-field__outline::before {
+  opacity: 1;
+}
+.v-field--variant-filled .v-field__overlay {
+  opacity: 0;
+}
+
+/* Page titles, on the ground above the tiles. */
+h1.text-headline-small {
+  font-size: 1.625rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+@media (max-width: 599.98px) {
+  h1.text-headline-small {
+    font-size: 1.25rem;
+  }
+}
+
+a.text-primary {
+  font-weight: 500;
+  text-decoration: none;
+}
+a.text-primary:hover,
+a.text-primary:focus-visible {
+  text-decoration: underline;
+}
+
+/* The keyboard's focus is always seen, in the accent. */
+:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
+
+/* A tile within a tile (a tariff within its place) is an inset: a step apart. */
+.v-card .v-card {
+  background: rgb(var(--v-theme-surface-variant));
+}
+
+/* A segmented control (a split, an axis): the choices on a tile's color, the one chosen
+   on the inset color, a step apart, and heavier. */
+.v-btn-group.segmented {
+  padding: 3px;
+  block-size: auto;
+  background: rgb(var(--v-theme-surface));
+}
+.v-btn-group.segmented .v-btn {
+  block-size: 34px;
+  border-radius: 7px;
+  font-weight: 400;
+  color: rgb(var(--v-theme-text-secondary));
+}
+.v-btn-group.segmented .v-btn.v-btn--active {
+  font-weight: 500;
+  color: rgb(var(--v-theme-on-surface));
+  background: rgb(var(--v-theme-surface-variant));
+}
+.v-btn-group.segmented .v-btn .v-btn__overlay {
+  opacity: 0;
+}
+.v-btn-group.segmented .v-btn.v-btn--disabled {
+  background: none;
+  opacity: 0.6;
+}
+
+/* Rules between rows, and under a bar: the line color, whole. */
+.v-divider {
+  border-color: rgb(var(--v-theme-line)) !important;
+  opacity: 1;
+}
+
+/* A list of rows is a tile, its rows apart by a rule. */
+.v-list.tile-list {
+  border-radius: var(--v-tile-radius);
+  background: rgb(var(--v-theme-surface));
+}
+.v-list.tile-list .v-list-item {
+  border-radius: 0;
+  padding-inline: 20px;
+}
+@media (max-width: 599.98px) {
+  .v-list.tile-list {
+    border-radius: var(--v-tile-radius-phone);
+  }
+  .v-list.tile-list .v-list-item {
+    padding-inline: 16px;
+  }
+}
+
+/* A secondary button is a step of color, its words in its own: the tile's color on the
+   ground, the inset's on a tile. The accent's fill stays for the one action that matters. */
+.v-btn--variant-tonal {
+  background: rgb(var(--v-theme-surface));
+}
+.v-card .v-btn--variant-tonal,
+.v-alert .v-btn--variant-tonal {
+  background: rgb(var(--v-theme-surface-variant));
+}
+.v-btn--variant-tonal > .v-btn__underlay {
+  opacity: 0;
+}

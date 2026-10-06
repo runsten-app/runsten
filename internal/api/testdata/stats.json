@@ -1,0 +1,656 @@
+{
+  "from": "2026-09-27T22:00:00Z",
+  "to": "2026-09-30T22:00:00Z",
+  "time_zone": "Europe/Paris",
+  "bucket": "day",
+  "currency": {
+    "code": "EUR",
+    "minor_digits": 2
+  },
+  "totals": {
+    "trips": {
+      "count": 3,
+      "reconstructed": 1,
+      "distance_km": 73,
+      "distance_unknown": 0,
+      "driving_time_s": {
+        "min": 4860,
+        "max": 5700
+      },
+      "driving_time_unknown": 1,
+      "energy_kwh": 6,
+      "energy_unknown": 2,
+      "consumption_kwh_per_100km": 18.75
+    },
+    "charges": {
+      "count": 2,
+      "reconstructed": 1,
+      "energy_soc_kwh": 44,
+      "energy_soc_unknown": 0,
+      "energy_power_kwh": 25.3,
+      "energy_power_unknown": 1,
+      "charging_time_s": {
+        "min": 12300,
+        "max": 12960
+      },
+      "charging_time_unknown": 1,
+      "cost": {
+        "min_minor": 1374,
+        "max_minor": 1429
+      },
+      "cost_unknown": 0,
+      "cost_entered": 1,
+      "orphaned_costs": {
+        "count": 1,
+        "amount_minor": 1240
+      },
+      "by_type": {
+        "ac": {
+          "count": 1,
+          "energy_soc_kwh": 26.4,
+          "energy_soc_unknown": 0,
+          "cost": {
+            "min_minor": 524,
+            "max_minor": 579
+          },
+          "cost_unknown": 0,
+          "cost_entered": 0
+        },
+        "dc": {
+          "count": 0,
+          "energy_soc_kwh": 0,
+          "energy_soc_unknown": 0,
+          "cost": {
+            "min_minor": 0,
+            "max_minor": 0
+          },
+          "cost_unknown": 0,
+          "cost_entered": 0
+        },
+        "unknown": {
+          "count": 1,
+          "energy_soc_kwh": 17.6,
+          "energy_soc_unknown": 0,
+          "cost": {
+            "min_minor": 850,
+            "max_minor": 850
+          },
+          "cost_unknown": 0,
+          "cost_entered": 1
+        }
+      }
+    },
+    "parked": {
+      "intervals": 4,
+      "time_s": 42300,
+      "soc_loss_pct": 0,
+      "soc_loss_unknown": 3,
+      "soc_loss_pct_per_day": 0
+    }
+  },
+  "buckets": [
+    {
+      "start": "2026-09-27T22:00:00Z",
+      "end": "2026-09-28T22:00:00Z",
+      "trips": {
+        "count": 3,
+        "reconstructed": 1,
+        "distance_km": 73,
+        "distance_unknown": 0,
+        "driving_time_s": {
+          "min": 4860,
+          "max": 5700
+        },
+        "driving_time_unknown": 1,
+        "energy_kwh": 6,
+        "energy_unknown": 2,
+        "consumption_kwh_per_100km": 18.75
+      },
+      "charges": {
+        "count": 2,
+        "reconstructed": 1,
+        "energy_soc_kwh": 44,
+        "energy_soc_unknown": 0,
+        "energy_power_kwh": 25.3,
+        "energy_power_unknown": 1,
+        "charging_time_s": {
+          "min": 12300,
+          "max": 12960
+        },
+        "charging_time_unknown": 1,
+        "cost": {
+          "min_minor": 1374,
+          "max_minor": 1429
+        },
+        "cost_unknown": 0,
+        "cost_entered": 1,
+        "orphaned_costs": {
+          "count": 0,
+          "amount_minor": 0
+        },
+        "by_type": {
+          "ac": {
+            "count": 1,
+            "energy_soc_kwh": 26.4,
+            "energy_soc_unknown": 0,
+            "cost": {
+              "min_minor": 524,
+              "max_minor": 579
+            },
+            "cost_unknown": 0,
+            "cost_entered": 0
+          },
+          "dc": {
+            "count": 0,
+            "energy_soc_kwh": 0,
+            "energy_soc_unknown": 0,
+            "cost": {
+              "min_minor": 0,
+              "max_minor": 0
+            },
+            "cost_unknown": 0,
+            "cost_entered": 0
+          },
+          "unknown": {
+            "count": 1,
+            "energy_soc_kwh": 17.6,
+            "energy_soc_unknown": 0,
+            "cost": {
+              "min_minor": 850,
+              "max_minor": 850
+            },
+            "cost_unknown": 0,
+            "cost_entered": 1
+          }
+        }
+      },
+      "parked": {
+        "intervals": 4,
+        "time_s": 42300,
+        "soc_loss_pct": 0,
+        "soc_loss_unknown": 3,
+        "soc_loss_pct_per_day": 0
+      }
+    },
+    {
+      "start": "2026-09-28T22:00:00Z",
+      "end": "2026-09-29T22:00:00Z",
+      "trips": {
+        "count": 0,
+        "reconstructed": 0,
+        "distance_km": 0,
+        "distance_unknown": 0,
+        "driving_time_s": {
+          "min": 0,
+          "max": 0
+        },
+        "driving_time_unknown": 0,
+        "energy_kwh": 0,
+        "energy_unknown": 0,
+        "consumption_kwh_per_100km": null
+      },
+      "charges": {
+        "count": 0,
+        "reconstructed": 0,
+        "energy_soc_kwh": 0,
+        "energy_soc_unknown": 0,
+        "energy_power_kwh": 0,
+        "energy_power_unknown": 0,
+        "charging_time_s": {
+          "min": 0,
+          "max": 0
+        },
+        "charging_time_unknown": 0,
+        "cost": {
+          "min_minor": 0,
+          "max_minor": 0
+        },
+        "cost_unknown": 0,
+        "cost_entered": 0,
+        "orphaned_costs": {
+          "count": 1,
+          "amount_minor": 1240
+        },
+        "by_type": {
+          "ac": {
+            "count": 0,
+            "energy_soc_kwh": 0,
+            "energy_soc_unknown": 0,
+            "cost": {
+              "min_minor": 0,
+              "max_minor": 0
+            },
+            "cost_unknown": 0,
+            "cost_entered": 0
+          },
+          "dc": {
+            "count": 0,
+            "energy_soc_kwh": 0,
+            "energy_soc_unknown": 0,
+            "cost": {
+              "min_minor": 0,
+              "max_minor": 0
+            },
+            "cost_unknown": 0,
+            "cost_entered": 0
+          },
+          "unknown": {
+            "count": 0,
+            "energy_soc_kwh": 0,
+            "energy_soc_unknown": 0,
+            "cost": {
+              "min_minor": 0,
+              "max_minor": 0
+            },
+            "cost_unknown": 0,
+            "cost_entered": 0
+          }
+        }
+      },
+      "parked": {
+        "intervals": 0,
+        "time_s": 0,
+        "soc_loss_pct": 0,
+        "soc_loss_unknown": 0,
+        "soc_loss_pct_per_day": null
+      }
+    },
+    {
+      "start": "2026-09-29T22:00:00Z",
+      "end": "2026-09-30T22:00:00Z",
+      "trips": {
+        "count": 0,
+        "reconstructed": 0,
+        "distance_km": 0,
+        "distance_unknown": 0,
+        "driving_time_s": {
+          "min": 0,
+          "max": 0
+        },
+        "driving_time_unknown": 0,
+        "energy_kwh": 0,
+        "energy_unknown": 0,
+        "consumption_kwh_per_100km": null
+      },
+      "charges": {
+        "count": 0,
+        "reconstructed": 0,
+        "energy_soc_kwh": 0,
+        "energy_soc_unknown": 0,
+        "energy_power_kwh": 0,
+        "energy_power_unknown": 0,
+        "charging_time_s": {
+          "min": 0,
+          "max": 0
+        },
+        "charging_time_unknown": 0,
+        "cost": {
+          "min_minor": 0,
+          "max_minor": 0
+        },
+        "cost_unknown": 0,
+        "cost_entered": 0,
+        "orphaned_costs": {
+          "count": 0,
+          "amount_minor": 0
+        },
+        "by_type": {
+          "ac": {
+            "count": 0,
+            "energy_soc_kwh": 0,
+            "energy_soc_unknown": 0,
+            "cost": {
+              "min_minor": 0,
+              "max_minor": 0
+            },
+            "cost_unknown": 0,
+            "cost_entered": 0
+          },
+          "dc": {
+            "count": 0,
+            "energy_soc_kwh": 0,
+            "energy_soc_unknown": 0,
+            "cost": {
+              "min_minor": 0,
+              "max_minor": 0
+            },
+            "cost_unknown": 0,
+            "cost_entered": 0
+          },
+          "unknown": {
+            "count": 0,
+            "energy_soc_kwh": 0,
+            "energy_soc_unknown": 0,
+            "cost": {
+              "min_minor": 0,
+              "max_minor": 0
+            },
+            "cost_unknown": 0,
+            "cost_entered": 0
+          }
+        }
+      },
+      "parked": {
+        "intervals": 0,
+        "time_s": 0,
+        "soc_loss_pct": 0,
+        "soc_loss_unknown": 0,
+        "soc_loss_pct_per_day": null
+      }
+    }
+  ],
+  "trips_by_distance": {
+    "bands": [
+      {
+        "min_km": 0,
+        "max_km": 5,
+        "count": 0,
+        "consumption_kwh_per_100km": null
+      },
+      {
+        "min_km": 5,
+        "max_km": 20,
+        "count": 0,
+        "consumption_kwh_per_100km": null
+      },
+      {
+        "min_km": 20,
+        "max_km": 50,
+        "count": 2,
+        "consumption_kwh_per_100km": 18.75
+      },
+      {
+        "min_km": 50,
+        "max_km": 100,
+        "count": 0,
+        "consumption_kwh_per_100km": null
+      },
+      {
+        "min_km": 100,
+        "max_km": null,
+        "count": 0,
+        "consumption_kwh_per_100km": null
+      }
+    ],
+    "left_out": 1
+  },
+  "charges_by_soc": {
+    "start": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "end": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "left_out": 1
+  },
+  "charges_by_place": {
+    "places": [
+      {
+        "place": {
+          "id": "5e1f0000-0000-4000-8000-000000000001",
+          "name": "Maison de Tante Agathe"
+        },
+        "count": 1,
+        "reconstructed": 0,
+        "energy_soc_kwh": 26.4,
+        "energy_soc_unknown": 0,
+        "cost": {
+          "min_minor": 524,
+          "max_minor": 579
+        },
+        "cost_unknown": 0,
+        "cost_entered": 0
+      }
+    ],
+    "outside": {
+      "ac": {
+        "count": 0,
+        "reconstructed": 0,
+        "energy_soc_kwh": 0,
+        "energy_soc_unknown": 0,
+        "cost": {
+          "min_minor": 0,
+          "max_minor": 0
+        },
+        "cost_unknown": 0,
+        "cost_entered": 0
+      },
+      "dc": {
+        "count": 0,
+        "reconstructed": 0,
+        "energy_soc_kwh": 0,
+        "energy_soc_unknown": 0,
+        "cost": {
+          "min_minor": 0,
+          "max_minor": 0
+        },
+        "cost_unknown": 0,
+        "cost_entered": 0
+      },
+      "unknown": {
+        "count": 0,
+        "reconstructed": 0,
+        "energy_soc_kwh": 0,
+        "energy_soc_unknown": 0,
+        "cost": {
+          "min_minor": 0,
+          "max_minor": 0
+        },
+        "cost_unknown": 0,
+        "cost_entered": 0
+      }
+    },
+    "no_position": {
+      "count": 1,
+      "reconstructed": 1,
+      "energy_soc_kwh": 17.6,
+      "energy_soc_unknown": 0,
+      "cost": {
+        "min_minor": 850,
+        "max_minor": 850
+      },
+      "cost_unknown": 0,
+      "cost_entered": 1
+    }
+  }
+}

@@ -1,0 +1,5 @@
+dist
+coverage
+e2e-results
+src/shared/api/schema.d.ts
+package-lock.json

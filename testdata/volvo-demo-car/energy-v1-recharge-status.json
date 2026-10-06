@@ -1,0 +1,6 @@
+{
+  "error": {
+    "message": "GONE",
+    "description": "Version 1 is removed. See https://developer.volvocars.com/apis/energy/v2/overview/"
+  }
+}

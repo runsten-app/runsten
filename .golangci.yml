@@ -1,0 +1,328 @@
+# golangci-lint configuration (v2). The architecture rules are enforced here: depguard (dependencies between packages) and forbidigo (injected time).
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - bodyclose
+    - contextcheck
+    - depguard
+    - errorlint
+    - forbidigo
+    - gocritic
+    - gosec
+    - nilerr
+    - noctx
+    - revive
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wrapcheck
+
+  settings:
+    depguard:
+      rules:
+        # The vehicle model knows nothing about HTTP, the Volvo format or scenarios.
+        vehicle-is-pure:
+          files: ["**/internal/simulator/vehicle/**"]
+          deny:
+            - pkg: net/http
+              desc: the vehicle model does not depend on the transport
+            - pkg: encoding/json
+              desc: the API format belongs to volvoapi
+            - pkg: runsten/internal/simulator/volvoapi
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/simulator/scenario
+              desc: outward dependency forbidden
+        # The scenario engine drives the vehicle, without knowing HTTP or the API.
+        scenario-without-http:
+          files: ["**/internal/simulator/scenario/**"]
+          deny:
+            - pkg: net/http
+              desc: the scenario engine does not depend on the transport
+            - pkg: runsten/internal/simulator/volvoapi
+              desc: outward dependency forbidden
+        # The simulated API declares its Ledger: pgledger keeps the grants in PostgreSQL.
+        volvoapi-without-database:
+          files: ["**/internal/simulator/volvoapi/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: the grants' storage belongs to pgledger
+        # Technical building blocks do not depend on any business code.
+        platform-is-generic:
+          files: ["**/internal/platform/**"]
+          deny:
+            - pkg: runsten/internal/simulator
+              desc: platform does not depend on the simulator
+            - pkg: runsten/internal/core
+              desc: platform does not depend on the domain
+        # Public code never imports the private premium modules.
+        public-without-premium:
+          files: ["**/internal/**", "**/cmd/**", "!**/cmd/**/premium*.go"]
+          deny:
+            - pkg: runsten/premium
+              desc: premium is referenced only by the premium build files
+        # The simulator is used only by its binary and by tests.
+        simulator-only-in-tests:
+          files: ["**/internal/**", "!**/internal/simulator/**", "!$test"]
+          deny:
+            - pkg: runsten/internal/simulator
+              desc: the simulator is only for tests and runsten-simulator
+        # The collector orchestrates: it knows neither the transport nor the database.
+        collector-without-adapters:
+          files: ["**/internal/collector/**", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the transport belongs to the volvo client
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: the collector declares its own Store interface
+            - pkg: runsten/internal/derive
+              desc: the collector declares its own Deriver interface
+            - pkg: runsten/internal/oauth
+              desc: the collector declares its own TokenSource interface
+            - pkg: runsten/internal/publish
+              desc: the collector declares its own Publisher interface
+        # The addresses' worker orchestrates: it knows neither the transport nor the database.
+        geocode-without-adapters:
+          files: ["**/internal/geocode/*.go", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the transport belongs to geocode/nominatim
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: geocode declares its own Store interface
+        # The front end's server serves files and relays to runsten-api by URL: it knows
+        # no business code, no storage and no secret.
+        web-without-business:
+          files: ["**/internal/web/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: runsten-web has no database
+            - pkg: runsten/internal/store
+              desc: runsten-web has no database
+            - pkg: runsten/internal/api
+              desc: runsten-api is reached over HTTP, never imported
+            - pkg: runsten/internal/auth
+              desc: sessions belong to runsten-api
+            - pkg: runsten/internal/core
+              desc: the front end reads the domain through the API
+            - pkg: runsten/internal/volvo
+              desc: runsten-web never talks to Volvo
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+        # The Volvo client depends on neither storage nor the collector.
+        volvo-is-a-client:
+          files: ["**/internal/volvo/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: the client stores nothing
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/derive
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/api
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/catalog
+              desc: recognizing a variant is a reading of the API, not a normalization
+        # The domain depends on no adapter, and never sees a vendor format.
+        core-is-pure:
+          files: ["**/internal/core/**"]
+          deny:
+            - pkg: net/http
+              desc: the domain does not depend on the transport
+            - pkg: database/sql
+              desc: the domain does not depend on storage
+            - pkg: github.com/jackc/pgx
+              desc: the domain does not depend on storage
+            - pkg: encoding/json
+              desc: vendor formats are converted by the adapters (internal/volvo)
+            - pkg: runsten/internal/volvo
+              desc: the domain knows no vendor
+            - pkg: runsten/internal/simulator
+              desc: the domain knows nothing about the simulator
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/derive
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/platform
+              desc: the domain needs no technical building block (time comes with the data)
+            - pkg: runsten/internal/catalog
+              desc: the domain derives from the readings; the API recognizes the variants
+        # The variants' data sheet is pure data: it knows no other package of the module, no
+        # transport and no storage. The binaries read it and pass what it says along.
+        catalog-is-data:
+          files: ["**/internal/catalog/**"]
+          deny:
+            - pkg: runsten/
+              desc: the catalog is pure data, it imports no package of the module
+            - pkg: net/http
+              desc: the catalog does not depend on the transport
+            - pkg: encoding/json
+              desc: the catalog is read from its embedded YAML file only
+            - pkg: database/sql
+              desc: the catalog is embedded, never stored
+            - pkg: github.com/jackc/pgx
+              desc: the catalog is embedded, never stored
+        # Derivation orchestrates: it knows neither the transport nor the database.
+        derive-without-adapters:
+          files: ["**/internal/derive/**", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the transport belongs to the volvo client
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: derive declares its own Store interface
+            - pkg: runsten/internal/collector
+              desc: derive is called by the collector, not the other way round
+            - pkg: runsten/internal/catalog
+              desc: derive declares its own Capacities interface, the binary reads the catalog
+        # The token lifecycle orchestrates: no transport, no database, no vendor. The Volvo
+        # client and the store implement its interfaces.
+        oauth-without-adapters:
+          files: ["**/internal/oauth/**", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the transport belongs to the volvo client and to api
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: oauth declares its own Store interface
+            - pkg: runsten/internal/volvo
+              desc: oauth declares its own Refresher interface, a future Polestar source implements it too
+            - pkg: runsten/internal/collector
+              desc: oauth implements the collector's TokenSource, without importing it
+            - pkg: runsten/internal/api
+              desc: outward dependency forbidden
+        # Authentication: users, passwords and sessions, without transport nor database.
+        # The store implements its Store, api turns sessions into cookies.
+        auth-without-adapters:
+          files: ["**/internal/auth/**", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: cookies and requests belong to api
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: auth declares its own Store interface
+            - pkg: runsten/internal/api
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/volvo
+              desc: authentication knows no vendor
+            - pkg: runsten/internal/oauth
+              desc: user sessions are unrelated to the vendor grants
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+        # What is published to a broker is built without the network or the database: the
+        # adapter publish/mqtt holds the connections.
+        publish-is-pure:
+          files: ["**/internal/publish/*.go"]
+          deny:
+            - pkg: net
+              desc: the connections belong to publish/mqtt
+            - pkg: net/http
+              desc: the connections belong to publish/mqtt
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+        # paho is the MQTT adapter's alone: neither the domain nor the collector know it.
+        paho-only-in-mqtt:
+          files: ["$all", "!**/internal/publish/mqtt/**"]
+          deny:
+            - pkg: github.com/eclipse/paho.mqtt.golang
+              desc: MQTT belongs to internal/publish/mqtt
+        # The embedded broker tests the MQTT adapter: it never ships.
+        mochi-only-in-tests:
+          files: ["$all", "!$test"]
+          deny:
+            - pkg: github.com/mochi-mqtt
+              desc: the embedded broker is for the tests of internal/publish/mqtt
+        # The OpenAPI validator checks the API in tests: runsten-api does not validate at run time.
+        openapi-only-in-tests:
+          files: ["$all", "!$test"]
+          deny:
+            - pkg: github.com/pb33f
+              desc: the OpenAPI validator is for the tests of internal/api
+        # huma builds the JSON API and its OpenAPI document: internal/api only.
+        huma-only-in-api:
+          files: ["$all", "!**/internal/api/**"]
+          deny:
+            - pkg: github.com/danielgtaylor/huma
+              desc: the JSON API and its OpenAPI document belong to internal/api
+        # The HTTP interface knows neither the database nor the vendor client: it declares
+        # its interfaces, the binary wires them.
+        api-without-adapters:
+          files: ["**/internal/api/**", "!$test"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: api declares the interfaces it needs
+            - pkg: runsten/internal/volvo
+              desc: api declares its own Authorizer interface
+            - pkg: runsten/internal/collector
+              desc: the API does not drive the collector
+            - pkg: runsten/internal/derive
+              desc: the API does not derive events
+
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: ^time\.Now$
+          msg: inject a clock.Clock
+        - pattern: ^fmt\.Print(f|ln)?$
+          msg: use log/slog
+
+    gosec:
+      excludes:
+        - G104 # duplicate of errcheck
+
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: var-naming
+        - name: errorf
+        - name: unused-parameter
+        - name: context-as-argument
+
+    wrapcheck:
+      ignore-sig-regexps:
+        - \.Errorf\(
+        - errors\.New\(
+        - errors\.Join\(
+
+  exclusions:
+    presets:
+      - std-error-handling
+    rules:
+      # The real clock and request duration measurement use system time.
+      - path: internal/platform/
+        linters: [forbidigo]
+        text: time\.Now
+      # Tests may compare errors without wrapping them.
+      - path: _test\.go
+        linters: [wrapcheck, errorlint]
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      module-path: runsten # no dot, otherwise mistaken for a standard library package
+    goimports:
+      local-prefixes: [runsten]

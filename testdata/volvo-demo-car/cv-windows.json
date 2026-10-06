@@ -1,0 +1,29 @@
+{
+  "data": {
+    "frontLeftWindow": {
+      "timestamp": "2026-09-25T15:37:23.105928815Z",
+      "unit": null,
+      "value": "OPEN"
+    },
+    "frontRightWindow": {
+      "timestamp": "2026-09-25T15:37:23.105928815Z",
+      "unit": null,
+      "value": "CLOSED"
+    },
+    "rearLeftWindow": {
+      "timestamp": "2026-09-25T15:37:23.105928815Z",
+      "unit": null,
+      "value": "CLOSED"
+    },
+    "rearRightWindow": {
+      "timestamp": "2026-09-25T15:37:23.105928815Z",
+      "unit": null,
+      "value": "CLOSED"
+    },
+    "sunroof": {
+      "timestamp": "2026-09-25T15:37:23.105928815Z",
+      "unit": null,
+      "value": "CLOSED"
+    }
+  }
+}

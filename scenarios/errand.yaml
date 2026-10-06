@@ -1,0 +1,37 @@
+# Short errand: to the station during an API outage, DC fast charging there, then back
+# home. make compose-test reads a reconstructed trip, a charge and a trip through the API
+# and the web interface; all three are there about 90 s after the start, at ×60.
+#
+# The way there, never seen driving, is revealed by the odometer, read right after the
+# charge ends: the collector reads it once a simulated hour when parked, and right after
+# a trip or a charge. It comes first on purpose: a trip seen ending waits for its last
+# readings (core.Params.SettleWindow, 15 minutes of the collector's clock, which is real
+# time in Compose), and an unseen trip within that window would be taken as part of it.
+# The first stop leaves time to create the user and connect the Volvo ID before the
+# outage. Fictitious coordinates (Lyon).
+vin: YV1SMLT0000ER0001
+start: 2026-09-28T09:00:00Z
+vehicle:
+  profile: bev-generic
+  model: EX-SIM
+  modelYear: 2026
+  batteryKWh: 80
+  consumptionKWhPer100km: 18
+  chargingCurrentLimitA: 16
+  soc: 50
+  targetSoc: 80
+  odometerKm: 8200
+  place: home
+places:
+  home: { lat: 45.7640, lon: 4.8357 }
+  station: { lat: 45.7485, lon: 4.8467 }
+steps:
+  - park: { duration: 42m }
+  - drive: { to: station, distanceKm: 6, duration: 10m } # 09:42 → 09:52, unseen
+  - charge: { type: DC, powerKW: 100, untilSoc: 80 } # 48.7 % → 80 %, 09:52 → about 10:07
+  - park: { duration: 3m }
+  - drive: { to: home, distanceKm: 12, duration: 20m } # about 10:10 → 10:30
+  - park: { duration: 12h }
+api:
+  outages:
+    - { after: 40m, duration: 15m } # 09:40 → 09:55: over the way there

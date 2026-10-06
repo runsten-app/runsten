@@ -1,0 +1,33 @@
+{
+  "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a02",
+  "vin": "YV1SMLT0000DT0002",
+  "model": {
+    "family": null,
+    "model_year": null,
+    "variant": null,
+    "variant_source": null,
+    "ac_max_kw": null
+  },
+  "connection": {
+    "status": "reauth_required",
+    "api_key": "instance",
+    "authorized_at": "2026-09-28T05:00:00Z",
+    "refreshed_at": null,
+    "reauth_at": "2026-09-28T06:30:00Z",
+    "reauth_reason": "refresh token expired"
+  },
+  "collection": {
+    "passed_at": "2026-09-28T07:00:00Z",
+    "mode": "parked",
+    "read_at": "2026-09-28T06:20:00Z",
+    "next_read_at": null,
+    "paused_until": "2026-09-28T07:10:00Z",
+    "quota": [],
+    "last_failure": {
+      "at": "2026-09-28T06:30:00Z",
+      "endpoint": null,
+      "status": null,
+      "kind": "token"
+    }
+  }
+}

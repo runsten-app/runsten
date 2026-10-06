@@ -1,0 +1,8 @@
+{
+  "user": {
+    "id": "user-admin",
+    "username": "admin"
+  },
+  "expires_at": "2026-10-28T05:00:00Z",
+  "limits": null
+}

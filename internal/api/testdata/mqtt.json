@@ -1,0 +1,19 @@
+{
+  "broker": {
+    "url": "mqtt://homeassistant.local:1883",
+    "username": "runsten",
+    "password_set": true,
+    "client_id": "",
+    "topic_prefix": "runsten",
+    "discovery": true,
+    "discovery_prefix": "homeassistant",
+    "publish_location": true,
+    "updated_at": "2026-09-28T05:00:00Z"
+  },
+  "status": {
+    "connected_at": "2026-09-28T05:00:00Z",
+    "failed_at": "2026-09-28T06:00:00Z",
+    "failure": "not_authorized"
+  },
+  "public_only": false
+}

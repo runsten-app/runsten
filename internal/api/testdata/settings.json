@@ -1,0 +1,73 @@
+{
+  "currency": {
+    "code": "EUR",
+    "minor_digits": 2
+  },
+  "currencies": [
+    {
+      "code": "CHF",
+      "minor_digits": 2
+    },
+    {
+      "code": "CZK",
+      "minor_digits": 2
+    },
+    {
+      "code": "DKK",
+      "minor_digits": 2
+    },
+    {
+      "code": "EUR",
+      "minor_digits": 2
+    },
+    {
+      "code": "GBP",
+      "minor_digits": 2
+    },
+    {
+      "code": "ISK",
+      "minor_digits": 0
+    },
+    {
+      "code": "NOK",
+      "minor_digits": 2
+    },
+    {
+      "code": "PLN",
+      "minor_digits": 2
+    },
+    {
+      "code": "SEK",
+      "minor_digits": 2
+    },
+    {
+      "code": "USD",
+      "minor_digits": 2
+    }
+  ],
+  "limits": {
+    "places": 100,
+    "place_name_chars": 60,
+    "radius_m": {
+      "min": 20,
+      "max": 1000,
+      "default": 100
+    },
+    "max_power_kw_max": 400,
+    "versions_per_place": 50,
+    "windows_per_version": 24,
+    "price_per_kwh": {
+      "max": 10000,
+      "decimals": 5
+    },
+    "entered_cost": {
+      "amount_minor_max": 1000000000,
+      "energy_kwh_max": 500,
+      "note_chars": 500
+    }
+  },
+  "default_efficiency": {
+    "ac": 0.88,
+    "dc": 0.95
+  }
+}

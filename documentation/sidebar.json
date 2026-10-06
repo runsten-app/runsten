@@ -1,0 +1,38 @@
+[
+  {
+    "text": "Introduction",
+    "items": [{ "text": "What Runsten is", "link": "/docs/" }]
+  },
+  {
+    "text": "Self-hosting",
+    "items": [
+      { "text": "Installation", "link": "/docs/self-hosting/" },
+      { "text": "Your Volvo application", "link": "/docs/self-hosting/volvo" },
+      { "text": "Users", "link": "/docs/self-hosting/users" },
+      { "text": "Reverse proxy (https)", "link": "/docs/self-hosting/reverse-proxy" },
+      { "text": "Backup and restore", "link": "/docs/self-hosting/backup" },
+      { "text": "Updating", "link": "/docs/self-hosting/updating" },
+      { "text": "Troubleshooting", "link": "/docs/self-hosting/troubleshooting" }
+    ]
+  },
+  {
+    "text": "Using Runsten",
+    "items": [
+      { "text": "The web interface", "link": "/docs/guide/" },
+      { "text": "Trips and charges", "link": "/docs/guide/trips-and-charges" },
+      { "text": "Statistics", "link": "/docs/guide/statistics" },
+      { "text": "Battery", "link": "/docs/guide/battery" },
+      { "text": "Places, tariffs and costs", "link": "/docs/guide/costs" },
+      { "text": "Vehicle models", "link": "/docs/guide/vehicle-models" },
+      { "text": "Home Assistant and MQTT", "link": "/docs/guide/mqtt" }
+    ]
+  },
+  {
+    "text": "Reference",
+    "items": [{ "text": "API", "link": "/docs/reference/api" }]
+  },
+  {
+    "text": "Contributing",
+    "items": [{ "text": "A vehicle variant", "link": "/docs/contributing/variants" }]
+  }
+]

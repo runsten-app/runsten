@@ -1,0 +1,47 @@
+{
+  "items": [
+    {
+      "id": "2026-09-28T07:01:00.000000Z",
+      "detected_at": "2026-09-28T07:01:00Z",
+      "reconstructed": false,
+      "start": {
+        "after": "2026-09-28T06:55:00Z",
+        "before": "2026-09-28T07:01:00Z"
+      },
+      "end": {
+        "after": "2026-09-28T07:39:00Z",
+        "before": "2026-09-28T07:40:00Z"
+      },
+      "distance_km": 32,
+      "start_odometer_km": 12400,
+      "end_odometer_km": 12432,
+      "start_soc_pct": 62,
+      "end_soc_pct": 54.5,
+      "start_range_km": 248,
+      "end_range_km": 218,
+      "energy_kwh": 6,
+      "capacity_kwh": 80,
+      "capacity_source": "api",
+      "start_position": {
+        "lat": 45.764,
+        "lon": 4.8357
+      },
+      "end_position": {
+        "lat": 45.7797,
+        "lon": 4.927
+      },
+      "start_place": {
+        "id": "5e1f0000-0000-4000-8000-000000000001",
+        "name": "Maison de Tante Agathe"
+      },
+      "end_place": null,
+      "start_address": null,
+      "end_address": null,
+      "vehicle_reported": {
+        "trip_meter_km": 32.2,
+        "consumption_kwh_per_100km": 18.1
+      }
+    }
+  ],
+  "next_cursor": null
+}

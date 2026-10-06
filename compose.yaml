@@ -1,0 +1,218 @@
+# Runsten self-hosted: PostgreSQL, runsten-api, runsten-collector and runsten-web (the
+# web interface, on http://127.0.0.1:8082).
+#
+#   cp .env.example .env              # then fill it in, following its comments
+#   docker compose pull && docker compose up -d
+#   docker compose run --rm api user create <name>   # the first user; asks the password
+#
+# The images are the published ones (ghcr.io/runsten-app), of the release RUNSTEN_VERSION
+# names in .env, latest without it; docker compose up -d --build builds them from this
+# tree instead, under the same names.
+#
+# Without a car: the sim profile adds the Volvo API and Volvo ID simulator, and sim.env
+# points the stack at it (separate project, volume and data, images built as :dev):
+#
+#   docker compose --env-file sim.env up -d --build
+#
+# The mqtt profile adds a Mosquitto broker, for development and tests: Runsten publishes
+# to the broker set in its settings (mqtt://mosquitto:1883 for this one).
+#
+# Nothing is published beyond the host's loopback interface, and PostgreSQL not at all.
+# runsten-web serves the interface and relays to runsten-api, at the same origin; both
+# serve plain http: to reach Runsten from elsewhere, put a reverse proxy with https in
+# front of runsten-web (README, "Self-hosting").
+
+name: runsten
+
+x-logging: &logging
+  driver: json-file
+  options: # the default json-file log grows without bound
+    max-size: 10m
+    max-file: "3"
+
+# Runsten binaries: static, distroless, non-root; they write nothing to disk.
+x-runsten: &runsten
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  logging: *logging
+  networks: [default, db]
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+x-runsten-env: &runsten-env
+  # Plain text on the internal db network, which only these containers join.
+  RUNSTEN_DATABASE_URL: postgres://runsten:${RUNSTEN_DB_PASSWORD:?set RUNSTEN_DB_PASSWORD in .env}@postgres:5432/runsten?sslmode=disable
+  RUNSTEN_TOKEN_KEY: ${RUNSTEN_TOKEN_KEY:?set RUNSTEN_TOKEN_KEY in .env (openssl rand -base64 32)}
+  # Empty: no key of the instance; each account gives its own on the Connection page.
+  RUNSTEN_VOLVO_API_KEY: ${RUNSTEN_VOLVO_API_KEY:-}
+  RUNSTEN_VOLVO_CLIENT_ID: ${RUNSTEN_VOLVO_CLIENT_ID:?set RUNSTEN_VOLVO_CLIENT_ID in .env}
+  RUNSTEN_VOLVO_CLIENT_SECRET: ${RUNSTEN_VOLVO_CLIENT_SECRET:?set RUNSTEN_VOLVO_CLIENT_SECRET in .env}
+  # Empty means the binary's default (the real Volvo API and Volvo ID).
+  RUNSTEN_VOLVO_BASE_URL: ${RUNSTEN_VOLVO_BASE_URL:-}
+  RUNSTEN_VOLVO_AUTH_URL: ${RUNSTEN_VOLVO_AUTH_URL:-}
+  RUNSTEN_LOG_LEVEL: ${RUNSTEN_LOG_LEVEL:-}
+  # false: the MQTT brokers set in the settings must be on the Internet, over TLS.
+  RUNSTEN_MQTT_PRIVATE_BROKERS: ${RUNSTEN_MQTT_PRIVATE_BROKERS:-}
+  # The containers listen on all their interfaces, but their ports are only published
+  # on the host's loopback (below): only the host, an SSH tunnel or a reverse proxy on
+  # the host reach them. Keep it true as long as the ports stay on 127.0.0.1.
+  RUNSTEN_ACCESS_RESTRICTED: "true"
+
+services:
+  postgres:
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    logging: *logging
+    networks: [db]
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      RUNSTEN_DB_PASSWORD: ${RUNSTEN_DB_PASSWORD:?set RUNSTEN_DB_PASSWORD in .env}
+    volumes:
+      - postgres:/var/lib/postgresql
+      - ./deploy/postgres/init-runsten.sh:/docker-entrypoint-initdb.d/init-runsten.sh:ro
+    healthcheck:
+      # Over TCP: during the first start, the temporary server that runs the init
+      # script only listens on its socket.
+      test: [CMD, pg_isready, -h, 127.0.0.1, -U, runsten, -d, runsten]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 1m
+      start_interval: 1s
+
+  api:
+    <<: *runsten
+    image: ghcr.io/runsten-app/runsten-api:${RUNSTEN_VERSION:-latest}
+    build:
+      context: .
+      args: { CMD: runsten-api }
+    environment:
+      <<: *runsten-env
+      RUNSTEN_API_ADDR: 0.0.0.0:8081
+      RUNSTEN_VOLVO_REDIRECT_URI: ${RUNSTEN_VOLVO_REDIRECT_URI:?set RUNSTEN_VOLVO_REDIRECT_URI in .env}
+      RUNSTEN_VOLVO_SCOPES: ${RUNSTEN_VOLVO_SCOPES:-}
+      RUNSTEN_GEOCODER_URL: ${RUNSTEN_GEOCODER_URL:-}
+      RUNSTEN_GEOCODER_INTERVAL: ${RUNSTEN_GEOCODER_INTERVAL:-}
+      RUNSTEN_HEALTH_TOKEN: ${RUNSTEN_HEALTH_TOKEN:-}
+    ports:
+      - 127.0.0.1:${RUNSTEN_API_PORT:-8081}:8081
+    healthcheck: &healthcheck
+      test: [CMD, /app, healthcheck] # no shell nor curl in the image
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 1m
+      start_interval: 1s
+
+  collector:
+    <<: *runsten
+    image: ghcr.io/runsten-app/runsten-collector:${RUNSTEN_VERSION:-latest}
+    build:
+      context: .
+      args: { CMD: runsten-collector }
+    environment:
+      <<: *runsten-env
+      # Loopback of the container: only the healthcheck, which runs inside it, reaches it.
+      RUNSTEN_HEALTH_ADDR: 127.0.0.1:8091
+      # Debug page, off by default: set RUNSTEN_DEBUG_ADDR=0.0.0.0:8090 in .env, then
+      # open http://127.0.0.1:8090 on the host (an SSH tunnel from elsewhere).
+      RUNSTEN_DEBUG_ADDR: ${RUNSTEN_DEBUG_ADDR:-}
+      RUNSTEN_TOKEN_MARGIN: ${RUNSTEN_TOKEN_MARGIN:-}
+      RUNSTEN_TOKEN_KEEPALIVE: ${RUNSTEN_TOKEN_KEEPALIVE:-}
+      RUNSTEN_POLL_TICK: ${RUNSTEN_POLL_TICK:-}
+      RUNSTEN_POLL_PARKED: ${RUNSTEN_POLL_PARKED:-}
+      RUNSTEN_POLL_ACTIVE: ${RUNSTEN_POLL_ACTIVE:-}
+      RUNSTEN_POLL_RARE: ${RUNSTEN_POLL_RARE:-}
+      RUNSTEN_POLL_DETAILS: ${RUNSTEN_POLL_DETAILS:-}
+      RUNSTEN_VOLVO_DAILY_QUOTA: ${RUNSTEN_VOLVO_DAILY_QUOTA:-}
+      RUNSTEN_VOLVO_QUOTA_PER_USER: ${RUNSTEN_VOLVO_QUOTA_PER_USER:-}
+    ports:
+      - 127.0.0.1:${RUNSTEN_DEBUG_PORT:-8090}:8090
+    healthcheck: *healthcheck
+
+  # The web interface: the front end's files, and a relay to api at the same origin.
+  # It needs neither the database nor a secret.
+  web:
+    image: ghcr.io/runsten-app/runsten-web:${RUNSTEN_VERSION:-latest}
+    build:
+      context: .
+      target: runsten-web
+      args: { CMD: runsten-web }
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging: *logging
+    environment:
+      RUNSTEN_WEB_ADDR: 0.0.0.0:8082
+      RUNSTEN_WEB_API_URL: http://api:8081
+      RUNSTEN_WEB_BASE_PATH: ${RUNSTEN_WEB_BASE_PATH:-}
+      RUNSTEN_WEB_MAP_TILES: ${RUNSTEN_WEB_MAP_TILES:-}
+      RUNSTEN_WEB_MAP_ATTRIBUTION: ${RUNSTEN_WEB_MAP_ATTRIBUTION:-}
+      RUNSTEN_LOG_LEVEL: ${RUNSTEN_LOG_LEVEL:-}
+      # Published on the host's loopback only, like the others.
+      RUNSTEN_ACCESS_RESTRICTED: "true"
+    ports:
+      - 127.0.0.1:${RUNSTEN_WEB_PORT:-8082}:8082
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck: *healthcheck
+
+  # Development only: the fake Volvo API and Volvo ID, with its runsten-dev application.
+  simulator:
+    profiles: [sim]
+    image: ghcr.io/runsten-app/runsten-simulator:${RUNSTEN_VERSION:-latest}
+    build:
+      context: .
+      args: { CMD: runsten-simulator }
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging: *logging
+    environment:
+      SIM_SCENARIO: /scenarios/${RUNSTEN_SIM_SCENARIO:-commute}.yaml
+      SIM_SPEED: ${RUNSTEN_SIM_SPEED:-60}
+      # Its runsten-dev application accepts the stack's redirect URI (on runsten-web).
+      SIM_REDIRECT_URI: ${RUNSTEN_VOLVO_REDIRECT_URI:-}
+    ports:
+      # The browser (or task connect-sim) follows the Volvo ID redirect to it.
+      - 127.0.0.1:8080:8080
+
+  # Development and tests only: a broker without a password, on the stack's network
+  # (the collector reaches it at mqtt://mosquitto:1883) and the host's loopback, for a
+  # Home Assistant or mosquitto_sub on the host. Its retained messages are not kept.
+  mosquitto:
+    profiles: [mqtt]
+    image: eclipse-mosquitto:2.1.2-alpine@sha256:38c0da4f2ef84284d47b3b3eeea1cb3bdeabe81ee10caf0cd5c5ff61ee3ea408
+    user: "1883:1883" # the image's mosquitto user: nothing to drop privileges from
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging: *logging
+    volumes:
+      - ./deploy/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    ports:
+      - 127.0.0.1:${RUNSTEN_MQTT_PORT:-1883}:1883
+    healthcheck:
+      test: [CMD, mosquitto_sub, -t, $$SYS/broker/version, -C, "1", -W, "3"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 1m
+      start_interval: 1s
+
+volumes:
+  postgres:
+
+networks:
+  default:
+  # No route outside: PostgreSQL needs none, and nothing reaches it but Runsten.
+  db:
+    internal: true

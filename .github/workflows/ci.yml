@@ -1,0 +1,174 @@
+# CI: runs `task ci`, the same pipeline as locally, as its three levels in parallel jobs, by
+# what they need: `task unit` (Go or Node alone, as unit-go and unit-web) reports in
+# minutes, `task integration` (containers: PostgreSQL, Redocly, Trivy) and `task system`
+# (the Compose stack, browser tests included) wait for nothing else, and a failed one is
+# re-run alone. unit-go and unit-web run only when their side changed; integration and
+# system, which check the whole, always run. Task is the one pinned in tools/go.mod, so every
+# job sets Go up.
+# On a pull request, while the repository is private, the jobs run only while the
+# organization's included minutes last: changes reads the month's billed minutes (the
+# BILLING_TOKEN secret, read access to the organization's billing) and skips every job once
+# some are billed, or the usage cannot be read. main always runs them.
+# When the repository goes public: pin actions by SHA (Dependabot will keep them up to date).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Which side a push or a pull request touches (against the commit before the push, or
+  # the pull request's base), and whether the minutes allow the jobs. A skipped job counts
+  # as passed for a required check.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      go: ${{ steps.filter.outputs.go }}
+      web: ${{ steps.filter.outputs.web }}
+      run: ${{ steps.minutes.outputs.run }}
+    steps:
+      - id: minutes
+        env:
+          GH_TOKEN: ${{ secrets.BILLING_TOKEN }}
+          PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != pull_request ] || [ "$PRIVATE" != true ]; then
+            echo run=true >> "$GITHUB_OUTPUT"
+          elif ! billed=$(gh api "/organizations/$GITHUB_REPOSITORY_OWNER/settings/billing/usage/summary?product=Actions&sku=actions_linux" \
+              --jq '[.usageItems[].netQuantity] | add // 0'); then
+            echo "::warning::Actions usage unreadable (BILLING_TOKEN): jobs skipped"
+            echo run=false >> "$GITHUB_OUTPUT"
+          elif awk -v b="$billed" 'BEGIN { exit !(b > 0) }'; then
+            echo "::notice::$billed minutes billed this month: jobs skipped, they run on main"
+            echo run=false >> "$GITHUB_OUTPUT"
+          else
+            echo run=true >> "$GITHUB_OUTPUT"
+          fi
+      # With its credentials: on a push, the filter fetches the commit before it, and the
+      # repository is private. The job runs nothing of the repository's.
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          # A file counts when some pattern matches it and no exclusion does.
+          predicate-quantifier: some-with-excludes
+          # Go: anything outside the front end, but prose; a new directory is included
+          # rather than forgotten (embedded migrations, the catalog, scenarios, testdata).
+          # The front end: its own files, and what its types and fixtures come from.
+          filters: |
+            go:
+              - '**'
+              - '!web/**'
+              - '!**/*.md'
+            web:
+              - 'web/**'
+              - 'api/openapi.yaml'
+              - 'internal/api/testdata/**'
+              - 'Taskfile.yml'
+              - 'tools/**'
+              - '.github/workflows/ci.yml'
+
+  unit-go:
+    needs: changes
+    if: needs.changes.outputs.run == 'true' && needs.changes.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - run: go tool -modfile=tools/go.mod task unit-go
+
+  unit-web:
+    needs: changes
+    if: needs.changes.outputs.run == 'true' && needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: go tool -modfile=tools/go.mod task unit-web
+
+  integration:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - run: go tool -modfile=tools/go.mod task integration
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage
+          path: coverage.out
+          if-no-files-found: ignore
+
+  system:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Task, and image-platforms reads the architecture of each binary with go version -m.
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      # The browser tests run from web/node_modules, in the pinned Playwright image.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: go tool -modfile=tools/go.mod task system
+      # Screenshots of every view, and the Playwright report (with traces) of a failure.
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: e2e-results
+          path: web/e2e-results
+          if-no-files-found: ignore

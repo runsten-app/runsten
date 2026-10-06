@@ -1,0 +1,32 @@
+# Dependency updates: one grouped pull request per ecosystem and per week.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      go-modules:
+        patterns: ["*"]
+  # Task, pinned apart from the application's modules.
+  - package-ecosystem: gomod
+    directory: /tools
+    schedule: { interval: weekly }
+    groups:
+      tools:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      github-actions:
+        patterns: ["*"]
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      docker-images:
+        patterns: ["*"]
+    # Node follows web/.nvmrc and the engines of web/package.json: a major is raised by hand.
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]

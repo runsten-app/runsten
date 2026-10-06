@@ -1,0 +1,29 @@
+# Quota exhausted: 150 calls per day and per API instead of 10,000. The Connected
+# Vehicle quota runs out during the morning; the API then responds 403 "Out of call
+# volume quota" until midnight UTC. Same day as
+# commute.yaml.
+vin: YV1SMLT0000XH0001
+start: 2026-09-28T05:00:00Z
+vehicle:
+  profile: bev-generic
+  model: EX-SIM
+  modelYear: 2026
+  batteryKWh: 80
+  consumptionKWhPer100km: 18
+  chargingCurrentLimitA: 16
+  soc: 62
+  targetSoc: 80
+  odometerKm: 12400
+  place: home
+places:
+  home: { lat: 45.7640, lon: 4.8357 }
+  work: { lat: 45.7797, lon: 4.9270 }
+steps:
+  - park: { duration: 2h }
+  - drive: { to: work, distanceKm: 32, duration: 40m }
+  - park: { duration: 9h }
+  - drive: { to: home, distanceKm: 33, duration: 45m }
+  - park: { duration: 1h }
+  - charge: { type: AC, powerKW: 7.4, untilSoc: 80 }
+api:
+  dailyQuota: 150

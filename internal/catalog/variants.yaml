@@ -1,0 +1,754 @@
+# Electric variants of Volvo and Polestar vehicles. Plug-in hybrids are left out: Runsten
+# does not derive their charges correctly, so recognizing them would only mislead.
+#
+# One entry per variant: a powertrain and battery over a range of model years. Its id is
+# stored by users once they choose it, so it never changes: correcting a figure keeps the
+# id, and an entry is corrected rather than removed.
+#
+# - family: exactly what the Volvo API returns in descriptions.model. Polestar families are
+#   provisional: no data source returns them yet.
+# - years: [from, to] model years, or [from] while the variant is on sale.
+# - gross_kwh, net_kwh: battery capacity; net_kwh is left out when no source settles it.
+# - ac_max_kw: standard onboard charger; ac_option_kw: the optional one (22 kW), if any.
+# - api_kwh: values of batteryCapacityKWH seen for the variant, each with where it was seen.
+# - motor_codes: VIN positions 4-5, from unofficial tables: they only break ties.
+# - sources: every figure is backed by at least one source, listed in its "for"; its level
+#   says whether the figure comes from the manufacturer or from a secondary source (press,
+#   Wikipedia, ev-database as a cross-check).
+#
+# Conflicts between sources: a maximum power keeps the highest value (it never narrows a
+# cost interval by mistake); a capacity keeps the manufacturer's, or else the most cited,
+# or is left out on a tie. Each conflict is told in a comment.
+#
+# Variants that no reading can separate (same family, overlapping years, capacities within
+# the tolerances, no motor code apart) must name each other in ambiguous_with: Match then
+# offers both, and the user chooses.
+
+# --- Volvo XC40 and C40 (CMA) ---------------------------------------------------------
+
+- id: xc40-twin-2021
+  brand: volvo
+  family: XC40
+  name: XC40 Recharge Twin
+  years: [2021, 2023]
+  gross_kwh: 78
+  net_kwh: 75
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 150 # Wikipedia 150, ev-database 149
+  api_kwh:
+    - kwh: 78.012 # model year 2022
+      source: https://github.com/home-assistant/core/issues/179741
+  motor_codes: [ED]
+  sources:
+    - url: https://en.wikipedia.org/wiki/Volvo_XC40
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/1520/Volvo-XC40-Recharge-Twin-Pure-Electric
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw]
+    - url: https://en.wikibooks.org/wiki/Vehicle_Identification_Numbers_(VIN_codes)/Volvo/VIN_Codes
+      level: secondary
+      for: [motor_codes]
+
+- id: xc40-single-2022
+  brand: volvo
+  family: XC40
+  name: XC40 Recharge Single Motor (front-wheel drive)
+  years: [2022, 2023]
+  gross_kwh: 69
+  net_kwh: 67
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 136
+  sources:
+    - url: https://ev-database.org/car/1539/Volvo-XC40-Recharge-Pure-Electric
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: xc40-single-2024
+  brand: volvo
+  family: XC40
+  name: XC40 Single Motor (rear-wheel drive)
+  years: [2024]
+  gross_kwh: 69
+  net_kwh: 66
+  chemistry: nmc
+  ac_max_kw: 11
+  # Volvo announced 130 kW (https://www.volvoclub.org.uk/press/releases/2023/c40xc40rwd.shtml),
+  # ev-database gives 136: the highest is kept.
+  dc_max_kw: 136
+  motor_codes: [EH]
+  sources:
+    - url: https://ev-database.org/car/1796/Volvo-XC40-Recharge-Single-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://en.wikibooks.org/wiki/Vehicle_Identification_Numbers_(VIN_codes)/Volvo/VIN_Codes
+      level: secondary
+      for: [motor_codes]
+
+- id: xc40-er-2024
+  brand: volvo
+  family: XC40
+  name: XC40 Single Motor Extended Range
+  years: [2024]
+  gross_kwh: 82
+  net_kwh: 79
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 200 # Volvo 200, Wikipedia 175
+  api_kwh:
+    # Reported for a 2024 XC40 with the 82 kWh battery, without saying which motor: the
+    # Twin Motor shares the battery, and the value.
+    - kwh: 81.608
+      source: https://github.com/home-assistant/core/tree/dev/tests/components/volvo/fixtures
+  motor_codes: [EH]
+  sources:
+    - url: https://www.volvoclub.org.uk/press/releases/2023/c40xc40rwd.shtml
+      level: manufacturer
+      for: [gross_kwh, dc_max_kw]
+    - url: https://ev-database.org/car/2121/Volvo-EX40-Single-Motor-ER
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw]
+    - url: https://en.wikibooks.org/wiki/Vehicle_Identification_Numbers_(VIN_codes)/Volvo/VIN_Codes
+      level: secondary
+      for: [motor_codes]
+
+- id: xc40-twin-2024
+  brand: volvo
+  family: XC40
+  name: XC40 Twin Motor
+  years: [2024]
+  gross_kwh: 82
+  net_kwh: 79
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 207 # ev-database 207; Volvo's 200 kW is for the Single Motor Extended Range
+  api_kwh:
+    - kwh: 81.608 # see xc40-er-2024
+      source: https://github.com/home-assistant/core/tree/dev/tests/components/volvo/fixtures
+  motor_codes: [ER]
+  sources:
+    - url: https://ev-database.org/car/1798/Volvo-XC40-Recharge-Twin-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://en.wikibooks.org/wiki/Vehicle_Identification_Numbers_(VIN_codes)/Volvo/VIN_Codes
+      level: secondary
+      for: [motor_codes]
+
+# The C40 shares the XC40's powertrains and batteries, year for year.
+
+- id: c40-twin-2021
+  brand: volvo
+  family: C40
+  name: C40 Recharge Twin
+  years: [2021, 2023]
+  gross_kwh: 78
+  net_kwh: 75
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 150
+  motor_codes: [ED]
+  sources:
+    - url: https://en.wikipedia.org/wiki/Volvo_XC40
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://en.wikibooks.org/wiki/Vehicle_Identification_Numbers_(VIN_codes)/Volvo/VIN_Codes
+      level: secondary
+      for: [motor_codes]
+
+- id: c40-single-2022
+  brand: volvo
+  family: C40
+  name: C40 Recharge Single Motor (front-wheel drive)
+  years: [2022, 2023]
+  gross_kwh: 69
+  net_kwh: 67
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 136
+  api_kwh:
+    - kwh: 69.452 # model year 2023
+      source: https://github.com/akamming/Domoticz_VolvoRecharge_Plugin/issues/13#issuecomment-2674295580
+  sources:
+    - url: https://en.wikipedia.org/wiki/Volvo_XC40
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: c40-single-2024
+  brand: volvo
+  family: C40
+  name: C40 Single Motor (rear-wheel drive)
+  years: [2024]
+  gross_kwh: 69
+  net_kwh: 66
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 136 # as the XC40: Volvo announced 130, ev-database gives 136
+  sources:
+    - url: https://en.wikipedia.org/wiki/Volvo_XC40
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: c40-er-2024
+  brand: volvo
+  family: C40
+  name: C40 Single Motor Extended Range
+  years: [2024]
+  gross_kwh: 82
+  net_kwh: 79
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 200
+  # No motor code is known for the C40 from 2024: the Twin Motor has the same battery.
+  ambiguous_with: [c40-twin-2024]
+  sources:
+    - url: https://www.volvoclub.org.uk/press/releases/2023/c40xc40rwd.shtml
+      level: manufacturer
+      for: [gross_kwh, dc_max_kw]
+    - url: https://ev-database.org/uk/car/2124/Volvo-EC40-Single-Motor-ER
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw]
+
+- id: c40-twin-2024
+  brand: volvo
+  family: C40
+  name: C40 Twin Motor
+  years: [2024]
+  gross_kwh: 82
+  net_kwh: 79
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 207 # as the XC40 Twin Motor
+  sources:
+    - url: https://en.wikipedia.org/wiki/Volvo_XC40
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# --- Volvo EX30 (SEA) -----------------------------------------------------------------
+# The 22 kW onboard charger is an option (standard on Ultra in the United Kingdom), not a
+# variant: ac_option_kw.
+#
+# From about 2024-10-24 to 2025-02-11 the backend returned 66.0 for every NMC EX30 (the
+# pack's label) and 49.0 for every LFP one (the net capacity), then 69.0 and 51.0 again,
+# with no change to the cars: https://www.ex30forums.com/viewtopic.php?t=751
+
+- id: ex30-lfp-2024
+  brand: volvo
+  family: EX30
+  name: EX30 Single Motor
+  years: [2024, 2026]
+  gross_kwh: 51
+  net_kwh: 49
+  chemistry: lfp
+  ac_max_kw: 11
+  dc_max_kw: 134
+  api_kwh:
+    - kwh: 51.0
+      source: https://github.com/Dielee/volvo2mqtt/issues/303
+    - kwh: 49.0
+      source: https://www.ex30forums.com/viewtopic.php?t=751
+  motor_codes: [EL] # shared with the Extended Range: the code does not tell the battery
+  sources:
+    - url: https://www.motor1.com/features/714431/volvo-ex30-analysis/
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/Volvo_EX30
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://en.wikibooks.org/wiki/Vehicle_Identification_Numbers_(VIN_codes)/Volvo/VIN_Codes
+      level: secondary
+      for: [motor_codes]
+
+- id: ex30-er-2024
+  brand: volvo
+  family: EX30
+  name: EX30 Single Motor Extended Range
+  years: [2024, 2026]
+  gross_kwh: 69
+  net_kwh: 64
+  chemistry: nmc
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 153
+  # The reports do not say which NMC variant they come from: the value is the same for all.
+  api_kwh:
+    - kwh: 69.0
+      source: https://github.com/jobe39/volvo2evcc/issues/1
+    - kwh: 66.0
+      source: https://github.com/thomasddn/ha-volvo-cars/issues/6
+  motor_codes: [EL]
+  sources:
+    - url: https://ev-database.org/car/1910/Volvo-EX30-Single-Motor-ER
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://www.zapmap.com/ev-guides/model-charging/volvo-ex30
+      level: secondary
+      for: [ac_max_kw, ac_option_kw]
+    - url: https://en.wikibooks.org/wiki/Vehicle_Identification_Numbers_(VIN_codes)/Volvo/VIN_Codes
+      level: secondary
+      for: [motor_codes]
+
+- id: ex30-twin-2024
+  brand: volvo
+  family: EX30
+  name: EX30 Twin Motor Performance / Cross Country
+  years: [2024, 2026]
+  gross_kwh: 69
+  net_kwh: 64
+  chemistry: nmc
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 153
+  api_kwh:
+    - kwh: 69.0
+      source: https://www.ex30forums.com/viewtopic.php?t=751
+    - kwh: 66.0
+      source: https://www.ex30forums.com/viewtopic.php?t=751
+  motor_codes: [EK]
+  sources:
+    - url: https://ev-database.org/uk/car/1911/Volvo-EX30-Twin-Motor-Performance
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, ac_option_kw, dc_max_kw]
+    - url: https://en.wikibooks.org/wiki/Vehicle_Identification_Numbers_(VIN_codes)/Volvo/VIN_Codes
+      level: secondary
+      for: [motor_codes]
+
+# Model year 2027: 65 kWh net and 158 kW, against 64 and 153 before. A software update or a
+# revision of ev-database's figures: unknown.
+
+- id: ex30-p5-2027
+  brand: volvo
+  family: EX30
+  name: EX30 P5
+  years: [2027]
+  gross_kwh: 51
+  net_kwh: 49
+  chemistry: lfp
+  ac_max_kw: 11
+  dc_max_kw: 134
+  sources:
+    - url: https://ev-database.org/car/3478/Volvo-EX30-P5
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: ex30-p5-lr-2027
+  brand: volvo
+  family: EX30
+  name: EX30 P5 Long Range
+  years: [2027]
+  gross_kwh: 69
+  net_kwh: 65
+  chemistry: nmc
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 158
+  motor_codes: [EL]
+  sources:
+    - url: https://ev-database.org/car/3480/Volvo-EX30-P5-Long-Range
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, ac_option_kw, dc_max_kw]
+    - url: https://en.wikibooks.org/wiki/Vehicle_Identification_Numbers_(VIN_codes)/Volvo/VIN_Codes
+      level: secondary
+      for: [motor_codes]
+
+- id: ex30-p8-2027
+  brand: volvo
+  family: EX30
+  name: EX30 P8 AWD
+  years: [2027]
+  gross_kwh: 69
+  net_kwh: 65
+  chemistry: nmc
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 158
+  motor_codes: [EK]
+  sources:
+    - url: https://ev-database.org/car/3481/Volvo-EX30-P8-AWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, ac_option_kw, dc_max_kw]
+    - url: https://en.wikibooks.org/wiki/Vehicle_Identification_Numbers_(VIN_codes)/Volvo/VIN_Codes
+      level: secondary
+      for: [motor_codes]
+
+# --- Volvo EX90 and ES90 (SPA2) -------------------------------------------------------
+# Model year 2026 moves from 400 V to 800 V, with smaller batteries under the same family.
+
+- id: ex90-single-2024
+  brand: volvo
+  family: EX90
+  name: EX90 Single Motor
+  years: [2024, 2025]
+  gross_kwh: 104
+  # Net capacity left out: 100 (ev-database) against 101 (Wikipedia).
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 250
+  sources:
+    - url: https://ev-database.org/car/1950/Volvo-EX90-Single-Motor
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/Volvo_EX90
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: ex90-twin-2024
+  brand: volvo
+  family: EX90
+  name: EX90 Twin Motor / Twin Motor Performance
+  years: [2024, 2025]
+  gross_kwh: 111
+  net_kwh: 107
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 250
+  motor_codes: [EV, E2]
+  sources:
+    - url: https://ev-database.org/uk/car/1775/Volvo-EX90-Twin-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://en.wikibooks.org/wiki/Vehicle_Identification_Numbers_(VIN_codes)/Volvo/VIN_Codes
+      level: secondary
+      for: [motor_codes]
+
+- id: ex90-single-2026
+  brand: volvo
+  family: EX90
+  name: EX90 Single Motor (800 V)
+  years: [2026]
+  gross_kwh: 92
+  net_kwh: 88
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 350 # Volvo gives 350 kW for the range, ev-database 310 for this variant
+  sources:
+    - url: https://www.media.volvocars.com/global/en-gb/media/pressreleases/353165/upgraded-ex90-charges-even-faster-and-delivers-new-and-improved-features
+      level: manufacturer
+      for: [dc_max_kw]
+    - url: https://ev-database.org/uk/car/3323/Volvo-EX90-Single-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw]
+    - url: https://www.electrive.com/2025/09/23/model-year-2026-volvo-ex90-gets-800-volt-technology/
+      level: secondary
+      for: [gross_kwh, net_kwh]
+
+- id: ex90-twin-2026
+  brand: volvo
+  family: EX90
+  name: EX90 Twin Motor / Twin Motor Performance (800 V)
+  years: [2026]
+  gross_kwh: 106
+  net_kwh: 102
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 350
+  sources:
+    - url: https://www.media.volvocars.com/global/en-gb/media/pressreleases/353165/upgraded-ex90-charges-even-faster-and-delivers-new-and-improved-features
+      level: manufacturer
+      for: [dc_max_kw]
+    - url: https://ev-database.org/car/3324/Volvo-EX90-Twin-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: es90-single-2026
+  brand: volvo
+  family: ES90
+  name: ES90 Single Motor
+  years: [2026]
+  gross_kwh: 92
+  net_kwh: 88
+  chemistry: nmc
+  ac_max_kw: 11
+  # Volvo gives 350 kW for the range, but no source at hand says it for this variant.
+  dc_max_kw: 310
+  sources:
+    - url: https://ev-database.org/uk/car/3128/Volvo-ES90-Single-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://insideevs.com/news/752512/volvo-es90-official-specs-range/
+      level: secondary
+      for: [gross_kwh, net_kwh, dc_max_kw]
+
+- id: es90-twin-2026
+  brand: volvo
+  family: ES90
+  name: ES90 Twin Motor / Twin Motor Performance
+  years: [2026]
+  gross_kwh: 106
+  net_kwh: 102
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 350
+  sources:
+    - url: https://www.electrive.com/2025/03/05/world-premiere-of-the-volvo-es90-the-swedes-move-up-to-800-volts/
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# --- Volvo EX60 (SPA3, 800 V) ---------------------------------------------------------
+# Volvo publishes the net capacity as "the battery". The onboard charger is 22 kW in
+# Europe and 19.2 kW in North America: the highest is kept. DC: 320 or 370 kW on
+# ev-database, 400 kW on Wikipedia: the highest is kept.
+
+- id: ex60-p6-2027
+  brand: volvo
+  family: EX60
+  name: EX60 P6
+  years: [2027]
+  gross_kwh: 83
+  net_kwh: 80
+  chemistry: nmc
+  ac_max_kw: 22
+  dc_max_kw: 400
+  sources:
+    - url: https://www.volvocars.com/intl/media/press-releases/BBFA79F8A7B113F9/
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://ev-database.org/car/3441/Volvo-EX60-P6
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw]
+    - url: https://en.wikipedia.org/wiki/Volvo_EX60
+      level: secondary
+      for: [ac_max_kw, dc_max_kw]
+
+- id: ex60-p10-2027
+  brand: volvo
+  family: EX60
+  name: EX60 P10 AWD / Cross Country
+  years: [2027]
+  gross_kwh: 95
+  net_kwh: 91 # Volvo 91, ev-database 90
+  chemistry: nmc
+  ac_max_kw: 22
+  dc_max_kw: 400
+  sources:
+    - url: https://www.volvocars.com/intl/media/press-releases/BBFA79F8A7B113F9/
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://ev-database.org/car/3442/Volvo-EX60-P10-AWD
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw]
+    - url: https://en.wikipedia.org/wiki/Volvo_EX60
+      level: secondary
+      for: [ac_max_kw, dc_max_kw]
+
+- id: ex60-p12-2027
+  brand: volvo
+  family: EX60
+  name: EX60 P12 AWD
+  years: [2027]
+  gross_kwh: 117
+  net_kwh: 112
+  chemistry: nmc
+  ac_max_kw: 22
+  dc_max_kw: 400
+  sources:
+    - url: https://www.volvocars.com/intl/media/press-releases/BBFA79F8A7B113F9/
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://ev-database.org/car/3443/Volvo-EX60-P12-AWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw]
+    - url: https://en.wikipedia.org/wiki/Volvo_EX60
+      level: secondary
+      for: [ac_max_kw, dc_max_kw]
+
+# --- Polestar 2 -----------------------------------------------------------------------
+# No motor code is known for Polestar: the Single and Dual Motor Long Range share their
+# battery, so each pair names the other in ambiguous_with.
+
+- id: ps2-sr-2021
+  brand: polestar
+  family: Polestar 2
+  name: Polestar 2 Standard Range Single Motor (front-wheel drive)
+  years: [2021, 2021]
+  gross_kwh: 64
+  net_kwh: 61
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 116
+  sources:
+    - url: https://ev-database.org/car/1486/Polestar-2-Standard-Range-Single-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: ps2-sr-2022
+  brand: polestar
+  family: Polestar 2
+  name: Polestar 2 Standard Range Single Motor (front-wheel drive)
+  years: [2022, 2023]
+  gross_kwh: 69
+  # Net capacity left out: 66 (ev-database) against 64 (Wikipedia).
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 136 # 130 to 136 depending on the source
+  sources:
+    - url: https://ev-database.org/uk/car/1654/Polestar-2-Standard-Range-Single-Motor
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/Polestar_2
+      level: secondary
+      for: [gross_kwh, dc_max_kw]
+
+- id: ps2-sr-2024
+  brand: polestar
+  family: Polestar 2
+  name: Polestar 2 Standard Range Single Motor (rear-wheel drive)
+  years: [2024, 2024]
+  gross_kwh: 69
+  net_kwh: 66
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 136
+  sources:
+    - url: https://ev-database.org/uk/car/1817/Polestar-2-Standard-Range-Single-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: ps2-sr-2025
+  brand: polestar
+  family: Polestar 2
+  name: Polestar 2 Standard Range Single Motor
+  years: [2025]
+  gross_kwh: 70
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 180
+  sources:
+    - url: https://www.polestar.com/uk/polestar-2/specifications/
+      level: manufacturer
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: ps2-lr-single-2021
+  brand: polestar
+  family: Polestar 2
+  name: Polestar 2 Long Range Single Motor (front-wheel drive)
+  years: [2021, 2023]
+  gross_kwh: 78
+  net_kwh: 75
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 155 # 150 to 155 depending on the source
+  ambiguous_with: [ps2-lr-dual-2021]
+  sources:
+    - url: https://ev-database.org/uk/car/1487/Polestar-2-Long-Range-Single-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: ps2-lr-single-2024
+  brand: polestar
+  family: Polestar 2
+  name: Polestar 2 Long Range Single Motor
+  years: [2024]
+  gross_kwh: 82
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 205
+  ambiguous_with: [ps2-lr-dual-2025]
+  sources:
+    - url: https://www.polestar.com/uk/polestar-2/specifications/
+      level: manufacturer
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: ps2-lr-dual-2021
+  brand: polestar
+  family: Polestar 2
+  name: Polestar 2 Long Range Dual Motor / Performance
+  years: [2021, 2024] # kept the 78 kWh battery one model year longer than the Single Motor
+  gross_kwh: 78
+  net_kwh: 75
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 155
+  sources:
+    - url: https://ev-database.org/car/1819/Polestar-2-Long-Range-Dual-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: ps2-lr-dual-2025
+  brand: polestar
+  family: Polestar 2
+  name: Polestar 2 Long Range Dual Motor / Performance
+  years: [2025]
+  gross_kwh: 82
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 205
+  sources:
+    - url: https://www.polestar.com/uk/polestar-2/specifications/
+      level: manufacturer
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# --- Polestar 3, 4 and 5 --------------------------------------------------------------
+
+- id: ps3-2024
+  brand: polestar
+  family: Polestar 3
+  name: Polestar 3 Long Range Dual Motor
+  years: [2024, 2025]
+  gross_kwh: 111
+  net_kwh: 107
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 250
+  sources:
+    - url: https://ev-database.org/uk/car/1758/Polestar-3-Long-Range-Dual-motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# Polestar gives the 800 V batteries' chemistry as "lithium-ion" only.
+
+- id: ps3-rear-2026
+  brand: polestar
+  family: Polestar 3
+  name: Polestar 3 Long Range Rear Motor (800 V)
+  years: [2026]
+  gross_kwh: 92
+  ac_max_kw: 11
+  dc_max_kw: 310
+  sources:
+    - url: https://www.polestar.com/uk/polestar-3/specifications/
+      level: manufacturer
+      for: [gross_kwh, ac_max_kw, dc_max_kw]
+
+- id: ps3-dual-2026
+  brand: polestar
+  family: Polestar 3
+  name: Polestar 3 Long Range Dual Motor / Performance (800 V)
+  years: [2026]
+  gross_kwh: 106
+  ac_max_kw: 11
+  dc_max_kw: 350
+  sources:
+    - url: https://www.polestar.com/uk/polestar-3/specifications/
+      level: manufacturer
+      for: [gross_kwh, ac_max_kw, dc_max_kw]
+
+# The Plus pack is said to bring a 22 kW charger, but no source at hand says so: no
+# ac_option_kw yet.
+- id: ps4-2024
+  brand: polestar
+  family: Polestar 4
+  name: Polestar 4 Long Range Single Motor / Dual Motor
+  years: [2024]
+  gross_kwh: 100
+  ac_max_kw: 11
+  dc_max_kw: 200
+  sources:
+    - url: https://www.polestar.com/uk/polestar-4/specifications/
+      level: manufacturer
+      for: [gross_kwh, ac_max_kw, dc_max_kw]
+
+- id: ps5-2025
+  brand: polestar
+  family: Polestar 5
+  name: Polestar 5 Dual Motor / Performance
+  years: [2025]
+  gross_kwh: 112 # Polestar 112, Wikipedia 103
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 350
+  sources:
+    - url: https://www.polestar.com/uk/polestar-5/specifications/
+      level: manufacturer
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]

@@ -1,0 +1,19 @@
+{
+  "data": {
+    "batteryCapacityKWH": 78.0,
+    "descriptions": {
+      "model": "V60 II",
+      "steering": "LEFT",
+      "upholstery": "CHARCOAL/LEAC/CHARC"
+    },
+    "externalColour": "SAVILE GREY",
+    "fuelType": "DIESEL",
+    "gearbox": "AUTOMATIC",
+    "images": {
+      "exteriorImageUrl": "https://cas.volvocars.com/image/vbsnext-v4/exterior/MY19_1817/225/A8/13/49200/R131/_/TP02/_/_/TM02/JT02_f13/SR02/_/_/JB0C/T206/default.png?market=us&client=connected-vehicle-api&w=1920&bg=00000000&angle=0&fallback",
+      "internalImageUrl": "https://cas.volvocars.com/image/vbsnext-v4/interior/MY19_1817/225/1/RC0000_f13/NC04/DI02/RU06/_/_/FJ01/EV02/K502/default.png?market=us&client=connected-vehicle-api&w=1920&bg=00000000&angle=0&fallback"
+    },
+    "modelYear": 2019,
+    "vin": "YV4952NA4F120DEMO"
+  }
+}

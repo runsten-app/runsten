@@ -1,0 +1,39 @@
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+
+# Local tools
+.playwright-mcp/
+
+# Go artifacts
+bin/
+coverage.out
+
+# Rendered API documentation (README, API)
+api/*.html
+
+# Modules of a downstream build (the premium build tag): never in this repository
+premium/
+
+# Personal notes (ADRs, research): not versioned
+docs/
+
+# Front end (web/): dependencies, build, coverage, browser test results, types generated
+# from api/openapi.yaml
+/web/node_modules/
+/web/dist/
+/web/coverage/
+/web/e2e-results/
+/web/src/shared/api/schema.d.ts
+
+# Task's checksums (sources of web-install)
+.task/

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+{{if not .Paused}}<meta http-equiv="refresh" content="3">{{end}}
+<title>Runsten · collector (debug)</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #fff; --fg: #18202e; --muted: #6b7280; --line: #e6e8ec; --code: #f1f3f6;
+    --accent: #2563eb; --ok: #059669; --warn: #d97706; --err: #dc2626;
+    --ok-bg: #d1fae5; --warn-bg: #fef3c7; --err-bg: #fee2e2; --blue-bg: #dbeafe; --grey-bg: #eceef2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1218; --card: #171b23; --fg: #e5e7eb; --muted: #8b93a1; --line: #262c37; --code: #11151c;
+      --accent: #60a5fa; --ok: #34d399; --warn: #fbbf24; --err: #f87171;
+      --ok-bg: #064e3b; --warn-bg: #4a3405; --err-bg: #4c1414; --blue-bg: #1e3a5f; --grey-bg: #262c37;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { font: 14px/1.45 system-ui, -apple-system, sans-serif; margin: 0; color: var(--fg); background: var(--bg); }
+  main { max-width: 1400px; margin: 0 auto; padding: 1.25rem 1.5rem 3rem; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1rem; margin-bottom: 1.25rem; }
+  h1 { font-size: 1.25rem; margin: 0; letter-spacing: -.01em; }
+  h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 1.75rem 0 .6rem; }
+  a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+  .muted { color: var(--muted); }
+  code, pre { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+  .grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+  .kpi { padding: .75rem 1rem; }
+  .kpi .label { font-size: .75rem; color: var(--muted); }
+  .kpi .value { font-size: 1.4rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .quotas { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .quota { padding: .75rem 1rem; }
+  .bar { height: 6px; border-radius: 3px; background: var(--grey-bg); margin-top: .4rem; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--ok); }
+  .bar.warn span { background: var(--warn); } .bar.err span { background: var(--err); }
+  .vehicles { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+  .vehicle { padding: .9rem 1rem; }
+  .vehicle .top { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+  .vehicle dl { display: grid; grid-template-columns: auto 1fr; gap: .2rem .8rem; margin: .7rem 0 0; }
+  .vehicle dt { color: var(--muted); } .vehicle dd { margin: 0; }
+  .pill { display: inline-block; padding: .05rem .55rem; border-radius: 999px; font-size: .78rem; font-weight: 500; background: var(--grey-bg); white-space: nowrap; }
+  .pill.ok { background: var(--ok-bg); color: var(--ok); } .pill.warn { background: var(--warn-bg); color: var(--warn); }
+  .pill.err { background: var(--err-bg); color: var(--err); } .pill.driving { background: var(--blue-bg); color: var(--accent); }
+  .pill.charging { background: var(--ok-bg); color: var(--ok); }
+  .due { display: inline-block; margin: 0 .6rem .15rem 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .table { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: .45rem .75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  th { font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .err { color: var(--err); }
+  pre { margin: .4rem 0 0; padding: .6rem; background: var(--code); border-radius: 6px; overflow-x: auto; max-height: 24rem; }
+  summary { cursor: pointer; color: var(--muted); }
+  nav { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .6rem; }
+  nav a { padding: .15rem .65rem; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--fg); font-size: .82rem; }
+  nav a.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  nav a:hover { text-decoration: none; border-color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Runsten · collector</h1>
+  <span class="muted">{{clock .Now}} UTC · up {{ago .Started}}</span>
+  <span class="muted">{{if .Paused}}<a href="?vehicle={{.Filter.Vehicle}}&amp;endpoint={{.Filter.Endpoint}}{{if .Errors}}&amp;errors=1{{end}}">resume refresh</a>{{else}}refreshed every 3 s · <a href="?pause=1&amp;vehicle={{.Filter.Vehicle}}&amp;endpoint={{.Filter.Endpoint}}{{if .Errors}}&amp;errors=1{{end}}">pause</a>{{end}}</span>
+</header>
+
+<div class="grid">
+  <div class="card kpi"><div class="label">Last vehicle pass</div><div class="value">{{ago .LastPass}}</div></div>
+  <div class="card kpi"><div class="label">Calls</div><div class="value">{{.Totals.Calls}}</div></div>
+  <div class="card kpi"><div class="label">Stored</div><div class="value">{{.Totals.Stored}}</div></div>
+  <div class="card kpi"><div class="label">Duplicates</div><div class="value">{{.Totals.Dups}}</div></div>
+  <div class="card kpi"><div class="label">Errors</div><div class="value{{if .Totals.Errors}} err{{end}}">{{.Totals.Errors}} <span class="muted" style="font-size:.8rem">({{.Totals.ErrorRate}} %)</span></div></div>
+</div>
+
+<h2>Quota · calls over the last 24 h (estimate, this process)</h2>
+<div class="quotas">
+  {{range .Quotas}}
+  <div class="card quota">
+    <div><code>{{.API}}</code> <span class="muted">· {{.Used}} / {{.Limit}}</span></div>
+    <div class="bar{{if ge .Percent 90}} err{{else if ge .Percent 70}} warn{{end}}"><span style="width: {{.Percent}}%"></span></div>
+  </div>
+  {{end}}
+</div>
+
+<h2>Vehicles</h2>
+{{if .Vehicles}}
+<div class="vehicles">
+  {{range .Vehicles}}
+  <div class="card vehicle">
+    <div class="top">
+      <a href="?vehicle={{.VehicleID}}"><code>{{.VIN}}</code></a>
+      <span class="pill {{.Mode}}">{{.Mode}}</span>
+    </div>
+    <dl>
+      <dt>Seen</dt><dd>{{ago .At}} <span class="muted">({{clock .At}})</span></dd>
+      <dt>Connection</dt><dd>{{if .ReauthReason}}<span class="pill err">re-authentication required</span><br><span class="muted">{{.ReauthReason}}</span><br>open <code>/auth/volvo/start</code> on runsten-api{{else}}<span class="pill ok">active</span>{{end}}</dd>
+      <dt>Application key</dt><dd>{{if or (eq .Key "refused") (eq .Key "instance refused") (eq .Key "missing")}}<span class="pill err">{{.Key}}</span>{{else}}{{or .Key "—"}}{{end}}</dd>
+      <dt>Engine</dt><dd>{{or .Engine "—"}}</dd>
+      <dt>Charging</dt><dd>{{or .Charging "—"}}</dd>
+      {{if not .PausedUntil.IsZero}}<dt>Paused</dt><dd><span class="pill warn">account: {{until .PausedUntil}}</span></dd>{{end}}
+      {{range $api, $at := .APIBlocked}}<dt>Blocked</dt><dd><span class="pill err">quota {{$api}}: {{until $at}}</span></dd>{{end}}
+      <dt>Next calls</dt><dd>{{range .Due}}<span class="due"><code>{{.Endpoint}}</code> <span class="muted">{{until .At}}</span></span>{{else}}—{{end}}</dd>
+    </dl>
+  </div>
+  {{end}}
+</div>
+{{else}}<p class="muted">No vehicle polled yet.</p>{{end}}
+
+<h2>Endpoints · since start</h2>
+<div class="card table">
+<table>
+  <tr><th>Endpoint</th><th class="num">Calls</th><th class="num">Stored</th><th class="num">Duplicates</th><th class="num">Errors</th><th class="num">Avg</th><th>Last</th><th>Last error</th></tr>
+  {{range .Stats}}
+  <tr>
+    <td><a href="?endpoint={{.Endpoint}}"><code>{{.Endpoint}}</code></a></td>
+    <td class="num">{{.Calls}}</td><td class="num">{{.Stored}}</td><td class="num">{{.Dups}}</td>
+    <td class="num{{if .Errors}} err{{end}}">{{.Errors}}</td>
+    <td class="num">{{.AvgMS}} ms</td>
+    <td>{{ago .Last}}</td>
+    <td>{{if .LastErr}}<span class="err">{{.LastErr}}</span>{{else}}<span class="muted">—</span>{{end}}</td>
+  </tr>
+  {{else}}
+  <tr><td colspan="8" class="muted">No calls yet.</td></tr>
+  {{end}}
+</table>
+</div>
+
+<h2>Recent calls · {{len .Calls}} shown of {{.Total}} in memory</h2>
+<nav>
+  <a href="?vehicle={{.Filter.Vehicle}}"{{if not (or .Errors .Filter.Endpoint)}} class="on"{{end}}>all</a>
+  <a href="?errors=1&amp;vehicle={{.Filter.Vehicle}}"{{if .Errors}} class="on"{{end}}>errors</a>
+  {{range .Endpoints}}<a href="?endpoint={{.}}&amp;vehicle={{$.Filter.Vehicle}}"{{if eq (print .) $.Filter.Endpoint}} class="on"{{end}}>{{.}}</a>{{end}}
+  {{if .Filter.Vehicle}}<a href="?">× vehicle filter</a>{{end}}
+</nav>
+<div class="card table">
+<table>
+  <tr><th>Time</th><th>VIN</th><th>Endpoint</th><th>Status</th><th class="num">Duration</th><th>Response</th></tr>
+  {{range .Calls}}
+  <tr>
+    <td>{{clock .At}}</td>
+    <td><code>{{.VIN}}</code></td>
+    <td><code>{{.Endpoint}}</code></td>
+    <td>
+      {{if .Err}}<span class="pill err">{{if .Status}}{{.Status}}{{else}}—{{end}}</span>
+      {{else if .Stored}}<span class="pill ok">200 · stored</span>
+      {{else}}<span class="pill">200 · duplicate</span>{{end}}
+    </td>
+    <td class="num">{{ms .Duration}} ms</td>
+    <td>
+      {{if .Err}}<span class="err">{{.Err}}</span>{{end}}
+      {{if .Payload}}<details><summary>{{len .Payload}} bytes</summary><pre>{{pretty .Payload}}</pre></details>{{end}}
+    </td>
+  </tr>
+  {{else}}
+  <tr><td colspan="6" class="muted">No calls.</td></tr>
+  {{end}}
+</table>
+</div>
+</main>
+</body>
+</html>

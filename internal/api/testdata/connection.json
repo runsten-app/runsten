@@ -1,0 +1,10 @@
+{
+  "connected": false,
+  "client_id": "runsten-dev",
+  "instance_key": null,
+  "api_key": {
+    "last4": "cdef",
+    "set_at": "2026-09-28T05:00:00Z",
+    "refused_at": null
+  }
+}

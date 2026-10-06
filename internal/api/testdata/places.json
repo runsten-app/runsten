@@ -1,0 +1,120 @@
+{
+  "items": [
+    {
+      "id": "5e1f0000-0000-4000-8000-000000000001",
+      "name": "Maison de Tante Agathe",
+      "position": {
+        "lat": 45.764,
+        "lon": 4.8357
+      },
+      "radius_m": 100,
+      "time_zone": "Europe/Paris",
+      "without_position": true,
+      "max_power_kw": 11,
+      "efficiency": null,
+      "tariff": [
+        {
+          "valid_from": "2026-02-01",
+          "price_per_kwh": 0.2516,
+          "windows": [
+            {
+              "days": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ],
+              "from": "22:00",
+              "to": "06:00",
+              "months": [],
+              "price_per_kwh": 0.1828
+            }
+          ]
+        },
+        {
+          "valid_from": "2026-08-01",
+          "price_per_kwh": 0.2142,
+          "windows": [
+            {
+              "days": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ],
+              "from": "23:00",
+              "to": "07:00",
+              "months": [
+                11,
+                12,
+                1,
+                2,
+                3
+              ],
+              "price_per_kwh": 0.1589
+            },
+            {
+              "days": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ],
+              "from": "02:00",
+              "to": "07:00",
+              "months": [
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10
+              ],
+              "price_per_kwh": 0.1589
+            },
+            {
+              "days": [
+                "sat",
+                "sun"
+              ],
+              "from": "00:00",
+              "to": "00:00",
+              "months": [],
+              "price_per_kwh": 0.19
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5e1f0000-0000-4000-8000-000000000002",
+      "name": "Work",
+      "position": {
+        "lat": 45.7797,
+        "lon": 4.927
+      },
+      "radius_m": 250,
+      "time_zone": "Europe/Paris",
+      "without_position": false,
+      "max_power_kw": null,
+      "efficiency": 0.9,
+      "tariff": [
+        {
+          "valid_from": "2026-01-01",
+          "price_per_kwh": 0,
+          "windows": []
+        }
+      ]
+    }
+  ]
+}

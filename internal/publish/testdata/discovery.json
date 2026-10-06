@@ -1,0 +1,305 @@
+{
+  "homeassistant/sensor/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/battery_level/config": {
+    "name": "Battery",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_battery_level",
+    "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/battery_level",
+    "value_template": "{{ value if value != '' else 'None' }}",
+    "device_class": "battery",
+    "state_class": "measurement",
+    "unit_of_measurement": "%",
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  },
+  "homeassistant/sensor/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/range/config": {
+    "name": "Range",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_range",
+    "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/range_km",
+    "value_template": "{{ value if value != '' else 'None' }}",
+    "device_class": "distance",
+    "state_class": "measurement",
+    "unit_of_measurement": "km",
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  },
+  "homeassistant/sensor/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/charging_status/config": {
+    "name": "Charging status",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_charging_status",
+    "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/charging_status",
+    "value_template": "{{ value if value != '' else 'None' }}",
+    "device_class": "enum",
+    "options": [
+      "idle",
+      "charging",
+      "done",
+      "scheduled",
+      "discharging",
+      "error"
+    ],
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  },
+  "homeassistant/sensor/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/charge_type/config": {
+    "name": "Charge type",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_charge_type",
+    "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/charge_type",
+    "value_template": "{{ value if value != '' else 'None' }}",
+    "device_class": "enum",
+    "options": [
+      "AC",
+      "DC"
+    ],
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  },
+  "homeassistant/sensor/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/charging_power/config": {
+    "name": "Charging power",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_charging_power",
+    "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/charging_power_kw",
+    "value_template": "{{ value if value != '' else 'None' }}",
+    "device_class": "power",
+    "state_class": "measurement",
+    "unit_of_measurement": "kW",
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  },
+  "homeassistant/sensor/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/target_soc/config": {
+    "name": "Charge limit",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_target_soc",
+    "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/target_soc",
+    "value_template": "{{ value if value != '' else 'None' }}",
+    "unit_of_measurement": "%",
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  },
+  "homeassistant/sensor/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/odometer/config": {
+    "name": "Odometer",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_odometer",
+    "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/odometer_km",
+    "value_template": "{{ value if value != '' else 'None' }}",
+    "device_class": "distance",
+    "state_class": "total_increasing",
+    "unit_of_measurement": "km",
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  },
+  "homeassistant/sensor/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/read_at/config": {
+    "name": "Last read",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_read_at",
+    "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/read_at",
+    "value_template": "{{ value if value != '' else 'None' }}",
+    "device_class": "timestamp",
+    "entity_category": "diagnostic",
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  },
+  "homeassistant/binary_sensor/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/plug/config": {
+    "name": "Plug",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_plug",
+    "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/plug",
+    "value_template": "{{ 'ON' if value == 'connected' else ('OFF' if value == 'disconnected' else 'None') }}",
+    "device_class": "plug",
+    "payload_on": "ON",
+    "payload_off": "OFF",
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  },
+  "homeassistant/binary_sensor/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/charging/config": {
+    "name": "Charging",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_charging",
+    "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/charging_status",
+    "value_template": "{{ 'ON' if value == 'charging' else ('OFF' if value != '' else 'None') }}",
+    "device_class": "battery_charging",
+    "payload_on": "ON",
+    "payload_off": "OFF",
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  },
+  "homeassistant/binary_sensor/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/engine/config": {
+    "name": "Engine",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_engine",
+    "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/engine",
+    "value_template": "{{ 'ON' if value == 'running' else ('OFF' if value == 'stopped' else 'None') }}",
+    "device_class": "running",
+    "payload_on": "ON",
+    "payload_off": "OFF",
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  },
+  "homeassistant/device_tracker/runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/location/config": {
+    "name": "Location",
+    "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_location",
+    "json_attributes_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/location",
+    "json_attributes_template": "{{ value if value != '' else '{\"latitude\": null, \"longitude\": null}' }}",
+    "source_type": "gps",
+    "availability_topic": "runsten/status",
+    "payload_available": "online",
+    "payload_not_available": "offline",
+    "qos": 1,
+    "device": {
+      "identifiers": [
+        "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69"
+      ],
+      "name": "EX30 Single Motor Extended Range · 2025",
+      "manufacturer": "Volvo",
+      "model": "EX30 Single Motor Extended Range"
+    },
+    "origin": {
+      "name": "Runsten",
+      "support_url": "https://runsten.app"
+    }
+  }
+}

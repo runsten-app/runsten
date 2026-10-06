@@ -1,0 +1,398 @@
+# Quality and security pipeline. `task ci` runs exactly what the remote CI runs, in three
+# levels the CI runs as parallel jobs, by what they need: `task unit` (Go or Node alone:
+# unit-go and unit-web, each its own job, run only when its side changed),
+# `task integration` (containers: PostgreSQL, Redocly, Trivy) and `task system` (the
+# images and the Compose stack, browser tests included).
+#
+# Task is pinned in tools/go.mod, apart from the application's modules: `task` if installed
+# (same major version), or `go tool -modfile=tools/go.mod task`, as the CI does.
+version: "3"
+
+vars:
+  GO: go
+  TRIVY: aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+  TRIVY_RUN: docker run --rm -v trivy-cache:/root/.cache
+  TRIVY_FLAGS: --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed
+  REDOCLY: redocly/cli:2.54.3@sha256:8e3a6fee4e002900d22fb35595e7f7346524b9a93acb29615062b3cbfc7bb55c
+  # Browser tests only (scripts/e2e.sh), never shipped: not scanned by trivy image. Its
+  # version is the one of @playwright/test in web/package.json.
+  PLAYWRIGHT: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+  # runsten-web has its own Dockerfile target, with the front end's build.
+  IMAGES: runsten-simulator runsten-collector runsten-api runsten-web
+  PLATFORMS: linux/amd64 linux/arm64
+  COVER_MIN: 70
+  NPM: npm --prefix web
+
+  # Local PostgreSQL, shared by tests (one throwaway database per test) and development.
+  POSTGRES: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+  DB_NAME: runsten-postgres
+  DB_PORT: 55432
+  DB_ADMIN: postgres://postgres:runsten@localhost:{{.DB_PORT}}/postgres?sslmode=disable
+  DB_DEV: postgres://postgres:runsten@localhost:{{.DB_PORT}}/runsten?sslmode=disable
+
+  # Local MQTT broker of the development stack (run-mqtt), with deploy/mosquitto's
+  # configuration. Pinned in compose.yaml too (its mqtt profile): update them together.
+  MOSQUITTO: eclipse-mosquitto:2.1.2-alpine@sha256:38c0da4f2ef84284d47b3b3eeea1cb3bdeabe81ee10caf0cd5c5ff61ee3ea408
+  MQTT_NAME: runsten-mosquitto
+  MQTT_PORT: 1883
+
+  # SCENARIO=errand,ex30: one vehicle per scenario, under one Volvo ID.
+  SCENARIO: commute
+  SIM_SCENARIOS: '{{range $i, $s := splitList "," .SCENARIO}}{{if $i}},{{end}}scenarios/{{$s}}.yaml{{end}}'
+
+  # Development-only user of runsten-api, like the key below: never on a real instance.
+  DEV_USER: admin
+  DEV_PASSWORD: runsten-dev-password
+
+  # Development wiring to the simulator: its Volvo API and Volvo ID on :8080, and its
+  # development application (client runsten-dev). Development-only encryption key (32 zero bytes).
+  DEV_ENV: >-
+    RUNSTEN_DATABASE_URL="{{.DB_DEV}}"
+    RUNSTEN_TOKEN_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+    RUNSTEN_VOLVO_API_KEY=dev RUNSTEN_VOLVO_BASE_URL=http://localhost:8080 RUNSTEN_VOLVO_AUTH_URL=http://localhost:8080
+    RUNSTEN_VOLVO_CLIENT_ID=runsten-dev RUNSTEN_VOLVO_CLIENT_SECRET=runsten-dev-secret
+
+tasks:
+  default:
+    desc: List tasks
+    silent: true
+    cmds:
+      - '"{{.TASK_EXE}}" --list'
+
+  ci:
+    desc: "Full pipeline (same as CI): unit, integration, then system"
+    cmds:
+      - task: unit
+      - task: integration
+      - task: system
+
+  unit:
+    desc: "Go and Node alone: format, lint, unit tests, vulnerabilities, build"
+    cmds:
+      - task: unit-go
+      - task: unit-web
+
+  unit-go:
+    desc: "Go alone: format, lint, tests without PostgreSQL, govulncheck, build"
+    cmds:
+      - task: fmt-check
+      - task: lint
+      - task: test-unit
+      - task: vuln
+      - task: build
+
+  unit-web:
+    desc: "Node alone: the front end's types, lint, Vitest, npm audit, build"
+    cmds:
+      - task: web-lint
+      - task: web-test
+      - task: web-audit
+      - task: web-build
+
+  integration:
+    desc: "In containers: the tests with PostgreSQL (race detector, coverage), the API's lint, trivy fs"
+    cmds:
+      - task: lint-api
+      - task: trivy-fs
+      - task: cover
+      - task: test-norace
+
+  system:
+    desc: The images and their scans, both platforms, the Compose stack end to end (browser tests included)
+    cmds:
+      - task: image
+      - task: trivy-image
+      - task: image-platforms
+      - task: compose-test
+
+  fmt:
+    desc: Format the code (Go and web/)
+    deps: [web-install]
+    cmds:
+      - "{{.GO}} tool golangci-lint fmt ./..."
+      - "{{.NPM}} run format"
+
+  fmt-check:
+    desc: Fail if the code is not formatted
+    silent: true
+    cmds:
+      - |
+        out="$({{.GO}} tool golangci-lint fmt --diff ./...)"
+        if [ -n "$out" ]; then echo "$out"; echo "→ run task fmt"; exit 1; fi
+
+  lint:
+    desc: Static analysis, security (gosec) and architecture rules (depguard, forbidigo)
+    cmds:
+      - "{{.GO}} tool golangci-lint run ./..."
+
+  # The OpenAPI description of /api/v1; the tests of internal/api validate the responses against it.
+  lint-api:
+    desc: Lint api/openapi.yaml (Redocly CLI, recommended rules, warnings as errors)
+    cmds:
+      - >-
+        docker run --rm -e REDOCLY_TELEMETRY=off -e REDOCLY_SUPPRESS_UPDATE_NOTICE=true
+        -v "{{.ROOT_DIR}}/api:/spec:ro" -w /spec {{.REDOCLY}} lint openapi.yaml
+
+  # The front end (web/) needs the Node version of web/.nvmrc (nvm use, in web/). Skipped
+  # while its sources are unchanged and web/node_modules is there.
+  web-install:
+    desc: Install the front end's dependencies (npm ci)
+    sources: [web/package.json, web/package-lock.json, web/.nvmrc]
+    generates: [web/node_modules/.package-lock.json]
+    cmds:
+      - cmd: |
+          want="v$(cat web/.nvmrc)"; have="$(node --version 2>/dev/null)"
+          if [ "$have" != "$want" ]; then echo "web/ needs Node $want (found ${have:-none}): cd web && nvm use"; exit 1; fi
+        silent: true
+      - "{{.NPM}} ci"
+
+  web-lint:
+    desc: "Front end: types (vue-tsc), ESLint, Prettier"
+    deps: [web-install]
+    cmds:
+      - "{{.NPM}} run typecheck"
+      - "{{.NPM}} run lint"
+
+  web-test:
+    desc: "Front end: unit and component tests (Vitest) with coverage"
+    deps: [web-install]
+    cmds:
+      - "{{.NPM}} test"
+
+  # Shipped dependencies fail from moderate up; development ones (never in the image) from high.
+  web-audit:
+    desc: "Front end: known vulnerabilities in dependencies (npm audit)"
+    deps: [web-install]
+    cmds:
+      - "{{.NPM}} audit --omit=dev --audit-level=moderate"
+      - "{{.NPM}} audit --audit-level=high"
+
+  web-build:
+    desc: "Front end: build into web/dist"
+    deps: [web-install]
+    cmds:
+      - "{{.NPM}} run build"
+
+  run-web:
+    desc: Front end dev server on http://127.0.0.1:5173, relaying /api and /auth to runsten-api (task run-api)
+    deps: [web-install]
+    cmds:
+      - "{{.NPM}} run dev"
+
+  # Without PostgreSQL the store's tests skip themselves: set empty, a database of the
+  # environment is not used either.
+  test-unit:
+    desc: Tests without PostgreSQL (the store's skipped), nor race detector
+    cmds:
+      - RUNSTEN_TEST_DATABASE_URL= {{.GO}} test -count=1 ./...
+
+  test:
+    desc: Tests with race detector and coverage
+    cmds:
+      - task: db-up
+      - >-
+        RUNSTEN_TEST_DATABASE_URL="{{.DB_ADMIN}}" {{.GO}} test -race -count=1 -covermode=atomic
+        -coverpkg=./internal/... -coverprofile=coverage.out ./...
+
+  # The race detector and coverage change the generated code: a bug may show only in a
+  # plain build (an unspecified evaluation order did, in store.eventPage). This pass runs
+  # the tests as the binaries are built, in about half the time of task test.
+  test-norace:
+    desc: Tests without race detector nor coverage, as the binaries are compiled
+    cmds:
+      - task: db-up
+      - RUNSTEN_TEST_DATABASE_URL="{{.DB_ADMIN}}" {{.GO}} test -count=1 ./...
+
+  cover:
+    desc: Check the coverage threshold on internal/
+    cmds:
+      - task: test
+      - cmd: |
+          total=$({{.GO}} tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
+          echo "internal/ coverage: $total% (minimum {{.COVER_MIN}}%)"
+          awk -v t="$total" -v m={{.COVER_MIN}} 'BEGIN { exit (t + 0 < m) }'
+        silent: true
+
+  vuln:
+    desc: Known vulnerabilities (dependencies and standard library)
+    cmds:
+      - "{{.GO}} tool govulncheck ./..."
+
+  build:
+    desc: Build the binaries into bin/
+    cmds:
+      - CGO_ENABLED=0 {{.GO}} build -trimpath -ldflags="-s -w" -o bin/ ./cmd/...
+
+  trivy-fs:
+    desc: Vulnerabilities, secrets and misconfigurations in the repository
+    cmds:
+      - >-
+        {{.TRIVY_RUN}} -v "{{.ROOT_DIR}}:/src:ro" {{.TRIVY}} fs {{.TRIVY_FLAGS}}
+        --scanners vuln,secret,misconfig --skip-dirs /src/bin,/src/web/node_modules,/src/web/dist,/src/web/e2e-results /src
+
+  image:
+    desc: Build the images
+    cmds:
+      - |
+        for c in {{.IMAGES}}; do t=; [ $c = runsten-web ] && t="--target runsten-web"
+          docker build --build-arg CMD=$c $t -t $c:dev . || exit 1; done
+
+  trivy-image:
+    desc: Image vulnerabilities
+    cmds:
+      - mkdir -p bin
+      - |
+        for c in {{.IMAGES}}; do
+          docker save $c:dev -o bin/$c.tar &&
+          {{.TRIVY_RUN}} -v "{{.ROOT_DIR}}/bin:/in:ro" {{.TRIVY}} image {{.TRIVY_FLAGS}} --input /in/$c.tar || exit 1
+        done
+
+  # Cross-compiled (see the Dockerfile): no emulation. Each binary must be built for its platform.
+  image-platforms:
+    desc: Build the images for linux/amd64 and linux/arm64 and check the binaries' architecture
+    cmds:
+      - rm -rf bin/platforms
+      - |
+        for p in {{.PLATFORMS}}; do for c in {{.IMAGES}}; do
+          out=bin/platforms/$(echo $p | tr / -)/$c; t=; [ $c = runsten-web ] && t="--target runsten-web"
+          docker buildx build --quiet --platform $p --build-arg CMD=$c $t --output type=local,dest=$out . >/dev/null &&
+          {{.GO}} version -m $out/app | grep -q "GOARCH=${p#linux/}$" || { echo "$c: not built for $p"; exit 1; }
+        done; done
+      - cmd: echo "images built for {{.PLATFORMS}}"
+        silent: true
+
+  # The release workflow runs it, on a tag vX.Y.Z; logged in to the registry first.
+  release-images:
+    desc: Build the images for both platforms and push them to GHCR, tagged VERSION (X.Y.Z), its minor and latest
+    requires:
+      vars: [VERSION]
+    cmds:
+      - IMAGES="{{.IMAGES}}" PLATFORMS="{{.PLATFORMS}}" scripts/release-images.sh {{.VERSION}}
+
+  compose-sim:
+    desc: Compose stack against the simulator (sim.env) and its user; then task connect-sim
+    cmds:
+      - docker compose --env-file sim.env up --detach --build --wait
+      - cmd: >-
+          printf '%s\n' '{{.DEV_PASSWORD}}' | docker compose --env-file sim.env run --rm --no-deps -T api user create {{.DEV_USER}}
+          || echo "user {{.DEV_USER}} not created (it may exist already)"
+        silent: true
+
+  compose-sim-down:
+    desc: Stop the simulated Compose stack and remove its data
+    cmds:
+      - docker compose --env-file sim.env down --volumes
+
+  compose-test:
+    desc: End-to-end test of compose.yaml against the simulator (user, OAuth, API, browser, MQTT, backup, restore)
+    deps: [web-install]
+    cmds:
+      - PLAYWRIGHT_IMAGE={{.PLAYWRIGHT}} scripts/compose-test.sh
+
+  # Against task compose-sim on the errand scenario, once task connect-sim is done and its
+  # reconstructed trip has shown up (about three minutes after the start).
+  e2e:
+    desc: Browser tests (Playwright, axe) against RUNSTEN_SIM_SCENARIO=errand task compose-sim; results in web/e2e-results
+    deps: [web-install]
+    cmds:
+      - PLAYWRIGHT_IMAGE={{.PLAYWRIGHT}} scripts/e2e.sh runsten-sim_default
+
+  db-up:
+    desc: Start PostgreSQL locally (container runsten-postgres, port 55432)
+    silent: true
+    cmds:
+      - >-
+        docker inspect {{.DB_NAME}} >/dev/null 2>&1 || docker run -d --name {{.DB_NAME}}
+        -e POSTGRES_PASSWORD=runsten -e POSTGRES_DB=runsten -p 127.0.0.1:{{.DB_PORT}}:5432 {{.POSTGRES}} >/dev/null
+      - docker start {{.DB_NAME}} >/dev/null
+      - until docker exec {{.DB_NAME}} pg_isready -h 127.0.0.1 -U postgres -q; do sleep 1; done
+
+  db-down:
+    desc: Remove the local PostgreSQL container and its data
+    cmds:
+      - docker rm -f {{.DB_NAME}}
+
+  run-sim:
+    desc: Run the simulator at ×60 (SCENARIO=missed-trip, quota-exhausted…, errand,ex30 for two vehicles; default commute)
+    cmds:
+      - SIM_SCENARIO={{.SIM_SCENARIOS}} SIM_SPEED=60 {{.GO}} run ./cmd/runsten-simulator
+
+  run-api:
+    desc: runsten-api against the simulator (task run-sim alongside), on http://127.0.0.1:8081; addresses from OpenStreetMap's Nominatim unless RUNSTEN_GEOCODER_URL says otherwise, empty for none
+    cmds:
+      - task: db-up
+      - >-
+        {{.DEV_ENV}} RUNSTEN_API_ADDR=127.0.0.1:8081
+        RUNSTEN_VOLVO_REDIRECT_URI=http://127.0.0.1:8081/auth/volvo/callback
+        RUNSTEN_APP_URL=http://127.0.0.1:5173/
+        RUNSTEN_GEOCODER_URL=${RUNSTEN_GEOCODER_URL-https://nominatim.openstreetmap.org}
+        {{.GO}} run ./cmd/runsten-api
+
+  dev-user:
+    desc: Create the development user of runsten-api (admin, password in DEV_PASSWORD) in the local database
+    cmds:
+      - task: db-up
+      - printf '%s\n' '{{.DEV_PASSWORD}}' | RUNSTEN_DATABASE_URL="{{.DB_DEV}}" {{.GO}} run ./cmd/runsten-api user create {{.DEV_USER}}
+
+  # Signs in as the development user, then follows the connection up to the way back to
+  # the web interface, which may not run. In the Compose stack, runsten-api sends the
+  # browser to http://simulator:8080: curl reaches it through its published port.
+  connect-sim:
+    desc: Sign in as the development user and connect the simulated Volvo ID, as a browser would (curl)
+    silent: true
+    cmds:
+      - |
+        jar=$(mktemp)
+        trap 'rm -f "$jar"' EXIT
+        curl -fsS -c "$jar" -H 'Content-Type: application/json' -o /dev/null \
+          -d '{"username":"{{.DEV_USER}}","password":"{{.DEV_PASSWORD}}"}' http://127.0.0.1:8081/api/v1/session || exit 1
+        next() { curl -fsS -b "$jar" -c "$jar" --connect-to simulator:8080:127.0.0.1:8080 -o /dev/null -w '%{redirect_url}' "$1"; }
+        authorize=$(next http://127.0.0.1:8081/auth/volvo/start) && callback=$(next "$authorize") && back=$(next "$callback") &&
+        case "$back" in *volvo=connected) echo "Volvo ID connected" ;; *) echo "not connected: $back" >&2; exit 1 ;; esac
+
+  # In the foreground, removed when it stops: tilt up runs it as a service.
+  run-mqtt:
+    desc: Mosquitto on 127.0.0.1:1883 (container runsten-mosquitto), the development stack's MQTT broker
+    cmds:
+      - docker rm -f {{.MQTT_NAME}} >/dev/null 2>&1 || true
+      - >-
+        docker run --rm --name {{.MQTT_NAME}} --user 1883:1883 --read-only --cap-drop ALL
+        --security-opt no-new-privileges:true -p 127.0.0.1:{{.MQTT_PORT}}:1883
+        -v "{{.ROOT_DIR}}/deploy/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro" {{.MOSQUITTO}}
+
+  # The broker of task run-mqtt, as the settings would set it: the collector of task
+  # run-collector publishes to it from its next pass.
+  dev-mqtt:
+    desc: Set the development user's MQTT broker to task run-mqtt's (mqtt://127.0.0.1:1883), through runsten-api
+    silent: true
+    cmds:
+      - |
+        jar=$(mktemp)
+        trap 'rm -f "$jar"' EXIT
+        curl -fsS -c "$jar" -H 'Content-Type: application/json' -o /dev/null \
+          -d '{"username":"{{.DEV_USER}}","password":"{{.DEV_PASSWORD}}"}' http://127.0.0.1:8081/api/v1/session || exit 1
+        curl -fsS -b "$jar" -X PUT -H 'Content-Type: application/json' -o /dev/null \
+          -d '{"url":"mqtt://127.0.0.1:{{.MQTT_PORT}}","username":"","password":"","client_id":"","topic_prefix":"runsten",
+            "discovery":true,"discovery_prefix":"homeassistant","publish_location":true}' \
+          http://127.0.0.1:8081/api/v1/mqtt && echo "MQTT broker set: mqtt://127.0.0.1:{{.MQTT_PORT}}"
+
+  mqtt-sub:
+    desc: Print every message of task run-mqtt's broker, retained ones first (mosquitto_sub -v -t '#', in its container)
+    cmds:
+      - docker exec {{.MQTT_NAME}} mosquitto_sub -v -t '#'
+
+  # The collector's time runs at ×60, like the simulator's: its readings are stamped in
+  # simulated time, so the energy of a charge is integrated over its simulated duration.
+  # A pass every real second is one every simulated minute, the active interval.
+  run-collector:
+    desc: Collector against the simulator (after task connect-sim); debug on http://127.0.0.1:8090
+    cmds:
+      - task: db-up
+      - >-
+        {{.DEV_ENV}} RUNSTEN_DEV_CLOCK_SPEED=60 RUNSTEN_POLL_TICK=1s RUNSTEN_DEBUG_ADDR=127.0.0.1:8090
+        {{.GO}} run ./cmd/runsten-collector
+
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - rm -rf bin coverage.out web/dist web/coverage web/e2e-results .task

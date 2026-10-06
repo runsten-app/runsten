@@ -1,0 +1,24 @@
+{
+  "data": {
+    "frontLeft": {
+      "timestamp": "2026-09-25T15:37:23.223565206Z",
+      "unit": null,
+      "value": "UNSPECIFIED"
+    },
+    "frontRight": {
+      "timestamp": "2026-09-25T15:37:23.223565206Z",
+      "unit": null,
+      "value": "NO_WARNING"
+    },
+    "rearLeft": {
+      "timestamp": "2026-09-25T15:37:23.223565206Z",
+      "unit": null,
+      "value": "LOW_PRESSURE"
+    },
+    "rearRight": {
+      "timestamp": "2026-09-25T15:37:23.223565206Z",
+      "unit": null,
+      "value": "HIGH_PRESSURE"
+    }
+  }
+}

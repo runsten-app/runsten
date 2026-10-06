@@ -1,0 +1,83 @@
+# Release: a tag vX.Y.Z pushed on a commit of main whose ci run passed publishes its images
+# to GHCR (task release-images: linux/amd64 and linux/arm64, SBOM and provenance; X.Y.Z,
+# X.Y and latest) and creates the GitHub Release, its notes generated from the pull
+# requests since the previous tag, the images' digests first. A pre-release
+# (vX.Y.Z-rc.N) is published under its own tag only, and marked as such.
+#
+# Nothing is tested again: the tag must name a commit ci checked on main, whose system
+# job built and scanned the same Dockerfile. A tag pushed before its run passed fails
+# here: re-run this workflow once it has.
+#
+# The packages (ghcr.io/runsten-app/runsten-*) follow the repository through their
+# source annotation; while it is private, so are they. When it goes public, make each
+# package public too (its settings on GitHub): a package's visibility does not follow.
+name: release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      actions: read # ci's runs
+      contents: write # the release
+      packages: write # GHCR
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # main, to check the tag is on it
+          persist-credentials: false
+      - name: Check the tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main ||
+            { echo "::error::$GITHUB_REF_NAME is not on main"; exit 1; }
+          passed=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&event=push&status=success" --jq .total_count)
+          [ "$passed" -gt 0 ] ||
+            { echo "::error::no passed ci run on $GITHUB_SHA: re-run this workflow once it has"; exit 1; }
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+      - name: Publish the images
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          # The default builder cannot push a multi-platform image.
+          docker buildx create --use --driver docker-container >/dev/null
+          go tool -modfile=tools/go.mod task -s release-images VERSION="${GITHUB_REF_NAME#v}" > "$RUNNER_TEMP/images.md"
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$GITHUB_REF_NAME
+          {
+            echo "## Images"
+            echo
+            echo "For \`linux/amd64\` and \`linux/arm64\`. In \`.env\`, \`RUNSTEN_VERSION=${tag#v}\`, then \`docker compose pull && docker compose up -d\` (README, Updating)."
+            echo
+            cat "$RUNNER_TEMP/images.md"
+          } > "$RUNNER_TEMP/notes.md"
+          # A release drafted on GitHub before its tag keeps its text: the images are added to it.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            { gh release view "$tag" --json body --jq .body; echo; cat "$RUNNER_TEMP/notes.md"; } > "$RUNNER_TEMP/body.md"
+            gh release edit "$tag" --notes-file "$RUNNER_TEMP/body.md"
+          else
+            pre=()
+            [[ $tag != *-* ]] || pre=(--prerelease)
+            gh release create "$tag" --verify-tag --title "$tag" --generate-notes --notes-file "$RUNNER_TEMP/notes.md" "${pre[@]}"
+          fi

@@ -1,0 +1,83 @@
+{
+  "vehicle_id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a01",
+  "connection": {
+    "status": "active",
+    "api_key": "instance",
+    "authorized_at": "2026-09-28T05:00:00Z",
+    "refreshed_at": "2026-09-28T06:00:00Z",
+    "reauth_at": null,
+    "reauth_reason": null
+  },
+  "checked_at": "2026-09-28T19:03:00Z",
+  "engine": {
+    "value": "stopped",
+    "reported_at": "2026-09-28T17:25:00Z",
+    "fetched_at": "2026-09-28T17:26:00Z",
+    "checked_at": "2026-09-28T19:00:00Z"
+  },
+  "soc_pct": {
+    "value": 64,
+    "reported_at": "2026-09-28T19:02:00Z",
+    "fetched_at": "2026-09-28T19:03:00Z",
+    "checked_at": "2026-09-28T19:03:00Z"
+  },
+  "range_km": {
+    "value": 256,
+    "reported_at": "2026-09-28T19:02:00Z",
+    "fetched_at": "2026-09-28T19:03:00Z",
+    "checked_at": "2026-09-28T19:03:00Z"
+  },
+  "odometer_km": {
+    "value": 12473,
+    "reported_at": "2026-09-28T17:25:00Z",
+    "fetched_at": "2026-09-28T17:30:00Z",
+    "checked_at": "2026-09-28T19:00:00Z"
+  },
+  "position": {
+    "value": {
+      "lat": 45.764,
+      "lon": 4.8357
+    },
+    "reported_at": "2026-09-28T17:25:00Z",
+    "fetched_at": "2026-09-28T17:30:00Z",
+    "checked_at": "2026-09-28T18:30:00Z"
+  },
+  "battery_capacity_kwh": {
+    "value": 78.012,
+    "reported_at": null,
+    "fetched_at": "2026-09-28T05:00:00Z",
+    "checked_at": "2026-09-28T05:00:00Z"
+  },
+  "charging": {
+    "status": {
+      "value": "charging",
+      "reported_at": "2026-09-28T19:02:00Z",
+      "fetched_at": "2026-09-28T19:03:00Z",
+      "checked_at": "2026-09-28T19:03:00Z"
+    },
+    "cable": {
+      "value": "connected",
+      "reported_at": "2026-09-28T19:02:00Z",
+      "fetched_at": "2026-09-28T19:03:00Z",
+      "checked_at": "2026-09-28T19:03:00Z"
+    },
+    "type": {
+      "value": "AC",
+      "reported_at": "2026-09-28T19:02:00Z",
+      "fetched_at": "2026-09-28T19:03:00Z",
+      "checked_at": "2026-09-28T19:03:00Z"
+    },
+    "power_w": {
+      "value": 7400,
+      "reported_at": "2026-09-28T19:02:00Z",
+      "fetched_at": "2026-09-28T19:03:00Z",
+      "checked_at": "2026-09-28T19:03:00Z"
+    },
+    "target_soc_pct": {
+      "value": 80,
+      "reported_at": "2026-09-28T19:02:00Z",
+      "fetched_at": "2026-09-28T19:03:00Z",
+      "checked_at": "2026-09-28T19:03:00Z"
+    }
+  }
+}

@@ -1,0 +1,52 @@
+# The battery page filled in about 20 minutes at ×60: an EX30 of 2024 (recognized, 64 kWh
+# usable) drives 120 km, about 32 points of SoC, and charges back to 80 % at 11 kW, six
+# times over. Each charge is long enough and steady enough to give an estimate of the
+# capacity from its charging power: from the fifth one, the page shows the estimated
+# capacity and its deviation from the data sheet. The evolution waits for 12 months of
+# history, which no scenario holds.
+#
+# The VIN is fictitious; its motor code (EL) is the Extended Range's, as in ex30.
+# Fictitious coordinates (Lyon, Annecy).
+vin: YV1EL00000EX30002
+start: 2026-09-28T05:00:00Z
+vehicle:
+  profile: bev-generic
+  model: EX30
+  modelYear: 2024
+  batteryKWh: 69
+  usableKWh: 64
+  consumptionKWhPer100km: 17
+  chargingCurrentLimitA: 16
+  soc: 80
+  targetSoc: 80
+  odometerKm: 12400
+  place: home
+places:
+  home: { lat: 45.7640, lon: 4.8357 }
+  annecy: { lat: 45.8992, lon: 6.1294 }
+steps:
+  - park: { duration: 15m }
+  - drive: { to: annecy, distanceKm: 120, duration: 1h30m }
+  - park: { duration: 15m }
+  - charge: { type: AC, powerKW: 11, untilSoc: 80 }
+  - park: { duration: 15m }
+  - drive: { to: home, distanceKm: 120, duration: 1h30m }
+  - park: { duration: 15m }
+  - charge: { type: AC, powerKW: 11, untilSoc: 80 }
+  - park: { duration: 15m }
+  - drive: { to: annecy, distanceKm: 120, duration: 1h30m }
+  - park: { duration: 15m }
+  - charge: { type: AC, powerKW: 11, untilSoc: 80 }
+  - park: { duration: 15m }
+  - drive: { to: home, distanceKm: 120, duration: 1h30m }
+  - park: { duration: 15m }
+  - charge: { type: AC, powerKW: 11, untilSoc: 80 }
+  - park: { duration: 15m }
+  - drive: { to: annecy, distanceKm: 120, duration: 1h30m }
+  - park: { duration: 15m }
+  - charge: { type: AC, powerKW: 11, untilSoc: 80 }
+  - park: { duration: 15m }
+  - drive: { to: home, distanceKm: 120, duration: 1h30m }
+  - park: { duration: 15m }
+  - charge: { type: AC, powerKW: 11, untilSoc: 80 }
+  - park: { duration: 1h }

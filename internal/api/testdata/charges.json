@@ -1,0 +1,69 @@
+{
+  "items": [
+    {
+      "id": "2026-09-28T18:30:00.000000Z",
+      "detected_at": "2026-09-28T18:30:00Z",
+      "reconstructed": false,
+      "start": {
+        "after": "2026-09-28T18:20:00Z",
+        "before": "2026-09-28T18:30:00Z"
+      },
+      "end": {
+        "after": "2026-09-28T21:55:00Z",
+        "before": "2026-09-28T21:56:00Z"
+      },
+      "type": "AC",
+      "start_soc_pct": 47,
+      "end_soc_pct": 80,
+      "target_soc_pct": 80,
+      "energy_soc_kwh": 26.4,
+      "energy_power_kwh": 25.3,
+      "capacity_kwh": 80,
+      "capacity_source": "api",
+      "position": {
+        "lat": 45.764,
+        "lon": 4.8357
+      },
+      "place": {
+        "id": "5e1f0000-0000-4000-8000-000000000001",
+        "name": "Maison de Tante Agathe"
+      },
+      "address": null,
+      "cost": {
+        "currency": "EUR",
+        "min_minor": 524,
+        "max_minor": 579,
+        "source": "tariff",
+        "energy_kwh": 30,
+        "efficiency": 0.88,
+        "note": null
+      }
+    },
+    {
+      "id": "2026-09-28T04:00:00.000000Z",
+      "detected_at": "2026-09-28T04:00:00Z",
+      "reconstructed": true,
+      "start": {
+        "after": "2026-09-28T01:00:00Z",
+        "before": "2026-09-28T04:00:00Z"
+      },
+      "end": {
+        "after": "2026-09-28T01:00:00Z",
+        "before": "2026-09-28T04:00:00Z"
+      },
+      "type": null,
+      "start_soc_pct": 40,
+      "end_soc_pct": 62,
+      "target_soc_pct": null,
+      "energy_soc_kwh": 17.6,
+      "energy_power_kwh": null,
+      "capacity_kwh": 80,
+      "capacity_source": "api",
+      "position": null,
+      "place": null,
+      "address": null,
+      "cost": null
+    }
+  ],
+  "next_cursor": null
+}

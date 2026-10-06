@@ -1,0 +1,59 @@
+{
+  "data": {
+    "averageEnergyConsumption": {
+      "timestamp": "2026-09-25T15:37:22.226Z",
+      "unit": "kWh/100km",
+      "value": 2.2374
+    },
+    "averageEnergyConsumptionAutomatic": {
+      "timestamp": "2026-09-25T15:37:22.226Z",
+      "unit": "kWh/100km",
+      "value": 2.4732
+    },
+    "averageEnergyConsumptionSinceCharge": {
+      "timestamp": "2026-09-25T15:37:22.226Z",
+      "unit": "kWh/100km",
+      "value": 2.4732
+    },
+    "averageFuelConsumption": {
+      "timestamp": "2026-09-25T15:37:22.226Z",
+      "unit": "l/100km",
+      "value": 7.2374
+    },
+    "averageFuelConsumptionAutomatic": {
+      "timestamp": "2026-09-25T15:37:22.226Z",
+      "unit": "l/100km",
+      "value": 7.4732
+    },
+    "averageSpeed": {
+      "timestamp": "2026-09-25T15:37:22.226Z",
+      "unit": "km/h",
+      "value": 50
+    },
+    "averageSpeedAutomatic": {
+      "timestamp": "2026-09-25T15:37:22.226Z",
+      "unit": "km/h",
+      "value": 66
+    },
+    "distanceToEmptyBattery": {
+      "timestamp": "2026-09-25T15:37:22.226Z",
+      "unit": "km",
+      "value": 200
+    },
+    "distanceToEmptyTank": {
+      "timestamp": "2026-09-25T15:37:22.226Z",
+      "unit": "km",
+      "value": 1312
+    },
+    "tripMeterAutomatic": {
+      "timestamp": "2026-09-25T15:37:22.226Z",
+      "unit": "km",
+      "value": 420.0
+    },
+    "tripMeterManual": {
+      "timestamp": "2026-09-25T15:37:22.226Z",
+      "unit": "km",
+      "value": 500.0
+    }
+  }
+}

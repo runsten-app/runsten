@@ -1,0 +1,28 @@
+{
+  "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a04",
+  "vin": "YV1SMLT0000DT0004",
+  "model": {
+    "family": "EX30",
+    "model_year": 2024,
+    "variant": {
+      "id": "ex30-er-2024",
+      "name": "EX30 Single Motor Extended Range",
+      "gross_kwh": 69,
+      "net_kwh": 64,
+      "ac_max_kw": 11,
+      "ac_option_kw": 22,
+      "dc_max_kw": 153
+    },
+    "variant_source": "chosen",
+    "ac_max_kw": 11
+  },
+  "connection": {
+    "status": "active",
+    "api_key": "instance",
+    "authorized_at": "2026-09-28T05:00:00Z",
+    "refreshed_at": null,
+    "reauth_at": null,
+    "reauth_reason": null
+  },
+  "collection": null
+}

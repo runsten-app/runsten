@@ -1,0 +1,1149 @@
+{
+  "locale": {
+    "label": "Språk"
+  },
+  "auth": {
+    "intro": "Logga in i din bils loggbok.",
+    "username": "Användarnamn",
+    "password": "Lösenord",
+    "signIn": "Logga in",
+    "signOut": "Logga ut",
+    "error": {
+      "invalidCredentials": "Fel användarnamn eller lösenord.",
+      "tooManyAttempts": "För många försök. Försök igen om {minutes} min.",
+      "unavailable": "Runsten går inte att nå. Försök igen om en stund.",
+      "internal": "Något gick fel. Försök igen senare."
+    }
+  },
+  "user": {
+    "menu": "Konto: {username}"
+  },
+  "common": {
+    "unknown": "Okänt",
+    "openInOsm": "Öppna i OpenStreetMap",
+    "atLeast": "Minst",
+    "atMost": "Högst"
+  },
+  "cost": {
+    "free": "Gratis",
+    "range": "från {min} till {max}"
+  },
+  "home": {
+    "connectVolvo": "Anslut ett Volvo ID",
+    "error": "Fordonen kunde inte laddas. Försök igen om en stund.",
+    "empty": {
+      "title": "Inga fordon ännu",
+      "text": "Anslut ditt Volvo ID: Runsten läser kontots fordon."
+    }
+  },
+  "vehicle": {
+    "title": "Fordon",
+    "select": "Fordon",
+    "notFound": "Det här fordonet finns inte.",
+    "home": "Tillbaka till mina fordon"
+  },
+  "reading": {
+    "checked": "kontrollerad {age}",
+    "since": "sedan {time}",
+    "stale": "inaktuell"
+  },
+  "state": {
+    "loading": "Laddar status",
+    "error": "Statusen kunde inte laddas. Försök igen om en stund.",
+    "refreshFailed": "Statusen kunde inte uppdateras: värdena kan vara inaktuella.",
+    "lastChecked": "Senast kontrollerad {age}",
+    "neverChecked": "Inget har lästs ännu",
+    "mode": {
+      "parked": "Parkerad",
+      "driving": "Kör",
+      "charging": "Laddar",
+      "unknown": "Okänt läge"
+    },
+    "battery": "Batteri",
+    "soc": "Laddningsnivå",
+    "range": "Räckvidd",
+    "capacity": "Batterikapacitet",
+    "charging": {
+      "title": "Laddning",
+      "status": "Status",
+      "power": "Effekt",
+      "type": "Typ",
+      "cable": "Kabel",
+      "target": "Mål"
+    },
+    "vehicle": "Fordon",
+    "engine": "Motor",
+    "odometer": "Mätarställning",
+    "map": "Karta över positionen",
+    "position": "Senaste position",
+    "coordinates": "Koordinater"
+  },
+  "charging": {
+    "status": {
+      "idle": "Inaktiv",
+      "charging": "Laddar",
+      "done": "Klar",
+      "scheduled": "Schemalagd",
+      "discharging": "Urladdning",
+      "error": "Fel"
+    },
+    "cable": {
+      "connected": "Ansluten",
+      "disconnected": "Frånkopplad",
+      "fault": "Fel"
+    }
+  },
+  "engine": {
+    "running": "Igång",
+    "stopped": "Avstängd"
+  },
+  "nav": {
+    "label": "Fordon",
+    "state": "Status",
+    "battery": "Batteri",
+    "trips": "Resor",
+    "charges": "Laddningar",
+    "stats": "Statistik"
+  },
+  "event": {
+    "reconstructed": "Rekonstruerad",
+    "reconstructedHelp": "Inte sedd av insamlaren: avslöjad av vägmätaren eller laddningsnivån, den skedde någon gång inom detta intervall.",
+    "between": "Skedde mellan {from} och {to}",
+    "span": "{start} → {end}",
+    "when": "När",
+    "start": "Start",
+    "end": "Slut",
+    "duration": "Varaktighet",
+    "boundsNote": "Varje tid är ett intervall: insamlaren såg ändringen mellan två avläsningar. Varaktigheten täcker alla värden de tillåter."
+  },
+  "period": {
+    "from": "Från",
+    "to": "Till",
+    "clear": "Rensa",
+    "error": {
+      "invalidDate": "Ogiltigt datum.",
+      "inverted": "Slutet kommer före starten.",
+      "rejected": "Perioden är ogiltig."
+    },
+    "shortcut": {
+      "label": "Period",
+      "thisMonth": "Den här månaden",
+      "lastMonth": "Förra månaden",
+      "thisYear": "I år",
+      "last12Months": "Senaste 12 månaderna",
+      "all": "Allt"
+    },
+    "choose": "Välj en period",
+    "whole": "Hela historiken",
+    "since": "Sedan {day}",
+    "until": "Till och med {day}",
+    "previous": "Föregående period",
+    "next": "Nästa period"
+  },
+  "trips": {
+    "title": "Resor",
+    "loading": "Läser in resorna",
+    "error": "Resorna kunde inte läsas in. Försök igen om en stund.",
+    "empty": "Inga resor registrerade ännu.",
+    "emptyPeriod": "Inga resor under denna period.",
+    "loadMore": "Visa fler",
+    "moreFailed": "Fler resor kunde inte läsas in. Försök igen.",
+    "end": "Inga fler resor.",
+    "csv": "Ladda ner CSV"
+  },
+  "trip": {
+    "title": "Resa",
+    "loading": "Läser in resan",
+    "error": "Resan kunde inte läsas in. Försök igen om en stund.",
+    "notFound": "Resan finns inte.",
+    "back": "Resor",
+    "distanceUnknown": "Okänd sträcka",
+    "figures": "Siffror",
+    "distance": "Sträcka",
+    "energy": "Energi (uppskattad)",
+    "energyNote": "Energin är en uppskattning: ändringen av laddningsnivån gånger batteriets kapacitet. Ingen mätare läses av.",
+    "soc": "Laddningsnivå",
+    "range": "Räckvidd",
+    "odometer": "Vägmätare",
+    "map": "Karta över resan",
+    "positions": "Positioner",
+    "startPosition": "Start",
+    "endPosition": "Mål",
+    "elsewhere": "Annanstans",
+    "route": "{from} → {to}",
+    "routeSpoken": "Från {from} till {to}",
+    "openPlace": "Öppna platsen",
+    "createPlace": "Skapa en plats här",
+    "vehicle": {
+      "title": "Rapporterat av fordonet (för jämförelse)",
+      "tripMeter": "Trippmätare",
+      "consumption": "Förbrukning",
+      "note": "Fordonets egna siffror, som det rapporterar dem: exakt vad de omfattar är okänt."
+    },
+    "consumption": {
+      "title": "Förbrukning",
+      "own": "Den här resan (uppskattad)",
+      "average": "Genomsnitt för {month}",
+      "similar": "Resor {band} i {month}",
+      "gap": "{pct} för den här resan",
+      "note": "Uppskattningar från laddningsnivån, på en procentenhet när: en kort resa kan avvika mycket från genomsnittet.",
+      "statsLink": "Se statistiken för {month}"
+    }
+  },
+  "charges": {
+    "title": "Laddningar",
+    "loading": "Läser in laddningarna",
+    "error": "Laddningarna kunde inte läsas in. Försök igen om en stund.",
+    "empty": "Inga laddningar registrerade ännu.",
+    "emptyPeriod": "Inga laddningar under denna period.",
+    "loadMore": "Visa fler",
+    "moreFailed": "Fler laddningar kunde inte läsas in. Försök igen.",
+    "end": "Inga fler laddningar.",
+    "csv": "Ladda ner CSV"
+  },
+  "charge": {
+    "title": "Laddning",
+    "loading": "Läser in laddningen",
+    "error": "Laddningen kunde inte läsas in. Försök igen om en stund.",
+    "notFound": "Laddningen finns inte.",
+    "back": "Laddningar",
+    "socUnknown": "Okänd laddningsnivå",
+    "figures": "Siffror",
+    "type": "Typ",
+    "soc": "Laddningsnivå",
+    "target": "Mål",
+    "energy": "Energi",
+    "energySoc": "Energi (från laddningsnivån)",
+    "energyPower": "Energi (från laddningseffekten)",
+    "energyNote": "Två separata uppskattningar, ingen av dem en mätning: fordonet har ingen energimätare att läsa av.",
+    "position": "Position",
+    "address": "Adress",
+    "map": "Karta över laddningen",
+    "coordinates": "Koordinater",
+    "cost": {
+      "title": "Kostnad",
+      "place": "Plats",
+      "noPlace": "Utanför alla platser",
+      "openPlace": "Öppna platsen och dess tariff",
+      "label": "Kostnad",
+      "unknown": "Varken en tariff eller en angiven kostnad ger den.",
+      "unpriced": "Tariffen för {place} ger inget pris den dag laddningen skedde: den började före tariffens första pris.",
+      "noCurrency": "Ingen valuta vald än: kostnaderna kan inte beräknas.",
+      "chooseCurrency": "Välj en valuta",
+      "entered": "Angiven",
+      "billed": "{energy} fakturerat",
+      "note": "Anteckning: {note}",
+      "tariff": "Uppskattad enligt tariffen för {place}",
+      "estimate": "{energy} fakturerat (uppskattat), med en antagen verkningsgrad på {efficiency}",
+      "range": "Laddningens exakta tid är inte känd: kostnaden ligger inom detta intervall.",
+      "createPlace": "Skapa en plats här"
+    }
+  },
+  "chargeCost": {
+    "enter": "Ange kostnaden",
+    "change": "Ändra den angivna kostnaden",
+    "help": "Det som betalades, som på kvittot: det ersätter tariffens uppskattning.",
+    "amount": "Betalt belopp",
+    "amountHelp": "Inklusive moms; 0 för en gratis laddning.",
+    "energy": "Fakturerad energi (valfritt)",
+    "energyHelp": "Som på kvittot.",
+    "note": "Anteckning (valfritt)",
+    "noteHelp": "Operatören eller betalsättet, till exempel.",
+    "save": "Spara kostnaden",
+    "cancel": "Avbryt",
+    "saved": "Kostnaden har sparats.",
+    "deleted": "Den angivna kostnaden har tagits bort.",
+    "delete": {
+      "button": "Ta bort den angivna kostnaden",
+      "title": "Ta bort den angivna kostnaden?",
+      "text": "Laddningen får åter kostnaden enligt platsens tariff, om den har en.",
+      "error": "Kostnaden kunde inte tas bort. Försök igen senare.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    },
+    "error": {
+      "summary": "Kostnaden kunde inte sparas",
+      "item": "{field}: {message}",
+      "required": "Obligatoriskt.",
+      "notNumber": "Ange ett belopp, med punkt eller komma.",
+      "range": "Mellan {min} och {max}.",
+      "decimals": "Inga decimaler. | Högst {n} decimal. | Högst {n} decimaler.",
+      "aboveZero": "Mer än 0, högst {max} kWh.",
+      "tooLong": "Högst {max} tecken.",
+      "invalidBody": "Runsten avvisade kostnaden: {message}",
+      "notFound": "Den här laddningen finns inte längre: laddningarna har identifierats på nytt. Gå tillbaka till listan.",
+      "unavailable": "Runsten kan inte nås. Försök igen om en stund.",
+      "internal": "Något gick fel. Försök igen senare."
+    }
+  },
+  "stats": {
+    "error": "Periodens summor kunde inte läsas in.",
+    "trips": {
+      "inPeriod": "{n} resa påbörjad under perioden | {n} resor påbörjade under perioden",
+      "all": "{n} resa totalt | {n} resor totalt",
+      "reconstructed": "varav {n} rekonstruerad | varav {n} rekonstruerade",
+      "distanceUnknown": "okänd sträcka för {n} resa | okänd sträcka för {n} resor",
+      "consumption": "{value} (uppskattad)",
+      "consumptionUnknown": "okänd förbrukning"
+    },
+    "charges": {
+      "inPeriod": "{n} laddning påbörjad under perioden | {n} laddningar påbörjade under perioden",
+      "all": "{n} laddning totalt | {n} laddningar totalt",
+      "reconstructed": "varav {n} rekonstruerad | varav {n} rekonstruerade",
+      "energy": "{value} (enligt laddningsnivån)",
+      "energyUnknown": "okänd energi för {n} laddning | okänd energi för {n} laddningar",
+      "types": "{ac} AC, {dc} DC",
+      "typeUnknown": "{n} av okänd typ | {n} av okänd typ",
+      "costUnknown": "okänd kostnad för {n} laddning | okänd kostnad för {n} laddningar",
+      "costEntered": "{n} angiven kostnad | {n} angivna kostnader"
+    },
+    "title": "Statistik",
+    "scope": "Varje resa och laddning räknas en gång, den dag, vecka eller månad den började. Energi, förbrukning och förlust vid parkering är uppskattningar från laddningsnivån, på en procentenhet när.",
+    "loading": "Läser in statistiken",
+    "tooMany": "Perioden har för många intervall för den här indelningen: välj veckor eller månader.",
+    "bucket": {
+      "label": "Indelning",
+      "day": "Per dag",
+      "week": "Per vecka",
+      "month": "Per månad",
+      "dayHeader": "Dag",
+      "weekHeader": "Vecka från",
+      "monthHeader": "Månad"
+    },
+    "tile": {
+      "distance": "Sträcka",
+      "distanceUnknown": "okänd för {n} resa | okänd för {n} resor",
+      "trips": "Resor",
+      "drivingTime": "Körtid",
+      "withoutDuration": "{n} rekonstruerad resa, utan längd | {n} rekonstruerade resor, utan längd",
+      "consumption": "Förbrukning",
+      "consumptionNote": "Uppskattad, över resorna med känd energi och sträcka",
+      "energy": "Laddad energi",
+      "energySoc": "Enligt laddningsnivån",
+      "energyPower": "Enligt laddeffekten: {value}",
+      "energyPowerUnknown": "ingen effektavläsning för {n} laddning | ingen effektavläsning för {n} laddningar",
+      "charges": "Laddningar",
+      "parked": "Förlust vid parkering",
+      "perDay": "{value} per dag",
+      "parkedNote": "Laddningsnivå förlorad mellan händelser: meningsfull över veckor, inte över en natt",
+      "parkedUnknown": "okänd för {n} intervall | okänd för {n} intervall",
+      "cost": "Laddningarnas kostnad",
+      "costNote": "Uppskattad enligt tarifferna, eller angiven; ett intervall när laddningarnas tider inte är kända",
+      "costUnknown": "okänd för {n} laddning | okänd för {n} laddningar"
+    },
+    "chart": {
+      "distance": {
+        "title": "Sträcka",
+        "series": "Sträcka",
+        "summary": "Sträcka: {total} totalt, mest för {at} ({max}).",
+        "none": "Ingen sträcka under perioden.",
+        "hint": "Välj en stapel för att se intervallets resor."
+      },
+      "energy": {
+        "title": "Laddad energi (enligt laddningsnivån)",
+        "ac": "AC",
+        "dc": "DC",
+        "unknown": "Okänd typ",
+        "summary": "Laddad energi: {ac} AC, {dc} DC.",
+        "none": "Ingen laddning under perioden.",
+        "hint": "Välj en stapel för att se intervallets laddningar."
+      },
+      "consumption": {
+        "title": "Förbrukning (uppskattad)",
+        "series": "Förbrukning",
+        "summary": "Förbrukning: {average} i snitt, från {min} till {max}.",
+        "none": "Ingen känd förbrukning under perioden.",
+        "hint": "Välj en punkt för att se intervallets resor."
+      },
+      "cost": {
+        "title": "Laddningarnas kostnad",
+        "min": "Lägsta kostnad",
+        "uncertainty": "Osäkerhet, upp till högsta kostnad",
+        "minHeader": "Lägsta kostnad",
+        "maxHeader": "Högsta kostnad",
+        "summary": "Laddningarnas kostnad: {total} totalt, mest för {at} ({max}).",
+        "total": "Laddningarnas kostnad: {total} totalt.",
+        "none": "Ingen känd kostnad under perioden.",
+        "hint": "Välj en stapel för att se intervallets laddningar."
+      },
+      "costPerDistance": {
+        "title": "Kostnad per 100 km",
+        "min": "Lägsta kostnad",
+        "range": "Intervall, upp till högsta kostnad",
+        "value": "{amount}/100 km",
+        "unit": "{currency}/100 km",
+        "summary": "Kostnad per 100 km: {average} under perioden.",
+        "none": "Ingen känd kostnad per 100 km under perioden.",
+        "hint": "Välj en punkt för att se intervallets laddningar."
+      },
+      "time": {
+        "title": "Tid för körning och laddning",
+        "driving": "Körning",
+        "drivingUncertainty": "Körning, osäkerhet",
+        "charging": "Laddning",
+        "chargingUncertainty": "Laddning, osäkerhet",
+        "drivingMin": "Körning, minst",
+        "drivingMax": "Körning, högst",
+        "chargingMin": "Laddning, minst",
+        "chargingMax": "Laddning, högst",
+        "summary": "Körtid: {driving}; laddtid: {charging}.",
+        "none": "Ingen resa eller laddning under perioden.",
+        "hint": "Välj en stapel för att se intervallets resor."
+      },
+      "parked": {
+        "title": "Förlust vid parkering",
+        "series": "Förlust per dag",
+        "unit": "%/dag",
+        "summary": "Förlust vid parkering: {average} i genomsnitt under perioden.",
+        "none": "Ingen känd förlust vid parkering under perioden.",
+        "hint": "Laddningsnivån som förlorats mellan händelser, per dag: meningsfull över veckor, inte över en natt."
+      },
+      "byDistance": {
+        "title": "Resor efter sträcka",
+        "series": "Resor",
+        "unit": "resor",
+        "header": "Sträcka",
+        "summary": "Resor efter sträcka: oftast {band} ({count} av {n}).",
+        "none": "Ingen resa med känd sträcka under perioden.",
+        "leftOut": "{n} resa utelämnad: rekonstruerad, kan rymma flera, eller utan sträcka. | {n} resor utelämnade: rekonstruerade, kan rymma flera, eller utan sträcka."
+      },
+      "byDistanceConsumption": {
+        "title": "Förbrukning efter sträcka (uppskattad)",
+        "series": "Förbrukning",
+        "item": "{band}, {value}",
+        "summary": "Förbrukning efter sträcka: {list}.",
+        "none": "Ingen känd förbrukning under perioden.",
+        "hint": "Korta resor drar ofta mer per kilometer: batteriet och kupén ska värmas, stadskörning."
+      },
+      "bySoC": {
+        "title": "Laddningsnivå i början och slutet av laddningar",
+        "started": "Började på",
+        "ended": "Slutade på",
+        "unit": "laddningar",
+        "header": "Laddningsnivå",
+        "summary": "Av {n} laddningar började {below} under 20 % och {above} slutade över 80 %.",
+        "none": "Ingen laddning med känd laddningsnivå under perioden.",
+        "hint": "Varje laddning räknas två gånger: vid nivån den började på och vid den den slutade på.",
+        "leftOut": "{n} laddning utelämnad: rekonstruerad, eller utan laddningsnivå. | {n} laddningar utelämnade: rekonstruerade, eller utan laddningsnivå."
+      },
+      "byPlace": {
+        "title": "Laddad energi per plats (enligt laddningsnivån)",
+        "series": "Energi",
+        "charges": "Laddningar",
+        "header": "Plats",
+        "outsideAC": "Annat ställe, AC",
+        "outsideDC": "Annat ställe, DC",
+        "outsideUnknown": "Annat ställe, okänd typ",
+        "noPosition": "Utan position",
+        "summary": "Laddad energi per plats: {total} totalt, mest för {at} ({max}).",
+        "none": "Ingen laddning med känd energi under perioden.",
+        "hint": "En laddning räknas på platsen för dess kostnad: utan position på den plats som även tar sådana, om det finns en.",
+        "reconstructed": "{n} rekonstruerad laddning medräknad, på samma sätt. | {n} rekonstruerade laddningar medräknade, på samma sätt."
+      },
+      "costByPlace": {
+        "title": "Laddningarnas kostnad per plats",
+        "item": "{place}, {amount}",
+        "summary": "Laddningarnas kostnad per plats: {list}.",
+        "none": "Ingen känd kostnad under perioden.",
+        "hint": "Utanför dina platser är en kostnad känd bara om den har angetts."
+      }
+    },
+    "orphans": "{n} kostnad utan laddning: {amount}, inte i summan. | {n} kostnader utan laddning: {amount}, inte i summan.",
+    "orphansLink": "Se inställningarna",
+    "band": {
+      "below": "under {max}",
+      "between": "{min} till {max}",
+      "atLeast": "{min} och mer",
+      "soc": "{min}–{max}"
+    },
+    "view": {
+      "label": "Diagram",
+      "driving": "Körning",
+      "charging": "Laddning",
+      "costs": "Kostnader",
+      "noCurrency": "Ingen valuta vald än: kostnaderna kan inte beräknas."
+    }
+  },
+  "battery": {
+    "title": "Batteri",
+    "intro": "Runsten uppskattar bilens batterikapacitet utifrån dina laddningar. En enskild uppskattning är ungefärlig: det som spelar roll är hur den förändras över månaderna.",
+    "loading": "Läser in batteriet",
+    "error": "Batteriet kunde inte läsas in. Försök igen om en stund.",
+    "tooMany": "Detta fordon har fler månaders historik än diagrammen kan rita.",
+    "axis": {
+      "label": "Axel",
+      "date": "Datum",
+      "odometer": "Mätarställning"
+    },
+    "tile": {
+      "remaining": "Återstående kapacitet",
+      "remainingValue": "≈ {pct}",
+      "estimated": "{kwh} uppskattat",
+      "gaugeText": "Ungefär {pct}, mellan {low} och {high}",
+      "capacity": "Uppskattad batterikapacitet",
+      "between": "mellan {q1} och {q3}",
+      "notEnough": "Än för få laddningar",
+      "need": "{n} användbar laddning till krävs | {n} användbara laddningar till krävs",
+      "reference": "Referenskapacitet",
+      "referenceCatalog": "Från modellens datablad",
+      "referenceApi": "Som bilen anger den",
+      "change": "Utveckling",
+      "since": "sedan {date}",
+      "inTwelveMonths": "Efter 12 månaders data",
+      "cycles": "Ekvivalenta cykler",
+      "cyclesNote": "Energi motsvarande lika många fulla laddningar",
+      "kept": "Använda laddningar",
+      "setAside": "{n} laddning inte använd | {n} laddningar inte använda",
+      "why": "Varför?"
+    },
+    "why": {
+      "title": "Varför vissa laddningar inte ger någon uppskattning",
+      "intro": "Varje rad säger varför en laddning inte gav någon uppskattning, och hur många.",
+      "reconstructed": "Laddningen sågs aldrig",
+      "noPower": "Bilen anger inte sin ladeffekt",
+      "highSoc": "Laddades över 95 %",
+      "spanSoc": "För liten laddning (under 20 %)",
+      "powerGap": "Avläsningar för långt ifrån varandra",
+      "lowPower": "Laddade för långsamt",
+      "implausible": "Resultat för långt ifrån",
+      "close": "Stäng"
+    },
+    "chart": {
+      "capacity": {
+        "title": "Uppskattad batterikapacitet",
+        "power": "Ladeffekt",
+        "billed": "Fakturerad energi",
+        "band": "Den mittersta hälften av uppskattningarna (Q1–Q3)",
+        "median": "Månadsmedian",
+        "reference": "Referens",
+        "summary": "Uppskattad kapacitet från {first} i {firstAt} till {last} i {lastAt}.",
+        "one": "Uppskattad kapacitet {value} i {at}.",
+        "odometerSummary": "Uppskattad kapacitet från {first} vid {firstKm} till {last} vid {lastKm}.",
+        "odometerOne": "Uppskattad kapacitet {value} vid {km}.",
+        "hidden": "{n} uppskattning utan mätarställning visas inte. | {n} uppskattningar utan mätarställning visas inte.",
+        "noOdometer": "Ingen uppskattning har en mätarställning.",
+        "none": "Ingen uppskattning ännu: det krävs en laddning på minst 20 %.",
+        "hint": "Välj en punkt för att se dess laddning."
+      },
+      "range": {
+        "title": "Räckvidd vid 100 % (bilens uppskattning)",
+        "series": "Räckvidd vid 100 %",
+        "summary": "Räckvidd vid 100 % från {first} i {firstAt} till {last} i {lastAt}.",
+        "one": "Räckvidd vid 100 % {value} i {at}.",
+        "none": "Ingen räckvidd vid 100 % ännu.",
+        "hint": "Bilens egna uppskattning, baserad på din senaste körning: den sjunker på vintern, oavsett batteriet."
+      },
+      "header": {
+        "month": "Månad",
+        "median": "Median",
+        "q1": "Undre kvartilen",
+        "q3": "Övre kvartilen",
+        "estimates": "Uppskattningar",
+        "trips": "Resor"
+      }
+    },
+    "state": {
+      "withDeviation": "{capacity}, {deviation} från databladet",
+      "open": "Se batterisidan"
+    }
+  },
+  "timeline": {
+    "title": "Laddningsnivå, senaste 7 dagarna",
+    "soc": "Laddningsnivå",
+    "driving": "Körning",
+    "charging": "Laddning",
+    "hint": "Banden är resorna och laddningarna: ljusa där de kan ha skett, starkare där de säkert skedde. Mellan dem stod fordonet parkerat. Linjen bryts där inget lästes.",
+    "summary": "Under de senaste 7 dagarna, från {first} till {last}, mellan {min} och {max}; {trips} och {charges}.",
+    "none": "Inget lästes under de senaste 7 dagarna.",
+    "tripCount": "ingen resa | {n} resa | {n} resor",
+    "chargeCount": "ingen laddning | {n} laddning | {n} laddningar",
+    "day": "Dag",
+    "low": "Lägsta laddningsnivå",
+    "high": "Högsta laddningsnivå",
+    "trips": "Påbörjade resor",
+    "charges": "Påbörjade laddningar"
+  },
+  "recent": {
+    "title": "Senaste 30 dagarna",
+    "stats": "Visa statistiken",
+    "hint": "Sträckan för varje dag. Tryck på en dag för att se dess resor."
+  },
+  "chargeCurve": {
+    "title": "Laddkurva",
+    "power": "Effekt",
+    "soc": "Laddningsnivå",
+    "time": "Tid",
+    "hint": "Som fordonet angav dem under laddningen; linjen bryts där inget lästes.",
+    "summary": "Upp till {peak}; laddningsnivå från {from} till {to}.",
+    "few": "Ingen avläsning av effekten under denna laddning: för få för att rita dess kurva. | En avläsning av effekten under denna laddning: för få för att rita dess kurva. | {n} avläsningar av effekten under denna laddning: för få för att rita dess kurva."
+  },
+  "periodChart": {
+    "hint": "Välj en stapel för att begränsa listan till dess intervall."
+  },
+  "settings": {
+    "open": "Inställningar",
+    "title": "Inställningar",
+    "loading": "Läser in inställningarna",
+    "error": "Inställningarna kunde inte läsas in. Försök igen om en stund.",
+    "currency": {
+      "title": "Valuta",
+      "label": "Valuta",
+      "option": "{name} ({code})",
+      "help": "Alla priser och kostnader är i den här valutan, utan omräkning. När ett pris eller en kostnad finns kan den inte längre ändras.",
+      "none": "Ingen valuta vald än: laddningarnas kostnad kan inte beräknas.",
+      "save": "Spara valutan",
+      "saved": "Valutan har sparats.",
+      "inUse": "Det finns redan priser eller kostnader i en annan valuta: valutan kan inte längre ändras.",
+      "unavailable": "Runsten kan inte nås. Försök igen om en stund.",
+      "error": "Valutan kunde inte sparas. Försök igen senare."
+    },
+    "vehicles": {
+      "title": "Fordon",
+      "help": "Varje fordon har egna inställningar: dess variant och dess inbyggda laddare.",
+      "loading": "Läser in fordonen",
+      "error": "Fordonen kunde inte läsas in. Försök igen om en stund.",
+      "none": "Inga fordon än: anslut ditt Volvo ID först."
+    },
+    "places": {
+      "title": "Platser och tariffer",
+      "help": "En laddning får tariffen för den närmaste plats vars cirkel innehåller dess position.",
+      "loading": "Läser in platserna",
+      "error": "Platserna kunde inte läsas in. Försök igen om en stund.",
+      "empty": "Inga platser än.",
+      "new": "Ny plats",
+      "tooMany": "Ett konto har högst {max} platser: ta bort en för att lägga till en annan.",
+      "radius": "radie {radius} m",
+      "since": "{price} sedan {date}",
+      "from": "{price} från {date}",
+      "windows": "{n} tidsfönster | {n} tidsfönster",
+      "withoutPosition": "även för laddningar utan position"
+    }
+  },
+  "preferences": {
+    "open": "Preferenser",
+    "title": "Preferenser",
+    "intro": "Dina egna val, sparade i den här webbläsaren.",
+    "language": "Språk",
+    "appearance": {
+      "title": "Utseende",
+      "system": "Automatiskt",
+      "light": "Ljust",
+      "dark": "Mörkt",
+      "hint": "Automatiskt följer din enhet."
+    },
+    "maps": {
+      "title": "Kartor",
+      "hint": "Kartorna kommer från en tredjepartstjänst, som ser din IP-adress och de områden som visas.",
+      "on": "Visas",
+      "off": "Dolda"
+    }
+  },
+  "shortcuts": {
+    "title": "Kortkommandon",
+    "hint": "Tryck på ? på valfri sida för att se dem. Stäng av dem om enskilda tangenter är i vägen.",
+    "help": "Den här listan",
+    "shift": "Skift, nedhållen",
+    "hints": "Visa tangenterna på sidan",
+    "turnOff": "För att stänga av dem:",
+    "close": "Stäng",
+    "on": "På",
+    "off": "Av"
+  },
+  "vehicleModel": {
+    "vin": "VIN",
+    "family": "Rapporterad modell",
+    "modelYear": "Rapporterad årsmodell",
+    "loading": "Läser in varianterna",
+    "loadError": "Varianterna kunde inte läsas in. Försök igen om en stund.",
+    "notRead": "Runsten har inte läst fordonets detaljer än: dess variant kan väljas när de har lästs.",
+    "noVariant": "Runstens katalog har ingen variant av {family}: den listar bara helt eldrivna Volvo- och Polestar-modeller.",
+    "variant": "Variant",
+    "variantHelp": "Siffrorna är katalogens. De varianter som fordonets detaljer passar kommer först.",
+    "automatic": "Automatisk igenkänning",
+    "automaticIs": "Igenkänd: {name}",
+    "automaticNone": "Ingen variant igenkänd: flera passar, eller ingen. Välj din nedan.",
+    "option": "{name}, {years}",
+    "recognized": "automatiskt igenkänd",
+    "yearsSince": "sedan {from}",
+    "yearsRange": "{from} till {to}",
+    "grossOnly": "{gross} batteri",
+    "capacity": "{gross} batteri, {net} användbart",
+    "ac": "AC {kw}",
+    "acOption": "AC {kw}, {option} som tillval",
+    "dc": "DC {kw}",
+    "fromManufacturer": "Enligt tillverkaren",
+    "fromPublic": "Enligt offentliga källor",
+    "fromBoth": "Enligt tillverkaren; {figures}: enligt offentliga källor",
+    "figure": {
+      "gross": "batteri",
+      "net": "användbar kapacitet",
+      "ac": "AC-laddare",
+      "acOption": "laddare som tillval",
+      "dc": "DC-effekt"
+    },
+    "charger": "Inbyggd laddare",
+    "chargerHelp": "Den inbyggda laddaren begränsar effekten vid AC-laddning, oavsett laddpunkt. Så länge du inte anger vilken fordonet har räknar Runsten med den kraftfullaste.",
+    "chargerUnknown": "Inte angiven: {kw} antas, den kraftfullaste",
+    "chargerStandard": "{kw}, standard",
+    "chargerOption": "{kw}, tillval",
+    "save": "Spara",
+    "saveNamed": "Spara varianten för {vehicle}",
+    "saved": "Varianten har sparats.",
+    "error": {
+      "summary": "Varianten kunde inte sparas",
+      "item": "{field}: {message}",
+      "unknownVariant": "Den här varianten erbjuds inte längre: välj en annan.",
+      "notACharger": "Den här laddaren hör inte till varianten: välj en annan.",
+      "invalidBody": "Runsten avvisade valet: {message}",
+      "notFound": "Det här fordonet finns inte längre.",
+      "unavailable": "Runsten kan inte nås. Försök igen om en stund.",
+      "internal": "Något gick fel. Försök igen senare."
+    }
+  },
+  "vehicleSettings": {
+    "open": "Fordonsinställningar",
+    "title": "Fordonsinställningar",
+    "help": "Runsten känner igen fordonets variant utifrån det fordonet rapporterar, när bara en passar. Ditt val går före igenkänningen och syns överallt där fordonet visas.",
+    "loading": "Läser in fordonet",
+    "error": "Fordonet kunde inte läsas in. Försök igen om en stund."
+  },
+  "orphans": {
+    "title": "Kostnader utan laddning",
+    "help": "En angiven kostnad finns kvar även när dess laddning identifieras på nytt, efter en ändring av reglerna. När ingen laddning, eller fler än en, längre motsvarar den väntar den här: koppla den till rätt laddning, eller ta bort den. Den läggs aldrig till summorna, som då skulle räkna laddningen två gånger.",
+    "error": "Kostnaderna utan laddning kunde inte läsas in. Försök igen om en stund.",
+    "none": "Inga kostnader utan laddning längre.",
+    "window": "Laddning {window}",
+    "amount": "Belopp",
+    "energy": "Fakturerad energi",
+    "note": "Anteckning",
+    "noEnergy": "Inte angiven",
+    "noNote": "Ingen",
+    "noCurrency": "{n} minsta enheter, ingen valuta vald än",
+    "attached": "Kostnaden har kopplats till laddningen.",
+    "deleted": "Kostnaden har tagits bort.",
+    "attach": {
+      "button": "Koppla till en laddning",
+      "label": "Koppla till en laddning, {cost}",
+      "title": "Koppla kostnaden till en laddning",
+      "help": "Fordonets laddningar runt {window}, när kostnaden angavs:",
+      "choose": "Laddning",
+      "loading": "Läser in laddningarna",
+      "loadError": "Laddningarna kunde inte läsas in. Försök igen om en stund.",
+      "none": "Ingen laddning vid den tiden: ta bort kostnaden, eller behåll den här.",
+      "typeUnknown": "okänd typ",
+      "entered": "{cost} angiven",
+      "hasCost": "Laddningen har redan en angiven kostnad: ta bort den på laddningen först, eller välj en annan.",
+      "notFound": "Kostnaden eller laddningen finns inte längre.",
+      "error": "Kostnaden kunde inte kopplas. Försök igen senare.",
+      "cancel": "Avbryt",
+      "confirm": "Koppla"
+    },
+    "delete": {
+      "button": "Ta bort",
+      "label": "Ta bort, {cost}",
+      "title": "Ta bort kostnaden?",
+      "text": "Kostnaden på {cost} tas bort för gott.",
+      "error": "Kostnaden kunde inte tas bort. Försök igen senare.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    }
+  },
+  "place": {
+    "newTitle": "Ny plats",
+    "back": "Inställningar",
+    "loading": "Läser in platsen",
+    "notFound": "Den här platsen finns inte.",
+    "details": "Plats",
+    "name": "Namn",
+    "position": "Position",
+    "lat": "Latitud",
+    "lon": "Longitud",
+    "map": "Karta över platsen: tryck för att placera platsen där",
+    "mapHelp": "Eller tryck på kartan där platsen är.",
+    "mapPicked": "Positionen hämtades från kartan.",
+    "positionHelp": "I decimalgrader, med punkt eller komma.",
+    "vehiclePosition": "Aktuell position för {vehicle}",
+    "positionFilled": "Positionen för {from} har fyllts i.",
+    "radius": "Radie",
+    "radiusHelp": "En laddning, eller en resas start eller mål, inom detta avstånd är på platsen.",
+    "maxPower": "Laddboxens effekt",
+    "maxPowerHelp": "Valfri: effekten hos laddboxen på den här platsen. Den snävar in kostnaden för en laddning över flera priser.",
+    "timeZone": "Tidszon",
+    "timeZoneHelp": "Tariffens dagar och tider är i den här tidszonen.",
+    "withoutPosition": "Även för laddningar utan position",
+    "withoutPositionHelp": "AC-laddningar och laddningar av okänd typ som saknar position får den här tariffen. Högst en plats.",
+    "advanced": "Avancerat",
+    "efficiency": "Laddningens verkningsgrad",
+    "efficiencyHelp": "Den andel av energin från elnätet som når batteriet. Tomt för standardvärdet: {ac} för AC, {dc} för DC.",
+    "save": "Spara",
+    "saved": "Platsen har sparats.",
+    "leave": "Lämna utan att spara ändringarna?",
+    "tariff": {
+      "title": "Tariff",
+      "help": "Utanför alla tidsfönster gäller grundpriset. När flera fönster täcker samma tid vinner det sista: lägg det mest specifika sist.",
+      "midnight": "Ett fönster kan gå över midnatt: 22:00–06:00 på måndag täcker natten från måndag till tisdag.",
+      "versionFrom": "Pris från {date}",
+      "versionNew": "Nytt pris",
+      "validFrom": "Från",
+      "validFromHelp": "Laddningar före denna dag får inget pris från det.",
+      "price": "Grundpris",
+      "windows": "Tidsfönster",
+      "noWindow": "Inga tidsfönster: grundpriset gäller hela tiden.",
+      "addWindow": "Lägg till ett tidsfönster",
+      "tooManyWindows": "Högst {max} tidsfönster per pris.",
+      "removeVersion": "Ta bort detta pris",
+      "addVersion": "Nytt pris från…",
+      "unpriced": {
+        "text": "Inget pris i denna tariff gäller för en laddning på denna plats: den började före {date}, dagen för det första priset. Dess kostnad är okänd. | Inget pris i denna tariff gäller för {n} laddningar på denna plats: de började före {date}, dagen för det första priset. Deras kostnad är okänd.",
+        "retroactive": "Kostnaderna räknas om vid varje läsning: ett första pris från en tidigare dag gäller även tidigare laddningar, när det har sparats.",
+        "startOn": "Låt tariffen börja {date}",
+        "moved": "Det första priset börjar nu {date}: spara för att ge laddningarna deras kostnad."
+      }
+    },
+    "window": {
+      "legend": "Tidsfönster {n}",
+      "days": "Dagar",
+      "presets": "Dagar för tidsfönster {n}",
+      "everyDay": "Alla dagar",
+      "weekdays": "Vardagar",
+      "weekend": "Helg",
+      "from": "Från",
+      "to": "Till",
+      "price": "Pris",
+      "overnight": "Går över midnatt: slutar nästa dag.",
+      "allDay": "Varar 24 timmar.",
+      "months": "Månader",
+      "allYear": "Hela året",
+      "up": "Flytta upp",
+      "upNamed": "Flytta upp: tidsfönster {n}",
+      "down": "Flytta ned",
+      "downNamed": "Flytta ned: tidsfönster {n}",
+      "remove": "Ta bort",
+      "removeNamed": "Ta bort: tidsfönster {n}"
+    },
+    "delete": {
+      "button": "Ta bort",
+      "title": "Ta bort {name}?",
+      "text": "Platsen och dess tariff tas bort: dess laddningar förlorar sitt pris.",
+      "error": "Platsen kunde inte tas bort. Försök igen senare.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    },
+    "error": {
+      "summary": "Platsen kunde inte sparas",
+      "item": "{field}: {message}",
+      "load": "Platsen kunde inte läsas in. Försök igen om en stund.",
+      "required": "Obligatoriskt.",
+      "notNumber": "Ange ett tal, med punkt eller komma.",
+      "range": "Mellan {min} och {max}.",
+      "aboveZero": "Mer än 0, högst {max}.",
+      "tooLong": "Högst {max} tecken.",
+      "decimals": "Högst {max} decimaler.",
+      "notDate": "Ogiltigt datum.",
+      "notTime": "Ogiltig tid.",
+      "sameDay": "Ett annat pris börjar samma dag.",
+      "noVersion": "Minst ett pris.",
+      "tooMany": "Högst {max}.",
+      "noDay": "Välj minst en dag.",
+      "noMonth": "Välj minst en månad, eller hela året.",
+      "withoutPositionTaken": "En annan plats tar redan laddningarna utan position.",
+      "tooManyPlaces": "Ett konto har högst {max} platser.",
+      "invalidBody": "Runsten avvisade platsen: {message}",
+      "notFound": "Den här platsen finns inte längre.",
+      "unavailable": "Runsten kan inte nås. Försök igen om en stund.",
+      "internal": "Något gick fel. Försök igen senare."
+    }
+  },
+  "connection": {
+    "open": "Anslutning",
+    "title": "Anslutning",
+    "backToVehicle": "Tillbaka till fordonet",
+    "attention": "Anslutningen behöver din uppmärksamhet",
+    "intro": "Runsten läser dina fordon från Volvos API i bakgrunden: det är dess insamlare. Den här sidan visar om den läser dem, och om inte, varför.",
+    "loading": "Läser in anslutningen",
+    "error": "Anslutningen kunde inte läsas in. Försök igen om en stund.",
+    "refreshFailed": "Anslutningen kunde inte uppdateras: det som visas kan vara inaktuellt.",
+    "outcome": {
+      "connected": "Volvo ID anslutet: insamlaren läser dina fordon från sitt nästa varv.",
+      "keyRefused": "Ditt Volvo ID är anslutet, men Volvo avvisade din nyckel: rätta den nedan, fordonen listas då, utan att du ansluter igen.",
+      "tooManyVehicles": "Ditt Volvo ID ger åtkomst till fler fordon än ditt konto tillåter: det anslöts inte."
+    },
+    "volvoId": {
+      "title": "Volvo ID",
+      "none": "Inget Volvo ID anslutet ännu: Runsten läser ingenting.",
+      "connect": "Anslut ett Volvo ID",
+      "reconnect": "Anslut Volvo ID igen",
+      "reconnectHelp": "Att ansluta igen förnyar bara behörigheten: inget som redan lästs går förlorat.",
+      "status": "Status",
+      "active": "Ansluten",
+      "reauth": "Ny inloggning krävs",
+      "authorizedAt": "Behörighet given",
+      "pasted": "Okänt (en token inklistrad för hand)",
+      "refreshedAt": "Behörighet förnyad",
+      "lostAt": "Förlorad",
+      "reason": "Orsak",
+      "keyFirst": "Ange först din Volvo-nyckel ovan: Volvo ID ansluts sedan, och dina fordon läses med den.",
+      "noVehicle": "Ditt Volvo ID är anslutet, men inget fordon är listat än: Volvo avvisade nyckeln. Ange en ny: fordonen listas då, utan att du ansluter igen."
+    },
+    "vehicles": {
+      "title": "Fordon",
+      "help": "Insamlaren läser varje fordon oftare när det körs eller laddar. Tiderna är från dess senaste varv."
+    },
+    "state": {
+      "reauth": "Läses inte: Volvo ID måste anslutas igen",
+      "waiting": "Väntar på insamlarens första varv",
+      "stopped": "Insamlaren verkar ha stannat: dess senaste varv var {age}",
+      "paused": "Pausad av Volvo till {time}",
+      "quota": "Volvos kvot nådd till {time}: {apis}",
+      "reading": "Läses normalt",
+      "keyRefused": "Läses inte: Volvo avvisade applikationsnyckeln",
+      "keyMissing": "Läses inte: ingen Volvo-nyckel angiven",
+      "unread": "Läses inte för ditt konto"
+    },
+    "notice": {
+      "reauth": {
+        "title": "Ny inloggning krävs",
+        "body": "Runsten läser inte längre det här fordonet: anslut dess Volvo ID igen.",
+        "since": "Sedan {time}",
+        "reason": "orsak: {reason}"
+      },
+      "stopped": "Inget nytt läses medan insamlaren inte körs. Kontrollera att runsten-collector körs och når sin databas.",
+      "paused": "Volvo har begränsat antalet anrop. Läsningen återupptas av sig själv.",
+      "quota": "Volvos dagliga kvot av anrop är slut, för alla fordon i den här instansen. Läsningen återupptas av sig själv.",
+      "details": "Visa anslutningen",
+      "keyRefused": "Volvo avvisade applikationsnyckeln som fordonet läses med: den har genererats om, eller dess applikation har tagits bort på utvecklarportalen. Ange en ny på anslutningssidan: Volvo ID förblir anslutet.",
+      "keyMissing": "Den här instansen har ingen egen Volvo-nyckel: ange din på anslutningssidan.",
+      "quotaOwnKey": "Din Volvo-nyckels dagliga kvot av anrop är förbrukad. Läsningen återupptas av sig själv.",
+      "unread": "Ditt konto läser inte det här fordonet: inget nytt läses, och det som redan lästs finns kvar."
+    },
+    "facts": {
+      "mode": "Läsläge",
+      "passedAt": "Insamlarens senaste varv",
+      "never": "Aldrig",
+      "readAt": "Senaste lyckade läsning",
+      "nextReadAt": "Nästa läsning",
+      "due": "Vid nästa varv",
+      "noneDue": "Ingen förrän Volvo ID anslutits igen",
+      "quota": "Kvot nådd",
+      "quotaUntil": "{api} till {time}",
+      "lastFailure": "Senaste fel",
+      "noFailure": "Inget",
+      "noneDueKey": "Ingen förrän en Volvo-nyckel anges"
+    },
+    "api": {
+      "connectedVehicle": "fordonsdata",
+      "energy": "batteri och laddning",
+      "location": "position"
+    },
+    "failure": {
+      "quota": "Kvot nådd",
+      "rateLimited": "För många anrop",
+      "unauthorized": "Token nekad",
+      "notFound": "Fordonet okänt för Volvo",
+      "unavailable": "Volvo går inte att nå",
+      "token": "Volvo ID går inte att nå",
+      "other": "Anrop nekat",
+      "keyRefused": "Volvo-nyckel avvisad"
+    },
+    "key": {
+      "title": "Volvo-nyckel"
+    },
+    "app": {
+      "title": "Volvo-applikation",
+      "help": "Applikationen på Volvos utvecklarportal som den här instansen läser med, enligt dess konfiguration (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_API_KEY): jämför dem med din applikations på developer.volvocars.com. Dess nyckel läser alla fordon; hemligheten visas aldrig.",
+      "clientId": "Klient-ID",
+      "key": "Applikationsnyckel"
+    }
+  },
+  "apiKey": {
+    "intro": "Volvo räknar sin dagliga kvot av anrop per applikationsnyckel. Den här instansen har ingen egen: ange nyckeln till en applikation du skapar på Volvos utvecklarportal. Dess kvot är bara din, inget annat konto förbrukar den.",
+    "refused": {
+      "title": "Din Volvo-nyckel avvisades",
+      "body": "Volvo avvisade den {time}: den har genererats om, eller dess applikation har tagits bort på utvecklarportalen. Dina fordon läses inte förrän du anger en ny; Volvo ID förblir anslutet."
+    },
+    "current": "Din nyckel",
+    "last4": "Slutar på {last4}",
+    "setAt": "Angiven",
+    "replace": "Byt nyckel",
+    "delete": {
+      "button": "Ta bort nyckeln",
+      "title": "Ta bort din Volvo-nyckel?",
+      "text": "Den här instansen har ingen egen nyckel: dina fordon läses inte längre förrän du anger en annan.",
+      "error": "Nyckeln kunde inte tas bort. Försök igen om en stund.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    },
+    "steps": {
+      "title": "Skapa din nyckel",
+      "signIn": "Logga in med ditt Volvo ID på",
+      "newTab": "(öppnas i en ny flik)",
+      "create": "Under ”Your API applications”, skapa en applikation: vilket namn som helst duger.",
+      "unpublished": "Publicera den inte: den behöver ingen redirect URI, inga villkor och ingen granskning.",
+      "copy": "Kopiera dess primära VCC API-nyckel.",
+      "paste": "Klistra in den nedan: den visas aldrig igen, bara dess fyra sista tecken."
+    },
+    "label": "Primär VCC API-nyckel",
+    "help": "Dess kvot: 10 000 anrop per dag för varje Volvo-API, ungefär sju gånger vad ett fordon som körs tio timmar om dagen behöver.",
+    "save": "Spara nyckeln",
+    "cancel": "Avbryt",
+    "saved": "Nyckeln sparades.",
+    "deleted": "Nyckeln togs bort.",
+    "error": {
+      "summary": "Nyckeln sparades inte",
+      "required": "Klistra in nyckeln.",
+      "spaces": "En nyckel har inga mellanslag: kopiera den igen.",
+      "characters": "En nyckel har bara bokstäver, siffror och tecken: kopiera den igen.",
+      "tooShort": "En nyckel har minst {min} tecken: kopiera hela.",
+      "tooLong": "En nyckel har högst {max} tecken: kopiera bara den.",
+      "tooManyVehicles": "Ditt Volvo ID ger åtkomst till fler fordon än ditt konto tillåter: nyckeln sparades inte.",
+      "refused": "Volvo avvisade nyckeln: kontrollera att det är din applikations primära nyckel.",
+      "invalidBody": "Nyckeln avvisades: kopiera den igen.",
+      "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
+      "internal": "Nyckeln kunde inte sparas. Försök igen om en stund."
+    }
+  },
+  "history": {
+    "limited": "Historik visas från {day}. Äldre resor och laddningar sparas, men visas inte.",
+    "lift": "Visa hela historiken"
+  },
+  "limits": {
+    "costs": "Ditt konto omfattar inte laddningarnas kostnader: vad varje laddning kostade, och summorna.",
+    "stats": "Ditt konto omfattar inte statistiken per dag, vecka och månad.",
+    "mqtt": "Ditt konto omfattar inte MQTT: att publicera dina fordons status till Home Assistant eller ett annat hemautomationssystem.",
+    "lift": "Häv gränsen"
+  },
+  "accessTokens": {
+    "title": "API-åtkomst",
+    "help": "En personlig åtkomsttoken låter ett program läsa dina data via API:et utan ditt lösenord: ett skript, Home Assistant, en AI-assistent. Den kan bara läsa, och bara det du ser här. Återkalla den när programmet inte längre behöver den.",
+    "loading": "Läser in åtkomsttokens",
+    "none": "Inga åtkomsttokens ännu.",
+    "createdAt": "Skapad {at}",
+    "lastUsed": "senast använd {at}",
+    "neverUsed": "aldrig",
+    "noExpiry": "upphör aldrig",
+    "expiresAt": "upphör {at}",
+    "expiredAt": "upphörde {at}",
+    "new": "Ny åtkomsttoken",
+    "name": "Namn",
+    "nameHelp": "För att skilja dina tokens åt, till exempel programmet som använder den.",
+    "expiry": {
+      "label": "Upphör",
+      "30d": "Om 30 dagar",
+      "90d": "Om 90 dagar",
+      "365d": "Om ett år",
+      "never": "Aldrig"
+    },
+    "create": "Skapa token",
+    "cancel": "Avbryt",
+    "created": {
+      "title": "Token ”{name}” skapad",
+      "once": "Kopiera den nu: den visas inte igen. Den som har den kan läsa dina data.",
+      "label": "Åtkomsttoken",
+      "copy": "Kopiera",
+      "copied": "Åtkomsttoken kopierad.",
+      "copyFailed": "Token kunde inte kopieras: markera den och kopiera den för hand.",
+      "use": "Ett program skickar den i varje anrop till API:et:",
+      "done": "Jag har kopierat den"
+    },
+    "revoke": {
+      "button": "Återkalla",
+      "label": "Återkalla token {name}",
+      "title": "Återkalla ”{name}”?",
+      "text": "Programmen som använder den förlorar åtkomsten direkt. Det går inte att ångra: en ny token skulle behövas.",
+      "confirm": "Återkalla",
+      "error": "Token kunde inte återkallas. Försök igen.",
+      "done": "Token {name} återkallad."
+    },
+    "error": {
+      "summary": "Token kunde inte skapas",
+      "required": "Ge token ett namn.",
+      "tooLong": "Högst {max} tecken.",
+      "invalid": "Namnet godtas inte: använd bokstäver, siffror och skiljetecken.",
+      "unavailable": "Runsten kan inte nås. Försök igen senare.",
+      "internal": "Token kunde inte skapas. Försök igen.",
+      "list": "Åtkomsttokens kunde inte läsas in."
+    }
+  },
+  "mqtt": {
+    "title": "MQTT",
+    "help": "Runsten publicerar dina fordons status (batteri, räckvidd, laddning, kontakt, position) till din MQTT-broker efter varje avläsning: Home Assistant skapar sina entiteter själv, och Node-RED eller openHAB läser ämnena.",
+    "loading": "Läser in MQTT-brokern",
+    "loadError": "MQTT-brokern kunde inte läsas in.",
+    "connected": "Ansluten sedan {time}.",
+    "waiting": "Inte ansluten än: Runsten ansluter inom en minut.",
+    "failure": {
+      "title": "Runsten kan inte publicera till din broker",
+      "unreachable": "Brokern kunde inte nås: kontrollera adress och port, och att den tar emot anslutningar från Runsten.",
+      "refusedAddress": "Den här instansen publicerar inte till den adressen: brokern måste kunna nås från internet.",
+      "tls": "Den säkra anslutningen misslyckades: brokerns certifikat är inte betrott, eller inte för dess namn.",
+      "notAuthorized": "Brokern avvisade användarnamnet eller lösenordet.",
+      "rejected": "Brokern avvisade anslutningen: kontrollera klient-ID:t.",
+      "at": "Senaste fel {time}."
+    },
+    "url": "Brokerns URL",
+    "urlHelp": "mqtt://värd:1883, eller mqtts://värd:8883 över TLS. För Home Assistants tillägg: mqtt://homeassistant.local:1883.",
+    "urlHelpPublic": "mqtts://värd:8883: den här instansen publicerar bara över TLS, till en broker som kan nås från internet.",
+    "username": "Användarnamn",
+    "usernameHelp": "Lämna tomt om brokern inte kräver något.",
+    "password": "Lösenord",
+    "passwordHelp": "Visas aldrig igen.",
+    "passwordKept": "Lämna tomt för att behålla det nuvarande; ange det igen för en annan värd.",
+    "passwordSet": "Angivet",
+    "removePassword": "Ta bort lösenordet",
+    "none": "Inget",
+    "discovery": "Home Assistant-upptäckt",
+    "discoveryHelp": "Home Assistant skapar en enhet per fordon, med dess entiteter.",
+    "discoveryOn": "På, under {prefix}",
+    "publishLocation": "Publicera positionen",
+    "publishLocationHelp": "Varje fordons latitud och longitud, för en karta eller en zon.",
+    "on": "På",
+    "off": "Av",
+    "advanced": "Avancerat",
+    "topicPrefix": "Ämnesprefix",
+    "topicPrefixHelp": "Ämnena ligger under det: runsten/vehicles/…",
+    "discoveryPrefix": "Upptäcktsprefix",
+    "discoveryPrefixHelp": "homeassistant, om det inte ändrats i Home Assistants MQTT-integration.",
+    "clientId": "Klient-ID",
+    "clientIdHelp": "Lämna tomt: Runsten väljer ett.",
+    "edit": "Ändra brokern",
+    "save": "Spara brokern",
+    "cancel": "Avbryt",
+    "saved": "Brokern sparad: Runsten ansluter till den inom en minut.",
+    "deleted": "Brokern borttagen.",
+    "delete": {
+      "button": "Ta bort brokern",
+      "title": "Ta bort MQTT-brokern?",
+      "text": "Runsten publicerar inte längre till den och rensar det som publicerats där: Home Assistant tar bort fordonens entiteter. Om brokern inte kan nås just då ligger det som publicerats kvar.",
+      "error": "Brokern kunde inte tas bort. Försök igen om en stund.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    },
+    "error": {
+      "summary": "Brokern sparades inte",
+      "item": "{field}: {message}",
+      "required": "Fyll i det.",
+      "scheme": "Börja med mqtt:// eller mqtts://.",
+      "tls": "Använd mqtts://: den här instansen publicerar bara över TLS.",
+      "host": "Skriv brokerns värd efter mqtt://, som mqtt://homeassistant.local:1883.",
+      "credentials": "Ange användarnamn och lösenord i sina egna fält, inte i URL:en.",
+      "path": "Bara värd och port: ingen sökväg, ingen fråga.",
+      "port": "Porten är ett tal från 1 till 65535.",
+      "tooLong": "Högst {max} tecken.",
+      "passwordAgain": "Ange lösenordet igen för en annan värd, eller ta bort det.",
+      "prefix": "Nivåer åtskilda av /, utan + eller #, och utan / i början eller slutet.",
+      "clientId": "Bara bokstäver, siffror, - och _.",
+      "refused": "Den här instansen publicerar inte till den adressen: brokern måste kunna nås från internet, över mqtts://.",
+      "invalidBody": "Brokern avvisades: kontrollera dess fält.",
+      "featureUnavailable": "Ditt konto omfattar inte MQTT.",
+      "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
+      "internal": "Brokern kunde inte sparas. Försök igen om en stund."
+    }
+  },
+  "account": {
+    "title": "Dina data",
+    "export": {
+      "help": "Ladda ner allt ditt konto innehåller, även fordonens råa avläsningar, som en enda JSON-fil.",
+      "button": "Ladda ner mina data"
+    }
+  }
+}

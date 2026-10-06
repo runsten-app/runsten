@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+  <!-- The mark of the application: four tiles, one in the accent (AppShell.vue),
+       in the Tiles theme's colors of the browser's scheme. -->
+  <style>
+    rect { fill: #16171A; } .accent { fill: #B34E0B; }
+    @media (prefers-color-scheme: dark) { rect { fill: #F2F2F0; } .accent { fill: #FF8A3D; } }
+  </style>
+  <rect x="0" y="0" width="9" height="9" rx="2"/>
+  <rect x="11" y="0" width="9" height="9" rx="2" class="accent"/>
+  <rect x="0" y="11" width="9" height="9" rx="2"/>
+  <rect x="11" y="11" width="9" height="9" rx="2"/>
+</svg>

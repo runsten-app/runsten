@@ -1,0 +1,17 @@
+{
+  "items": [
+    {
+      "id": "c0570000-0000-4000-8000-000000000009",
+      "vehicle_id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a01",
+      "entered_at": "2026-09-29T14:02:00Z",
+      "window": {
+        "after": "2026-09-29T12:00:00Z",
+        "before": "2026-09-29T12:40:00Z"
+      },
+      "amount_minor": 1240,
+      "currency": "EUR",
+      "energy_kwh": 31.5,
+      "note": "Ionity, carte Chargemap"
+    }
+  ]
+}

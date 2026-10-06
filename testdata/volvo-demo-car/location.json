@@ -1,0 +1,19 @@
+{
+  "data": {
+    "geometry": {
+      "coordinates": [
+        11.968302141174869,
+        57.68877034998428,
+        0.0
+      ],
+      "type": "Point"
+    },
+    "properties": {
+      "timestamp": "2026-09-25T15:40:12.045762046Z",
+      "heading": "220"
+    },
+    "type": "Feature"
+  },
+  "operationId": "535a0d9da5eb410eaa3a83f1f5e19f13",
+  "status": 200
+}
