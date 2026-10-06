@@ -16,7 +16,7 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/mochi-mqtt/server/v2 v2.7.9
 	github.com/pb33f/libopenapi v0.41.2
-	github.com/pb33f/libopenapi-validator v0.15.0
+	github.com/pb33f/libopenapi-validator v0.15.1
 	go.yaml.in/yaml/v3 v3.0.5
 	golang.org/x/crypto v0.57.0
 	golang.org/x/oauth2 v0.37.0
