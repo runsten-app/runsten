@@ -23,10 +23,16 @@ Create your application on the Volvo developer portal first: its redirect URI ca
 
 ## Install
 
+Nothing to build: the stack runs the published [images](#images). It needs only `compose.yaml`, `.env.example` and the two files of `deploy/` of a release, fetched into a directory of their own:
+
 ```sh
-git clone https://github.com/runsten-app/runsten.git runsten && cd runsten
-cp .env.example .env && chmod 600 .env   # fill it in, following its comments
-docker compose up -d --build
+mkdir runsten && cd runsten
+v=X.Y.Z   # the latest release: https://github.com/runsten-app/runsten/releases
+for f in compose.yaml .env.example deploy/postgres/init-runsten.sh deploy/mosquitto/mosquitto.conf; do
+  curl -fsSL --create-dirs -o "$f" "https://raw.githubusercontent.com/runsten-app/runsten/v$v/$f"
+done
+cp .env.example .env && chmod 600 .env   # fill it in, following its comments; RUNSTEN_VERSION=X.Y.Z
+docker compose pull && docker compose up -d
 docker compose ps                         # postgres, api, collector and web: running (healthy)
 docker compose run --rm api user create <name>   # your user: asks for a password, twice
 docker compose logs -f api collector
@@ -58,4 +64,6 @@ Everything listens on the host's loopback: from another machine, go through an h
 
 ## Images
 
-For now the images are built locally from the repository and tagged `:dev`. Published images, with version tags, will come later; `compose.yaml` will then pull them instead of building.
+Each release publishes `ghcr.io/runsten-app/runsten-api`, `runsten-collector` and `runsten-web`, for `linux/amd64` and `linux/arm64`, tagged with its version (`0.4.1`), its minor (`0.4`, which follows the fixes) and `latest`, each with its SBOM and provenance; the release's notes give their digests. `RUNSTEN_VERSION` in `.env` chooses the tag, `latest` when empty: set it to a release, so that an update is a choice ([Updating](./updating.md)).
+
+To run the sources instead (a branch, a change of your own), clone the repository and run `docker compose up -d --build`: it builds the images under the same names.
