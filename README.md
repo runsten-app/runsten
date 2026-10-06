@@ -57,9 +57,15 @@ Runsten runs with Docker Compose on any Linux server with Docker Engine 25 or la
 
 ### Installation
 
+Nothing to build: the stack runs the published images ([Updating](#updating)). It needs only `compose.yaml`, `.env.example` and the two files of `deploy/` of a release, fetched into a directory of their own:
+
 ```sh
-git clone --branch v<X.Y.Z> <repository> runsten && cd runsten   # the latest release
-cp .env.example .env && chmod 600 .env   # fill it in, following its comments
+mkdir runsten && cd runsten
+v=X.Y.Z   # the latest release: https://github.com/runsten-app/runsten/releases
+for f in compose.yaml .env.example deploy/postgres/init-runsten.sh deploy/mosquitto/mosquitto.conf; do
+  curl -fsSL --create-dirs -o "$f" "https://raw.githubusercontent.com/runsten-app/runsten/v$v/$f"
+done
+cp .env.example .env && chmod 600 .env   # fill it in, following its comments; RUNSTEN_VERSION=X.Y.Z
 docker compose pull && docker compose up -d
 docker compose ps                         # postgres, api, collector and web: running (healthy)
 docker compose run --rm api user create <name>   # your user: asks for a password, twice
@@ -176,12 +182,13 @@ docker compose start collector
 
 ### Updating
 
-Read the release's notes ([releases](https://github.com/runsten-app/runsten/releases)), back up, then set `RUNSTEN_VERSION` in `.env` to the new release and:
+Read the release's notes ([releases](https://github.com/runsten-app/runsten/releases)), back up, then fetch the files of the new release as for the installation (`.env` is left alone), compare `.env` with the new `.env.example`, set `RUNSTEN_VERSION` in `.env` to the new release, and:
 
 ```sh
-git fetch --tags && git checkout v<X.Y.Z>   # compose.yaml and .env.example of that release
 docker compose pull && docker compose up -d
 ```
+
+From a clone of the repository, `git fetch --tags && git checkout vX.Y.Z` brings the same files.
 
 An update that changes how trips and charges are derived says so below: the new events follow it at once, the past ones only after a rebuild ([Backup and restore](#backup-and-restore): stop the collector, `docker compose run --rm collector rebuild`, start it).
 

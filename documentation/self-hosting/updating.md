@@ -4,12 +4,22 @@ description: "Update a self-hosted Runsten, and the notes of the updates that ch
 
 # Updating
 
-[Back up](./backup.md) first, then:
+Read the release's notes ([releases](https://github.com/runsten-app/runsten/releases)) and [back up](./backup.md) first. Then, in the directory of the [installation](./index.md#install), fetch the files of the new release (`.env` is left alone):
 
 ```sh
-git pull
-docker compose up -d --build
+v=X.Y.Z   # the new release
+for f in compose.yaml .env.example deploy/postgres/init-runsten.sh deploy/mosquitto/mosquitto.conf; do
+  curl -fsSL --create-dirs -o "$f" "https://raw.githubusercontent.com/runsten-app/runsten/v$v/$f"
+done
 ```
+
+Compare `.env` with the new `.env.example` (a release that needs a new variable says so in its notes), set `RUNSTEN_VERSION=X.Y.Z` in `.env`, and:
+
+```sh
+docker compose pull && docker compose up -d
+```
+
+From a clone of the repository, `git fetch --tags && git checkout vX.Y.Z` brings the same files.
 
 The new images replace the containers; the database migrations are applied at startup.
 
