@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a vulnerability
+    url: https://github.com/runsten-app/runsten/security/advisories/new
+    about: Privately, never in a public issue.
+  - name: Documentation
+    url: https://runsten.app/docs/
+    about: Installing, updating, and using Runsten.

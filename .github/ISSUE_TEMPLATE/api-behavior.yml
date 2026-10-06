@@ -1,0 +1,36 @@
+name: Volvo API behavior
+description: What the Volvo API returned for your car, when Runsten reads it wrong or not at all.
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The Volvo API is little documented: what it really returns helps every user.
+        Remove the VIN, positions and tokens from the responses before pasting them.
+  - type: input
+    id: car
+    attributes:
+      label: Car
+      description: Model and model year.
+    validations:
+      required: true
+  - type: input
+    id: endpoint
+    attributes:
+      label: Endpoint
+      placeholder: /energy/v2/vehicles/{vin}/state
+    validations:
+      required: true
+  - type: textarea
+    id: response
+    attributes:
+      label: Response
+      description: The JSON, as stored in the `snapshots` table of your instance (its `payload` column).
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What the car was doing (parked, driving, charging AC or DC), and what Runsten showed.

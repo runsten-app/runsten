@@ -1,0 +1,35 @@
+name: Vehicle variant
+description: A variant missing from the catalog, or a wrong figure.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        You can also open a pull request on `internal/catalog/variants.yaml`: see
+        [Contributing a variant](https://github.com/runsten-app/runsten/blob/main/documentation/contributing/variants.md).
+  - type: input
+    id: model
+    attributes:
+      label: Model and model year
+      placeholder: EX40 Extended Range, 2025
+    validations:
+      required: true
+  - type: textarea
+    id: figures
+    attributes:
+      label: What is missing or wrong
+      description: The figures (capacity, onboard charger, DC power) and what Runsten shows instead.
+    validations:
+      required: true
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources
+      description: A link for every figure, the manufacturer's when there is one.
+    validations:
+      required: true
+  - type: input
+    id: api-kwh
+    attributes:
+      label: Battery capacity reported by the API
+      description: "`batteryCapacityKWH`, as your instance shows it, if you have one."
