@@ -177,6 +177,9 @@ func basePath(p string) (string, error) {
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// An instance holds one household's data behind a sign-in: nothing for a search
+	// engine, relayed pages included.
+	w.Header().Set("X-Robots-Tag", "noindex, nofollow")
 	for _, prefix := range relayed {
 		if strings.HasPrefix(r.URL.Path, prefix) {
 			s.proxy.ServeHTTP(w, r)

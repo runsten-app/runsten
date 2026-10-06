@@ -121,7 +121,8 @@ func TestStatic(t *testing.T) {
 				!strings.Contains(rec.Body.String(), tc.body) {
 				t.Fatalf("status %d, cache %q, body %q", res.StatusCode, res.Header.Get("Cache-Control"), rec.Body.String())
 			}
-			if res.Header.Get("X-Content-Type-Options") != "nosniff" || res.Header.Get("Referrer-Policy") != "no-referrer" {
+			if res.Header.Get("X-Content-Type-Options") != "nosniff" || res.Header.Get("Referrer-Policy") != "no-referrer" ||
+				res.Header.Get("X-Robots-Tag") != "noindex, nofollow" {
 				t.Errorf("headers %v", res.Header)
 			}
 			if csp := res.Header.Get("Content-Security-Policy"); (csp != "") != tc.app {
@@ -258,6 +259,9 @@ func TestRelay(t *testing.T) {
 	}
 	if rec.Header().Get("Content-Security-Policy") != "" {
 		t.Error("the relay adds the app's CSP to API responses")
+	}
+	if rec.Header().Get("X-Robots-Tag") != "noindex, nofollow" {
+		t.Error("relayed response indexable")
 	}
 
 	if rec := do(t, h, http.MethodPost, "http://runsten.example/api/v1/session", http.Header{"Origin": {"https://evil.example"}}); rec.Code != http.StatusForbidden {
