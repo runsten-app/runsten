@@ -68,7 +68,7 @@ jobs:
           {
             echo "## Images"
             echo
-            echo "For \`linux/amd64\` and \`linux/arm64\`. In \`.env\`, \`RUNSTEN_VERSION=${tag#v}\`, then \`docker compose pull && docker compose up -d\` (README, Updating)."
+            echo "For \`linux/amd64\` and \`linux/arm64\`. In \`.env\`, \`RUNSTEN_VERSION=${tag#v}\`, then \`docker compose pull && docker compose up -d\` (https://runsten.app/docs/self-hosting/updating)."
             echo
             cat "$RUNNER_TEMP/images.md"
           } > "$RUNNER_TEMP/notes.md"
