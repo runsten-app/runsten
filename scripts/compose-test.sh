@@ -6,12 +6,12 @@
 # set the account's MQTT broker to the mqtt profile's Mosquitto and read what the
 # collector publishes there (the state, Home Assistant's discovery) until the broker is
 # removed, give the DC charge a cost (a tariff, then an entered one), then back up,
-# restore and rebuild as the README describes, the entered cost kept. Everything but the
-# first checks goes through runsten-web, as a browser does: its relay to runsten-api is
-# under test too. Everything is removed at the end, volume included. Its own Compose
-# project: a running sim stack is left alone, but its ports (8080, 8081, 8082, 8090,
-# 1883) must be free. Needs curl, jq, web/node_modules (task web-install) and PLAYWRIGHT_IMAGE (the
-# Taskfile sets it).
+# restore and rebuild as documentation/self-hosting/backup.md describes, the entered
+# cost kept. Everything but the first checks goes through runsten-web, as a browser
+# does: its relay to runsten-api is under test too. Everything is removed at the end,
+# volume included. Its own Compose project: a running sim stack is left alone, but its
+# ports (8080, 8081, 8082, 8090, 1883) must be free. Needs curl, jq, web/node_modules
+# (task web-install) and PLAYWRIGHT_IMAGE (the Taskfile sets it).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

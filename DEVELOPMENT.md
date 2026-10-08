@@ -109,8 +109,12 @@ task e2e              # once its reconstructed trip is there, about three minute
 - The database: `docker exec -it runsten-postgres psql -U postgres runsten` (also on
   `localhost:55432`, password `runsten`). Trips and charges are derived:
   `go run ./cmd/runsten-collector rebuild` recomputes them from the snapshots.
-- The API: its contract is `api/openapi.yaml`; the README's [API](README.md#api) section shows
-  how to render it.
+- The API: its contract is `api/openapi.yaml`, generated from the code (never edit it by hand:
+  `go test ./internal/api -update`). Render it with Redocly CLI, into `api/api.html` (ignored by
+  git):
+  ```sh
+  docker run --rm --user "$(id -u):$(id -g)" -v "$PWD/api:/spec" -w /spec redocly/cli build-docs openapi.yaml -o api.html
+  ```
 
 ## Tests
 
@@ -194,6 +198,22 @@ real API: say in the pull request what you observed and where.
 Avoid it if the standard library or an existing dependency does the job. Otherwise, justify it
 in the commit message, and add it to the import allowlist of `internal/archtest` and, if it is
 constrained, to depguard in `.golangci.yml`.
+
+## Releases
+
+A release is a tag `vX.Y.Z` ([semantic versioning](https://semver.org); `vX.Y.Z-rc.N` for a
+pre-release) on a commit of `main` whose `ci` run passed, pushed by the maintainer:
+
+```sh
+git switch main && git pull
+git tag -a v0.4.0 -m "Runsten 0.4.0" && git push origin v0.4.0
+```
+
+The workflow `release` publishes the images and creates the GitHub Release, its notes
+generated from the pull requests merged since the previous tag, with the images' digests. A
+change that asks something of those who update (a rebuild, a new variable) goes into the
+[update notes](documentation/self-hosting/updating.md#update-notes) with its pull request,
+and the notes point to it.
 
 ## Conventions in short
 

@@ -20,7 +20,7 @@
 # Nothing is published beyond the host's loopback interface, and PostgreSQL not at all.
 # runsten-web serves the interface and relays to runsten-api, at the same origin; both
 # serve plain http: to reach Runsten from elsewhere, put a reverse proxy with https in
-# front of runsten-web (README, "Self-hosting").
+# front of runsten-web (documentation/self-hosting/reverse-proxy.md).
 
 name: runsten
 

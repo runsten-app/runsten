@@ -18,7 +18,7 @@
 bin/
 coverage.out
 
-# Rendered API documentation (README, API)
+# Rendered API documentation (DEVELOPMENT.md, "Looking inside")
 api/*.html
 
 # Modules of a downstream build (the premium build tag): never in this repository
