@@ -5,14 +5,29 @@ import { ApiError } from '@/shared/api'
 import vehicles from '@fixtures/vehicles.json'
 import { mountWith, testRouter } from '@test/utils'
 
-const { fetchVehicles } = vi.hoisted(() => ({ fetchVehicles: vi.fn() }))
+const { fetchVehicles, fetchConnection } = vi.hoisted(() => ({
+  fetchVehicles: vi.fn(),
+  fetchConnection: vi.fn(),
+}))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
   fetchVehicles,
 }))
+vi.mock('@/entities/connection', async (original) => ({
+  ...(await original<typeof import('@/entities/connection')>()),
+  fetchConnection,
+}))
 
 beforeEach(() => {
   fetchVehicles.mockReset()
+  fetchConnection.mockReset()
+  // Self-hosting: the instance's key reads the vehicles.
+  fetchConnection.mockResolvedValue({
+    connected: false,
+    client_id: 'runsten-dev',
+    instance_key: { last4: 'e123' },
+    api_key: null,
+  })
 })
 
 async function home() {
@@ -43,6 +58,21 @@ describe('HomePage', () => {
     const link = wrapper.find('a[href="auth/volvo/start"]')
     expect(link.text()).toBe('Connect a Volvo ID')
     expect(router.currentRoute.value.name).toBe('home')
+  })
+
+  it('asks for the Volvo key first on an instance without its own', async () => {
+    fetchVehicles.mockResolvedValue([])
+    fetchConnection.mockResolvedValue({
+      connected: false,
+      client_id: 'runsten-dev',
+      instance_key: null,
+      api_key: null,
+    })
+    const { wrapper } = await home()
+    expect(wrapper.text()).toContain('give it first, then connect your Volvo ID')
+    expect(wrapper.find('a[href="auth/volvo/start"]').exists()).toBe(false)
+    const link = wrapper.find('a[href="/connection"]')
+    expect(link.text()).toBe('Give your Volvo key')
   })
 
   it('says when the vehicles cannot be loaded', async () => {

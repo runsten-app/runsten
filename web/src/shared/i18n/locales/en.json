@@ -30,9 +30,11 @@
   },
   "home": {
     "connectVolvo": "Connect a Volvo ID",
+    "giveKey": "Give your Volvo key",
     "error": "The vehicles could not be loaded. Try again in a moment.",
     "empty": {
       "title": "No vehicle yet",
+      "keyText": "Runsten reads your vehicles with the key of a Volvo application you create: give it first, then connect your Volvo ID.",
       "text": "Connect your Volvo ID: Runsten will read the vehicles of the account."
     }
   },
