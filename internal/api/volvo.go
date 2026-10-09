@@ -203,7 +203,7 @@ const keyRefusedMessage = "Your Volvo ID is connected, but Volvo refused your ap
 const tooManyVehiclesMessage = "Your Volvo ID gives access to more vehicles than this instance lets an account have: it was not connected."
 
 // noKeyMessage asks for the account's application key, on an instance without its own.
-const noKeyMessage = "This instance has no Volvo application key of its own: give yours on the Connection page first, then connect your Volvo ID."
+const noKeyMessage = "Runsten reads your vehicles with the key of a Volvo application you create. Give it on the Connection page first, then connect your Volvo ID."
 
 func truncate(s string, n int) string {
 	if len(s) > n {

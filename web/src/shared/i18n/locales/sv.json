@@ -30,9 +30,11 @@
   },
   "home": {
     "connectVolvo": "Anslut ett Volvo ID",
+    "giveKey": "Ange din Volvo-nyckel",
     "error": "Fordonen kunde inte laddas. Försök igen om en stund.",
     "empty": {
       "title": "Inga fordon ännu",
+      "keyText": "Runsten läser dina fordon med nyckeln till en Volvo-applikation som du skapar: ange den först och anslut sedan ditt Volvo ID.",
       "text": "Anslut ditt Volvo ID: Runsten läser kontots fordon."
     }
   },

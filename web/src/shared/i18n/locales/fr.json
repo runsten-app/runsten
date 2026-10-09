@@ -30,9 +30,11 @@
   },
   "home": {
     "connectVolvo": "Connecter un Volvo ID",
+    "giveKey": "Donner votre clé Volvo",
     "error": "Les véhicules n'ont pas pu être chargés. Réessayez dans un instant.",
     "empty": {
       "title": "Aucun véhicule pour l'instant",
+      "keyText": "Runsten lit vos véhicules avec la clé d'une application Volvo que vous créez : donnez-la d'abord, puis connectez votre Volvo ID.",
       "text": "Connectez votre Volvo ID : Runsten lira les véhicules du compte."
     }
   },
