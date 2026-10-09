@@ -1,6 +1,6 @@
 module runsten/tools
 
-go 1.27.1
+go 1.27.2
 
 tool github.com/go-task/task/v3/cmd/task
 
