@@ -1,4 +1,6 @@
-# Dependency updates: one grouped pull request per ecosystem and per week.
+# Dependency updates: one grouped pull request per ecosystem and per week. A security
+# advisory has its own pull request as soon as it is published (security updates, enabled
+# in the repository's settings), so that Trivy does not fail every pull request until then.
 version: 2
 updates:
   - package-ecosystem: gomod
@@ -13,6 +15,12 @@ updates:
     schedule: { interval: weekly }
     groups:
       tools:
+        patterns: ["*"]
+  - package-ecosystem: npm
+    directory: /web
+    schedule: { interval: weekly }
+    groups:
+      npm:
         patterns: ["*"]
   - package-ecosystem: github-actions
     directory: /
