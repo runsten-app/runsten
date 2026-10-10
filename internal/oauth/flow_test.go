@@ -180,7 +180,7 @@ func TestEnrollCapped(t *testing.T) {
 func TestEnrollWithKey(t *testing.T) {
 	creds := Credentials{AccessToken: "a", RefreshToken: "r"}
 	setAt := time.Date(2026, 9, 29, 8, 0, 0, 0, time.UTC)
-	key := APIKey{Value: "own-key", SetAt: setAt}
+	key := APIKey{Value: "own-key", SetAt: setAt, ConnectionID: "conn"}
 
 	var used string
 	st := &enrollStore{}
@@ -198,6 +198,13 @@ func TestEnrollWithKey(t *testing.T) {
 	_, err := Enroll(context.Background(), st, lister{err: refusedKey{}}, "acc", key, creds, 0)
 	if !errors.Is(err, ErrKeyRefused) || !errors.Is(err, refusedKey{}) || st.creds != creds || !st.refused[setAt] || len(st.vehicles) != 0 {
 		t.Errorf("own key refused: %v (the provider's answer kept); store %+v", err, st)
+	}
+
+	// A key refused before, which lists no vehicle now: accepted again, nothing stored.
+	st = &enrollStore{refused: map[time.Time]bool{setAt: true}}
+	if _, err := Enroll(context.Background(), st, lister{}, "acc", key, creds, 0); !errors.Is(err, ErrNoVehicle) ||
+		st.refused[setAt] || st.creds.AccessToken != "" {
+		t.Errorf("own key, no vehicle: %v; store %+v", err, st)
 	}
 
 	st = &enrollStore{}

@@ -40,7 +40,7 @@ func TestAPIKeyLifecycle(t *testing.T) {
 	}
 	k, err := s.AccountKey(ctx, a)
 	setAt := t0.Truncate(time.Microsecond)
-	if err != nil || k.Value != keyA || !k.SetAt.Equal(setAt) {
+	if err != nil || k.Value != keyA || !k.SetAt.Equal(setAt) || k.ConnectionID != conn {
 		t.Fatalf("key = %+v, %v", k, err)
 	}
 	c, err := s.Connection(ctx, a)
