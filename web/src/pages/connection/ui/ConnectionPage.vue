@@ -17,9 +17,10 @@ import VehicleCollection from './VehicleCollection.vue'
 // key the vehicles are read with, and how the collector reads each vehicle. The other
 // pages only warn when nothing new is read; this one says why, and how to connect again.
 // The vehicle it was opened from, if any, is kept for the way back. The Volvo ID flow
-// comes back to it with its outcome (volvo=connected, key_refused, no_vehicle or too_many_vehicles,
-// which leads to the offer when the instance has a page of it), told once: the parameter
-// leaves the URL, a reload does not tell it again.
+// comes back to it with its outcome (volvo=connected, key_refused, no_vehicle, which
+// names the button to click again, or too_many_vehicles, which leads to the offer when
+// the instance has a page of it), told once: the parameter leaves the URL, a reload does
+// not tell it again.
 //
 // Without the instance's key (the hosted offer), the account's comes first: the Volvo ID
 // is connected after, the vehicles listed with it. With it (self-hosting), it reads every
@@ -39,7 +40,7 @@ const outcomeText = (o: Outcome) => {
     case 'key_refused':
       return t('connection.outcome.keyRefused')
     case 'no_vehicle':
-      return t('connection.outcome.noVehicle')
+      return t('connection.outcome.noVehicle', { button: connectLabel.value })
     case 'too_many_vehicles':
       return t('connection.outcome.tooManyVehicles')
   }
@@ -61,6 +62,9 @@ const {
 // to start the flow, and the button waits for the key.
 const keyMissing = computed(
   () => !!settings.value && !settings.value.instance_key && !settings.value.api_key,
+)
+const connectLabel = computed(() =>
+  settings.value?.connected ? t('connection.volvoId.reconnect') : t('connection.volvoId.connect'),
 )
 const labels = computed(() => vehicleLabels(vehicles.value ?? []))
 // One Volvo ID per account: every vehicle carries the same connection.
@@ -140,11 +144,7 @@ const lost = computed(() => connection.value?.status === 'reauth_required')
           </p>
           <!-- A full page load: the Volvo ID flow is served by runsten-api. -->
           <v-btn v-if="!keyMissing" href="auth/volvo/start" color="primary" variant="flat">
-            {{
-              settings.connected
-                ? t('connection.volvoId.reconnect')
-                : t('connection.volvoId.connect')
-            }}
+            {{ connectLabel }}
           </v-btn>
         </template>
         <template v-else>

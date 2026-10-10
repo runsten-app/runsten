@@ -196,8 +196,8 @@ func TestEnrollWithKey(t *testing.T) {
 
 	st = &enrollStore{}
 	_, err := Enroll(context.Background(), st, lister{err: refusedKey{}}, "acc", key, creds, 0)
-	if !errors.Is(err, ErrKeyRefused) || st.creds != creds || !st.refused[setAt] || len(st.vehicles) != 0 {
-		t.Errorf("own key refused: %v; store %+v", err, st)
+	if !errors.Is(err, ErrKeyRefused) || !errors.Is(err, refusedKey{}) || st.creds != creds || !st.refused[setAt] || len(st.vehicles) != 0 {
+		t.Errorf("own key refused: %v (the provider's answer kept); store %+v", err, st)
 	}
 
 	st = &enrollStore{}
