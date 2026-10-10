@@ -63,7 +63,9 @@ const status = () => w().find('[role="status"]').text()
 describe('ApiKeyForm', () => {
   it('without the instance key, is open with the steps to the developer portal', () => {
     form(hosted)
-    expect(w().text()).toContain('This instance has none of its own')
+    expect(w().text()).toContain(
+      'Runsten reads your vehicles with the key of an application you create',
+    )
     const link = w().find('a.portal')
     expect(link.attributes('href')).toBe('https://developer.volvocars.com/')
     expect(link.attributes('rel')).toBe('noreferrer')
@@ -157,7 +159,7 @@ describe('ApiKeyForm', () => {
     await w().find('.delete-key').trigger('click')
     await flushPromises()
     expect(document.body.textContent).toContain('Remove your Volvo key?')
-    expect(document.body.textContent).toContain('no longer be read')
+    expect(document.body.textContent).toContain('no longer reads your vehicles')
     document.querySelector<HTMLButtonElement>('.confirm-delete')?.click()
     await flushPromises()
     expect(api.deleteApiKey).toHaveBeenCalled()
@@ -172,7 +174,7 @@ describe('ApiKeyForm', () => {
     form(withKey)
     await w().find('.delete-key').trigger('click')
     await flushPromises()
-    expect(document.body.textContent).toContain('no longer be read')
+    expect(document.body.textContent).toContain('no longer reads your vehicles')
     document.querySelector<HTMLButtonElement>('.confirm-delete')?.click()
     await flushPromises()
     expect(document.body.textContent).toContain('The key could not be removed.')

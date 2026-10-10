@@ -83,7 +83,7 @@ describe('CollectionNotice', () => {
     [
       'missing',
       'Not read: no Volvo key given',
-      'This instance has no Volvo key of its own: give yours on the connection page.',
+      'Runsten reads your vehicles with your Volvo key: give it on the connection page.',
     ],
   ] as const)('tells a key %s, and leads to the connection', async (key, title, body) => {
     const v = car && { ...car, connection: { ...car.connection, api_key: key } }

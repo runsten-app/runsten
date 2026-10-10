@@ -163,7 +163,7 @@ describe('MqttBroker', () => {
   })
 
   it.each([
-    [new ApiError(400, 'broker_refused', ''), 'This instance does not publish to this address'],
+    [new ApiError(400, 'broker_refused', ''), 'Runsten does not publish to this address'],
     [new ApiError(400, 'invalid_body', ''), 'This broker was refused: check its fields.'],
     [new ApiError(403, 'feature_unavailable', ''), 'Your account does not include MQTT.'],
     [new ApiError(502, 'unavailable', ''), 'Runsten could not be reached.'],
@@ -179,10 +179,10 @@ describe('MqttBroker', () => {
 
   it('tells TLS before sending where the instance publishes to the Internet only', async () => {
     await mounted({ ...empty, public_only: true })
-    expect(w().text()).toContain('this instance publishes over TLS only')
+    expect(w().text()).toContain('Runsten publishes over TLS only')
     await input('mqtt-url').setValue('mqtt://broker.example')
     await submit()
-    expect(summary()).toEqual(['Broker URL: Use mqtts://: this instance publishes over TLS only.'])
+    expect(summary()).toEqual(['Broker URL: Use mqtts://: Runsten publishes over TLS only.'])
   })
 
   it('removes the broker once confirmed, the focus on the form of the next one', async () => {
