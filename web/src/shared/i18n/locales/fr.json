@@ -886,7 +886,8 @@
       "lostAt": "Perdue",
       "reason": "Raison",
       "keyFirst": "Donnez d'abord votre clé Volvo, ci-dessus : le Volvo ID se connecte ensuite, et vos véhicules sont lus avec elle.",
-      "noVehicle": "Votre Volvo ID est connecté, mais aucun véhicule n'est encore listé : Volvo a refusé la clé. Donnez-en une nouvelle : les véhicules seront listés, sans vous reconnecter."
+      "noVehicle": "Votre Volvo ID est connecté, mais aucun véhicule n'est encore listé : Volvo a refusé la clé. Donnez-en une nouvelle : les véhicules seront listés, sans vous reconnecter.",
+      "empty": "Votre Volvo ID est connecté, mais il n'a aucun véhicule : ajoutez-y votre voiture dans l'app Volvo Cars, puis cliquez sur « {button} »."
     },
     "vehicles": {
       "title": "Véhicules",

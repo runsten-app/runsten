@@ -137,9 +137,11 @@ const lost = computed(() => connection.value?.status === 'reauth_required')
             {{
               keyMissing
                 ? t('connection.volvoId.keyFirst')
-                : settings.connected
-                  ? t('connection.volvoId.noVehicle')
-                  : t('connection.volvoId.none')
+                : !settings.connected
+                  ? t('connection.volvoId.none')
+                  : settings.api_key?.refused_at
+                    ? t('connection.volvoId.noVehicle')
+                    : t('connection.volvoId.empty', { button: connectLabel })
             }}
           </p>
           <!-- A full page load: the Volvo ID flow is served by runsten-api. -->
