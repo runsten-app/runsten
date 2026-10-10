@@ -868,7 +868,7 @@
     "outcome": {
       "connected": "Volvo ID anslutet: insamlaren läser dina fordon från sitt nästa varv.",
       "keyRefused": "Ditt Volvo ID är anslutet, men Volvo avvisade din nyckel: rätta den nedan, fordonen listas då, utan att du ansluter igen.",
-      "noVehicle": "Ditt Volvo ID har inget fordon: det anslöts inte. Lägg till din bil i det i Volvo Cars-appen och anslut sedan igen.",
+      "noVehicle": "Ditt Volvo ID har inget fordon: det anslöts inte. Lägg till din bil i detta Volvo ID i Volvo Cars-appen och klicka sedan på ”{button}” igen.",
       "tooManyVehicles": "Ditt Volvo ID ger åtkomst till fler fordon än ditt konto tillåter: det anslöts inte."
     },
     "volvoId": {

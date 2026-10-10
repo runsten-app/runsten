@@ -62,14 +62,14 @@ func Enroll(ctx context.Context, st Enrollment, api VehicleLister, accountID str
 	}
 	vins, err := api.Vehicles(ctx, key.Value, c.AccessToken)
 	if key.Value != "" && keyRefused(err) {
-		conn, err := st.SaveConnection(ctx, accountID, c)
-		if err != nil {
-			return nil, fmt.Errorf("connection: %w", err)
+		conn, serr := st.SaveConnection(ctx, accountID, c)
+		if serr != nil {
+			return nil, fmt.Errorf("connection: %w", serr)
 		}
-		if err := st.SetKeyRefused(ctx, accountID, conn, key.SetAt, true); err != nil {
-			return nil, fmt.Errorf("connection: %w", err)
+		if serr := st.SetKeyRefused(ctx, accountID, conn, key.SetAt, true); serr != nil {
+			return nil, fmt.Errorf("connection: %w", serr)
 		}
-		return nil, ErrKeyRefused
+		return nil, fmt.Errorf("%w: %w", ErrKeyRefused, err) // the provider's answer, for the logs
 	}
 	if err != nil {
 		return nil, fmt.Errorf("list vehicles: %w", err)

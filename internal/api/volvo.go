@@ -142,7 +142,7 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request, sess auth.Sess
 	vins, err := oauth.Enroll(ctx, s.Enrollment, s.Vehicles, sess.AccountID, key, oauth.NewCredentials(g, at), s.MaxVehicles)
 	if errors.Is(err, oauth.ErrKeyRefused) {
 		// The grant is kept: a corrected key lists the vehicles, without a new consent.
-		s.Log.Warn("Volvo ID connected, application key refused", "account", sess.AccountID)
+		s.Log.Warn("Volvo ID connected, application key refused", "account", sess.AccountID, "err", err)
 		s.backToApp(w, r, outcomeKeyRefused)
 		return
 	}

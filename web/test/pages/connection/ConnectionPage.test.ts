@@ -257,6 +257,7 @@ describe('ConnectionPage', () => {
   it('warns when the Volvo ID has no vehicle', async () => {
     const w = await page({ outcome: 'no_vehicle' })
     expect(w.find('.v-alert').text()).toContain('Your Volvo ID has no vehicle')
+    expect(w.find('.v-alert').text()).toContain('click “Reconnect the Volvo ID” again') // the button shown: a connection is in place
   })
 
   it.each([null, '/plans'])(
