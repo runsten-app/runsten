@@ -26,8 +26,9 @@ func (s *Store) AccountKey(ctx context.Context, accountID string) (oauth.APIKey,
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		var sealed []byte
 		var setAt *time.Time
-		err := tx.QueryRow(ctx, "SELECT api_key, api_key_set_at FROM connections WHERE provider = 'volvo'").Scan(&sealed, &setAt)
+		err := tx.QueryRow(ctx, "SELECT id, api_key, api_key_set_at FROM connections WHERE provider = 'volvo'").Scan(&k.ConnectionID, &sealed, &setAt)
 		if errors.Is(err, pgx.ErrNoRows) || sealed == nil {
+			k = oauth.APIKey{}
 			return nil
 		}
 		if err != nil {

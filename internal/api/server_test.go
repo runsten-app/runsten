@@ -160,7 +160,7 @@ func (e *enrollStore) SetAPIKey(_ context.Context, _, key string, at time.Time) 
 	if e.keysErr != nil {
 		return "", e.keysErr
 	}
-	e.key, e.refused = oauth.APIKey{Value: key, SetAt: at}, false
+	e.key, e.refused = oauth.APIKey{Value: key, SetAt: at, ConnectionID: "conn"}, false
 	return "conn", nil
 }
 

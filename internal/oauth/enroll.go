@@ -28,8 +28,9 @@ type VehicleLister interface {
 // APIKey is the application key of an account's connection: the provider counts its
 // quota on it. A zero APIKey is the instance's key.
 type APIKey struct {
-	Value string
-	SetAt time.Time
+	Value        string
+	SetAt        time.Time
+	ConnectionID string // the connection it is stored on
 }
 
 // ErrKeyRefused is returned by Enroll when the provider refused the account's own
@@ -54,7 +55,8 @@ func keyRefused(err error) bool {
 // Enroll attaches credentials to the account and records the vehicles they give access
 // to, listed with key. The vehicles are listed first: a token that gives access to
 // nothing is not stored (ErrNoVehicle). A refusal of the account's own key is not the grant's: the
-// connection is stored, the key marked refused, and ErrKeyRefused returned. More than
+// connection is stored, the key marked refused, and ErrKeyRefused returned; any answer
+// of the provider marks it accepted again, before anything is stored. More than
 // maxVehicles vehicles (0: no cap) are refused with ErrTooManyVehicles.
 func Enroll(ctx context.Context, st Enrollment, api VehicleLister, accountID string, key APIKey, c Credentials, maxVehicles int) ([]string, error) {
 	if c.AccessToken == "" {
@@ -74,6 +76,12 @@ func Enroll(ctx context.Context, st Enrollment, api VehicleLister, accountID str
 	if err != nil {
 		return nil, fmt.Errorf("list vehicles: %w", err)
 	}
+	if key.Value != "" {
+		// Volvo answered: the key is accepted, even with no vehicle to list or too many.
+		if err := st.SetKeyRefused(ctx, accountID, key.ConnectionID, key.SetAt, false); err != nil {
+			return nil, fmt.Errorf("connection: %w", err)
+		}
+	}
 	if len(vins) == 0 {
 		return nil, ErrNoVehicle
 	}
@@ -83,11 +91,6 @@ func Enroll(ctx context.Context, st Enrollment, api VehicleLister, accountID str
 	conn, err := st.SaveConnection(ctx, accountID, c)
 	if err != nil {
 		return nil, fmt.Errorf("connection: %w", err)
-	}
-	if key.Value != "" {
-		if err := st.SetKeyRefused(ctx, accountID, conn, key.SetAt, false); err != nil {
-			return nil, fmt.Errorf("connection: %w", err)
-		}
 	}
 	if err := AddVehicles(ctx, st, accountID, conn, vins); err != nil {
 		return nil, err
