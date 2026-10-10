@@ -886,7 +886,8 @@
       "lostAt": "Lost",
       "reason": "Reason",
       "keyFirst": "Give your Volvo key first, above: the Volvo ID is connected after, and your vehicles read with it.",
-      "noVehicle": "Your Volvo ID is connected, but no vehicle is listed yet: Volvo refused the key. Give a new one: the vehicles are listed then, without connecting again."
+      "noVehicle": "Your Volvo ID is connected, but no vehicle is listed yet: Volvo refused the key. Give a new one: the vehicles are listed then, without connecting again.",
+      "empty": "Your Volvo ID is connected, but it has no vehicle: add your car to it in the Volvo Cars app, then click “{button}”."
     },
     "vehicles": {
       "title": "Vehicles",

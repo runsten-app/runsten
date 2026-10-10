@@ -212,6 +212,21 @@ describe('ConnectionPage', () => {
     )
   })
 
+  it('tells a Volvo ID without vehicle, its key accepted', async () => {
+    mocks.fetchVehicles.mockResolvedValue([])
+    mocks.fetchConnection.mockResolvedValue({
+      ...hosted,
+      connected: true,
+      api_key: { last4: 'cdef', set_at: '2026-09-28T05:00:00Z', refused_at: null },
+    })
+    const w = await page()
+    expect(w.find('.refused').exists()).toBe(false)
+    const section = w.find('[aria-labelledby="connection-volvo-title"]').text()
+    expect(section).toContain('Your Volvo ID is connected, but it has no vehicle')
+    expect(section).not.toContain('refused')
+    expect(section).toContain('click “Reconnect the Volvo ID”')
+  })
+
   it('tells a vehicle whose key was refused', async () => {
     const [car] = items
     if (!car) throw new Error('fixture')

@@ -886,7 +886,8 @@
       "lostAt": "Förlorad",
       "reason": "Orsak",
       "keyFirst": "Ange först din Volvo-nyckel ovan: Volvo ID ansluts sedan, och dina fordon läses med den.",
-      "noVehicle": "Ditt Volvo ID är anslutet, men inget fordon är listat än: Volvo avvisade nyckeln. Ange en ny: fordonen listas då, utan att du ansluter igen."
+      "noVehicle": "Ditt Volvo ID är anslutet, men inget fordon är listat än: Volvo avvisade nyckeln. Ange en ny: fordonen listas då, utan att du ansluter igen.",
+      "empty": "Ditt Volvo ID är anslutet men har inget fordon: lägg till din bil i det i Volvo Cars-appen och klicka sedan på ”{button}”."
     },
     "vehicles": {
       "title": "Fordon",
