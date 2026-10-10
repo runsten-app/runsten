@@ -914,7 +914,7 @@
       "quota": "Le quota quotidien d'appels de Volvo est épuisé, pour tous les véhicules de cette instance. La lecture reprend d'elle-même.",
       "details": "Voir la connexion",
       "keyRefused": "Volvo a refusé la clé d'application avec laquelle ce véhicule est lu : régénérée, ou son application supprimée sur le portail développeur. Donnez-en une nouvelle sur la page Connexion : le Volvo ID reste connecté.",
-      "keyMissing": "Cette instance n'a pas de clé Volvo à elle : donnez la vôtre sur la page Connexion.",
+      "keyMissing": "Runsten lit vos véhicules avec votre clé Volvo : donnez-la sur la page Connexion.",
       "quotaOwnKey": "Le quota quotidien d'appels de votre clé Volvo est épuisé. La lecture reprend d'elle-même.",
       "unread": "Votre compte ne lit pas ce véhicule : rien de nouveau n'en est lu, et ce qui a été lu reste."
     },
@@ -958,7 +958,7 @@
     }
   },
   "apiKey": {
-    "intro": "Volvo compte son quota quotidien d'appels par clé d'application. Cette instance n'en a pas à elle : donnez la clé d'une application que vous créez sur le portail développeur de Volvo. Son quota n'est qu'à vous, aucun autre compte ne le dépense.",
+    "intro": "Runsten lit vos véhicules avec la clé d'une application que vous créez sur le portail développeur de Volvo. Volvo compte son quota quotidien d'appels par clé : il n'est qu'à vous, aucun autre compte ne le dépense.",
     "refused": {
       "title": "Votre clé Volvo a été refusée",
       "body": "Volvo l'a refusée le {time} : régénérée, ou son application supprimée sur le portail développeur. Vos véhicules ne sont plus lus tant que vous n'en donnez pas une nouvelle ; le Volvo ID reste connecté."
@@ -970,7 +970,7 @@
     "delete": {
       "button": "Retirer la clé",
       "title": "Retirer votre clé Volvo ?",
-      "text": "Cette instance n'a pas de clé à elle : vos véhicules ne seront plus lus tant que vous n'en donnez pas une autre.",
+      "text": "Sans clé, Runsten ne lit plus vos véhicules tant que vous n'en donnez pas une autre.",
       "error": "La clé n'a pas pu être retirée. Réessayez dans un instant.",
       "cancel": "Annuler",
       "confirm": "Retirer"
@@ -1076,7 +1076,7 @@
     "failure": {
       "title": "Runsten ne peut pas publier vers votre broker",
       "unreachable": "Le broker est injoignable : vérifiez son adresse et son port, et qu'il accepte les connexions de Runsten.",
-      "refusedAddress": "Cette instance ne publie pas vers cette adresse : le broker doit être joignable depuis Internet.",
+      "refusedAddress": "Runsten ne publie pas vers cette adresse : le broker doit être joignable depuis Internet.",
       "tls": "La connexion sécurisée a échoué : le certificat du broker n'est pas reconnu, ou pas pour son nom.",
       "notAuthorized": "Le broker a refusé le nom d'utilisateur ou le mot de passe.",
       "rejected": "Le broker a refusé la connexion : vérifiez l'identifiant client.",
@@ -1084,7 +1084,7 @@
     },
     "url": "URL du broker",
     "urlHelp": "mqtt://hôte:1883, ou mqtts://hôte:8883 en TLS. Pour le module de Home Assistant : mqtt://homeassistant.local:1883.",
-    "urlHelpPublic": "mqtts://hôte:8883 : cette instance ne publie qu'en TLS, vers un broker joignable depuis Internet.",
+    "urlHelpPublic": "mqtts://hôte:8883 : Runsten ne publie qu'en TLS, vers un broker joignable depuis Internet.",
     "username": "Nom d'utilisateur",
     "usernameHelp": "Laissez vide si le broker n'en demande pas.",
     "password": "Mot de passe",
@@ -1125,7 +1125,7 @@
       "item": "{field} : {message}",
       "required": "Remplissez-le.",
       "scheme": "Commencez par mqtt:// ou mqtts://.",
-      "tls": "Utilisez mqtts:// : cette instance ne publie qu'en TLS.",
+      "tls": "Utilisez mqtts:// : Runsten ne publie qu'en TLS.",
       "host": "Écrivez l'hôte du broker après mqtt://, comme mqtt://homeassistant.local:1883.",
       "credentials": "Mettez le nom d'utilisateur et le mot de passe dans leurs champs, pas dans l'URL.",
       "path": "Seulement l'hôte et le port : ni chemin, ni requête.",
@@ -1134,7 +1134,7 @@
       "passwordAgain": "Redonnez le mot de passe pour un autre hôte, ou supprimez-le.",
       "prefix": "Des niveaux séparés par /, sans + ni #, ni / au début ou à la fin.",
       "clientId": "Seulement des lettres, des chiffres, - et _.",
-      "refused": "Cette instance ne publie pas vers cette adresse : le broker doit être joignable depuis Internet, en mqtts://.",
+      "refused": "Runsten ne publie pas vers cette adresse : le broker doit être joignable depuis Internet, en mqtts://.",
       "invalidBody": "Ce broker a été refusé : vérifiez ses champs.",
       "featureUnavailable": "Votre compte n'inclut pas MQTT.",
       "unavailable": "Runsten est injoignable. Réessayez dans un instant.",

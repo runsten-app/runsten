@@ -914,7 +914,7 @@
       "quota": "Volvos dagliga kvot av anrop är slut, för alla fordon i den här instansen. Läsningen återupptas av sig själv.",
       "details": "Visa anslutningen",
       "keyRefused": "Volvo avvisade applikationsnyckeln som fordonet läses med: den har genererats om, eller dess applikation har tagits bort på utvecklarportalen. Ange en ny på anslutningssidan: Volvo ID förblir anslutet.",
-      "keyMissing": "Den här instansen har ingen egen Volvo-nyckel: ange din på anslutningssidan.",
+      "keyMissing": "Runsten läser dina fordon med din Volvo-nyckel: ange den på anslutningssidan.",
       "quotaOwnKey": "Din Volvo-nyckels dagliga kvot av anrop är förbrukad. Läsningen återupptas av sig själv.",
       "unread": "Ditt konto läser inte det här fordonet: inget nytt läses, och det som redan lästs finns kvar."
     },
@@ -958,7 +958,7 @@
     }
   },
   "apiKey": {
-    "intro": "Volvo räknar sin dagliga kvot av anrop per applikationsnyckel. Den här instansen har ingen egen: ange nyckeln till en applikation du skapar på Volvos utvecklarportal. Dess kvot är bara din, inget annat konto förbrukar den.",
+    "intro": "Runsten läser dina fordon med nyckeln till en applikation du skapar på Volvos utvecklarportal. Volvo räknar sin dagliga kvot av anrop per nyckel: den är bara din, inget annat konto förbrukar den.",
     "refused": {
       "title": "Din Volvo-nyckel avvisades",
       "body": "Volvo avvisade den {time}: den har genererats om, eller dess applikation har tagits bort på utvecklarportalen. Dina fordon läses inte förrän du anger en ny; Volvo ID förblir anslutet."
@@ -970,7 +970,7 @@
     "delete": {
       "button": "Ta bort nyckeln",
       "title": "Ta bort din Volvo-nyckel?",
-      "text": "Den här instansen har ingen egen nyckel: dina fordon läses inte längre förrän du anger en annan.",
+      "text": "Utan nyckel läser Runsten inte längre dina fordon förrän du anger en annan.",
       "error": "Nyckeln kunde inte tas bort. Försök igen om en stund.",
       "cancel": "Avbryt",
       "confirm": "Ta bort"
@@ -1076,7 +1076,7 @@
     "failure": {
       "title": "Runsten kan inte publicera till din broker",
       "unreachable": "Brokern kunde inte nås: kontrollera adress och port, och att den tar emot anslutningar från Runsten.",
-      "refusedAddress": "Den här instansen publicerar inte till den adressen: brokern måste kunna nås från internet.",
+      "refusedAddress": "Runsten publicerar inte till den adressen: brokern måste kunna nås från internet.",
       "tls": "Den säkra anslutningen misslyckades: brokerns certifikat är inte betrott, eller inte för dess namn.",
       "notAuthorized": "Brokern avvisade användarnamnet eller lösenordet.",
       "rejected": "Brokern avvisade anslutningen: kontrollera klient-ID:t.",
@@ -1084,7 +1084,7 @@
     },
     "url": "Brokerns URL",
     "urlHelp": "mqtt://värd:1883, eller mqtts://värd:8883 över TLS. För Home Assistants tillägg: mqtt://homeassistant.local:1883.",
-    "urlHelpPublic": "mqtts://värd:8883: den här instansen publicerar bara över TLS, till en broker som kan nås från internet.",
+    "urlHelpPublic": "mqtts://värd:8883: Runsten publicerar bara över TLS, till en broker som kan nås från internet.",
     "username": "Användarnamn",
     "usernameHelp": "Lämna tomt om brokern inte kräver något.",
     "password": "Lösenord",
@@ -1125,7 +1125,7 @@
       "item": "{field}: {message}",
       "required": "Fyll i det.",
       "scheme": "Börja med mqtt:// eller mqtts://.",
-      "tls": "Använd mqtts://: den här instansen publicerar bara över TLS.",
+      "tls": "Använd mqtts://: Runsten publicerar bara över TLS.",
       "host": "Skriv brokerns värd efter mqtt://, som mqtt://homeassistant.local:1883.",
       "credentials": "Ange användarnamn och lösenord i sina egna fält, inte i URL:en.",
       "path": "Bara värd och port: ingen sökväg, ingen fråga.",
@@ -1134,7 +1134,7 @@
       "passwordAgain": "Ange lösenordet igen för en annan värd, eller ta bort det.",
       "prefix": "Nivåer åtskilda av /, utan + eller #, och utan / i början eller slutet.",
       "clientId": "Bara bokstäver, siffror, - och _.",
-      "refused": "Den här instansen publicerar inte till den adressen: brokern måste kunna nås från internet, över mqtts://.",
+      "refused": "Runsten publicerar inte till den adressen: brokern måste kunna nås från internet, över mqtts://.",
       "invalidBody": "Brokern avvisades: kontrollera dess fält.",
       "featureUnavailable": "Ditt konto omfattar inte MQTT.",
       "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",

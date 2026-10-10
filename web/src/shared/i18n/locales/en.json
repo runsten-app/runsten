@@ -914,7 +914,7 @@
       "quota": "Volvo's daily quota of calls is used up, for every vehicle of this instance. Reading resumes by itself.",
       "details": "See the connection",
       "keyRefused": "Volvo refused the application key this vehicle is read with: regenerated, or its application deleted on the developer portal. Give a new one on the connection page: the Volvo ID stays connected.",
-      "keyMissing": "This instance has no Volvo key of its own: give yours on the connection page.",
+      "keyMissing": "Runsten reads your vehicles with your Volvo key: give it on the connection page.",
       "quotaOwnKey": "The daily quota of calls of your Volvo key is used up. Reading resumes by itself.",
       "unread": "Your account does not read this vehicle: nothing new is read of it, and what was read stays."
     },
@@ -958,7 +958,7 @@
     }
   },
   "apiKey": {
-    "intro": "Volvo counts its daily quota of calls per application key. This instance has none of its own: give the key of an application you create on Volvo's developer portal. Its quota is yours alone, no other account spends it.",
+    "intro": "Runsten reads your vehicles with the key of an application you create on Volvo's developer portal. Volvo counts its daily quota of calls per key: it is yours alone, no other account spends it.",
     "refused": {
       "title": "Your Volvo key was refused",
       "body": "Volvo refused it on {time}: regenerated, or its application deleted on the developer portal. Your vehicles are not read until you give a new one; the Volvo ID stays connected."
@@ -970,7 +970,7 @@
     "delete": {
       "button": "Remove the key",
       "title": "Remove your Volvo key?",
-      "text": "This instance has no key of its own: your vehicles will no longer be read until you give another.",
+      "text": "Without a key, Runsten no longer reads your vehicles until you give another.",
       "error": "The key could not be removed. Try again in a moment.",
       "cancel": "Cancel",
       "confirm": "Remove"
@@ -1076,7 +1076,7 @@
     "failure": {
       "title": "Runsten cannot publish to your broker",
       "unreachable": "The broker could not be reached: check its address and port, and that it accepts connections from Runsten.",
-      "refusedAddress": "This instance does not publish to that address: the broker must be reachable from the Internet.",
+      "refusedAddress": "Runsten does not publish to that address: the broker must be reachable from the Internet.",
       "tls": "The secure connection failed: the broker's certificate is not trusted, or not for its name.",
       "notAuthorized": "The broker refused the username or the password.",
       "rejected": "The broker refused the connection: check the client ID.",
@@ -1084,7 +1084,7 @@
     },
     "url": "Broker URL",
     "urlHelp": "mqtt://host:1883, or mqtts://host:8883 over TLS. For Home Assistant's add-on: mqtt://homeassistant.local:1883.",
-    "urlHelpPublic": "mqtts://host:8883: this instance publishes over TLS only, to a broker reachable from the Internet.",
+    "urlHelpPublic": "mqtts://host:8883: Runsten publishes over TLS only, to a broker reachable from the Internet.",
     "username": "Username",
     "usernameHelp": "Leave empty if the broker takes none.",
     "password": "Password",
@@ -1125,7 +1125,7 @@
       "item": "{field}: {message}",
       "required": "Fill it in.",
       "scheme": "Start with mqtt:// or mqtts://.",
-      "tls": "Use mqtts://: this instance publishes over TLS only.",
+      "tls": "Use mqtts://: Runsten publishes over TLS only.",
       "host": "Write the broker's host after mqtt://, as mqtt://homeassistant.local:1883.",
       "credentials": "Put the username and the password in their own fields, not in the URL.",
       "path": "Only the host and the port: no path, no query.",
@@ -1134,7 +1134,7 @@
       "passwordAgain": "Give the password again for another host, or remove it.",
       "prefix": "Topic levels separated by /, without + or #, nor a / at either end.",
       "clientId": "Only letters, digits, - and _.",
-      "refused": "This instance does not publish to this address: the broker must be reachable from the Internet, over mqtts://.",
+      "refused": "Runsten does not publish to this address: the broker must be reachable from the Internet, over mqtts://.",
       "invalidBody": "This broker was refused: check its fields.",
       "featureUnavailable": "Your account does not include MQTT.",
       "unavailable": "Runsten could not be reached. Try again in a moment.",
