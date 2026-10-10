@@ -135,7 +135,6 @@ func TestEnroll(t *testing.T) {
 		failAt string
 	}{
 		"empty token":      {lister{vins: []string{"VIN1"}}, Credentials{}, ""},
-		"no vehicle":       {lister{}, creds, ""},
 		"listing fails":    {lister{err: errors.New("403")}, creds, ""},
 		"connection fails": {lister{vins: []string{"VIN1"}}, creds, "connection"},
 		"vehicle fails":    {lister{vins: []string{"VIN1"}}, creds, "vehicle"},
@@ -149,6 +148,15 @@ func TestEnroll(t *testing.T) {
 				t.Error("connection stored although enrollment failed")
 			}
 		})
+	}
+}
+
+// TestEnrollNoVehicle: credentials that give access to no vehicle store nothing.
+func TestEnrollNoVehicle(t *testing.T) {
+	st := &enrollStore{}
+	if _, err := Enroll(context.Background(), st, lister{}, "acc", APIKey{}, Credentials{AccessToken: "a"}, 0); !errors.Is(err, ErrNoVehicle) ||
+		st.creds.AccessToken != "" || len(st.vehicles) != 0 {
+		t.Errorf("no vehicle: %v; store %+v", err, st)
 	}
 }
 
