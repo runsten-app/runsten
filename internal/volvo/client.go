@@ -131,6 +131,25 @@ func (c *Client) get(ctx context.Context, key, token, name, path string) ([]byte
 	if key == "" {
 		return nil, fmt.Errorf("%s: %w", name, ErrNoKey)
 	}
+	var body []byte
+	var err error
+	for range keyAttempts {
+		body, err = c.call(ctx, key, token, name, path)
+		var e *APIError
+		if !errors.As(err, &e) || !e.KeyRefused() {
+			break
+		}
+	}
+	return body, err
+}
+
+// keyAttempts is how many times a call is made while Volvo refuses its application key.
+// Observed on the real API (2026-10-10): keys of applications created that day refused
+// about one call in two ("invalid VCC-API-KEY"), at random, older keys never; a key
+// really invalid is refused every time.
+const keyAttempts = 3
+
+func (c *Client) call(ctx context.Context, key, token, name, path string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.base+path, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", name, err)

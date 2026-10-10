@@ -252,3 +252,45 @@ func TestKeyRefusedMessages(t *testing.T) {
 		}
 	}
 }
+
+// TestKeyRefusedRetried: a key Volvo refuses now and then is tried again, up to
+// keyAttempts calls; one refused every time is refused; other errors are not retried.
+func TestKeyRefusedRetried(t *testing.T) {
+	const refusal = `{"status":401,"error":{"message":"Access denied due to invalid VCC-API-KEY. Make sure to provide a valid key for an active application."}}`
+	for name, tt := range map[string]struct {
+		refused, status int // calls refused first, then the status answered
+		wantCalls       int
+		wantErr         bool
+		wantKind        Kind
+	}{
+		"accepted at the last attempt": {keyAttempts - 1, http.StatusOK, keyAttempts, false, 0},
+		"refused every time":           {keyAttempts, http.StatusOK, keyAttempts, true, KindKeyRefused},
+		"token refused":                {0, http.StatusUnauthorized, 1, true, KindUnauthorized},
+	} {
+		t.Run(name, func(t *testing.T) {
+			calls := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				calls++
+				switch {
+				case calls <= tt.refused:
+					w.WriteHeader(http.StatusUnauthorized)
+					_, _ = w.Write([]byte(refusal))
+				case tt.status != http.StatusOK:
+					w.WriteHeader(tt.status)
+					_, _ = w.Write([]byte(`{"error":{"message":"UNAUTHORIZED"}}`))
+				default:
+					_, _ = w.Write([]byte(`{"data":[{"vin":"VIN1"}]}`))
+				}
+			}))
+			t.Cleanup(srv.Close)
+			vins, err := NewClient(srv.URL, "key", srv.Client()).Vehicles(context.Background(), "", "token")
+			var apiErr *APIError
+			if !tt.wantErr && (err != nil || len(vins) != 1) || tt.wantErr && (!errors.As(err, &apiErr) || apiErr.Kind != tt.wantKind) {
+				t.Errorf("Vehicles = %v, %v", vins, err)
+			}
+			if calls != tt.wantCalls {
+				t.Errorf("%d calls, want %d", calls, tt.wantCalls)
+			}
+		})
+	}
+}
