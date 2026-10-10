@@ -4,9 +4,13 @@ import { createWebHistory } from 'vue-router'
 import { i18n } from '@/shared/i18n'
 import { onUnauthorized } from '@/shared/api'
 import App from './App.vue'
+import { beforeStart } from './extensions'
 import { createQueryClient } from './providers/query'
 import { vuetify } from './providers/vuetify'
 import { createAppRouter } from './routes'
+
+// Before anything reads the API or the router starts: a downstream build's preparations.
+await beforeStart()
 
 const queryClient = createQueryClient()
 // The base of the document: runsten-web writes the reverse proxy's prefix into it.
