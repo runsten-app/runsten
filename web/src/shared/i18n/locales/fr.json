@@ -868,6 +868,7 @@
     "outcome": {
       "connected": "Volvo ID connecté : le collecteur lit vos véhicules dès son prochain passage.",
       "keyRefused": "Votre Volvo ID est connecté, mais Volvo a refusé votre clé : corrigez-la ci-dessous, les véhicules seront listés, sans vous reconnecter.",
+      "noVehicle": "Votre Volvo ID n'a aucun véhicule : il n'a pas été connecté. Ajoutez-y votre voiture dans l'app Volvo Cars, puis connectez-vous à nouveau.",
       "tooManyVehicles": "Votre Volvo ID donne accès à plus de véhicules que votre compte n'en permet : il n'a pas été connecté."
     },
     "volvoId": {

@@ -146,6 +146,12 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request, sess auth.Sess
 		s.backToApp(w, r, outcomeKeyRefused)
 		return
 	}
+	if errors.Is(err, oauth.ErrNoVehicle) {
+		// Not a failure of the instance: the user attaches a vehicle at Volvo, then again.
+		s.Log.Warn("Volvo ID refused: no vehicle", "account", sess.AccountID)
+		s.backToApp(w, r, outcomeNoVehicle)
+		return
+	}
 	if errors.Is(err, oauth.ErrTooManyVehicles) {
 		// The connection in place, if any, stays.
 		s.Log.Warn("Volvo ID refused: too many vehicles", "account", sess.AccountID, "max", s.MaxVehicles)
@@ -170,6 +176,7 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request, sess auth.Sess
 const (
 	outcomeConnected       = "connected"
 	outcomeKeyRefused      = "key_refused"
+	outcomeNoVehicle       = "no_vehicle"
 	outcomeTooManyVehicles = "too_many_vehicles"
 )
 

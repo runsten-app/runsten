@@ -254,6 +254,11 @@ describe('ConnectionPage', () => {
     expect(w.find('.v-alert').text()).toContain('Volvo refused your key')
   })
 
+  it('warns when the Volvo ID has no vehicle', async () => {
+    const w = await page({ outcome: 'no_vehicle' })
+    expect(w.find('.v-alert').text()).toContain('Your Volvo ID has no vehicle')
+  })
+
   it.each([null, '/plans'])(
     'warns when the Volvo ID has too many vehicles, leading to the page that lifts the limits: %s',
     async (limitsPage) => {

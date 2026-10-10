@@ -17,7 +17,7 @@ import VehicleCollection from './VehicleCollection.vue'
 // key the vehicles are read with, and how the collector reads each vehicle. The other
 // pages only warn when nothing new is read; this one says why, and how to connect again.
 // The vehicle it was opened from, if any, is kept for the way back. The Volvo ID flow
-// comes back to it with its outcome (volvo=connected, key_refused or too_many_vehicles,
+// comes back to it with its outcome (volvo=connected, key_refused, no_vehicle or too_many_vehicles,
 // which leads to the offer when the instance has a page of it), told once: the parameter
 // leaves the URL, a reload does not tell it again.
 //
@@ -29,7 +29,7 @@ const { t } = useI18n()
 const { unread } = useLimits()
 const route = useRoute()
 const router = useRouter()
-const outcomes = ['connected', 'key_refused', 'too_many_vehicles'] as const
+const outcomes = ['connected', 'key_refused', 'no_vehicle', 'too_many_vehicles'] as const
 type Outcome = (typeof outcomes)[number]
 const outcome = ref(outcomes.find((o) => o === props.outcome))
 const outcomeText = (o: Outcome) => {
@@ -38,6 +38,8 @@ const outcomeText = (o: Outcome) => {
       return t('connection.outcome.connected')
     case 'key_refused':
       return t('connection.outcome.keyRefused')
+    case 'no_vehicle':
+      return t('connection.outcome.noVehicle')
     case 'too_many_vehicles':
       return t('connection.outcome.tooManyVehicles')
   }

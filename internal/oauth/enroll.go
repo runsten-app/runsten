@@ -37,6 +37,10 @@ type APIKey struct {
 // another key.
 var ErrKeyRefused = errors.New("application key refused")
 
+// ErrNoVehicle is returned by Enroll when the credentials give access to no vehicle (none
+// attached to the account at the provider): nothing is stored.
+var ErrNoVehicle = errors.New("no vehicle accessible with this token")
+
 // ErrTooManyVehicles is returned by Enroll when the credentials give access to more
 // vehicles than the account may have: nothing is stored.
 var ErrTooManyVehicles = errors.New("more vehicles than the account may have")
@@ -49,7 +53,7 @@ func keyRefused(err error) bool {
 
 // Enroll attaches credentials to the account and records the vehicles they give access
 // to, listed with key. The vehicles are listed first: a token that gives access to
-// nothing is not stored. A refusal of the account's own key is not the grant's: the
+// nothing is not stored (ErrNoVehicle). A refusal of the account's own key is not the grant's: the
 // connection is stored, the key marked refused, and ErrKeyRefused returned. More than
 // maxVehicles vehicles (0: no cap) are refused with ErrTooManyVehicles.
 func Enroll(ctx context.Context, st Enrollment, api VehicleLister, accountID string, key APIKey, c Credentials, maxVehicles int) ([]string, error) {
@@ -71,7 +75,7 @@ func Enroll(ctx context.Context, st Enrollment, api VehicleLister, accountID str
 		return nil, fmt.Errorf("list vehicles: %w", err)
 	}
 	if len(vins) == 0 {
-		return nil, errors.New("no vehicle accessible with this token")
+		return nil, ErrNoVehicle
 	}
 	if maxVehicles > 0 && len(vins) > maxVehicles {
 		return nil, ErrTooManyVehicles

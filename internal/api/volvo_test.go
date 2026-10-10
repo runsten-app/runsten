@@ -274,9 +274,10 @@ func (f *fakeAuthorizer) Exchange(context.Context, string, string) (oauth.Grant,
 	return oauth.Grant{AccessToken: "a", RefreshToken: "r"}, f.err
 }
 
-type noVehicles struct{}
+// failingVehicles fails to list the vehicles.
+type failingVehicles struct{}
 
-func (noVehicles) Vehicles(context.Context, string, string) ([]string, error) {
+func (failingVehicles) Vehicles(context.Context, string, string) ([]string, error) {
 	return nil, errors.New("403")
 }
 
@@ -287,7 +288,7 @@ func TestEnrollmentFailure(t *testing.T) {
 	sessions := newFakeSessions(clk)
 	token, _, _ := sessions.Login(context.Background(), "admin", password, "test")
 	s := New(Config{
-		Sessions: sessions, Authorizer: &fakeAuthorizer{}, Flows: flows, Enrollment: st, Vehicles: noVehicles{},
+		Sessions: sessions, Authorizer: &fakeAuthorizer{}, Flows: flows, Enrollment: st, Vehicles: failingVehicles{},
 		Keys: st, Tokens: st, InstanceKey: true,
 		Clock: clk, Log: quiet,
 	})
@@ -299,6 +300,38 @@ func TestEnrollmentFailure(t *testing.T) {
 	s.ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadGateway || st.count() != 0 {
 		t.Errorf("status %d, %d saved", rec.Code, st.count())
+	}
+}
+
+// emptyVehicles lists no vehicle: none is attached to the Volvo ID.
+type emptyVehicles struct{}
+
+func (emptyVehicles) Vehicles(context.Context, string, string) ([]string, error) {
+	return nil, nil
+}
+
+// TestNoVehicle: a Volvo ID without a vehicle is not connected, and the Connection page
+// tells why, rather than an error page.
+func TestNoVehicle(t *testing.T) {
+	clk := clock.NewManual(t0)
+	flows := oauth.NewFlows(clk, time.Minute, 1)
+	st := &enrollStore{}
+	sessions := newFakeSessions(clk)
+	token, _, _ := sessions.Login(context.Background(), "admin", password, "test")
+	s := New(Config{
+		Sessions: sessions, Authorizer: &fakeAuthorizer{}, Flows: flows, Enrollment: st, Vehicles: emptyVehicles{},
+		Keys: st, Tokens: st, InstanceKey: true,
+		Clock: clk, Log: quiet,
+	})
+	state, _, _ := flows.Start(account)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/auth/volvo/callback?code=c&state="+state, http.NoBody)
+	req.AddCookie(reqCookie(stateCookie, state))
+	req.AddCookie(reqCookie("runsten_session", token))
+	s.ServeHTTP(rec, req)
+	if rec.Code != http.StatusSeeOther || !strings.HasSuffix(rec.Header().Get("Location"), "connection?volvo="+outcomeNoVehicle) ||
+		st.count() != 0 {
+		t.Errorf("status %d, Location %q, %d saved", rec.Code, rec.Header().Get("Location"), st.count())
 	}
 }
 
