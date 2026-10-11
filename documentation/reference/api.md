@@ -32,6 +32,7 @@ A request body is sent as `application/json`.
 | `GET /api/v1/vehicles/{id}/trips`, `…/charges` | newest first, by pages (`limit`, `cursor`), within a period (`from`, `to`) |
 | `GET /api/v1/vehicles/{id}/trips/{trip}`, `…/charges/{charge}` | one trip or charge |
 | `PUT`, `DELETE /api/v1/vehicles/{id}/charges/{charge}/cost` | enter what a charge cost; delete it |
+| `GET /api/v1/vehicles/{id}/imports`, `DELETE …/imports/{source}` | the trips and charges imported from other apps, by source; delete one source's |
 | `GET /api/v1/vehicles/{id}/stats` | totals of a period (`from`, `to`), by `day`, `week` or `month` in a time zone (`bucket`, `tz`) |
 | `GET /api/v1/vehicles/{id}/battery` | the estimated battery capacity over the whole history |
 | `GET`, `PUT /api/v1/settings` | the account's currency, and the accepted ones |
@@ -45,9 +46,10 @@ A request body is sent as `application/json`.
 
 - **Units are in the field names**: `_km`, `_m`, `_kwh`, `_pct`, `_w`, `_kw`, `_s`; `_minor` in minor units of the account's currency (cents), `price_per_kwh` in its major units.
 - **Times** are RFC 3339 in UTC. Trip and charge times are bounds: `start.after`, `start.before`, `end.after`, `end.before`. `reconstructed` marks the events that were never seen.
+- **Imported events** come in the same lists as the derived ones, with `imported: true`: trips and charges another app (Aximote, the Volvo Cars app) cut from its own readings, before Runsten read the vehicle. Their times are exact (`after` equals `before`), and their ID is their source and their ID there, `aximote:8812`. `sources` tells where every event comes from: the sources of a derived event's readings (`volvo`), or the app of an imported one.
 - **Unknown is `null`**, never zero.
 - **Energies** are estimates: ΔSoC × `capacity_kwh`, with `capacity_source` `catalog_net` (the net capacity of the variant) or `api` (the capacity Volvo reports).
 - **Durations** are `{"min", "max"}` in seconds.
-- **A cost** is `{"currency", "min_minor", "max_minor", "source", …}`, `min_minor = max_minor` when it is one amount; `source` is `tariff` or `entered`.
+- **A cost** is `{"currency", "min_minor", "max_minor", "source", …}`, `min_minor = max_minor` when it is one amount; `source` is `tariff`, `entered`, or `imported` (what the app of an imported charge says it cost, in the account's currency).
 - **Statistics** count each event once, in the interval that holds its `start.after`; a sum's `_unknown` companion counts the events that lacked a value. At most 400 intervals; `tz` is an IANA time zone, `UTC` by default.
 - **Errors** are `{"error": {"code": …, "message": …}}`.
