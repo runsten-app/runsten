@@ -211,6 +211,7 @@ type env struct {
 	brokers  *memBrokers
 	jobs     *memImportJobs
 	aximote  *fakeAximote
+	files    *fakeFileImports
 	flows    *oauth.Flows
 	server   *Server
 }
@@ -226,7 +227,7 @@ func newEnv(t *testing.T, maxFlows int) *env {
 // the simulator accepts (nil: any).
 func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []string) *env {
 	t.Helper()
-	e := &env{store: &enrollStore{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, aximote: &fakeAximote{}}
+	e := &env{store: &enrollStore{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, aximote: &fakeAximote{}, files: &fakeFileImports{}}
 	e.reader = newMemReader(e.settings)
 	var handler http.Handler
 	e.api = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { handler.ServeHTTP(w, r) }))
@@ -264,7 +265,7 @@ func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []strin
 		Sessions: e.sessions, AccessTokens: e.tokens, Reader: e.reader, States: e.reader, Readings: e.reader, Settings: e.settings, Costs: e.reader, Imports: e.reader, Models: e.reader,
 		Authorizer: authz, Flows: e.flows, Enrollment: e.store, Vehicles: volvo.NewClient(e.sim.URL, instanceKey, e.sim.Client()),
 		Keys: e.store, Tokens: e.store, InstanceKey: instanceKey != "", ClientID: cfg.ClientID,
-		InstanceKeyLast4: instanceKey[max(0, len(instanceKey)-4):], Brokers: e.brokers, ImportJobs: e.jobs, Aximote: e.aximote,
+		InstanceKeyLast4: instanceKey[max(0, len(instanceKey)-4):], Brokers: e.brokers, ImportJobs: e.jobs, Aximote: e.aximote, FileImports: e.files,
 		Params: core.DefaultParams(), CostParams: core.DefaultCostParams(), CapacityParams: core.DefaultCapacityParams(),
 		Catalog: mustCatalog(t), Clock: e.clk, Log: quiet,
 	})

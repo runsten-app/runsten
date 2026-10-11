@@ -84,7 +84,10 @@ test("Imports: a vehicle's settings tell the last import, list Aximote's vehicle
   await expect(vehicles.getByRole('radio', { name: /My EX30/ })).toBeChecked()
   await expect(vehicles.getByRole('radio', { name: /Old V60/ })).not.toBeChecked()
   await expect(vehicles).toContainText('Same VIN as this vehicle')
-  await expect(section.getByRole('button', { name: 'Import', exact: true })).toBeVisible()
+  // Aximote's: the Volvo Data Portal's form has its own.
+  await expect(
+    section.locator('.aximote-import').getByRole('button', { name: 'Import', exact: true }),
+  ).toBeVisible()
   await checkView(page, testInfo, 'import-vehicles')
 
   await section.getByRole('button', { name: 'Cancel' }).click()

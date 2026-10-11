@@ -33,6 +33,7 @@ const defaults = {
   VSelect: field,
   VAutocomplete: field,
   VTextarea: field,
+  VFileInput: field,
   VMenu: { VList: { bgColor: 'surface' } },
   VDivider: { opacity: 1 },
 }

@@ -7,8 +7,10 @@ import { useFormat } from '@/shared/lib'
 import { ImportedBadge } from '@/shared/ui'
 import { useDeleteImport, useImports } from '../composables/useImports'
 import AximoteImport from './AximoteImport.vue'
+import VolvoDataPortalImport from './VolvoDataPortalImport.vue'
 
-// VehicleImports imports a vehicle's history from Aximote, then lists the trips and
+// VehicleImports imports a vehicle's history from Aximote or from the files of the
+// Volvo Data Portal, then lists the trips and
 // charges imported into it from other applications, by source, and deletes one
 // source's: what Runsten derived stays.
 const props = defineProps<{ vehicle: string }>()
@@ -62,10 +64,13 @@ async function confirm() {
 </script>
 
 <template>
-  <section class="vehicle-imports mb-6" :aria-labelledby="titleId">
+  <!-- Inert behind the dialog, which is teleported out of it: a modal leaves nothing
+       behind it to reach, nor to read through its scrim. -->
+  <section class="vehicle-imports mb-6" :aria-labelledby="titleId" :inert="confirming || undefined">
     <h2 :id="titleId" class="text-title-large mb-2" tabindex="-1">{{ t('imports.title') }}</h2>
     <p class="text-body-medium mb-4">{{ t('imports.help') }}</p>
     <AximoteImport :vehicle />
+    <VolvoDataPortalImport :vehicle />
     <h3 class="text-title-medium mb-2">{{ t('imports.listTitle') }}</h3>
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">
       {{ t('imports.error') }}

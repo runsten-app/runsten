@@ -11,7 +11,11 @@ async function importFromScreen(section: Locator) {
   await section.getByLabel('Aximote token').fill(aximoteToken)
   await section.getByRole('button', { name: 'Find my vehicles' }).click()
   await expect(section.getByRole('radio', { name: /My EX30/ })).toBeChecked()
-  await section.getByRole('button', { name: 'Import', exact: true }).click()
+  // Aximote's: the Volvo Data Portal's form has its own.
+  await section
+    .locator('.aximote-import')
+    .getByRole('button', { name: 'Import', exact: true })
+    .click()
   // The token leaves the page with the form; the report follows the progress.
   await expect(section.getByLabel('Aximote token')).toHaveCount(0)
   await expect(section.locator('.import-report')).toContainText('Import finished', {

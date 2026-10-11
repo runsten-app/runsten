@@ -341,7 +341,7 @@ type EventFields struct {
 	DetectedAt    time.Time  `json:"detected_at" pattern:"Z$" doc:"The first reading that revealed the event; for an imported event, when it was last imported."`
 	Reconstructed bool       `json:"reconstructed" doc:"The event was never seen, only revealed by the odometer or the state of charge: it lies somewhere within [start.after, end.before], and start and end are that same interval."`
 	Imported      bool       `json:"imported" doc:"The event was imported from another application, which cut it from its own readings: it is not derived from Runsten's, and its times are the application's own, start.after equal to start.before, end.after to end.before. Only events before the vehicle's first reading are imported."`
-	Sources       []string   `json:"sources" nullable:"false" minItems:"1" doc:"Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote). One vocabulary for both, which new sources extend." example:"[\"volvo\"]"`
+	Sources       []string   `json:"sources" nullable:"false" minItems:"1" doc:"Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote; volvo_data_portal: the files of the Volvo Data Portal). One vocabulary for both, which new sources extend." example:"[\"volvo\"]"`
 	Start         boundsJSON `json:"start" doc:"When the event started. A derived event's bounds are never collapsed into a single time."`
 	End           boundsJSON `json:"end" doc:"When the event ended."`
 }

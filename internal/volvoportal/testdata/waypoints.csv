@@ -1,0 +1,4 @@
+Timestamp,Latitude,Longitude,Altitude,Odometer,Speed (kph),Heading (degree),Fuel Consumption Since Start (L),Energy Consumption Since Start (kWh),Energy Regeneration Since Start (kWh)
+2025-10-13T07:17:03.616Z,35.34558666666667,23.453405277777777,113.0,5094000.0,0.0,0.0,0.0,0.0,0.0
+2025-10-13T07:17:26.495Z,35.34558666666667,23.453405277777777,113.0,5094000.0,0.0,0.0,0.0,0.0,0.0
+2025-10-13T07:18:27.813Z,35.34759426666667,23.454243411111111,223.0,5094000.0,11.0,0.0,0.0,0.0,0.0

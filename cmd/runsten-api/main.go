@@ -107,6 +107,7 @@ import (
 	"runsten/internal/platform/secretbox"
 	"runsten/internal/store"
 	"runsten/internal/volvo"
+	"runsten/internal/volvoportal"
 )
 
 // Pending authorizations: a user completes the Volvo ID login within minutes, and a
@@ -212,15 +213,16 @@ func run(args []string) error {
 	ax := aximote.NewClient(cfg.aximoteURL, hc)
 	handler := api.New(api.Config{
 		Sessions: sessions, AccessTokens: sessions,
-		Addresses:  addresses,
-		Reader:     st,
-		Settings:   st,
-		Models:     st,
-		Costs:      st,
-		Imports:    st,
-		ImportJobs: st,
-		Aximote:    aximoteVehicles{ax},
-		Accounts:   st,
+		Addresses:   addresses,
+		Reader:      st,
+		Settings:    st,
+		Models:      st,
+		Costs:       st,
+		Imports:     st,
+		ImportJobs:  st,
+		Aximote:     aximoteVehicles{ax},
+		FileImports: fileImports{importer.NewFiles(st, clock.Real{})},
+		Accounts:    st,
 		// It only reads the current state and the readings: it derives nothing, and
 		// needs no capacity.
 		States:     deriver,
@@ -508,6 +510,21 @@ func validateRedirectURI(raw string) error {
 		return fmt.Errorf("the path must end with %s", callbackPath)
 	}
 	return nil
+}
+
+// fileImports imports the files a user uploads, for the API.
+type fileImports struct{ f *importer.Files }
+
+func (i fileImports) ImportVolvoDataPortal(ctx context.Context, accountID, vehicleID string, trips, waypoints io.Reader) (api.FileImport, error) {
+	rep, err := i.f.VolvoDataPortal(ctx, accountID, vehicleID, trips, waypoints)
+	var fe *volvoportal.FormatError
+	switch {
+	case errors.As(err, &fe):
+		return api.FileImport{}, fmt.Errorf("%w: %w", api.ErrImportFile, err)
+	case err != nil:
+		return api.FileImport{}, err //nolint:wrapcheck // the importer's, with its context
+	}
+	return api.FileImport{Imported: rep.Saved, Skipped: rep.Skipped, Invalid: rep.Invalid, Cutoff: rep.Cutoff}, nil
 }
 
 // aximoteVehicles lists an Aximote account's vehicles for the API.
