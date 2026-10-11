@@ -123,6 +123,7 @@
     "importedFrom": {
       "aximote": "Importerad från Aximote",
       "volvoCsv": "Importerad från Volvo Cars-appen",
+      "volvoDataPortal": "Importerad från Volvo Data Portal",
       "other": "Importerad från {source}"
     },
     "importedHelp": "Importerad från en annan app, från innan Runsten läste fordonet: tider och siffror är den appens egna.",
@@ -1216,6 +1217,36 @@
         "active": "En import av detta fordon pågår redan.",
         "network": "Runsten kunde inte nås. Försök igen om en stund.",
         "internal": "Importen kunde inte starta. Försök igen om en stund."
+      }
+    },
+    "portal": {
+      "title": "Importera från Volvo Data Portal",
+      "beta": "Beta",
+      "intro": "I EU ger Data Act dig rätt att begära bilens data från Volvo Cars på deras Data Portal: begär resorna och vägpunkterna. Volvo skickar två CSV-filer, ibland efter flera timmar; välj dem här. Bara resor från före fordonets första avläsning importeras, med spår från vägpunkterna. En ny import ersätter dem.",
+      "link": "Volvo Data Portal",
+      "newTab": "(öppnas i en ny flik)",
+      "trips": {
+        "label": "Resefil (CSV)",
+        "hint": "Obligatorisk: filen vars kolumner börjar med Start time, End time."
+      },
+      "waypoints": {
+        "label": "Vägpunktsfil (CSV)",
+        "hint": "Valfri: dess positioner, ungefär en per minut, ritar resornas spår."
+      },
+      "start": "Importera",
+      "done": "Importen är klar",
+      "report": {
+        "imported": "Ingen resa importerad. | En resa importerad. | {n} resor importerade.",
+        "skipped": "En utelämnad: den börjar efter fordonets första avläsning ({date}). | {n} utelämnade: de börjar efter fordonets första avläsning ({date}).",
+        "invalid": "En rad utelämnad, oläslig eller utanför gränserna. | {n} rader utelämnade, oläsliga eller utanför gränserna."
+      },
+      "error": {
+        "summary": "Filerna importerades inte",
+        "required": "Välj resefilen.",
+        "file": "Det här är ingen fil från Volvo Data Portal: kontrollera att resefilen är den med Start time och End time, och vägpunktsfilen den med Timestamp.",
+        "tooLarge": "Filerna är för stora: högst 32 MB tillsammans.",
+        "network": "Runsten kunde inte nås. Försök igen om en stund.",
+        "internal": "Filerna kunde inte importeras. Försök igen om en stund."
       }
     },
     "error": "Importerna kunde inte läsas in. Försök igen om en stund.",

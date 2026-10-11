@@ -50,9 +50,13 @@ async function mounted(list: VehicleImport[] | Error = [aximote]) {
 const status = (w: VueWrapper) => w.find('.vehicle-imports > [role="status"]').text()
 
 describe('VehicleImports', () => {
-  it('offers the import from Aximote above the list, empty without an import', async () => {
+  it('offers the imports from Aximote and the Volvo Data Portal above the list, empty without an import', async () => {
     const { w } = await mounted([])
-    expect(w.findAll('h3').map((h) => h.text())).toEqual(['Import from Aximote Beta', 'Imports'])
+    expect(w.findAll('h3').map((h) => h.text())).toEqual([
+      'Import from Aximote Beta',
+      'Import from the Volvo Data Portal Beta',
+      'Imports',
+    ])
     expect(w.find('.none').text()).toBe('Nothing imported.')
     expect(api.fetchImports).toHaveBeenCalledWith('v1')
   })

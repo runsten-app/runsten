@@ -120,6 +120,8 @@ export function useFormat() {
           return t('event.importedFrom.aximote')
         case 'volvo_csv':
           return t('event.importedFrom.volvoCsv')
+        case 'volvo_data_portal':
+          return t('event.importedFrom.volvoDataPortal')
         default:
           return t('event.importedFrom.other', { source })
       }

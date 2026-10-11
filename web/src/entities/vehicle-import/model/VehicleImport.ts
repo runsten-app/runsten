@@ -10,6 +10,9 @@ export type ImportJob = components['schemas']['ImportJob']
 // AximoteVehicle is a vehicle of an Aximote account, as its token gives access to it.
 export type AximoteVehicle = components['schemas']['AximoteVehicle']
 
+// FileImport is the report of an import of files, written at once.
+export type FileImport = components['schemas']['FileImport']
+
 // isActive tells a job the import worker has still to run.
 export const isActive = (job: ImportJob | null | undefined) =>
   job?.status === 'pending' || job?.status === 'running'
