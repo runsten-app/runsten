@@ -10,7 +10,7 @@ import (
 )
 
 // The fixtures are the samples an owner published, their dates made consistent (they
-// had edited some), one header broken over two lines as it was shown, CRLF in the trips'.
+// had edited some), one header broken over two lines as it was shown.
 
 func TestReadTrips(t *testing.T) {
 	f, err := os.Open("testdata/trips.csv")
@@ -62,9 +62,9 @@ func TestReadWaypoints(t *testing.T) {
 
 func TestReadTolerates(t *testing.T) {
 	// Reordered, in another case, a byte order mark, columns missing or added, cells
-	// empty or spaced.
-	trips, invalid, err := ReadTrips(strings.NewReader("\ufeffEND TIME, start  time ,Distance (meters),Extra\n" +
-		"2025-10-13T07:53:02Z,2025-10-13T07:17:26+02:00, ,x\n" +
+	// empty or spaced, CRLF line ends.
+	trips, invalid, err := ReadTrips(strings.NewReader("\ufeffEND TIME, start  time ,Distance (meters),Extra\r\n" +
+		"2025-10-13T07:53:02Z,2025-10-13T07:17:26+02:00, ,x\r\n" +
 		"2025-10-13T08:53:02Z,2025-10-13T08:17:26Z\n"))
 	if err != nil || invalid != 0 || len(trips) != 2 {
 		t.Fatalf("%d trips, %d invalid, %v", len(trips), invalid, err)
