@@ -345,14 +345,15 @@ type Collector struct {
 	// own or not at all.
 	noInstanceKey bool
 
-	vehicles     map[string]*vehicleState // by VehicleID
-	restored     bool                     // the budget replayed the saved calls
-	apiBlocked   map[unit]time.Time       // quota exhausted
-	keyRefused   map[keyID]time.Time      // application keys refused, until when
-	accountPause map[string]time.Time     // rate limit or token rejected, per account
-	reauthLogged map[string]bool          // connections whose loss was logged, by ConnectionID
-	keyLogged    map[string]bool          // connections whose missing or refused key was logged
-	written      map[string]Status        // the latest status written, by VehicleID
+	vehicles     map[string]*vehicleState          // by VehicleID
+	restored     bool                              // the budget replayed the saved calls
+	apiBlocked   map[unit]time.Time                // quota exhausted
+	keyRefused   map[keyID]time.Time               // application keys refused, until when
+	keyAnswered  map[keyID]map[volvo.Endpoint]bool // endpoints read with each key
+	accountPause map[string]time.Time              // rate limit or token rejected, per account
+	reauthLogged map[string]bool                   // connections whose loss was logged, by ConnectionID
+	keyLogged    map[string]bool                   // connections whose missing or refused key was logged
+	written      map[string]Status                 // the latest status written, by VehicleID
 }
 
 // keyID is an application key: a connection's own, as set at a time, or the instance's
@@ -382,6 +383,7 @@ func New(api API, store Store, tokens TokenSource, clk clock.Clock, iv Intervals
 		vehicles:      map[string]*vehicleState{},
 		apiBlocked:    map[unit]time.Time{},
 		keyRefused:    map[keyID]time.Time{},
+		keyAnswered:   map[keyID]map[volvo.Endpoint]bool{},
 		accountPause:  map[string]time.Time{},
 		reauthLogged:  map[string]bool{},
 		keyLogged:     map[string]bool{},
@@ -571,6 +573,7 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 			continue
 		}
 		delete(vs.missing, ep)
+		c.answered(t, ep)
 		stored, err := c.save(ctx, t, ep, now, raw)
 		if err == nil {
 			saved, vs.readAt = true, now
@@ -882,11 +885,11 @@ func (c *Collector) observe(t Target, vs *vehicleState, ep volvo.Endpoint, raw [
 
 func (c *Collector) fetchFailed(ctx context.Context, t Target, vs *vehicleState, ep volvo.Endpoint, now time.Time, err error) {
 	var apiErr *volvo.APIError
-	if errors.As(err, &apiErr) && optional(ep) && missingEndpoint(apiErr) {
+	if errors.As(err, &apiErr) && ((optional(ep) && missingEndpoint(apiErr)) || c.endpointRefused(t, ep, apiErr)) {
 		// Not a failure the user can act upon: tried again at the details' pace, logged
 		// once until it answers.
 		if _, logged := vs.missing[ep]; !logged {
-			c.log.Info("optional endpoint unavailable: tried again later", "vehicle", t.VehicleID, "endpoint", ep,
+			c.log.Info("endpoint unavailable: tried again later", "vehicle", t.VehicleID, "endpoint", ep,
 				"status", apiErr.Status)
 		}
 		vs.missing[ep] = now.Add(c.interval(t, vs.mode, volvo.Details))
@@ -924,6 +927,23 @@ func (c *Collector) fetchFailed(ctx context.Context, t Target, vs *vehicleState,
 	default:
 		c.log.Warn("call", "vehicle", t.VehicleID, "endpoint", ep, "status", apiErr.Status, "err", apiErr.Message)
 	}
+}
+
+func (c *Collector) answered(t Target, ep volvo.Endpoint) {
+	k := keyOf(t)
+	if c.keyAnswered[k] == nil {
+		c.keyAnswered[k] = map[volvo.Endpoint]bool{}
+	}
+	c.keyAnswered[k][ep] = true
+}
+
+// endpointRefused reports whether e, a refused key, is the endpoint's refusal rather
+// than the key's: the key read other endpoints, never this one. Observed on the real
+// API: an application without the diagnostics answered 401 "invalid VCC-API-KEY" on it
+// alone. A key revoked later is refused on an endpoint it read, and stays the key's.
+func (c *Collector) endpointRefused(t Target, ep volvo.Endpoint, e *volvo.APIError) bool {
+	read := c.keyAnswered[keyOf(t)]
+	return e.Kind == volvo.KindKeyRefused && len(read) > 0 && !read[ep]
 }
 
 // missingEndpoint reports whether e tells that an endpoint is not there for the vehicle:
