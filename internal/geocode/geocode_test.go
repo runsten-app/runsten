@@ -62,7 +62,14 @@ func TestOnce(t *testing.T) {
 	s := &fakeStore{pending: []Claim{home}, resolved: map[Claim]string{}}
 	g := &fakeGeocoder{}
 	var logs bytes.Buffer
-	w := New(s, g, clk, DefaultParams(), slog.New(slog.NewTextHandler(&logs, nil)))
+	// No time in the log: its digits could pass for a coordinate.
+	noTime := func(_ []string, a slog.Attr) slog.Attr {
+		if a.Key == slog.TimeKey {
+			return slog.Attr{}
+		}
+		return a
+	}
+	w := New(s, g, clk, DefaultParams(), slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{ReplaceAttr: noTime})))
 	if worked, err := w.Once(ctx); !worked || err != nil {
 		t.Fatalf("once = %v, %v", worked, err)
 	}
@@ -86,7 +93,6 @@ func TestOnce(t *testing.T) {
 	if _, ok := s.resolved[home]; ok {
 		t.Error("resolved after a failure")
 	}
-	// The coordinates themselves: "45." alone would match a timestamp's seconds.
 	if !strings.Contains(logs.String(), "503") || strings.Contains(logs.String(), "45.76") || strings.Contains(logs.String(), "4.83") {
 		t.Errorf("log %q", logs.String())
 	}
