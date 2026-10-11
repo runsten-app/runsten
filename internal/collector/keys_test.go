@@ -256,6 +256,45 @@ func TestKeyRefused(t *testing.T) {
 	})
 }
 
+// TestEndpointRefusedToKey: a key that reads the other endpoints but is refused on one
+// (an application without the diagnostics) is not refused: that endpoint alone is
+// tried again at the details' pace, and the vehicle's status shows no failure. Refused
+// later on an endpoint it read, the key is.
+func TestEndpointRefusedToKey(t *testing.T) {
+	t0 := time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
+	refused := &volvo.APIError{Status: 401, Kind: volvo.KindKeyRefused, Message: "Access denied due to invalid VCC-API-KEY."}
+	clk := clock.NewManual(t0)
+	api := &keyedAPI{refuseEp: map[volvo.Endpoint]error{volvo.Diagnostics: refused}}
+	st := &memStore{targets: []Target{ownKey("a", "va", "VIN-A", "ca", keySet)}, keys: map[string]string{"ca": "key-a"}}
+	c := New(api, st, &keyTokens{}, clk, DefaultIntervals(), Quota{Daily: 10_000, NoInstanceKey: true}, quiet, nil, nil)
+	for range 6 { // an hour
+		if err := c.PollOnce(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		clk.Advance(DefaultIntervals().Parked)
+	}
+	if len(st.refused) != 0 {
+		t.Errorf("key marked refused: %v", st.refused)
+	}
+	if n := api.epCalls[volvo.Diagnostics]; n != 1 {
+		t.Errorf("%d calls of the diagnostics, want 1 within a day", n)
+	}
+	if api.epCalls[volvo.EngineStatus] < 6 {
+		t.Errorf("%d calls of the engine status: the reads stopped", api.epCalls[volvo.EngineStatus])
+	}
+	if s := st.statuses[len(st.statuses)-1]; s.Failure.Kind != "" {
+		t.Errorf("status %+v: want no failure", s)
+	}
+
+	api.refuseEp[volvo.EngineStatus] = refused // the key revoked
+	if err := c.PollOnce(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if !st.refused["ca"].Equal(keySet) {
+		t.Errorf("revoked key not marked refused: %v", st.refused)
+	}
+}
+
 // TestNoInstanceKey: without the instance's key, a connection without its own is not
 // read, nothing is due for it, and it is logged once; one with its own key is read.
 // With the instance's key (self-hosting), it reads every connection: an account's key
@@ -307,16 +346,22 @@ func TestNoInstanceKey(t *testing.T) {
 // keyedAPI counts the calls per application key (empty: the instance's), and refuses
 // those of some keys.
 type keyedAPI struct {
-	refuse map[string]error
-	calls  map[string]int
+	refuse   map[string]error
+	refuseEp map[volvo.Endpoint]error // refused whatever the key
+	calls    map[string]int
+	epCalls  map[volvo.Endpoint]int
 }
 
-func (k *keyedAPI) Fetch(_ context.Context, key, _, _ string, _ volvo.Endpoint) ([]byte, error) {
+func (k *keyedAPI) Fetch(_ context.Context, key, _, _ string, ep volvo.Endpoint) ([]byte, error) {
 	if k.calls == nil {
-		k.calls = map[string]int{}
+		k.calls, k.epCalls = map[string]int{}, map[volvo.Endpoint]int{}
 	}
 	k.calls[key]++
+	k.epCalls[ep]++
 	if err := k.refuse[key]; err != nil {
+		return nil, err
+	}
+	if err := k.refuseEp[ep]; err != nil {
 		return nil, err
 	}
 	return []byte(`{}`), nil

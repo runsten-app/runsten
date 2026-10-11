@@ -679,7 +679,7 @@ func TestFailures(t *testing.T) {
 				t.Fatalf("failure told: %+v", f)
 			}
 		}
-		if n := strings.Count(logs.String(), "optional endpoint unavailable"); n != 2 {
+		if n := strings.Count(logs.String(), "endpoint unavailable"); n != 2 {
 			t.Errorf("logged %d times:\n%s", n, &logs)
 		}
 
