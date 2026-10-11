@@ -2,8 +2,9 @@
 # End-to-end test of compose.yaml against the simulator (sim.env): start the stack,
 # create the first user, sign in, connect the simulated Volvo ID under that session,
 # read the vehicle's state, trips (a reconstructed one included), charges and statistics
-# through the API, run the browser tests of the web interface (Playwright and axe, scripts/e2e.sh),
-# set the account's MQTT broker to the mqtt profile's Mosquitto and read what the
+# through the API, write imports as an importer would (scripts/e2e-imports.sql) and read
+# them with the derived events, run the browser tests of the web interface (Playwright and
+# axe, scripts/e2e.sh), set the account's MQTT broker to the mqtt profile's Mosquitto and read what the
 # collector publishes there (the state, Home Assistant's discovery) until the broker is
 # removed, give the DC charge a cost (a tariff, then an entered one), then back up,
 # restore and rebuild as documentation/self-hosting/backup.md describes, the entered
@@ -72,12 +73,12 @@ costs_add_up() {
 }
 
 # capacities_from_api: the scenario's family (EX-SIM) is not in the catalog, so every
-# energy rests on the capacity the vendor reports, not on a net capacity.
+# derived energy rests on the capacity the vendor reports, not on a net capacity.
 capacities_from_api() {
 	jq -en --argjson s "$(get "/api/v1/vehicles/$vehicle/state")" \
 		--argjson t "$(get "/api/v1/vehicles/$vehicle/trips?limit=200")" \
 		--argjson c "$(get "/api/v1/vehicles/$vehicle/charges?limit=200")" '
-		[$t.items[], $c.items[]] as $events
+		[$t.items[], $c.items[] | select(.imported | not)] as $events
 		| ($events | length) >= 3
 		and all($events[]; .capacity_source == "api" and .capacity_kwh == $s.battery_capacity_kwh.value)' >/dev/null ||
 		fail "energies not on the vendor's capacity: $(get "/api/v1/vehicles/$vehicle/trips?limit=200")"
@@ -203,6 +204,16 @@ jq -en --argjson s "$(get "/api/v1/vehicles/$vehicle/stats?bucket=day")" \
 	and ($s.buckets | length) == (($s.to | t) / 86400 | ceil) - (($s.from | t) / 86400 | floor)' >/dev/null ||
 	fail "statistics differ from the lists: $(get "/api/v1/vehicles/$vehicle/stats?bucket=day")"
 
+echo "→ imports: what an importer wrote before the first snapshot, listed with the derived events"
+compose exec -T postgres psql -U postgres -d runsten -v ON_ERROR_STOP=1 -q <scripts/e2e-imports.sql
+get "/api/v1/vehicles/$vehicle/imports" | jq -e 'any(.items[]; .source == "aximote" and .trips == 1 and .charges == 1)' >/dev/null ||
+	fail "imports: $(get "/api/v1/vehicles/$vehicle/imports")"
+get "/api/v1/vehicles/$vehicle/trips/aximote:e2e-trip" | jq -e '.imported and .sources == ["aximote"]
+	and .start.after == .start.before and .distance_km == 24.5 and .start_address == "Place Bellecour, Lyon"' >/dev/null ||
+	fail "imported trip: $(get "/api/v1/vehicles/$vehicle/trips/aximote:e2e-trip")"
+get "/api/v1/vehicles/$vehicle/trips?limit=200" | jq -e '[.items[] | select(.imported)] | length == 5
+	and ([.[] | select(.imported | not)] | all(.sources == ["volvo"]))' >/dev/null || fail "imported trips not listed"
+
 echo "→ the web interface in a browser (Playwright, axe)"
 scripts/e2e.sh "${project}_default"
 
@@ -273,6 +284,8 @@ get "/api/v1/vehicles/$vehicle/charges/$charge_id" |
 	jq -e '.cost.source == "entered" and .cost.min_minor == 1234 and .cost.note == "compose-test"' >/dev/null ||
 	fail "the entered cost did not survive the rebuild: $(get "/api/v1/vehicles/$vehicle/charges/$charge_id")"
 get /api/v1/charge-costs/orphans | jq -e '.items == []' >/dev/null || fail "orphaned costs after the rebuild"
+# Nor are the imports: the rebuild leaves them.
+get "/api/v1/vehicles/$vehicle/trips/aximote:e2e-trip" | jq -e .imported >/dev/null || fail "the import did not survive the rebuild"
 costs_add_up
 capacities_from_api
 

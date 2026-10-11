@@ -51,7 +51,11 @@ test('Costs: a place from the charge, its cost in the details, the list and the 
       await page.request.delete(`/api/v1/vehicles/${vehicle}/charges/${charge.id}/cost`)
 
     await page.goto(`/vehicles/${vehicle}/charges`)
-    await page.locator('.charge-summary').click()
+    // The DC charge: an imported one is apart (imports.spec.ts).
+    await page
+      .locator('.charge-summary')
+      .filter({ hasNot: page.locator('.imported') })
+      .click()
     await expect(page).toHaveURL(/\/charges\/[^/?]+$/)
     const details = page.url()
     const card = page.locator('.cost')
@@ -90,7 +94,10 @@ test('Costs: a place from the charge, its cost in the details, the list and the 
     const line = page.locator('.charge-summary .cost')
     await expect(line).toHaveText(/^€\d+\.\d{2}$/)
     if (created) await expect(line).toHaveText(estimated)
-    await expect(page.locator('.period-totals')).toContainText(/ · €\d+\.\d{2}$/)
+    // The imported charge's cost is unknown: at no place, the app gave none.
+    await expect(page.locator('.period-totals')).toContainText(
+      / · €\d+\.\d{2}( · cost unknown for 1 charge)?$/,
+    )
     await checkView(page, testInfo, 'charges-cost')
 
     // Entered: an empty form tells what is missing in a summary that takes the focus.

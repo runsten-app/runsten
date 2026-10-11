@@ -7,7 +7,8 @@ test('Urd: the DC charge and its two energies', async ({ page }, testInfo) => {
   await page.getByRole('link', { name: 'Charges' }).click()
   await expect(page).toHaveURL(/\/charges$/)
 
-  const charge = page.locator('.charge-summary')
+  // The one the collector saw: an imported one is apart (imports.spec.ts).
+  const charge = page.locator('.charge-summary').filter({ hasNot: page.locator('.imported') })
   await expect(charge).toHaveCount(1)
   await expect(charge.locator('.figures')).toHaveText(/^DC · \d+\s?% → (79|80)\s?% · /)
   await checkView(page, testInfo, 'charges')
