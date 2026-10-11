@@ -210,7 +210,9 @@ func normalizeEnergy(raw []byte, s *core.Snapshot) error {
 		"IDLE": core.ChargingIdle, "CHARGING": core.ChargingActive, "DONE": core.ChargingDone,
 		"SCHEDULED": core.ChargingScheduled, "DISCHARGING": core.ChargingDischarging, "ERROR": core.ChargingError,
 	})
-	s.ChargeType = energyEnum(v.ChargingType, map[string]core.ChargeType{"AC": core.AC, "DC": core.DC}) // NONE: absent
+	s.ChargeType = energyEnum(v.ChargingType, map[string]core.ChargeType{
+		"AC": core.AC, "DC": core.DC, "NONE": core.NoCharge,
+	})
 	s.PowerW = v.ChargingPower.number(watts)
 	s.TargetSoC = v.TargetBatteryChargeLevel.number(percent)
 	return nil

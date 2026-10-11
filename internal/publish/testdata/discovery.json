@@ -88,7 +88,8 @@
     "device_class": "enum",
     "options": [
       "AC",
-      "DC"
+      "DC",
+      "none"
     ],
     "availability_topic": "runsten/status",
     "payload_available": "online",

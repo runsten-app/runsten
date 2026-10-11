@@ -165,7 +165,7 @@ func (d *detector) charging(cb *chargeBuilder, p point) {
 		cb.endLimit, cb.hints = time.Time{}, nil
 	}
 	cb.lastCharging = p.at
-	if !cb.c.Type.OK && s.ChargeType.OK {
+	if !cb.c.Type.OK && s.ChargeType.OK && s.ChargeType.V != NoCharge {
 		cb.c.Type = s.ChargeType
 	}
 	if s.TargetSoC.OK {

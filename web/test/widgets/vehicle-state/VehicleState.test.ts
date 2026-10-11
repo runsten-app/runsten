@@ -103,6 +103,16 @@ describe('VehicleState', () => {
     expect(plain(w.find('.charging-status').text())).toBe('Status: Done')
   })
 
+  it('tells a charge type the car says is none from an unknown one', async () => {
+    const none = {
+      ...state,
+      charging: { ...state.charging, type: { ...state.charging.type, value: 'none' } },
+    }
+    expect(reading(await mounted(none), 'Type').value).toBe('None')
+    i18n.global.locale.value = 'fr'
+    expect(reading(await mounted(none), 'Type').value).toBe('Aucun')
+  })
+
   it('links to OpenStreetMap, nowhere else, only on a click', async () => {
     const w = await mounted(state)
     const link = w.find('a[target="_blank"]')

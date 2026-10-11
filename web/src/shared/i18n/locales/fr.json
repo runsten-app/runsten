@@ -93,6 +93,9 @@
       "connected": "Branché",
       "disconnected": "Débranché",
       "fault": "Défaut"
+    },
+    "type": {
+      "none": "Aucun"
     }
   },
   "engine": {

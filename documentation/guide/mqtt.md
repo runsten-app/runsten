@@ -44,7 +44,7 @@ Under `<prefix>/vehicles/<vehicle id>/`, where the prefix is `runsten` by defaul
 | `range_km` | range, in km |
 | `charging_status` | `idle`, `charging`, `done`, `scheduled`, `discharging` or `error` |
 | `plug` | `connected`, `disconnected` or `fault` |
-| `charge_type` | `AC` or `DC` |
+| `charge_type` | `AC`, `DC`, or `none` when the car says no charge runs |
 | `charging_power_kw` | charging power, in kW |
 | `target_soc` | charge limit, in % |
 | `odometer_km` | odometer, in km |
@@ -73,7 +73,7 @@ With discovery on, each vehicle is a device named as the web interface names it 
 | Battery | sensor, battery, % | `battery_level` |
 | Range | sensor, distance, km | `range_km` |
 | Charging status | sensor, enum | `charging_status` |
-| Charge type | sensor, enum (AC, DC) | `charge_type` |
+| Charge type | sensor, enum (AC, DC, none) | `charge_type` |
 | Charging power | sensor, power, kW | `charging_power_kw` |
 | Charge limit | sensor, % | `target_soc` |
 | Odometer | sensor, distance, km, total increasing | `odometer_km` |

@@ -17,6 +17,7 @@ import {
   vehicleMode,
   type Cable,
   type ChargingStatus,
+  type CurrentChargeType,
   type Engine,
   type Mode,
   type Reading,
@@ -93,6 +94,12 @@ const cableLabels = computed<Record<Cable, string>>(() => ({
   connected: t('charging.cable.connected'),
   disconnected: t('charging.cable.disconnected'),
   fault: t('charging.cable.fault'),
+}))
+// AC and DC are the same words in every language.
+const typeLabels = computed<Record<CurrentChargeType, string>>(() => ({
+  AC: 'AC',
+  DC: 'DC',
+  none: t('charging.type.none'),
 }))
 const engineLabels = computed<Record<Engine, string>>(() => ({
   running: t('engine.running'),
@@ -233,7 +240,7 @@ const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_
               <ReadingItem
                 :label="t('state.charging.type')"
                 :reading="state.charging.type"
-                :value="state.charging.type?.value ?? null"
+                :value="label(state.charging.type, typeLabels)"
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"

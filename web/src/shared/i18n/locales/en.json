@@ -93,6 +93,9 @@
       "connected": "Connected",
       "disconnected": "Disconnected",
       "fault": "Fault"
+    },
+    "type": {
+      "none": "None"
     }
   },
   "engine": {

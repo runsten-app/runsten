@@ -21,6 +21,7 @@ export { vehicleKeys } from './model/queryKeys'
 export type {
   Cable,
   ChargingStatus,
+  CurrentChargeType,
   Connection,
   Engine,
   Model,

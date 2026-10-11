@@ -330,6 +330,24 @@ func TestDeriveCharges(t *testing.T) {
 			}},
 		},
 		{
+			// A vehicle that says none as the charge starts tells no type: the next does.
+			name: "type none, then AC",
+			records: []Record{
+				rec(0, 0, capacity(80)),
+				rec(0, 0, loc(home, m(0))),
+				rec(0, 10, nrg(50, ChargingIdle)),
+				rec(20, 30, charging(51, 7000, NoCharge)),
+				rec(31, 80, charging(55, 7000, AC)),
+				rec(81, 81, nrg(80, ChargingDone)),
+			},
+			want: []Charge{{
+				DetectedAt: m(20), Start: Bounds{m(10), m(20)}, End: Bounds{m(80), m(81)},
+				Type: Some(AC, time.Time{}), StartSoC: val(50), EndSoC: val(80), TargetSoC: val(80),
+				EnergySoCKWh: val(24), EnergyPowerKWh: val(7), Position: Some(home, m(0)),
+				Span: keptSpan(51, 55, 7, 49*time.Minute, 60*time.Minute),
+			}},
+		},
+		{
 			// Unplugged before the target: the charge ends at the disconnection.
 			name: "interrupted charge",
 			records: []Record{
