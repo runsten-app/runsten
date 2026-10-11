@@ -69,6 +69,25 @@ describe('MapView', () => {
     expect(w.text()).toContain('Press the map')
   })
 
+  it('draws a track as a plain line, in place of the dashed route', async () => {
+    withMapTiles()
+    await mounted()
+    await vi.waitFor(() =>
+      expect(document.querySelector('.leaflet-overlay-pane path')).not.toBeNull(),
+    )
+    const dashes = () =>
+      [...document.querySelectorAll('.leaflet-overlay-pane path[fill="none"]')].map((p) =>
+        p.getAttribute('stroke-dasharray'),
+      )
+    expect(dashes()).toEqual(['6 6'])
+    mountedViews.splice(0).forEach((w) => w.unmount())
+    await mounted({ line: [lyon, { lat: 45.7563, lon: 4.8421 }, villeurbanne] })
+    await vi.waitFor(() =>
+      expect(document.querySelector('.leaflet-overlay-pane path')).not.toBeNull(),
+    )
+    expect(dashes()).toEqual([null])
+  })
+
   it('draws vector tiles on canvases, without images nor inverting them', async () => {
     withMapTiles('https://maps.example/europe.pmtiles')
     // The file is read by range requests, here never answered.

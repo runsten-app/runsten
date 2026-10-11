@@ -8,9 +8,10 @@ import { useTheme } from 'vuetify'
 import type { MapTiles, Position } from '@/shared/lib'
 import type { MapCircle, MapMarker } from './types'
 
-// MapFrame is a Leaflet map of the instance's tiles: markers, a route between them, a
-// place's circle, and the position pressed when pickable. Leaflet styles its elements
-// through the CSSOM, which the CSP allows; its markers here are SVG, never images.
+// MapFrame is a Leaflet map of the instance's tiles: markers, a route between them or
+// the line of a track, a place's circle, and the position pressed when pickable.
+// Leaflet styles its elements through the CSSOM, which the CSP allows; its markers here
+// are SVG, never images.
 // Vector tiles (a PMTiles file) are drawn by protomaps-leaflet on canvases, in the
 // theme's light or dark flavor and with names in the reader's language.
 const props = defineProps<{
@@ -19,6 +20,8 @@ const props = defineProps<{
   markers?: MapMarker[]
   circle?: MapCircle | null
   route?: boolean
+  // line is a track, drawn instead of the route: the path driven, not a straight one.
+  line?: Position[]
   pickable?: boolean
 }>()
 const emit = defineEmits<{ pick: [position: Position] }>()
@@ -57,7 +60,11 @@ function draw() {
     // Its square, computed without the map's view, which it may not have yet.
     bounds.extend(center.toBounds(props.circle.radiusM * 2))
   }
-  if (props.route && points.length > 1)
+  const line = (props.line ?? []).map(latLng)
+  if (line.length > 1) {
+    L.polyline(line, { color: accent, weight: 4, interactive: false }).addTo(layers)
+    bounds.extend(line)
+  } else if (props.route && points.length > 1)
     L.polyline(points, { color: accent, weight: 3, dashArray: '6 6', interactive: false }).addTo(
       layers,
     )
@@ -114,7 +121,7 @@ function drawVector() {
   vectorTiles.addTo(map)
 }
 
-watch(() => [props.markers, props.circle, props.route], draw, { deep: true })
+watch(() => [props.markers, props.circle, props.route, props.line], draw, { deep: true })
 watch(
   () => [theme.current.value.dark, locale.value],
   () => props.tiles.vector && drawVector(),

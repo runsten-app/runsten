@@ -2,7 +2,7 @@
 import { mdiOpenInNew } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useTrip } from '@/features/browse-trips'
+import { useTrip, useTripTrack } from '@/features/browse-trips'
 import { isApiError } from '@/shared/api'
 import {
   formatCoordinate,
@@ -30,6 +30,13 @@ const f = useFormat()
 const { trip, isPending, error } = useTrip(
   () => props.vehicle,
   () => props.id,
+)
+
+// An imported trip may have its track: read only where a map draws it.
+const { line } = useTripTrack(
+  () => props.vehicle,
+  () => props.id,
+  () => mapsOn.value && !!trip.value?.imported,
 )
 
 // The heading names the day: times on it leave out their date.
@@ -156,7 +163,14 @@ const newPlace = (p: Position) => ({
         <v-card class="h-100 positions">
           <v-card-title tag="h2" class="text-title-medium">{{ t('trip.positions') }}</v-card-title>
           <v-card-text>
-            <MapView v-if="markers.length" :label="t('trip.map')" :markers route class="mb-4" />
+            <MapView
+              v-if="markers.length || line.length"
+              :label="t('trip.map')"
+              :markers
+              :line
+              route
+              class="mb-4"
+            />
             <dl class="facts">
               <FactItem
                 v-for="p in positions"

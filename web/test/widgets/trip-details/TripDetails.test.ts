@@ -7,14 +7,20 @@ import { TripDetails } from '@/widgets/trip-details'
 import stats from '@fixtures/stats.json'
 import imported from '@fixtures/trip-imported.json'
 import trip from '@fixtures/trip.json'
+import track from '@fixtures/trip-track.json'
 import page1 from '@fixtures/trips-page-1.json'
 import { withMapTiles, withoutMapTiles } from '@test/mapMeta'
 import { mountWith } from '@test/utils'
 
-const { fetchTrip, fetchStats } = vi.hoisted(() => ({ fetchTrip: vi.fn(), fetchStats: vi.fn() }))
+const { fetchTrip, fetchTripTrack, fetchStats } = vi.hoisted(() => ({
+  fetchTrip: vi.fn(),
+  fetchTripTrack: vi.fn(),
+  fetchStats: vi.fn(),
+}))
 vi.mock('@/entities/trip', async (original) => ({
   ...(await original<typeof import('@/entities/trip')>()),
   fetchTrip,
+  fetchTripTrack,
 }))
 vi.mock('@/entities/stats', async (original) => ({
   ...(await original<typeof import('@/entities/stats')>()),
@@ -33,6 +39,8 @@ function month(): Stats {
 
 beforeEach(() => {
   fetchTrip.mockReset()
+  fetchTripTrack.mockReset()
+  fetchTripTrack.mockResolvedValue(track)
   fetchStats.mockReset()
   fetchStats.mockResolvedValue(month())
 })
@@ -144,6 +152,30 @@ describe('TripDetails', () => {
     expect(w.find('.positions .map-view').exists()).toBe(true)
     expect(w.findAll('.positions a[target="_blank"]')).toHaveLength(0)
     expect(w.find('.positions .create-place').exists()).toBe(true)
+    w.unmount()
+  })
+
+  it("reads an imported trip's track only where a map draws it", async () => {
+    let w = await mounted(imported)
+    expect(fetchTripTrack).not.toHaveBeenCalled()
+    w.unmount()
+    withMapTiles()
+    w = await mounted(trip)
+    expect(fetchTripTrack).not.toHaveBeenCalled()
+    w.unmount()
+    w = await mounted(imported)
+    expect(fetchTripTrack).toHaveBeenCalledWith('v1', 'x')
+    expect(w.find('.positions .map-view').exists()).toBe(true)
+    w.unmount()
+  })
+
+  it('draws the ends alone for an imported trip without a track', async () => {
+    withMapTiles()
+    fetchTripTrack.mockRejectedValue(new ApiError(404, 'not_found', ''))
+    const w = await mounted(imported)
+    expect(fetchTripTrack).toHaveBeenCalled()
+    expect(w.find('.positions .map-view').exists()).toBe(true)
+    expect(w.find('.v-alert[type="error"]').exists()).toBe(false)
     w.unmount()
   })
 

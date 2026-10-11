@@ -13,6 +13,7 @@ defineProps<{
   markers?: MapMarker[]
   circle?: MapCircle | null
   route?: boolean
+  line?: Position[]
   pickable?: boolean
 }>()
 defineEmits<{ pick: [position: Position] }>()
@@ -21,7 +22,7 @@ const tiles = mapTiles()
 
 <template>
   <div v-if="tiles && mapsShown" class="map-view">
-    <MapFrame :tiles :label :markers :circle :route :pickable @pick="$emit('pick', $event)" />
+    <MapFrame :tiles :label :markers :circle :route :line :pickable @pick="$emit('pick', $event)" />
     <p v-if="hint" class="text-body-small text-medium-emphasis mt-1">{{ hint }}</p>
   </div>
 </template>
