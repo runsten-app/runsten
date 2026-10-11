@@ -1,5 +1,5 @@
 import { api, unwrap } from '@/shared/api'
-import type { AximoteVehicle, ImportJob, VehicleImport } from '../model/VehicleImport'
+import type { AximoteVehicle, FileImport, ImportJob, VehicleImport } from '../model/VehicleImport'
 
 export async function fetchImports(vehicle: string): Promise<VehicleImport[]> {
   return (await unwrap(api.GET('/vehicles/{vehicle}/imports', { params: { path: { vehicle } } })))
@@ -47,6 +47,27 @@ export async function startAximoteImport(
     api.POST('/vehicles/{vehicle}/import-job', {
       params: { path: { vehicle } },
       body: { source: 'aximote', token, vehicle: aximoteVehicle },
+    }),
+  )
+}
+
+// importVolvoDataPortal imports the files the Volvo Data Portal gave: the trips, and the
+// waypoints that make their tracks, if any. Written at once: the report comes back.
+export async function importVolvoDataPortal(
+  vehicle: string,
+  trips: File,
+  waypoints?: File,
+): Promise<FileImport> {
+  const form = new FormData()
+  form.append('trips', trips)
+  if (waypoints) form.append('waypoints', waypoints)
+  return unwrap(
+    api.POST('/vehicles/{vehicle}/imports/volvo_data_portal', {
+      params: { path: { vehicle } },
+      // The generated type names the files as strings: the form is sent as it is, and
+      // the browser sets its boundary.
+      body: form as unknown as { trips: string; waypoints?: string },
+      bodySerializer: (b) => b as unknown as FormData,
     }),
   )
 }

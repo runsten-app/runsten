@@ -18,7 +18,7 @@ curl -c jar -H 'Content-Type: application/json' \
 curl -b jar http://127.0.0.1:8081/api/v1/vehicles
 ```
 
-A request body is sent as `application/json`.
+A request body is sent as `application/json`, but the files of an import, as `multipart/form-data`.
 
 ## Routes
 
@@ -36,6 +36,7 @@ A request body is sent as `application/json`.
 | `GET /api/v1/vehicles/{id}/imports`, `DELETE …/imports/{source}` | the trips and charges imported from other apps, by source; delete one source's |
 | `POST /api/v1/vehicles/{id}/aximote-vehicles` | the vehicles of an Aximote account, the token in the body; the one with the vehicle's VIN marked |
 | `POST`, `GET /api/v1/vehicles/{id}/import-job` | import the vehicle's history from Aximote, in the background (`202`, `409` while one runs); its progress and report |
+| `POST /api/v1/vehicles/{id}/imports/volvo_data_portal` | import the files of the Volvo Data Portal, at once: a `multipart/form-data` body with the `trips` file and, optionally, the `waypoints` file (32 MiB at most); the report |
 | `GET /api/v1/vehicles/{id}/stats` | totals of a period (`from`, `to`), by `day`, `week` or `month` in a time zone (`bucket`, `tz`) |
 | `GET /api/v1/vehicles/{id}/battery` | the estimated battery capacity over the whole history |
 | `GET`, `PUT /api/v1/settings` | the account's currency, and the accepted ones |
@@ -49,7 +50,7 @@ A request body is sent as `application/json`.
 
 - **Units are in the field names**: `_km`, `_m`, `_kwh`, `_pct`, `_w`, `_kw`, `_s`; `_minor` in minor units of the account's currency (cents), `price_per_kwh` in its major units.
 - **Times** are RFC 3339 in UTC. Trip and charge times are bounds: `start.after`, `start.before`, `end.after`, `end.before`. `reconstructed` marks the events that were never seen.
-- **Imported events** come in the same lists as the derived ones, with `imported: true`: trips and charges another app (Aximote, the Volvo Cars app) cut from its own readings, before Runsten read the vehicle. Their times are exact (`after` equals `before`), and their ID is their source and their ID there, `aximote:8812`. `sources` tells where every event comes from: the sources of a derived event's readings (`volvo`), or the app of an imported one.
+- **Imported events** come in the same lists as the derived ones, with `imported: true`: trips and charges another app (Aximote, the Volvo Cars app) or Volvo Cars' Data Portal cut from its own readings, before Runsten read the vehicle. Their times are exact (`after` equals `before`), and their ID is their source and their ID there, `aximote:8812`. `sources` tells where every event comes from: the sources of a derived event's readings (`volvo`), or the app of an imported one.
 - **Unknown is `null`**, never zero.
 - **Energies** are estimates: ΔSoC × `capacity_kwh`, with `capacity_source` `catalog_net` (the net capacity of the variant) or `api` (the capacity Volvo reports).
 - **Durations** are `{"min", "max"}` in seconds.

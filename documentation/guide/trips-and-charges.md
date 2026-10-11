@@ -20,7 +20,7 @@ A value the car did not give says **Unknown**, never 0.
 
 ## Imported trips and charges
 
-A vehicle's history may start before Runsten read it: trips and charges imported from another app ([Importing your history](./importing.md)) are marked with it, "Imported from Aximote". Only what started before Runsten's first reading of the vehicle is imported, so they never duplicate the events Runsten saw. Their times and figures are the app's own: one time at each end, never a range, and the energy and cost it gave, when it gave them. A charge's cost is the app's when it is in your currency, else its place's tariff's.
+A vehicle's history may start before Runsten read it: trips and charges imported from another app ([Importing your history](./importing.md)) are marked with it, "Imported from Aximote" or "Imported from the Volvo Data Portal". Only what started before Runsten's first reading of the vehicle is imported, so they never duplicate the events Runsten saw. Their times and figures are the app's own: one time at each end, never a range, and the energy and cost it gave, when it gave them. A charge's cost is the app's when it is in your currency, else its place's tariff's.
 
 An imported trip with a track draws it on its map, where your instance shows maps and you have not hidden them; otherwise, as a trip Runsten read, it has its two ends only: Volvo gives no position while driving.
 

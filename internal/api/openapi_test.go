@@ -232,43 +232,44 @@ func TestOpenAPIFile(t *testing.T) {
 
 // goldenRequests maps each golden file to the request whose 200 response it is.
 var goldenRequests = map[string]string{
-	"session.json":                 "POST /api/v1/session",
-	"connection.json":              "PUT /api/v1/connection/api-key",
-	"vehicles.json":                "GET /api/v1/vehicles",
-	"vehicle-reauth-required.json": "GET /api/v1/vehicles/" + parked,
-	"state.json":                   "GET /api/v1/vehicles/" + car + "/state",
-	"state-unknown.json":           "GET /api/v1/vehicles/" + parked + "/state",
-	"trips-page-1.json":            "GET /api/v1/vehicles/" + car + "/trips",
-	"trips-page-2.json":            "GET /api/v1/vehicles/" + car + "/trips",
-	"trip.json":                    "GET /api/v1/vehicles/" + car + "/trips/2026-09-28T07:01:00.000000Z",
-	"charges.json":                 "GET /api/v1/vehicles/" + car + "/charges",
-	"charge.json":                  "GET /api/v1/vehicles/" + car + "/charges/2026-09-28T18:30:00.000000Z",
-	"charge-onboard-charger.json":  "GET /api/v1/vehicles/" + car + "/charges/2026-09-28T18:30:00.000000Z",
-	"trip-imported.json":           "GET /api/v1/vehicles/" + car + "/trips/aximote:trip-8812",
-	"trip-track.json":              "GET /api/v1/vehicles/" + car + "/trips/aximote:trip-8812/track",
-	"charge-imported.json":         "GET /api/v1/vehicles/" + car + "/charges/aximote:charge-311",
-	"imports.json":                 "GET /api/v1/vehicles/" + car + "/imports",
-	"aximote-vehicles.json":        "POST /api/v1/vehicles/" + car + "/aximote-vehicles",
-	"import-job-pending.json":      "GET /api/v1/vehicles/" + car + "/import-job",
-	"import-job-done.json":         "GET /api/v1/vehicles/" + car + "/import-job",
-	"stats.json":                   "GET /api/v1/vehicles/" + car + "/stats",
-	"stats-totals.json":            "GET /api/v1/vehicles/" + car + "/stats",
-	"stats-empty.json":             "GET /api/v1/vehicles/" + parked + "/stats",
-	"battery.json":                 "GET /api/v1/vehicles/" + car + "/battery",
-	"battery-empty.json":           "GET /api/v1/vehicles/" + car + "/battery",
-	"battery-api-capacity.json":    "GET /api/v1/vehicles/" + car + "/battery",
-	"series.json":                  "GET /api/v1/vehicles/" + car + "/series",
-	"settings.json":                "GET /api/v1/settings",
-	"settings-unset.json":          "GET /api/v1/settings",
-	"places.json":                  "GET /api/v1/places",
-	"place.json":                   "GET /api/v1/places/" + placeID(1),
-	"place-unpriced.json":          "GET /api/v1/places/" + placeID(1) + "/unpriced",
-	"charge-cost.json":             "PUT /api/v1/vehicles/" + car + "/charges/2026-09-28T04:00:00.000000Z/cost",
-	"orphans.json":                 "GET /api/v1/charge-costs/orphans",
-	"variants.json":                "GET /api/v1/vehicles/" + chosen + "/variants",
-	"vehicle-model.json":           "PUT /api/v1/vehicles/" + chosen + "/model",
-	"mqtt-none.json":               "GET /api/v1/mqtt",
-	"mqtt.json":                    "GET /api/v1/mqtt",
+	"session.json":                  "POST /api/v1/session",
+	"import-volvo-data-portal.json": "POST /api/v1/vehicles/" + car + "/imports/volvo_data_portal",
+	"connection.json":               "PUT /api/v1/connection/api-key",
+	"vehicles.json":                 "GET /api/v1/vehicles",
+	"vehicle-reauth-required.json":  "GET /api/v1/vehicles/" + parked,
+	"state.json":                    "GET /api/v1/vehicles/" + car + "/state",
+	"state-unknown.json":            "GET /api/v1/vehicles/" + parked + "/state",
+	"trips-page-1.json":             "GET /api/v1/vehicles/" + car + "/trips",
+	"trips-page-2.json":             "GET /api/v1/vehicles/" + car + "/trips",
+	"trip.json":                     "GET /api/v1/vehicles/" + car + "/trips/2026-09-28T07:01:00.000000Z",
+	"charges.json":                  "GET /api/v1/vehicles/" + car + "/charges",
+	"charge.json":                   "GET /api/v1/vehicles/" + car + "/charges/2026-09-28T18:30:00.000000Z",
+	"charge-onboard-charger.json":   "GET /api/v1/vehicles/" + car + "/charges/2026-09-28T18:30:00.000000Z",
+	"trip-imported.json":            "GET /api/v1/vehicles/" + car + "/trips/aximote:trip-8812",
+	"trip-track.json":               "GET /api/v1/vehicles/" + car + "/trips/aximote:trip-8812/track",
+	"charge-imported.json":          "GET /api/v1/vehicles/" + car + "/charges/aximote:charge-311",
+	"imports.json":                  "GET /api/v1/vehicles/" + car + "/imports",
+	"aximote-vehicles.json":         "POST /api/v1/vehicles/" + car + "/aximote-vehicles",
+	"import-job-pending.json":       "GET /api/v1/vehicles/" + car + "/import-job",
+	"import-job-done.json":          "GET /api/v1/vehicles/" + car + "/import-job",
+	"stats.json":                    "GET /api/v1/vehicles/" + car + "/stats",
+	"stats-totals.json":             "GET /api/v1/vehicles/" + car + "/stats",
+	"stats-empty.json":              "GET /api/v1/vehicles/" + parked + "/stats",
+	"battery.json":                  "GET /api/v1/vehicles/" + car + "/battery",
+	"battery-empty.json":            "GET /api/v1/vehicles/" + car + "/battery",
+	"battery-api-capacity.json":     "GET /api/v1/vehicles/" + car + "/battery",
+	"series.json":                   "GET /api/v1/vehicles/" + car + "/series",
+	"settings.json":                 "GET /api/v1/settings",
+	"settings-unset.json":           "GET /api/v1/settings",
+	"places.json":                   "GET /api/v1/places",
+	"place.json":                    "GET /api/v1/places/" + placeID(1),
+	"place-unpriced.json":           "GET /api/v1/places/" + placeID(1) + "/unpriced",
+	"charge-cost.json":              "PUT /api/v1/vehicles/" + car + "/charges/2026-09-28T04:00:00.000000Z/cost",
+	"orphans.json":                  "GET /api/v1/charge-costs/orphans",
+	"variants.json":                 "GET /api/v1/vehicles/" + chosen + "/variants",
+	"vehicle-model.json":            "PUT /api/v1/vehicles/" + chosen + "/model",
+	"mqtt-none.json":                "GET /api/v1/mqtt",
+	"mqtt.json":                     "GET /api/v1/mqtt",
 }
 
 func goldenFiles(t *testing.T) map[string][]byte {
@@ -398,7 +399,8 @@ func otherType(v any) any {
 
 // TestSpecIsStrict checks the conventions every object of the spec follows: no field
 // other than those described (additionalProperties: false), and every key always
-// present (required lists every property), null standing for an unknown value.
+// present (required lists every property), null standing for an unknown value. A
+// multipart form has no null: an optional file is a part left out.
 func TestSpecIsStrict(t *testing.T) {
 	c := specContract(t)
 	objects := 0
@@ -420,7 +422,8 @@ func TestSpecIsStrict(t *testing.T) {
 					required = append(required, r.(string))
 				}
 				slices.Sort(required)
-				if keys := slices.Sorted(maps.Keys(props)); !slices.Equal(required, keys) {
+				form := strings.Contains(at, "multipart/form-data")
+				if keys := slices.Sorted(maps.Keys(props)); !form && !slices.Equal(required, keys) {
 					t.Errorf("%s: required %v, want every property %v", at, required, keys)
 				}
 			}

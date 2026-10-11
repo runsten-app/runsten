@@ -4,6 +4,7 @@ import {
   fetchAximoteVehicles,
   fetchImportJob,
   importKeys,
+  importVolvoDataPortal,
   isActive,
   startAximoteImport,
 } from '@/entities/vehicle-import'
@@ -45,4 +46,16 @@ export function useStartImport(vehicle: MaybeRefOrGetter<string>) {
     onSuccess: (job) => queryClient.setQueryData(importKeys.job(toValue(vehicle)), job),
   })
   return { startImport: mutateAsync, isPending, error, reset }
+}
+
+// useImportVolvoDataPortal imports the Volvo Data Portal's files; once written, what they
+// imported is read again everywhere.
+export function useImportVolvoDataPortal(vehicle: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient()
+  const { mutateAsync, isPending, error, reset } = useMutation({
+    mutationFn: (p: { trips: File; waypoints?: File }) =>
+      importVolvoDataPortal(toValue(vehicle), p.trips, p.waypoints),
+    onSuccess: () => afterImportChange(queryClient, toValue(vehicle)),
+  })
+  return { importFiles: mutateAsync, isPending, error, reset }
 }

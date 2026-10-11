@@ -1,8 +1,9 @@
 // Package importer imports a vehicle's past trips and charges from another application
 // (ADR 0030, ADR 0036): its worker claims the jobs the API created, reads the source page
 // by page, converts and checks what it reads, and writes it through its Store, which
-// keeps only what starts before the vehicle's first snapshot. It knows neither HTTP nor
-// the database: it declares its Store and its Source, which the binary wires.
+// keeps only what starts before the vehicle's first snapshot. Files uploaded by the user
+// (Files) are converted and written at once, without a job. It knows neither HTTP nor
+// the database: it declares its Store, its Saver and its Source, which the binary wires.
 package importer
 
 import (

@@ -125,6 +125,14 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/core
               desc: the client returns Aximote's values; importer converts them
+        # The reader of the Volvo Data Portal's files returns their values as they are.
+        volvoportal-is-a-reader:
+          files: ["**/internal/volvoportal/**"]
+          deny:
+            - pkg: runsten/internal/core
+              desc: the reader returns the portal's values; importer converts them
+            - pkg: runsten/internal/importer
+              desc: outward dependency forbidden
         # The front end's server serves files and relays to runsten-api by URL: it knows
         # no business code, no storage and no secret.
         web-without-business:

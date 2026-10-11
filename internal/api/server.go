@@ -189,6 +189,8 @@ type Config struct {
 	Imports    Imports
 	ImportJobs ImportJobs
 	Aximote    AximoteVehicles
+	// FileImports imports the files a user uploads.
+	FileImports FileImports
 	// Addresses name the positions outside the places; nil without a geocoder: no
 	// address, and nothing asked of a third party.
 	Addresses Addresses
@@ -282,6 +284,7 @@ func New(cfg Config) *Server {
 	s.registerCSV(s.api)
 	s.registerImports(s.api)
 	s.registerImportJobs(s.api)
+	s.registerFileImports(s.api)
 	s.registerModel(s.api)
 	s.registerStats(s.api)
 	s.registerBattery(s.api)

@@ -28,7 +28,7 @@ var allowed = map[string][]string{
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/catalog", "internal/core",
 		"internal/derive", "internal/geocode", "internal/importer", "internal/oauth", "internal/platform", "internal/store",
-		"internal/volvo",
+		"internal/volvo", "internal/volvoportal",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
@@ -55,8 +55,8 @@ var allowed = map[string][]string{
 	// The addresses' worker declares its Store and its Geocoder.
 	"internal/geocode": {"internal/core", "internal/platform/clock"},
 	// The import worker declares its Store and its Source, Aximote's client, whose
-	// values it converts.
-	"internal/importer": {"internal/aximote", "internal/core", "internal/platform/clock"},
+	// values it converts, as it converts the Volvo Data Portal's files.
+	"internal/importer": {"internal/aximote", "internal/core", "internal/platform/clock", "internal/volvoportal"},
 	// What is published to an MQTT broker, built from the domain: neither network nor
 	// database; Home Assistant's discovery configurations are JSON.
 	"internal/publish": {"encoding/json", "internal/core"},
@@ -65,6 +65,7 @@ var allowed = map[string][]string{
 	"internal/volvo":             {"net/http", "encoding/json", "golang.org/x/oauth2", "internal/core", "internal/oauth"},
 	"internal/geocode/nominatim": {"net/http", "encoding/json", "internal/core"},
 	"internal/aximote":           {"net/http", "encoding/json"},
+	"internal/volvoportal":       nil,
 	// The only package that knows paho.
 	"internal/publish/mqtt": {
 		"github.com/eclipse/paho.mqtt.golang", "internal/core", "internal/platform/clock", "internal/platform/netguard",

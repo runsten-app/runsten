@@ -123,6 +123,7 @@
     "importedFrom": {
       "aximote": "Imported from Aximote",
       "volvoCsv": "Imported from the Volvo Cars app",
+      "volvoDataPortal": "Imported from the Volvo Data Portal",
       "other": "Imported from {source}"
     },
     "importedHelp": "Imported from another app, from before Runsten read the vehicle: its times and figures are that app's own.",
@@ -1216,6 +1217,37 @@
         "active": "An import of this vehicle is already in progress.",
         "network": "Runsten could not be reached. Try again in a moment.",
         "internal": "The import could not start. Try again in a moment."
+      }
+    },
+    "portal": {
+      "title": "Import from the Volvo Data Portal",
+      "beta": "Beta",
+      "intro": "In the EU, the Data Act lets you ask Volvo Cars for your car's data on its Data Portal: ask for the trips and the waypoints. Volvo sends two CSV files, sometimes after several hours; choose them here. Only the trips from before the vehicle's first reading are imported, with their tracks from the waypoints. Importing again replaces them.",
+      "link": "Volvo Data Portal",
+      "newTab": "(opens in a new tab)",
+      "trips": {
+        "label": "Trips file (CSV)",
+        "hint": "Required: the file whose columns start with Start time, End time."
+      },
+      "waypoints": {
+        "label": "Waypoints file (CSV)",
+        "hint": "Optional: its positions, about one a minute, draw the trips' tracks."
+      },
+      "clear": "Remove: {file}",
+      "start": "Import",
+      "done": "Import finished",
+      "report": {
+        "imported": "No trip imported. | One trip imported. | {n} trips imported.",
+        "skipped": "One left: it starts after the vehicle's first reading ({date}). | {n} left: they start after the vehicle's first reading ({date}).",
+        "invalid": "One row left, unreadable or out of bounds. | {n} rows left, unreadable or out of bounds."
+      },
+      "error": {
+        "summary": "The files were not imported",
+        "required": "Choose the trips file.",
+        "file": "This is not a file of the Volvo Data Portal: check that the trips file is the one with Start time and End time, and the waypoints file the one with Timestamp.",
+        "tooLarge": "The files are too large: 32 MB at most together.",
+        "network": "Runsten could not be reached. Try again in a moment.",
+        "internal": "The files could not be imported. Try again in a moment."
       }
     },
     "error": "The imports could not be loaded. Try again in a moment.",

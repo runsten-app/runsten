@@ -50,9 +50,13 @@ async function mounted(list: VehicleImport[] | Error = [aximote]) {
 const status = (w: VueWrapper) => w.find('.vehicle-imports > [role="status"]').text()
 
 describe('VehicleImports', () => {
-  it('offers the import from Aximote above the list, empty without an import', async () => {
+  it('offers the imports from Aximote and the Volvo Data Portal above the list, empty without an import', async () => {
     const { w } = await mounted([])
-    expect(w.findAll('h3').map((h) => h.text())).toEqual(['Import from Aximote Beta', 'Imports'])
+    expect(w.findAll('h3').map((h) => h.text())).toEqual([
+      'Import from Aximote Beta',
+      'Import from the Volvo Data Portal Beta',
+      'Imports',
+    ])
     expect(w.find('.none').text()).toBe('Nothing imported.')
     expect(api.fetchImports).toHaveBeenCalledWith('v1')
   })
@@ -89,6 +93,9 @@ describe('VehicleImports', () => {
     await w.find('.delete').trigger('click')
     await flushPromises()
     expect(document.body.textContent).toContain('Delete this import?')
+    // The section behind the dialog is inert; the dialog is outside it.
+    expect(w.find('.vehicle-imports').attributes('inert')).toBeDefined()
+    expect(document.querySelector('.confirm-delete')?.closest('[inert]')).toBeNull()
     expect(document.body.textContent).toContain(
       'Imported from Aximote: 1 trip · 1 charge. They leave the lists and the statistics',
     )
@@ -104,6 +111,7 @@ describe('VehicleImports', () => {
     await flushPromises()
     expect(api.deleteImport).toHaveBeenLastCalledWith('v1', 'aximote')
     expect(status(w)).toBe('Imported from Aximote: deleted.')
+    expect(w.find('.vehicle-imports').attributes('inert')).toBeUndefined()
     expect(document.activeElement?.id).toBe('vehicle-imports-title')
     const keys = invalidate.mock.calls.map(
       ([f]) => (f as { queryKey?: unknown } | undefined)?.queryKey,
