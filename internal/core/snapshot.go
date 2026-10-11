@@ -180,10 +180,17 @@ func (s *Snapshot) merge(o Snapshot) {
 	}
 }
 
+// Kind is a kind of stored response: the source of the readings (the Volvo Cars API, an
+// app, an import) and one of its endpoints. Each source names its own endpoints.
+type Kind struct {
+	Source, Endpoint string
+}
+
 // Record is a stored snapshot. Its values were read at FetchedAt and were read again,
 // unchanged, at CheckedAt (the last identical response). Nothing is known in between:
 // failed calls do not interrupt a run of identical responses.
 type Record struct {
+	Source    string // the source of the readings, as in Kind
 	FetchedAt time.Time
 	CheckedAt time.Time
 	Snapshot  Snapshot

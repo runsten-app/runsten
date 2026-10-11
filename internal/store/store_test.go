@@ -270,7 +270,7 @@ func TestSaveSnapshotDeduplicates(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		return collector.Snapshot{AccountID: a, VehicleID: v, Endpoint: volvo.Odometer, FetchedAt: at, Payload: raw, Hash: h}
+		return collector.Snapshot{AccountID: a, VehicleID: v, Source: volvo.Source, Endpoint: volvo.Odometer, FetchedAt: at, Payload: raw, Hash: h}
 	}
 	steps := []struct {
 		at     time.Time
@@ -316,8 +316,8 @@ func TestAccountIsolation(t *testing.T) {
 	h, _ := volvo.Fingerprint(raw)
 	now := time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
 	for _, sn := range []collector.Snapshot{
-		{AccountID: a, VehicleID: va, Endpoint: volvo.Odometer, FetchedAt: now, Payload: raw, Hash: h},
-		{AccountID: b, VehicleID: vb, Endpoint: volvo.Odometer, FetchedAt: now, Payload: raw, Hash: h},
+		{AccountID: a, VehicleID: va, Source: volvo.Source, Endpoint: volvo.Odometer, FetchedAt: now, Payload: raw, Hash: h},
+		{AccountID: b, VehicleID: vb, Source: volvo.Source, Endpoint: volvo.Odometer, FetchedAt: now, Payload: raw, Hash: h},
 	} {
 		if _, err := s.SaveSnapshot(ctx, sn); err != nil {
 			t.Fatal(err)
@@ -349,13 +349,13 @@ func TestAccountIsolation(t *testing.T) {
 	})
 	t.Run("write into another account refused", func(t *testing.T) {
 		_, err := s.SaveSnapshot(ctx, collector.Snapshot{
-			AccountID: a, VehicleID: vb, Endpoint: volvo.Doors, FetchedAt: now, Payload: raw, Hash: h,
+			AccountID: a, VehicleID: vb, Source: volvo.Source, Endpoint: volvo.Doors, FetchedAt: now, Payload: raw, Hash: h,
 		})
 		if err == nil {
 			t.Error("snapshot written to another account's vehicle")
 		}
 		err = s.inAccount(ctx, a, func(tx pgx.Tx) error {
-			_, err := tx.Exec(ctx, "INSERT INTO snapshots (account_id, vehicle_id, endpoint, fetched_at, checked_at, value_hash, payload) VALUES ($1, $2, 'doors', now(), now(), '', '{}')", b, vb)
+			_, err := tx.Exec(ctx, "INSERT INTO snapshots (account_id, vehicle_id, source, endpoint, fetched_at, checked_at, value_hash, payload) VALUES ($1, $2, 'volvo', 'doors', now(), now(), '', '{}')", b, vb)
 			return err
 		})
 		if err == nil {

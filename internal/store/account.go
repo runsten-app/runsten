@@ -54,7 +54,7 @@ var exportTables = []exportTable{
 	{name: "mqtt_brokers", orderBy: "account_id", omit: []string{"password"}},
 	{name: "mqtt_status", orderBy: "account_id"},
 	// value_hash: the deduplication's, a hash of the payload.
-	{name: "snapshots", orderBy: "vehicle_id, endpoint, fetched_at", omit: []string{"value_hash"}},
+	{name: "snapshots", orderBy: "vehicle_id, source, endpoint, fetched_at", omit: []string{"value_hash"}},
 }
 
 // notExported are the tables an export leaves out, and why.

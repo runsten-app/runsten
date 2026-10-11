@@ -116,7 +116,7 @@ func TestSnapshotsSince(t *testing.T) {
 	save := func(ep volvo.Endpoint, at time.Time, raw string) {
 		t.Helper()
 		h, _ := volvo.Fingerprint([]byte(raw))
-		if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Endpoint: ep, FetchedAt: at, Payload: []byte(raw), Hash: h}); err != nil {
+		if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Source: volvo.Source, Endpoint: ep, FetchedAt: at, Payload: []byte(raw), Hash: h}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -127,22 +127,62 @@ func TestSnapshotsSince(t *testing.T) {
 	save(volvo.Odometer, t0.Add(3*time.Hour), `{"v":3}`)
 	save(volvo.Doors, t0.Add(3*time.Hour), `{}`)
 
-	got, err := s.SnapshotsSince(ctx, a, v, t0.Add(time.Hour), []volvo.Endpoint{volvo.Odometer, volvo.Details})
+	got, err := s.SnapshotsSince(ctx, a, v, t0.Add(time.Hour), []core.Kind{volvoKind(volvo.Odometer), volvoKind(volvo.Details)})
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []derive.Snapshot{
-		{Endpoint: volvo.Details, FetchedAt: t0, CheckedAt: t0, Payload: []byte(`{"data": {"batteryCapacityKWH": 80}}`)},
-		{Endpoint: volvo.Odometer, FetchedAt: t0.Add(time.Hour), CheckedAt: t0.Add(2 * time.Hour), Payload: []byte(`{"v": 2}`)},
-		{Endpoint: volvo.Odometer, FetchedAt: t0.Add(3 * time.Hour), CheckedAt: t0.Add(3 * time.Hour), Payload: []byte(`{"v": 3}`)},
+		{Kind: volvoKind(volvo.Details), FetchedAt: t0, CheckedAt: t0, Payload: []byte(`{"data": {"batteryCapacityKWH": 80}}`)},
+		{Kind: volvoKind(volvo.Odometer), FetchedAt: t0.Add(time.Hour), CheckedAt: t0.Add(2 * time.Hour), Payload: []byte(`{"v": 2}`)},
+		{Kind: volvoKind(volvo.Odometer), FetchedAt: t0.Add(3 * time.Hour), CheckedAt: t0.Add(3 * time.Hour), Payload: []byte(`{"v": 3}`)},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got  %+v\nwant %+v", got, want)
 	}
-	all, _ := s.SnapshotsSince(ctx, a, v, time.Time{}, []volvo.Endpoint{volvo.Odometer})
+	all, _ := s.SnapshotsSince(ctx, a, v, time.Time{}, []core.Kind{volvoKind(volvo.Odometer)})
 	if len(all) != 3 {
 		t.Errorf("whole history: %d snapshots", len(all))
 	}
+}
+
+// Each source has its snapshots: the same endpoint and values from another source are
+// neither deduplicated against the Volvo Cars API's nor read in their place.
+func TestSnapshotSources(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, v := newVehicle(t, s, "token", "YV1AAAAAAAAAAAAA1")
+	raw := []byte(`{"v":1}`)
+	h, _ := volvo.Fingerprint(raw)
+	save := func(source string, at time.Time) bool {
+		t.Helper()
+		stored, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Source: source, Endpoint: volvo.Odometer, FetchedAt: at, Payload: raw, Hash: h})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return stored
+	}
+	if !save(volvo.Source, t0) || !save("phone", t0) {
+		t.Fatal("first snapshot of a source not stored")
+	}
+	if save("phone", t0.Add(time.Hour)) {
+		t.Error("identical snapshot of the same source stored again")
+	}
+	got, err := s.SnapshotsSince(ctx, a, v, time.Time{}, []core.Kind{volvoKind(volvo.Odometer)})
+	if err != nil || len(got) != 1 || got[0].Kind.Source != volvo.Source || !got[0].CheckedAt.Equal(t0) {
+		t.Errorf("volvo's: %+v, %v", got, err)
+	}
+	phone := []core.Kind{{Source: "phone", Endpoint: string(volvo.Odometer)}}
+	got, err = s.SnapshotsSince(ctx, a, v, time.Time{}, phone)
+	if err != nil || len(got) != 1 || !got[0].CheckedAt.Equal(t0.Add(time.Hour)) {
+		t.Errorf("phone's: %+v, %v", got, err)
+	}
+	if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Endpoint: volvo.Odometer, FetchedAt: t0, Payload: raw, Hash: h}); err == nil {
+		t.Error("snapshot without a source stored")
+	}
+}
+
+func volvoKind(ep volvo.Endpoint) core.Kind {
+	return core.Kind{Source: volvo.Source, Endpoint: string(ep)}
 }
 
 func TestSnapshotsBetween(t *testing.T) {
@@ -153,7 +193,7 @@ func TestSnapshotsBetween(t *testing.T) {
 	save := func(acc, vehicle string, ep volvo.Endpoint, at time.Time, raw string) {
 		t.Helper()
 		h, _ := volvo.Fingerprint([]byte(raw))
-		if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: acc, VehicleID: vehicle, Endpoint: ep, FetchedAt: at, Payload: []byte(raw), Hash: h}); err != nil {
+		if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: acc, VehicleID: vehicle, Source: volvo.Source, Endpoint: ep, FetchedAt: at, Payload: []byte(raw), Hash: h}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -166,16 +206,16 @@ func TestSnapshotsBetween(t *testing.T) {
 	save(a, v, volvo.EnergyState, at(91), `{"v":5}`)
 	save(a, v, volvo.Odometer, at(50), `{"v":1}`)
 	save(b, vb, volvo.EnergyState, at(50), `{"v":9}`)
-	energy := []volvo.Endpoint{volvo.EnergyState}
+	energy := []core.Kind{volvoKind(volvo.EnergyState)}
 
 	got, err := s.SnapshotsBetween(ctx, a, v, at(30), at(90), energy, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []derive.Snapshot{
-		{Endpoint: volvo.EnergyState, FetchedAt: at(10), CheckedAt: at(40), Payload: []byte(`{"v": 2}`)},
-		{Endpoint: volvo.EnergyState, FetchedAt: at(60), CheckedAt: at(60), Payload: []byte(`{"v": 3}`)},
-		{Endpoint: volvo.EnergyState, FetchedAt: at(90), CheckedAt: at(90), Payload: []byte(`{"v": 4}`)},
+		{Kind: volvoKind(volvo.EnergyState), FetchedAt: at(10), CheckedAt: at(40), Payload: []byte(`{"v": 2}`)},
+		{Kind: volvoKind(volvo.EnergyState), FetchedAt: at(60), CheckedAt: at(60), Payload: []byte(`{"v": 3}`)},
+		{Kind: volvoKind(volvo.EnergyState), FetchedAt: at(90), CheckedAt: at(90), Payload: []byte(`{"v": 4}`)},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got  %+v\nwant %+v", got, want)
@@ -296,7 +336,7 @@ func TestDeriveOnPostgres(t *testing.T) {
 	defer srv.Close()
 	a, v := newVehicle(t, s, "token", sc.VIN)
 
-	d := derive.New(s, core.DefaultParams(), nil, quietLog)
+	d := derive.New(s, volvo.Normalizer{}, core.DefaultParams(), nil, quietLog)
 	// A token pasted by hand: no expiry, never refreshed.
 	tokens := oauth.NewManager(s, nil, clk, oauth.DefaultParams(), quietLog)
 	c := collector.New(volvo.NewClient(srv.URL, "key", srv.Client()), s, tokens, clk, collector.DefaultIntervals(), collector.DefaultQuota(), quietLog, nil, d)

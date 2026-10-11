@@ -200,7 +200,7 @@ func run(args []string) error {
 	if err != nil {
 		return fmt.Errorf("catalog: %w", err)
 	}
-	deriver := derive.New(st, core.DefaultParams(), capacities{catalog: cat, vehicle: vehicleOf(st)}, log)
+	deriver := derive.New(st, volvo.Normalizer{}, core.DefaultParams(), capacities{catalog: cat, vehicle: vehicleOf(st)}, log)
 	if cmd == rebuild {
 		return rebuildAll(ctx, st, deriver, log)
 	}

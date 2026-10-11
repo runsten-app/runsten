@@ -14,12 +14,11 @@ import (
 	"time"
 
 	"runsten/internal/core"
-	"runsten/internal/volvo"
 )
 
 // Snapshot is a stored raw response.
 type Snapshot struct {
-	Endpoint  volvo.Endpoint
+	Kind      core.Kind
 	FetchedAt time.Time
 	CheckedAt time.Time
 	Payload   []byte
@@ -29,16 +28,28 @@ type Snapshot struct {
 type Store interface {
 	// DerivationCursor returns where the vehicle's derivation resumes; zero if it never ran.
 	DerivationCursor(ctx context.Context, accountID, vehicleID string) (core.Cursor, error)
-	// SnapshotsSince returns the snapshots of endpoints fetched after from, and the latest
-	// one of each endpoint fetched at or before it (the one still valid at from).
-	SnapshotsSince(ctx context.Context, accountID, vehicleID string, from time.Time, endpoints []volvo.Endpoint) ([]Snapshot, error)
+	// SnapshotsSince returns the snapshots of the kinds fetched after from, and the latest
+	// one of each kind fetched at or before it (the one still valid at from).
+	SnapshotsSince(ctx context.Context, accountID, vehicleID string, from time.Time, kinds []core.Kind) ([]Snapshot, error)
 	// SnapshotsBetween returns, oldest first and at most limit of them, the snapshots of
-	// endpoints read within [from, to]: fetched in it, or fetched before and read again,
+	// the kinds read within [from, to]: fetched in it, or fetched before and read again,
 	// unchanged, at from or later.
-	SnapshotsBetween(ctx context.Context, accountID, vehicleID string, from, to time.Time, endpoints []volvo.Endpoint, limit int) ([]Snapshot, error)
+	SnapshotsBetween(ctx context.Context, accountID, vehicleID string, from, to time.Time, kinds []core.Kind, limit int) ([]Snapshot, error)
 	// SaveDerivation replaces the events detected after the given time with those of res
 	// and records res.Cursor, atomically.
 	SaveDerivation(ctx context.Context, accountID, vehicleID string, after time.Time, res core.Result) error
+}
+
+// Normalizer reads the stored responses of the sources it knows into snapshots. derive
+// does not know their formats: the binary provides it (the Volvo Cars API's today).
+type Normalizer interface {
+	// Kinds returns the kinds of response the derivation reads.
+	Kinds() []core.Kind
+	// EnergyKinds returns those holding the energy state: the state of charge, the range
+	// and the charging power.
+	EnergyKinds() []core.Kind
+	// Normalize reads a stored response of kind k.
+	Normalize(k core.Kind, raw []byte) (core.Snapshot, error)
 }
 
 // Capacities gives the net battery capacity of each vehicle, for core.CapacityCatalogNet.
@@ -52,15 +63,16 @@ type Capacities interface {
 // Deriver derives the events of a vehicle.
 type Deriver struct {
 	st   Store
+	norm Normalizer
 	p    core.Params
 	caps Capacities
 	log  *slog.Logger
 }
 
-// New creates a Deriver. Without caps, every energy rests on the vendor's capacity: a
-// Deriver that only reads the current state needs none.
-func New(st Store, p core.Params, caps Capacities, log *slog.Logger) *Deriver {
-	return &Deriver{st: st, p: p, caps: caps, log: log}
+// New creates a Deriver reading the snapshots norm knows. Without caps, every energy
+// rests on the vendor's capacity: a Deriver that only reads the current state needs none.
+func New(st Store, norm Normalizer, p core.Params, caps Capacities, log *slog.Logger) *Deriver {
+	return &Deriver{st: st, norm: norm, p: p, caps: caps, log: log}
 }
 
 // Update derives the events detected since the vehicle's cursor.
@@ -92,10 +104,9 @@ func (d *Deriver) Current(ctx context.Context, accountID, vehicleID string, at t
 
 // Readings returns, oldest first and at most limit of them, the vehicle's energy states
 // (its state of charge, range and charging power) read within [from, to]: the records
-// of one endpoint, which follow each other, each valid from its FetchedAt to its
-// CheckedAt.
+// of each kind follow each other, each valid from its FetchedAt to its CheckedAt.
 func (d *Deriver) Readings(ctx context.Context, accountID, vehicleID string, from, to time.Time, limit int) ([]core.Record, error) {
-	snaps, err := d.st.SnapshotsBetween(ctx, accountID, vehicleID, from, to, []volvo.Endpoint{volvo.EnergyState}, limit)
+	snaps, err := d.st.SnapshotsBetween(ctx, accountID, vehicleID, from, to, d.norm.EnergyKinds(), limit)
 	if err != nil {
 		return nil, fmt.Errorf("snapshots: %w", err)
 	}
@@ -121,9 +132,9 @@ func (d *Deriver) run(ctx context.Context, accountID, vehicleID string, c core.C
 }
 
 // records returns the normalized snapshots fetched after from, and the latest one of
-// each endpoint fetched at or before it.
+// each kind fetched at or before it.
 func (d *Deriver) records(ctx context.Context, accountID, vehicleID string, from time.Time) ([]core.Record, error) {
-	snaps, err := d.st.SnapshotsSince(ctx, accountID, vehicleID, from, volvo.NormalizedEndpoints())
+	snaps, err := d.st.SnapshotsSince(ctx, accountID, vehicleID, from, d.norm.Kinds())
 	if err != nil {
 		return nil, fmt.Errorf("snapshots: %w", err)
 	}
@@ -134,13 +145,14 @@ func (d *Deriver) records(ctx context.Context, accountID, vehicleID string, from
 func (d *Deriver) normalize(vehicleID string, snaps []Snapshot) []core.Record {
 	records := make([]core.Record, 0, len(snaps))
 	for _, s := range snaps {
-		n, err := volvo.Normalize(s.Endpoint, s.Payload)
+		n, err := d.norm.Normalize(s.Kind, s.Payload)
 		if err != nil {
 			// Stored responses are valid JSON; an unreadable one is skipped, not fatal.
-			d.log.Warn("unreadable snapshot", "vehicle", vehicleID, "endpoint", s.Endpoint, "fetched_at", s.FetchedAt, "err", err)
+			d.log.Warn("unreadable snapshot", "vehicle", vehicleID, "source", s.Kind.Source, "endpoint", s.Kind.Endpoint,
+				"fetched_at", s.FetchedAt, "err", err)
 			continue
 		}
-		records = append(records, core.Record{FetchedAt: s.FetchedAt, CheckedAt: s.CheckedAt, Snapshot: n})
+		records = append(records, core.Record{Source: s.Kind.Source, FetchedAt: s.FetchedAt, CheckedAt: s.CheckedAt, Snapshot: n})
 	}
 	return records
 }

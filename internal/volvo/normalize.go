@@ -13,6 +13,36 @@ import (
 // kmPerMile converts electricRange and distances reported in miles (market-dependent).
 const kmPerMile = 1.609344
 
+// Source names the Volvo Cars API among the sources of readings.
+const Source = "volvo"
+
+// Normalizer reads the stored responses of the Volvo Cars API into snapshots, for the
+// derivation.
+type Normalizer struct{}
+
+// Kinds returns the kinds of response Normalize reads.
+func (Normalizer) Kinds() []core.Kind { return kinds(NormalizedEndpoints()...) }
+
+// EnergyKinds returns the kinds holding the energy state: the state of charge, the range
+// and the charging power.
+func (Normalizer) EnergyKinds() []core.Kind { return kinds(EnergyState) }
+
+// Normalize reads a stored response of kind k.
+func (Normalizer) Normalize(k core.Kind, raw []byte) (core.Snapshot, error) {
+	if k.Source != Source {
+		return core.Snapshot{}, fmt.Errorf("normalize: source %q is not %s", k.Source, Source)
+	}
+	return Normalize(Endpoint(k.Endpoint), raw)
+}
+
+func kinds(eps ...Endpoint) []core.Kind {
+	out := make([]core.Kind, len(eps))
+	for i, ep := range eps {
+		out[i] = core.Kind{Source: Source, Endpoint: string(ep)}
+	}
+	return out
+}
+
 // NormalizedEndpoints lists the endpoints Normalize reads; the others carry nothing the
 // domain uses.
 func NormalizedEndpoints() []Endpoint {

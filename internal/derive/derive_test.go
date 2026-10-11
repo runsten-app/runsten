@@ -35,8 +35,8 @@ type memStore struct {
 }
 
 type memVehicle struct {
-	rows    map[volvo.Endpoint][]Snapshot
-	hashes  map[volvo.Endpoint][]byte
+	rows    map[core.Kind][]Snapshot
+	hashes  map[core.Kind][]byte
 	trips   []core.Trip
 	charges []core.Charge
 	cursor  core.Cursor
@@ -49,7 +49,7 @@ func newMemStore(targets ...collector.Target) *memStore {
 func (m *memStore) vehicle(id string) *memVehicle {
 	v, ok := m.vehicles[id]
 	if !ok {
-		v = &memVehicle{rows: map[volvo.Endpoint][]Snapshot{}, hashes: map[volvo.Endpoint][]byte{}}
+		v = &memVehicle{rows: map[core.Kind][]Snapshot{}, hashes: map[core.Kind][]byte{}}
 		m.vehicles[id] = v
 	}
 	return v
@@ -69,13 +69,14 @@ func (m *memStore) SetKeyRefused(context.Context, string, string, time.Time, boo
 
 func (m *memStore) SaveSnapshot(_ context.Context, s collector.Snapshot) (bool, error) {
 	v := m.vehicle(s.VehicleID)
-	rows := v.rows[s.Endpoint]
-	if len(rows) > 0 && bytes.Equal(v.hashes[s.Endpoint], s.Hash) {
+	k := core.Kind{Source: s.Source, Endpoint: string(s.Endpoint)}
+	rows := v.rows[k]
+	if len(rows) > 0 && bytes.Equal(v.hashes[k], s.Hash) {
 		rows[len(rows)-1].CheckedAt = s.FetchedAt
 		return false, nil
 	}
-	v.hashes[s.Endpoint] = s.Hash
-	v.rows[s.Endpoint] = append(rows, Snapshot{Endpoint: s.Endpoint, FetchedAt: s.FetchedAt, CheckedAt: s.FetchedAt, Payload: s.Payload})
+	v.hashes[k] = s.Hash
+	v.rows[k] = append(rows, Snapshot{Kind: k, FetchedAt: s.FetchedAt, CheckedAt: s.FetchedAt, Payload: s.Payload})
 	return true, nil
 }
 
@@ -83,10 +84,10 @@ func (m *memStore) DerivationCursor(_ context.Context, _, vehicleID string) (cor
 	return m.vehicle(vehicleID).cursor, nil
 }
 
-func (m *memStore) SnapshotsSince(_ context.Context, _, vehicleID string, from time.Time, endpoints []volvo.Endpoint) ([]Snapshot, error) {
+func (m *memStore) SnapshotsSince(_ context.Context, _, vehicleID string, from time.Time, kinds []core.Kind) ([]Snapshot, error) {
 	var out []Snapshot
-	for _, ep := range endpoints {
-		rows := m.vehicle(vehicleID).rows[ep]
+	for _, k := range kinds {
+		rows := m.vehicle(vehicleID).rows[k]
 		for i, r := range rows {
 			lastBefore := !r.FetchedAt.After(from) && (i == len(rows)-1 || rows[i+1].FetchedAt.After(from))
 			if lastBefore || r.FetchedAt.After(from) {
@@ -98,10 +99,10 @@ func (m *memStore) SnapshotsSince(_ context.Context, _, vehicleID string, from t
 	return out, nil
 }
 
-func (m *memStore) SnapshotsBetween(_ context.Context, _, vehicleID string, from, to time.Time, endpoints []volvo.Endpoint, limit int) ([]Snapshot, error) {
+func (m *memStore) SnapshotsBetween(_ context.Context, _, vehicleID string, from, to time.Time, kinds []core.Kind, limit int) ([]Snapshot, error) {
 	var out []Snapshot
-	for _, ep := range endpoints {
-		for _, r := range m.vehicle(vehicleID).rows[ep] {
+	for _, k := range kinds {
+		for _, r := range m.vehicle(vehicleID).rows[k] {
 			if !r.FetchedAt.After(to) && !r.CheckedAt.Before(from) {
 				out = append(out, r)
 			}
@@ -174,7 +175,7 @@ func play(t *testing.T, file string, until time.Duration) (*memStore, *Deriver, 
 	t.Cleanup(srv.Close)
 
 	st := newMemStore(collector.Target{AccountID: "a", VehicleID: "v", VIN: sc.VIN, ConnectionID: "c"})
-	d := New(st, core.DefaultParams(), simCatalog{}, quiet)
+	d := New(st, volvo.Normalizer{}, core.DefaultParams(), simCatalog{}, quiet)
 	c := collector.New(volvo.NewClient(srv.URL, "key", srv.Client()), st, fixedToken{}, clk, collector.DefaultIntervals(), collector.DefaultQuota(), quiet, nil, d)
 	day := sc.Start.Truncate(24 * time.Hour)
 	for clk.Now().Before(day.Add(until)) {
@@ -508,7 +509,7 @@ func TestCurrent(t *testing.T) {
 	if c, err := d.Current(context.Background(), "a", "v", day); err != nil || c.Snapshot.Covers != 0 {
 		t.Errorf("before the first pass: %+v, %v", c.Snapshot, err)
 	}
-	if _, err := New(&scriptedStore{snapErr: errors.New("boom")}, core.DefaultParams(), nil, quiet).Current(context.Background(), "a", "v", now); err == nil {
+	if _, err := New(&scriptedStore{snapErr: errors.New("boom")}, volvo.Normalizer{}, core.DefaultParams(), nil, quiet).Current(context.Background(), "a", "v", now); err == nil {
 		t.Error("store error ignored")
 	}
 }

@@ -681,7 +681,7 @@ func TestEnteredCostSurvivesRebuild(t *testing.T) {
 	save := func(ep volvo.Endpoint, at time.Time, raw string) {
 		t.Helper()
 		h, _ := volvo.Fingerprint([]byte(raw))
-		if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Endpoint: ep, FetchedAt: at, Payload: []byte(raw), Hash: h}); err != nil {
+		if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Source: volvo.Source, Endpoint: ep, FetchedAt: at, Payload: []byte(raw), Hash: h}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -696,7 +696,7 @@ func TestEnteredCostSurvivesRebuild(t *testing.T) {
 		t.Helper()
 		p := core.DefaultParams()
 		p.MinChargeSoC = minChargeSoC
-		if _, err := derive.New(s, p, nil, quietLog).Rebuild(ctx, a, v); err != nil {
+		if _, err := derive.New(s, volvo.Normalizer{}, p, nil, quietLog).Rebuild(ctx, a, v); err != nil {
 			t.Fatal(err)
 		}
 		charges, err := s.Charges(ctx, a, v)
