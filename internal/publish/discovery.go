@@ -114,7 +114,7 @@ func entities() []entity {
 		enum("charging_status", "Charging status", "charging_status", values(
 			core.ChargingIdle, core.ChargingActive, core.ChargingDone, core.ChargingScheduled,
 			core.ChargingDischarging, core.ChargingError)...),
-		enum("charge_type", "Charge type", "charge_type", values(core.AC, core.DC)...),
+		enum("charge_type", "Charge type", "charge_type", values(core.AC, core.DC, core.NoCharge)...),
 		sensor("charging_power", "Charging power", "charging_power_kw", "power", "kW", "measurement"),
 		sensor("target_soc", "Charge limit", "target_soc", "", "%", ""),
 		sensor("odometer", "Odometer", "odometer_km", "distance", "km", "total_increasing"),

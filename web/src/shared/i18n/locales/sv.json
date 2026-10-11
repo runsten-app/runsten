@@ -93,6 +93,9 @@
       "connected": "Ansluten",
       "disconnected": "Frånkopplad",
       "fault": "Fel"
+    },
+    "type": {
+      "none": "Ingen"
     }
   },
   "engine": {

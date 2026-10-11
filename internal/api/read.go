@@ -236,10 +236,11 @@ type positionJSON struct {
 
 // Enumerations of the state, from the domain's values.
 type (
-	engineJSON         string
-	chargingStatusJSON string
-	cableJSON          string
-	chargeTypeJSON     string
+	engineJSON            string
+	chargingStatusJSON    string
+	cableJSON             string
+	chargeTypeJSON        string
+	currentChargeTypeJSON string
 )
 
 // Schema lists the engine states.
@@ -263,12 +264,17 @@ func (chargeTypeJSON) Schema(huma.Registry) *huma.Schema {
 	return enumSchema(core.AC, core.DC)
 }
 
+// Schema lists the charge types a vehicle reports: a charge's, or none.
+func (currentChargeTypeJSON) Schema(huma.Registry) *huma.Schema {
+	return enumSchema(core.AC, core.DC, core.NoCharge)
+}
+
 type chargingJSON struct {
-	Status       null[reading[chargingStatusJSON]] `json:"status" doc:"A charge is in progress when it is charging."`
-	Cable        null[reading[cableJSON]]          `json:"cable"`
-	Type         null[reading[chargeTypeJSON]]     `json:"type"`
-	PowerW       null[reading[float64]]            `json:"power_w" doc:"Charging power, in W."`
-	TargetSoCPct null[reading[float64]]            `json:"target_soc_pct" doc:"Target state of charge, in %."`
+	Status       null[reading[chargingStatusJSON]]    `json:"status" doc:"A charge is in progress when it is charging."`
+	Cable        null[reading[cableJSON]]             `json:"cable"`
+	Type         null[reading[currentChargeTypeJSON]] `json:"type" doc:"none when the vehicle says no charge runs."`
+	PowerW       null[reading[float64]]               `json:"power_w" doc:"Charging power, in W."`
+	TargetSoCPct null[reading[float64]]               `json:"target_soc_pct" doc:"Target state of charge, in %."`
 }
 
 type stateJSON struct {
@@ -308,7 +314,7 @@ func (s *Server) getState(ctx context.Context, in *vehicleInput) (*body[stateJSO
 		Charging: chargingJSON{
 			Status:       readingOf(c, core.FieldCharging, n.Charging, text[core.ChargingStatus, chargingStatusJSON]),
 			Cable:        readingOf(c, core.FieldConnection, n.Connection, text[core.Connection, cableJSON]),
-			Type:         readingOf(c, core.FieldChargeType, n.ChargeType, text[core.ChargeType, chargeTypeJSON]),
+			Type:         readingOf(c, core.FieldChargeType, n.ChargeType, text[core.ChargeType, currentChargeTypeJSON]),
 			PowerW:       readingOf(c, core.FieldPower, n.PowerW, same),
 			TargetSoCPct: readingOf(c, core.FieldTargetSoC, n.TargetSoC, same),
 		},

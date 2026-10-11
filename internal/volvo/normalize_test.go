@@ -121,8 +121,9 @@ func TestNormalizeAbsences(t *testing.T) {
 			core.Snapshot{
 				Covers: core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
 					core.FieldChargeType | core.FieldPower | core.FieldTargetSoC,
-				SoC:     core.Some(0.0, ts("2026-09-28T06:00:00Z")), // a real 0 %, not an absence
-				RangeKm: core.Some(160.9344, ts("2026-09-28T06:00:00Z")),
+				SoC:        core.Some(0.0, ts("2026-09-28T06:00:00Z")), // a real 0 %, not an absence
+				RangeKm:    core.Some(160.9344, ts("2026-09-28T06:00:00Z")),
+				ChargeType: core.Some(core.NoCharge, ts("2026-09-28T06:00:00Z")), // told, not unknown
 			},
 		},
 		{

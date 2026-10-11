@@ -713,8 +713,9 @@ components:
             - $ref: "#/components/schemas/ReadingFloat64"
             - type: "null"
         type:
+          description: none when the vehicle says no charge runs.
           oneOf:
-            - $ref: "#/components/schemas/ReadingChargeType"
+            - $ref: "#/components/schemas/ReadingCurrentChargeType"
             - type: "null"
       required:
         - status
@@ -2145,37 +2146,6 @@ components:
         - fetched_at
         - checked_at
       type: object
-    ReadingChargeType:
-      additionalProperties: false
-      properties:
-        checked_at:
-          description: The last reading of the same value, unchanged.
-          format: date-time
-          pattern: Z$
-          type: string
-        fetched_at:
-          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
-          format: date-time
-          pattern: Z$
-          type: string
-        reported_at:
-          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
-          format: date-time
-          pattern: Z$
-          type:
-            - string
-            - "null"
-        value:
-          enum:
-            - AC
-            - DC
-          type: string
-      required:
-        - value
-        - reported_at
-        - fetched_at
-        - checked_at
-      type: object
     ReadingChargingStatus:
       additionalProperties: false
       properties:
@@ -2204,6 +2174,38 @@ components:
             - scheduled
             - discharging
             - error
+          type: string
+      required:
+        - value
+        - reported_at
+        - fetched_at
+        - checked_at
+      type: object
+    ReadingCurrentChargeType:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The last reading of the same value, unchanged.
+          format: date-time
+          pattern: Z$
+          type: string
+        fetched_at:
+          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
+          format: date-time
+          pattern: Z$
+          type: string
+        reported_at:
+          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        value:
+          enum:
+            - AC
+            - DC
+            - none
           type: string
       required:
         - value

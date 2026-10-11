@@ -66,6 +66,9 @@ type ChargeType string
 const (
 	AC ChargeType = "AC"
 	DC ChargeType = "DC"
+	// NoCharge is a vehicle's own word that no charge runs: a reading of the current
+	// state, never a charge's type.
+	NoCharge ChargeType = "none"
 )
 
 // Field identifies a value of Snapshot.
