@@ -4,29 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 
 	"runsten/internal/api"
 	"runsten/internal/core"
+	"runsten/internal/importer"
 )
-
-// ImportedTrip is a trip to import, with its track when the source gives one: a GeoJSON
-// LineString.
-type ImportedTrip struct {
-	Trip  core.Trip
-	Track []byte // nil: none given, a track stored before stays
-}
-
-// ImportResult tells what an import wrote.
-type ImportResult struct {
-	Saved   int // events written, new or replacing the same event of the same source
-	Skipped int // events starting at or after Cutoff
-	// Cutoff is the vehicle's first snapshot, of any source, or the time of the import
-	// when it has none: only what starts before it is imported.
-	Cutoff time.Time
-}
 
 // ErrNotImported is returned for an event without its import: its source and its ID
 // there.
@@ -41,9 +25,19 @@ var ErrNotImported = errors.New("an imported event needs its source and its ID t
 //
 // A snapshot written meanwhile by the collector is not waited for: it reads the
 // present, and an import the past.
-func (s *Store) SaveImport(ctx context.Context, accountID, vehicleID string, trips []ImportedTrip, charges []core.Charge) (ImportResult, error) {
-	var res ImportResult
+func (s *Store) SaveImport(ctx context.Context, accountID, vehicleID string, trips []importer.ImportedTrip, charges []core.Charge) (importer.Result, error) {
+	var res importer.Result
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		var err error
+		res, err = saveImport(ctx, tx, accountID, vehicleID, trips, charges)
+		return err
+	})
+	return res, err
+}
+
+func saveImport(ctx context.Context, tx pgx.Tx, accountID, vehicleID string, trips []importer.ImportedTrip, charges []core.Charge) (importer.Result, error) {
+	var res importer.Result
+	err := func() error {
 		err := tx.QueryRow(ctx, `SELECT coalesce((SELECT min(fetched_at) FROM snapshots WHERE vehicle_id = $1), now())`,
 			vehicleID).Scan(&res.Cutoff)
 		if err != nil {
@@ -131,7 +125,7 @@ func (s *Store) SaveImport(ctx context.Context, accountID, vehicleID string, tri
 			res.Saved++
 		}
 		return nil
-	})
+	}()
 	return res, err
 }
 

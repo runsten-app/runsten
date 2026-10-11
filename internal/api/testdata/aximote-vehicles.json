@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "id": "veh-v60",
+      "name": "Old V60",
+      "make": "Volvo",
+      "model": "V60",
+      "year": 2016,
+      "vin_matches": false
+    },
+    {
+      "id": "veh-ex30",
+      "name": "My EX30",
+      "make": "Volvo",
+      "model": "EX30",
+      "year": 2024,
+      "vin_matches": true
+    },
+    {
+      "id": "veh-bare",
+      "name": null,
+      "make": null,
+      "model": null,
+      "year": null,
+      "vin_matches": false
+    }
+  ]
+}

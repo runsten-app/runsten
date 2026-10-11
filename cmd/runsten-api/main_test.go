@@ -35,6 +35,7 @@ func TestLoadConfigDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 	if cfg.addr != "127.0.0.1:8081" || cfg.baseURL != volvo.DefaultBaseURL || cfg.app.BaseURL != volvo.DefaultAuthURL ||
+		cfg.aximoteURL != "https://api.aximote.com" ||
 		!slices.Equal(cfg.app.Scopes, volvo.DefaultScopes()) || cfg.app.ClientID != "id" || cfg.app.ClientSecret != "secret" ||
 		cfg.logLevel != slog.LevelInfo || cfg.geocoder != nil || cfg.geocode.Interval != time.Second || !cfg.privateBrokers {
 		t.Errorf("config = %+v", cfg)
@@ -49,7 +50,7 @@ func TestLoadConfigOverrides(t *testing.T) {
 		"RUNSTEN_VOLVO_REDIRECT_URI": "http://127.0.0.1:8081/auth/volvo/callback", "RUNSTEN_ACCESS_RESTRICTED": "true",
 		"RUNSTEN_APP_URL": "http://127.0.0.1:5173", "RUNSTEN_GEOCODER_URL": "https://nominatim.example",
 		"RUNSTEN_GEOCODER_INTERVAL": "2s", "RUNSTEN_HEALTH_TOKEN": strings.Repeat("h", minHealthToken),
-		"RUNSTEN_MQTT_PRIVATE_BROKERS": "false",
+		"RUNSTEN_MQTT_PRIVATE_BROKERS": "false", "RUNSTEN_AXIMOTE_BASE_URL": "http://localhost:8080",
 	} {
 		m[k] = v
 	}
@@ -60,7 +61,7 @@ func TestLoadConfigOverrides(t *testing.T) {
 	if cfg.baseURL != "http://localhost:8080" || cfg.app.BaseURL != "http://localhost:8080" || cfg.addr != ":9000" || !cfg.restricted ||
 		!slices.Equal(cfg.app.Scopes, []string{"openid", "conve:odometer_status"}) || cfg.logLevel != slog.LevelDebug ||
 		cfg.appURL != "http://127.0.0.1:5173/" || cfg.geocoder == nil || cfg.geocode.Interval != 2*time.Second ||
-		cfg.healthToken != strings.Repeat("h", minHealthToken) || cfg.privateBrokers {
+		cfg.healthToken != strings.Repeat("h", minHealthToken) || cfg.privateBrokers || cfg.aximoteURL != "http://localhost:8080" {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -80,7 +81,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_VOLVO_AUTH_URL": "volvoid", "RUNSTEN_VOLVO_SCOPES": "openid conve:unlock", "RUNSTEN_LOG_LEVEL": "loud",
 		"RUNSTEN_ACCESS_RESTRICTED": "maybe", "RUNSTEN_APP_URL": "/connection",
 		"RUNSTEN_GEOCODER_URL": "nominatim", "RUNSTEN_GEOCODER_INTERVAL": "10ms", "RUNSTEN_HEALTH_TOKEN": "short",
-		"RUNSTEN_MQTT_PRIVATE_BROKERS": "sometimes",
+		"RUNSTEN_MQTT_PRIVATE_BROKERS": "sometimes", "RUNSTEN_AXIMOTE_BASE_URL": "aximote",
 	}))
 	if err == nil {
 		t.Fatal("error expected")
@@ -89,7 +90,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_DATABASE_URL", "RUNSTEN_TOKEN_KEY", "RUNSTEN_VOLVO_CLIENT_ID",
 		"RUNSTEN_VOLVO_CLIENT_SECRET", "RUNSTEN_VOLVO_REDIRECT_URI", "RUNSTEN_VOLVO_AUTH_URL", "conve:unlock", "RUNSTEN_LOG_LEVEL",
 		"RUNSTEN_ACCESS_RESTRICTED", "RUNSTEN_APP_URL", "RUNSTEN_GEOCODER_URL", "RUNSTEN_GEOCODER_INTERVAL",
-		"RUNSTEN_HEALTH_TOKEN", "RUNSTEN_MQTT_PRIVATE_BROKERS",
+		"RUNSTEN_HEALTH_TOKEN", "RUNSTEN_MQTT_PRIVATE_BROKERS", "RUNSTEN_AXIMOTE_BASE_URL",
 	} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("the error should mention %s: %v", want, err)

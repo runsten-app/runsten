@@ -1,4 +1,7 @@
-// Command runsten-simulator is a fake backend mimicking the Volvo Cars API.
+// Command runsten-simulator is a fake backend mimicking the Volvo Cars API, and
+// Aximote's public API for the imports (/api/public/v1/, its token
+// aximoteapi.DevToken): an electric car with the first scenario's VIN, whose history
+// ends a month before the simulator started.
 //
 // Configuration through environment variables:
 //
@@ -54,6 +57,7 @@ import (
 
 	"runsten/internal/platform/clock"
 	"runsten/internal/platform/httpserver"
+	"runsten/internal/simulator/aximoteapi"
 	"runsten/internal/simulator/control"
 	"runsten/internal/simulator/pgledger"
 	"runsten/internal/simulator/scenario"
@@ -121,6 +125,9 @@ func run() error {
 	clk := clock.NewAccelerated(clock.Real{}, fleet.Start(), cfg.speed)
 	mux := http.NewServeMux()
 	mux.Handle("/sim/", control.NewHandler(fleet, clk, cfg.speed))
+	// In real time: the history must stay before the collector's first reading, which
+	// it stamps with its own clock.
+	mux.Handle(aximoteapi.Prefix, aximoteapi.NewHandler(aximoteapi.DevToken, aximoteapi.Default(clock.Real{}.Now(), vins[0])))
 	mux.Handle("/", volvoapi.NewHandler(srcs, clk, limits, faults, auth))
 
 	log.Info("simulation ready", "vins", vins, "start", fleet.Start(), "speed", cfg.speed,

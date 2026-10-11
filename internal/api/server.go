@@ -173,8 +173,12 @@ type Config struct {
 	Settings     Settings
 	Models       VehicleModels
 	Costs        ChargeCosts
-	// Imports are the vehicles' events imported from other applications.
-	Imports Imports
+	// Imports are the vehicles' events imported from other applications; ImportJobs
+	// the imports asked for, run by the import worker; Aximote lists the vehicles of an
+	// Aximote account.
+	Imports    Imports
+	ImportJobs ImportJobs
+	Aximote    AximoteVehicles
 	// Addresses name the positions outside the places; nil without a geocoder: no
 	// address, and nothing asked of a third party.
 	Addresses Addresses
@@ -267,6 +271,7 @@ func New(cfg Config) *Server {
 	s.registerReads(s.api)
 	s.registerCSV(s.api)
 	s.registerImports(s.api)
+	s.registerImportJobs(s.api)
 	s.registerModel(s.api)
 	s.registerStats(s.api)
 	s.registerBattery(s.api)

@@ -127,6 +127,61 @@ components:
         - vehicle
         - charge
       type: object
+    AximoteToken:
+      additionalProperties: false
+      properties:
+        token:
+          description: A personal access token of Aximote (axm_pat_…), created in its app (Pro). Only sent to Aximote, never returned.
+          pattern: ^axm_pat_[0-9A-Za-z]{26}$
+          type: string
+      required:
+        - token
+      type: object
+    AximoteVehicle:
+      additionalProperties: false
+      properties:
+        id:
+          description: Its ID at Aximote, to import its history.
+          type: string
+        make:
+          type:
+            - string
+            - "null"
+        model:
+          type:
+            - string
+            - "null"
+        name:
+          description: "Its name in Aximote; null: none."
+          type:
+            - string
+            - "null"
+        vin_matches:
+          description: "Aximote gives it the VIN of the vehicle: its history is this vehicle's. Never guessed otherwise."
+          type: boolean
+        year:
+          format: int64
+          type:
+            - integer
+            - "null"
+      required:
+        - id
+        - name
+        - make
+        - model
+        - year
+        - vin_matches
+      type: object
+    AximoteVehicleList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/AximoteVehicle"
+          type: array
+      required:
+        - items
+      type: object
     Battery:
       additionalProperties: false
       properties:
@@ -1156,6 +1211,9 @@ components:
             - too_many_vehicles
             - feature_unavailable
             - broker_refused
+            - token_refused
+            - source_unavailable
+            - import_active
             - insufficient_scope
             - rate_limited
             - internal
@@ -1337,6 +1395,107 @@ components:
         - started_to
         - last_imported_at
       type: object
+    ImportJob:
+      additionalProperties: false
+      properties:
+        created_at:
+          format: date-time
+          pattern: Z$
+          type: string
+        cutoff:
+          description: "The vehicle's first reading: only what starts before it is imported. null: no page read yet."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        ended_at:
+          description: "null: still active."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        error:
+          description: "Why the import failed. token_refused: the application refused the token (revoked, or mistyped). source_failed: the application kept failing. internal: Runsten failed, see its logs. null: not failed."
+          oneOf:
+            - enum:
+                - token_refused
+                - source_failed
+                - internal
+              type: string
+            - type: "null"
+        id:
+          format: uuid
+          type: string
+        imported:
+          description: Events written so far, new or replacing those of an earlier import.
+          format: int64
+          minimum: 0
+          type: integer
+        invalid:
+          description: Events left because they are unfinished or out of bounds (a trip without an end, a charge in progress). The application's fuel stops are left without being counted.
+          format: int64
+          minimum: 0
+          type: integer
+        not_before:
+          description: "Not read again before: the application asked to wait, or a failure is retried."
+          format: date-time
+          pattern: Z$
+          type: string
+        skipped:
+          description: Events left because they start at or after the cutoff.
+          format: int64
+          minimum: 0
+          type: integer
+        source:
+          description: The application the history is imported from.
+          examples:
+            - aximote
+          type: string
+        source_vehicle:
+          description: The vehicle there.
+          type: string
+        status:
+          description: "pending: waiting for the import worker, or for the application's limit (not_before). running: being read, page by page; a restart resumes it. done, failed: over, its token erased."
+          enum:
+            - pending
+            - running
+            - done
+            - failed
+          type: string
+        step:
+          description: "What is being read: the trips, then the charges."
+          enum:
+            - trips
+            - charges
+          type: string
+      required:
+        - id
+        - source
+        - source_vehicle
+        - status
+        - step
+        - imported
+        - skipped
+        - invalid
+        - cutoff
+        - error
+        - created_at
+        - not_before
+        - ended_at
+      type: object
+    ImportJobState:
+      additionalProperties: false
+      properties:
+        job:
+          description: "The vehicle's latest import; null: none yet."
+          oneOf:
+            - $ref: "#/components/schemas/ImportJob"
+            - type: "null"
+      required:
+        - job
+      type: object
     ImportList:
       additionalProperties: false
       properties:
@@ -1346,6 +1505,27 @@ components:
           type: array
       required:
         - items
+      type: object
+    ImportStart:
+      additionalProperties: false
+      properties:
+        source:
+          description: "The application to import from: aximote, the only one so far."
+          enum:
+            - aximote
+          type: string
+        token:
+          description: A personal access token of Aximote, kept encrypted until the import ends, then erased.
+          pattern: ^axm_pat_[0-9A-Za-z]{26}$
+          type: string
+        vehicle:
+          description: "The vehicle at Aximote whose history is imported: one of POST /vehicles/{vehicle}/aximote-vehicles."
+          pattern: ^[A-Za-z0-9._~-]{1,128}$
+          type: string
+      required:
+        - source
+        - token
+        - vehicle
       type: object
     InstanceKey:
       additionalProperties: false
@@ -4411,6 +4591,79 @@ paths:
       summary: A vehicle
       tags:
         - vehicles
+  /vehicles/{vehicle}/aximote-vehicles:
+    post:
+      description: Asks Aximote for the vehicles its token gives access to, and tells the one with the VIN of the vehicle. The token goes in the body, never in the URL; it is not kept.
+      operationId: listAximoteVehicles
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AximoteToken"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AximoteVehicleList"
+          description: Aximote's vehicles, in its order.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `token_refused`: Aximote refused the token."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: this operation requires a session, never an access token."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: Aximote did not answer, or asked to wait."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: The vehicles of an Aximote account
+      tags:
+        - events
   /vehicles/{vehicle}/battery:
     get:
       description: "Over the whole history of the vehicle, one capacity estimate per source and charge and their aggregates: no period is chosen. A power estimate is the integral of the charging power over the charge's retained span, over the SoC change of the same readings; a billed one is the energy entered from the charge's receipt, over the SoC change of the whole charge. Neither is a measurement: the vehicle exposes no energy meter, and the integer SoC rounds a 20-point span by ±5 %. `current` is the median of the latest 20 estimates, all sources together; `deviation_pct` compares it with the reference capacity, signed and never clamped, so that a bias of the method shows as one instead of passing for a new battery. `change` waits for 12 months of history and twice 20 estimates: a ratio of two medians of the same method, in which a constant bias cancels, and the trend says more than the level. `cycles` is an estimate too, and `excluded` counts the candidates the filters set aside, by reason, so that the reader sees why there are few points. `range_at_full` is the vehicle's own forecast of its consumption, which follows the season and the driving: shown apart, and never a measure of the battery. The months are split in the requested time zone, empty ones included; at most 400 of them."
@@ -4882,6 +5135,135 @@ paths:
       summary: Enter the cost of a charge
       tags:
         - costs
+  /vehicles/{vehicle}/import-job:
+    get:
+      description: "How it stands: pending, running, or over with its report. Never its token."
+      operationId: getImportJob
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportJobState"
+          description: The latest import.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: The latest import of a vehicle
+      tags:
+        - events
+    post:
+      description: "Creates the import, which runs in the background: its trips, then its charges, page by page, only what starts before the vehicle's first reading. Its progress and its report are read with `GET /vehicles/{vehicle}/import-job`. An event imported before is replaced. The token is kept encrypted until the import ends, then erased."
+      operationId: startImport
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportStart"
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportJob"
+          description: The import, pending.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: this operation requires a session, never an access token."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`import_active`: an import of the vehicle is pending or running."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Import a vehicle's history from another application
+      tags:
+        - events
   /vehicles/{vehicle}/imports:
     get:
       description: "The trips and charges imported from other applications, by source. They are listed with the derived events (`imported`), and only events that start before the vehicle's first reading are imported: the two never overlap."

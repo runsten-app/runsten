@@ -98,6 +98,8 @@ services:
       RUNSTEN_GEOCODER_URL: ${RUNSTEN_GEOCODER_URL:-}
       RUNSTEN_GEOCODER_INTERVAL: ${RUNSTEN_GEOCODER_INTERVAL:-}
       RUNSTEN_HEALTH_TOKEN: ${RUNSTEN_HEALTH_TOKEN:-}
+      # Empty means the binary's default (Aximote's API, for the imports).
+      RUNSTEN_AXIMOTE_BASE_URL: ${RUNSTEN_AXIMOTE_BASE_URL:-}
     ports:
       - 127.0.0.1:${RUNSTEN_API_PORT:-8081}:8081
     healthcheck: &healthcheck

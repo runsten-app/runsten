@@ -136,6 +136,9 @@ const (
 	codeTooManyVehicles      errorCode = "too_many_vehicles"
 	codeFeatureUnavailable   errorCode = "feature_unavailable"
 	codeBrokerRefused        errorCode = "broker_refused"
+	codeTokenRefused         errorCode = "token_refused" //nolint:gosec // an error code, not a credential
+	codeSourceUnavailable    errorCode = "source_unavailable"
+	codeImportActive         errorCode = "import_active"
 	codeInsufficientScope    errorCode = "insufficient_scope"
 	codeRateLimited          errorCode = "rate_limited"
 	codeInternal             errorCode = "internal"
@@ -146,7 +149,8 @@ func (errorCode) Schema(huma.Registry) *huma.Schema {
 	return enumSchema(codeInvalidParameter, codeInvalidBody, codeUnauthorized, codeInvalidCredentials,
 		codeCrossOrigin, codeNotFound, codeMethodNotAllowed, codeUnsupportedMediaType, codeTooManyAttempts,
 		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeImportedCharge, codeAPIKeyRefused, codeInstanceKey, codeTooManyVehicles, codeFeatureUnavailable,
-		codeBrokerRefused, codeInsufficientScope, codeRateLimited, codeInternal)
+		codeBrokerRefused, codeTokenRefused, codeSourceUnavailable, codeImportActive, codeInsufficientScope, codeRateLimited,
+		codeInternal)
 }
 
 // errorJSON is the body of every JSON error, and the error the operations return.

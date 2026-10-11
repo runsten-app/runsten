@@ -54,6 +54,7 @@ var exportTables = []exportTable{
 	{name: "imported_tracks", orderBy: "trip_id"},
 	{name: "imported_charges", orderBy: "vehicle_id, source, started_at, source_id"},
 	{name: "geocoded_positions", orderBy: "lat_e4, lon_e4"},
+	{name: "import_jobs", orderBy: "created_at, id", omit: []string{"token"}},
 	{name: "mqtt_brokers", orderBy: "account_id", omit: []string{"password"}},
 	{name: "mqtt_status", orderBy: "account_id"},
 	// value_hash: the deduplication's, a hash of the payload.
