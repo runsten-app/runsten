@@ -551,7 +551,7 @@ components:
           description: "The event was never seen, only revealed by the odometer or the state of charge: it lies somewhere within [start.after, end.before], and start and end are that same interval."
           type: boolean
         sources:
-          description: "Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote). One vocabulary for both, which new sources extend."
+          description: "Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote; volvo_data_portal: the files of the Volvo Data Portal). One vocabulary for both, which new sources extend."
           examples:
             - - volvo
           items:
@@ -1214,6 +1214,7 @@ components:
             - token_refused
             - source_unavailable
             - import_active
+            - invalid_file
             - insufficient_scope
             - rate_limited
             - internal
@@ -1353,6 +1354,41 @@ components:
         - ac_max_kw
         - ac_option_kw
         - dc_max_kw
+      type: object
+    FileImport:
+      additionalProperties: false
+      properties:
+        cutoff:
+          description: "The vehicle's first reading, or the time of the import when it has none: only what starts before it is imported."
+          format: date-time
+          pattern: Z$
+          type: string
+        imported:
+          description: Events written, new or replacing those of an earlier import of the same source.
+          format: int64
+          minimum: 0
+          type: integer
+        invalid:
+          description: Rows left because they are unreadable or out of bounds (a trip that ends before it starts, a position out of range).
+          format: int64
+          minimum: 0
+          type: integer
+        skipped:
+          description: Events left because they start at or after the cutoff.
+          format: int64
+          minimum: 0
+          type: integer
+        source:
+          description: The source the events were imported from.
+          examples:
+            - volvo_data_portal
+          type: string
+      required:
+        - source
+        - imported
+        - skipped
+        - invalid
+        - cutoff
       type: object
     Import:
       additionalProperties: false
@@ -2920,7 +2956,7 @@ components:
           description: "The event was never seen, only revealed by the odometer or the state of charge: it lies somewhere within [start.after, end.before], and start and end are that same interval."
           type: boolean
         sources:
-          description: "Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote). One vocabulary for both, which new sources extend."
+          description: "Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote; volvo_data_portal: the files of the Volvo Data Portal). One vocabulary for both, which new sources extend."
           examples:
             - - volvo
           items:
@@ -3316,7 +3352,8 @@ info:
     `rate_limited`, with `Retry-After`). Requests that
     change state (`POST`, `PUT`, `DELETE`) from another origin are refused (403
     `cross_origin`), after the `Sec-Fetch-Site` or `Origin` header. A request body must be
-    `application/json` (415 `unsupported_media_type` otherwise).
+    `application/json`, but the files of an import, `multipart/form-data` (415
+    `unsupported_media_type` otherwise).
   license:
     identifier: AGPL-3.0-or-later
     name: AGPL-3.0-or-later
@@ -5319,6 +5356,93 @@ paths:
         - sessionSecure: []
         - accessToken: []
       summary: The imports of a vehicle
+      tags:
+        - events
+  /vehicles/{vehicle}/imports/volvo_data_portal:
+    post:
+      description: "The trips the Volvo Data Portal (data.volvocars.com) gave an owner who asked for their vehicle's data under the EU Data Act, with their tracks when the waypoints' file is given. Written at once: only what starts before the vehicle's first reading; a trip imported before, the same start, is replaced. At most 32 MiB of files."
+      operationId: importVolvoDataPortal
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            encoding:
+              trips:
+                contentType: application/octet-stream
+              waypoints:
+                contentType: application/octet-stream
+            schema:
+              additionalProperties: false
+              properties:
+                trips:
+                  contentEncoding: binary
+                  contentMediaType: application/octet-stream
+                  description: "The trips' file the portal gave (CSV): Start time, End time, positions, odometers, distance, energy."
+                  format: binary
+                  type: string
+                waypoints:
+                  contentEncoding: binary
+                  contentMediaType: application/octet-stream
+                  description: "The waypoints' file the portal gave (CSV), about one a minute while driving: they make the trips' tracks. Optional."
+                  format: binary
+                  type: string
+              required:
+                - trips
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileImport"
+          description: What was imported.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a multipart form with the trips' file, or more than 32 MiB. `invalid_file`: a file is not the portal's (not CSV, or a column missing); the message tells which and why."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: this operation requires a session, never an access token."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `multipart/form-data`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Import the files of the Volvo Data Portal
       tags:
         - events
   /vehicles/{vehicle}/imports/{source}:

@@ -52,7 +52,8 @@ reads: it serves the ` + "`GET`" + ` routes but those of the session and of the 
 ` + "`rate_limited`" + `, with ` + "`Retry-After`" + `). Requests that
 change state (` + "`POST`, `PUT`, `DELETE`" + `) from another origin are refused (403
 ` + "`cross_origin`" + `), after the ` + "`Sec-Fetch-Site`" + ` or ` + "`Origin`" + ` header. A request body must be
-` + "`application/json`" + ` (415 ` + "`unsupported_media_type`" + ` otherwise).`
+` + "`application/json`" + `, but the files of an import, ` + "`multipart/form-data`" + ` (415
+` + "`unsupported_media_type`" + ` otherwise).`
 
 // sessionSecurity is the requirement of the routes that need a session: either cookie.
 // readSecurity is that of the reads, which an access token may make too.
@@ -139,6 +140,7 @@ const (
 	codeTokenRefused         errorCode = "token_refused" //nolint:gosec // an error code, not a credential
 	codeSourceUnavailable    errorCode = "source_unavailable"
 	codeImportActive         errorCode = "import_active"
+	codeInvalidFile          errorCode = "invalid_file"
 	codeInsufficientScope    errorCode = "insufficient_scope"
 	codeRateLimited          errorCode = "rate_limited"
 	codeInternal             errorCode = "internal"
@@ -149,7 +151,7 @@ func (errorCode) Schema(huma.Registry) *huma.Schema {
 	return enumSchema(codeInvalidParameter, codeInvalidBody, codeUnauthorized, codeInvalidCredentials,
 		codeCrossOrigin, codeNotFound, codeMethodNotAllowed, codeUnsupportedMediaType, codeTooManyAttempts,
 		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeImportedCharge, codeAPIKeyRefused, codeInstanceKey, codeTooManyVehicles, codeFeatureUnavailable,
-		codeBrokerRefused, codeTokenRefused, codeSourceUnavailable, codeImportActive, codeInsufficientScope, codeRateLimited,
+		codeBrokerRefused, codeTokenRefused, codeSourceUnavailable, codeImportActive, codeInvalidFile, codeInsufficientScope, codeRateLimited,
 		codeInternal)
 }
 
@@ -183,7 +185,9 @@ func newError(status int, msg string, errs ...error) huma.StatusError {
 		}
 		var d *huma.ErrorDetail
 		if errors.As(err, &d) {
-			inBody = inBody || d.Location == "body" || strings.HasPrefix(d.Location, "body.")
+			// A multipart form's field is named alone: a file of the body.
+			formField := d.Location != "" && !strings.Contains(d.Location, ".")
+			inBody = inBody || d.Location == "body" || strings.HasPrefix(d.Location, "body.") || formField
 			details = append(details, d.Location+": "+d.Message)
 			continue
 		}
