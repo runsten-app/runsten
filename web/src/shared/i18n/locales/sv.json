@@ -1170,6 +1170,7 @@
     "listTitle": "Importer",
     "aximote": {
       "title": "Importera från Aximote",
+      "beta": "Beta",
       "intro": "Med Aximote Pro skapar du en personlig åtkomsttoken i appen och klistrar in den här. Runsten läser fordonets resor och laddningar från före dess första avläsning, i bakgrunden, och glömmer sedan token. En ny import ersätter det som importerats.",
       "token": {
         "label": "Aximote-token",

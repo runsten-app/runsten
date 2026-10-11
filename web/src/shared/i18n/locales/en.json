@@ -1170,6 +1170,7 @@
     "listTitle": "Imports",
     "aximote": {
       "title": "Import from Aximote",
+      "beta": "Beta",
       "intro": "With Aximote Pro, create a personal access token in its app, then paste it here. Runsten reads the vehicle's trips and charges from before its first reading, in the background, then forgets the token. Importing again replaces what was imported.",
       "token": {
         "label": "Aximote token",
