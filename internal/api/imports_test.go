@@ -12,7 +12,8 @@ import (
 
 // importFixtures add to the commute day a trip and a charge imported from Aximote the day
 // before, before the first reading: the trip ends outside every place, where Aximote
-// names the street; the charge, at home, cost what Aximote says.
+// names the street, and comes with its track; the charge, at home, cost what Aximote
+// says.
 func importFixtures(m *memReader) {
 	imp := func(id, from, to string) core.Value[core.Import] {
 		return some(core.Import{Source: "aximote", SourceID: id, ImportedAt: h(4, 30), StartAddress: from, EndAddress: to})
@@ -25,6 +26,7 @@ func importFixtures(m *memReader) {
 		StartSoC: some(81.0), EndSoC: some(74.0), EnergyKWh: some(5.2),
 		From: some(work), To: some(core.Position{Lat: 45.75, Lon: 4.85}),
 	})
+	m.tracks = map[string][][2]float64{"aximote:trip-8812": {{work.Lon, work.Lat}, {4.8421, 45.7563}, {4.85, 45.75}}}
 	m.charges[car] = append(m.charges[car], core.Charge{
 		DetectedAt: h(4, 30), Start: at(19, 10), End: at(21, 40), Sources: []string{"aximote"},
 		Import: imp("charge-311", "Rue Mercière, Lyon", ""),
@@ -75,6 +77,39 @@ func TestImportedEventsJSON(t *testing.T) {
 			t.Errorf("%s: %d %s", path, resp.status, body)
 		}
 	}
+
+	t.Run("its track, on demand", func(t *testing.T) {
+		resp, body := get(t, noFollow(), base+"/trips/aximote%3Atrip-8812/track", c)
+		if resp.status != http.StatusOK {
+			t.Fatalf("%d %s", resp.status, body)
+		}
+		golden(t, "trip-track.json", body)
+		for _, path := range []string{
+			"/trips/2026-09-28T07:01:00.000000Z/track", // read by Runsten: its two ends only
+			"/trips/aximote:charge-311/track",          // a charge
+			"/trips/aximote:nothing/track", "/trips/aximote:/track",
+		} {
+			if resp, body := get(t, noFollow(), base+path, c); resp.status != http.StatusNotFound {
+				t.Errorf("%s: %d %s", path, resp.status, body)
+			}
+		}
+
+		// Hidden with its trip, before the history limit.
+		e.server.Limits = &historyLimit{account: account, from: h(0, 0)}
+		resp, body = get(t, noFollow(), base+"/trips/aximote:trip-8812/track", c)
+		e.server.Limits = nil
+		if resp.status != http.StatusNotFound {
+			t.Errorf("a track before the history limit: %d %s", resp.status, body)
+		}
+
+		line := e.reader.tracks["aximote:trip-8812"]
+		delete(e.reader.tracks, "aximote:trip-8812")
+		defer func() { e.reader.tracks["aximote:trip-8812"] = line }()
+		resp, body = get(t, noFollow(), base+"/trips/aximote:trip-8812/track", c)
+		if resp.status != http.StatusNotFound {
+			t.Errorf("a trip without a track: %d %s", resp.status, body)
+		}
+	})
 
 	t.Run("listed with the derived events, paged across them", func(t *testing.T) {
 		var ids []string

@@ -2841,6 +2841,29 @@ components:
         - price_per_kwh
         - windows
       type: object
+    Track:
+      additionalProperties: false
+      properties:
+        coordinates:
+          description: The points of the track in order.
+          items:
+            description: A longitude, then a latitude, in degrees (WGS 84).
+            items:
+              format: double
+              type: number
+            maxItems: 2
+            minItems: 2
+            type: array
+          minItems: 2
+          type: array
+        type:
+          enum:
+            - LineString
+          type: string
+      required:
+        - type
+        - coordinates
+      type: object
     Trip:
       additionalProperties: false
       properties:
@@ -5954,6 +5977,72 @@ paths:
         - sessionSecure: []
         - accessToken: []
       summary: A trip
+      tags:
+        - events
+  /vehicles/{vehicle}/trips/{id}/track:
+    get:
+      description: "The path driven, as a GeoJSON LineString: only an imported trip may have one, when the application it comes from gave it. A trip read by Runsten has its two ends only, `start_position` and `end_position`."
+      operationId: getTripTrack
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+        - description: The event ID. For a derived event, any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z.
+          in: path
+          name: id
+          required: true
+          schema:
+            description: The event ID. For a derived event, any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z.
+            examples:
+              - "2026-09-28T07:01:00.000000Z"
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Track"
+          description: The track.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account, no such trip for it, or a trip without a track."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: The track of a trip
       tags:
         - events
   /vehicles/{vehicle}/variants:

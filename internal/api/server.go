@@ -50,6 +50,9 @@ type Reader interface {
 	Vehicle(ctx context.Context, accountID, vehicleID string) (Vehicle, bool, error)
 	ListTrips(ctx context.Context, accountID, vehicleID string, q EventQuery) ([]core.Trip, error)
 	FindTrip(ctx context.Context, accountID, vehicleID string, ref EventRef) (core.Trip, bool, error)
+	// TripTrack returns the track of an imported trip, when its source gave one; a
+	// derived trip has none.
+	TripTrack(ctx context.Context, accountID, vehicleID string, ref EventRef) (Track, bool, error)
 	// ListCharges and FindCharge read the charges with what their costs depend on.
 	ListCharges(ctx context.Context, accountID, vehicleID string, q EventQuery) (PricedCharges, error)
 	FindCharge(ctx context.Context, accountID, vehicleID string, ref EventRef) (PricedCharges, bool, error)
@@ -160,6 +163,13 @@ type EventKey struct {
 type EventRef struct {
 	DetectedAt       time.Time
 	Source, SourceID string // empty for a derived event
+}
+
+// Track is the track of an imported trip: its points in order, each a longitude and a
+// latitude, and the end of the trip, which the history limit applies to.
+type Track struct {
+	EndedAt time.Time
+	Line    [][2]float64
 }
 
 // Config wires a Server.

@@ -185,6 +185,28 @@ func (s *Store) FindTrip(ctx context.Context, accountID, vehicleID string, ref a
 	return trips[0], true, nil
 }
 
+// TripTrack implements api.Reader.
+func (s *Store) TripTrack(ctx context.Context, accountID, vehicleID string, ref api.EventRef) (api.Track, bool, error) {
+	var t api.Track
+	if ref.Source == "" {
+		return t, false, nil
+	}
+	found := false
+	err := s.readInAccount(ctx, accountID, func(tx pgx.Tx) error {
+		err := tx.QueryRow(ctx, `
+			SELECT t.ended_at, k.track -> 'coordinates' FROM imported_trips t JOIN imported_tracks k ON k.trip_id = t.id
+			WHERE t.vehicle_id = $1 AND t.source = $2 AND t.source_id = $3`,
+			vehicleID, ref.Source, ref.SourceID).Scan(&t.EndedAt, &t.Line)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		found = err == nil
+		return err //nolint:wrapcheck // wrapped by inAccount
+	})
+	t.EndedAt = t.EndedAt.UTC()
+	return t, found, err
+}
+
 // Charges returns the vehicle's derived charges, oldest first.
 func (s *Store) Charges(ctx context.Context, accountID, vehicleID string) ([]core.Charge, error) {
 	return s.queryCharges(ctx, accountID, "vehicle_id = $1 ORDER BY started_after, detected_at", vehicleID)

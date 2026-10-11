@@ -245,6 +245,7 @@ var goldenRequests = map[string]string{
 	"charge.json":                  "GET /api/v1/vehicles/" + car + "/charges/2026-09-28T18:30:00.000000Z",
 	"charge-onboard-charger.json":  "GET /api/v1/vehicles/" + car + "/charges/2026-09-28T18:30:00.000000Z",
 	"trip-imported.json":           "GET /api/v1/vehicles/" + car + "/trips/aximote:trip-8812",
+	"trip-track.json":              "GET /api/v1/vehicles/" + car + "/trips/aximote:trip-8812/track",
 	"charge-imported.json":         "GET /api/v1/vehicles/" + car + "/charges/aximote:charge-311",
 	"imports.json":                 "GET /api/v1/vehicles/" + car + "/imports",
 	"aximote-vehicles.json":        "POST /api/v1/vehicles/" + car + "/aximote-vehicles",
