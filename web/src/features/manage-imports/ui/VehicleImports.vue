@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { mdiDelete } from '@mdi/js'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { VehicleImport } from '@/entities/vehicle-import'
 import { useFormat } from '@/shared/lib'
 import { ImportedBadge } from '@/shared/ui'
 import { useDeleteImport, useImports } from '../composables/useImports'
+import AximoteImport from './AximoteImport.vue'
 
-// VehicleImports lists the trips and charges imported into a vehicle from other
-// applications, by source, and deletes one source's: what Runsten derived stays. Nothing
-// shows before there is one, the import itself being elsewhere; once shown, it stays, so
-// that the focus and the status of a deletion stay in the page.
+// VehicleImports imports a vehicle's history from Aximote, then lists the trips and
+// charges imported into it from other applications, by source, and deletes one
+// source's: what Runsten derived stays.
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const f = useFormat()
@@ -23,14 +23,6 @@ const {
 } = useDeleteImport(() => props.vehicle)
 
 const titleId = 'vehicle-imports-title'
-const shown = ref(false)
-watch(
-  imports,
-  (list) => {
-    if (list?.length) shown.value = true
-  },
-  { immediate: true },
-)
 const status = ref('')
 const deleted = ref<VehicleImport | null>(null)
 const confirming = computed({
@@ -70,9 +62,11 @@ async function confirm() {
 </script>
 
 <template>
-  <section v-if="shown || error" class="vehicle-imports mb-6" :aria-labelledby="titleId">
+  <section class="vehicle-imports mb-6" :aria-labelledby="titleId">
     <h2 :id="titleId" class="text-title-large mb-2" tabindex="-1">{{ t('imports.title') }}</h2>
     <p class="text-body-medium mb-4">{{ t('imports.help') }}</p>
+    <AximoteImport :vehicle />
+    <h3 class="text-title-medium mb-2">{{ t('imports.listTitle') }}</h3>
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">
       {{ t('imports.error') }}
     </v-alert>

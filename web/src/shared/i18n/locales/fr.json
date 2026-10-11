@@ -1166,7 +1166,57 @@
   },
   "imports": {
     "title": "Historique importé",
-    "help": "Trajets et charges importés d'autres apps, d'avant que Runsten ne lise le véhicule. Supprimer un import laisse ce que Runsten a lu.",
+    "help": "Trajets et charges d'avant que Runsten ne lise le véhicule, importés d'autres apps. Supprimer un import laisse ce que Runsten a lu.",
+    "listTitle": "Imports",
+    "aximote": {
+      "title": "Importer depuis Aximote",
+      "intro": "Avec Aximote Pro, créez un jeton d'accès personnel dans son app, puis collez-le ici. Runsten lit les trajets et les charges du véhicule d'avant sa première lecture, en arrière-plan, puis oublie le jeton. Importer de nouveau remplace ce qui a été importé.",
+      "token": {
+        "label": "Jeton Aximote",
+        "hint": "axm_pat_ suivi de 26 lettres et chiffres. Jamais réaffiché."
+      },
+      "list": "Trouver mes véhicules",
+      "listed": "Aximote ne donne aucun véhicule. | Aximote donne un véhicule. | Aximote donne {n} véhicules.",
+      "vehicle": {
+        "legend": "Véhicule dans Aximote",
+        "matches": "Même VIN que ce véhicule",
+        "noMatch": "Aucun n'a le VIN de ce véhicule dans Aximote : choisissez celui dont c'est l'historique.",
+        "none": "Ce jeton ne donne accès à aucun véhicule."
+      },
+      "start": "Importer",
+      "again": "Importer de nouveau",
+      "cancel": "Annuler",
+      "started": "Import lancé : il se poursuit en arrière-plan.",
+      "progress": {
+        "label": "Import en cours",
+        "trips": "Lecture des trajets.",
+        "charges": "Lecture des charges.",
+        "waiting": "Aximote a demandé d'attendre : l'import reprend {time}."
+      },
+      "report": {
+        "doneTitle": "Import terminé",
+        "failedTitle": "Import échoué",
+        "imported": "Rien d'importé. | Un trajet ou une charge importé. | {n} trajets et charges importés.",
+        "skipped": "Un laissé : il commence après la première lecture du véhicule ({date}). | {n} laissés : ils commencent après la première lecture du véhicule ({date}).",
+        "invalid": "Un laissé, inachevé ou hors limites. | {n} laissés, inachevés ou hors limites.",
+        "tokenRefused": "Aximote a refusé le jeton : vérifiez-le, ou créez-en un autre.",
+        "sourceFailed": "Aximote a échoué à plusieurs reprises. Réessayez plus tard.",
+        "internal": "Runsten a échoué : ses journaux disent pourquoi.",
+        "when": "Dernier import : {time}."
+      },
+      "error": {
+        "summary": "L'import n'a pas démarré",
+        "required": "Collez le jeton.",
+        "format": "Un jeton est axm_pat_ suivi de 26 lettres et chiffres : copiez-le de nouveau.",
+        "vehicle": "Choisissez le véhicule dont importer l'historique.",
+        "refused": "Aximote a refusé ce jeton : vérifiez-le, ou créez-en un autre.",
+        "invalidBody": "Ce jeton ou ce véhicule a été refusé : copiez le jeton de nouveau.",
+        "unavailable": "Aximote n'a pas répondu. Réessayez dans un instant.",
+        "active": "Un import de ce véhicule est déjà en cours.",
+        "network": "Runsten est injoignable. Réessayez dans un instant.",
+        "internal": "L'import n'a pas pu démarrer. Réessayez dans un instant."
+      }
+    },
     "error": "Les imports n'ont pas pu être chargés. Réessayez dans un instant.",
     "none": "Rien d'importé.",
     "trips": "aucun trajet | {n} trajet | {n} trajets",
