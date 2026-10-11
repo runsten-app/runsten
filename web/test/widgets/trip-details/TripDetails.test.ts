@@ -5,6 +5,7 @@ import { i18n } from '@/shared/i18n'
 import type { Stats } from '@/entities/stats'
 import { TripDetails } from '@/widgets/trip-details'
 import stats from '@fixtures/stats.json'
+import imported from '@fixtures/trip-imported.json'
 import trip from '@fixtures/trip.json'
 import page1 from '@fixtures/trips-page-1.json'
 import { withMapTiles, withoutMapTiles } from '@test/mapMeta'
@@ -78,6 +79,25 @@ describe('TripDetails', () => {
     })
     expect(w.find('.figures .note').text()).toContain('No meter is read.')
     expect(w.find('.reconstructed-note').exists()).toBe(false)
+  })
+
+  it('tells an imported trip, its exact times and the energy the app gave', async () => {
+    const w = await mounted(imported)
+    const note = w.find('.imported-note')
+    expect(note.find('.imported').text()).toBe('Imported from Aximote')
+    expect(note.text()).toContain("its times and figures are that app's own")
+    expect(w.find('.reconstructed-note').exists()).toBe(false)
+    expect(facts(w, 'when')).toEqual({ Start: '17:02', End: '17:41', Duration: '39 mins' })
+    expect(w.find('.when .note').text()).toBe(
+      'The times are those the app gave, to the minute or better: no range.',
+    )
+    expect(w.find('.figures .note').text()).toBe('The energy is the one the app gave.')
+    // Outside every place, the street the app named.
+    expect(facts(w, 'positions')).toEqual({
+      Start: 'Boulevard Vivier-Merle, Lyon',
+      End: 'Rue de la République, Lyon',
+    })
+    expect(w.find('.imported-note').exists()).toBe(true)
   })
 
   it('names the place of a position, else gives its coordinates, with a link to OpenStreetMap', async () => {

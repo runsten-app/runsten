@@ -50,6 +50,7 @@ type chargeView struct {
 		Efficiency *float64 `json:"efficiency"`
 		Note       *string  `json:"note"`
 	} `json:"cost"`
+	Address *string `json:"address"`
 }
 
 func readCharge(t *testing.T, body string) chargeView {

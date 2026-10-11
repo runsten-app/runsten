@@ -1,6 +1,7 @@
 package core
 
 import (
+	"slices"
 	"sort"
 	"time"
 )
@@ -125,7 +126,30 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 	if d.charge != nil && d.charge.c.Reconstructed {
 		d.res.Charges = append(d.res.Charges, d.buildCharge(d.charge))
 	}
+	for i := range d.res.Trips {
+		t := &d.res.Trips[i]
+		t.Sources = sourcesIn(ps, t.Start.Before, t.End.Before)
+	}
+	for i := range d.res.Charges {
+		c := &d.res.Charges[i]
+		c.Sources = sourcesIn(ps, c.Start.Before, c.End.Before)
+	}
 	return d.res
+}
+
+// sourcesIn returns the sources of the readings within [from, to], sorted: those of an
+// event from its start (its first reading seen running or charging, or the one that
+// revealed it) to its end. Never before: those readings come after the cursor's
+// settled time, which an incremental derivation replays as a rebuild does.
+func sourcesIn(ps []point, from, to time.Time) []string {
+	var out []string
+	for i := sort.Search(len(ps), func(i int) bool { return !ps[i].at.Before(from) }); i < len(ps) && !ps[i].at.After(to); i++ {
+		if src := ps[i].source; src != "" && !slices.Contains(out, src) {
+			out = append(out, src)
+		}
+	}
+	slices.Sort(out)
+	return out
 }
 
 // point is a reading: a record at its FetchedAt, or again, unchanged, at its CheckedAt.
@@ -133,6 +157,7 @@ type point struct {
 	at      time.Time
 	row     time.Time // FetchedAt of the record
 	confirm bool
+	source  string
 	snap    Snapshot
 }
 
@@ -143,9 +168,9 @@ func points(records []Record) []point {
 			continue
 		}
 		f, c := r.FetchedAt.UTC(), r.CheckedAt.UTC()
-		ps = append(ps, point{at: f, row: f, snap: r.Snapshot})
+		ps = append(ps, point{at: f, row: f, source: r.Source, snap: r.Snapshot})
 		if c.After(f) {
-			ps = append(ps, point{at: c, row: f, confirm: true, snap: r.Snapshot})
+			ps = append(ps, point{at: c, row: f, confirm: true, source: r.Source, snap: r.Snapshot})
 		}
 	}
 	sort.SliceStable(ps, func(i, j int) bool {

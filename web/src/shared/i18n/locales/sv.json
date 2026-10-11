@@ -119,7 +119,14 @@
     "start": "Start",
     "end": "Slut",
     "duration": "Varaktighet",
-    "boundsNote": "Varje tid är ett intervall: insamlaren såg ändringen mellan två avläsningar. Varaktigheten täcker alla värden de tillåter."
+    "boundsNote": "Varje tid är ett intervall: insamlaren såg ändringen mellan två avläsningar. Varaktigheten täcker alla värden de tillåter.",
+    "importedFrom": {
+      "aximote": "Importerad från Aximote",
+      "volvoCsv": "Importerad från Volvo Cars-appen",
+      "other": "Importerad från {source}"
+    },
+    "importedHelp": "Importerad från en annan app, från innan Runsten läste fordonet: tider och siffror är den appens egna.",
+    "importedTimesNote": "Tiderna är de som appen gav, på minuten eller bättre: inget intervall."
   },
   "period": {
     "from": "Från",
@@ -193,7 +200,8 @@
       "gap": "{pct} för den här resan",
       "note": "Uppskattningar från laddningsnivån, på en procentenhet när: en kort resa kan avvika mycket från genomsnittet.",
       "statsLink": "Se statistiken för {month}"
-    }
+    },
+    "energyImportedNote": "Energin är den som appen gav."
   },
   "charges": {
     "title": "Laddningar",
@@ -241,8 +249,11 @@
       "tariff": "Uppskattad enligt tariffen för {place}",
       "estimate": "{energy} fakturerat (uppskattat), med en antagen verkningsgrad på {efficiency}",
       "range": "Laddningens exakta tid är inte känd: kostnaden ligger inom detta intervall.",
-      "createPlace": "Skapa en plats här"
-    }
+      "createPlace": "Skapa en plats här",
+      "imported": "Som appen den importerades från gav den"
+    },
+    "averagePower": "Medeleffekt",
+    "energyImportedNote": "Energin enligt laddeffekten är den som appen gav; den enligt laddningsnivån är Runstens uppskattning."
   },
   "chargeCost": {
     "enter": "Ange kostnaden",
@@ -1151,6 +1162,25 @@
     "export": {
       "help": "Ladda ner allt ditt konto innehåller, även fordonens råa avläsningar, som en enda JSON-fil.",
       "button": "Ladda ner mina data"
+    }
+  },
+  "imports": {
+    "title": "Importerad historik",
+    "help": "Resor och laddningar importerade från andra appar, från innan Runsten läste fordonet. Att ta bort en import lämnar det Runsten har läst.",
+    "error": "Importerna kunde inte läsas in. Försök igen om en stund.",
+    "none": "Inget importerat.",
+    "trips": "ingen resa | {n} resa | {n} resor",
+    "charges": "ingen laddning | {n} laddning | {n} laddningar",
+    "span": "Från {from} till {to}",
+    "cancel": "Avbryt",
+    "delete": {
+      "button": "Ta bort",
+      "label": "{what}: ta bort",
+      "title": "Ta bort den här importen?",
+      "text": "{what}: {counts}. De försvinner från listorna och statistiken; importera dem igen för att få tillbaka dem.",
+      "confirm": "Ta bort",
+      "error": "Importen kunde inte tas bort. Försök igen om en stund.",
+      "done": "{what}: borttagen."
     }
   }
 }

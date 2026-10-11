@@ -1,0 +1,44 @@
+{
+  "id": "aximote:charge-311",
+  "detected_at": "2026-09-28T04:30:00Z",
+  "reconstructed": false,
+  "imported": true,
+  "sources": [
+    "aximote"
+  ],
+  "start": {
+    "after": "2026-09-27T19:10:00Z",
+    "before": "2026-09-27T19:10:00Z"
+  },
+  "end": {
+    "after": "2026-09-27T21:40:00Z",
+    "before": "2026-09-27T21:40:00Z"
+  },
+  "type": "AC",
+  "start_soc_pct": 74,
+  "end_soc_pct": 90,
+  "target_soc_pct": null,
+  "energy_soc_kwh": 12.8,
+  "energy_power_kwh": 10.6,
+  "average_power_kw": 4.2,
+  "capacity_kwh": 80,
+  "capacity_source": "api",
+  "position": {
+    "lat": 45.764,
+    "lon": 4.8357
+  },
+  "place": {
+    "id": "5e1f0000-0000-4000-8000-000000000001",
+    "name": "Maison de Tante Agathe"
+  },
+  "address": null,
+  "cost": {
+    "currency": "EUR",
+    "min_minor": 233,
+    "max_minor": 233,
+    "source": "imported",
+    "energy_kwh": null,
+    "efficiency": null,
+    "note": null
+  }
+}

@@ -359,9 +359,9 @@ func chargesAt(hours ...int) []core.Charge {
 	for _, h := range hours {
 		start := t0.Add(time.Duration(h) * time.Hour)
 		out = append(out, core.Charge{
-			DetectedAt: start.Add(5 * time.Minute),
-			Start:      core.Bounds{After: start, Before: start.Add(5 * time.Minute)},
-			End:        core.Bounds{After: start.Add(55 * time.Minute), Before: start.Add(time.Hour)},
+			DetectedAt: start.Add(5 * time.Minute), Sources: fromVolvo,
+			Start: core.Bounds{After: start, Before: start.Add(5 * time.Minute)},
+			End:   core.Bounds{After: start.Add(55 * time.Minute), Before: start.Add(time.Hour)},
 		})
 	}
 	return out
@@ -607,7 +607,7 @@ func TestEnteredCostsForPage(t *testing.T) {
 			if want := fullOf(c); !reflect.DeepEqual(attached[i], want) {
 				t.Errorf("charge %v takes %+v, over the whole history %+v", c.DetectedAt, attached[i], want)
 			}
-			found, ok, err := s.FindCharge(ctx, a, v, c.DetectedAt)
+			found, ok, err := s.FindCharge(ctx, a, v, api.EventRef{DetectedAt: c.DetectedAt})
 			if err != nil || !ok {
 				t.Fatalf("find %v: %v, %v", c.DetectedAt, ok, err)
 			}
@@ -837,7 +837,7 @@ func TestCostIsolation(t *testing.T) {
 		if p, err := s.ListCharges(ctx, a, vb, api.EventQuery{Limit: 10}); len(p.Charges) != 0 || len(p.Entered) != 0 || err != nil {
 			t.Errorf("A lists B's charges: %+v, %v", p, err)
 		}
-		if p, ok, err := s.FindCharge(ctx, a, vb, charge.DetectedAt); ok || err != nil {
+		if p, ok, err := s.FindCharge(ctx, a, vb, api.EventRef{DetectedAt: charge.DetectedAt}); ok || err != nil {
 			t.Errorf("A finds B's charge: %+v, %v", p, err)
 		}
 		if p, err := s.PeriodEvents(ctx, a, vb, time.Time{}, hours(24)); len(p.Charges) != 0 || len(p.Orphans) != 0 || err != nil {

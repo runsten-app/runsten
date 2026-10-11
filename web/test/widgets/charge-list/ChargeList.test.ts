@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '@/shared/api'
 import { ChargeList } from '@/widgets/charge-list'
 import charges from '@fixtures/charges.json'
+import imported from '@fixtures/charge-imported.json'
 import { heard, mountWith, seen, testRouter } from '@test/utils'
 
 const { fetchCharges } = vi.hoisted(() => ({ fetchCharges: vi.fn() }))
@@ -42,6 +43,15 @@ describe('ChargeList', () => {
     expect(plain(reconstructed?.find('.figures').text())).toBe('40% → 62%')
     expect(reconstructed?.find('.reconstructed').exists()).toBe(true)
     expect(w.find('.end').text()).toBe('No more charges.')
+  })
+
+  it('tells an imported charge by its app, with the cost it gave', async () => {
+    fetchCharges.mockResolvedValue({ items: [imported], next_cursor: null })
+    const w = await mounted()
+    const row = w.find('a.charge-summary')
+    expect(row.find('.imported').text()).toBe('Imported from Aximote')
+    expect(row.find('.event-when').text()).toBe('19:10 → 21:40')
+    expect(plain(row.find('.cost').text())).toContain('€2.33')
   })
 
   // Short: an unknown cost is told in the details, not on every line.

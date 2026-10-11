@@ -419,9 +419,16 @@ components:
       additionalProperties: false
       properties:
         address:
-          description: "The street and town of position, from the instance's reverse geocoder, outside every place. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one."
+          description: "The street and town of position, from the instance's reverse geocoder, outside every place; for an imported charge, else the name the application gave. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one."
           type:
             - string
+            - "null"
+        average_power_kw:
+          description: An imported charge's average power, as the application gives it; null for a derived charge, which tells its power in its readings (GET /vehicles/{vehicle}/series).
+          format: double
+          minimum: 0
+          type:
+            - number
             - "null"
         capacity_kwh:
           description: "The battery capacity the energy estimate rests on, as of the readings that ended the event. null when none was known, and for an event derived before Runsten recorded it: a rebuild of the derived data gives it."
@@ -439,12 +446,12 @@ components:
               type: string
             - type: "null"
         cost:
-          description: "What the charge cost: entered by the user, or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered cost, without energy_soc_kwh, or when the tariff has no version for a part of the charge's window."
+          description: "What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without energy_soc_kwh, or when the tariff has no version for a part of the charge's window."
           oneOf:
             - $ref: "#/components/schemas/Cost"
             - type: "null"
         detected_at:
-          description: The first reading that revealed the event.
+          description: The first reading that revealed the event; for an imported event, when it was last imported.
           format: date-time
           pattern: Z$
           type: string
@@ -457,7 +464,7 @@ components:
             - number
             - "null"
         energy_power_kwh:
-          description: "The other estimate: the charging power integrated over the observed readings. null without observed power readings, as for a reconstructed charge."
+          description: "The other estimate: the charging power integrated over the observed readings. null without observed power readings, as for a reconstructed charge. For an imported charge, the energy the application gives, a measured flow rather than a change of the state of charge."
           format: double
           type:
             - number
@@ -469,10 +476,13 @@ components:
             - number
             - "null"
         id:
-          description: "Identifies the event for its vehicle: its detection time, to the microsecond. Unlike a row ID, it survives a rebuild of the derived data, as long as the same reading reveals the event. Treat it as opaque."
+          description: "Identifies the event for its vehicle. A derived event's is its detection time, to the microsecond: unlike a row ID, it survives a rebuild of the derived data, as long as the same reading reveals the event. An imported event's is its source and its ID there, source:id. Treat it as opaque."
           examples:
             - "2026-09-28T07:01:00.000000Z"
           type: string
+        imported:
+          description: "The event was imported from another application, which cut it from its own readings: it is not derived from Runsten's, and its times are the application's own, start.after equal to start.before, end.after to end.before. Only events before the vehicle's first reading are imported."
+          type: boolean
         place:
           description: "The place of the charge: the nearest one whose circle holds its position; without a position, the place that takes such charges, unless the charge is DC. null elsewhere."
           oneOf:
@@ -485,9 +495,17 @@ components:
         reconstructed:
           description: "The event was never seen, only revealed by the odometer or the state of charge: it lies somewhere within [start.after, end.before], and start and end are that same interval."
           type: boolean
+        sources:
+          description: "Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote). One vocabulary for both, which new sources extend."
+          examples:
+            - - volvo
+          items:
+            type: string
+          minItems: 1
+          type: array
         start:
           $ref: "#/components/schemas/Bounds"
-          description: When the event started. The bounds are never collapsed into a single time.
+          description: When the event started. A derived event's bounds are never collapsed into a single time.
         start_soc_pct:
           format: double
           type:
@@ -512,6 +530,7 @@ components:
         - target_soc_pct
         - energy_soc_kwh
         - energy_power_kwh
+        - average_power_kw
         - position
         - place
         - address
@@ -519,6 +538,8 @@ components:
         - id
         - detected_at
         - reconstructed
+        - imported
+        - sources
         - start
         - end
         - capacity_kwh
@@ -873,13 +894,13 @@ components:
             - USD
           type: string
         efficiency:
-          description: "For a tariff, the assumed share of the energy drawn from the grid that reaches the battery: the place's, or else the default of the settings (default_efficiency: ac for AC and unknown types, dc for DC). null for an entered cost."
+          description: "For a tariff, the assumed share of the energy drawn from the grid that reaches the battery: the place's, or else the default of the settings (default_efficiency: ac for AC and unknown types, dc for DC). null for an entered or imported cost."
           format: double
           type:
             - number
             - "null"
         energy_kwh:
-          description: "The billed energy. For a tariff, an estimate: energy_soc_kwh (itself an estimate) over efficiency. For an entered cost, the energy entered with it, as read on the receipt; null if none was."
+          description: "The billed energy. For a tariff, an estimate: energy_soc_kwh (itself an estimate) over efficiency. For an entered cost, the energy entered with it, as read on the receipt; null if none was, and for an imported cost."
           format: double
           type:
             - number
@@ -900,10 +921,11 @@ components:
             - string
             - "null"
         source:
-          description: "tariff: estimated from the tariff of the charge's place. entered: the amount the user entered for the charge, which replaces the tariff's."
+          description: "tariff: estimated from the tariff of the charge's place. entered: the amount the user entered for the charge, which replaces the tariff's. imported: what the application an imported charge comes from says it cost, in the account's currency, which replaces the tariff's too."
           enum:
             - tariff
             - entered
+            - imported
           type: string
       required:
         - currency
@@ -1128,6 +1150,7 @@ components:
             - without_position_taken
             - too_many_places
             - charge_has_cost
+            - imported_charge
             - api_key_refused
             - instance_key
             - too_many_vehicles
@@ -1272,6 +1295,57 @@ components:
         - ac_max_kw
         - ac_option_kw
         - dc_max_kw
+      type: object
+    Import:
+      additionalProperties: false
+      properties:
+        charges:
+          description: The charges imported from it.
+          format: int64
+          minimum: 0
+          type: integer
+        last_imported_at:
+          description: When one of them was last imported.
+          format: date-time
+          pattern: Z$
+          type: string
+        source:
+          description: The application the events were imported from, in the vocabulary of the events' sources.
+          examples:
+            - aximote
+          type: string
+        started_from:
+          description: The earliest start of its events.
+          format: date-time
+          pattern: Z$
+          type: string
+        started_to:
+          description: "The latest start of its events: before the vehicle's first reading."
+          format: date-time
+          pattern: Z$
+          type: string
+        trips:
+          description: The trips imported from it.
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - source
+        - trips
+        - charges
+        - started_from
+        - started_to
+        - last_imported_at
+      type: object
+    ImportList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/Import"
+          type: array
+      required:
+        - items
       type: object
     InstanceKey:
       additionalProperties: false
@@ -2606,7 +2680,7 @@ components:
               type: string
             - type: "null"
         detected_at:
-          description: The first reading that revealed the event.
+          description: The first reading that revealed the event; for an imported event, when it was last imported.
           format: date-time
           pattern: Z$
           type: string
@@ -2649,24 +2723,35 @@ components:
             - number
             - "null"
         energy_kwh:
-          description: "An estimate, not a measurement: ΔSoC × capacity_kwh."
+          description: "An estimate, not a measurement: ΔSoC × capacity_kwh. For an imported trip, the application's own figure when it gives one, capacity_kwh then null."
           format: double
           type:
             - number
             - "null"
         id:
-          description: "Identifies the event for its vehicle: its detection time, to the microsecond. Unlike a row ID, it survives a rebuild of the derived data, as long as the same reading reveals the event. Treat it as opaque."
+          description: "Identifies the event for its vehicle. A derived event's is its detection time, to the microsecond: unlike a row ID, it survives a rebuild of the derived data, as long as the same reading reveals the event. An imported event's is its source and its ID there, source:id. Treat it as opaque."
           examples:
             - "2026-09-28T07:01:00.000000Z"
           type: string
+        imported:
+          description: "The event was imported from another application, which cut it from its own readings: it is not derived from Runsten's, and its times are the application's own, start.after equal to start.before, end.after to end.before. Only events before the vehicle's first reading are imported."
+          type: boolean
         reconstructed:
           description: "The event was never seen, only revealed by the odometer or the state of charge: it lies somewhere within [start.after, end.before], and start and end are that same interval."
           type: boolean
+        sources:
+          description: "Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote). One vocabulary for both, which new sources extend."
+          examples:
+            - - volvo
+          items:
+            type: string
+          minItems: 1
+          type: array
         start:
           $ref: "#/components/schemas/Bounds"
-          description: When the event started. The bounds are never collapsed into a single time.
+          description: When the event started. A derived event's bounds are never collapsed into a single time.
         start_address:
-          description: "The street and town of start_position, from the instance's reverse geocoder, outside every place. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one."
+          description: "The street and town of start_position, from the instance's reverse geocoder, outside every place; for an imported trip, else the name the application gave. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one."
           type:
             - string
             - "null"
@@ -2716,6 +2801,8 @@ components:
         - id
         - detected_at
         - reconstructed
+        - imported
+        - sources
         - start
         - end
         - capacity_kwh
@@ -3254,7 +3341,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`charge_has_cost`: the charge already takes another entered cost; delete that one first."
+          description: "`charge_has_cost`: the charge already takes another entered cost; delete that one first. `imported_charge`: the charge was imported, and takes no entered cost."
         "415":
           content:
             application/json:
@@ -4399,7 +4486,7 @@ paths:
         - battery
   /vehicles/{vehicle}/charges:
     get:
-      description: Newest first, by `start.after` then `detected_at`. Figures are `null` when the readings do not give them.
+      description: Newest first, by `start.after` then `detected_at`. Figures are `null` when the readings do not give them. The events derived from the readings and those imported from another application (`imported`) come in one list.
       operationId: listCharges
       parameters:
         - description: The vehicle ID.
@@ -4500,7 +4587,7 @@ paths:
         - events
   /vehicles/{vehicle}/charges.csv:
     get:
-      description: "Every event of the period the list would give, as a CSV file (RFC 4180, UTF-8, a header row) for a spreadsheet: oldest first, one row per event, its fields flattened and named after the JSON ones (`start_after` is `start.after`). Times are RFC 3339 in UTC, numbers have a decimal point, an unknown value is an empty cell. A text that would begin with `=`, `+`, `-` or `@` is prefixed with `'`, so that no spreadsheet takes it for a formula. A charge's cost is in major units of the currency (`cost_min` and `cost_max`, 5.24 for 524 cents)."
+      description: "Every event of the period the list would give, as a CSV file (RFC 4180, UTF-8, a header row) for a spreadsheet: oldest first, one row per event, its fields flattened and named after the JSON ones (`start_after` is `start.after`). Times are RFC 3339 in UTC, numbers have a decimal point, an unknown value is an empty cell, `sources` are separated by spaces. A text that would begin with `=`, `+`, `-` or `@` is prefixed with `'`, so that no spreadsheet takes it for a formula. A charge's cost is in major units of the currency (`cost_min` and `cost_max`, 5.24 for 524 cents)."
       operationId: chargesCSV
       parameters:
         - description: The vehicle ID.
@@ -4606,12 +4693,12 @@ paths:
           schema:
             description: The vehicle ID.
             type: string
-        - description: The event ID. Any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z.
+        - description: The event ID. For a derived event, any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z.
           in: path
           name: id
           required: true
           schema:
-            description: The event ID. Any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z.
+            description: The event ID. For a derived event, any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z.
             examples:
               - "2026-09-28T07:01:00.000000Z"
             type: string
@@ -4771,6 +4858,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
           description: "`not_found`: no such vehicle in the account, or no such charge for it."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`imported_charge`: the charge was imported, and takes no entered cost."
         "415":
           content:
             application/json:
@@ -4789,6 +4882,117 @@ paths:
       summary: Enter the cost of a charge
       tags:
         - costs
+  /vehicles/{vehicle}/imports:
+    get:
+      description: "The trips and charges imported from other applications, by source. They are listed with the derived events (`imported`), and only events that start before the vehicle's first reading are imported: the two never overlap."
+      operationId: listImports
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportList"
+          description: Every import of the vehicle, by source.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: The imports of a vehicle
+      tags:
+        - events
+  /vehicles/{vehicle}/imports/{source}:
+    delete:
+      description: Every trip and charge of the vehicle imported from the source, with their tracks. The derived events stay.
+      operationId: deleteImport
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+        - description: The application the events were imported from.
+          in: path
+          name: source
+          required: true
+          schema:
+            description: The application the events were imported from.
+            examples:
+              - aximote
+            type: string
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account, or nothing imported from the source."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Delete an import
+      tags:
+        - events
   /vehicles/{vehicle}/model:
     put:
       description: "The choice outranks the recognition, and shows wherever the model does. The onboard charger bounds the costs of AC charges at once. A new variant has the vehicle's trips and charges derived again on its net capacity, by the collector's next pass: their energies change then. The choice is checked against the vehicle's details as they are, and a choice that no longer holds later (a variant the catalog no longer has) is ignored on reading."
@@ -5109,7 +5313,7 @@ paths:
         - stats
   /vehicles/{vehicle}/trips:
     get:
-      description: Newest first, by `start.after` then `detected_at`. Figures are `null` when the readings do not give them.
+      description: Newest first, by `start.after` then `detected_at`. Figures are `null` when the readings do not give them. The events derived from the readings and those imported from another application (`imported`) come in one list.
       operationId: listTrips
       parameters:
         - description: The vehicle ID.
@@ -5210,7 +5414,7 @@ paths:
         - events
   /vehicles/{vehicle}/trips.csv:
     get:
-      description: "Every event of the period the list would give, as a CSV file (RFC 4180, UTF-8, a header row) for a spreadsheet: oldest first, one row per event, its fields flattened and named after the JSON ones (`start_after` is `start.after`). Times are RFC 3339 in UTC, numbers have a decimal point, an unknown value is an empty cell. A text that would begin with `=`, `+`, `-` or `@` is prefixed with `'`, so that no spreadsheet takes it for a formula."
+      description: "Every event of the period the list would give, as a CSV file (RFC 4180, UTF-8, a header row) for a spreadsheet: oldest first, one row per event, its fields flattened and named after the JSON ones (`start_after` is `start.after`). Times are RFC 3339 in UTC, numbers have a decimal point, an unknown value is an empty cell, `sources` are separated by spaces. A text that would begin with `=`, `+`, `-` or `@` is prefixed with `'`, so that no spreadsheet takes it for a formula."
       operationId: tripsCSV
       parameters:
         - description: The vehicle ID.
@@ -5316,12 +5520,12 @@ paths:
           schema:
             description: The vehicle ID.
             type: string
-        - description: The event ID. Any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z.
+        - description: The event ID. For a derived event, any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z.
           in: path
           name: id
           required: true
           schema:
-            description: The event ID. Any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z.
+            description: The event ID. For a derived event, any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z.
             examples:
               - "2026-09-28T07:01:00.000000Z"
             type: string

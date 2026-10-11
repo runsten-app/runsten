@@ -1,0 +1,43 @@
+{
+  "id": "aximote:trip-8812",
+  "detected_at": "2026-09-28T04:30:00Z",
+  "reconstructed": false,
+  "imported": true,
+  "sources": [
+    "aximote"
+  ],
+  "start": {
+    "after": "2026-09-27T17:02:00Z",
+    "before": "2026-09-27T17:02:00Z"
+  },
+  "end": {
+    "after": "2026-09-27T17:41:00Z",
+    "before": "2026-09-27T17:41:00Z"
+  },
+  "distance_km": 32,
+  "start_odometer_km": 12368,
+  "end_odometer_km": 12400,
+  "start_soc_pct": 81,
+  "end_soc_pct": 74,
+  "start_range_km": null,
+  "end_range_km": null,
+  "energy_kwh": 5.2,
+  "capacity_kwh": null,
+  "capacity_source": null,
+  "start_position": {
+    "lat": 45.7797,
+    "lon": 4.927
+  },
+  "end_position": {
+    "lat": 45.75,
+    "lon": 4.85
+  },
+  "start_place": null,
+  "end_place": null,
+  "start_address": "Boulevard Vivier-Merle, Lyon",
+  "end_address": "Rue de la République, Lyon",
+  "vehicle_reported": {
+    "trip_meter_km": null,
+    "consumption_kwh_per_100km": null
+  }
+}

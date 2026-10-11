@@ -9,7 +9,21 @@ type Bounds struct {
 	After, Before time.Time
 }
 
-// Trip is a trip derived from snapshots: two points, never a track.
+// Import is what an event imported from another application keeps of it (ADR 0030): a
+// summary the source cut, never derived. Its times are the source's own, exact: the
+// bounds of the event are each a single instant.
+type Import struct {
+	Source   string // in the vocabulary of the snapshots' sources
+	SourceID string // the event's ID at the source, unique per vehicle and source
+	// ImportedAt is when the event was last imported: its DetectedAt.
+	ImportedAt time.Time
+	// The source's names of the places, empty when it gives none: a trip's start and
+	// end, a charge's in StartAddress.
+	StartAddress, EndAddress string
+}
+
+// Trip is a trip derived from snapshots: two points, never a track. Or one imported from
+// another application (Import).
 //
 // An observed trip was seen driving: it started in Start and ended in End. A
 // reconstructed trip was not seen at all (outage, stopped collector, exhausted quota):
@@ -17,10 +31,14 @@ type Bounds struct {
 // End.Before, and Start and End are that same interval.
 type Trip struct {
 	// DetectedAt is the time of the first reading that revealed the trip. It identifies
-	// the trip for a given vehicle.
+	// a derived trip for a given vehicle.
 	DetectedAt    time.Time
 	Reconstructed bool
 	Start, End    Bounds
+	// Sources are where the trip comes from, sorted: those of the readings it was
+	// derived from, or its import's.
+	Sources []string
+	Import  Value[Import]
 
 	StartOdometerKm, EndOdometerKm Value[float64]
 	DistanceKm                     Value[float64]
@@ -49,14 +67,16 @@ type PowerSpan struct {
 	Duration  time.Duration // from its first to its last integrated reading
 }
 
-// Charge is a charging session derived from snapshots. A reconstructed charge was not
-// seen charging: only a rise of the SoC revealed it.
+// Charge is a charging session derived from snapshots, or imported (Import). A
+// reconstructed charge was not seen charging: only a rise of the SoC revealed it.
 type Charge struct {
 	// DetectedAt is the time of the first reading that revealed the charge. It
-	// identifies the charge for a given vehicle.
+	// identifies a derived charge for a given vehicle.
 	DetectedAt    time.Time
 	Reconstructed bool
 	Start, End    Bounds
+	Sources       []string // as a trip's
+	Import        Value[Import]
 
 	Type                        Value[ChargeType]
 	StartSoC, EndSoC, TargetSoC Value[float64]
@@ -74,4 +94,16 @@ type Charge struct {
 	// the one that gave EndSoC or ended the charge.
 	Capacity Value[Capacity]
 	Position Value[Position]
+
+	// An imported charge's own figures: its average power, and what the source says it
+	// cost.
+	AveragePowerKW Value[float64]
+	PaidCost       Value[Amount]
+}
+
+// Amount is a sum of money in minor units of an ISO 4217 currency, which may be one
+// Runsten does not accept.
+type Amount struct {
+	Currency string
+	Minor    int64
 }

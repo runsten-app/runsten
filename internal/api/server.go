@@ -49,10 +49,10 @@ type Reader interface {
 	Vehicles(ctx context.Context, accountID string) ([]Vehicle, error)
 	Vehicle(ctx context.Context, accountID, vehicleID string) (Vehicle, bool, error)
 	ListTrips(ctx context.Context, accountID, vehicleID string, q EventQuery) ([]core.Trip, error)
-	FindTrip(ctx context.Context, accountID, vehicleID string, detectedAt time.Time) (core.Trip, bool, error)
+	FindTrip(ctx context.Context, accountID, vehicleID string, ref EventRef) (core.Trip, bool, error)
 	// ListCharges and FindCharge read the charges with what their costs depend on.
 	ListCharges(ctx context.Context, accountID, vehicleID string, q EventQuery) (PricedCharges, error)
-	FindCharge(ctx context.Context, accountID, vehicleID string, detectedAt time.Time) (PricedCharges, bool, error)
+	FindCharge(ctx context.Context, accountID, vehicleID string, ref EventRef) (PricedCharges, bool, error)
 	// PeriodEvents returns the events that started in [from, to), and the latest one that
 	// started before from, with what the costs of the charges depend on.
 	PeriodEvents(ctx context.Context, accountID, vehicleID string, from, to time.Time) (Period, error)
@@ -136,7 +136,8 @@ type CollectionFailure struct {
 	Kind     string
 }
 
-// EventQuery selects a page of events, newest first (by Start.After, then DetectedAt).
+// EventQuery selects a page of events, newest first (by Start.After, then DetectedAt,
+// then the import).
 type EventQuery struct {
 	// From and To keep the events that may have happened, at least partly, within
 	// [From, To): Start.After < To and End.Before > From. Zero: unbounded.
@@ -149,6 +150,16 @@ type EventQuery struct {
 type EventKey struct {
 	StartedAfter time.Time
 	DetectedAt   time.Time
+	// Import is an imported event's source and ID there, as source:id; empty for a
+	// derived one. Two sources may start events at the same time.
+	Import string
+}
+
+// EventRef names an event of a vehicle: a derived one by its detection time, an imported
+// one by its source and its ID there.
+type EventRef struct {
+	DetectedAt       time.Time
+	Source, SourceID string // empty for a derived event
 }
 
 // Config wires a Server.
@@ -162,6 +173,8 @@ type Config struct {
 	Settings     Settings
 	Models       VehicleModels
 	Costs        ChargeCosts
+	// Imports are the vehicles' events imported from other applications.
+	Imports Imports
 	// Addresses name the positions outside the places; nil without a geocoder: no
 	// address, and nothing asked of a third party.
 	Addresses Addresses
@@ -253,6 +266,7 @@ func New(cfg Config) *Server {
 	s.registerSession(s.api)
 	s.registerReads(s.api)
 	s.registerCSV(s.api)
+	s.registerImports(s.api)
 	s.registerModel(s.api)
 	s.registerStats(s.api)
 	s.registerBattery(s.api)

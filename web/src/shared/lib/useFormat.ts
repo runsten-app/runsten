@@ -112,5 +112,17 @@ export function useFormat() {
     // weekday names a day of the week, 0 for Monday; month a month, 1 to 12.
     weekday: (i: number, style?: 'long' | 'short') => weekdayName(i, intl.value, style),
     month: (m: number, style?: 'long' | 'short') => monthName(m, intl.value, style),
+    // importedFrom names the application an event was imported from, each known one in
+    // full (the i18n lint sees every key); another keeps the API's name.
+    importedFrom: (source: string) => {
+      switch (source) {
+        case 'aximote':
+          return t('event.importedFrom.aximote')
+        case 'volvo_csv':
+          return t('event.importedFrom.volvoCsv')
+        default:
+          return t('event.importedFrom.other', { source })
+      }
+    },
   }
 }

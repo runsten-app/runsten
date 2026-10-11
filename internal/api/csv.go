@@ -87,7 +87,7 @@ var tripsHeader = []string{
 	"distance_km", "start_odometer_km", "end_odometer_km", "start_soc_pct", "end_soc_pct",
 	"start_range_km", "end_range_km", "energy_kwh", "capacity_kwh", "capacity_source",
 	"start_lat", "start_lon", "start_place", "start_address", "end_lat", "end_lon", "end_place", "end_address",
-	"vehicle_trip_meter_km", "vehicle_consumption_kwh_per_100km",
+	"vehicle_trip_meter_km", "vehicle_consumption_kwh_per_100km", "imported", "sources",
 }
 
 func (s *Server) tripsCSV(ctx context.Context, in *csvInput) (*csvOutput, error) {
@@ -112,7 +112,8 @@ func (s *Server) tripsCSV(ctx context.Context, in *csvInput) (*csvOutput, error)
 		}, capacityCells(j.CapacityFields),
 			positionCells(j.StartPosition, j.StartPlace, j.StartAddress),
 			positionCells(j.EndPosition, j.EndPlace, j.EndAddress),
-			[]string{num(j.VehicleReported.TripMeterKm), num(j.VehicleReported.ConsumptionKWhPer100km)})
+			[]string{num(j.VehicleReported.TripMeterKm), num(j.VehicleReported.ConsumptionKWhPer100km)},
+			provenanceCells(j.EventFields))
 	}
 	return s.csvFile("trips", tripsHeader, rows)
 }
@@ -122,6 +123,7 @@ var chargesHeader = []string{
 	"type", "start_soc_pct", "end_soc_pct", "target_soc_pct", "energy_soc_kwh", "energy_power_kwh",
 	"capacity_kwh", "capacity_source", "lat", "lon", "place", "address",
 	"cost_currency", "cost_min", "cost_max", "cost_source", "cost_energy_kwh", "cost_efficiency", "cost_note",
+	"average_power_kw", "imported", "sources",
 }
 
 func (s *Server) chargesCSV(ctx context.Context, in *csvInput) (*csvOutput, error) {
@@ -147,7 +149,8 @@ func (s *Server) chargesCSV(ctx context.Context, in *csvInput) (*csvOutput, erro
 		rows[i] = slices.Concat(eventCells(j.EventFields), []string{
 			typ, num(j.StartSoCPct), num(j.EndSoCPct), num(j.TargetSoCPct), num(j.EnergySoCKWh), num(j.EnergyPowerKWh),
 		}, capacityCells(j.CapacityFields), positionCells(j.Position, j.Place, j.Address),
-			costCells(j.Cost, priced.Currency.V.MinorDigits))
+			costCells(j.Cost, priced.Currency.V.MinorDigits),
+			[]string{num(j.AveragePowerKW)}, provenanceCells(j.EventFields))
 	}
 	return s.csvFile("charges", chargesHeader, rows)
 }
@@ -157,6 +160,12 @@ func eventCells(e EventFields) []string {
 		e.ID, strconv.FormatBool(e.Reconstructed),
 		instant(e.Start.After), instant(e.Start.Before), instant(e.End.After), instant(e.End.Before),
 	}
+}
+
+// provenanceCells come last: the columns added after the others, which a spreadsheet
+// reading the file by position still finds where they were.
+func provenanceCells(e EventFields) []string {
+	return []string{strconv.FormatBool(e.Imported), strings.Join(e.Sources, " ")}
 }
 
 func capacityCells(c CapacityFields) []string {
@@ -237,8 +246,8 @@ func (s *Server) registerCSV(api huma.API) {
 	const description = "Every event of the period the list would give, as a CSV file (RFC 4180, UTF-8, a header row) " +
 		"for a spreadsheet: oldest first, one row per event, its fields flattened and named after the JSON ones " +
 		"(`start_after` is `start.after`). Times are RFC 3339 in UTC, numbers have a decimal point, an unknown value " +
-		"is an empty cell. A text that would begin with `=`, `+`, `-` or `@` is prefixed with `'`, so that no " +
-		"spreadsheet takes it for a formula."
+		"is an empty cell, `sources` are separated by spaces. A text that would begin with `=`, `+`, `-` or `@` is " +
+		"prefixed with `'`, so that no spreadsheet takes it for a formula."
 	for _, op := range []struct {
 		id, kind, summary, columns string
 		handler                    func(context.Context, *csvInput) (*csvOutput, error)

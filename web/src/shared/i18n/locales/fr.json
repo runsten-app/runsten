@@ -119,7 +119,14 @@
     "start": "Début",
     "end": "Fin",
     "duration": "Durée",
-    "boundsNote": "Chaque heure est un intervalle : le collecteur a vu le changement entre deux relevés. La durée couvre toutes les valeurs qu'ils permettent."
+    "boundsNote": "Chaque heure est un intervalle : le collecteur a vu le changement entre deux relevés. La durée couvre toutes les valeurs qu'ils permettent.",
+    "importedFrom": {
+      "aximote": "Importé d'Aximote",
+      "volvoCsv": "Importé de l'app Volvo Cars",
+      "other": "Importé de {source}"
+    },
+    "importedHelp": "Importé d'une autre app, d'avant que Runsten ne lise le véhicule : ses heures et ses chiffres sont ceux de cette app.",
+    "importedTimesNote": "Les heures sont celles que l'app a données, à la minute ou mieux : pas d'intervalle."
   },
   "period": {
     "from": "Du",
@@ -193,7 +200,8 @@
       "gap": "{pct} pour ce trajet",
       "note": "Estimations d’après le niveau de charge, au point près : un trajet court peut s’écarter beaucoup de la moyenne.",
       "statsLink": "Voir les statistiques de {month}"
-    }
+    },
+    "energyImportedNote": "L'énergie est celle que l'app a donnée."
   },
   "charges": {
     "title": "Charges",
@@ -241,8 +249,11 @@
       "tariff": "Estimé d'après le tarif de {place}",
       "estimate": "{energy} facturés estimés, pour un rendement supposé de {efficiency}",
       "range": "L'heure exacte de la charge n'est pas connue : son coût est dans cet intervalle.",
-      "createPlace": "Créer un lieu ici"
-    }
+      "createPlace": "Créer un lieu ici",
+      "imported": "Tel que l'app d'où il vient l'a donné"
+    },
+    "averagePower": "Puissance moyenne",
+    "energyImportedNote": "L'énergie d'après la puissance de charge est celle que l'app a donnée ; celle d'après l'état de charge est l'estimation de Runsten."
   },
   "chargeCost": {
     "enter": "Saisir le coût",
@@ -1151,6 +1162,25 @@
     "export": {
       "help": "Téléchargez tout ce que contient votre compte, relevés bruts de vos véhicules compris, en un seul fichier JSON.",
       "button": "Télécharger mes données"
+    }
+  },
+  "imports": {
+    "title": "Historique importé",
+    "help": "Trajets et charges importés d'autres apps, d'avant que Runsten ne lise le véhicule. Supprimer un import laisse ce que Runsten a lu.",
+    "error": "Les imports n'ont pas pu être chargés. Réessayez dans un instant.",
+    "none": "Rien d'importé.",
+    "trips": "aucun trajet | {n} trajet | {n} trajets",
+    "charges": "aucune charge | {n} charge | {n} charges",
+    "span": "Du {from} au {to}",
+    "cancel": "Annuler",
+    "delete": {
+      "button": "Supprimer",
+      "label": "{what} : supprimer",
+      "title": "Supprimer cet import ?",
+      "text": "{what} : {counts}. Ils quittent les listes et les statistiques ; importez-les de nouveau pour les retrouver.",
+      "confirm": "Supprimer",
+      "error": "L'import n'a pas pu être supprimé. Réessayez dans un instant.",
+      "done": "{what} : supprimé."
     }
   }
 }

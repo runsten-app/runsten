@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { RouteLocationRaw } from 'vue-router'
 import { useFormat } from '@/shared/lib'
-import { EventWhen, ReconstructedBadge, SpokenText } from '@/shared/ui'
+import { EventWhen, ImportedBadge, ReconstructedBadge, SpokenText } from '@/shared/ui'
 import type { Trip } from '../model/Trip'
 
 // TripSummary is a trip in a list, a link to its details: when, from where to where
@@ -42,8 +42,9 @@ const route = computed(() => {
       <SpokenText :text="route.text" :spoken="route.spoken" />
     </v-list-item-subtitle>
     <v-list-item-subtitle class="figures">{{ figures }}</v-list-item-subtitle>
-    <template v-if="trip.reconstructed" #append>
-      <ReconstructedBadge />
+    <template v-if="trip.reconstructed || trip.imported" #append>
+      <ReconstructedBadge v-if="trip.reconstructed" />
+      <ImportedBadge v-else :source="trip.sources[0] ?? ''" />
     </template>
   </v-list-item>
 </template>

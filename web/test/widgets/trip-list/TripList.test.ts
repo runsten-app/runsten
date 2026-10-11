@@ -5,6 +5,7 @@ import { i18n } from '@/shared/i18n'
 import { TripList } from '@/widgets/trip-list'
 import page1 from '@fixtures/trips-page-1.json'
 import page2 from '@fixtures/trips-page-2.json'
+import imported from '@fixtures/trip-imported.json'
 import { mountWith, testRouter } from '@test/utils'
 
 const { fetchTrips } = vi.hoisted(() => ({ fetchTrips: vi.fn() }))
@@ -73,6 +74,20 @@ describe('TripList', () => {
     expect(reconstructed?.find('.route').exists()).toBe(false)
     // The first trip has no state of charge: none is shown, rather than a guess.
     expect(plain(seen?.find('.figures').text())).toBe('33 km · 43–50 mins')
+  })
+
+  it('tells an imported trip by its app, with its exact times and duration', async () => {
+    fetchTrips.mockResolvedValue({ items: [imported], next_cursor: null })
+    const w = await mounted()
+    const row = w.find('a.trip-summary')
+    expect(row.find('.imported').text()).toBe('Imported from Aximote')
+    expect(row.find('.reconstructed').exists()).toBe(false)
+    expect(row.find('.event-when').text()).toBe('17:02 → 17:41')
+    expect(plain(row.find('.figures').text())).toBe('32 km · 39 mins · 81% → 74%')
+    expect(row.find('.route [aria-hidden]').text()).toBe(
+      'Boulevard Vivier-Merle, Lyon → Rue de la République, Lyon',
+    )
+    expect(row.attributes('href')).toBe(`/vehicles/${vehicle}/trips/aximote:trip-8812`)
   })
 
   it('loads more until the last page', async () => {

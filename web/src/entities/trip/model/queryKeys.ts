@@ -1,4 +1,6 @@
 export const tripKeys = {
+  // Every trip of every vehicle: what deleting an import touches.
+  details: () => ['trip'] as const,
   // Every list of a vehicle, whatever the period: where a trip may already be.
   lists: (vehicle: string) => ['trips', vehicle] as const,
   list: (vehicle: string, from?: string, to?: string) =>

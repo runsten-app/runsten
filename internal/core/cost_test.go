@@ -259,6 +259,24 @@ func TestChargeCost(t *testing.T) {
 			entered: known(EnteredCost{AmountMinor: 800}),
 			want:    known(Cost{Currency: eur.V, Min: 800, Max: 800, Source: CostEntered, Place: known(homePlace())}),
 		},
+		{
+			// An imported charge's source gives it in the account's currency, whatever
+			// the tariff.
+			name: "imported: the source's", pricing: pricing,
+			charge: with(fixture(), func(c *Charge) {
+				c.Start = Bounds{pt("2026-07-31 22:00"), pt("2026-07-31 22:00")}
+				c.End = Bounds{pt("2026-08-01 02:00"), pt("2026-08-01 02:00")}
+				c.PaidCost = known(Amount{Currency: "EUR", Minor: 932})
+			}),
+			want: known(Cost{Currency: eur.V, Min: 932, Max: 932, Source: CostImported, Place: known(homePlace())}),
+		},
+		{
+			name: "imported: another currency takes the tariff", pricing: pricing,
+			charge: with(fixture(), func(c *Charge) { c.PaidCost = known(Amount{Currency: "SEK", Minor: 9320}) }),
+			want: known(Cost{
+				Currency: eur.V, Min: 476, Max: 643, Source: CostTariff, EnergyKWh: val(30), Efficiency: val(0.88), Place: known(homePlace()),
+			}),
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.pricing.ChargeCost(tt.charge, tt.entered)
@@ -346,6 +364,23 @@ func TestDistance(t *testing.T) {
 	}
 	if d := distanceM(lyon, lyon); d != 0 {
 		t.Errorf("distance to itself = %g", d)
+	}
+}
+
+// An imported charge takes no entered cost, neither by its time nor by an overlap.
+func TestAttachCostsSkipsImported(t *testing.T) {
+	at := pt("2026-06-01 00:00")
+	imported := Charge{
+		DetectedAt: at, Start: Bounds{at, at}, End: Bounds{at.Add(2 * time.Hour), at.Add(2 * time.Hour)},
+		Import: known(Import{Source: "aximote", SourceID: "1", ImportedAt: at}),
+	}
+	entered := []EnteredCost{
+		{ChargeDetectedAt: at, WindowAfter: at, WindowBefore: at.Add(time.Hour), AmountMinor: 100},
+		{ChargeDetectedAt: at.Add(time.Minute), WindowAfter: at, WindowBefore: at.Add(time.Hour), AmountMinor: 200},
+	}
+	attached, orphans := AttachCosts([]Charge{imported}, entered)
+	if attached[0].OK || len(orphans) != 2 {
+		t.Errorf("attached %+v, orphans %+v", attached, orphans)
 	}
 }
 

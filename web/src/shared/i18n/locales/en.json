@@ -119,7 +119,14 @@
     "start": "Start",
     "end": "End",
     "duration": "Duration",
-    "boundsNote": "Each time is a range: the collector saw the change between two readings. The duration covers every value they allow."
+    "boundsNote": "Each time is a range: the collector saw the change between two readings. The duration covers every value they allow.",
+    "importedFrom": {
+      "aximote": "Imported from Aximote",
+      "volvoCsv": "Imported from the Volvo Cars app",
+      "other": "Imported from {source}"
+    },
+    "importedHelp": "Imported from another app, from before Runsten read the vehicle: its times and figures are that app's own.",
+    "importedTimesNote": "The times are those the app gave, to the minute or better: no range."
   },
   "period": {
     "from": "From",
@@ -193,7 +200,8 @@
       "gap": "{pct} for this trip",
       "note": "Estimates from the state of charge, to a point: a short trip may read far from the average.",
       "statsLink": "See the statistics of {month}"
-    }
+    },
+    "energyImportedNote": "The energy is the one the app gave."
   },
   "charges": {
     "title": "Charges",
@@ -241,8 +249,11 @@
       "tariff": "Estimated from the tariff of {place}",
       "estimate": "{energy} billed (estimated), assuming an efficiency of {efficiency}",
       "range": "The exact time of the charge is not known: its cost lies within this range.",
-      "createPlace": "Create a place here"
-    }
+      "createPlace": "Create a place here",
+      "imported": "As the app it was imported from gave it"
+    },
+    "averagePower": "Average power",
+    "energyImportedNote": "The energy from the charging power is the one the app gave; the one from the state of charge is Runsten's estimate."
   },
   "chargeCost": {
     "enter": "Enter the cost",
@@ -1151,6 +1162,25 @@
     "export": {
       "help": "Download everything your account holds, the raw readings of your vehicles included, as one JSON file.",
       "button": "Download my data"
+    }
+  },
+  "imports": {
+    "title": "Imported history",
+    "help": "Trips and charges imported from other apps, from before Runsten read the vehicle. Deleting an import leaves what Runsten read.",
+    "error": "The imports could not be loaded. Try again in a moment.",
+    "none": "Nothing imported.",
+    "trips": "no trip | {n} trip | {n} trips",
+    "charges": "no charge | {n} charge | {n} charges",
+    "span": "From {from} to {to}",
+    "cancel": "Cancel",
+    "delete": {
+      "button": "Delete",
+      "label": "{what}: delete",
+      "title": "Delete this import?",
+      "text": "{what}: {counts}. They leave the lists and the statistics; import them again to get them back.",
+      "confirm": "Delete",
+      "error": "The import could not be deleted. Try again in a moment.",
+      "done": "{what}: deleted."
     }
   }
 }
