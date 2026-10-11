@@ -202,7 +202,7 @@ func run(args []string) error {
 	if cfg.geocoder != nil {
 		addresses = st
 	}
-	deriver := derive.New(st, core.DefaultParams(), nil, log)
+	deriver := derive.New(st, volvo.Normalizer{}, core.DefaultParams(), nil, log)
 	handler := api.New(api.Config{
 		Sessions: sessions, AccessTokens: sessions,
 		Addresses: addresses,

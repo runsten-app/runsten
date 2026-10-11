@@ -40,7 +40,8 @@ cmd/
                        `healthcheck` subcommand
 internal/
   volvo/               Volvo API client: endpoints, typed errors (APIError, Kind, RetryIn), value parsing,
-                       fingerprint, normalization into core.Snapshot; Volvo ID client (AuthClient, AuthError)
+                       fingerprint, normalization into core.Snapshot (Normalizer, derive's for the source
+                       `volvo`); Volvo ID client (AuthClient, AuthError)
   collector/           adaptive polling; declares its own API, Store, TokenSource, Observer, Deriver and
                        Publisher interfaces
   oauth/               token lifecycle (Manager), pending flows (state, PKCE), enrollment; declares its Store
@@ -59,7 +60,8 @@ internal/
   core/                pure domain: normalized snapshots, trip and charge detection (core.Derive), totals of a
                        period by day, week or month (core.Summarize)
   derive/              loads snapshots, normalizes them, runs core.Derive, saves the events; current state of a
-                       vehicle (core.Latest); declares its Store and Capacities
+                       vehicle (core.Latest); declares its Store, Normalizer (one per source, given by the
+                       binary: it knows no vendor format) and Capacities
   geocode/             the addresses' worker: claims the positions the API asked for, asks a reverse geocoder,
                        saves the answer; declares its Store and Geocoder; nominatim/: the geocoder of
                        Nominatim's API (net/http)
@@ -138,8 +140,9 @@ The import graph is also checked by `internal/archtest` (`TestDependencies`, aft
 
 ## Data model and security
 
-- **Snapshots** are the source of truth: raw JSON per `(vehicle_id, endpoint, fetched_at)`.
-  - Deduplication: SHA-256 of the canonical JSON without `timestamp`, `updatedAt` and `operationId`.
+- **Snapshots** are the source of truth: raw JSON per `(vehicle_id, source, endpoint, fetched_at)`.
+  - `source` names where the readings come from (ADR 0035): `volvo` for the collector, the only one today; each writer names its own, there is no default. `endpoint` is the source's own.
+  - Deduplication, within a source and an endpoint: SHA-256 of the canonical JSON without `timestamp`, `updatedAt` and `operationId`.
   - An identical response only advances `checked_at`. A value is therefore valid from `fetched_at` up to `checked_at`.
 - **Derived data** (trips, charges) must be rebuildable from snapshots at any time, idempotently.
   - A record is two readings: its values at `fetched_at` and again at `checked_at`. Nothing is known in between (failed calls do not break a run of identical responses).

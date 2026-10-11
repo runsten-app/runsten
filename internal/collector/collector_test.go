@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http/httptest"
@@ -87,6 +88,9 @@ func (m *memStore) SaveStatus(_ context.Context, s Status) error {
 }
 
 func (m *memStore) SaveSnapshot(_ context.Context, s Snapshot) (bool, error) {
+	if s.Source != volvo.Source {
+		return false, fmt.Errorf("source %q", s.Source)
+	}
 	if m.last == nil {
 		m.last = map[string][]byte{}
 	}

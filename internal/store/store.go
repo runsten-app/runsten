@@ -134,33 +134,36 @@ func (s *Store) Targets(ctx context.Context) ([]collector.Target, error) {
 
 // SaveSnapshot implements collector.Store.
 func (s *Store) SaveSnapshot(ctx context.Context, snap collector.Snapshot) (bool, error) {
+	if snap.Source == "" {
+		return false, errors.New("save snapshot: no source")
+	}
 	stored := false
 	err := s.inAccount(ctx, snap.AccountID, func(tx pgx.Tx) error {
 		var lastHash []byte
 		var lastAt time.Time
 		err := tx.QueryRow(ctx, `
 			SELECT value_hash, fetched_at FROM snapshots
-			WHERE vehicle_id = $1 AND endpoint = $2
-			ORDER BY fetched_at DESC LIMIT 1`, snap.VehicleID, string(snap.Endpoint)).Scan(&lastHash, &lastAt)
+			WHERE vehicle_id = $1 AND source = $2 AND endpoint = $3
+			ORDER BY fetched_at DESC LIMIT 1`, snap.VehicleID, snap.Source, string(snap.Endpoint)).Scan(&lastHash, &lastAt)
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
 		case err != nil:
 			return fmt.Errorf("latest snapshot: %w", err)
 		case bytes.Equal(lastHash, snap.Hash):
 			_, err := tx.Exec(ctx, `
-				UPDATE snapshots SET checked_at = $4
-				WHERE vehicle_id = $1 AND endpoint = $2 AND fetched_at = $3`,
-				snap.VehicleID, string(snap.Endpoint), lastAt, snap.FetchedAt)
+				UPDATE snapshots SET checked_at = $5
+				WHERE vehicle_id = $1 AND source = $2 AND endpoint = $3 AND fetched_at = $4`,
+				snap.VehicleID, snap.Source, string(snap.Endpoint), lastAt, snap.FetchedAt)
 			if err != nil {
 				return fmt.Errorf("check: %w", err)
 			}
 			return nil
 		}
 		tag, err := tx.Exec(ctx, `
-			INSERT INTO snapshots (account_id, vehicle_id, endpoint, fetched_at, checked_at, value_hash, payload)
-			VALUES ($1, $2, $3, $4, $4, $5, $6)
+			INSERT INTO snapshots (account_id, vehicle_id, source, endpoint, fetched_at, checked_at, value_hash, payload)
+			VALUES ($1, $2, $3, $4, $5, $5, $6, $7)
 			ON CONFLICT DO NOTHING`,
-			snap.AccountID, snap.VehicleID, string(snap.Endpoint), snap.FetchedAt, snap.Hash, snap.Payload)
+			snap.AccountID, snap.VehicleID, snap.Source, string(snap.Endpoint), snap.FetchedAt, snap.Hash, snap.Payload)
 		if err != nil {
 			return fmt.Errorf("insert: %w", err)
 		}

@@ -12,7 +12,6 @@ import (
 	"runsten/internal/api"
 	"runsten/internal/core"
 	"runsten/internal/derive"
-	"runsten/internal/volvo"
 )
 
 // DerivationCursor implements derive.Store.
@@ -31,34 +30,25 @@ func (s *Store) DerivationCursor(ctx context.Context, accountID, vehicleID strin
 }
 
 // SnapshotsSince implements derive.Store.
-func (s *Store) SnapshotsSince(ctx context.Context, accountID, vehicleID string, from time.Time, endpoints []volvo.Endpoint) ([]derive.Snapshot, error) {
-	eps := make([]string, len(endpoints))
-	for i, ep := range endpoints {
-		eps[i] = string(ep)
-	}
+func (s *Store) SnapshotsSince(ctx context.Context, accountID, vehicleID string, from time.Time, kinds []core.Kind) ([]derive.Snapshot, error) {
+	sources, endpoints := kindColumns(kinds)
 	var out []derive.Snapshot
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `
-			SELECT endpoint, fetched_at, checked_at, payload FROM snapshots
-			WHERE vehicle_id = $1 AND endpoint = ANY($3) AND fetched_at > $2
+			SELECT source, endpoint, fetched_at, checked_at, payload FROM snapshots
+			WHERE vehicle_id = $1 AND (source, endpoint) IN (SELECT * FROM unnest($3::text[], $4::text[]))
+				AND fetched_at > $2
 			UNION ALL
-			(SELECT DISTINCT ON (endpoint) endpoint, fetched_at, checked_at, payload FROM snapshots
-			 WHERE vehicle_id = $1 AND endpoint = ANY($3) AND fetched_at <= $2
-			 ORDER BY endpoint, fetched_at DESC)
-			ORDER BY fetched_at, endpoint`, vehicleID, from, eps)
+			(SELECT DISTINCT ON (source, endpoint) source, endpoint, fetched_at, checked_at, payload FROM snapshots
+			 WHERE vehicle_id = $1 AND (source, endpoint) IN (SELECT * FROM unnest($3::text[], $4::text[]))
+				AND fetched_at <= $2
+			 ORDER BY source, endpoint, fetched_at DESC)
+			ORDER BY fetched_at, source, endpoint`, vehicleID, from, sources, endpoints)
 		if err != nil {
 			return err //nolint:wrapcheck // wrapped by inAccount
 		}
-		var sn derive.Snapshot
-		var ep string
-		_, err = pgx.ForEachRow(rows, []any{&ep, &sn.FetchedAt, &sn.CheckedAt, &sn.Payload}, func() error {
-			out = append(out, derive.Snapshot{
-				Endpoint: volvo.Endpoint(ep), FetchedAt: sn.FetchedAt.UTC(), CheckedAt: sn.CheckedAt.UTC(),
-				Payload: append([]byte(nil), sn.Payload...),
-			})
-			return nil
-		})
-		return err //nolint:wrapcheck // wrapped by inAccount
+		out, err = scanSnapshots(rows)
+		return err
 	})
 	return out, err
 }
@@ -67,40 +57,53 @@ func (s *Store) SnapshotsSince(ctx context.Context, accountID, vehicleID string,
 // those read within [from, to] are the ones fetched in (from, to] and the latest fetched
 // at or before from, when it was read again at from or later: both halves walk the
 // primary key, never the vehicle's whole history.
-func (s *Store) SnapshotsBetween(ctx context.Context, accountID, vehicleID string, from, to time.Time, endpoints []volvo.Endpoint, limit int) ([]derive.Snapshot, error) {
-	eps := make([]string, len(endpoints))
-	for i, ep := range endpoints {
-		eps[i] = string(ep)
-	}
+func (s *Store) SnapshotsBetween(ctx context.Context, accountID, vehicleID string, from, to time.Time, kinds []core.Kind, limit int) ([]derive.Snapshot, error) {
+	sources, endpoints := kindColumns(kinds)
 	var out []derive.Snapshot
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `
-			SELECT endpoint, fetched_at, checked_at, payload FROM (
-				(SELECT DISTINCT ON (endpoint) endpoint, fetched_at, checked_at, payload FROM snapshots
-				 WHERE vehicle_id = $1 AND endpoint = ANY($4) AND fetched_at <= $2
-				 ORDER BY endpoint, fetched_at DESC)
+			SELECT source, endpoint, fetched_at, checked_at, payload FROM (
+				(SELECT DISTINCT ON (source, endpoint) source, endpoint, fetched_at, checked_at, payload FROM snapshots
+				 WHERE vehicle_id = $1 AND (source, endpoint) IN (SELECT * FROM unnest($4::text[], $5::text[]))
+					AND fetched_at <= $2
+				 ORDER BY source, endpoint, fetched_at DESC)
 				UNION ALL
-				SELECT endpoint, fetched_at, checked_at, payload FROM snapshots
-				WHERE vehicle_id = $1 AND endpoint = ANY($4) AND fetched_at > $2 AND fetched_at <= $3
+				SELECT source, endpoint, fetched_at, checked_at, payload FROM snapshots
+				WHERE vehicle_id = $1 AND (source, endpoint) IN (SELECT * FROM unnest($4::text[], $5::text[]))
+					AND fetched_at > $2 AND fetched_at <= $3
 			) s
 			WHERE checked_at >= $2
-			ORDER BY fetched_at, endpoint
-			LIMIT $5`, vehicleID, from, to, eps, limit)
+			ORDER BY fetched_at, source, endpoint
+			LIMIT $6`, vehicleID, from, to, sources, endpoints, limit)
 		if err != nil {
 			return err //nolint:wrapcheck // wrapped by inAccount
 		}
-		var sn derive.Snapshot
-		var ep string
-		_, err = pgx.ForEachRow(rows, []any{&ep, &sn.FetchedAt, &sn.CheckedAt, &sn.Payload}, func() error {
-			out = append(out, derive.Snapshot{
-				Endpoint: volvo.Endpoint(ep), FetchedAt: sn.FetchedAt.UTC(), CheckedAt: sn.CheckedAt.UTC(),
-				Payload: append([]byte(nil), sn.Payload...),
-			})
-			return nil
-		})
-		return err //nolint:wrapcheck // wrapped by inAccount
+		out, err = scanSnapshots(rows)
+		return err
 	})
 	return out, err
+}
+
+// kindColumns splits kinds into their sources and endpoints, for unnest.
+func kindColumns(kinds []core.Kind) (sources, endpoints []string) {
+	sources, endpoints = make([]string, len(kinds)), make([]string, len(kinds))
+	for i, k := range kinds {
+		sources[i], endpoints[i] = k.Source, k.Endpoint
+	}
+	return sources, endpoints
+}
+
+func scanSnapshots(rows pgx.Rows) ([]derive.Snapshot, error) {
+	var out []derive.Snapshot
+	var sn derive.Snapshot
+	_, err := pgx.ForEachRow(rows, []any{&sn.Kind.Source, &sn.Kind.Endpoint, &sn.FetchedAt, &sn.CheckedAt, &sn.Payload}, func() error {
+		out = append(out, derive.Snapshot{
+			Kind: sn.Kind, FetchedAt: sn.FetchedAt.UTC(), CheckedAt: sn.CheckedAt.UTC(),
+			Payload: append([]byte(nil), sn.Payload...),
+		})
+		return nil
+	})
+	return out, err //nolint:wrapcheck // wrapped by inAccount
 }
 
 // SaveDerivation implements derive.Store.

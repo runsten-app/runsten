@@ -58,6 +58,7 @@ func (t Target) ownKey() bool { return !t.KeySetAt.IsZero() }
 type Snapshot struct {
 	AccountID string
 	VehicleID string
+	Source    string // volvo.Source: the collector reads the Volvo Cars API
 	Endpoint  volvo.Endpoint
 	FetchedAt time.Time
 	Payload   []byte
@@ -74,7 +75,7 @@ type API interface {
 type Store interface {
 	Targets(ctx context.Context) ([]Target, error)
 	// SaveSnapshot stores s if its values differ from the previous snapshot of the same
-	// endpoint; otherwise it only records the check time. Returns true if stored.
+	// source and endpoint; otherwise it only records the check time. Returns true if stored.
 	SaveSnapshot(ctx context.Context, s Snapshot) (bool, error)
 	// SaveStatus replaces the vehicle's status, but for a zero ReadAt or Failure, which
 	// keep those saved before: a restarted collector knows neither.
@@ -827,7 +828,8 @@ func (c *Collector) save(ctx context.Context, t Target, ep volvo.Endpoint, now t
 		return false, err //nolint:wrapcheck // already has context from volvo
 	}
 	stored, err := c.store.SaveSnapshot(ctx, Snapshot{
-		AccountID: t.AccountID, VehicleID: t.VehicleID, Endpoint: ep, FetchedAt: now, Payload: raw, Hash: hash,
+		AccountID: t.AccountID, VehicleID: t.VehicleID, Source: volvo.Source, Endpoint: ep, FetchedAt: now, Payload: raw,
+		Hash: hash,
 	})
 	if err != nil {
 		c.log.Error("store", "vehicle", t.VehicleID, "endpoint", ep, "err", err)

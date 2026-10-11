@@ -203,3 +203,21 @@ func TestNormalizeDetails(t *testing.T) {
 		})
 	}
 }
+
+func TestNormalizer(t *testing.T) {
+	var n Normalizer
+	if got := n.Kinds(); len(got) != len(NormalizedEndpoints()) || got[0] != (core.Kind{Source: Source, Endpoint: string(EngineStatus)}) {
+		t.Errorf("kinds %v", got)
+	}
+	if got := n.EnergyKinds(); len(got) != 1 || got[0].Endpoint != string(EnergyState) {
+		t.Errorf("energy kinds %v", got)
+	}
+	odo := []byte(`{"data":{"odometer":{"value":1234,"unit":"km","timestamp":"2026-10-11T10:00:00Z"}}}`)
+	got, err := n.Normalize(core.Kind{Source: Source, Endpoint: string(Odometer)}, odo)
+	if err != nil || !got.OdometerKm.OK || got.OdometerKm.V != 1234 {
+		t.Errorf("odometer: %+v, %v", got.OdometerKm, err)
+	}
+	if _, err := n.Normalize(core.Kind{Source: "phone", Endpoint: string(Odometer)}, odo); err == nil {
+		t.Error("another source's response read")
+	}
+}

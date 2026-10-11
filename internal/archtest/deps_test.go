@@ -43,7 +43,7 @@ var allowed = map[string][]string{
 
 	// Orchestration: each declares the interfaces it needs, the binaries wire them.
 	"internal/collector": {"internal/platform/clock", "internal/volvo"},
-	"internal/derive":    {"internal/core", "internal/volvo"},
+	"internal/derive":    {"internal/core"},
 	"internal/oauth":     {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
 	// It reads the catalog, pure data like core, to recognize the vehicles' variants.
 	"internal/api": {

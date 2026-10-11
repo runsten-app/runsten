@@ -21,11 +21,11 @@ func (s *scriptedStore) DerivationCursor(context.Context, string, string) (core.
 	return core.Cursor{}, s.cursorErr
 }
 
-func (s *scriptedStore) SnapshotsSince(context.Context, string, string, time.Time, []volvo.Endpoint) ([]Snapshot, error) {
+func (s *scriptedStore) SnapshotsSince(context.Context, string, string, time.Time, []core.Kind) ([]Snapshot, error) {
 	return s.snaps, s.snapErr
 }
 
-func (s *scriptedStore) SnapshotsBetween(context.Context, string, string, time.Time, time.Time, []volvo.Endpoint, int) ([]Snapshot, error) {
+func (s *scriptedStore) SnapshotsBetween(context.Context, string, string, time.Time, time.Time, []core.Kind, int) ([]Snapshot, error) {
 	return s.snaps, s.snapErr
 }
 
@@ -42,7 +42,7 @@ func TestStoreErrors(t *testing.T) {
 		"save":      {saveErr: boom},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if err := New(st, core.DefaultParams(), nil, quiet).Update(context.Background(), "a", "v"); !errors.Is(err, boom) {
+			if err := New(st, volvo.Normalizer{}, core.DefaultParams(), nil, quiet).Update(context.Background(), "a", "v"); !errors.Is(err, boom) {
 				t.Errorf("err = %v", err)
 			}
 		})
@@ -52,12 +52,12 @@ func TestStoreErrors(t *testing.T) {
 func TestReadingsErrors(t *testing.T) {
 	boom := errors.New("boom")
 	at := time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
-	d := New(&scriptedStore{snapErr: boom}, core.DefaultParams(), nil, quiet)
+	d := New(&scriptedStore{snapErr: boom}, volvo.Normalizer{}, core.DefaultParams(), nil, quiet)
 	if _, err := d.Readings(context.Background(), "a", "v", at, at.Add(time.Hour), 10); !errors.Is(err, boom) {
 		t.Errorf("err = %v", err)
 	}
 	// An unreadable response is skipped, as the derivation skips it.
-	d = New(&scriptedStore{snaps: []Snapshot{{Endpoint: volvo.EnergyState, FetchedAt: at, CheckedAt: at, Payload: []byte("{")}}}, core.DefaultParams(), nil, quiet)
+	d = New(&scriptedStore{snaps: []Snapshot{{Kind: kind(volvo.EnergyState), FetchedAt: at, CheckedAt: at, Payload: []byte("{")}}}, volvo.Normalizer{}, core.DefaultParams(), nil, quiet)
 	if got, err := d.Readings(context.Background(), "a", "v", at, at.Add(time.Hour), 10); err != nil || len(got) != 0 {
 		t.Errorf("readings = %+v, %v", got, err)
 	}
@@ -72,7 +72,7 @@ func (f failingCapacities) NetCapacity(context.Context, string, string) (core.Ne
 func TestCapacitiesError(t *testing.T) {
 	boom := errors.New("boom")
 	st := &scriptedStore{}
-	if err := New(st, core.DefaultParams(), failingCapacities{boom}, quiet).Update(context.Background(), "a", "v"); !errors.Is(err, boom) || st.saved != nil {
+	if err := New(st, volvo.Normalizer{}, core.DefaultParams(), failingCapacities{boom}, quiet).Update(context.Background(), "a", "v"); !errors.Is(err, boom) || st.saved != nil {
 		t.Errorf("err = %v, saved %+v", err, st.saved)
 	}
 }
@@ -80,14 +80,16 @@ func TestCapacitiesError(t *testing.T) {
 func TestUnreadableSnapshotSkipped(t *testing.T) {
 	at := time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
 	st := &scriptedStore{snaps: []Snapshot{
-		{Endpoint: volvo.Odometer, FetchedAt: at, CheckedAt: at, Payload: []byte("{")},
+		{Kind: kind(volvo.Odometer), FetchedAt: at, CheckedAt: at, Payload: []byte("{")},
 		{
-			Endpoint: volvo.Odometer, FetchedAt: at.Add(time.Hour), CheckedAt: at.Add(time.Hour),
+			Kind: kind(volvo.Odometer), FetchedAt: at.Add(time.Hour), CheckedAt: at.Add(time.Hour),
 			Payload: []byte(`{"data":{"odometer":{"timestamp":"x","unit":"km","value":1}}}`),
 		},
 	}}
-	res, err := New(st, core.DefaultParams(), nil, quiet).Rebuild(context.Background(), "a", "v")
+	res, err := New(st, volvo.Normalizer{}, core.DefaultParams(), nil, quiet).Rebuild(context.Background(), "a", "v")
 	if err != nil || st.saved == nil || len(res.Trips) != 0 {
 		t.Errorf("rebuild: %+v, %v", res, err)
 	}
 }
+
+func kind(ep volvo.Endpoint) core.Kind { return core.Kind{Source: volvo.Source, Endpoint: string(ep)} }
