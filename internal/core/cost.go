@@ -159,6 +159,8 @@ type CostSource string
 const (
 	CostTariff  CostSource = "tariff"
 	CostEntered CostSource = "entered"
+	// CostImported is what the source of an imported charge says it cost.
+	CostImported CostSource = "imported"
 )
 
 // Cost is the cost of a charge: every amount its bounds allow lies in [Min, Max], in
@@ -208,7 +210,8 @@ func (pr Pricing) Costs(charges []Charge, entered []EnteredCost) Costs {
 // exact 5.00 may come out as 499.9999999.
 const minorEpsilon = 1e-6
 
-// ChargeCost is the cost of a charge. An entered cost replaces the tariff's. Otherwise
+// ChargeCost is the cost of a charge. An entered cost replaces the tariff's, and so does
+// the cost an imported charge's source gives, in the account's currency. Otherwise
 // the billed energy is EnergySoCKWh over the efficiency, somewhere in [Start.After,
 // End.Before]: the minimum fills the cheapest price segments first, the maximum the
 // dearest, each segment holding at most the maximum power times its duration. Without a
@@ -235,6 +238,10 @@ func (pr Pricing) ChargeCost(c Charge, entered Value[EnteredCost]) Value[Cost] {
 		cost.EnergyKWh, cost.Note = e.EnergyKWh, e.Note
 		return known(cost)
 	}
+	if p := c.PaidCost; p.OK && p.V.Currency == pr.Currency.V.Code {
+		cost.Min, cost.Max, cost.Source = p.V.Minor, p.V.Minor, CostImported
+		return known(cost)
+	}
 	if !atPlace || !c.EnergySoCKWh.OK {
 		return Value[Cost]{}
 	}
@@ -253,11 +260,12 @@ func (pr Pricing) ChargeCost(c Charge, entered Value[EnteredCost]) Value[Cost] {
 }
 
 // Unpriced tells whether the cost of a charge is unknown for want of a price only: it is
-// at a place, has neither an entered cost nor an unknown energy, and part of its window
-// has no price, before the first version of the tariff. It gives the place, whose tariff
-// from an earlier day would give the charge a cost.
+// at a place, has neither an entered nor an imported cost nor an unknown energy, and part
+// of its window has no price, before the first version of the tariff. It gives the
+// place, whose tariff from an earlier day would give the charge a cost.
 func (pr Pricing) Unpriced(c Charge, entered Value[EnteredCost]) (Place, bool) {
-	if !pr.Currency.OK || entered.OK || !c.EnergySoCKWh.OK {
+	paid := c.PaidCost.OK && c.PaidCost.V.Currency == pr.Currency.V.Code
+	if !pr.Currency.OK || entered.OK || paid || !c.EnergySoCKWh.OK {
 		return Place{}, false
 	}
 	place, ok := PlaceOf(c, pr.Places)
@@ -374,15 +382,16 @@ func allocate(segs []PriceSegment, energy float64, powerKW Value[float64]) (lo, 
 // detection moved DetectedAt), sharing more than an end. attached[i] is the entered cost
 // of charges[i].
 //
-// A charge takes at most one entered cost. An exact match comes first, and a charge so
-// taken is no candidate for an overlap. Two entered costs that point to the same charge
+// A charge takes at most one entered cost, and an imported one none: its cost is its
+// source's or its tariff's. An exact match comes first, and a charge so taken is no
+// candidate for an overlap. Two entered costs that point to the same charge
 // otherwise are both orphaned, as are those that overlap no charge or several: the user
 // settles them, nothing is attached by guess.
 func AttachCosts(charges []Charge, entered []EnteredCost) (attached []Value[EnteredCost], orphans []EnteredCost) {
 	attached = make([]Value[EnteredCost], len(charges))
 	var pending []EnteredCost
 	for _, e := range entered {
-		i := slices.IndexFunc(charges, func(c Charge) bool { return c.DetectedAt.Equal(e.ChargeDetectedAt) })
+		i := slices.IndexFunc(charges, func(c Charge) bool { return !c.Import.OK && c.DetectedAt.Equal(e.ChargeDetectedAt) })
 		if i >= 0 && !attached[i].OK {
 			attached[i] = known(e)
 			continue
@@ -396,7 +405,7 @@ func AttachCosts(charges []Charge, entered []EnteredCost) (attached []Value[Ente
 		target[j] = -1
 		for i, c := range charges {
 			overlaps := c.Start.After.Before(e.WindowBefore) && e.WindowAfter.Before(c.End.Before)
-			if attached[i].OK || !overlaps {
+			if attached[i].OK || c.Import.OK || !overlaps {
 				continue
 			}
 			if target[j] != -1 {

@@ -2,6 +2,7 @@ package core
 
 import (
 	"reflect"
+	"slices"
 	"sort"
 	"testing"
 	"time"
@@ -713,7 +714,12 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 			records[i].CheckedAt = m(r.at)
 		} else {
 			last[r.snap.Covers] = len(records)
-			records = append(records, Record{FetchedAt: m(r.at), CheckedAt: m(r.at), Snapshot: r.snap})
+			// Two sources, so that the events' sources are compared too.
+			source := "volvo"
+			if r.snap.Covers == FieldEngine {
+				source = "car"
+			}
+			records = append(records, Record{Source: source, FetchedAt: m(r.at), CheckedAt: m(r.at), Snapshot: r.snap})
 		}
 		// What the store returns: the records fetched after the cursor, and the latest
 		// one of each kind fetched at or before it.
@@ -746,11 +752,42 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 	if full.Trips[0].Capacity != netCap || full.Trips[1].Capacity != netCap || full.Charges[0].Capacity != apiCap {
 		t.Errorf("capacities %+v, %+v, %+v", full.Trips[0].Capacity, full.Trips[1].Capacity, full.Charges[0].Capacity)
 	}
+	if got := full.Trips[0].Sources; !slices.Equal(got, []string{"car", "volvo"}) {
+		t.Errorf("sources %q", got)
+	}
 	if !reflect.DeepEqual(trips, full.Trips) || !reflect.DeepEqual(charges, full.Charges) {
 		t.Errorf("incremental:\n%+v\n%+v\nfull:\n%+v\n%+v", trips, charges, full.Trips, full.Charges)
 	}
 	if cursor.Settled.IsZero() || cursor.From.After(cursor.Settled) {
 		t.Errorf("cursor %+v", cursor)
+	}
+}
+
+// An event's sources are those of the readings from its start to its end, never of
+// the readings before it.
+func TestSources(t *testing.T) {
+	records := trip()
+	for i := range records {
+		records[i].Source = "volvo"
+	}
+	records[0].Source = "phone" // before the trip
+	records[7].Source = "car"   // while driving
+	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	if len(res.Trips) != 1 {
+		t.Fatalf("trips %+v", res.Trips)
+	}
+	if got := res.Trips[0].Sources; !slices.Equal(got, []string{"car", "volvo"}) {
+		t.Errorf("sources %q, want car and volvo", got)
+	}
+
+	charge := []Record{
+		{Source: "volvo", FetchedAt: m(0), CheckedAt: m(10), Snapshot: nrg(50, ChargingIdle)},
+		{Source: "volvo", FetchedAt: m(20), CheckedAt: m(30), Snapshot: charging(51, 7000, AC)},
+		{Source: "volvo", FetchedAt: m(40), CheckedAt: m(100), Snapshot: nrg(60, ChargingDone)},
+	}
+	res = Derive(charge, Cursor{}, DefaultParams(), nil)
+	if len(res.Charges) != 1 || !slices.Equal(res.Charges[0].Sources, []string{"volvo"}) {
+		t.Errorf("charges %+v", res.Charges)
 	}
 }
 
