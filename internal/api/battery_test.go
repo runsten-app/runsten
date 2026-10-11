@@ -15,10 +15,10 @@ import (
 // whole window: a capacity estimate of kwh over span points of SoC, from 40 %.
 func batteryCharge(at time.Time, typ core.ChargeType, span, kwh, odo float64) core.Charge {
 	return core.Charge{
-		DetectedAt: at.Add(-time.Minute),
-		Start:      core.Bounds{After: at.Add(-2 * time.Hour), Before: at.Add(-time.Hour)},
-		End:        core.Bounds{After: at.Add(-10 * time.Minute), Before: at},
-		Type:       some(typ), StartSoC: some(40.0), EndSoC: some(40 + span),
+		DetectedAt: at.Add(-time.Minute), Sources: fromVolvo,
+		Start: core.Bounds{After: at.Add(-2 * time.Hour), Before: at.Add(-time.Hour)},
+		End:   core.Bounds{After: at.Add(-10 * time.Minute), Before: at},
+		Type:  some(typ), StartSoC: some(40.0), EndSoC: some(40 + span),
 		EnergySoCKWh: some(span / 100 * 75), EnergyPowerKWh: some(kwh),
 		Span:       some(core.PowerSpan{StartSoC: 40, EndSoC: 40 + span, EnergyKWh: kwh, MaxGap: time.Minute, Duration: time.Hour}),
 		OdometerKm: some(odo),
@@ -29,10 +29,10 @@ func batteryCharge(at time.Time, typ core.ChargeType, span, kwh, odo float64) co
 // of displayed range: the displayed range at a full charge is range/50×100 km.
 func batteryTrip(at time.Time, rangeKm float64) core.Trip {
 	return core.Trip{
-		DetectedAt: at.Add(31 * time.Minute),
-		Start:      core.Bounds{After: at, Before: at.Add(6 * time.Minute)},
-		End:        core.Bounds{After: at.Add(30 * time.Minute), Before: at.Add(31 * time.Minute)},
-		StartSoC:   some(50.0), StartRangeKm: some(rangeKm),
+		DetectedAt: at.Add(31 * time.Minute), Sources: fromVolvo,
+		Start:    core.Bounds{After: at, Before: at.Add(6 * time.Minute)},
+		End:      core.Bounds{After: at.Add(30 * time.Minute), Before: at.Add(31 * time.Minute)},
+		StartSoC: some(50.0), StartRangeKm: some(rangeKm),
 	}
 }
 

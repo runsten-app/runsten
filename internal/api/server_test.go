@@ -259,7 +259,7 @@ func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []strin
 	e.sessions = newFakeSessions(e.clk)
 	e.tokens = newFakeTokens(e.clk)
 	e.server = New(Config{
-		Sessions: e.sessions, AccessTokens: e.tokens, Reader: e.reader, States: e.reader, Readings: e.reader, Settings: e.settings, Costs: e.reader, Models: e.reader,
+		Sessions: e.sessions, AccessTokens: e.tokens, Reader: e.reader, States: e.reader, Readings: e.reader, Settings: e.settings, Costs: e.reader, Imports: e.reader, Models: e.reader,
 		Authorizer: authz, Flows: e.flows, Enrollment: e.store, Vehicles: volvo.NewClient(e.sim.URL, instanceKey, e.sim.Client()),
 		Keys: e.store, Tokens: e.store, InstanceKey: instanceKey != "", ClientID: cfg.ClientID,
 		InstanceKeyLast4: instanceKey[max(0, len(instanceKey)-4):], Brokers: e.brokers,

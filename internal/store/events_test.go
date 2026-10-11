@@ -30,10 +30,13 @@ var t0 = time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
 
 func some(v float64) core.Value[float64] { return core.Value[float64]{V: v, OK: true} }
 
+// fromVolvo are the sources of the derived events of the tests.
+var fromVolvo = []string{"volvo"}
+
 func sampleResult(at time.Time) core.Result {
 	return core.Result{
 		Trips: []core.Trip{{
-			DetectedAt: at, Start: core.Bounds{After: at.Add(-10 * time.Minute), Before: at},
+			DetectedAt: at, Start: core.Bounds{After: at.Add(-10 * time.Minute), Before: at}, Sources: fromVolvo,
 			End:             core.Bounds{After: at.Add(40 * time.Minute), Before: at.Add(41 * time.Minute)},
 			StartOdometerKm: some(12400), EndOdometerKm: some(12432), DistanceKm: some(32),
 			StartSoC: some(62), EndSoC: some(54), EnergyKWh: some(6.4),
@@ -42,7 +45,7 @@ func sampleResult(at time.Time) core.Result {
 			TripMeterKm: some(32),
 		}},
 		Charges: []core.Charge{{
-			DetectedAt: at.Add(time.Hour), Reconstructed: true,
+			DetectedAt: at.Add(time.Hour), Reconstructed: true, Sources: fromVolvo,
 			Start:    core.Bounds{After: at.Add(50 * time.Minute), Before: at.Add(70 * time.Minute)},
 			End:      core.Bounds{After: at.Add(50 * time.Minute), Before: at.Add(70 * time.Minute)},
 			Type:     core.Value[core.ChargeType]{V: core.DC, OK: true},
@@ -373,10 +376,10 @@ func TestChargeSpanRoundTrip(t *testing.T) {
 	a, v := newVehicle(t, s, "token", "YV1AAAAAAAAAAAAA1")
 	charge := func(at time.Time, sp core.Value[core.PowerSpan], odo core.Value[float64]) core.Charge {
 		return core.Charge{
-			DetectedAt: at,
-			Start:      core.Bounds{After: at, Before: at.Add(10 * time.Minute)},
-			End:        core.Bounds{After: at.Add(50 * time.Minute), Before: at.Add(time.Hour)},
-			StartSoC:   some(47), EndSoC: some(78), Span: sp, OdometerKm: odo,
+			DetectedAt: at, Sources: fromVolvo,
+			Start:    core.Bounds{After: at, Before: at.Add(10 * time.Minute)},
+			End:      core.Bounds{After: at.Add(50 * time.Minute), Before: at.Add(time.Hour)},
+			StartSoC: some(47), EndSoC: some(78), Span: sp, OdometerKm: odo,
 		}
 	}
 	span := func(start, end, kwh float64, gap, dur time.Duration) core.Value[core.PowerSpan] {
@@ -446,11 +449,11 @@ func TestPeriodEvents(t *testing.T) {
 	var res core.Result
 	for _, h := range []int{0, 2, 4} {
 		d, start, end := event(h)
-		res.Trips = append(res.Trips, core.Trip{DetectedAt: d, Start: start, End: end, DistanceKm: some(10)})
+		res.Trips = append(res.Trips, core.Trip{DetectedAt: d, Start: start, End: end, DistanceKm: some(10), Sources: fromVolvo})
 	}
 	for _, h := range []int{1, 3} {
 		d, start, end := event(h)
-		res.Charges = append(res.Charges, core.Charge{DetectedAt: d, Start: start, End: end, EnergySoCKWh: some(20)})
+		res.Charges = append(res.Charges, core.Charge{DetectedAt: d, Start: start, End: end, EnergySoCKWh: some(20), Sources: fromVolvo})
 	}
 	for _, x := range [][2]string{{a, va}, {b, vb}} {
 		if err := s.SaveDerivation(ctx, x[0], x[1], time.Time{}, res); err != nil {
@@ -516,7 +519,7 @@ func TestReadsSeeOneSnapshot(t *testing.T) {
 		}
 		// Another connection, committed at once.
 		more := res
-		more.Charges = append(slices.Clone(res.Charges), core.Charge{DetectedAt: t0.Add(48 * time.Hour)})
+		more.Charges = append(slices.Clone(res.Charges), core.Charge{DetectedAt: t0.Add(48 * time.Hour), Sources: fromVolvo})
 		if err := s.SaveDerivation(ctx, a, v, time.Time{}, more); err != nil {
 			return err
 		}

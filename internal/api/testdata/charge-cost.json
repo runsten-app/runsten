@@ -2,6 +2,10 @@
   "id": "2026-09-28T04:00:00.000000Z",
   "detected_at": "2026-09-28T04:00:00Z",
   "reconstructed": true,
+  "imported": false,
+  "sources": [
+    "volvo"
+  ],
   "start": {
     "after": "2026-09-28T01:00:00Z",
     "before": "2026-09-28T04:00:00Z"
@@ -16,6 +20,7 @@
   "target_soc_pct": null,
   "energy_soc_kwh": 17.6,
   "energy_power_kwh": null,
+  "average_power_kw": null,
   "capacity_kwh": 80,
   "capacity_source": "api",
   "position": null,

@@ -17,12 +17,18 @@ import (
 	"runsten/internal/core"
 )
 
-// idFormat formats the ID of an event: its detection time, to the microsecond (the
+// idFormat formats the ID of a derived event: its detection time, to the microsecond (the
 // precision of the database). Unlike a row ID, it survives a rebuild of the derived
-// tables, as long as the same reading reveals the event.
+// tables, as long as the same reading reveals the event. An imported event's is its
+// source and its ID there, source:id, which no time reads as.
 const idFormat = "2006-01-02T15:04:05.000000Z"
 
-var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+var (
+	uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	// The database's checks of an import's source and of its ID there.
+	sourcePattern   = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
+	sourceIDPattern = regexp.MustCompile(`^[A-Za-z0-9._~-]{1,128}$`)
+)
 
 // body is an output made of a JSON body only.
 type body[T any] struct {
@@ -331,18 +337,42 @@ type boundsJSON struct {
 // EventFields are common to trips and charges. The type is exported because huma, unlike
 // encoding/json, ignores the fields of an unexported embedded struct.
 type EventFields struct {
-	ID            string     `json:"id" doc:"Identifies the event for its vehicle: its detection time, to the microsecond. Unlike a row ID, it survives a rebuild of the derived data, as long as the same reading reveals the event. Treat it as opaque." example:"2026-09-28T07:01:00.000000Z"`
-	DetectedAt    time.Time  `json:"detected_at" pattern:"Z$" doc:"The first reading that revealed the event."`
+	ID            string     `json:"id" doc:"Identifies the event for its vehicle. A derived event's is its detection time, to the microsecond: unlike a row ID, it survives a rebuild of the derived data, as long as the same reading reveals the event. An imported event's is its source and its ID there, source:id. Treat it as opaque." example:"2026-09-28T07:01:00.000000Z"`
+	DetectedAt    time.Time  `json:"detected_at" pattern:"Z$" doc:"The first reading that revealed the event; for an imported event, when it was last imported."`
 	Reconstructed bool       `json:"reconstructed" doc:"The event was never seen, only revealed by the odometer or the state of charge: it lies somewhere within [start.after, end.before], and start and end are that same interval."`
-	Start         boundsJSON `json:"start" doc:"When the event started. The bounds are never collapsed into a single time."`
+	Imported      bool       `json:"imported" doc:"The event was imported from another application, which cut it from its own readings: it is not derived from Runsten's, and its times are the application's own, start.after equal to start.before, end.after to end.before. Only events before the vehicle's first reading are imported."`
+	Sources       []string   `json:"sources" nullable:"false" minItems:"1" doc:"Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote). One vocabulary for both, which new sources extend." example:"[\"volvo\"]"`
+	Start         boundsJSON `json:"start" doc:"When the event started. A derived event's bounds are never collapsed into a single time."`
 	End           boundsJSON `json:"end" doc:"When the event ended."`
 }
 
-func eventOf(detected time.Time, reconstructed bool, start, end core.Bounds) EventFields {
-	return EventFields{
+func eventOf(detected time.Time, reconstructed bool, start, end core.Bounds, sources []string, imp core.Value[core.Import]) EventFields {
+	e := EventFields{
 		ID: detected.UTC().Format(idFormat), DetectedAt: detected, Reconstructed: reconstructed,
-		Start: boundsJSON(start), End: boundsJSON(end),
+		Sources: append([]string{}, sources...), Start: boundsJSON(start), End: boundsJSON(end),
 	}
+	if imp.OK {
+		e.ID, e.Imported = imp.V.Source+":"+imp.V.SourceID, true
+	}
+	return e
+}
+
+// eventKey is an event's position in the lists.
+func eventKey(start core.Bounds, detected time.Time, imp core.Value[core.Import]) EventKey {
+	k := EventKey{StartedAfter: start.After, DetectedAt: detected}
+	if imp.OK {
+		k.Import = imp.V.Source + ":" + imp.V.SourceID
+	}
+	return k
+}
+
+// addressOr is the instance's address of a position, else the name an import's source
+// gave it, but never at a place: its name says where.
+func addressOr(address *string, place null[placeRefJSON], source string) *string {
+	if address != nil || place.ok || source == "" {
+		return address
+	}
+	return &source
 }
 
 type capacitySourceJSON string
@@ -381,21 +411,22 @@ type tripJSON struct {
 	EndSoCPct       *float64 `json:"end_soc_pct"`
 	StartRangeKm    *float64 `json:"start_range_km"`
 	EndRangeKm      *float64 `json:"end_range_km"`
-	EnergyKWh       *float64 `json:"energy_kwh" doc:"An estimate, not a measurement: ΔSoC × capacity_kwh."`
+	EnergyKWh       *float64 `json:"energy_kwh" doc:"An estimate, not a measurement: ΔSoC × capacity_kwh. For an imported trip, the application's own figure when it gives one, capacity_kwh then null."`
 	CapacityFields
 	StartPosition   null[positionJSON] `json:"start_position"`
 	EndPosition     null[positionJSON] `json:"end_position"`
 	StartPlace      null[placeRefJSON] `json:"start_place" doc:"The place of start_position: the nearest one whose circle holds it. null without a position, and outside every place."`
 	EndPlace        null[placeRefJSON] `json:"end_place" doc:"The place of end_position, as for start_place."`
-	StartAddress    *string            `json:"start_address" doc:"The street and town of start_position, from the instance's reverse geocoder, outside every place. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one."`
+	StartAddress    *string            `json:"start_address" doc:"The street and town of start_position, from the instance's reverse geocoder, outside every place; for an imported trip, else the name the application gave. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one."`
 	EndAddress      *string            `json:"end_address" doc:"The address of end_position, as for start_address."`
 	VehicleReported vehicleTripJSON    `json:"vehicle_reported" doc:"The vehicle's own trip figures, for comparison only: their exact semantics are unknown, and a reconstructed trip has none."`
 }
 
 // tripOf converts a trip, its positions at the account's places or at their addresses.
 func tripOf(t core.Trip, places []core.Place, book addressBook) tripJSON {
+	start, end := placeAt(t.From, places), placeAt(t.To, places)
 	return tripJSON{
-		EventFields:     eventOf(t.DetectedAt, t.Reconstructed, t.Start, t.End),
+		EventFields:     eventOf(t.DetectedAt, t.Reconstructed, t.Start, t.End, t.Sources, t.Import),
 		DistanceKm:      opt(t.DistanceKm, same),
 		StartOdometerKm: opt(t.StartOdometerKm, same), EndOdometerKm: opt(t.EndOdometerKm, same),
 		StartSoCPct: opt(t.StartSoC, same), EndSoCPct: opt(t.EndSoC, same),
@@ -403,8 +434,9 @@ func tripOf(t core.Trip, places []core.Place, book addressBook) tripJSON {
 		EnergyKWh:      opt(t.EnergyKWh, same),
 		CapacityFields: capacityOf(t.Capacity),
 		StartPosition:  nullOf(t.From, positionOf), EndPosition: nullOf(t.To, positionOf),
-		StartPlace: placeAt(t.From, places), EndPlace: placeAt(t.To, places),
-		StartAddress: book.of(t.From), EndAddress: book.of(t.To),
+		StartPlace: start, EndPlace: end,
+		StartAddress: addressOr(book.of(t.From), start, t.Import.V.StartAddress),
+		EndAddress:   addressOr(book.of(t.To), end, t.Import.V.EndAddress),
 		VehicleReported: vehicleTripJSON{
 			TripMeterKm: opt(t.TripMeterKm, same), ConsumptionKWhPer100km: opt(t.ConsumptionKWhPer100km, same),
 		},
@@ -418,30 +450,33 @@ type chargeJSON struct {
 	EndSoCPct      *float64             `json:"end_soc_pct"`
 	TargetSoCPct   *float64             `json:"target_soc_pct"`
 	EnergySoCKWh   *float64             `json:"energy_soc_kwh" doc:"One of two separate estimates, neither a measurement (the vehicle exposes no energy meter): ΔSoC × capacity_kwh."`
-	EnergyPowerKWh *float64             `json:"energy_power_kwh" doc:"The other estimate: the charging power integrated over the observed readings. null without observed power readings, as for a reconstructed charge."`
+	EnergyPowerKWh *float64             `json:"energy_power_kwh" doc:"The other estimate: the charging power integrated over the observed readings. null without observed power readings, as for a reconstructed charge. For an imported charge, the energy the application gives, a measured flow rather than a change of the state of charge."`
+	AveragePowerKW *float64             `json:"average_power_kw" minimum:"0" doc:"An imported charge's average power, as the application gives it; null for a derived charge, which tells its power in its readings (GET /vehicles/{vehicle}/series)."`
 	CapacityFields
 	Position null[positionJSON] `json:"position"`
 	Place    null[placeRefJSON] `json:"place" doc:"The place of the charge: the nearest one whose circle holds its position; without a position, the place that takes such charges, unless the charge is DC. null elsewhere."`
-	Address  *string            `json:"address" doc:"The street and town of position, from the instance's reverse geocoder, outside every place. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one."`
-	Cost     null[costJSON]     `json:"cost" doc:"What the charge cost: entered by the user, or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered cost, without energy_soc_kwh, or when the tariff has no version for a part of the charge's window."`
+	Address  *string            `json:"address" doc:"The street and town of position, from the instance's reverse geocoder, outside every place; for an imported charge, else the name the application gave. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one."`
+	Cost     null[costJSON]     `json:"cost" doc:"What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without energy_soc_kwh, or when the tariff has no version for a part of the charge's window."`
 }
 
 func chargeOf(c core.Charge, places []core.Place, cost core.Value[core.Cost], book addressBook) chargeJSON {
 	place, _ := core.PlaceOf(c, places)
+	ref := nullOf(core.Value[core.Place]{V: place, OK: place.ID != ""}, placeRefOf)
 	return chargeJSON{
-		EventFields: eventOf(c.DetectedAt, c.Reconstructed, c.Start, c.End),
+		EventFields: eventOf(c.DetectedAt, c.Reconstructed, c.Start, c.End, c.Sources, c.Import),
 		Type:        nullOf(c.Type, text[core.ChargeType, chargeTypeJSON]),
 		StartSoCPct: opt(c.StartSoC, same), EndSoCPct: opt(c.EndSoC, same), TargetSoCPct: opt(c.TargetSoC, same),
 		EnergySoCKWh: opt(c.EnergySoCKWh, same), EnergyPowerKWh: opt(c.EnergyPowerKWh, same),
+		AveragePowerKW: opt(c.AveragePowerKW, same),
 		CapacityFields: capacityOf(c.Capacity),
 		Position:       nullOf(c.Position, positionOf),
-		Address:        book.of(c.Position),
-		Place:          nullOf(core.Value[core.Place]{V: place, OK: place.ID != ""}, placeRefOf),
+		Address:        addressOr(book.of(c.Position), ref, c.Import.V.StartAddress),
+		Place:          ref,
 		Cost:           nullOf(cost, costOf),
 	}
 }
 
-// page is a page of a list, newest first (by start.after, then detected_at).
+// page is a page of a list, newest first (by start.after, then detected_at, then id).
 type page[T any] struct {
 	Items      []T     `json:"items" nullable:"false"`
 	NextCursor *string `json:"next_cursor" doc:"The cursor of the next page; null on the last one."`
@@ -548,7 +583,7 @@ func (s *Server) listTrips(ctx context.Context, in *listInput) (*body[page[tripJ
 			return nil, err //nolint:wrapcheck // logged by listEvents, never shown
 		}
 		return s.Reader.ListTrips(ctx, acc, v.ID, q)
-	}, func(t core.Trip) EventKey { return EventKey{t.Start.After, t.DetectedAt} }, func(trips []core.Trip, _ AccountLimits) []tripJSON {
+	}, func(t core.Trip) EventKey { return eventKey(t.Start, t.DetectedAt, t.Import) }, func(trips []core.Trip, _ AccountLimits) []tripJSON {
 		book := s.addresses(ctx, places, tripPositions(trips...)...)
 		return each(func(t core.Trip) tripJSON { return tripOf(t, places, book) })(trips)
 	})
@@ -564,7 +599,7 @@ func (s *Server) listCharges(ctx context.Context, in *listInput) (*body[page[cha
 		}
 		priced, err = s.Reader.ListCharges(ctx, acc, v.ID, q)
 		return priced.Charges, err //nolint:wrapcheck // logged by listEvents, never shown
-	}, func(c core.Charge) EventKey { return EventKey{c.Start.After, c.DetectedAt} }, func(page []core.Charge, l AccountLimits) []chargeJSON {
+	}, func(c core.Charge) EventKey { return eventKey(c.Start, c.DetectedAt, c.Import) }, func(page []core.Charge, l AccountLimits) []chargeJSON {
 		// The costs of the whole read: its extra charge, left out of the page, is one of
 		// the vehicle's like the others.
 		return s.chargesOf(ctx, priced, charger, l)[:len(page)]
@@ -574,17 +609,17 @@ func (s *Server) listCharges(ctx context.Context, in *listInput) (*body[page[cha
 // eventInput is an event of a vehicle.
 type eventInput struct {
 	Vehicle string `path:"vehicle" doc:"The vehicle ID."`
-	ID      string `path:"id" doc:"The event ID. Any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z." example:"2026-09-28T07:01:00.000000Z"`
+	ID      string `path:"id" doc:"The event ID. For a derived event, any RFC 3339 form of the detection time is accepted too, such as 2026-09-28T07:01:00Z." example:"2026-09-28T07:01:00.000000Z"`
 }
 
 func (s *Server) getTrip(ctx context.Context, in *eventInput) (*body[tripJSON], error) {
 	var places []core.Place
-	return getEvent(ctx, s, in, "trip", func(acc, vehicle string, at time.Time) (core.Trip, bool, error) {
+	return getEvent(ctx, s, in, "trip", func(acc, vehicle string, ref EventRef) (core.Trip, bool, error) {
 		var err error
 		if places, err = s.Settings.Places(ctx, acc); err != nil {
 			return core.Trip{}, false, err //nolint:wrapcheck // logged by getEvent, never shown
 		}
-		return s.Reader.FindTrip(ctx, acc, vehicle, at)
+		return s.Reader.FindTrip(ctx, acc, vehicle, ref)
 	}, func(t core.Trip) core.Bounds { return t.End }, func(t core.Trip) tripJSON { return tripOf(t, places, s.addresses(ctx, places, tripPositions(t)...)) })
 }
 
@@ -593,34 +628,38 @@ func (s *Server) getCharge(ctx context.Context, in *eventInput) (*body[chargeJSO
 	if err != nil {
 		return nil, err
 	}
-	at, err := eventTime(in.ID, "charge")
+	ref, err := eventRef(in.ID, "charge")
 	if err != nil {
 		return nil, err
 	}
-	return s.chargeAt(ctx, v, at)
+	return s.chargeAt(ctx, v, ref)
 }
 
-// eventTime reads the detection time of an event ID; a malformed one is not found.
-func eventTime(id, kind string) (time.Time, error) {
-	at, err := time.Parse(time.RFC3339Nano, id)
-	if err != nil {
-		return time.Time{}, apiError(http.StatusNotFound, codeNotFound, "no such "+kind)
+// eventRef reads an event ID: a derived event's detection time, or an imported one's
+// source:id. A malformed one is not found.
+func eventRef(id, kind string) (EventRef, error) {
+	if at, err := time.Parse(time.RFC3339Nano, id); err == nil {
+		return EventRef{DetectedAt: at}, nil
 	}
-	return at, nil
+	source, sourceID, found := strings.Cut(id, ":")
+	if !found || !sourcePattern.MatchString(source) || !sourceIDPattern.MatchString(sourceID) {
+		return EventRef{}, apiError(http.StatusNotFound, codeNotFound, "no such "+kind)
+	}
+	return EventRef{Source: source, SourceID: sourceID}, nil
 }
 
 func getEvent[E, J any](ctx context.Context, s *Server, in *eventInput, kind string,
-	find func(accountID, vehicleID string, at time.Time) (E, bool, error), end func(E) core.Bounds, conv func(E) J,
+	find func(accountID, vehicleID string, ref EventRef) (E, bool, error), end func(E) core.Bounds, conv func(E) J,
 ) (*body[J], error) {
 	v, err := s.accountVehicle(ctx, in.Vehicle)
 	if err != nil {
 		return nil, err
 	}
-	at, err := eventTime(in.ID, kind)
+	ref, err := eventRef(in.ID, kind)
 	if err != nil {
 		return nil, err
 	}
-	e, found, err := find(sessionFrom(ctx).AccountID, v.ID, at)
+	e, found, err := find(sessionFrom(ctx).AccountID, v.ID, ref)
 	switch {
 	case err != nil:
 		return nil, s.internal(kind+" not read", err)
@@ -649,7 +688,8 @@ func (s *Server) registerReads(api huma.API) {
 	eventErrs := map[int]string{
 		http.StatusUnauthorized: errUnauthorized, http.StatusNotFound: errEvent, http.StatusInternalServerError: errInternal,
 	}
-	const listDescription = "Newest first, by `start.after` then `detected_at`. Figures are `null` when the readings do not give them."
+	const listDescription = "Newest first, by `start.after` then `detected_at`. Figures are `null` when the readings do not give them. " +
+		"The events derived from the readings and those imported from another application (`imported`) come in one list."
 
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "listVehicles", Method: http.MethodGet, Path: "/vehicles", Tags: []string{"vehicles"},
@@ -687,9 +727,14 @@ func (s *Server) registerReads(api huma.API) {
 }
 
 // A cursor is opaque to clients: the position of the last event of a page, in
-// microseconds since the epoch.
+// microseconds since the epoch, then an imported event's source:id. A cursor without it,
+// of a derived event, is the one this API gave before events were imported.
 func encodeCursor(k EventKey) string {
-	return base64.RawURLEncoding.EncodeToString(fmt.Appendf(nil, "%d.%d", k.StartedAfter.UnixMicro(), k.DetectedAt.UnixMicro()))
+	raw := fmt.Appendf(nil, "%d.%d", k.StartedAfter.UnixMicro(), k.DetectedAt.UnixMicro())
+	if k.Import != "" {
+		raw = fmt.Appendf(raw, ".%s", k.Import)
+	}
+	return base64.RawURLEncoding.EncodeToString(raw)
 }
 
 func decodeCursor(s string) (EventKey, error) {
@@ -697,13 +742,24 @@ func decodeCursor(s string) (EventKey, error) {
 	if err != nil {
 		return EventKey{}, fmt.Errorf("cursor: %w", err)
 	}
-	a, b, found := strings.Cut(string(raw), ".")
-	started, err1 := strconv.ParseInt(a, 10, 64)
-	detected, err2 := strconv.ParseInt(b, 10, 64)
-	if !found || err1 != nil || err2 != nil {
+	parts := strings.SplitN(string(raw), ".", 3)
+	if len(parts) < 2 {
 		return EventKey{}, fmt.Errorf("cursor %q: malformed", raw)
 	}
-	return EventKey{StartedAfter: time.UnixMicro(started).UTC(), DetectedAt: time.UnixMicro(detected).UTC()}, nil
+	started, err1 := strconv.ParseInt(parts[0], 10, 64)
+	detected, err2 := strconv.ParseInt(parts[1], 10, 64)
+	k := EventKey{StartedAfter: time.UnixMicro(started).UTC(), DetectedAt: time.UnixMicro(detected).UTC()}
+	if len(parts) == 3 {
+		source, sourceID, found := strings.Cut(parts[2], ":")
+		if !found || !sourcePattern.MatchString(source) || !sourceIDPattern.MatchString(sourceID) {
+			return EventKey{}, fmt.Errorf("cursor %q: malformed import", raw)
+		}
+		k.Import = parts[2]
+	}
+	if err1 != nil || err2 != nil {
+		return EventKey{}, fmt.Errorf("cursor %q: malformed", raw)
+	}
+	return k, nil
 }
 
 func opt[T, U any](v core.Value[T], conv func(T) U) *U {

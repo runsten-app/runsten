@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"maps"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -116,8 +117,9 @@ func (m *memReader) attachedTo(vehicle string, c core.Charge) int {
 	})
 }
 
+// chargeAt is the derived charge detected at at.
 func (m *memReader) chargeAt(vehicle string, at time.Time) (core.Charge, bool) {
-	i := slices.IndexFunc(m.charges[vehicle], func(c core.Charge) bool { return c.DetectedAt.Equal(at) })
+	i := slices.IndexFunc(m.charges[vehicle], func(c core.Charge) bool { return !c.Import.OK && c.DetectedAt.Equal(at) })
 	if i < 0 {
 		return core.Charge{}, false
 	}
@@ -227,26 +229,22 @@ func (m *memReader) Vehicle(_ context.Context, acc, id string) (Vehicle, bool, e
 	return Vehicle{}, false, m.err
 }
 
-func pageEvents[E any](events []E, q EventQuery, bounds func(E) (core.Bounds, core.Bounds, time.Time)) []E {
+func pageEvents[E any](events []E, q EventQuery, bounds func(E) (core.Bounds, core.Bounds, EventKey)) []E {
 	var out []E
 	for _, e := range events {
-		start, end, detected := bounds(e)
+		start, end, key := bounds(e)
 		switch {
 		case !q.From.IsZero() && !end.Before.After(q.From):
 		case !q.To.IsZero() && !start.After.Before(q.To):
-		case q.After != nil && !start.After.Before(q.After.StartedAfter) &&
-			(!start.After.Equal(q.After.StartedAfter) || !detected.Before(q.After.DetectedAt)):
+		case q.After != nil && compareKeys(key, *q.After) >= 0:
 		default:
 			out = append(out, e)
 		}
 	}
 	slices.SortFunc(out, func(a, b E) int {
-		sa, _, da := bounds(a)
-		sb, _, db := bounds(b)
-		if c := sb.After.Compare(sa.After); c != 0 {
-			return c
-		}
-		return db.Compare(da)
+		_, _, ka := bounds(a)
+		_, _, kb := bounds(b)
+		return compareKeys(kb, ka)
 	})
 	if q.Limit == 0 {
 		return out
@@ -254,21 +252,40 @@ func pageEvents[E any](events []E, q EventQuery, bounds func(E) (core.Bounds, co
 	return out[:min(len(out), q.Limit)]
 }
 
-func tripBounds(t core.Trip) (core.Bounds, core.Bounds, time.Time) {
-	return t.Start, t.End, t.DetectedAt
+// compareKeys orders events as the store does: by start, detection, then import.
+func compareKeys(a, b EventKey) int {
+	if c := a.StartedAfter.Compare(b.StartedAfter); c != 0 {
+		return c
+	}
+	if c := a.DetectedAt.Compare(b.DetectedAt); c != 0 {
+		return c
+	}
+	return strings.Compare(a.Import, b.Import)
 }
 
-func chargeBounds(c core.Charge) (core.Bounds, core.Bounds, time.Time) {
-	return c.Start, c.End, c.DetectedAt
+func tripBounds(t core.Trip) (core.Bounds, core.Bounds, EventKey) {
+	return t.Start, t.End, eventKey(t.Start, t.DetectedAt, t.Import)
+}
+
+func chargeBounds(c core.Charge) (core.Bounds, core.Bounds, EventKey) {
+	return c.Start, c.End, eventKey(c.Start, c.DetectedAt, c.Import)
+}
+
+// isEvent tells whether an event is the one ref names.
+func isEvent(ref EventRef, detected time.Time, imp core.Value[core.Import]) bool {
+	if ref.Source != "" {
+		return imp.OK && imp.V.Source == ref.Source && imp.V.SourceID == ref.SourceID
+	}
+	return !imp.OK && detected.Equal(ref.DetectedAt)
 }
 
 func (m *memReader) ListTrips(_ context.Context, _, vehicle string, q EventQuery) ([]core.Trip, error) {
 	return pageEvents(m.trips[vehicle], q, tripBounds), m.err
 }
 
-func (m *memReader) FindTrip(_ context.Context, _, vehicle string, at time.Time) (core.Trip, bool, error) {
+func (m *memReader) FindTrip(_ context.Context, _, vehicle string, ref EventRef) (core.Trip, bool, error) {
 	for _, t := range m.trips[vehicle] {
-		if t.DetectedAt.Equal(at) {
+		if isEvent(ref, t.DetectedAt, t.Import) {
 			return t, true, m.err
 		}
 	}
@@ -279,12 +296,59 @@ func (m *memReader) ListCharges(ctx context.Context, acc, vehicle string, q Even
 	return m.priced(ctx, acc, vehicle, pageEvents(m.charges[vehicle], q, chargeBounds)), m.err
 }
 
-func (m *memReader) FindCharge(ctx context.Context, acc, vehicle string, at time.Time) (PricedCharges, bool, error) {
-	c, ok := m.chargeAt(vehicle, at)
-	if !ok {
+func (m *memReader) FindCharge(ctx context.Context, acc, vehicle string, ref EventRef) (PricedCharges, bool, error) {
+	i := slices.IndexFunc(m.charges[vehicle], func(c core.Charge) bool { return isEvent(ref, c.DetectedAt, c.Import) })
+	if i < 0 {
 		return PricedCharges{}, false, m.err
 	}
-	return m.priced(ctx, acc, vehicle, []core.Charge{c}), true, m.err
+	return m.priced(ctx, acc, vehicle, []core.Charge{m.charges[vehicle][i]}), true, m.err
+}
+
+func (m *memReader) Imports(_ context.Context, _, vehicle string) ([]Import, error) {
+	byName := map[string]*Import{}
+	add := func(start core.Bounds, imp core.Value[core.Import], trip bool) {
+		if !imp.OK {
+			return
+		}
+		i := byName[imp.V.Source]
+		if i == nil {
+			i = &Import{Source: imp.V.Source, StartedFrom: start.After, StartedTo: start.After}
+			byName[imp.V.Source] = i
+		}
+		if trip {
+			i.Trips++
+		} else {
+			i.Charges++
+		}
+		if start.After.Before(i.StartedFrom) {
+			i.StartedFrom = start.After
+		}
+		if start.After.After(i.StartedTo) {
+			i.StartedTo = start.After
+		}
+		if imp.V.ImportedAt.After(i.LastImportedAt) {
+			i.LastImportedAt = imp.V.ImportedAt
+		}
+	}
+	for _, t := range m.trips[vehicle] {
+		add(t.Start, t.Import, true)
+	}
+	for _, c := range m.charges[vehicle] {
+		add(c.Start, c.Import, false)
+	}
+	var out []Import
+	for _, name := range slices.Sorted(maps.Keys(byName)) {
+		out = append(out, *byName[name])
+	}
+	return out, m.err
+}
+
+func (m *memReader) DeleteImport(_ context.Context, _, vehicle, source string) (bool, error) {
+	from := func(imp core.Value[core.Import]) bool { return imp.OK && imp.V.Source == source }
+	n := len(m.trips[vehicle]) + len(m.charges[vehicle])
+	m.trips[vehicle] = slices.DeleteFunc(m.trips[vehicle], func(t core.Trip) bool { return from(t.Import) })
+	m.charges[vehicle] = slices.DeleteFunc(m.charges[vehicle], func(c core.Charge) bool { return from(c.Import) })
+	return len(m.trips[vehicle])+len(m.charges[vehicle]) < n, m.err
 }
 
 func (m *memReader) ChargeHistory(ctx context.Context, acc string) ([]PricedCharges, error) {
@@ -311,19 +375,18 @@ func (m *memReader) PeriodEvents(ctx context.Context, acc, vehicle string, from,
 	}, m.err
 }
 
-func inPeriod[E any](events []E, from, to time.Time, bounds func(E) (core.Bounds, core.Bounds, time.Time)) []E {
+func inPeriod[E any](events []E, from, to time.Time, bounds func(E) (core.Bounds, core.Bounds, EventKey)) []E {
 	var out []E
 	var prior []E
 	var priorKey EventKey
 	for _, e := range events {
-		start, _, detected := bounds(e)
+		start, _, key := bounds(e)
 		switch {
 		case !start.After.Before(to):
 		case !start.After.Before(from):
 			out = append(out, e)
-		case prior == nil || start.After.After(priorKey.StartedAfter) ||
-			start.After.Equal(priorKey.StartedAfter) && detected.After(priorKey.DetectedAt):
-			prior, priorKey = []E{e}, EventKey{start.After, detected}
+		case prior == nil || compareKeys(key, priorKey) > 0:
+			prior, priorKey = []E{e}, key
 		}
 	}
 	return append(out, prior...)
@@ -356,6 +419,9 @@ var (
 	work = core.Position{Lat: 45.7797, Lon: 4.927}
 )
 
+// fromVolvo are the sources of the derived fixtures.
+var fromVolvo = []string{"volvo"}
+
 // fromAPI is the capacity of the fixtures' energies: 80 kWh, as the vendor reports.
 var fromAPI = some(core.Capacity{KWh: 80, Source: core.CapacityAPI})
 
@@ -379,6 +445,7 @@ func fixtures(m *memReader) {
 	m.trips[car] = []core.Trip{
 		{
 			DetectedAt: h(7, 1), Start: core.Bounds{After: h(6, 55), Before: h(7, 1)}, End: core.Bounds{After: h(7, 39), Before: h(7, 40)},
+			Sources:         fromVolvo,
 			StartOdometerKm: some(12400.0), EndOdometerKm: some(12432.0), DistanceKm: some(32.0),
 			StartSoC: some(62.0), EndSoC: some(54.5), StartRangeKm: some(248.0), EndRangeKm: some(218.0), EnergyKWh: some(6.0),
 			Capacity: fromAPI,
@@ -386,12 +453,13 @@ func fixtures(m *memReader) {
 		},
 		{
 			// Revealed by the odometer after an outage: no position, no vehicle figures.
-			DetectedAt: h(13, 0), Reconstructed: true,
+			DetectedAt: h(13, 0), Reconstructed: true, Sources: fromVolvo,
 			Start: core.Bounds{After: h(12, 0), Before: h(13, 0)}, End: core.Bounds{After: h(12, 0), Before: h(13, 0)},
 			StartOdometerKm: some(12432.0), EndOdometerKm: some(12440.0), DistanceKm: some(8.0),
 		},
 		{
 			DetectedAt: h(16, 41), Start: core.Bounds{After: h(16, 35), Before: h(16, 41)}, End: core.Bounds{After: h(17, 24), Before: h(17, 25)},
+			Sources: fromVolvo,
 			// No SoC was read: the capacity is known, the energy is not.
 			StartOdometerKm: some(12440.0), EndOdometerKm: some(12473.0), DistanceKm: some(33.0),
 			From: some(work), To: some(home),
@@ -401,12 +469,13 @@ func fixtures(m *memReader) {
 	m.charges[car] = []core.Charge{
 		{
 			DetectedAt: h(18, 30), Start: core.Bounds{After: h(18, 20), Before: h(18, 30)}, End: core.Bounds{After: h(21, 55), Before: h(21, 56)},
-			Type: some(core.AC), StartSoC: some(47.0), EndSoC: some(80.0), TargetSoC: some(80.0),
+			Sources: fromVolvo,
+			Type:    some(core.AC), StartSoC: some(47.0), EndSoC: some(80.0), TargetSoC: some(80.0),
 			EnergySoCKWh: some(26.4), EnergyPowerKWh: some(25.3), Position: some(home),
 			Capacity: fromAPI,
 		},
 		{
-			DetectedAt: h(4, 0), Reconstructed: true,
+			DetectedAt: h(4, 0), Reconstructed: true, Sources: fromVolvo,
 			Start: core.Bounds{After: h(1, 0), Before: h(4, 0)}, End: core.Bounds{After: h(1, 0), Before: h(4, 0)},
 			StartSoC: some(40.0), EndSoC: some(62.0), EnergySoCKWh: some(17.6),
 			Capacity: fromAPI,
@@ -776,7 +845,7 @@ func (failingEvents) ListTrips(context.Context, string, string, EventQuery) ([]c
 	return nil, errEvents
 }
 
-func (failingEvents) FindTrip(context.Context, string, string, time.Time) (core.Trip, bool, error) {
+func (failingEvents) FindTrip(context.Context, string, string, EventRef) (core.Trip, bool, error) {
 	return core.Trip{}, false, errEvents
 }
 
@@ -788,7 +857,7 @@ func (failingEvents) PeriodEvents(context.Context, string, string, time.Time, ti
 	return Period{}, errEvents
 }
 
-func (failingEvents) FindCharge(context.Context, string, string, time.Time) (PricedCharges, bool, error) {
+func (failingEvents) FindCharge(context.Context, string, string, EventRef) (PricedCharges, bool, error) {
 	return PricedCharges{}, false, errEvents
 }
 

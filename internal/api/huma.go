@@ -130,6 +130,7 @@ const (
 	codeWithoutPositionTaken errorCode = "without_position_taken"
 	codeTooManyPlaces        errorCode = "too_many_places"
 	codeChargeHasCost        errorCode = "charge_has_cost"
+	codeImportedCharge       errorCode = "imported_charge"
 	codeAPIKeyRefused        errorCode = "api_key_refused"
 	codeInstanceKey          errorCode = "instance_key"
 	codeTooManyVehicles      errorCode = "too_many_vehicles"
@@ -144,7 +145,7 @@ const (
 func (errorCode) Schema(huma.Registry) *huma.Schema {
 	return enumSchema(codeInvalidParameter, codeInvalidBody, codeUnauthorized, codeInvalidCredentials,
 		codeCrossOrigin, codeNotFound, codeMethodNotAllowed, codeUnsupportedMediaType, codeTooManyAttempts,
-		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeAPIKeyRefused, codeInstanceKey, codeTooManyVehicles, codeFeatureUnavailable,
+		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeImportedCharge, codeAPIKeyRefused, codeInstanceKey, codeTooManyVehicles, codeFeatureUnavailable,
 		codeBrokerRefused, codeInsufficientScope, codeRateLimited, codeInternal)
 }
 

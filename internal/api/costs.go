@@ -133,7 +133,7 @@ type costSourceJSON string
 
 // Schema lists the sources of a cost.
 func (costSourceJSON) Schema(huma.Registry) *huma.Schema {
-	return enumSchema(core.CostTariff, core.CostEntered)
+	return enumSchema(core.CostTariff, core.CostEntered, core.CostImported)
 }
 
 // placeRefJSON names a place of the account: the one of a charge, or of a trip's start
@@ -147,10 +147,10 @@ type costJSON struct {
 	Currency currencyCodeJSON `json:"currency" doc:"The account's currency, the unit of min_minor and max_minor."`
 	MinMinor int64            `json:"min_minor" minimum:"0" doc:"The lowest amount the charge may have cost, in minor units of the currency (cents): the energy went through somewhere within [start.after, end.before], at prices that may change over it, so every amount the bounds allow lies within [min_minor, max_minor]. Equal to max_minor when the price is the same over the whole window, and for an entered cost."`
 	MaxMinor int64            `json:"max_minor" minimum:"0" doc:"The highest amount the charge may have cost."`
-	Source   costSourceJSON   `json:"source" doc:"tariff: estimated from the tariff of the charge's place. entered: the amount the user entered for the charge, which replaces the tariff's."`
+	Source   costSourceJSON   `json:"source" doc:"tariff: estimated from the tariff of the charge's place. entered: the amount the user entered for the charge, which replaces the tariff's. imported: what the application an imported charge comes from says it cost, in the account's currency, which replaces the tariff's too."`
 	// The two estimates behind a tariff's cost are said as such.
-	EnergyKWh  *float64 `json:"energy_kwh" doc:"The billed energy. For a tariff, an estimate: energy_soc_kwh (itself an estimate) over efficiency. For an entered cost, the energy entered with it, as read on the receipt; null if none was."`
-	Efficiency *float64 `json:"efficiency" doc:"For a tariff, the assumed share of the energy drawn from the grid that reaches the battery: the place's, or else the default of the settings (default_efficiency: ac for AC and unknown types, dc for DC). null for an entered cost."`
+	EnergyKWh  *float64 `json:"energy_kwh" doc:"The billed energy. For a tariff, an estimate: energy_soc_kwh (itself an estimate) over efficiency. For an entered cost, the energy entered with it, as read on the receipt; null if none was, and for an imported cost."`
+	Efficiency *float64 `json:"efficiency" doc:"For a tariff, the assumed share of the energy drawn from the grid that reaches the battery: the place's, or else the default of the settings (default_efficiency: ac for AC and unknown types, dc for DC). null for an entered or imported cost."`
 	Note       *string  `json:"note" doc:"The note entered with the cost; null for a tariff, and without a note."`
 }
 
@@ -311,13 +311,26 @@ func (s *Server) costError(msg, notFound string, err error) error {
 	return s.internal(msg, err)
 }
 
-// chargeAt answers the vehicle's charge detected at at, with its cost.
-func (s *Server) chargeAt(ctx context.Context, v Vehicle, at time.Time) (*body[chargeJSON], error) {
+// enteredChargeTime reads the ID of a charge that may take an entered cost: a derived
+// one's. An imported charge's cost is its application's, or its tariff's.
+func enteredChargeTime(id string) (time.Time, error) {
+	ref, err := eventRef(id, "charge")
+	switch {
+	case err != nil:
+		return time.Time{}, err
+	case ref.Source != "":
+		return time.Time{}, apiError(http.StatusConflict, codeImportedCharge, "an imported charge takes no entered cost")
+	}
+	return ref.DetectedAt, nil
+}
+
+// chargeAt answers the vehicle's charge ref names, with its cost.
+func (s *Server) chargeAt(ctx context.Context, v Vehicle, ref EventRef) (*body[chargeJSON], error) {
 	charger, err := s.chargerOf(ctx, v)
 	if err != nil {
 		return nil, s.internal("vehicle model not read", err)
 	}
-	p, found, err := s.Reader.FindCharge(ctx, sessionFrom(ctx).AccountID, v.ID, at)
+	p, found, err := s.Reader.FindCharge(ctx, sessionFrom(ctx).AccountID, v.ID, ref)
 	switch {
 	case err != nil:
 		return nil, s.internal("charge not read", err)
@@ -339,7 +352,7 @@ func (s *Server) putChargeCost(ctx context.Context, in *chargeCostInput) (*body[
 	if err != nil {
 		return nil, err
 	}
-	at, err := eventTime(in.ID, "charge")
+	at, err := enteredChargeTime(in.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +366,7 @@ func (s *Server) putChargeCost(ctx context.Context, in *chargeCostInput) (*body[
 	if err := s.Costs.SetChargeCost(ctx, sessionFrom(ctx).AccountID, v.ID, e); err != nil {
 		return nil, s.costError("cost not entered", "no such charge", err)
 	}
-	return s.chargeAt(ctx, v, at)
+	return s.chargeAt(ctx, v, EventRef{DetectedAt: at})
 }
 
 func (s *Server) deleteChargeCost(ctx context.Context, in *chargeCostDelete) (*struct{}, error) {
@@ -361,10 +374,11 @@ func (s *Server) deleteChargeCost(ctx context.Context, in *chargeCostDelete) (*s
 	if err != nil {
 		return nil, err
 	}
-	at, err := eventTime(in.ID, "charge")
-	if err != nil {
-		return nil, err
+	ref, err := eventRef(in.ID, "charge")
+	if err != nil || ref.Source != "" {
+		return nil, apiError(http.StatusNotFound, codeNotFound, "no such charge, or it has no entered cost")
 	}
+	at := ref.DetectedAt
 	if err := s.Costs.DeleteChargeCost(ctx, sessionFrom(ctx).AccountID, v.ID, at); err != nil {
 		return nil, s.costError("cost not deleted", "no such charge, or it has no entered cost", err)
 	}
@@ -397,14 +411,14 @@ func (s *Server) attachOrphan(ctx context.Context, in *attachInput) (*body[charg
 	if err != nil {
 		return nil, err
 	}
-	at, err := eventTime(in.Body.Charge, "charge")
+	at, err := enteredChargeTime(in.Body.Charge)
 	if err != nil {
 		return nil, err
 	}
 	if err := s.Costs.AttachEnteredCost(ctx, sessionFrom(ctx).AccountID, in.ID, v.ID, at); err != nil {
 		return nil, s.costError("cost not attached", "no such entered cost or charge", err)
 	}
-	return s.chargeAt(ctx, v, at)
+	return s.chargeAt(ctx, v, EventRef{DetectedAt: at})
 }
 
 func (s *Server) deleteOrphan(ctx context.Context, in *orphanInput) (*struct{}, error) {
@@ -422,6 +436,8 @@ func (s *Server) registerCosts(api huma.API) {
 	const (
 		errCharge = "`not_found`: no such vehicle in the account, or no such charge for it."
 		errOrphan = "`not_found`: no such entered cost in the account, or no such vehicle or charge."
+		// The application an imported charge comes from may give its cost; else its tariff does.
+		errImported = "`imported_charge`: the charge was imported, and takes no entered cost."
 	)
 	// The costs are the account's offer's: its limits may leave them out (403, as a
 	// request from another origin).
@@ -449,7 +465,10 @@ func (s *Server) registerCosts(api huma.API) {
 			"Accepted without a currency, as a tariff is: the charge's `cost` stays `null` until the account's currency " +
 			"is set, which gives the amount its unit.",
 		Middlewares: jsonBody,
-	}, "The charge, with its entered cost.", write(map[int]string{http.StatusNotFound: errCharge})), s.putChargeCost)
+	}, "The charge, with its entered cost.", write(map[int]string{
+		http.StatusNotFound: errCharge,
+		http.StatusConflict: errImported,
+	})), s.putChargeCost)
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "deleteChargeCost", Method: http.MethodDelete, Path: "/vehicles/{vehicle}/charges/{id}/cost", Tags: []string{"costs"},
 		Summary: "Delete the entered cost of a charge", Description: "The charge's cost is that of its tariff again, if any.",
@@ -475,7 +494,7 @@ func (s *Server) registerCosts(api huma.API) {
 		Middlewares: jsonBody,
 	}, "The charge, with the cost.", write(map[int]string{
 		http.StatusNotFound: errOrphan,
-		http.StatusConflict: "`charge_has_cost`: the charge already takes another entered cost; delete that one first.",
+		http.StatusConflict: "`charge_has_cost`: the charge already takes another entered cost; delete that one first. " + errImported,
 	})), s.attachOrphan)
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "deleteOrphanedCost", Method: http.MethodDelete, Path: "/charge-costs/orphans/{id}", Tags: []string{"costs"},

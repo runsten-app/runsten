@@ -210,6 +210,7 @@ func run(args []string) error {
 		Settings:  st,
 		Models:    st,
 		Costs:     st,
+		Imports:   st,
 		Accounts:  st,
 		// It only reads the current state and the readings: it derives nothing, and
 		// needs no capacity.

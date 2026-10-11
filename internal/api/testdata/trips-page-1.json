@@ -4,6 +4,10 @@
       "id": "2026-09-28T16:41:00.000000Z",
       "detected_at": "2026-09-28T16:41:00Z",
       "reconstructed": false,
+      "imported": false,
+      "sources": [
+        "volvo"
+      ],
       "start": {
         "after": "2026-09-28T16:35:00Z",
         "before": "2026-09-28T16:41:00Z"
@@ -46,6 +50,10 @@
       "id": "2026-09-28T13:00:00.000000Z",
       "detected_at": "2026-09-28T13:00:00Z",
       "reconstructed": true,
+      "imported": false,
+      "sources": [
+        "volvo"
+      ],
       "start": {
         "after": "2026-09-28T12:00:00Z",
         "before": "2026-09-28T13:00:00Z"

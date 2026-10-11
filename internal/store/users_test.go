@@ -407,21 +407,21 @@ func TestReads(t *testing.T) {
 	}
 
 	want := sampleResult(day(1))
-	if tr, ok, err := s.FindTrip(ctx, a, va, day(1)); err != nil || !ok || !reflect.DeepEqual(tr, want.Trips[0]) {
+	if tr, ok, err := s.FindTrip(ctx, a, va, api.EventRef{DetectedAt: day(1)}); err != nil || !ok || !reflect.DeepEqual(tr, want.Trips[0]) {
 		t.Errorf("trip = %+v, %v, %v", tr, ok, err)
 	}
-	if c, ok, err := s.FindCharge(ctx, a, va, day(1).Add(time.Hour)); err != nil || !ok || !reflect.DeepEqual(c.Charges, want.Charges[:1]) {
+	if c, ok, err := s.FindCharge(ctx, a, va, api.EventRef{DetectedAt: day(1).Add(time.Hour)}); err != nil || !ok || !reflect.DeepEqual(c.Charges, want.Charges[:1]) {
 		t.Errorf("charge = %+v, %v, %v", c, ok, err)
 	}
 	for _, at := range []time.Time{day(1).Add(time.Microsecond), day(5)} {
-		if _, ok, err := s.FindTrip(ctx, a, va, at); ok || err != nil {
+		if _, ok, err := s.FindTrip(ctx, a, va, api.EventRef{DetectedAt: at}); ok || err != nil {
 			t.Errorf("trip at %s: %v, %v", at, ok, err)
 		}
-		if _, ok, err := s.FindCharge(ctx, a, va, at); ok || err != nil {
+		if _, ok, err := s.FindCharge(ctx, a, va, api.EventRef{DetectedAt: at}); ok || err != nil {
 			t.Errorf("charge at %s: %v, %v", at, ok, err)
 		}
 	}
-	if _, ok, err := s.FindTrip(ctx, a, vb, t0); ok || err != nil {
+	if _, ok, err := s.FindTrip(ctx, a, vb, api.EventRef{DetectedAt: t0}); ok || err != nil {
 		t.Errorf("account A finds B's trip: %v, %v", ok, err)
 	}
 }
