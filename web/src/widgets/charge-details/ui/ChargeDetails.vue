@@ -8,7 +8,7 @@ import { ChargeCostEditor } from '@/features/enter-charge-cost'
 import { FeatureUnavailable, useLimits } from '@/features/view-limits'
 import { isApiError } from '@/shared/api'
 import { formatCoordinate, openStreetMapUrl, useFormat, useMapsOn } from '@/shared/lib'
-import { EventWhen, FactItem, MapView, ReconstructedBadge } from '@/shared/ui'
+import { EventWhen, FactItem, ImportedBadge, MapView, ReconstructedBadge } from '@/shared/ui'
 
 // ChargeDetails is everything Runsten knows of a charge, and says what it does not. Its
 // cost, where the account's offer leaves the costs out, is said to be part of another.
@@ -59,6 +59,7 @@ const costNotes = computed(() => {
       return [t('charge.cost.unpriced', { place: place.name })]
     return [t('charge.cost.unknown')]
   }
+  if (c.source === 'imported') return [t('charge.cost.imported')]
   if (c.source === 'entered') {
     const notes = [t('charge.cost.entered')]
     if (c.energy_kwh !== null)
@@ -109,6 +110,10 @@ const costNotes = computed(() => {
       </div>
       <p class="text-body-medium">{{ t('event.reconstructedHelp') }}</p>
     </v-alert>
+    <v-alert v-else-if="charge.imported" type="info" variant="tonal" class="imported-note mb-4">
+      <ImportedBadge :source="charge.sources[0] ?? ''" class="mb-1" />
+      <p class="text-body-medium">{{ t('event.importedHelp') }}</p>
+    </v-alert>
 
     <v-row>
       <v-col v-if="!charge.reconstructed" cols="12" md="6">
@@ -124,7 +129,7 @@ const costNotes = computed(() => {
               />
             </dl>
             <p class="note text-body-small text-medium-emphasis mt-3">
-              {{ t('event.boundsNote') }}
+              {{ charge.imported ? t('event.importedTimesNote') : t('event.boundsNote') }}
             </p>
           </v-card-text>
         </v-card>
@@ -162,9 +167,14 @@ const costNotes = computed(() => {
                 :label="t('charge.energyPower')"
                 :value="f.quantity(charge.energy_power_kwh, 'kWh')"
               />
+              <FactItem
+                v-if="charge.average_power_kw !== null"
+                :label="t('charge.averagePower')"
+                :value="f.quantity(charge.average_power_kw, 'kW')"
+              />
             </dl>
             <p class="note text-body-small text-medium-emphasis mt-3">
-              {{ t('charge.energyNote') }}
+              {{ charge.imported ? t('charge.energyImportedNote') : t('charge.energyNote') }}
             </p>
           </v-card-text>
         </v-card>
@@ -230,7 +240,7 @@ const costNotes = computed(() => {
               </v-btn>
             </div>
             <ChargeCostEditor
-              v-if="settings && currency && !noCosts"
+              v-if="settings && currency && !noCosts && !charge.imported"
               :vehicle
               :charge
               :currency

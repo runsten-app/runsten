@@ -12,7 +12,14 @@ import {
   useMapsOn,
   type Position,
 } from '@/shared/lib'
-import { EventWhen, FactItem, MapView, ReconstructedBadge, type MapMarker } from '@/shared/ui'
+import {
+  EventWhen,
+  FactItem,
+  ImportedBadge,
+  MapView,
+  ReconstructedBadge,
+  type MapMarker,
+} from '@/shared/ui'
 import TripConsumption from './TripConsumption.vue'
 
 // TripDetails is everything Runsten knows of a trip, and says what it does not.
@@ -88,6 +95,10 @@ const newPlace = (p: Position) => ({
       </div>
       <p class="text-body-medium">{{ t('event.reconstructedHelp') }}</p>
     </v-alert>
+    <v-alert v-else-if="trip.imported" type="info" variant="tonal" class="imported-note mb-4">
+      <ImportedBadge :source="trip.sources[0] ?? ''" class="mb-1" />
+      <p class="text-body-medium">{{ t('event.importedHelp') }}</p>
+    </v-alert>
 
     <v-row>
       <v-col v-if="!trip.reconstructed" cols="12" md="6">
@@ -100,7 +111,7 @@ const newPlace = (p: Position) => ({
               <FactItem :label="t('event.duration')" :value="f.duration(trip.start, trip.end)" />
             </dl>
             <p class="note text-body-small text-medium-emphasis mt-3">
-              {{ t('event.boundsNote') }}
+              {{ trip.imported ? t('event.importedTimesNote') : t('event.boundsNote') }}
             </p>
           </v-card-text>
         </v-card>
@@ -127,7 +138,11 @@ const newPlace = (p: Position) => ({
               />
             </dl>
             <p class="note text-body-small text-medium-emphasis mt-3">
-              {{ t('trip.energyNote') }}
+              {{
+                trip.imported && trip.capacity_kwh === null
+                  ? t('trip.energyImportedNote')
+                  : t('trip.energyNote')
+              }}
             </p>
           </v-card-text>
         </v-card>

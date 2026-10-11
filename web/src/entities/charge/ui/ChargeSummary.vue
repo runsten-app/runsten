@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { RouteLocationRaw } from 'vue-router'
 import { useFormat } from '@/shared/lib'
-import { EventWhen, ReconstructedBadge, SpokenText } from '@/shared/ui'
+import { EventWhen, ImportedBadge, ReconstructedBadge, SpokenText } from '@/shared/ui'
 import type { Charge } from '../model/Charge'
 
 // ChargeSummary is a charge in a list, a link to its details: when, how much, how long,
@@ -39,7 +39,7 @@ const cost = computed(() => (props.charge.cost ? f.chargeCost(props.charge.cost)
       />
     </v-list-item-title>
     <v-list-item-subtitle class="figures">{{ figures }}</v-list-item-subtitle>
-    <template v-if="charge.reconstructed || cost" #append>
+    <template v-if="charge.reconstructed || charge.imported || cost" #append>
       <div class="d-flex flex-column align-end ga-1">
         <SpokenText
           v-if="cost"
@@ -48,6 +48,7 @@ const cost = computed(() => (props.charge.cost ? f.chargeCost(props.charge.cost)
           :spoken="cost.spoken"
         />
         <ReconstructedBadge v-if="charge.reconstructed" />
+        <ImportedBadge v-else-if="charge.imported" :source="charge.sources[0] ?? ''" />
       </div>
     </template>
   </v-list-item>

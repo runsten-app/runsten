@@ -3,12 +3,14 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { vehicleLabel } from '@/entities/vehicle'
 import { VehicleModelForm } from '@/features/edit-vehicle-model'
+import { VehicleImports } from '@/features/manage-imports'
 import { useVehicle } from '@/features/select-vehicle'
 import { isApiError } from '@/shared/api'
 import { AppShell } from '@/widgets/app-shell'
 
-// VehicleSettingsPage is one vehicle's: its variant and onboard charger. What the account
-// shares (currency, places, tariffs) stays in the settings.
+// VehicleSettingsPage is one vehicle's: its variant and onboard charger, and the history
+// imported from other applications. What the account shares (currency, places, tariffs)
+// stays in the settings.
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const { vehicle: current, isPending, error } = useVehicle(() => props.vehicle)
@@ -30,6 +32,9 @@ const label = computed(() => (current.value ? vehicleLabel(current.value) : ''))
       indeterminate
       :aria-label="t('vehicleSettings.loading')"
     />
-    <VehicleModelForm v-else-if="current" :vehicle="current" :label />
+    <template v-else-if="current">
+      <VehicleModelForm :vehicle="current" :label />
+      <VehicleImports :vehicle />
+    </template>
   </AppShell>
 </template>

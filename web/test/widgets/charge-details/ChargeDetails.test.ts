@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '@/shared/api'
 import { ChargeDetails } from '@/widgets/charge-details'
 import entered from '@fixtures/charge-cost.json'
+import imported from '@fixtures/charge-imported.json'
 import charge from '@fixtures/charge.json'
 import charges from '@fixtures/charges.json'
 import settings from '@fixtures/settings.json'
@@ -112,6 +113,22 @@ describe('ChargeDetails', () => {
       Target: 'Unknown',
     })
     expect(w.find('.position a').exists()).toBe(false)
+  })
+
+  it('tells an imported charge: its average power, the energy and the cost the app gave', async () => {
+    const w = await mounted(imported)
+    expect(w.find('.imported-note .imported').text()).toBe('Imported from Aximote')
+    expect(facts(w, 'when')).toEqual({ Start: '19:10', End: '21:40', Duration: '2 hrs, 30 mins' })
+    expect(facts(w, 'energies')).toEqual({
+      'Energy (from state of charge)': '12.8 kWh',
+      'Energy (from charging power)': '10.6 kWh',
+      'Average power': '4.2 kW',
+    })
+    expect(w.find('.energies .note').text()).toContain('is the one the app gave')
+    expect(costNotes(w)).toEqual(['As the app it was imported from gave it'])
+    // Its cost is the app's, or its tariff's: none to enter.
+    expect(w.find('.charge-cost-editor').exists()).toBe(false)
+    expect(w.findAll('button').filter((b) => b.text().includes('Enter the cost'))).toHaveLength(0)
   })
 
   it('tells an unknown charge', async () => {
