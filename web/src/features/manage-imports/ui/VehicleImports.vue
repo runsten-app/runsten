@@ -64,7 +64,9 @@ async function confirm() {
 </script>
 
 <template>
-  <section class="vehicle-imports mb-6" :aria-labelledby="titleId">
+  <!-- Inert behind the dialog, which is teleported out of it: a modal leaves nothing
+       behind it to reach, nor to read through its scrim. -->
+  <section class="vehicle-imports mb-6" :aria-labelledby="titleId" :inert="confirming || undefined">
     <h2 :id="titleId" class="text-title-large mb-2" tabindex="-1">{{ t('imports.title') }}</h2>
     <p class="text-body-medium mb-4">{{ t('imports.help') }}</p>
     <AximoteImport :vehicle />

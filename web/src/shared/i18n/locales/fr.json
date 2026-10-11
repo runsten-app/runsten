@@ -1233,6 +1233,7 @@
         "label": "Fichier des points de passage (CSV)",
         "hint": "Facultatif : ses positions, environ une par minute, tracent les trajets."
       },
+      "clear": "Retirer : {file}",
       "start": "Importer",
       "done": "Import terminé",
       "report": {

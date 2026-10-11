@@ -96,6 +96,13 @@ describe('VolvoDataPortalImport', () => {
     expect(w.findAll('.portal-import .import-report p')).toHaveLength(1)
   })
 
+  it('names the button that removes a file chosen', async () => {
+    const { w } = await mounted()
+    await choose(w, 'waypoints', waypoints)
+    const clear = w.find('.portal-import .waypoints [role="button"]')
+    expect(clear.attributes('aria-label')).toBe('Remove: Waypoints file (CSV)')
+  })
+
   it('asks for the trips file first', async () => {
     const { w } = await mounted()
     await submit(w)

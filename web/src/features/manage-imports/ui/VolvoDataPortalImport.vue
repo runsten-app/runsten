@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { mdiDatabaseImport, mdiOpenInNew } from '@mdi/js'
+import { mdiCloseCircle, mdiDatabaseImport, mdiOpenInNew } from '@mdi/js'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FileImport } from '@/entities/vehicle-import'
@@ -126,7 +126,16 @@ const lines = computed(() => {
         accept=".csv,text/csv"
         prepend-icon=""
         class="trips file mb-4"
-      />
+      >
+        <template #clear="{ props: clear }">
+          <v-icon
+            v-bind="clear"
+            :icon="mdiCloseCircle"
+            role="button"
+            :aria-label="t('imports.portal.clear', { file: t('imports.portal.trips.label') })"
+          />
+        </template>
+      </v-file-input>
       <v-file-input
         id="portal-waypoints"
         v-model="waypoints"
@@ -136,7 +145,16 @@ const lines = computed(() => {
         accept=".csv,text/csv"
         prepend-icon=""
         class="waypoints file mb-4"
-      />
+      >
+        <template #clear="{ props: clear }">
+          <v-icon
+            v-bind="clear"
+            :icon="mdiCloseCircle"
+            role="button"
+            :aria-label="t('imports.portal.clear', { file: t('imports.portal.waypoints.label') })"
+          />
+        </template>
+      </v-file-input>
       <v-btn
         type="submit"
         color="primary"

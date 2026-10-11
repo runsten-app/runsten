@@ -1233,6 +1233,7 @@
         "label": "Vägpunktsfil (CSV)",
         "hint": "Valfri: dess positioner, ungefär en per minut, ritar resornas spår."
       },
+      "clear": "Ta bort: {file}",
       "start": "Importera",
       "done": "Importen är klar",
       "report": {

@@ -1233,6 +1233,7 @@
         "label": "Waypoints file (CSV)",
         "hint": "Optional: its positions, about one a minute, draw the trips' tracks."
       },
+      "clear": "Remove: {file}",
       "start": "Import",
       "done": "Import finished",
       "report": {
