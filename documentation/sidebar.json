@@ -20,6 +20,7 @@
     "items": [
       { "text": "The web interface", "link": "/docs/guide/" },
       { "text": "Trips and charges", "link": "/docs/guide/trips-and-charges" },
+      { "text": "Importing your history", "link": "/docs/guide/importing" },
       { "text": "Statistics", "link": "/docs/guide/statistics" },
       { "text": "Battery", "link": "/docs/guide/battery" },
       { "text": "Places, tariffs and costs", "link": "/docs/guide/costs" },

@@ -33,6 +33,8 @@ A request body is sent as `application/json`.
 | `GET /api/v1/vehicles/{id}/trips/{trip}`, `…/charges/{charge}` | one trip or charge |
 | `PUT`, `DELETE /api/v1/vehicles/{id}/charges/{charge}/cost` | enter what a charge cost; delete it |
 | `GET /api/v1/vehicles/{id}/imports`, `DELETE …/imports/{source}` | the trips and charges imported from other apps, by source; delete one source's |
+| `POST /api/v1/vehicles/{id}/aximote-vehicles` | the vehicles of an Aximote account, the token in the body; the one with the vehicle's VIN marked |
+| `POST`, `GET /api/v1/vehicles/{id}/import-job` | import the vehicle's history from Aximote, in the background (`202`, `409` while one runs); its progress and report |
 | `GET /api/v1/vehicles/{id}/stats` | totals of a period (`from`, `to`), by `day`, `week` or `month` in a time zone (`bucket`, `tz`) |
 | `GET /api/v1/vehicles/{id}/battery` | the estimated battery capacity over the whole history |
 | `GET`, `PUT /api/v1/settings` | the account's currency, and the accepted ones |

@@ -290,13 +290,12 @@ tasks:
       - PLAYWRIGHT_IMAGE={{.PLAYWRIGHT}} scripts/compose-test.sh
 
   # Against task compose-sim on the errand scenario, once task connect-sim is done and its
-  # reconstructed trip has shown up (about three minutes after the start). The imports the
-  # tests read are written first, again on each run.
+  # reconstructed trip has shown up (about three minutes after the start). The tests
+  # import the history they read from the simulator's Aximote first, again on each run.
   e2e:
     desc: Browser tests (Playwright, axe) against RUNSTEN_SIM_SCENARIO=errand task compose-sim; results in web/e2e-results
     deps: [web-install]
     cmds:
-      - docker compose --env-file sim.env exec -T postgres psql -U postgres -d runsten -v ON_ERROR_STOP=1 -q <scripts/e2e-imports.sql
       - PLAYWRIGHT_IMAGE={{.PLAYWRIGHT}} scripts/e2e.sh runsten-sim_default
 
   db-up:
@@ -328,6 +327,7 @@ tasks:
         RUNSTEN_VOLVO_REDIRECT_URI=http://127.0.0.1:8081/auth/volvo/callback
         RUNSTEN_APP_URL=http://127.0.0.1:5173/
         RUNSTEN_GEOCODER_URL=${RUNSTEN_GEOCODER_URL-https://nominatim.openstreetmap.org}
+        RUNSTEN_AXIMOTE_BASE_URL=http://localhost:8080
         {{.GO}} run ./cmd/runsten-api
 
   dev-user:
