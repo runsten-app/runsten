@@ -1,10 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-import { batteryKeys } from '@/entities/battery'
-import { chargeKeys } from '@/entities/charge'
-import { statsKeys } from '@/entities/stats'
-import { tripKeys } from '@/entities/trip'
 import { deleteImport, fetchImports, importKeys } from '@/entities/vehicle-import'
+import { afterImportChange } from './invalidate'
 
 // useImports lists a vehicle's imports, by source.
 export function useImports(vehicle: MaybeRefOrGetter<string>) {
@@ -21,20 +18,7 @@ export function useDeleteImport(vehicle: MaybeRefOrGetter<string>) {
   const queryClient = useQueryClient()
   const { mutateAsync, isPending, error, reset } = useMutation({
     mutationFn: (source: string) => deleteImport(toValue(vehicle), source),
-    onSuccess: () => {
-      const v = toValue(vehicle)
-      return Promise.all(
-        [
-          importKeys.list(v),
-          tripKeys.lists(v),
-          tripKeys.details(),
-          chargeKeys.all(),
-          chargeKeys.details(),
-          statsKeys.every(),
-          batteryKeys.every(),
-        ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
-      )
-    },
+    onSuccess: () => afterImportChange(queryClient, toValue(vehicle)),
   })
   return { deleteImport: mutateAsync, isPending, error, reset }
 }

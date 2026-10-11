@@ -63,6 +63,9 @@
 //	                             address, no position leaves the instance). It is sent
 //	                             the positions outside the places, one per
 //	                             RUNSTEN_GEOCODER_INTERVAL (default 1s)
+//	RUNSTEN_AXIMOTE_BASE_URL     Aximote's public API, which the imports of a vehicle's
+//	                             history read with the user's token (default
+//	                             https://api.aximote.com)
 //	RUNSTEN_HEALTH_TOKEN         the bearer token of /healthz/full, 32 characters at
 //	                             least (default none: no report)
 //	RUNSTEN_LOG_LEVEL            debug, info, warn, error (default info)
@@ -90,11 +93,13 @@ import (
 
 	"runsten/internal/api"
 	"runsten/internal/auth"
+	"runsten/internal/aximote"
 	"runsten/internal/catalog"
 	"runsten/internal/core"
 	"runsten/internal/derive"
 	"runsten/internal/geocode"
 	"runsten/internal/geocode/nominatim"
+	"runsten/internal/importer"
 	"runsten/internal/oauth"
 	"runsten/internal/platform/clock"
 	"runsten/internal/platform/health"
@@ -125,6 +130,7 @@ type config struct {
 	tokenKey    string
 	apiKey      string
 	baseURL     string
+	aximoteURL  string
 	app         volvo.AuthConfig
 	appURL      string
 	addr        string
@@ -203,15 +209,18 @@ func run(args []string) error {
 		addresses = st
 	}
 	deriver := derive.New(st, volvo.Normalizer{}, core.DefaultParams(), nil, log)
+	ax := aximote.NewClient(cfg.aximoteURL, hc)
 	handler := api.New(api.Config{
 		Sessions: sessions, AccessTokens: sessions,
-		Addresses: addresses,
-		Reader:    st,
-		Settings:  st,
-		Models:    st,
-		Costs:     st,
-		Imports:   st,
-		Accounts:  st,
+		Addresses:  addresses,
+		Reader:     st,
+		Settings:   st,
+		Models:     st,
+		Costs:      st,
+		Imports:    st,
+		ImportJobs: st,
+		Aximote:    aximoteVehicles{ax},
+		Accounts:   st,
 		// It only reads the current state and the readings: it derives nothing, and
 		// needs no capacity.
 		States:     deriver,
@@ -242,6 +251,7 @@ func run(args []string) error {
 	if cfg.geocoder != nil {
 		go geocode.New(st, cfg.geocoder, clock.Real{}, cfg.geocode, log).Run(ctx)
 	}
+	go importer.New(st, ax, clock.Real{}, importer.DefaultParams(), log).Run(ctx)
 	httpserver.WarnIfExposed(log, cfg.addr, cfg.restricted,
 		"listening beyond this machine over plain http: put an https reverse proxy in front of runsten-api, passwords and session cookies travel in clear text otherwise")
 	if ok, err := st.HasUsers(ctx); err != nil {
@@ -385,10 +395,11 @@ func readPassword(r io.Reader) (string, error) {
 
 func loadConfig(getenv func(string) string) (config, error) {
 	cfg := config{
-		baseURL:  volvo.DefaultBaseURL,
-		app:      volvo.AuthConfig{BaseURL: volvo.DefaultAuthURL, Scopes: volvo.DefaultScopes()},
-		addr:     defaultAddr,
-		logLevel: slog.LevelInfo,
+		baseURL:    volvo.DefaultBaseURL,
+		aximoteURL: aximote.DefaultBaseURL,
+		app:        volvo.AuthConfig{BaseURL: volvo.DefaultAuthURL, Scopes: volvo.DefaultScopes()},
+		addr:       defaultAddr,
+		logLevel:   slog.LevelInfo,
 		// Self-hosting publishes to a broker on its own network.
 		privateBrokers: true,
 	}
@@ -410,7 +421,9 @@ func loadConfig(getenv func(string) string) (config, error) {
 			errs = append(errs, fmt.Errorf("RUNSTEN_VOLVO_REDIRECT_URI %q: %w", cfg.app.RedirectURI, err))
 		}
 	}
-	for name, dst := range map[string]*string{"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.app.BaseURL} {
+	for name, dst := range map[string]*string{
+		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.app.BaseURL, "RUNSTEN_AXIMOTE_BASE_URL": &cfg.aximoteURL,
+	} {
 		if v := getenv(name); v != "" {
 			if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
 				errs = append(errs, fmt.Errorf("%s %q: http(s) URL expected", name, v))
@@ -495,4 +508,28 @@ func validateRedirectURI(raw string) error {
 		return fmt.Errorf("the path must end with %s", callbackPath)
 	}
 	return nil
+}
+
+// aximoteVehicles lists an Aximote account's vehicles for the API.
+type aximoteVehicles struct{ c *aximote.Client }
+
+func (a aximoteVehicles) AximoteVehicles(ctx context.Context, token string) ([]api.AximoteVehicle, error) {
+	vs, err := a.c.Vehicles(ctx, token)
+	if err != nil {
+		return nil, err //nolint:wrapcheck // the client's, with its context
+	}
+	str := func(p *string) string {
+		if p == nil {
+			return ""
+		}
+		return *p
+	}
+	out := make([]api.AximoteVehicle, len(vs))
+	for i, v := range vs {
+		out[i] = api.AximoteVehicle{ID: v.ID, Name: str(v.Name), Make: str(v.Make), Model: str(v.Model), VIN: str(v.VIN)}
+		if v.Year != nil {
+			out[i].Year = *v.Year
+		}
+	}
+	return out, nil
 }

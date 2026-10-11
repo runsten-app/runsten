@@ -26,8 +26,9 @@ const module = "runsten"
 var allowed = map[string][]string{
 	// The binaries wire the adapters together. Only runsten-simulator knows the simulator.
 	"cmd/runsten-api": {
-		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/catalog", "internal/core", "internal/derive",
-		"internal/geocode", "internal/oauth", "internal/platform", "internal/store", "internal/volvo",
+		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/catalog", "internal/core",
+		"internal/derive", "internal/geocode", "internal/importer", "internal/oauth", "internal/platform", "internal/store",
+		"internal/volvo",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
@@ -53,6 +54,9 @@ var allowed = map[string][]string{
 	"internal/auth": {"golang.org/x/crypto", "internal/platform/clock"}, // argon2id
 	// The addresses' worker declares its Store and its Geocoder.
 	"internal/geocode": {"internal/core", "internal/platform/clock"},
+	// The import worker declares its Store and its Source, Aximote's client, whose
+	// values it converts.
+	"internal/importer": {"internal/aximote", "internal/core", "internal/platform/clock"},
 	// What is published to an MQTT broker, built from the domain: neither network nor
 	// database; Home Assistant's discovery configurations are JSON.
 	"internal/publish": {"encoding/json", "internal/core"},
@@ -60,6 +64,7 @@ var allowed = map[string][]string{
 	// Adapters.
 	"internal/volvo":             {"net/http", "encoding/json", "golang.org/x/oauth2", "internal/core", "internal/oauth"},
 	"internal/geocode/nominatim": {"net/http", "encoding/json", "internal/core"},
+	"internal/aximote":           {"net/http", "encoding/json"},
 	// The only package that knows paho.
 	"internal/publish/mqtt": {
 		"github.com/eclipse/paho.mqtt.golang", "internal/core", "internal/platform/clock", "internal/platform/netguard",
@@ -67,7 +72,8 @@ var allowed = map[string][]string{
 	},
 	"internal/store": {
 		"github.com/jackc/pgx/v5", "internal/api", "internal/auth", "internal/collector", "internal/core", "internal/derive",
-		"internal/geocode", "internal/oauth", "internal/platform/secretbox", "internal/publish", "internal/volvo",
+		"internal/geocode", "internal/importer", "internal/oauth", "internal/platform/secretbox", "internal/publish",
+		"internal/volvo",
 	},
 	"internal/debugui": {"net/http", "encoding/json", "internal/collector", "internal/platform/clock", "internal/volvo"},
 	// The front end's server knows runsten-api only by URL: it relays requests.
@@ -87,6 +93,8 @@ var allowed = map[string][]string{
 		"net/http", "encoding/json", "golang.org/x/oauth2", "internal/platform/clock", "internal/simulator/vehicle",
 	},
 	"internal/simulator/control": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
+	// The fake Aximote writes its API's JSON on its own: it never imports the client.
+	"internal/simulator/aximoteapi": {"net/http", "encoding/json"},
 	// The simulated Volvo ID's grants, kept across restarts.
 	"internal/simulator/pgledger": {"github.com/jackc/pgx/v5", "internal/simulator/volvoapi"},
 }

@@ -1,0 +1,17 @@
+{
+  "job": {
+    "id": "6f0c1d2e-0000-4000-8000-000000000001",
+    "source": "aximote",
+    "source_vehicle": "veh-ex30",
+    "status": "done",
+    "step": "charges",
+    "imported": 3,
+    "skipped": 1,
+    "invalid": 2,
+    "cutoff": "2026-09-28T04:00:00Z",
+    "error": null,
+    "created_at": "2026-09-28T05:00:00Z",
+    "not_before": "2026-09-28T05:00:00Z",
+    "ended_at": "2026-09-28T05:31:00Z"
+  }
+}

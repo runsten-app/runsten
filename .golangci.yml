@@ -97,6 +97,34 @@ linters:
               desc: storage belongs to store
             - pkg: runsten/internal/store
               desc: geocode declares its own Store interface
+        # The import worker orchestrates: it knows neither the transport nor the database.
+        importer-without-adapters:
+          files: ["**/internal/importer/*.go", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the transport belongs to aximote
+            - pkg: encoding/json
+              desc: the source's formats are read by its client (aximote)
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: importer declares its own Store interface
+            - pkg: runsten/internal/api
+              desc: the API creates the jobs, the worker runs them
+        # The Aximote client depends on neither storage nor what uses it.
+        aximote-is-a-client:
+          files: ["**/internal/aximote/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: the client stores nothing
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/importer
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/api
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/core
+              desc: the client returns Aximote's values; importer converts them
         # The front end's server serves files and relays to runsten-api by URL: it knows
         # no business code, no storage and no secret.
         web-without-business:

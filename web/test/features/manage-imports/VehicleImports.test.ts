@@ -9,7 +9,13 @@ import { ApiError } from '@/shared/api'
 import imports from '@fixtures/imports.json'
 import { mountWith, testQueryClient } from '@test/utils'
 
-const api = vi.hoisted(() => ({ fetchImports: vi.fn(), deleteImport: vi.fn() }))
+const api = vi.hoisted(() => ({
+  fetchImports: vi.fn(),
+  deleteImport: vi.fn(),
+  fetchImportJob: vi.fn(),
+  fetchAximoteVehicles: vi.fn(),
+  startAximoteImport: vi.fn(),
+}))
 vi.mock('@/entities/vehicle-import', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle-import')>()),
   ...api,
@@ -27,6 +33,7 @@ afterEach(() => {
 })
 
 async function mounted(list: VehicleImport[] | Error = [aximote]) {
+  api.fetchImportJob.mockResolvedValue(null)
   if (list instanceof Error) api.fetchImports.mockRejectedValue(list)
   else api.fetchImports.mockResolvedValue(list)
   const queryClient = testQueryClient()
@@ -40,12 +47,13 @@ async function mounted(list: VehicleImport[] | Error = [aximote]) {
   return { w: mounted.wrapper, queryClient }
 }
 
-const status = (w: VueWrapper) => w.find('[role="status"]').text()
+const status = (w: VueWrapper) => w.find('.vehicle-imports > [role="status"]').text()
 
 describe('VehicleImports', () => {
-  it('shows nothing without an import', async () => {
+  it('offers the import from Aximote above the list, empty without an import', async () => {
     const { w } = await mounted([])
-    expect(w.find('.vehicle-imports').exists()).toBe(false)
+    expect(w.findAll('h3').map((h) => h.text())).toEqual(['Import from Aximote', 'Imports'])
+    expect(w.find('.none').text()).toBe('Nothing imported.')
     expect(api.fetchImports).toHaveBeenCalledWith('v1')
   })
 

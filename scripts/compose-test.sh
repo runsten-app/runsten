@@ -2,8 +2,8 @@
 # End-to-end test of compose.yaml against the simulator (sim.env): start the stack,
 # create the first user, sign in, connect the simulated Volvo ID under that session,
 # read the vehicle's state, trips (a reconstructed one included), charges and statistics
-# through the API, write imports as an importer would (scripts/e2e-imports.sql) and read
-# them with the derived events, run the browser tests of the web interface (Playwright and
+# through the API, import the vehicle's history from the simulator's Aximote and read it
+# with the derived events, run the browser tests of the web interface (Playwright and
 # axe, scripts/e2e.sh), set the account's MQTT broker to the mqtt profile's Mosquitto and read what the
 # collector publishes there (the state, Home Assistant's discovery) until the broker is
 # removed, give the DC charge a cost (a tariff, then an entered one), then back up,
@@ -204,14 +204,31 @@ jq -en --argjson s "$(get "/api/v1/vehicles/$vehicle/stats?bucket=day")" \
 	and ($s.buckets | length) == (($s.to | t) / 86400 | ceil) - (($s.from | t) / 86400 | floor)' >/dev/null ||
 	fail "statistics differ from the lists: $(get "/api/v1/vehicles/$vehicle/stats?bucket=day")"
 
-echo "→ imports: what an importer wrote before the first snapshot, listed with the derived events"
-compose exec -T postgres psql -U postgres -d runsten -v ON_ERROR_STOP=1 -q <scripts/e2e-imports.sql
-get "/api/v1/vehicles/$vehicle/imports" | jq -e 'any(.items[]; .source == "aximote" and .trips == 1 and .charges == 1)' >/dev/null ||
+echo "→ imports: the vehicle's history from the simulator's Aximote, before its first snapshot"
+token=axm_pat_RunstenSimulatorDevToken00 # the simulator's, development only
+send POST "/api/v1/vehicles/$vehicle/aximote-vehicles" "{\"token\":\"$token\"}" |
+	jq -e '[.items[] | select(.vin_matches) | .id] == ["veh-ex30"]' >/dev/null || fail "Aximote's vehicles"
+[ "$(status -b "$jar" -X POST -H 'Content-Type: application/json' -d '{"token":"axm_pat_00000000000000000000000000"}' \
+	"$api/api/v1/vehicles/$vehicle/aximote-vehicles")" = 400 ] || fail "a token Aximote refuses"
+send POST "/api/v1/vehicles/$vehicle/import-job" "{\"source\":\"aximote\",\"token\":\"$token\",\"vehicle\":\"veh-ex30\"}" |
+	jq -e '.status == "pending"' >/dev/null || fail "import not started"
+until_api "/api/v1/vehicles/$vehicle/import-job" '.job.status == "done"'
+get "/api/v1/vehicles/$vehicle/import-job" | jq -e '.job | .imported == 3 and .invalid == 2 and .skipped == 0
+	and .error == null and .cutoff != null' >/dev/null || fail "import report: $(get "/api/v1/vehicles/$vehicle/import-job")"
+# The token is erased as soon as the job ends.
+[ "$(sql 'SELECT count(token) FROM import_jobs')" = 0 ] || fail "the import's token outlived it"
+get "/api/v1/vehicles/$vehicle/imports" | jq -e 'any(.items[]; .source == "aximote" and .trips == 2 and .charges == 1)' >/dev/null ||
 	fail "imports: $(get "/api/v1/vehicles/$vehicle/imports")"
-get "/api/v1/vehicles/$vehicle/trips/aximote:e2e-trip" | jq -e '.imported and .sources == ["aximote"]
-	and .start.after == .start.before and .distance_km == 24.5 and .start_address == "Place Bellecour, Lyon"' >/dev/null ||
-	fail "imported trip: $(get "/api/v1/vehicles/$vehicle/trips/aximote:e2e-trip")"
-get "/api/v1/vehicles/$vehicle/trips?limit=200" | jq -e '[.items[] | select(.imported)] | length == 5
+get "/api/v1/vehicles/$vehicle/trips/aximote:trip-1001" | jq -e '.imported and .sources == ["aximote"]
+	and .start.after == .start.before and .distance_km == 24.5 and .start_address == "Lyon, France"
+	and .end_address == "Villeurbanne, France"' >/dev/null ||
+	fail "imported trip: $(get "/api/v1/vehicles/$vehicle/trips/aximote:trip-1001")"
+[ "$(sql 'SELECT count(*) FROM imported_tracks')" = 1 ] || fail "the imported track"
+get "/api/v1/vehicles/$vehicle/charges/aximote:charge-501" | jq -e 'def near($a; $b): ($a - $b) | fabs < 1e-9;
+	.imported and near(.start_soc_pct; 65) and near(.end_soc_pct; 90) and .energy_power_kwh == 16.8
+	and .capacity_source == "api" and .type == null and .address == "Lyon, France"' >/dev/null ||
+	fail "imported charge: $(get "/api/v1/vehicles/$vehicle/charges/aximote:charge-501")"
+get "/api/v1/vehicles/$vehicle/trips?limit=200" | jq -e '[.items[] | select(.imported)] | length == 2
 	and ([.[] | select(.imported | not)] | all(.sources == ["volvo"]))' >/dev/null || fail "imported trips not listed"
 
 echo "→ the web interface in a browser (Playwright, axe)"
@@ -285,7 +302,10 @@ get "/api/v1/vehicles/$vehicle/charges/$charge_id" |
 	fail "the entered cost did not survive the rebuild: $(get "/api/v1/vehicles/$vehicle/charges/$charge_id")"
 get /api/v1/charge-costs/orphans | jq -e '.items == []' >/dev/null || fail "orphaned costs after the rebuild"
 # Nor are the imports: the rebuild leaves them.
-get "/api/v1/vehicles/$vehicle/trips/aximote:e2e-trip" | jq -e .imported >/dev/null || fail "the import did not survive the rebuild"
+get "/api/v1/vehicles/$vehicle/trips/aximote:trip-1001" | jq -e .imported >/dev/null || fail "the import did not survive the rebuild"
+# The cost Aximote gave, in the account's currency.
+get "/api/v1/vehicles/$vehicle/charges/aximote:charge-501" | jq -e '.cost.source == "imported" and .cost.min_minor == 437' >/dev/null ||
+	fail "the imported charge's cost: $(get "/api/v1/vehicles/$vehicle/charges/aximote:charge-501")"
 costs_add_up
 capacities_from_api
 

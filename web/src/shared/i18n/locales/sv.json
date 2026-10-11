@@ -1166,7 +1166,57 @@
   },
   "imports": {
     "title": "Importerad historik",
-    "help": "Resor och laddningar importerade från andra appar, från innan Runsten läste fordonet. Att ta bort en import lämnar det Runsten har läst.",
+    "help": "Resor och laddningar från innan Runsten läste fordonet, importerade från andra appar. Att ta bort en import lämnar det Runsten läst.",
+    "listTitle": "Importer",
+    "aximote": {
+      "title": "Importera från Aximote",
+      "intro": "Med Aximote Pro skapar du en personlig åtkomsttoken i appen och klistrar in den här. Runsten läser fordonets resor och laddningar från före dess första avläsning, i bakgrunden, och glömmer sedan token. En ny import ersätter det som importerats.",
+      "token": {
+        "label": "Aximote-token",
+        "hint": "axm_pat_ följt av 26 bokstäver och siffror. Visas aldrig igen."
+      },
+      "list": "Hitta mina fordon",
+      "listed": "Aximote ger inget fordon. | Aximote ger ett fordon. | Aximote ger {n} fordon.",
+      "vehicle": {
+        "legend": "Fordon i Aximote",
+        "matches": "Samma VIN som detta fordon",
+        "noMatch": "Inget har detta fordons VIN i Aximote: välj det vars historik detta är.",
+        "none": "Denna token ger inte åtkomst till något fordon."
+      },
+      "start": "Importera",
+      "again": "Importera igen",
+      "cancel": "Avbryt",
+      "started": "Importen har startat: den fortsätter i bakgrunden.",
+      "progress": {
+        "label": "Import pågår",
+        "trips": "Läser resorna.",
+        "charges": "Läser laddningarna.",
+        "waiting": "Aximote bad om att vänta: importen fortsätter {time}."
+      },
+      "report": {
+        "doneTitle": "Importen är klar",
+        "failedTitle": "Importen misslyckades",
+        "imported": "Inget importerat. | En resa eller laddning importerad. | {n} resor och laddningar importerade.",
+        "skipped": "En utelämnad: den börjar efter fordonets första avläsning ({date}). | {n} utelämnade: de börjar efter fordonets första avläsning ({date}).",
+        "invalid": "En utelämnad, oavslutad eller utanför gränserna. | {n} utelämnade, oavslutade eller utanför gränserna.",
+        "tokenRefused": "Aximote avvisade token: kontrollera den eller skapa en ny.",
+        "sourceFailed": "Aximote misslyckades upprepade gånger. Försök igen senare.",
+        "internal": "Runsten misslyckades: dess loggar berättar varför.",
+        "when": "Senaste import: {time}."
+      },
+      "error": {
+        "summary": "Importen startade inte",
+        "required": "Klistra in token.",
+        "format": "En token är axm_pat_ följt av 26 bokstäver och siffror: kopiera den igen.",
+        "vehicle": "Välj fordonet vars historik ska importeras.",
+        "refused": "Aximote avvisade denna token: kontrollera den eller skapa en ny.",
+        "invalidBody": "Denna token eller detta fordon avvisades: kopiera token igen.",
+        "unavailable": "Aximote svarade inte. Försök igen om en stund.",
+        "active": "En import av detta fordon pågår redan.",
+        "network": "Runsten kunde inte nås. Försök igen om en stund.",
+        "internal": "Importen kunde inte starta. Försök igen om en stund."
+      }
+    },
     "error": "Importerna kunde inte läsas in. Försök igen om en stund.",
     "none": "Inget importerat.",
     "trips": "ingen resa | {n} resa | {n} resor",

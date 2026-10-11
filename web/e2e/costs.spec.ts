@@ -91,10 +91,15 @@ test('Costs: a place from the charge, its cost in the details, the list and the 
     // In the list, on the charge's line and in the totals.
     await page.getByRole('link', { name: 'Charges' }).first().click()
     await expect(page).toHaveURL(/\/charges$/)
-    const line = page.locator('.charge-summary .cost')
+    // The DC charge's: the imported one has the cost its app gave.
+    const line = page
+      .locator('.charge-summary')
+      .filter({ hasNot: page.locator('.imported') })
+      .locator('.cost')
     await expect(line).toHaveText(/^€\d+\.\d{2}$/)
     if (created) await expect(line).toHaveText(estimated)
-    // The imported charge's cost is unknown: at no place, the app gave none.
+    // The imported charge's cost is the app's, in euros: none is unknown, unless an
+    // older stack left another charge.
     await expect(page.locator('.period-totals')).toContainText(
       / · €\d+\.\d{2}( · cost unknown for 1 charge)?$/,
     )

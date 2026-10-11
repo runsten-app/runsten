@@ -8,6 +8,12 @@ import { defineConfig, devices } from '@playwright/test'
 // the time zone are fixed: the assertions never depend on the machine's.
 const desktop = { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } }
 const mobile = devices['Pixel 7']
+const views = [
+  { name: 'desktop-light', use: { ...desktop, colorScheme: 'light' as const } },
+  { name: 'desktop-dark', use: { ...desktop, colorScheme: 'dark' as const } },
+  { name: 'mobile-light', use: { ...mobile, colorScheme: 'light' as const } },
+  { name: 'mobile-dark', use: { ...mobile, colorScheme: 'dark' as const } },
+]
 
 export default defineConfig({
   testDir: 'e2e',
@@ -24,10 +30,22 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },
+  // The history imported from the simulator's Aximote comes first (setup); the four
+  // projects read it in parallel; one project alone then imports and deletes it from the
+  // screen, once they are done.
   projects: [
-    { name: 'desktop-light', use: { ...desktop, colorScheme: 'light' } },
-    { name: 'desktop-dark', use: { ...desktop, colorScheme: 'dark' } },
-    { name: 'mobile-light', use: { ...mobile, colorScheme: 'light' } },
-    { name: 'mobile-dark', use: { ...mobile, colorScheme: 'dark' } },
+    { name: 'setup', testMatch: /\.setup\.ts$/ },
+    ...views.map(({ name, use }) => ({
+      name,
+      use,
+      dependencies: ['setup'],
+      testIgnore: /imports-run\.spec\.ts$/,
+    })),
+    {
+      name: 'imports',
+      testMatch: /imports-run\.spec\.ts$/,
+      use: { ...desktop, colorScheme: 'light' },
+      dependencies: views.map((v) => v.name),
+    },
   ],
 })

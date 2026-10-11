@@ -25,6 +25,9 @@ export { expect }
 export const user = 'admin'
 export const password = 'runsten-dev-password'
 
+// The token the simulator's Aximote accepts, development only.
+export const aximoteToken = 'axm_pat_RunstenSimulatorDevToken00'
+
 // signIn opens a session through the API: the pages under test are behind it, the form
 // has its own tests.
 export async function signIn(page: Page) {

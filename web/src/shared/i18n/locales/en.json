@@ -1166,7 +1166,57 @@
   },
   "imports": {
     "title": "Imported history",
-    "help": "Trips and charges imported from other apps, from before Runsten read the vehicle. Deleting an import leaves what Runsten read.",
+    "help": "Trips and charges from before Runsten read the vehicle, imported from other apps. Deleting an import leaves what Runsten read.",
+    "listTitle": "Imports",
+    "aximote": {
+      "title": "Import from Aximote",
+      "intro": "With Aximote Pro, create a personal access token in its app, then paste it here. Runsten reads the vehicle's trips and charges from before its first reading, in the background, then forgets the token. Importing again replaces what was imported.",
+      "token": {
+        "label": "Aximote token",
+        "hint": "axm_pat_ followed by 26 letters and digits. Never shown again."
+      },
+      "list": "Find my vehicles",
+      "listed": "Aximote gives no vehicle. | Aximote gives one vehicle. | Aximote gives {n} vehicles.",
+      "vehicle": {
+        "legend": "Vehicle in Aximote",
+        "matches": "Same VIN as this vehicle",
+        "noMatch": "None has this vehicle's VIN in Aximote: choose the one whose history this is.",
+        "none": "This token gives access to no vehicle."
+      },
+      "start": "Import",
+      "again": "Import again",
+      "cancel": "Cancel",
+      "started": "Import started: it goes on in the background.",
+      "progress": {
+        "label": "Import in progress",
+        "trips": "Reading the trips.",
+        "charges": "Reading the charges.",
+        "waiting": "Aximote asked to wait: the import resumes {time}."
+      },
+      "report": {
+        "doneTitle": "Import finished",
+        "failedTitle": "Import failed",
+        "imported": "Nothing imported. | One trip or charge imported. | {n} trips and charges imported.",
+        "skipped": "One left: it starts after the vehicle's first reading ({date}). | {n} left: they start after the vehicle's first reading ({date}).",
+        "invalid": "One left unfinished or out of bounds. | {n} left unfinished or out of bounds.",
+        "tokenRefused": "Aximote refused the token: check it, or create another one.",
+        "sourceFailed": "Aximote kept failing. Try again later.",
+        "internal": "Runsten failed: its logs tell why.",
+        "when": "Last import: {time}."
+      },
+      "error": {
+        "summary": "The import did not start",
+        "required": "Paste the token.",
+        "format": "A token is axm_pat_ followed by 26 letters and digits: copy it again.",
+        "vehicle": "Choose the vehicle whose history to import.",
+        "refused": "Aximote refused this token: check it, or create another one.",
+        "invalidBody": "This token or vehicle was refused: copy the token again.",
+        "unavailable": "Aximote did not answer. Try again in a moment.",
+        "active": "An import of this vehicle is already in progress.",
+        "network": "Runsten could not be reached. Try again in a moment.",
+        "internal": "The import could not start. Try again in a moment."
+      }
+    },
     "error": "The imports could not be loaded. Try again in a moment.",
     "none": "Nothing imported.",
     "trips": "no trip | {n} trip | {n} trips",

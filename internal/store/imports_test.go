@@ -13,6 +13,7 @@ import (
 	"runsten/internal/api"
 	"runsten/internal/collector"
 	"runsten/internal/core"
+	"runsten/internal/importer"
 	"runsten/internal/volvo"
 )
 
@@ -21,8 +22,8 @@ func imported(source, id string) core.Value[core.Import] {
 }
 
 // importedTrip is a trip of the source from start, of 30 minutes.
-func importedTrip(source, id string, start time.Time) ImportedTrip {
-	return ImportedTrip{Trip: core.Trip{
+func importedTrip(source, id string, start time.Time) importer.ImportedTrip {
+	return importer.ImportedTrip{Trip: core.Trip{
 		Start: core.Bounds{After: start, Before: start}, End: core.Bounds{After: start.Add(30 * time.Minute), Before: start.Add(30 * time.Minute)},
 		Import:     imported(source, id),
 		DistanceKm: some(21), StartSoC: some(80), EndSoC: some(74), EnergyKWh: some(3.9),
@@ -64,7 +65,7 @@ func TestSaveImport(t *testing.T) {
 	before := t0.Add(-48 * time.Hour)
 	trip := importedTrip("aximote", "trip-1", before)
 	trip.Track = []byte(`{"type":"LineString","coordinates":[[4.8357,45.764],[4.927,45.7797]]}`)
-	trips := []ImportedTrip{trip, importedTrip("aximote", "trip-2", t0)} // the second starts at the cutoff
+	trips := []importer.ImportedTrip{trip, importedTrip("aximote", "trip-2", t0)} // the second starts at the cutoff
 	charges := []core.Charge{importedCharge("charge-1", before.Add(time.Hour)), importedCharge("charge-2", t0.Add(time.Hour))}
 	res, err := s.SaveImport(ctx, a, v, trips, charges)
 	if err != nil {
@@ -131,7 +132,7 @@ func TestSaveImport(t *testing.T) {
 		first, _ := read()
 		again := importedTrip("aximote", "trip-1", before)
 		again.Trip.DistanceKm = some(22)
-		if res, err := s.SaveImport(ctx, a, v, []ImportedTrip{again}, nil); err != nil || res.Saved != 1 {
+		if res, err := s.SaveImport(ctx, a, v, []importer.ImportedTrip{again}, nil); err != nil || res.Saved != 1 {
 			t.Fatalf("%+v, %v", res, err)
 		}
 		if id, track := read(); id != first || track != 1 {
@@ -145,7 +146,7 @@ func TestSaveImport(t *testing.T) {
 	t.Run("without its import, refused", func(t *testing.T) {
 		bare := importedTrip("aximote", "x", before)
 		bare.Trip.Import = core.Value[core.Import]{}
-		if _, err := s.SaveImport(ctx, a, v, []ImportedTrip{bare}, nil); !errors.Is(err, ErrNotImported) {
+		if _, err := s.SaveImport(ctx, a, v, []importer.ImportedTrip{bare}, nil); !errors.Is(err, ErrNotImported) {
 			t.Errorf("err %v", err)
 		}
 		if _, err := s.SaveImport(ctx, a, v, nil, []core.Charge{{Start: core.Bounds{After: before}}}); !errors.Is(err, ErrNotImported) {
@@ -154,7 +155,7 @@ func TestSaveImport(t *testing.T) {
 	})
 
 	t.Run("an invalid ID at the source refused, nothing written", func(t *testing.T) {
-		if _, err := s.SaveImport(ctx, a, v, []ImportedTrip{importedTrip("aximote", "a/b", before), importedTrip("aximote", "ok", before)}, nil); err == nil {
+		if _, err := s.SaveImport(ctx, a, v, []importer.ImportedTrip{importedTrip("aximote", "a/b", before), importedTrip("aximote", "ok", before)}, nil); err == nil {
 			t.Error("an ID with a slash accepted")
 		}
 		if got, _ := s.ListTrips(ctx, a, v, api.EventQuery{}); len(got) != 1 {
@@ -169,7 +170,7 @@ func TestSaveImportWithoutSnapshot(t *testing.T) {
 	ctx := context.Background()
 	a, v := newVehicle(t, s, "token", "YV1AAAAAAAAAAAAA1")
 	future := time.Now().Add(time.Hour) //nolint:forbidigo // the database's clock decides
-	res, err := s.SaveImport(ctx, a, v, []ImportedTrip{importedTrip("aximote", "1", t0), importedTrip("aximote", "2", future)}, nil)
+	res, err := s.SaveImport(ctx, a, v, []importer.ImportedTrip{importedTrip("aximote", "1", t0), importedTrip("aximote", "2", future)}, nil)
 	if err != nil || res.Saved != 1 || res.Skipped != 1 {
 		t.Errorf("%+v, %v", res, err)
 	}
@@ -186,7 +187,7 @@ func TestImportedEventsListed(t *testing.T) {
 	}
 	saveOdometer(t, s, a, v, t0.Add(-time.Hour))
 	start := t0.Add(-5 * time.Hour)
-	trips := []ImportedTrip{
+	trips := []importer.ImportedTrip{
 		importedTrip("aximote", "1", start), importedTrip("volvo_csv", "1", start), importedTrip("aximote", "2", start.Add(time.Hour)),
 	}
 	if _, err := s.SaveImport(ctx, a, v, trips, []core.Charge{importedCharge("c", start.Add(2*time.Hour))}); err != nil {
@@ -267,7 +268,7 @@ func TestImportIsolation(t *testing.T) {
 	for _, x := range [][2]string{{a, va}, {b, vb}} {
 		trip := importedTrip("aximote", "1", t0)
 		trip.Track = []byte(`{"type":"LineString","coordinates":[]}`)
-		if _, err := s.SaveImport(ctx, x[0], x[1], []ImportedTrip{trip}, []core.Charge{importedCharge("1", t0)}); err != nil {
+		if _, err := s.SaveImport(ctx, x[0], x[1], []importer.ImportedTrip{trip}, []core.Charge{importedCharge("1", t0)}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -297,7 +298,7 @@ func TestImportIsolation(t *testing.T) {
 	if imports, err := s.Imports(ctx, a, vb); len(imports) != 0 || err != nil {
 		t.Errorf("account A read B's imports: %+v, %v", imports, err)
 	}
-	if _, err := s.SaveImport(ctx, a, vb, []ImportedTrip{importedTrip("aximote", "2", t0)}, nil); err == nil {
+	if _, err := s.SaveImport(ctx, a, vb, []importer.ImportedTrip{importedTrip("aximote", "2", t0)}, nil); err == nil {
 		t.Error("imported into another account's vehicle")
 	}
 	if found, err := s.DeleteImport(ctx, a, vb, "aximote"); found || err != nil {
