@@ -1170,6 +1170,7 @@
     "listTitle": "Imports",
     "aximote": {
       "title": "Importer depuis Aximote",
+      "beta": "Bêta",
       "intro": "Avec Aximote Pro, créez un jeton d'accès personnel dans son app, puis collez-le ici. Runsten lit les trajets et les charges du véhicule d'avant sa première lecture, en arrière-plan, puis oublie le jeton. Importer de nouveau remplace ce qui a été importé.",
       "token": {
         "label": "Jeton Aximote",

@@ -191,7 +191,12 @@ const waiting = computed(() => {
 
 <template>
   <div class="aximote-import mb-6">
-    <h3 class="text-title-medium mb-2">{{ t('imports.aximote.title') }}</h3>
+    <h3 class="text-title-medium mb-2">
+      {{ t('imports.aximote.title') }}
+      <v-chip size="small" variant="tonal" color="primary" class="ms-2 beta">
+        {{ t('imports.aximote.beta') }}
+      </v-chip>
+    </h3>
     <p class="text-body-medium mb-4">{{ t('imports.aximote.intro') }}</p>
 
     <div v-if="job && active" class="import-progress mb-4">
