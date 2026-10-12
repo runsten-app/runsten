@@ -116,6 +116,27 @@ func TestSaveImport(t *testing.T) {
 		}
 	})
 
+	t.Run("left out of a period that starts once they ended", func(t *testing.T) {
+		// As the history limit of the API does: the imported events with the derived ones.
+		for _, c := range []struct {
+			from        time.Time
+			trips, chgs int
+		}{
+			{before, 1, 1},
+			{trip.Trip.End.Before, 0, 1},
+			{charges[0].End.Before, 0, 0},
+		} {
+			got, err := s.ListTrips(ctx, a, v, api.EventQuery{From: c.from})
+			if err != nil || len(got) != c.trips {
+				t.Errorf("trips from %v: %d, %v; want %d", c.from, len(got), err, c.trips)
+			}
+			p, err := s.ListCharges(ctx, a, v, api.EventQuery{From: c.from})
+			if err != nil || len(p.Charges) != c.chgs {
+				t.Errorf("charges from %v: %d, %v; want %d", c.from, len(p.Charges), err, c.chgs)
+			}
+		}
+	})
+
 	other, ov := newVehicle(t, s, "token-other", "YV1AAAAAAAAAAAAA2")
 	t.Run("its track, apart", func(t *testing.T) {
 		ref := api.EventRef{Source: "aximote", SourceID: "trip-1"}
