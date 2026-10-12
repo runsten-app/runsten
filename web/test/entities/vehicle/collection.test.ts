@@ -85,6 +85,24 @@ describe('collectionState', () => {
         { kind: 'reading' },
       ],
       [
+        'its own key refused once: paused, tried again then',
+        {
+          ...car,
+          connection: { ...car.connection, api_key: 'own' },
+          collection: {
+            ...c,
+            paused_until: '2026-09-28T08:04:00Z',
+            last_failure: {
+              at: '2026-09-28T07:04:00Z',
+              endpoint: 'odometer',
+              status: 401,
+              kind: 'key_refused',
+            },
+          },
+        },
+        { kind: 'paused', until: '2026-09-28T08:04:00Z' },
+      ],
+      [
         'the collector stopped',
         { ...car, collection: { ...c, passed_at: '2026-09-28T06:49:00Z' } },
         { kind: 'stopped', since: '2026-09-28T06:49:00Z' },

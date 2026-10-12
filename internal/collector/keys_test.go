@@ -209,8 +209,9 @@ func TestKeyRefused(t *testing.T) {
 		for _, s := range st.statuses {
 			last[s.VehicleID] = s
 		}
-		if s := last["va"]; s.Failure.Kind != FailKeyRefused || !s.NextAt.IsZero() {
-			t.Errorf("va: failure %+v, next %v; want key_refused, nothing due", s.Failure, s.NextAt)
+		if s := last["va"]; s.Failure.Kind != FailKeyRefused || !s.NextAt.IsZero() || !s.PausedUntil.IsZero() {
+			t.Errorf("va: failure %+v, next %v, paused until %v; want key_refused, nothing due, no pause",
+				s.Failure, s.NextAt, s.PausedUntil)
 		}
 		if s := last["vb"]; s.Failure.Kind != "" || s.NextAt.IsZero() {
 			t.Errorf("vb: %+v", s)
@@ -252,8 +253,9 @@ func TestKeyRefused(t *testing.T) {
 		if len(st.refused) != 0 {
 			t.Errorf("the instance's key marked on a connection: %v", st.refused)
 		}
-		if s := st.statuses[len(st.statuses)-1]; s.Failure.Kind != FailKeyRefused || s.NextAt.Before(t0.Add(keyRetry)) {
-			t.Errorf("status %+v: want key_refused, due after keyRetry", s)
+		if s := st.statuses[len(st.statuses)-1]; s.Failure.Kind != FailKeyRefused || s.NextAt.Before(t0.Add(keyRetry)) ||
+			!s.PausedUntil.Equal(t0.Add(keyRetry)) {
+			t.Errorf("status %+v: want key_refused, paused and due after keyRetry", s)
 		}
 		clk.Advance(t0.Add(keyRetry).Sub(clk.Now()))
 		_ = c.PollOnce(context.Background())
@@ -307,7 +309,7 @@ func TestEndpointRefusedToKey(t *testing.T) {
 
 // TestKeyRefusedAtRandom: a key refused at random (a new application's, observed on the
 // real API), reading in between, is never marked refused: each refusal only holds it
-// for keyRetry.
+// for keyRetry, which the status tells as a pause.
 func TestKeyRefusedAtRandom(t *testing.T) {
 	t0 := time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
 	refused := &volvo.APIError{Status: 401, Kind: volvo.KindKeyRefused, Message: "Access denied due to invalid VCC-API-KEY."}
@@ -322,6 +324,13 @@ func TestKeyRefusedAtRandom(t *testing.T) {
 		}
 		if err := c.PollOnce(context.Background()); err != nil {
 			t.Fatal(err)
+		}
+		s := st.statuses[len(st.statuses)-1]
+		if want := clk.Now().Add(keyRetry); i%2 == 0 && !s.PausedUntil.Equal(want) {
+			t.Errorf("pass %d, refused: paused until %v, want %v", i, s.PausedUntil, want)
+		}
+		if i%2 == 1 && !s.PausedUntil.IsZero() {
+			t.Errorf("pass %d, read: paused until %v", i, s.PausedUntil)
 		}
 		clk.Advance(keyRetry)
 	}

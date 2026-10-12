@@ -203,7 +203,7 @@ type Status struct {
 	// connection lost its grant, or has no key it may read with: nothing is due until
 	// the user acts.
 	NextAt      time.Time
-	PausedUntil time.Time            // zero: not paused
+	PausedUntil time.Time            // rate limit, token rejected, key refused; zero: not paused
 	Quota       map[string]time.Time // APIs whose quota is exhausted, until when
 	Failure     Failure              // the latest failed call; zero: none since the collector started
 }
@@ -796,6 +796,9 @@ func (c *Collector) status(t Target, vs *vehicleState) Status {
 	}
 	if t.ReauthReason != "" || (!t.ownKey() && c.noInstanceKey) || (t.ownKey() && t.KeyRefused) {
 		return s // nothing is due until the user acts
+	}
+	if pause := c.keyRefused[keyOf(t)]; pause.After(now) && pause.After(s.PausedUntil) {
+		s.PausedUntil = pause // a refusal that may not be the key's: tried again then
 	}
 	for i, ep := range endpoints() {
 		due := vs.next[ep]

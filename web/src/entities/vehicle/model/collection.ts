@@ -42,9 +42,14 @@ export function collectionState(
     return { kind: 'stopped', since: c.passed_at }
   }
   // The instance's key refused is the collector's only: it tries it again later, and
-  // reads again once the administrator replaced it.
+  // reads again once the administrator replaced it. The connection's own key refused
+  // once is only paused: api_key tells when it is refused for good.
   const f = c.last_failure
-  if (f?.kind === 'key_refused' && (!c.read_at || Date.parse(f.at) > Date.parse(c.read_at))) {
+  if (
+    v.connection.api_key === 'instance' &&
+    f?.kind === 'key_refused' &&
+    (!c.read_at || Date.parse(f.at) > Date.parse(c.read_at))
+  ) {
     return { kind: 'key', refused: true }
   }
   if (c.paused_until && Date.parse(c.paused_until) > now) {
