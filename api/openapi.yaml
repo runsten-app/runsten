@@ -828,7 +828,7 @@ components:
           pattern: Z$
           type: string
         paused_until:
-          description: "No call before this, as of passed_at: the vendor limited the rate, or refused the token after a refresh. null when not paused."
+          description: "No call before this, as of passed_at: the vendor limited the rate, refused the token after a refresh, or refused the application key, tried again then. null when not paused."
           format: date-time
           pattern: Z$
           type:

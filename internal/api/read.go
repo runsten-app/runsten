@@ -125,7 +125,7 @@ type collectionJSON struct {
 	Mode        collectionModeJSON `json:"mode" doc:"The collector's polling mode, from the latest readings: it reads more often while driving or charging."`
 	ReadAt      *time.Time         `json:"read_at" pattern:"Z$" doc:"The latest successful call; null when unknown."`
 	NextReadAt  *time.Time         `json:"next_read_at" pattern:"Z$" doc:"When the next call is due, as of passed_at, pauses and quotas included; null when none is, the connection having lost its grant, or having no application key it may read with."`
-	PausedUntil *time.Time         `json:"paused_until" pattern:"Z$" doc:"No call before this, as of passed_at: the vendor limited the rate, or refused the token after a refresh. null when not paused."`
+	PausedUntil *time.Time         `json:"paused_until" pattern:"Z$" doc:"No call before this, as of passed_at: the vendor limited the rate, refused the token after a refresh, or refused the application key, tried again then. null when not paused."`
 	Quota       []quotaJSON        `json:"quota" nullable:"false" doc:"The vendor's APIs whose quota is exhausted, as of passed_at, by name: what they give is not read until then. The quota is that of the application key the vehicle is read with: the instance's, which counts every vehicle of the instance, or on an instance without one, the account's own."`
 	LastFailure null[failureJSON]  `json:"last_failure" doc:"The latest failed call; null when none is known."`
 }
