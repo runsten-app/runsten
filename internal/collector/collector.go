@@ -236,8 +236,14 @@ const statusEvery = time.Minute
 // keyRetry is how long a refused key is not tried again. The instance's key is only
 // replaced with a restart, but a refusal that was not the key's (see volvo.KindKeyRefused)
 // should not stop the reads for good; a connection's own key stays refused until the
-// user sets another.
+// user sets another, once refused keyRefusals times in a row.
 const keyRetry = time.Hour
+
+// keyRefusals is how many refusals in a row, each keyRetry apart and with nothing read
+// in between, mark a connection's own key refused. Observed on the real API
+// (2026-10-12): a key created minutes before was refused on the 3 attempts of a call
+// (see volvo.keyAttempts) within its first hour, while it read the other endpoints.
+const keyRefusals = 3
 
 type nopObserver struct{}
 
@@ -349,6 +355,7 @@ type Collector struct {
 	restored     bool                              // the budget replayed the saved calls
 	apiBlocked   map[unit]time.Time                // quota exhausted
 	keyRefused   map[keyID]time.Time               // application keys refused, until when
+	keyStrikes   map[keyID]int                     // refusals in a row of each key
 	keyAnswered  map[keyID]map[volvo.Endpoint]bool // endpoints read with each key
 	accountPause map[string]time.Time              // rate limit or token rejected, per account
 	reauthLogged map[string]bool                   // connections whose loss was logged, by ConnectionID
@@ -383,6 +390,7 @@ func New(api API, store Store, tokens TokenSource, clk clock.Clock, iv Intervals
 		vehicles:      map[string]*vehicleState{},
 		apiBlocked:    map[unit]time.Time{},
 		keyRefused:    map[keyID]time.Time{},
+		keyStrikes:    map[keyID]int{},
 		keyAnswered:   map[keyID]map[volvo.Endpoint]bool{},
 		accountPause:  map[string]time.Time{},
 		reauthLogged:  map[string]bool{},
@@ -705,8 +713,8 @@ func (c *Collector) keyUsable(t Target, now time.Time) bool {
 	return false
 }
 
-// keyBlocked reports whether the key t reads with was refused: its own until the user
-// sets another, the instance's for keyRetry.
+// keyBlocked reports whether the key t reads with was refused: its own, marked refused,
+// until the user sets another; any key for keyRetry after a refusal.
 func (c *Collector) keyBlocked(t Target, now time.Time) bool {
 	return (t.ownKey() && t.KeyRefused) || now.Before(c.keyRefused[keyOf(t)])
 }
@@ -908,14 +916,20 @@ func (c *Collector) fetchFailed(ctx context.Context, t Target, vs *vehicleState,
 			"retry_in", apiErr.RetryIn.String())
 	case volvo.KindKeyRefused:
 		// The key, not the grant: the tokens and the re-authentication are left alone.
-		c.keyRefused[keyOf(t)] = now.Add(keyRetry)
-		if t.ownKey() {
+		k := keyOf(t)
+		c.keyRefused[k] = now.Add(keyRetry)
+		c.keyStrikes[k]++
+		n := c.keyStrikes[k]
+		if t.ownKey() && n >= keyRefusals {
+			// Counted again from zero: should the refusal be lifted without a new key,
+			// the key is marked again only after as many.
+			delete(c.keyStrikes, k)
 			if err := c.store.SetKeyRefused(ctx, t.AccountID, t.ConnectionID, t.KeySetAt, true); err != nil {
 				c.log.Warn("save refused key", "connection", t.ConnectionID, "err", err)
 			}
 		}
 		c.log.Error("application key refused", "account", t.AccountID, "connection", t.ConnectionID,
-			"own_key", t.ownKey(), "status", apiErr.Status)
+			"own_key", t.ownKey(), "status", apiErr.Status, "refusals", n)
 	case volvo.KindRateLimited:
 		c.accountPause[t.AccountID] = now.Add(apiErr.RetryIn)
 		c.log.Warn("rate limit", "account", t.AccountID, "retry_in", apiErr.RetryIn.String())
@@ -931,6 +945,7 @@ func (c *Collector) fetchFailed(ctx context.Context, t Target, vs *vehicleState,
 
 func (c *Collector) answered(t Target, ep volvo.Endpoint) {
 	k := keyOf(t)
+	delete(c.keyStrikes, k)
 	if c.keyAnswered[k] == nil {
 		c.keyAnswered[k] = map[volvo.Endpoint]bool{}
 	}
