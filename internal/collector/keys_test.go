@@ -159,8 +159,9 @@ func (k *keyTokens) KeepAlive(context.Context) error {
 
 // TestKeyRefused: a refused key stops the reads of its vehicles, not of the others, and
 // is not taken for a refused token: no refresh, no re-authentication, the keep-alive
-// goes on. The connection's own key is marked refused, until the user sets another;
-// the instance's is tried again after keyRetry. The key never shows in the logs.
+// goes on. The connection's own key is tried again after keyRetry, and marked refused
+// at its keyRefusals-th refusal in a row, until the user sets another; the instance's
+// is tried again after keyRetry. The key never shows in the logs.
 func TestKeyRefused(t *testing.T) {
 	t0 := time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
 	refused := &volvo.APIError{Status: 401, Kind: volvo.KindKeyRefused, Message: "Access denied due to invalid VCC-API-KEY."}
@@ -180,17 +181,20 @@ func TestKeyRefused(t *testing.T) {
 		tokens := &keyTokens{}
 		hosted := Quota{Daily: 10_000, NoInstanceKey: true}
 		c := New(api, st, tokens, clk, DefaultIntervals(), hosted, slog.New(slog.NewJSONHandler(&logs, nil)), nil, nil)
-		for range 3 {
+		for i := range keyRefusals + 2 {
 			if err := c.PollOnce(context.Background()); err != nil {
 				t.Fatal(err)
 			}
 			// The store says what the collector saved, as the real one would.
 			st.targets[0].KeyRefused = !st.refused["ca"].IsZero()
 			st.targets[1].KeyRefused = st.targets[0].KeyRefused
-			clk.Advance(DefaultIntervals().Parked)
+			if i < keyRefusals-1 && st.targets[0].KeyRefused {
+				t.Fatalf("key marked refused at its refusal %d", i+1)
+			}
+			clk.Advance(keyRetry)
 		}
-		if n := api.calls["bad-key"]; n != 1 {
-			t.Errorf("%d calls with the refused key, want 1", n)
+		if n := api.calls["bad-key"]; n != keyRefusals {
+			t.Errorf("%d calls with the refused key, want %d", n, keyRefusals)
 		}
 		if api.calls["key-b"] < 3 {
 			t.Errorf("%d calls with b's key: b's reads stopped", api.calls["key-b"])
@@ -198,7 +202,7 @@ func TestKeyRefused(t *testing.T) {
 		if !st.refused["ca"].Equal(keySet) {
 			t.Errorf("refused keys saved: %v", st.refused)
 		}
-		if tokens.refreshes != 0 || tokens.keepAlives != 3 {
+		if tokens.refreshes != 0 || tokens.keepAlives != keyRefusals+2 {
 			t.Errorf("%d refreshes, %d keep-alives: want none, and one a pass", tokens.refreshes, tokens.keepAlives)
 		}
 		last := map[string]Status{}
@@ -214,8 +218,11 @@ func TestKeyRefused(t *testing.T) {
 		if strings.Contains(logs.String(), "bad-key") {
 			t.Errorf("the key is in the logs: %s", logs.String())
 		}
-		if n := strings.Count(logs.String(), "application key refused"); n != 2 {
-			t.Errorf("%d log lines of the refusal, want one when refused, one when skipped", n)
+		if n := strings.Count(logs.String(), `"application key refused"`); n != keyRefusals {
+			t.Errorf("%d log lines of the refusal, want one a refusal", n)
+		}
+		if n := strings.Count(logs.String(), "application key refused: the vehicles"); n != keyRefusals {
+			t.Errorf("%d log lines of the skipped vehicles, want one a refusal (va2), then none", n)
 		}
 
 		// A new key: read again.
@@ -286,12 +293,43 @@ func TestEndpointRefusedToKey(t *testing.T) {
 		t.Errorf("status %+v: want no failure", s)
 	}
 
-	api.refuseEp[volvo.EngineStatus] = refused // the key revoked
-	if err := c.PollOnce(context.Background()); err != nil {
-		t.Fatal(err)
+	api.refuse = map[string]error{"key-a": refused} // the key revoked
+	for range keyRefusals {
+		clk.Advance(keyRetry)
+		if err := c.PollOnce(context.Background()); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if !st.refused["ca"].Equal(keySet) {
 		t.Errorf("revoked key not marked refused: %v", st.refused)
+	}
+}
+
+// TestKeyRefusedAtRandom: a key refused at random (a new application's, observed on the
+// real API), reading in between, is never marked refused: each refusal only holds it
+// for keyRetry.
+func TestKeyRefusedAtRandom(t *testing.T) {
+	t0 := time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
+	refused := &volvo.APIError{Status: 401, Kind: volvo.KindKeyRefused, Message: "Access denied due to invalid VCC-API-KEY."}
+	clk := clock.NewManual(t0)
+	api := &keyedAPI{}
+	st := &memStore{targets: []Target{ownKey("a", "va", "VIN-A", "ca", keySet)}, keys: map[string]string{"ca": "key-a"}}
+	c := New(api, st, &keyTokens{}, clk, DefaultIntervals(), Quota{Daily: 10_000, NoInstanceKey: true}, quiet, nil, nil)
+	for i := range 4 * keyRefusals {
+		api.refuse = nil
+		if i%2 == 0 {
+			api.refuse = map[string]error{"key-a": refused}
+		}
+		if err := c.PollOnce(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		clk.Advance(keyRetry)
+	}
+	if len(st.refused) != 0 {
+		t.Errorf("key marked refused: %v", st.refused)
+	}
+	if n := api.epCalls[volvo.EngineStatus]; n < 2*keyRefusals {
+		t.Errorf("%d calls of the engine status: the reads stopped", n)
 	}
 }
 
