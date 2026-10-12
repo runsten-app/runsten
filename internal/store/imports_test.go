@@ -116,6 +116,30 @@ func TestSaveImport(t *testing.T) {
 		}
 	})
 
+	other, ov := newVehicle(t, s, "token-other", "YV1AAAAAAAAAAAAA2")
+	t.Run("its track, apart", func(t *testing.T) {
+		ref := api.EventRef{Source: "aximote", SourceID: "trip-1"}
+		track, ok, err := s.TripTrack(ctx, a, v, ref)
+		want := [][2]float64{{4.8357, 45.764}, {4.927, 45.7797}}
+		if err != nil || !ok || !track.EndedAt.Equal(trip.Trip.End.Before) || !reflect.DeepEqual(track.Line, want) {
+			t.Errorf("track %+v, %v, %v", track, ok, err)
+		}
+		for name, read := range map[string]func() (api.Track, bool, error){
+			"of a derived trip": func() (api.Track, bool, error) {
+				return s.TripTrack(ctx, a, v, api.EventRef{DetectedAt: tr.DetectedAt})
+			},
+			"of a charge": func() (api.Track, bool, error) {
+				return s.TripTrack(ctx, a, v, api.EventRef{Source: "aximote", SourceID: "charge-1"})
+			},
+			"of another vehicle": func() (api.Track, bool, error) { return s.TripTrack(ctx, other, ov, ref) },
+			"of another account": func() (api.Track, bool, error) { return s.TripTrack(ctx, other, v, ref) },
+		} {
+			if _, ok, err := read(); ok || err != nil {
+				t.Errorf("a track %s: %v, %v", name, ok, err)
+			}
+		}
+	})
+
 	t.Run("imported again: replaced, its id and track kept", func(t *testing.T) {
 		var id string
 		read := func() (string, int) {

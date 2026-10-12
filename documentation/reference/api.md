@@ -31,6 +31,7 @@ A request body is sent as `application/json`, but the files of an import, as `mu
 | `GET /api/v1/vehicles/{id}/state` | the latest known values: SoC, range, odometer, position, charging, each with when it was read |
 | `GET /api/v1/vehicles/{id}/trips`, `…/charges` | newest first, by pages (`limit`, `cursor`), within a period (`from`, `to`) |
 | `GET /api/v1/vehicles/{id}/trips/{trip}`, `…/charges/{charge}` | one trip or charge |
+| `GET /api/v1/vehicles/{id}/trips/{trip}/track` | the track of an imported trip, a GeoJSON `LineString`; `404` for a trip without one |
 | `PUT`, `DELETE /api/v1/vehicles/{id}/charges/{charge}/cost` | enter what a charge cost; delete it |
 | `GET /api/v1/vehicles/{id}/imports`, `DELETE …/imports/{source}` | the trips and charges imported from other apps, by source; delete one source's |
 | `POST /api/v1/vehicles/{id}/aximote-vehicles` | the vehicles of an Aximote account, the token in the body; the one with the vehicle's VIN marked |

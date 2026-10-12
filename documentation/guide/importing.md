@@ -21,7 +21,7 @@ Runsten keeps the token encrypted while the import runs and erases it as soon as
 
 - **Trips**: their exact times, distance, energy used and places, named as Aximote names them ("Lyon, France"). Neither state of charge nor odometer: Aximote gives none.
 - **Charges**: the charging session's times, the energy charged, the average power, the cost Aximote gives, and the state of charge from the battery's energy at both ends, when Aximote gives it. Never AC or DC: Aximote does not tell, and Runsten does not guess it from the power.
-- **Tracks** of the trips, when Aximote gives them.
+- **Tracks** of the trips, when Aximote gives them: the path driven. A track is fine-grained location data: Runsten keeps it with the trip, reads it only to draw it on the trip's map, and deletes it with the import.
 
 Only what started before Runsten's first reading of the vehicle is imported: it never duplicates what Runsten saw. The report tells how many events were imported, how many were left because they start after that first reading, and how many were unfinished or out of bounds (a trip still under way, a charge in progress). Fuel stops are left without being counted.
 
@@ -45,7 +45,7 @@ The import runs at once, and its report shows in the same place. Files of 32 MB 
 ### What is imported
 
 - **Trips**: their exact times, the positions at both ends, the odometer at both ends and the distance (rounded to the kilometer by the portal), and the energy used, when the portal gives it (a trip of 0 kWh over a distance has none). No place names: Runsten names the positions as it names those it reads. No state of charge: the portal gives none.
-- **Tracks**: the waypoints, about one a minute while driving, with a precise position. Those of a trip, from its start to its end, make its track. A track is fine-grained location data: Runsten keeps it with the trip, and deletes it with the import.
+- **Tracks**: the waypoints, about one a minute while driving, with a precise position. Those of a trip, from its start to its end, make its track. A track is fine-grained location data: Runsten keeps it with the trip, reads it only to draw it on the trip's map, and deletes it with the import.
 - **No charges**: the portal gives none.
 
 What the portal gives may be shorter than the period asked for: an owner found the last month missing. Fuel, regeneration and heading are given as 0 for an electric car: Runsten leaves them out.

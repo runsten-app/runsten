@@ -623,6 +623,51 @@ func (s *Server) getTrip(ctx context.Context, in *eventInput) (*body[tripJSON], 
 	}, func(t core.Trip) core.Bounds { return t.End }, func(t core.Trip) tripJSON { return tripOf(t, places, s.addresses(ctx, places, tripPositions(t)...)) })
 }
 
+// trackJSON is a GeoJSON LineString (RFC 7946).
+type trackJSON struct {
+	Type        string      `json:"type" enum:"LineString"`
+	Coordinates []pointJSON `json:"coordinates" nullable:"false" minItems:"2" doc:"The points of the track in order."`
+}
+
+// pointJSON is a GeoJSON position: a longitude, then a latitude.
+type pointJSON [2]float64
+
+// Schema describes the pair, never null.
+func (pointJSON) Schema(huma.Registry) *huma.Schema {
+	two := 2
+	return &huma.Schema{
+		Type: huma.TypeArray, Items: &huma.Schema{Type: huma.TypeNumber, Format: "double"}, MinItems: &two, MaxItems: &two,
+		Description: "A longitude, then a latitude, in degrees (WGS 84).",
+	}
+}
+
+func (s *Server) getTripTrack(ctx context.Context, in *eventInput) (*body[trackJSON], error) {
+	v, err := s.accountVehicle(ctx, in.Vehicle)
+	if err != nil {
+		return nil, err
+	}
+	ref, err := eventRef(in.ID, "track")
+	if err != nil {
+		return nil, err
+	}
+	acc := sessionFrom(ctx).AccountID
+	track, found, err := s.Reader.TripTrack(ctx, acc, v.ID, ref)
+	switch {
+	case err != nil:
+		return nil, s.internal("track not read", err)
+	case !found:
+		return nil, apiError(http.StatusNotFound, codeNotFound, "no such track")
+	}
+	l, err := s.limitsOf(ctx, acc)
+	if err != nil {
+		return nil, err
+	}
+	if l.hides(core.Bounds{After: track.EndedAt, Before: track.EndedAt}) {
+		return nil, apiError(http.StatusNotFound, codeNotFound, "no such track")
+	}
+	return respond(trackJSON{Type: "LineString", Coordinates: each(func(p [2]float64) pointJSON { return p })(track.Line)}), nil
+}
+
 func (s *Server) getCharge(ctx context.Context, in *eventInput) (*body[chargeJSON], error) {
 	v, err := s.accountVehicle(ctx, in.Vehicle)
 	if err != nil {
@@ -716,6 +761,14 @@ func (s *Server) registerReads(api huma.API) {
 		OperationID: "getTrip", Method: http.MethodGet, Path: "/vehicles/{vehicle}/trips/{id}", Tags: []string{"events"},
 		Summary: "A trip", Description: "The same object as the item of the list.",
 	}, "The trip.", eventErrs), s.getTrip)
+	huma.Register(api, s.operation(huma.Operation{
+		OperationID: "getTripTrack", Method: http.MethodGet, Path: "/vehicles/{vehicle}/trips/{id}/track", Tags: []string{"events"},
+		Summary: "The track of a trip",
+		Description: "The path driven, as a GeoJSON LineString: only an imported trip may have one, when the application " +
+			"it comes from gave it. A trip read by Runsten has its two ends only, `start_position` and `end_position`.",
+	}, "The track.", map[int]string{
+		http.StatusUnauthorized: errUnauthorized, http.StatusNotFound: errTrack, http.StatusInternalServerError: errInternal,
+	}), s.getTripTrack)
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "listCharges", Method: http.MethodGet, Path: "/vehicles/{vehicle}/charges", Tags: []string{"events"},
 		Summary: "The charges of a vehicle (Urd)", Description: listDescription,

@@ -316,6 +316,7 @@ const (
 	errInternal     = "`internal`: an internal failure, without detail; the cause is logged."
 	errVehicle      = "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
 	errEvent        = "`not_found`: no such vehicle in the account, or no such event for it."
+	errTrack        = "`not_found`: no such vehicle in the account, no such trip for it, or a trip without a track."
 	errParameter    = "`invalid_parameter`: `from`, `to`, `limit` or `cursor`; the message names the parameter."
 	errBody         = "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown " +
 		"field, or more than 1 MiB; the message names the field, never its value."

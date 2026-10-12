@@ -50,6 +50,7 @@ type memReader struct {
 	vehicles map[string][]Vehicle // by account
 	trips    map[string][]core.Trip
 	charges  map[string][]core.Charge
+	tracks   map[string][][2]float64 // of the imported trips, by source:id
 	current  map[string][]core.Record
 	entered  []EnteredCost
 	settings *memSettings
@@ -290,6 +291,15 @@ func (m *memReader) FindTrip(_ context.Context, _, vehicle string, ref EventRef)
 		}
 	}
 	return core.Trip{}, false, m.err
+}
+
+func (m *memReader) TripTrack(_ context.Context, _, vehicle string, ref EventRef) (Track, bool, error) {
+	for _, t := range m.trips[vehicle] {
+		if line, ok := m.tracks[ref.Source+":"+ref.SourceID]; ok && ref.Source != "" && isEvent(ref, t.DetectedAt, t.Import) {
+			return Track{EndedAt: t.End.Before, Line: line}, true, m.err
+		}
+	}
+	return Track{}, false, m.err
 }
 
 func (m *memReader) ListCharges(ctx context.Context, acc, vehicle string, q EventQuery) (PricedCharges, error) {
@@ -847,6 +857,10 @@ func (failingEvents) ListTrips(context.Context, string, string, EventQuery) ([]c
 
 func (failingEvents) FindTrip(context.Context, string, string, EventRef) (core.Trip, bool, error) {
 	return core.Trip{}, false, errEvents
+}
+
+func (failingEvents) TripTrack(context.Context, string, string, EventRef) (Track, bool, error) {
+	return Track{}, false, errEvents
 }
 
 func (failingEvents) ListCharges(context.Context, string, string, EventQuery) (PricedCharges, error) {
