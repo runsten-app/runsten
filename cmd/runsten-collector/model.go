@@ -32,11 +32,7 @@ func (m models) Model(ctx context.Context, accountID, vehicleID string, c core.C
 	if n.ModelYear.OK {
 		out.Year = n.ModelYear.V
 	}
-	v, ok := m.catalog.Effective(chosen, catalog.Reading{
-		Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
-		BatteryElectric: n.BatteryElectric.OK && n.BatteryElectric.V,
-	})
-	if ok {
+	if v, ok := capacities(m).effective(chosen, vin, n); ok {
 		out.Variant, out.Brand = v.Name, brands[v.Brand]
 	}
 	return out, nil

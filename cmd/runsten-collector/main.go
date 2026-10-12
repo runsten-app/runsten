@@ -268,7 +268,11 @@ func run(args []string) error {
 	log.Info("collector started", "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
 		"daily_quota", cfg.quota.Daily, "quota_per_user", cfg.quota.PerUser, "instance_key", cfg.apiKey != "",
 		"mqtt_private_brokers", cfg.privateBrokers)
-	c := collector.New(api, st, tokens, clk, cfg.intervals, cfg.quota, log, obs, deriver)
+	der := variants{
+		Deriver: deriver, capacities: capacities{catalog: cat, vehicle: vehicleOf(st)},
+		current: deriver.Current, set: st.SetVariantInEffect, clk: clk,
+	}
+	c := collector.New(api, st, tokens, clk, cfg.intervals, cfg.quota, log, obs, der)
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
 	c.SetPublisher(pub)

@@ -96,6 +96,57 @@ func TestVehicleModel(t *testing.T) {
 	})
 }
 
+// TestVariantInEffect checks the copy of the variant in effect: written, cleared, and
+// confined to the account.
+func TestVariantInEffect(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, va := newVehicle(t, s, "token-a", "YV1AAAAAAAAAAAAA1")
+	b, vb := newVehicle(t, s, "token-b", "YV1BBBBBBBBBBBBB1")
+	inEffect := func(account, vehicle string) *string {
+		t.Helper()
+		var id *string
+		err := s.inAccount(ctx, account, func(tx pgx.Tx) error {
+			return tx.QueryRow(ctx, "SELECT variant_in_effect FROM vehicles WHERE id = $1", vehicle).Scan(&id)
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return id
+	}
+
+	if id := inEffect(a, va); id != nil {
+		t.Errorf("a new vehicle: %q", *id)
+	}
+	for _, want := range []string{"ex30-er-2024", "ex30-er-2024", "ex30-lfp-2024"} {
+		if err := s.SetVariantInEffect(ctx, a, va, want); err != nil {
+			t.Fatal(err)
+		}
+		if id := inEffect(a, va); id == nil || *id != want {
+			t.Errorf("written %q, read %v", want, id)
+		}
+	}
+	if err := s.SetVariantInEffect(ctx, a, va, ""); err != nil {
+		t.Fatal(err)
+	}
+	if id := inEffect(a, va); id != nil {
+		t.Errorf("cleared, read %q", *id)
+	}
+	if err := s.SetVariantInEffect(ctx, a, vb, "ex30-er-2024"); err != nil {
+		t.Fatalf("B's vehicle from A: %v", err)
+	}
+	if id := inEffect(b, vb); id != nil {
+		t.Errorf("B's vehicle written from A: %q", *id)
+	}
+	err := s.inAccount(ctx, a, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, "UPDATE vehicles SET variant_in_effect = '' WHERE id = $1", va)
+		return err
+	})
+	if err == nil {
+		t.Error("an empty variant accepted")
+	}
+}
+
 // TestVehicleModelResetsDerivation checks that a new variant deletes the vehicle's
 // derivation cursor, for its energies to be derived again on its net capacity, while a
 // new charger, which only the costs read, keeps it.

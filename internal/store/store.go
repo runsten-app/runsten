@@ -257,6 +257,25 @@ func (s *Store) SetVehicleModel(ctx context.Context, accountID, vehicleID, varia
 	})
 }
 
+// SetVariantInEffect writes the copy of the vehicle's variant in effect (empty: none),
+// which the collector decides from the catalog. It checks nothing of the catalog; a
+// vehicle gone, or another account's, is left alone.
+func (s *Store) SetVariantInEffect(ctx context.Context, accountID, vehicleID, variantID string) error {
+	var variant *string
+	if variantID != "" {
+		variant = &variantID
+	}
+	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, `UPDATE vehicles SET variant_in_effect = $2
+			WHERE id = $1 AND variant_in_effect IS DISTINCT FROM $2`, vehicleID, variant)
+		return err //nolint:wrapcheck // wrapped below
+	})
+	if err != nil {
+		return fmt.Errorf("variant in effect: %w", err)
+	}
+	return nil
+}
+
 func utcOrZero(t *time.Time) time.Time {
 	if t == nil {
 		return time.Time{}

@@ -45,13 +45,19 @@ func (c capacities) NetCapacity(ctx context.Context, accountID, vehicleID string
 		return nil, errNoVehicle
 	}
 	return func(n core.Snapshot) (float64, bool) {
-		v, ok := c.catalog.Effective(chosen, catalog.Reading{
-			Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
-			BatteryElectric: n.BatteryElectric.OK && n.BatteryElectric.V,
-		})
+		v, ok := c.effective(chosen, vin, n)
 		if !ok || v.NetKWh == nil {
 			return 0, false
 		}
 		return *v.NetKWh, true
 	}, nil
+}
+
+// effective is the variant in effect of a vehicle of VIN vin whose user chose chosen
+// (empty: none), from the details n: catalog.Effective, the one rule.
+func (c capacities) effective(chosen, vin string, n core.Snapshot) (catalog.Variant, bool) {
+	return c.catalog.Effective(chosen, catalog.Reading{
+		Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
+		BatteryElectric: n.BatteryElectric.OK && n.BatteryElectric.V,
+	})
 }
