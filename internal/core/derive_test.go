@@ -789,6 +789,25 @@ func TestSources(t *testing.T) {
 	if len(res.Charges) != 1 || !slices.Equal(res.Charges[0].Sources, []string{"volvo"}) {
 		t.Errorf("charges %+v", res.Charges)
 	}
+
+	// A reconstructed trip whose bounds the arrival timestamp narrows to before the
+	// reading that revealed it: no reading lies within them, that one still counts.
+	missed := []Record{
+		rec(0, 120, engine(EngineStopped)),
+		rec(0, 20, nrg(62, ChargingIdle)),
+		rec(60, 60, nrg(61, ChargingIdle)),
+		rec(0, 60, odo(12400)),
+		rec(0, 60, loc(home, m(0))),
+		rec(120, 120, odo(12432)),
+		rec(120, 120, loc(work, m(100))),
+	}
+	for i := range missed {
+		missed[i].Source = "volvo"
+	}
+	res = Derive(missed, Cursor{}, DefaultParams(), nil)
+	if len(res.Trips) != 1 || res.Trips[0].End.Before != m(100) || !slices.Equal(res.Trips[0].Sources, []string{"volvo"}) {
+		t.Errorf("reconstructed trips %+v", res.Trips)
+	}
 }
 
 func TestCapacity(t *testing.T) {
