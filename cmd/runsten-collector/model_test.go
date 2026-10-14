@@ -27,10 +27,10 @@ func TestModel(t *testing.T) {
 		snap   core.Snapshot
 		want   publish.Model
 	}{
-		{"recognized", "YV1EL3AV0R2000001", "", ex30, publish.Model{Variant: er.Name, Family: "EX30", Brand: "Volvo", Year: 2024}},
+		{"recognized", "YV12ZEL9XRS000001", "", ex30, publish.Model{Variant: er.Name, Family: "EX30", Brand: "Volvo", Year: 2024}},
 		{"several fit: the family", "YV1SMLT0000DT0001", "", ex30, publish.Model{Family: "EX30", Year: 2024}},
 		{"chosen", "YV1SMLT0000DT0001", "ex30-er-2024", ex30, publish.Model{Variant: er.Name, Family: "EX30", Brand: "Volvo", Year: 2024}},
-		{"details never read", "YV1EL3AV0R2000001", "", core.Snapshot{}, publish.Model{}},
+		{"details never read", "YV12ZEL9XRS000001", "", core.Snapshot{}, publish.Model{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

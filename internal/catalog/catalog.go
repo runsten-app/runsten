@@ -82,7 +82,7 @@ type Variant struct {
 	// APIKWh are the values of batteryCapacityKWH seen for the variant. They need not be
 	// its capacity: the backend has returned a pack label or the net capacity for months.
 	APIKWh []APIValue `yaml:"api_kwh"`
-	// MotorCodes are VIN positions 4-5, from unofficial and incomplete tables.
+	// MotorCodes are VIN positions 6-7, from unofficial and incomplete tables.
 	MotorCodes []string `yaml:"motor_codes"`
 	// AmbiguousWith names the variants no reading can tell from this one.
 	AmbiguousWith []string `yaml:"ambiguous_with"`

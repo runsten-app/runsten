@@ -36,11 +36,11 @@ func TestVariants(t *testing.T) {
 		derived error
 		want    string
 	}{
-		{"recognized", "YV1EL3AV0R2000001", "", ex30, nil, "ex30-er-2024"},
-		{"chosen over the recognition", "YV1EL3AV0R2000001", "ex30-lfp-2024", ex30, nil, "ex30-lfp-2024"},
+		{"recognized", "YV12ZEL9XRS000001", "", ex30, nil, "ex30-er-2024"},
+		{"chosen over the recognition", "YV12ZEL9XRS000001", "ex30-lfp-2024", ex30, nil, "ex30-lfp-2024"},
 		{"several fit: none", "YV1SMLT0000DT0001", "", ex30, nil, ""},
-		{"details never read: none", "YV1EL3AV0R2000001", "", core.Snapshot{}, nil, ""},
-		{"written when the derivation fails", "YV1EL3AV0R2000001", "", ex30, boom, "ex30-er-2024"},
+		{"details never read: none", "YV12ZEL9XRS000001", "", core.Snapshot{}, nil, ""},
+		{"written when the derivation fails", "YV12ZEL9XRS000001", "", ex30, boom, "ex30-er-2024"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

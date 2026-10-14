@@ -116,7 +116,7 @@ func TestLoadFleet(t *testing.T) {
 		{
 			"two scenarios, the clock at the earliest start",
 			[]string{"errand.yaml", "ex30.yaml"},
-			[]string{"YV1SMLT0000ER0001", "YV1EL00000EX30001"},
+			[]string{"YV1SMLT0000ER0001", "YV12ZEL000EX30001"},
 			time.Date(2026, 9, 28, 5, 0, 0, 0, time.UTC), "",
 		},
 		{"the same VIN twice", []string{"commute.yaml", "commute.yaml"}, nil, time.Time{}, "same vin"},

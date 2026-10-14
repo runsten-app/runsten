@@ -29,14 +29,14 @@ func TestNetCapacity(t *testing.T) {
 		snap   core.Snapshot
 		want   float64 // 0: unknown
 	}{
-		{"recognized: its net capacity", "YV1EL3AV0R2000001", "", ex30, 64},
+		{"recognized: its net capacity", "YV12ZEL9XRS000001", "", ex30, 64},
 		// Two EX30 have 69 kWh: without the VIN's motor code, nothing is recognized.
 		{"several variants fit", "YV1SMLT0000DT0001", "", ex30, 0},
 		{"chosen where nothing is recognized", "YV1SMLT0000DT0001", "ex30-er-2024", ex30, 64},
-		{"chosen over the recognition", "YV1EL3AV0R2000001", "ex30-lfp-2024", ex30, 49},
-		{"a choice of another family is ignored", "YV1EL3AV0R2000001", "xc40-twin-2021", ex30, 64},
-		{"not battery electric", "YV1EL3AV0R2000001", "ex30-er-2024", hybrid, 0},
-		{"details never read", "YV1EL3AV0R2000001", "", core.Snapshot{}, 0},
+		{"chosen over the recognition", "YV12ZEL9XRS000001", "ex30-lfp-2024", ex30, 49},
+		{"a choice of another family is ignored", "YV12ZEL9XRS000001", "xc40-twin-2021", ex30, 64},
+		{"not battery electric", "YV12ZEL9XRS000001", "ex30-er-2024", hybrid, 0},
+		{"details never read", "YV12ZEL9XRS000001", "", core.Snapshot{}, 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

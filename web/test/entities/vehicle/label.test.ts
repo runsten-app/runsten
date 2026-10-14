@@ -42,7 +42,7 @@ describe('vehicleLabels', () => {
 
   it('ends two alike labels with their serial number', () => {
     const labels = vehicleLabels([
-      car('a', 'YV1EL3AV0R2000001', ex30),
+      car('a', 'YV12ZEL9XRS000001', ex30),
       car('b', 'YV1EL3AV0R2000742', ex30),
       car('c', 'YV1EL3AV0R2000999', { ...ex30, model_year: 2025 }),
     ])
