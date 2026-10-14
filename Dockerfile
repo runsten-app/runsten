@@ -8,7 +8,7 @@
 # The build stages run on the builder's platform and cross-compile for the target one
 # (--platform linux/arm64 on an amd64 machine, for a Raspberry Pi): no emulation needed.
 
-FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:738d1cf061836894ff6bb8c33881080ac66de8cf0586615012a0c8f592649cfa AS build
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags=
 
 # The front end's build: HTML, JavaScript and CSS, the same for every platform. Its types
 # are generated from the API description.
-FROM --platform=$BUILDPLATFORM node:26.10.0-alpine@sha256:0b36e8c136b94cd4fcf02188228e76c31ad5872eef3fec8cbd2eee500cfd9e80 AS web
+FROM --platform=$BUILDPLATFORM node:26.11.1-alpine@sha256:143494b1da2945f061539253adc65e4f1569ddf07da2d384c022c791a9d90a4a AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json web/.npmrc web/.nvmrc ./
 RUN npm ci --no-audit
