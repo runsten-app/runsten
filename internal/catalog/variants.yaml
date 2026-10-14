@@ -11,7 +11,7 @@
 # - gross_kwh, net_kwh: battery capacity; net_kwh is left out when no source settles it.
 # - ac_max_kw: standard onboard charger; ac_option_kw: the optional one (22 kW), if any.
 # - api_kwh: values of batteryCapacityKWH seen for the variant, each with where it was seen.
-# - motor_codes: VIN positions 4-5, from unofficial tables: they only break ties.
+# - motor_codes: VIN positions 6-7, from unofficial tables: they only break ties.
 # - sources: every figure is backed by at least one source, listed in its "for"; its level
 #   says whether the figure comes from the manufacturer or from a secondary source (press,
 #   Wikipedia, ev-database as a cross-check).

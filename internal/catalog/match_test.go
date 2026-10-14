@@ -6,8 +6,9 @@ import (
 	"testing"
 )
 
-// vin builds a 17-character VIN with the given motor code at positions 4-5.
-func vin(code string) string { return "YV1" + code + "3AV0R2000001" }
+// vin builds a 17-character VIN with the given motor code at positions 6-7, after an
+// EX30's model code (positions 4-5), as the Volvo API returns them.
+func vin(code string) string { return "YV12Z" + code + "9XRS000001" }
 
 func TestMatch(t *testing.T) {
 	c := mustLoad(t)
@@ -48,9 +49,11 @@ func TestMatch(t *testing.T) {
 		{"capacity absent, VIN EL", "EX30", 2024, 0, vin("EL"), []string{"ex30-lfp-2024", "ex30-er-2024"}, false},
 		{"capacity NaN", "EX30", 2024, math.NaN(), vin("EK"), []string{"ex30-twin-2024"}, true},
 		{"negative capacity", "EX30", 2024, -1, vin("EK"), []string{"ex30-twin-2024"}, true},
-		{"lowercase VIN", "EX30", 2024, 69.0, "  " + "yv1el3av0r2000001" + " ", []string{"ex30-er-2024"}, true},
+		{"lowercase VIN", "EX30", 2024, 69.0, "  " + "yv12zel9xrs000001" + " ", []string{"ex30-er-2024"}, true},
 		{"VIN too short", "EX30", 2024, 69.0, "YV1EL", []string{"ex30-er-2024", "ex30-twin-2024"}, false},
 		{"VIN with an unknown code", "EX30", 2024, 69.0, vin("ZZ"), []string{"ex30-er-2024", "ex30-twin-2024"}, false},
+		{"XC40 2024, its model code before the motor's", "XC40", 2024, 81.608, "YV1XZEHR0R2000001", []string{"xc40-er-2024"}, true},
+		{"a code at positions 4-5 is not the motor's", "EX30", 2024, 69.0, "YV1EL3AV0R2000001", []string{"ex30-er-2024", "ex30-twin-2024"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

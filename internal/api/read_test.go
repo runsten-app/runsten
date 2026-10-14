@@ -590,7 +590,7 @@ func TestVehiclesJSON(t *testing.T) {
 }
 
 func TestVehicleModel(t *testing.T) {
-	vin := "YV1EL3AV0R2000001" // motor code EL: the Single Motor of the EX30
+	vin := "YV12ZEL9XRS000001" // motor code EL: the Single Motor of the EX30
 	tests := []struct {
 		name    string
 		vin     string
@@ -785,7 +785,7 @@ func TestOnboardCharger(t *testing.T) {
 		{"an XC40 of 11 kW", "", details("XC40", 2021, 78.012, true), 524, 579},
 		// An EX30 may have the 22 kW option: nothing says it does not, and 22 kW could
 		// have charged either way.
-		{"an EX30, whose option is 22 kW", "YV1EL3AV0R2000001", details("EX30", 2024, 69.0, true), 476, 643},
+		{"an EX30, whose option is 22 kW", "YV12ZEL9XRS000001", details("EX30", 2024, 69.0, true), 476, 643},
 		{"no variant recognized", "", details("EX-SIM", 2026, 80, true), 476, 643},
 	}
 	for _, tt := range tests {

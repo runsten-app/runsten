@@ -29,7 +29,7 @@ func (m *memReader) SetVehicleModel(_ context.Context, acc, vehicle, variantID s
 func TestEffectiveModel(t *testing.T) {
 	cat := mustCatalog(t)
 	const (
-		single = "YV1EL3AV0R2000001" // motor code EL: an EX30 Single Motor
+		single = "YV12ZEL9XRS000001" // motor code EL: an EX30 Single Motor
 		other  = "YV1SMLT0000DT0001" // a code no EX30 lists: Single and Twin Motor alike
 	)
 	ex30 := details("EX30", 2024, 69.0, true)

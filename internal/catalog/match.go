@@ -31,7 +31,7 @@ type Result struct {
 //  1. the variants of the family whose years hold modelYear;
 //  2. those that have already been seen reporting capacityKWh (api_kwh), or else those
 //     whose gross capacity is within grossTolerance of it;
-//  3. the VIN's motor code (positions 4-5) rules out the variants that list other codes,
+//  3. the VIN's motor code (positions 6-7) rules out the variants that list other codes,
 //     when a candidate lists it.
 //
 // An unknown model year (≤ 0) skips step 1's year filter. An unknown capacity (≤ 0, NaN)
@@ -130,7 +130,7 @@ func byMotorCode(vs []Variant, vin string) []Variant {
 	if len(vin) != 17 {
 		return vs
 	}
-	code := vin[3:5]
+	code := vin[5:7]
 	lists := func(v Variant) bool { return slices.Contains(v.MotorCodes, code) }
 	if !slices.ContainsFunc(vs, lists) {
 		return vs
