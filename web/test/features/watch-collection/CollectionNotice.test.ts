@@ -20,7 +20,7 @@ vi.mock('@/entities/session/extensions', () => ({
   },
 }))
 
-const [car, lost, never] = vehicles.items as Vehicle[]
+const [car, lost, never, unserved] = vehicles.items as Vehicle[]
 const plain = (s: string) => s.replace(/\s+/g, ' ').trim()
 
 beforeEach(() => {
@@ -97,6 +97,18 @@ describe('CollectionNotice', () => {
     const alert = await notice(withCollection({ paused_until: '2026-09-28T07:30:00Z' }))
     expect(plain(alert.find('.v-alert-title').text())).toBe('Paused by Volvo until 07:30')
     expect(alert.text()).toContain('Volvo limited the number of calls.')
+  })
+
+  it.each<[Locale, string]>([
+    ['en', "Not read: Volvo's API does not serve this vehicle's market"],
+    ['fr', "Non lu : l'API de Volvo ne dessert pas le marché de ce véhicule"],
+    ['sv', 'Läses inte: Volvos API betjänar inte det här fordonets marknad'],
+  ])("tells a market Volvo's API does not serve, in %s", async (locale, title) => {
+    i18n.global.locale.value = locale
+    const alert = await notice(unserved)
+    expect(plain(alert.find('.v-alert-title').text())).toBe(plain(title))
+    expect(alert.text()).toContain(i18n.global.t('connection.notice.market'))
+    expect(alert.find('a').attributes('href')).toBe(`/connection?vehicle=${unserved?.id}`)
   })
 
   it('tells a stopped collector, as an error', async () => {

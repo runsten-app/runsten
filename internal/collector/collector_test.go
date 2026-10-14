@@ -41,6 +41,12 @@ type memStore struct {
 	callsErr   error
 	keys       map[string]string    // own application keys, by connection
 	refused    map[string]time.Time // keys refused, by connection: the setAt refused
+	markets    []string             // vehicles whose market was refused
+}
+
+func (m *memStore) SetMarketRefused(_ context.Context, _, vehicle string) error {
+	m.markets = append(m.markets, vehicle)
+	return nil
 }
 
 func (m *memStore) ConnectionKey(_ context.Context, _, connection string) (string, error) {
@@ -549,6 +555,51 @@ func TestTwoVehicles(t *testing.T) {
 	})
 }
 
+// TestMarketRefused plays a day with a second vehicle whose market the API does not
+// serve: the first pass tells it, the vehicle is marked and left alone, and the other
+// vehicle is read as usual.
+func TestMarketRefused(t *testing.T) {
+	data, err := os.ReadFile("../../scenarios/commute.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	commute, other := parseScenario(t, string(data)), parseScenario(t, charger)
+	other.MarketRefused = true
+	e := startFleet(t, commute, other)
+	rec := &recorder{}
+	st := &memStore{targets: twoVehicles(commute, other)}
+	start := e.clk.Now()
+	playDay(t, New(e.client, st, fixedToken{}, e.clk, DefaultIntervals(), DefaultQuota(), quiet, rec, nil), e.clk)
+
+	called := map[volvo.Endpoint]int{}
+	for _, c := range rec.calls {
+		if c.VIN == other.VIN {
+			called[c.Endpoint]++
+		}
+	}
+	if len(called) != 2 || called[volvo.EngineStatus] != 1 || called[volvo.EnergyState] != 1 {
+		t.Errorf("refused vehicle: calls %v, want engine-status and energy-state once", called)
+	}
+	var last Status
+	for _, s := range st.statuses {
+		if s.VehicleID == "charger" {
+			last = s
+		}
+	}
+	if f := last.Failure; f.Kind != FailMarket || f.Endpoint != volvo.EnergyState || f.Status != 404 {
+		t.Errorf("failure told: %+v, want market on energy-state", f)
+	}
+	if !last.NextAt.IsZero() {
+		t.Errorf("next read at %v, want none", last.NextAt)
+	}
+	if !slices.Equal(st.markets, []string{"charger"}) {
+		t.Errorf("markets refused: %v, want the charger once", st.markets)
+	}
+	if n := callsIn(rec, commute.VIN, volvo.EngineStatus, start, e.clk.Now()); n < 50 {
+		t.Errorf("the other vehicle: %d engine-status calls", n)
+	}
+}
+
 // TestTwoVehiclesShareTheQuota: the simulator counts the quota per API and application
 // key, over every vehicle (an assumption, see volvoapi.Limits). The collector blocks an
 // API for every vehicle once one of them is refused, until the announced delay.
@@ -654,6 +705,33 @@ func TestFailures(t *testing.T) {
 		_ = c.PollOnce(context.Background())
 		if api.calls[volvo.EngineStatus] != 2 || api.calls[volvo.Doors] != 1 {
 			t.Errorf("calls: %v", api.calls)
+		}
+	})
+
+	t.Run("market refused: never polled again, nor once marked", func(t *testing.T) {
+		clk := clock.NewManual(t0)
+		api := &scriptedAPI{errs: map[volvo.Endpoint]error{
+			volvo.EngineStatus: &volvo.APIError{Kind: volvo.KindNotFound, Status: 404},
+			volvo.EnergyState:  &volvo.APIError{Kind: volvo.KindMarket, Status: 404},
+		}}
+		marked := target()
+		marked.VehicleID, marked.VIN, marked.MarketRefused = "marked", "YV1SMLT0000DT0002", true
+		st := &memStore{targets: []Target{target(), marked}}
+		c := New(api, st, fixedToken{}, clk, iv, DefaultQuota(), quiet, nil, nil)
+		for range 25 * 6 { // 25 hours
+			_ = c.PollOnce(context.Background())
+			clk.Advance(iv.Parked)
+		}
+		if len(api.calls) != 2 || api.calls[volvo.EngineStatus] != 1 || api.calls[volvo.EnergyState] != 1 {
+			t.Errorf("calls: %v, want the first pass's engine-status and energy-state only", api.calls)
+		}
+		if !slices.Equal(st.markets, []string{"v"}) {
+			t.Errorf("markets refused: %v", st.markets)
+		}
+		for _, s := range st.statuses {
+			if s.VehicleID == "marked" && (!s.NextAt.IsZero() || !s.Failure.At.IsZero()) {
+				t.Errorf("status of the vehicle marked before: %+v", s)
+			}
 		}
 	})
 

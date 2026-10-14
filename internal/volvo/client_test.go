@@ -22,6 +22,12 @@ const simVIN = "YV1SMLT0000DT0001"
 // between the client and the fake backend.
 func newSim(t *testing.T, limits volvoapi.Limits) (*Client, *clock.Manual) {
 	t.Helper()
+	return newSimWith(t, limits, func(*scenario.Scenario) {})
+}
+
+// newSimWith starts the simulator on the commute day, changed by edit.
+func newSimWith(t *testing.T, limits volvoapi.Limits, edit func(*scenario.Scenario)) (*Client, *clock.Manual) {
+	t.Helper()
 	data, err := os.ReadFile("../../scenarios/commute.yaml")
 	if err != nil {
 		t.Fatal(err)
@@ -30,6 +36,7 @@ func newSim(t *testing.T, limits volvoapi.Limits) (*Client, *clock.Manual) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	edit(sc)
 	sim, err := scenario.NewSimulation(sc, vehicle.DefaultUploadPolicy())
 	if err != nil {
 		t.Fatal(err)
@@ -149,6 +156,19 @@ func TestErrors(t *testing.T) {
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) || apiErr.Kind != KindNotFound {
 		t.Errorf("unknown VIN: err = %v", err)
+	}
+}
+
+// TestMarketRefused: only the Energy API names the market; the others answer a plain
+// 404, which stays KindNotFound.
+func TestMarketRefused(t *testing.T) {
+	c, _ := newSimWith(t, volvoapi.DefaultLimits(), func(sc *scenario.Scenario) { sc.MarketRefused = true })
+	for ep, want := range map[Endpoint]Kind{EnergyState: KindMarket, EngineStatus: KindNotFound, Details: KindNotFound, Location: KindNotFound} {
+		_, err := c.Fetch(context.Background(), "", "token", simVIN, ep)
+		var apiErr *APIError
+		if !errors.As(err, &apiErr) || apiErr.Kind != want || apiErr.Status != http.StatusNotFound {
+			t.Errorf("%s: err = %v, want kind %v", ep, err, want)
+		}
 	}
 }
 

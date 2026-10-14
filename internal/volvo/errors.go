@@ -21,6 +21,7 @@ const (
 	KindQuota             // daily quota exhausted: wait RetryIn, for the whole API
 	KindNotFound          // unknown VIN or removed from the account
 	KindKeyRefused        // the application key (vcc-api-key) is refused: not the token's fault
+	KindMarket            // the API does not serve the vehicle's market: nothing will be read
 )
 
 // Default delays when the response does not say when to retry.
@@ -60,6 +61,12 @@ var (
 // one. A refusal that does not name the key stays a token's.
 var keyRefusedRe = regexp.MustCompile(`(?i)(subscription|vcc-api|api)[ -]?key`)
 
+// marketMessage tells a vehicle whose market the API does not serve from one it does not
+// know. Observed on the real API (2026-10): the Energy API's 404 says it on energy-state,
+// while every Connected Vehicle and Location endpoint, the details included, answers a
+// plain 404 "NOT_FOUND" for the same vehicle. The refusal names no market.
+const marketMessage = "does not belong to allowed markets"
+
 func newAPIError(endpoint string, resp *http.Response, body []byte) *APIError {
 	e := &APIError{Endpoint: endpoint, Status: resp.StatusCode, Message: errorMessage(body)}
 	switch {
@@ -70,6 +77,8 @@ func newAPIError(endpoint string, resp *http.Response, body []byte) *APIError {
 		e.Kind = KindKeyRefused
 	case resp.StatusCode == http.StatusUnauthorized:
 		e.Kind = KindUnauthorized
+	case resp.StatusCode == http.StatusNotFound && strings.Contains(e.Message, marketMessage):
+		e.Kind = KindMarket
 	case resp.StatusCode == http.StatusNotFound:
 		e.Kind = KindNotFound
 	case resp.StatusCode == http.StatusTooManyRequests:

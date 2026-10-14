@@ -26,6 +26,7 @@
         "reauth_at": null,
         "reauth_reason": null
       },
+      "market_refused_at": null,
       "collection": {
         "passed_at": "2026-09-28T07:00:00Z",
         "mode": "charging",
@@ -68,6 +69,7 @@
         "reauth_at": "2026-09-28T06:30:00Z",
         "reauth_reason": "refresh token expired"
       },
+      "market_refused_at": null,
       "collection": {
         "passed_at": "2026-09-28T07:00:00Z",
         "mode": "parked",
@@ -109,7 +111,42 @@
         "reauth_at": null,
         "reauth_reason": null
       },
+      "market_refused_at": null,
       "collection": null
+    },
+    {
+      "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a05",
+      "vin": "YV1SMLT0000DT0005",
+      "model": {
+        "family": null,
+        "model_year": null,
+        "variant": null,
+        "variant_source": null,
+        "ac_max_kw": null
+      },
+      "connection": {
+        "status": "active",
+        "api_key": "instance",
+        "authorized_at": "2026-09-28T05:00:00Z",
+        "refreshed_at": null,
+        "reauth_at": null,
+        "reauth_reason": null
+      },
+      "market_refused_at": "2026-09-28T05:01:00Z",
+      "collection": {
+        "passed_at": "2026-09-28T05:01:00Z",
+        "mode": "parked",
+        "read_at": null,
+        "next_read_at": null,
+        "paused_until": null,
+        "quota": [],
+        "last_failure": {
+          "at": "2026-09-28T05:01:00Z",
+          "endpoint": "energy-state",
+          "status": 404,
+          "kind": "market"
+        }
+      }
     }
   ]
 }

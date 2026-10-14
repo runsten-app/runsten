@@ -97,11 +97,14 @@ type connectionJSON struct {
 }
 
 type vehicleJSON struct {
-	ID         string               `json:"id" format:"uuid"`
-	VIN        string               `json:"vin"`
-	Model      modelJSON            `json:"model" doc:"What the vehicle is, from its latest details."`
-	Connection connectionJSON       `json:"connection" doc:"The state of the provider connection (Volvo ID) that reads the vehicle."`
-	Collection null[collectionJSON] `json:"collection" doc:"What the collector wrote of the vehicle after its latest pass; null before the first one."`
+	ID         string         `json:"id" format:"uuid"`
+	VIN        string         `json:"vin"`
+	Model      modelJSON      `json:"model" doc:"What the vehicle is, from its latest details."`
+	Connection connectionJSON `json:"connection" doc:"The state of the provider connection (Volvo ID) that reads the vehicle."`
+	// Market refused: a fact of the vehicle, apart from its connection and from the
+	// collector's latest pass.
+	MarketRefusedAt *time.Time           `json:"market_refused_at" pattern:"Z$" doc:"When the vendor's API refused the vehicle's market: the API does not serve the market it was sold in, nothing of it can be read, and it is no longer read. Connecting the Volvo ID again tries it again. null: served."`
+	Collection      null[collectionJSON] `json:"collection" doc:"What the collector wrote of the vehicle after its latest pass; null before the first one."`
 }
 
 // The collector's statuses, the same strings as its own.
@@ -117,7 +120,7 @@ func (collectionModeJSON) Schema(huma.Registry) *huma.Schema {
 
 // Schema lists the kinds of a failed call.
 func (failureKindJSON) Schema(huma.Registry) *huma.Schema {
-	return enumSchema("quota", "rate_limited", "unauthorized", "not_found", "unavailable", "token", "key_refused", "other")
+	return enumSchema("quota", "rate_limited", "unauthorized", "not_found", "unavailable", "token", "key_refused", "market", "other")
 }
 
 type collectionJSON struct {
@@ -139,7 +142,7 @@ type failureJSON struct {
 	At       time.Time       `json:"at" pattern:"Z$"`
 	Endpoint *string         `json:"endpoint" doc:"The vendor's endpoint called; null when no call could be made, without an access token."`
 	Status   *int            `json:"status" doc:"The HTTP status; null when the API did not respond."`
-	Kind     failureKindJSON `json:"kind" doc:"quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. other: another refusal."`
+	Kind     failureKindJSON `json:"kind" doc:"quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). other: another refusal."`
 }
 
 func collectionOf(v Vehicle) null[collectionJSON] {

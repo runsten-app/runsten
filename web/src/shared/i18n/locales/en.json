@@ -917,7 +917,8 @@
       "reading": "Read normally",
       "keyRefused": "Not read: Volvo refused the application key",
       "keyMissing": "Not read: no Volvo key given",
-      "unread": "Not read for your account"
+      "unread": "Not read for your account",
+      "market": "Not read: Volvo's API does not serve this vehicle's market"
     },
     "notice": {
       "reauth": {
@@ -933,7 +934,8 @@
       "keyRefused": "Volvo refused the application key this vehicle is read with: regenerated, or its application deleted on the developer portal. Give a new one on the connection page: the Volvo ID stays connected.",
       "keyMissing": "Runsten reads your vehicles with your Volvo key: give it on the connection page.",
       "quotaOwnKey": "The daily quota of calls of your Volvo key is used up. Reading resumes by itself.",
-      "unread": "Your account does not read this vehicle: nothing new is read of it, and what was read stays."
+      "unread": "Your account does not read this vehicle: nothing new is read of it, and what was read stays.",
+      "market": "Volvo's API for developers does not serve the market this vehicle was sold in: Runsten cannot read it, and no longer tries. Nothing on your side can change that. Should Volvo serve its market one day, connect the Volvo ID again: Runsten tries again."
     },
     "facts": {
       "mode": "Polling mode",
@@ -947,7 +949,8 @@
       "quotaUntil": "{api} until {time}",
       "lastFailure": "Latest failure",
       "noFailure": "None",
-      "noneDueKey": "None until a Volvo key is given"
+      "noneDueKey": "None until a Volvo key is given",
+      "noneDueMarket": "None: Volvo does not serve the vehicle's market"
     },
     "api": {
       "connectedVehicle": "vehicle data",
@@ -962,7 +965,8 @@
       "unavailable": "Volvo unreachable",
       "token": "Volvo ID unreachable",
       "other": "Call refused",
-      "keyRefused": "Volvo key refused"
+      "keyRefused": "Volvo key refused",
+      "market": "Market not served by Volvo"
     },
     "key": {
       "title": "Volvo key"

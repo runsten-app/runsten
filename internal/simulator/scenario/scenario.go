@@ -22,6 +22,9 @@ type Scenario struct {
 	Places  map[string]Place `yaml:"places"`
 	Steps   []Step           `yaml:"steps"`
 	API     API              `yaml:"api"`
+	// MarketRefused: the API does not serve the vehicle's market. It is listed with the
+	// account's vehicles, and every other endpoint refuses it (volvoapi).
+	MarketRefused bool `yaml:"marketRefused"`
 }
 
 // API sets the simulated API's behavior for this scenario: limits, faults and token

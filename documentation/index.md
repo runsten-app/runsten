@@ -31,7 +31,7 @@ Runsten shows what it read, and when:
 ## What you need
 
 - A Linux server with Docker: a NAS, a small VPS, or a Raspberry Pi 4 or 5 on a 64-bit system.
-- A Volvo electric car and its Volvo ID.
+- A Volvo electric car and its Volvo ID, sold in a market the Volvo Cars API serves. Volvo publishes no list of them: a car of another market is refused by every call, and Runsten says so on its pages.
 - An application of your own on the [Volvo Cars developer portal](https://developer.volvocars.com/): see [Your Volvo application](./self-hosting/volvo.md).
 
 Then follow the [installation](./self-hosting/index.md).

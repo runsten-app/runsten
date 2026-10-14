@@ -141,7 +141,7 @@ func TestEveryFailureKindStored(t *testing.T) {
 	t0 := time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
 	for i, kind := range []string{
 		collector.FailQuota, collector.FailRateLimited, collector.FailRejected, collector.FailNotFound,
-		collector.FailUnavailable, collector.FailToken, collector.FailKeyRefused, collector.FailOther,
+		collector.FailUnavailable, collector.FailToken, collector.FailKeyRefused, collector.FailMarket, collector.FailOther,
 	} {
 		at := t0.Add(time.Duration(i) * time.Minute)
 		err := s.SaveStatus(ctx, collector.Status{

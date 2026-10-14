@@ -164,6 +164,66 @@ func TestTargetsAndTokens(t *testing.T) {
 	}
 }
 
+// TestMarketRefused: a vehicle whose market the API does not serve is marked, told to
+// the collector and to the API, the first refusal's time kept, and tried again once
+// listed again.
+func TestMarketRefused(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, va := newVehicle(t, s, "token-a", "YV1AAAAAAAAAAAAA1")
+	_, vb := newVehicle(t, s, "token-b", "YV1BBBBBBBBBBBBB1")
+
+	refused := func() (map[string]bool, time.Time) {
+		t.Helper()
+		targets, err := s.Targets(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := map[string]bool{}
+		for _, tg := range targets {
+			got[tg.VehicleID] = tg.MarketRefused
+		}
+		v, _, err := s.Vehicle(ctx, a, va)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return got, v.MarketRefusedAt
+	}
+	if got, at := refused(); got[va] || got[vb] || !at.IsZero() {
+		t.Fatalf("before any refusal: %v, %v", got, at)
+	}
+	if err := s.SetMarketRefused(ctx, a, va); err != nil {
+		t.Fatal(err)
+	}
+	got, first := refused()
+	if !got[va] || got[vb] || first.IsZero() {
+		t.Fatalf("refused: %v, %v", got, first)
+	}
+	if err := s.SetMarketRefused(ctx, a, va); err != nil {
+		t.Fatal(err)
+	}
+	if _, at := refused(); !at.Equal(first) {
+		t.Errorf("refused again: %v, want the first refusal's %v", at, first)
+	}
+	if err := s.SetMarketRefused(ctx, a, vb); err != nil { // another account's vehicle
+		t.Fatal(err)
+	}
+	if got, _ := refused(); got[vb] {
+		t.Error("another account's vehicle marked")
+	}
+
+	conn, err := s.SaveConnection(ctx, a, oauth.Credentials{AccessToken: "token-a2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AddVehicle(ctx, a, conn, "YV1AAAAAAAAAAAAA1"); err != nil {
+		t.Fatal(err)
+	}
+	if got, at := refused(); got[va] || !at.IsZero() {
+		t.Errorf("listed again: %v, %v; want tried again", got, at)
+	}
+}
+
 func TestCredentialsLifecycle(t *testing.T) {
 	s, _ := testStore(t)
 	ctx := context.Background()

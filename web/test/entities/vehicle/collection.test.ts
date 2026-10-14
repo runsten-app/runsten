@@ -7,7 +7,7 @@ import {
 } from '@/entities/vehicle'
 import vehicles from '@fixtures/vehicles.json'
 
-const [car, lost, never] = vehicles.items as Vehicle[]
+const [car, lost, never, unserved] = vehicles.items as Vehicle[]
 const at = (iso: string) => Date.parse(iso)
 
 describe('collectionState', () => {
@@ -48,6 +48,11 @@ describe('collectionState', () => {
         'no key at all',
         { ...car, connection: { ...car.connection, api_key: 'missing' } },
         { kind: 'key', refused: false },
+      ],
+      [
+        'the market not served, before any pass',
+        { ...car, market_refused_at: '2026-09-28T05:01:00Z', collection: null },
+        { kind: 'market' },
       ],
       ['no pass yet', { ...car, collection: null }, { kind: 'waiting' }],
       [
@@ -139,6 +144,7 @@ describe('collectionState', () => {
     const now = at('2026-09-28T07:05:00Z')
     expect(lost && collectionState(lost, now)).toEqual({ kind: 'reauth' })
     expect(never && collectionState(never, now)).toEqual({ kind: 'waiting' })
+    expect(unserved && collectionState(unserved, now)).toEqual({ kind: 'market' })
   })
 })
 
@@ -148,6 +154,7 @@ describe('needsAttention', () => {
     [{ kind: 'reauth' }, true],
     [{ kind: 'waiting' }, false],
     [{ kind: 'stopped', since: '' }, true],
+    [{ kind: 'market' }, true],
     [{ kind: 'paused', until: '' }, true],
     [{ kind: 'quota', until: '', apis: [] }, true],
     [{ kind: 'reading' }, false],

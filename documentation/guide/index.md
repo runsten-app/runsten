@@ -22,6 +22,7 @@ The **Connection** page (in the menu under your name) tells whether Runsten read
 - **No Volvo key given**, or **Volvo refused the key**: on an instance without a Volvo key of its own, each account gives its own ([Your Volvo key](#your-volvo-key)). A key regenerated, or whose application was deleted on the developer portal, is refused: give the new one, the Volvo ID stays connected.
 - **Quota reached**: the day's calls of the Volvo key are used up. Reading resumes by itself when the quota is renewed; the trips and charges missed meanwhile are found afterwards, marked as reconstructed.
 - **Paused by Volvo**: Volvo limited the number of calls. Reading resumes by itself.
+- **The market of the vehicle is not served**: the Volvo Cars API does not serve the market the car was sold in, and refuses every call about it. Runsten marks the car as not supported and no longer reads it; neither you nor the instance can change that. Should Volvo serve its market one day, connect the Volvo ID again: Runsten tries the car again.
 - **The collector seems stopped**: nothing is read on the instance's side. Whoever runs the instance looks into it ([Troubleshooting](../self-hosting/troubleshooting.md#nothing-new-is-read)).
 
 ### Your Volvo key

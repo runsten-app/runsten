@@ -416,6 +416,8 @@ const (
 	// chosen is an EX30 its details do not tell apart from the Twin Motor: its driver
 	// chose the Single Motor Extended Range, with the standard charger.
 	chosen = "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a04"
+	// unserved is a vehicle whose market the vendor's API does not serve.
+	unserved = "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a05"
 )
 
 func h(hh, mm int) time.Time {
@@ -450,6 +452,13 @@ func fixtures(m *memReader) {
 			},
 		},
 		{ID: chosen, VIN: "YV1SMLT0000DT0004", AuthorizedAt: h(5, 0), VariantID: "ex30-er-2024", ACMaxKW: some(11.0)},
+		{
+			ID: unserved, VIN: "YV1SMLT0000DT0005", AuthorizedAt: h(5, 0), MarketRefusedAt: h(5, 1),
+			Collection: &Collection{
+				PassedAt: h(5, 1), Mode: "parked", Quota: map[string]time.Time{},
+				Failure: CollectionFailure{At: h(5, 1), Endpoint: "energy-state", Status: 404, Kind: "market"},
+			},
+		},
 	}
 	m.vehicles["other"] = []Vehicle{{ID: foreign, VIN: "YV1SMLT0000DT0003"}}
 	m.trips[car] = []core.Trip{
@@ -571,7 +580,7 @@ func TestVehiclesJSON(t *testing.T) {
 	_, body = get(t, noFollow(), e.api.URL+"/api/v1/vehicles", e.session(t, "other"))
 	if body != `{"items":[{"id":"`+foreign+`","vin":"YV1SMLT0000DT0003",`+
 		`"model":{"family":null,"model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null},"connection":{"status":"active","api_key":"instance","authorized_at":null,"refreshed_at":null,"reauth_at":null,"reauth_reason":null},`+
-		`"collection":null}]}`+"\n" {
+		`"market_refused_at":null,"collection":null}]}`+"\n" {
 		t.Errorf("other account: %s", body)
 	}
 	e.reader.vehicles["other"] = nil

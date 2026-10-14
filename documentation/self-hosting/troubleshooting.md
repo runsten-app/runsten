@@ -24,6 +24,7 @@ The **Connection** page of the web interface tells what the collector did on its
 - **Grant lost**: the Volvo ID must be connected again (a grant lasts 6 months at most).
 - **Quota**: the daily call volume of the application is used up; reading resumes when it is renewed. Trips and charges missed meanwhile are found afterwards, as reconstructed.
 - **Paused**: the API refused too many calls; the collector waits.
+- **Market not served**: the Volvo Cars API refuses the car, its market being one it does not serve ("Vehicle does not belong to allowed markets"). Nothing can be read of it: the collector marks it and no longer polls it. A new connection of the Volvo ID tries it again.
 - **Collector stopped**: no pass for 15 minutes. Look at `docker compose logs collector`.
 
 ## Debug page

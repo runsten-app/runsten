@@ -84,6 +84,7 @@ describe('ConnectionPage', () => {
       'XC40 Recharge Twin · 2021',
       'YV1SMLT0000DT0002',
       'EX30 Single Motor Extended Range · 2024',
+      'YV1SMLT0000DT0005',
     ])
   })
 

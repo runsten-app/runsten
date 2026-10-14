@@ -7,6 +7,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"runsten/internal/platform/clock"
@@ -17,6 +18,7 @@ import (
 type Source interface {
 	VIN() string
 	ReportAt(at time.Time) vehicle.Report
+	MarketRefused() bool // the API does not serve the vehicle's market
 }
 
 // Handler serves the simulated API.
@@ -110,6 +112,10 @@ func (h *Handler) report(w http.ResponseWriter, r *http.Request) (vehicle.Report
 	src, ok := h.srcs[r.PathValue("vin")]
 	if !ok {
 		notFound(w, r) // real behavior for an unknown VIN: not observed
+		return vehicle.Report{}, false
+	}
+	if src.MarketRefused() {
+		marketRefused(w, r)
 		return vehicle.Report{}, false
 	}
 	return src.ReportAt(h.clk.Now()), true
@@ -372,6 +378,18 @@ func chargeType(t vehicle.ChargeType) string {
 
 func notFound(w http.ResponseWriter, _ *http.Request) {
 	writeStatusError(w, http.StatusNotFound, "Resource not found")
+}
+
+// marketRefused answers for a vehicle whose market the API does not serve, as observed
+// on the real API (2026-10): the Energy API says so, every other endpoint, the details
+// included, answers a plain "NOT_FOUND". Only the messages were seen, not the bodies:
+// their formats are assumed (the Energy API's error, the Connected Vehicle API's).
+func marketRefused(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.URL.Path, "/energy/") {
+		writeEnergyError(w, http.StatusNotFound, "NOT_FOUND", "Vehicle does not belong to allowed markets")
+		return
+	}
+	writeCVError(w, http.StatusNotFound, "NOT_FOUND", "Vehicle not found")
 }
 
 func forbidden(w http.ResponseWriter, _ *http.Request) {

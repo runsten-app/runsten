@@ -917,7 +917,8 @@
       "reading": "Läses normalt",
       "keyRefused": "Läses inte: Volvo avvisade applikationsnyckeln",
       "keyMissing": "Läses inte: ingen Volvo-nyckel angiven",
-      "unread": "Läses inte för ditt konto"
+      "unread": "Läses inte för ditt konto",
+      "market": "Läses inte: Volvos API betjänar inte det här fordonets marknad"
     },
     "notice": {
       "reauth": {
@@ -933,7 +934,8 @@
       "keyRefused": "Volvo avvisade applikationsnyckeln som fordonet läses med: den har genererats om, eller dess applikation har tagits bort på utvecklarportalen. Ange en ny på anslutningssidan: Volvo ID förblir anslutet.",
       "keyMissing": "Runsten läser dina fordon med din Volvo-nyckel: ange den på anslutningssidan.",
       "quotaOwnKey": "Din Volvo-nyckels dagliga kvot av anrop är förbrukad. Läsningen återupptas av sig själv.",
-      "unread": "Ditt konto läser inte det här fordonet: inget nytt läses, och det som redan lästs finns kvar."
+      "unread": "Ditt konto läser inte det här fordonet: inget nytt läses, och det som redan lästs finns kvar.",
+      "market": "Volvos API för utvecklare betjänar inte marknaden där fordonet såldes: Runsten kan inte läsa det och försöker inte längre. Inget du gör kan ändra på det. Om Volvo en dag betjänar marknaden, anslut Volvo ID igen: då försöker Runsten på nytt."
     },
     "facts": {
       "mode": "Läsläge",
@@ -947,7 +949,8 @@
       "quotaUntil": "{api} till {time}",
       "lastFailure": "Senaste fel",
       "noFailure": "Inget",
-      "noneDueKey": "Ingen förrän en Volvo-nyckel anges"
+      "noneDueKey": "Ingen förrän en Volvo-nyckel anges",
+      "noneDueMarket": "Ingen: Volvo betjänar inte fordonets marknad"
     },
     "api": {
       "connectedVehicle": "fordonsdata",
@@ -962,7 +965,8 @@
       "unavailable": "Volvo går inte att nå",
       "token": "Volvo ID går inte att nå",
       "other": "Anrop nekat",
-      "keyRefused": "Volvo-nyckel avvisad"
+      "keyRefused": "Volvo-nyckel avvisad",
+      "market": "Marknaden betjänas inte av Volvo"
     },
     "key": {
       "title": "Volvo-nyckel"

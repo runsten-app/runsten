@@ -49,6 +49,9 @@ type Target struct {
 	// KeyRefused is set when the vendor refused the connection's own key: the vehicle
 	// is not polled until the user sets another.
 	KeyRefused bool
+	// MarketRefused is set when the vendor's API does not serve the vehicle's market:
+	// nothing of it can be read, and it is not polled until it is listed again.
+	MarketRefused bool
 }
 
 // ownKey reports whether the target's connection reads with its own application key.
@@ -89,6 +92,8 @@ type Store interface {
 	// SetKeyRefused records whether the vendor refused the connection's own key set at
 	// setAt; a key set since is left alone.
 	SetKeyRefused(ctx context.Context, accountID, connectionID string, setAt time.Time, refused bool) error
+	// SetMarketRefused records that the vendor's API does not serve the vehicle's market.
+	SetMarketRefused(ctx context.Context, accountID, vehicleID string) error
 }
 
 // TokenSource provides the access tokens of the connections. An error implementing
@@ -200,8 +205,8 @@ type Status struct {
 	Mode      string
 	ReadAt    time.Time // the latest successful call; zero: none since the collector started
 	// NextAt is the earliest call due, blocks and pauses included; zero while the
-	// connection lost its grant, or has no key it may read with: nothing is due until
-	// the user acts.
+	// connection lost its grant, has no key it may read with, or the vehicle's market is
+	// refused: nothing is due until the user acts.
 	NextAt      time.Time
 	PausedUntil time.Time            // rate limit, token rejected, key refused; zero: not paused
 	Quota       map[string]time.Time // APIs whose quota is exhausted, until when
@@ -226,6 +231,7 @@ const (
 	FailUnavailable = "unavailable"  // no response, or a server error
 	FailToken       = "token"        // no access token, the grant still held (Volvo ID unreachable)
 	FailKeyRefused  = "key_refused"  // the application key refused, not the token
+	FailMarket      = "market"       // the API does not serve the vehicle's market
 	FailOther       = "other"
 )
 
@@ -327,8 +333,11 @@ type vehicleState struct {
 	// missing holds the optional endpoints the API refused, until when they are not
 	// called: apart from next, which a transition or a policy brings forward.
 	missing map[volvo.Endpoint]time.Time
-	readAt  time.Time
-	failure Failure
+	// marketRefused: the API refused the vehicle's market, though the store may not have
+	// recorded it.
+	marketRefused bool
+	readAt        time.Time
+	failure       Failure
 }
 
 // Collector polls the vehicles. It is not safe for concurrent use: Run and PollOnce
@@ -536,6 +545,9 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 		c.reauthRequired(t, t.ReauthReason)
 		return false
 	}
+	if t.MarketRefused || vs.marketRefused {
+		return false
+	}
 	if !c.keyUsable(t, c.clk.Now()) {
 		return false
 	}
@@ -543,7 +555,7 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 	renewed := false // a rejected token is renewed once per pass
 	for _, ep := range endpoints() {
 		now := c.clk.Now()
-		if now.Before(c.accountPause[t.AccountID]) || c.keyBlocked(t, now) {
+		if now.Before(c.accountPause[t.AccountID]) || c.keyBlocked(t, now) || vs.marketRefused {
 			return saved
 		}
 		// A policy lifted, or shortened, applies at once.
@@ -797,6 +809,9 @@ func (c *Collector) status(t Target, vs *vehicleState) Status {
 	if t.ReauthReason != "" || (!t.ownKey() && c.noInstanceKey) || (t.ownKey() && t.KeyRefused) {
 		return s // nothing is due until the user acts
 	}
+	if t.MarketRefused || vs.marketRefused {
+		return s // nothing is due until the vehicle is listed again
+	}
 	if pause := c.keyRefused[keyOf(t)]; pause.After(now) && pause.After(s.PausedUntil) {
 		s.PausedUntil = pause // a refusal that may not be the key's: tried again then
 	}
@@ -917,6 +932,14 @@ func (c *Collector) fetchFailed(ctx context.Context, t Target, vs *vehicleState,
 		c.apiBlocked[c.budget.unitOf(t, ep.API())] = now.Add(apiErr.RetryIn)
 		c.log.Error("quota exhausted", "api", ep.API(), "account", t.AccountID, "own_key", t.ownKey(),
 			"retry_in", apiErr.RetryIn.String())
+	case volvo.KindMarket:
+		// Not a passing state: Volvo opens a market to its API rarely, if ever.
+		vs.marketRefused = true
+		if err := c.store.SetMarketRefused(ctx, t.AccountID, t.VehicleID); err != nil {
+			c.log.Warn("save refused market", "vehicle", t.VehicleID, "err", err)
+		}
+		c.log.Error("market not served by the API: the vehicle is no longer polled", "account", t.AccountID,
+			"vehicle", t.VehicleID)
 	case volvo.KindKeyRefused:
 		// The key, not the grant: the tokens and the re-authentication are left alone.
 		k := keyOf(t)
@@ -983,6 +1006,8 @@ func failureKind(e *volvo.APIError) string {
 		return FailNotFound
 	case volvo.KindKeyRefused:
 		return FailKeyRefused
+	case volvo.KindMarket:
+		return FailMarket
 	case volvo.KindOther:
 	}
 	if e.Status == 0 || e.Status >= 500 {

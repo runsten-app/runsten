@@ -74,6 +74,9 @@ func newSimulation(sc *Scenario, policy vehicle.UploadPolicy, origin time.Time) 
 // VIN returns the simulated vehicle's VIN.
 func (s *Simulation) VIN() string { return s.sc.VIN }
 
+// MarketRefused reports whether the API does not serve the vehicle's market.
+func (s *Simulation) MarketRefused() bool { return s.sc.MarketRefused }
+
 // ReportAt advances the simulation up to at (if at is in the future) and returns
 // what the cloud knows about the vehicle.
 func (s *Simulation) ReportAt(at time.Time) vehicle.Report {

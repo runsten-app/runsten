@@ -4,6 +4,7 @@ import {
   mdiAlertCircle,
   mdiCheckCircle,
   mdiClockOutline,
+  mdiEarthOff,
   mdiGaugeFull,
   mdiKeyAlert,
   mdiMinusCircle,
@@ -32,6 +33,7 @@ const looks: Record<CollectionState['kind'], { icon: string; color: string }> = 
   key: { icon: mdiKeyAlert, color: 'warning' },
   waiting: { icon: mdiClockOutline, color: 'info' },
   stopped: { icon: mdiAlertCircle, color: 'error' },
+  market: { icon: mdiEarthOff, color: 'warning' },
   paused: { icon: mdiPauseCircle, color: 'warning' },
   quota: { icon: mdiGaugeFull, color: 'warning' },
   reading: { icon: mdiCheckCircle, color: 'success' },
@@ -45,10 +47,11 @@ const quota = computed(() => (c.value?.quota ?? []).filter((q) => Date.parse(q.u
 const nextRead = computed(() => {
   const next = c.value?.next_read_at
   if (!c.value) return f.unknown()
-  if (!next)
-    return state.value.kind === 'key'
-      ? t('connection.facts.noneDueKey')
-      : t('connection.facts.noneDue')
+  if (!next) {
+    if (state.value.kind === 'key') return t('connection.facts.noneDueKey')
+    if (state.value.kind === 'market') return t('connection.facts.noneDueMarket')
+    return t('connection.facts.noneDue')
+  }
   return Date.parse(next) <= props.now ? t('connection.facts.due') : f.dateTime(next, props.now)
 })
 const failure = computed(() => {
