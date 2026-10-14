@@ -15,7 +15,7 @@ beforeEach(() => {
 })
 
 type Item = (typeof vehicles.items)[0]
-const [first, second, third] = vehicles.items as [Item, Item, Item]
+const [first, second, third, fourth] = vehicles.items as [Item, Item, Item, Item]
 
 function router() {
   return testRouter([
@@ -35,6 +35,7 @@ describe('VehicleSelect', () => {
       { value: first.id, title: 'XC40 Recharge Twin · 2021' },
       { value: second.id, title: second.vin }, // details never read
       { value: third.id, title: 'EX30 Single Motor Extended Range · 2024' }, // chosen
+      { value: fourth.id, title: fourth.vin }, // its market not served: never read
     ])
     expect(select.props('modelValue')).toBe(first.id)
     select.vm.$emit('update:modelValue', second.id)

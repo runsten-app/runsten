@@ -32,6 +32,7 @@ export function useCollectionText() {
       unavailable: t('connection.failure.unavailable'),
       token: t('connection.failure.token'),
       key_refused: t('connection.failure.keyRefused'),
+      market: t('connection.failure.market'),
       other: t('connection.failure.other'),
     }
     return labels[kind]
@@ -50,6 +51,8 @@ export function useCollectionText() {
         return t('connection.state.waiting')
       case 'stopped':
         return t('connection.state.stopped', { age: f.age(s.since, now) })
+      case 'market':
+        return t('connection.state.market')
       case 'paused':
         return t('connection.state.paused', { time: f.dateTime(s.until, now) })
       case 'quota':

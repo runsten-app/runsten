@@ -24,5 +24,6 @@
     "reauth_at": null,
     "reauth_reason": null
   },
+  "market_refused_at": null,
   "collection": null
 }

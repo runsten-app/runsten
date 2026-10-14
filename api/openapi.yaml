@@ -1291,7 +1291,7 @@ components:
             - string
             - "null"
         kind:
-          description: "quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. other: another refusal."
+          description: "quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). other: another refusal."
           enum:
             - quota
             - rate_limited
@@ -1300,6 +1300,7 @@ components:
             - unavailable
             - token
             - key_refused
+            - market
             - other
           type: string
         status:
@@ -3269,6 +3270,13 @@ components:
         id:
           format: uuid
           type: string
+        market_refused_at:
+          description: "When the vendor's API refused the vehicle's market: the API does not serve the market it was sold in, nothing of it can be read, and it is no longer read. Connecting the Volvo ID again tries it again. null: served."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
         model:
           $ref: "#/components/schemas/Model"
           description: What the vehicle is, from its latest details.
@@ -3279,6 +3287,7 @@ components:
         - vin
         - model
         - connection
+        - market_refused_at
         - collection
       type: object
     VehicleList:

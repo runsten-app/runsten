@@ -11,12 +11,13 @@ export const collectorStoppedAfter = 15 * 60_000
 
 // CollectionState is what the user is told of the reading of a vehicle, the worst first:
 // the account's offer leaves it unread, the grant lost, no application key it may be
-// read with, no pass yet, the collector stopped, the instance's key refused, a pause, a
-// quota; else it reads.
+// read with, the vehicle's market not served by the API, no pass yet, the collector
+// stopped, the instance's key refused, a pause, a quota; else it reads.
 export type CollectionState =
   | { kind: 'unread' }
   | { kind: 'reauth' }
   | { kind: 'key'; refused: boolean }
+  | { kind: 'market' }
   | { kind: 'waiting' }
   | { kind: 'stopped'; since: string }
   | { kind: 'paused'; until: string }
@@ -28,7 +29,7 @@ export type CollectionState =
 // when everything is read again. unread: the account's limits leave the vehicle out
 // (the session's limits.unread_vehicles).
 export function collectionState(
-  v: Pick<Vehicle, 'connection' | 'collection'>,
+  v: Pick<Vehicle, 'connection' | 'collection' | 'market_refused_at'>,
   now: number,
   unread = false,
 ): CollectionState {
@@ -36,6 +37,8 @@ export function collectionState(
   if (v.connection.status === 'reauth_required') return { kind: 'reauth' }
   if (v.connection.api_key === 'refused') return { kind: 'key', refused: true }
   if (v.connection.api_key === 'missing') return { kind: 'key', refused: false }
+  // Marked for good by the collector: nothing of the vehicle is read any more.
+  if (v.market_refused_at) return { kind: 'market' }
   const c = v.collection
   if (!c) return { kind: 'waiting' }
   if (now - Date.parse(c.passed_at) > collectorStoppedAfter) {

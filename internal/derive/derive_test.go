@@ -67,6 +67,8 @@ func (m *memStore) ConnectionKey(context.Context, string, string) (string, error
 
 func (m *memStore) SetKeyRefused(context.Context, string, string, time.Time, bool) error { return nil }
 
+func (m *memStore) SetMarketRefused(context.Context, string, string) error { return nil }
+
 func (m *memStore) SaveSnapshot(_ context.Context, s collector.Snapshot) (bool, error) {
 	v := m.vehicle(s.VehicleID)
 	k := core.Kind{Source: s.Source, Endpoint: string(s.Endpoint)}

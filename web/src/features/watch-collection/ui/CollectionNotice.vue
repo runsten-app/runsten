@@ -9,7 +9,8 @@ import { useCollectionText } from '../composables/useCollectionText'
 
 // CollectionNotice warns, on every page of a vehicle, that nothing new is read of it,
 // and why: the grant lost, with the way to connect again; no application key it may be
-// read with, which the connection page takes; the collector stopped; a pause or a quota,
+// read with, which the connection page takes; the vehicle's market not served by Volvo's
+// API, which no one here can change; the collector stopped; a pause or a quota,
 // which end by themselves; the account's offer leaving it unread (unread: the session's
 // limits), with the page that lifts it, when the instance has one. The connection page
 // tells the rest. Nothing while the vehicle is read, or before the collector's first pass.
@@ -31,6 +32,8 @@ function body(s: CollectionState): string {
       return t('connection.notice.stopped')
     case 'paused':
       return t('connection.notice.paused')
+    case 'market':
+      return t('connection.notice.market')
     default:
       // The quota is the key's: the account's own, or the instance's, shared.
       return connection.value?.api_key === 'own'

@@ -29,6 +29,7 @@ type fakeSource struct{ rep vehicle.Report }
 
 func (f fakeSource) VIN() string                       { return vin }
 func (f fakeSource) ReportAt(time.Time) vehicle.Report { return f.rep }
+func (f fakeSource) MarketRefused() bool               { return false }
 
 func report(caps vehicle.Capabilities) vehicle.Report {
 	st := vehicle.State{
@@ -411,6 +412,7 @@ type namedSource struct {
 
 func (n namedSource) VIN() string                       { return n.vin }
 func (n namedSource) ReportAt(time.Time) vehicle.Report { return n.rep }
+func (n namedSource) MarketRefused() bool               { return n.vin == vinRefused }
 
 const vin2 = "YV1SMLT0000DT0002"
 
@@ -475,6 +477,36 @@ func TestSeveralVehicles(t *testing.T) {
 		if code, _ := get(t, srv, path, true); code != http.StatusNotFound {
 			t.Errorf("%s: status %d, want 404", path, code)
 		}
+	}
+}
+
+const vinRefused = "YV1SMLT0000DT0003"
+
+// TestMarketRefused: a vehicle whose market the API does not serve is listed, and every
+// endpoint refuses it with a 404, the Energy API's naming the market, as observed.
+func TestMarketRefused(t *testing.T) {
+	srcs := []Source{namedSource{vin, report(allSupported())}, namedSource{vinRefused, report(allSupported())}}
+	srv := httptest.NewServer(NewHandler(srcs, clock.NewManual(t0), Limits{}, Faults{}, DefaultOAuth()))
+	t.Cleanup(srv.Close)
+
+	_, list := get(t, srv, "/connected-vehicle/v2/vehicles", true)
+	if data, _ := list["data"].([]any); len(data) != 2 {
+		t.Errorf("listed vehicles = %v, want both", data)
+	}
+	for _, tt := range []struct{ path, message string }{
+		{"/energy/v2/vehicles/" + vinRefused + "/state", "Vehicle does not belong to allowed markets"},
+		{"/energy/v2/vehicles/" + vinRefused + "/capabilities", "Vehicle does not belong to allowed markets"},
+		{"/connected-vehicle/v2/vehicles/" + vinRefused, ""},
+		{"/connected-vehicle/v2/vehicles/" + vinRefused + "/engine-status", ""},
+		{"/location/v1/vehicles/" + vinRefused + "/location", ""},
+	} {
+		code, body := get(t, srv, tt.path, true)
+		if msg, _ := body["message"].(string); code != http.StatusNotFound || msg != tt.message {
+			t.Errorf("%s: %d %v, want 404 with message %q", tt.path, code, body, tt.message)
+		}
+	}
+	if code, _ := get(t, srv, "/energy/v2/vehicles/"+vin+"/state", true); code != http.StatusOK {
+		t.Errorf("the other vehicle: status %d, want 200", code)
 	}
 }
 

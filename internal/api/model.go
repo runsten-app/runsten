@@ -183,7 +183,10 @@ func (s *Server) vehicleOf(ctx context.Context, v Vehicle) (vehicleJSON, error) 
 		return vehicleJSON{}, err
 	}
 	m := effectiveModel(s.Catalog, n, v)
-	return vehicleJSON{ID: v.ID, VIN: v.VIN, Model: modelOf(m), Connection: s.connectionOf(v), Collection: collectionOf(v)}, nil
+	return vehicleJSON{
+		ID: v.ID, VIN: v.VIN, Model: modelOf(m), Connection: s.connectionOf(v), MarketRefusedAt: timeOrNil(v.MarketRefusedAt),
+		Collection: collectionOf(v),
+	}, nil
 }
 
 type sourceLevelJSON string

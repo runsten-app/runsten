@@ -109,6 +109,9 @@ type Vehicle struct {
 	// OwnKey: the connection reads with the account's own application key, rather
 	// than the instance's; KeyRefused: Volvo refused it.
 	OwnKey, KeyRefused bool
+	// MarketRefusedAt is when the collector found that the vendor's API does not serve
+	// the vehicle's market: it is no longer read. Zero: served.
+	MarketRefusedAt time.Time
 	// Collection is what the collector last wrote of the vehicle; nil: it never did.
 	Collection *Collection
 	// VariantID is the variant of the catalog the user chose; empty: none, the

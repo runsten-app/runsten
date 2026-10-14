@@ -97,16 +97,26 @@ func (s *Store) SingleAccount(ctx context.Context) (string, error) {
 	return s.scalar(ctx, "SELECT runsten_single_account()")
 }
 
-// AddVehicle attaches the VIN to the connection and returns the vehicle ID.
+// AddVehicle attaches the VIN to the connection and returns the vehicle ID. A vehicle
+// listed again is tried again, should its market have been refused.
 func (s *Store) AddVehicle(ctx context.Context, accountID, connectionID, vin string) (string, error) {
 	var id string
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		return tx.QueryRow(ctx, `
 			INSERT INTO vehicles (account_id, connection_id, vin) VALUES ($1, $2, $3)
-			ON CONFLICT (account_id, vin) DO UPDATE SET connection_id = EXCLUDED.connection_id
+			ON CONFLICT (account_id, vin) DO UPDATE SET connection_id = EXCLUDED.connection_id, market_refused_at = NULL
 			RETURNING id`, accountID, connectionID, vin).Scan(&id)
 	})
 	return id, err
+}
+
+// SetMarketRefused implements collector.Store: the vendor's API does not serve the
+// vehicle's market. The first refusal's time is kept.
+func (s *Store) SetMarketRefused(ctx context.Context, accountID, vehicleID string) error {
+	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, `UPDATE vehicles SET market_refused_at = coalesce(market_refused_at, now()) WHERE id = $1`, vehicleID)
+		return err //nolint:wrapcheck // wrapped by inAccount
+	})
 }
 
 // Targets returns the vehicles of all accounts, with their connection, whether it
@@ -114,14 +124,14 @@ func (s *Store) AddVehicle(ctx context.Context, accountID, connectionID, vin str
 // keys are read separately (Credentials, ConnectionKey).
 func (s *Store) Targets(ctx context.Context) ([]collector.Target, error) {
 	rows, err := s.pool.Query(ctx, `SELECT account_id, vehicle_id, vin, connection_id, coalesce(reauth_reason, ''),
-		api_key_set_at, api_key_refused FROM runsten_poll_targets()`)
+		api_key_set_at, api_key_refused, market_refused FROM runsten_poll_targets()`)
 	if err != nil {
 		return nil, fmt.Errorf("vehicles to poll: %w", err)
 	}
 	var out []collector.Target
 	var t collector.Target
 	var keySetAt *time.Time
-	_, err = pgx.ForEachRow(rows, []any{&t.AccountID, &t.VehicleID, &t.VIN, &t.ConnectionID, &t.ReauthReason, &keySetAt, &t.KeyRefused}, func() error {
+	_, err = pgx.ForEachRow(rows, []any{&t.AccountID, &t.VehicleID, &t.VIN, &t.ConnectionID, &t.ReauthReason, &keySetAt, &t.KeyRefused, &t.MarketRefused}, func() error {
 		t.KeySetAt = utcOrZero(keySetAt)
 		out = append(out, t)
 		return nil
@@ -192,7 +202,8 @@ func (s *Store) queryVehicles(ctx context.Context, accountID, clause string, arg
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `
 			SELECT v.id, v.vin, c.authorized_at, c.refreshed_at, c.reauth_at, coalesce(c.reauth_reason, ''),
-				c.api_key IS NOT NULL, c.api_key_refused_at IS NOT NULL, coalesce(v.variant_id, ''), v.ac_max_kw, `+statusColumns+`
+				c.api_key IS NOT NULL, c.api_key_refused_at IS NOT NULL, coalesce(v.variant_id, ''), v.ac_max_kw,
+				v.market_refused_at, `+statusColumns+`
 			FROM vehicles v JOIN connections c ON c.account_id = v.account_id AND c.id = v.connection_id
 			LEFT JOIN collector_status s ON s.vehicle_id = v.id `+clause, args...)
 		if err != nil {
@@ -201,13 +212,15 @@ func (s *Store) queryVehicles(ctx context.Context, accountID, clause string, arg
 		var v api.Vehicle
 		var authorized, refreshed, reauth *time.Time
 		var acMaxKW *float64
+		var marketRefused *time.Time
 		var st statusScan
 		dest := append([]any{
 			&v.ID, &v.VIN, &authorized, &refreshed, &reauth, &v.ReauthReason, &v.OwnKey, &v.KeyRefused,
-			&v.VariantID, &acMaxKW,
+			&v.VariantID, &acMaxKW, &marketRefused,
 		}, st.dest()...)
 		_, err = pgx.ForEachRow(rows, dest, func() error {
 			v.AuthorizedAt, v.RefreshedAt, v.ReauthAt = utcOrZero(authorized), utcOrZero(refreshed), utcOrZero(reauth)
+			v.MarketRefusedAt = utcOrZero(marketRefused)
 			v.ACMaxKW = core.Value[float64]{}
 			if acMaxKW != nil {
 				v.ACMaxKW = core.Value[float64]{V: *acMaxKW, OK: true}

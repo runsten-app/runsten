@@ -917,7 +917,8 @@
       "reading": "Lu normalement",
       "keyRefused": "Non lu : Volvo a refusé la clé d'application",
       "keyMissing": "Non lu : aucune clé Volvo donnée",
-      "unread": "Non lu pour votre compte"
+      "unread": "Non lu pour votre compte",
+      "market": "Non lu : l'API de Volvo ne dessert pas le marché de ce véhicule"
     },
     "notice": {
       "reauth": {
@@ -933,7 +934,8 @@
       "keyRefused": "Volvo a refusé la clé d'application avec laquelle ce véhicule est lu : régénérée, ou son application supprimée sur le portail développeur. Donnez-en une nouvelle sur la page Connexion : le Volvo ID reste connecté.",
       "keyMissing": "Runsten lit vos véhicules avec votre clé Volvo : donnez-la sur la page Connexion.",
       "quotaOwnKey": "Le quota quotidien d'appels de votre clé Volvo est épuisé. La lecture reprend d'elle-même.",
-      "unread": "Votre compte ne lit pas ce véhicule : rien de nouveau n'en est lu, et ce qui a été lu reste."
+      "unread": "Votre compte ne lit pas ce véhicule : rien de nouveau n'en est lu, et ce qui a été lu reste.",
+      "market": "L'API de Volvo pour les développeurs ne dessert pas le marché où ce véhicule a été vendu : Runsten ne peut pas le lire, et n'essaie plus. Rien de votre côté n'y changera. Si Volvo dessert un jour son marché, reconnectez le Volvo ID : Runsten essaiera à nouveau."
     },
     "facts": {
       "mode": "Mode de lecture",
@@ -947,7 +949,8 @@
       "quotaUntil": "{api} jusqu'à {time}",
       "lastFailure": "Dernier échec",
       "noFailure": "Aucun",
-      "noneDueKey": "Aucune tant qu'aucune clé Volvo n'est donnée"
+      "noneDueKey": "Aucune tant qu'aucune clé Volvo n'est donnée",
+      "noneDueMarket": "Aucune : Volvo ne dessert pas le marché du véhicule"
     },
     "api": {
       "connectedVehicle": "données du véhicule",
@@ -962,7 +965,8 @@
       "unavailable": "Volvo injoignable",
       "token": "Volvo ID injoignable",
       "other": "Appel refusé",
-      "keyRefused": "Clé Volvo refusée"
+      "keyRefused": "Clé Volvo refusée",
+      "market": "Marché non desservi par Volvo"
     },
     "key": {
       "title": "Clé Volvo"

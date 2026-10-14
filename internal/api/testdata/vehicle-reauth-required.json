@@ -16,6 +16,7 @@
     "reauth_at": "2026-09-28T06:30:00Z",
     "reauth_reason": "refresh token expired"
   },
+  "market_refused_at": null,
   "collection": {
     "passed_at": "2026-09-28T07:00:00Z",
     "mode": "parked",
