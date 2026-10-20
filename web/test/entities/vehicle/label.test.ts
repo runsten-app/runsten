@@ -37,6 +37,7 @@ describe('vehicleLabels', () => {
       'YV1SMLT0000DT0002',
       'EX30 Single Motor Extended Range · 2024', // chosen by the driver
       'YV1SMLT0000DT0005', // its market not served: never read
+      'Polestar 2 Long Range Dual Motor / Performance · 2024', // a Polestar: the family of the variant chosen
     ])
   })
 

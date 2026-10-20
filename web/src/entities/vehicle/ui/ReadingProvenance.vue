@@ -12,7 +12,7 @@ const props = withDefaults(
   defineProps<{
     reading: Reading
     now: number
-    connection: Pick<Connection, 'status'>
+    connection: Pick<Connection, 'status'> & Partial<Pick<Connection, 'credential'>>
     staleAfter?: number
     checked?: boolean
     since?: boolean

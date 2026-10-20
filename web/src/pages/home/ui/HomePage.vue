@@ -9,7 +9,8 @@ import { AppShell } from '@/widgets/app-shell'
 
 // Home leads to the first vehicle of the account; without one, to the Volvo ID connection,
 // or first to the Connection page while the account's key is missing: without it,
-// runsten-api refuses to start the flow (an instance without a key of its own).
+// runsten-api refuses to start the flow (an instance without a key of its own). The
+// Connection page also takes a Polestar's credential.
 const { t } = useI18n()
 const router = useRouter()
 const { vehicles, isPending, error } = useVehicles()
@@ -41,6 +42,9 @@ watchEffect(() => {
         <!-- A full page load: the Volvo ID flow is served by runsten-api. -->
         <v-btn v-else href="auth/volvo/start" color="primary" variant="flat">{{
           t('home.connectVolvo')
+        }}</v-btn>
+        <v-btn :to="{ name: 'connection' }" variant="tonal" class="polestar">{{
+          t('home.connectPolestar')
         }}</v-btn>
       </template>
     </v-empty-state>

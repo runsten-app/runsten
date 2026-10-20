@@ -7,8 +7,24 @@ import {
 } from '@/entities/vehicle'
 import vehicles from '@fixtures/vehicles.json'
 
-const [car, lost, never, unserved] = vehicles.items as Vehicle[]
+const [car, lost, never, unserved, polestar] = vehicles.items as Vehicle[]
 const at = (iso: string) => Date.parse(iso)
+const polestarConnection: Vehicle['connection'] = {
+  provider: 'polestar',
+  status: 'active',
+  api_key: null,
+  credential: 'set',
+  authorized_at: null,
+  refreshed_at: null,
+  reauth_at: null,
+  reauth_reason: null,
+}
+const notGranted = {
+  at: '2026-09-28T07:04:00Z',
+  endpoint: 'location',
+  status: 403,
+  kind: 'not_granted' as const,
+}
 
 describe('collectionState', () => {
   it('reads a vehicle whose quota is exhausted until the latest of its APIs', () => {
@@ -53,6 +69,30 @@ describe('collectionState', () => {
         'the market not served, before any pass',
         { ...car, market_refused_at: '2026-09-28T05:01:00Z', collection: null },
         { kind: 'market' },
+      ],
+      [
+        'a Polestar credential refused',
+        { ...car, connection: { ...polestarConnection, credential: 'refused' } },
+        { kind: 'credential', refused: true },
+      ],
+      [
+        'a Polestar credential removed, the vehicle unshared too',
+        {
+          ...car,
+          connection: { ...polestarConnection, credential: 'missing' },
+          unshared_at: '2026-09-28T06:00:00Z',
+        },
+        { kind: 'credential', refused: false },
+      ],
+      [
+        'the vehicle no longer shared, before any pass',
+        {
+          ...car,
+          connection: polestarConnection,
+          unshared_at: '2026-09-28T06:00:00Z',
+          collection: null,
+        },
+        { kind: 'unshared' },
       ],
       ['no pass yet', { ...car, collection: null }, { kind: 'waiting' }],
       [
@@ -122,6 +162,20 @@ describe('collectionState', () => {
         { ...car, collection: { ...c, paused_until: '2026-09-28T07:00:00Z', quota: [] } },
         { kind: 'reading' },
       ],
+      [
+        'a quota, a domain not granted',
+        { ...car, connection: polestarConnection, collection: { ...c, last_failure: notGranted } },
+        { kind: 'quota', until: '2026-09-28T09:00:00Z', apis: ['energy', 'location'] },
+      ],
+      [
+        'a domain not granted, the others read',
+        {
+          ...car,
+          connection: polestarConnection,
+          collection: { ...c, quota: [], last_failure: notGranted },
+        },
+        { kind: 'notGranted', endpoint: 'location' },
+      ],
     ]
     for (const [name, v, want] of cases) expect(collectionState(v, now), name).toEqual(want)
   })
@@ -130,6 +184,23 @@ describe('collectionState', () => {
     const now = at('2026-09-28T07:05:00Z')
     expect(lost && collectionState(lost, now, true)).toEqual({ kind: 'unread' })
     expect(never && collectionState(never, now, true)).toEqual({ kind: 'unread' })
+  })
+
+  it('tells a domain not granted for a day, while the collector leaves it out', () => {
+    const c = car?.collection
+    if (!car || !c) throw new Error('fixture')
+    const v = {
+      ...car,
+      connection: polestarConnection,
+      collection: { ...c, quota: [], last_failure: notGranted },
+    }
+    const passed = (iso: string) => ({ ...v, collection: { ...v.collection, passed_at: iso } })
+    expect(collectionState(passed('2026-09-29T07:00:00Z'), at('2026-09-29T07:03:59Z')).kind).toBe(
+      'notGranted',
+    )
+    expect(collectionState(passed('2026-09-29T07:04:00Z'), at('2026-09-29T07:04:00Z'))).toEqual({
+      kind: 'reading',
+    })
   })
 
   it('takes a pass of 15 minutes ago for a running collector', () => {
@@ -145,6 +216,7 @@ describe('collectionState', () => {
     expect(lost && collectionState(lost, now)).toEqual({ kind: 'reauth' })
     expect(never && collectionState(never, now)).toEqual({ kind: 'waiting' })
     expect(unserved && collectionState(unserved, now)).toEqual({ kind: 'market' })
+    expect(polestar && collectionState(polestar, now)).toEqual({ kind: 'unshared' })
   })
 })
 
@@ -155,6 +227,9 @@ describe('needsAttention', () => {
     [{ kind: 'waiting' }, false],
     [{ kind: 'stopped', since: '' }, true],
     [{ kind: 'market' }, true],
+    [{ kind: 'credential', refused: true }, true],
+    [{ kind: 'unshared' }, true],
+    [{ kind: 'notGranted', endpoint: null }, true],
     [{ kind: 'paused', until: '' }, true],
     [{ kind: 'quota', until: '', apis: [] }, true],
     [{ kind: 'reading' }, false],

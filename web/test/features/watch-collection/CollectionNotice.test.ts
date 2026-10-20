@@ -20,7 +20,7 @@ vi.mock('@/entities/session/extensions', () => ({
   },
 }))
 
-const [car, lost, never, unserved] = vehicles.items as Vehicle[]
+const [car, lost, never, unserved, polestar] = vehicles.items as Vehicle[]
 const plain = (s: string) => s.replace(/\s+/g, ' ').trim()
 
 beforeEach(() => {
@@ -38,6 +38,14 @@ async function notice(v: Vehicle | undefined) {
   const { wrapper } = mountWith(CollectionNotice, { props: { vehicle: v?.id } })
   await flushPromises()
   return wrapper.find('.collection-notice')
+}
+
+// shared is the Polestar of the fixtures, shared again, its collection patched.
+function shared(patch: Partial<NonNullable<Vehicle['collection']>>): Vehicle | undefined {
+  const c = polestar?.collection
+  return polestar && c
+    ? { ...polestar, unshared_at: null, collection: { ...c, ...patch } }
+    : undefined
 }
 
 function withCollection(patch: Partial<NonNullable<Vehicle['collection']>>): Vehicle | undefined {
@@ -158,6 +166,69 @@ describe('CollectionNotice', () => {
       plain(i18n.global.t('connection.state.unread')),
     )
     expect(alert.find('a').exists()).toBe(false)
+  })
+
+  it.each<[string, Vehicle | undefined, string, string]>([
+    [
+      'its credential refused',
+      polestar && {
+        ...polestar,
+        unshared_at: null,
+        connection: { ...polestar.connection, credential: 'refused' },
+      },
+      'Not read: Polestar refused the credential',
+      'it expired after its 90 days',
+    ],
+    [
+      'its credential removed',
+      polestar && {
+        ...polestar,
+        unshared_at: null,
+        connection: { ...polestar.connection, credential: 'missing' },
+      },
+      'Not read: no Polestar credential given',
+      'which was removed',
+    ],
+    [
+      'no longer shared',
+      polestar,
+      'Not read: the vehicle is no longer shared with the credential',
+      'Let it read the car again on the portal',
+    ],
+    [
+      'a domain not granted',
+      shared({
+        last_failure: {
+          at: '2026-09-28T07:00:00Z',
+          endpoint: 'location',
+          status: 403,
+          kind: 'not_granted',
+        },
+      }),
+      'Read in part: the credential was not granted every domain',
+      'one of the domains Runsten reads (location)',
+    ],
+  ])('tells a Polestar %s, and leads to the connection', async (_, v, title, body) => {
+    const alert = await notice(v)
+    expect(plain(alert.find('.v-alert-title').text())).toBe(title)
+    expect(alert.text()).toContain(body)
+    expect(alert.find('a').attributes('href')).toBe(`/connection?vehicle=${polestar?.id}`)
+  })
+
+  it('tells an exhausted quota of the Polestar credential', async () => {
+    const v = shared({ quota: [{ api: 'polestar', until: '2026-09-28T09:00:00Z' }] })
+    const alert = await notice(v)
+    expect(plain(alert.find('.v-alert-title').text())).toBe('Polestar quota reached until 09:00')
+    expect(alert.text()).toContain(
+      'The daily quota of calls of your Polestar credential is used up.',
+    )
+  })
+
+  it("tells a pause of the Data Portal as Polestar's", async () => {
+    const v = shared({ paused_until: '2026-09-28T07:30:00Z' })
+    const alert = await notice(v)
+    expect(plain(alert.find('.v-alert-title').text())).toBe('Paused by Polestar until 07:30')
+    expect(alert.text()).toContain('Polestar limited the number of calls.')
   })
 
   it('says nothing before the vehicle is read', async () => {

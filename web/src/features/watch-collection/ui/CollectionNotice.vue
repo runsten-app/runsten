@@ -9,8 +9,10 @@ import { useCollectionText } from '../composables/useCollectionText'
 
 // CollectionNotice warns, on every page of a vehicle, that nothing new is read of it,
 // and why: the grant lost, with the way to connect again; no application key it may be
-// read with, which the connection page takes; the vehicle's market not served by Volvo's
-// API, which no one here can change; the collector stopped; a pause or a quota,
+// read with, which the connection page takes; the Polestar credential refused or removed,
+// or the vehicle no longer shared with it, or a domain it was not granted, which the
+// connection page takes too; the vehicle's market not served by Volvo's API, which no one
+// here can change; the collector stopped; a pause or a quota,
 // which end by themselves; the account's offer leaving it unread (unread: the session's
 // limits), with the page that lifts it, when the instance has one. The connection page
 // tells the rest. Nothing while the vehicle is read, or before the collector's first pass.
@@ -31,11 +33,23 @@ function body(s: CollectionState): string {
     case 'stopped':
       return t('connection.notice.stopped')
     case 'paused':
-      return t('connection.notice.paused')
+      return connection.value?.provider === 'polestar'
+        ? t('connection.notice.pausedPolestar')
+        : t('connection.notice.paused')
     case 'market':
       return t('connection.notice.market')
+    case 'credential':
+      return s.refused
+        ? t('connection.notice.credentialRefused')
+        : t('connection.notice.credentialMissing')
+    case 'unshared':
+      return t('connection.notice.unshared')
+    case 'notGranted':
+      return t('connection.notice.notGranted', { endpoint: s.endpoint ?? f.unknown() })
     default:
-      // The quota is the key's: the account's own, or the instance's, shared.
+      // The quota is the key's: the account's own, or the instance's, shared; or the
+      // Polestar credential's.
+      if (connection.value?.provider === 'polestar') return t('connection.notice.quotaPolestar')
       return connection.value?.api_key === 'own'
         ? t('connection.notice.quotaOwnKey')
         : t('connection.notice.quota')
@@ -48,7 +62,7 @@ function body(s: CollectionState): string {
     v-if="shown?.kind === 'unread'"
     type="info"
     variant="tonal"
-    :title="text.state(shown, now)"
+    :title="text.state(shown, now, connection?.provider)"
     class="collection-notice mb-4"
   >
     <p>{{ t('connection.notice.unread') }}</p>
@@ -79,7 +93,7 @@ function body(s: CollectionState): string {
     v-else-if="shown"
     :type="shown.kind === 'stopped' ? 'error' : 'warning'"
     variant="tonal"
-    :title="text.state(shown, now)"
+    :title="text.state(shown, now, connection?.provider)"
     class="collection-notice mb-4"
   >
     <p>{{ body(shown) }}</p>

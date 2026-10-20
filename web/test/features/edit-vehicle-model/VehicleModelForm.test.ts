@@ -225,6 +225,16 @@ describe('VehicleModelForm', () => {
     expect(w.find('[role="status"]').exists()).toBe(true)
   })
 
+  it('offers a Polestar without a family the variants the API gives', async () => {
+    const polestar = vehicles.items[4] as Vehicle
+    const w = await form({
+      ...polestar,
+      model: { ...polestar.model, family: null, variant: null, variant_source: null },
+    })
+    expect(w.find('.none').exists()).toBe(false)
+    expect(w.find('form').exists()).toBe(true)
+  })
+
   it('tells when the variants cannot be read', async () => {
     api.fetchVariants.mockRejectedValue(new ApiError(500, 'internal', ''))
     const { wrapper } = mountWith(VehicleModelForm, { props: { vehicle: ex30, label: 'My EX30' } })

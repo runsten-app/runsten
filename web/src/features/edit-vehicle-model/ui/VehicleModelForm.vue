@@ -176,7 +176,12 @@ function chargerLabel(c: number): string {
       {{ t('vehicleModel.loadError') }}
     </v-alert>
     <v-progress-linear v-else-if="loading" indeterminate :aria-label="t('vehicleModel.loading')" />
-    <p v-else-if="vehicle.model.family === null" class="none text-body-medium">
+    <!-- The API's variants decide: a Polestar of the Data Portal reports no family, and
+         is offered its brand's. -->
+    <p
+      v-else-if="options.length === 0 && vehicle.model.family === null"
+      class="none text-body-medium"
+    >
       {{ t('vehicleModel.notRead') }}
     </p>
     <p v-else-if="options.length === 0" class="none text-body-medium">

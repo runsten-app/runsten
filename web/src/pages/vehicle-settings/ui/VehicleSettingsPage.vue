@@ -34,7 +34,8 @@ const label = computed(() => (current.value ? vehicleLabel(current.value) : ''))
     />
     <template v-else-if="current">
       <VehicleModelForm :vehicle="current" :label />
-      <VehicleImports :vehicle />
+      <!-- The Volvo Data Portal's files are a Volvo's history: none of a Polestar. -->
+      <VehicleImports :vehicle :volvo="current.connection.provider === 'volvo'" />
     </template>
   </AppShell>
 </template>

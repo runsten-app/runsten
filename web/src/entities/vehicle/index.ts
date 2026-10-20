@@ -9,12 +9,19 @@ export {
   collectionState,
   collectorStoppedAfter,
   needsAttention,
+  notGrantedFor,
   type Collection,
   type CollectionFailure,
   type CollectionState,
   type FailureKind,
 } from './model/collection'
-export { detailsStaleAfter, isStale, staleAfter } from './model/freshness'
+export {
+  detailsStaleAfter,
+  isStale,
+  lastReport,
+  reportLateAfter,
+  staleAfter,
+} from './model/freshness'
 export { vehicleLabel, vehicleLabels } from './model/label'
 export { vehicleMode, type Mode } from './model/mode'
 export { vehicleKeys } from './model/queryKeys'

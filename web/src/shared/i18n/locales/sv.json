@@ -35,8 +35,9 @@
     "empty": {
       "title": "Inga fordon ännu",
       "keyText": "Runsten läser dina fordon med nyckeln till en Volvo-applikation som du skapar: ange den först och anslut sedan ditt Volvo ID.",
-      "text": "Anslut ditt Volvo ID: Runsten läser kontots fordon."
-    }
+      "text": "Anslut ditt Volvo ID, eller ange uppgifterna för din Polestar: Runsten läser kontots fordon."
+    },
+    "connectPolestar": "Ange Polestar-uppgifter"
   },
   "vehicle": {
     "title": "Fordon",
@@ -78,7 +79,8 @@
     "odometer": "Mätarställning",
     "map": "Karta över positionen",
     "position": "Senaste position",
-    "coordinates": "Koordinater"
+    "coordinates": "Koordinater",
+    "lastReported": "Bilens senaste mätning {time}"
   },
   "charging": {
     "status": {
@@ -876,7 +878,7 @@
     "title": "Anslutning",
     "backToVehicle": "Tillbaka till fordonet",
     "attention": "Anslutningen behöver din uppmärksamhet",
-    "intro": "Runsten läser dina fordon från Volvos API i bakgrunden: det är dess insamlare. Den här sidan visar om den läser dem, och om inte, varför.",
+    "intro": "Runsten läser dina fordon i bakgrunden, från Volvos API och Polestars Data Portal: det är dess insamlare. Den här sidan visar om den läser dem, och om inte, varför.",
     "loading": "Läser in anslutningen",
     "error": "Anslutningen kunde inte läsas in. Försök igen om en stund.",
     "refreshFailed": "Anslutningen kunde inte uppdateras: det som visas kan vara inaktuellt.",
@@ -888,7 +890,7 @@
     },
     "volvoId": {
       "title": "Volvo ID",
-      "none": "Inget Volvo ID anslutet ännu: Runsten läser ingenting.",
+      "none": "Inget Volvo ID anslutet ännu: Runsten läser ingen Volvo.",
       "connect": "Anslut ett Volvo ID",
       "reconnect": "Anslut Volvo ID igen",
       "reconnectHelp": "Att ansluta igen förnyar bara behörigheten: inget som redan lästs går förlorat.",
@@ -918,7 +920,13 @@
       "keyRefused": "Läses inte: Volvo avvisade applikationsnyckeln",
       "keyMissing": "Läses inte: ingen Volvo-nyckel angiven",
       "unread": "Läses inte för ditt konto",
-      "market": "Läses inte: Volvos API betjänar inte det här fordonets marknad"
+      "market": "Läses inte: Volvos API betjänar inte det här fordonets marknad",
+      "credentialRefused": "Läses inte: Polestar avvisade inloggningsuppgifterna",
+      "credentialMissing": "Läses inte: inga Polestar-uppgifter angivna",
+      "unshared": "Läses inte: fordonet delas inte längre med uppgifterna",
+      "notGranted": "Läses delvis: uppgifterna har inte fått alla domäner",
+      "pausedPolestar": "Pausad av Polestar till {time}",
+      "quotaPolestar": "Polestars kvot nådd till {time}"
     },
     "notice": {
       "reauth": {
@@ -935,7 +943,13 @@
       "keyMissing": "Runsten läser dina fordon med din Volvo-nyckel: ange den på anslutningssidan.",
       "quotaOwnKey": "Din Volvo-nyckels dagliga kvot av anrop är förbrukad. Läsningen återupptas av sig själv.",
       "unread": "Ditt konto läser inte det här fordonet: inget nytt läses, och det som redan lästs finns kvar.",
-      "market": "Volvos API för utvecklare betjänar inte marknaden där fordonet såldes: Runsten kan inte läsa det och försöker inte längre. Inget du gör kan ändra på det. Om Volvo en dag betjänar marknaden, anslut Volvo ID igen: då försöker Runsten på nytt."
+      "market": "Volvos API för utvecklare betjänar inte marknaden där fordonet såldes: Runsten kan inte läsa det och försöker inte längre. Inget du gör kan ändra på det. Om Volvo en dag betjänar marknaden, anslut Volvo ID igen: då försöker Runsten på nytt.",
+      "credentialRefused": "Polestars Data Portal avvisade uppgifterna som fordonet läses med: de har gått ut efter sina 90 dagar, eller tagits bort på portalen. Skapa nya där och ange dem på anslutningssidan: det som redan lästs finns kvar.",
+      "credentialMissing": "Runsten läser den här Polestar med dina uppgifter från Polestars Data Portal, som har tagits bort: ange nya på anslutningssidan.",
+      "unshared": "Data Portal låter inte längre dina uppgifter läsa fordonet. Låt dem läsa bilen igen på portalen och ange sedan uppgifterna igen på anslutningssidan: då läses fordonet igen.",
+      "notGranted": "Dina uppgifter har inte fått en av domänerna som Runsten läser ({endpoint}): det den ger läses inte. Skapa uppgifter med alla fem domäner och ange dem på anslutningssidan.",
+      "quotaPolestar": "Dina Polestar-uppgifters dagliga kvot av anrop är förbrukad. Läsningen återupptas av sig själv.",
+      "pausedPolestar": "Polestar har begränsat antalet anrop. Läsningen återupptas av sig själv."
     },
     "facts": {
       "mode": "Läsläge",
@@ -950,12 +964,15 @@
       "lastFailure": "Senaste fel",
       "noFailure": "Inget",
       "noneDueKey": "Ingen förrän en Volvo-nyckel anges",
-      "noneDueMarket": "Ingen: Volvo betjänar inte fordonets marknad"
+      "noneDueMarket": "Ingen: Volvo betjänar inte fordonets marknad",
+      "noneDueCredential": "Ingen förrän Polestar-uppgifter anges",
+      "noneDueUnshared": "Ingen: fordonet delas inte längre med uppgifterna"
     },
     "api": {
       "connectedVehicle": "fordonsdata",
       "energy": "batteri och laddning",
-      "location": "position"
+      "location": "position",
+      "polestar": "Polestars Data Portal"
     },
     "failure": {
       "quota": "Kvot nådd",
@@ -966,7 +983,13 @@
       "token": "Volvo ID går inte att nå",
       "other": "Anrop nekat",
       "keyRefused": "Volvo-nyckel avvisad",
-      "market": "Marknaden betjänas inte av Volvo"
+      "market": "Marknaden betjänas inte av Volvo",
+      "credentialRefused": "Polestar-uppgifter avvisade",
+      "unshared": "Fordonet delas inte längre",
+      "notGranted": "Domän inte beviljad",
+      "notFoundPolestar": "Fordonet okänt för Polestar",
+      "unavailablePolestar": "Polestar går inte att nå",
+      "tokenPolestar": "Ingen token från Polestar"
     },
     "key": {
       "title": "Volvo-nyckel"
@@ -976,6 +999,9 @@
       "help": "Applikationen på Volvos utvecklarportal som den här instansen läser med, enligt dess konfiguration (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_API_KEY): jämför dem med din applikations på developer.volvocars.com. Dess nyckel läser alla fordon; hemligheten visas aldrig.",
       "clientId": "Klient-ID",
       "key": "Applikationsnyckel"
+    },
+    "polestar": {
+      "title": "Polestar"
     }
   },
   "apiKey": {
@@ -1268,6 +1294,67 @@
       "confirm": "Ta bort",
       "error": "Importen kunde inte tas bort. Försök igen om en stund.",
       "done": "{what}: borttagen."
+    }
+  },
+  "polestar": {
+    "intro": "Runsten läser din Polestar med inloggningsuppgifter som du skapar på Polestars Data Portal, den åtkomst som EU:s dataakt ger ägarna. Dess kvot av anrop är bara din.",
+    "beta": "Stödet för Polestar är i beta: hur ofta en bil skickar sina värden under körning är ännu inte kontrollerat.",
+    "guide": "Läs guiden",
+    "refused": {
+      "title": "Dina Polestar-uppgifter avvisades",
+      "body": "Polestar avvisade dem {time}: utgångna, eller borttagna på Data Portal. Dina Polestar-fordon läses inte förrän du anger nya; det som redan lästs finns kvar."
+    },
+    "renew": {
+      "title": "Förnya dina Polestar-uppgifter",
+      "soon": "Uppgifter från Data Portal gäller i 90 dagar: de här går ut {date}. Skapa nya på portalen innan dess och ange dem här.",
+      "past": "Uppgifter från Data Portal gäller i 90 dagar: de här borde ha gått ut {date}. Skapa nya på portalen och ange dem här."
+    },
+    "current": "Dina uppgifter",
+    "last4": "Klient-ID som slutar på {last4}",
+    "setAt": "Angivna",
+    "expiresAt": "Går ut",
+    "replace": "Byt uppgifter",
+    "delete": {
+      "button": "Ta bort uppgifterna",
+      "title": "Ta bort dina Polestar-uppgifter?",
+      "text": "Dina Polestar-fordon finns kvar, med sin historik, men läses inte förrän du anger nya uppgifter.",
+      "error": "Uppgifterna kunde inte tas bort. Försök igen om en stund.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    },
+    "steps": {
+      "title": "Skapa dina uppgifter",
+      "signIn": "Logga in med ditt Polestar ID på",
+      "newTab": "(öppnas i en ny flik)",
+      "create": "Skapa inloggningsuppgifter under Data Portals API: vilket namn som helst duger.",
+      "domains": "Ge dem de fem domäner som Runsten läser: batteri, mätarställning, position, tillgänglighet och laddningsgräns.",
+      "share": "Om portalen frågar vilka bilar de läser, välj din.",
+      "copy": "Kopiera klient-ID, klienthemlighet (visas bara en gång) och ditt Account ID, och klistra in dem nedan: de visas aldrig igen."
+    },
+    "field": {
+      "clientId": "Klient-ID",
+      "clientSecret": "Klienthemlighet",
+      "accountId": "Account ID"
+    },
+    "help": "Kvoten: 10 000 anrop per dag, mer än en bil som körs och laddas hela dagen behöver. Uppgifterna gäller i 90 dagar: Runsten påminner dig innan.",
+    "save": "Spara uppgifterna",
+    "cancel": "Avbryt",
+    "saved": "Uppgifterna sparade: fordonen läses från insamlarens nästa varv.",
+    "deleted": "Uppgifterna borttagna.",
+    "error": {
+      "summary": "Uppgifterna sparades inte",
+      "required": "Klistra in {field}.",
+      "spaces": "{field} har inga mellanslag: kopiera det igen.",
+      "characters": "{field} har bara bokstäver, siffror och tecken: kopiera det igen.",
+      "tooShort": "{field} har minst {min} tecken: kopiera hela.",
+      "tooLong": "{field} har högst {max} tecken: kopiera bara det.",
+      "refused": "Polestar avvisade uppgifterna: kontrollera de tre värdena, och att de inte har gått ut.",
+      "invalidBody": "Uppgifterna avvisades: kopiera värdena igen.",
+      "noVehicle": "Uppgifterna läser inget fordon: kontrollera på Data Portal att de läser din bil och spara dem sedan igen.",
+      "tooManyVehicles": "Med de här uppgifternas fordon skulle ditt konto få fler fordon än det tillåter: uppgifterna sparades inte.",
+      "portalUnavailable": "Polestars Data Portal svarade inte: uppgifterna sparades inte. Försök igen om en stund.",
+      "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
+      "internal": "Uppgifterna kunde inte sparas. Försök igen om en stund."
     }
   }
 }

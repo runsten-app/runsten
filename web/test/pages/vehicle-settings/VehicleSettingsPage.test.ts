@@ -47,6 +47,16 @@ describe('VehicleSettingsPage', () => {
   })
 
   it.each([
+    ['a Volvo', ex30, true],
+    ['a Polestar', vehicles.items[4], false],
+  ])("offers the Volvo Data Portal's files to %s only, Aximote to both", async (_, v, portal) => {
+    mocks.fetchVehicle.mockResolvedValue(v)
+    const w = await page(v?.id ?? '')
+    expect(w.find('.aximote-import').exists()).toBe(true)
+    expect(w.find('.portal-import').exists()).toBe(portal)
+  })
+
+  it.each([
     [new ApiError(404, 'not_found', ''), 'This vehicle does not exist.'],
     [new ApiError(500, 'internal', ''), 'The vehicle could not be loaded. Try again in a moment.'],
   ])('tells a failure: %s', async (e, text) => {

@@ -32,6 +32,7 @@ const selfHosted: ConnectionSettings = {
   client_id: 'runsten-dev',
   instance_key: { last4: 'e123' },
   api_key: null,
+  polestar: null,
 }
 // The hosted offer: no instance key, the account gives its own.
 const hosted: ConnectionSettings = {
@@ -39,6 +40,7 @@ const hosted: ConnectionSettings = {
   client_id: 'runsten-dev',
   instance_key: null,
   api_key: null,
+  polestar: null,
 }
 
 const items = vehicles.items as Vehicle[]
@@ -76,6 +78,7 @@ describe('ConnectionPage', () => {
     // Self-hosting: the instance's key reads every vehicle, there is none to give.
     expect(w.findAll('h2').map((h) => h.text())).toEqual([
       'Volvo ID',
+      'Polestar',
       'Volvo application',
       'Vehicles',
     ])
@@ -85,6 +88,7 @@ describe('ConnectionPage', () => {
       'YV1SMLT0000DT0002',
       'EX30 Single Motor Extended Range · 2024',
       'YV1SMLT0000DT0005',
+      'Polestar 2 Long Range Dual Motor / Performance · 2024',
     ])
   })
 
@@ -155,6 +159,30 @@ describe('ConnectionPage', () => {
     })
   })
 
+  it('tells how a Polestar is read, and takes its credential', async () => {
+    const w = await page()
+    const v = w.findAll('.vehicle-collection')[4]
+    expect(v?.find('.state').text()).toBe(
+      'Not read: the vehicle is no longer shared with the credential',
+    )
+    expect(v && facts(v.find('dl'))).toMatchObject({
+      'Next reading': 'None: the vehicle is no longer shared with the credential',
+      'Latest failure': 'Vehicle no longer shared · 06:00battery · HTTP 403',
+    })
+    expect(w.find('[aria-labelledby="connection-polestar-title"] .polestar-form').exists()).toBe(
+      true,
+    )
+  })
+
+  it('takes the Volvo ID from a Volvo, whatever comes first', async () => {
+    const [car, , , , polestar] = items
+    if (!car || !polestar) throw new Error('fixture')
+    mocks.fetchVehicles.mockResolvedValue([polestar, car])
+    const w = await page()
+    const section = w.find('[aria-labelledby="connection-volvo-title"]')
+    expect(facts(section.find('dl'))).toMatchObject({ Status: 'Connected', Authorized: '05:00' })
+  })
+
   it('shows a next reading still ahead as its time', async () => {
     vi.setSystemTime(Date.parse('2026-09-28T07:00:30Z'))
     const w = await page()
@@ -166,16 +194,20 @@ describe('ConnectionPage', () => {
     mocks.fetchVehicles.mockResolvedValue([])
     mocks.fetchConnection.mockResolvedValue({ ...selfHosted, connected: false })
     const w = await page()
-    expect(w.text()).toContain('No Volvo ID connected yet: Runsten reads nothing.')
+    expect(w.text()).toContain('No Volvo ID connected yet: Runsten reads no Volvo.')
     expect(w.find('a[href="auth/volvo/start"]').text()).toBe('Connect a Volvo ID')
-    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo ID', 'Volvo application'])
+    expect(w.findAll('h2').map((h) => h.text())).toEqual([
+      'Volvo ID',
+      'Polestar',
+      'Volvo application',
+    ])
   })
 
   it('asks for the key before the Volvo ID, on an instance without its own', async () => {
     mocks.fetchVehicles.mockResolvedValue([])
     mocks.fetchConnection.mockResolvedValue(hosted)
     const w = await page()
-    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID'])
+    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID', 'Polestar'])
     expect(w.find('.api-key-form form').exists()).toBe(true)
     expect(w.find('a[href="auth/volvo/start"]').exists()).toBe(false)
     expect(w.find('[aria-labelledby="connection-volvo-title"]').text()).toContain(
@@ -190,7 +222,7 @@ describe('ConnectionPage', () => {
       api_key: { last4: 'cdef', set_at: '2026-09-28T05:00:00Z', refused_at: null },
     })
     const w = await page()
-    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID'])
+    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID', 'Polestar'])
     expect(w.find('a[href="auth/volvo/start"]').text()).toBe('Connect a Volvo ID')
   })
 

@@ -9,19 +9,28 @@ export type FailureKind = CollectionFailure['kind']
 // long pass over many vehicles is not taken for a stop.
 export const collectorStoppedAfter = 15 * 60_000
 
+// A domain the Polestar credential was not granted is left out for the collector's details
+// interval, then tried again: the failure tells it for as long.
+export const notGrantedFor = 24 * 60 * 60_000
+
 // CollectionState is what the user is told of the reading of a vehicle, the worst first:
 // the account's offer leaves it unread, the grant lost, no application key it may be
-// read with, the vehicle's market not served by the API, no pass yet, the collector
-// stopped, the instance's key refused, a pause, a quota; else it reads.
+// read with, the Polestar credential refused or removed, the vehicle's market not served
+// by the API, the vehicle no longer shared with the credential, no pass yet, the
+// collector stopped, the instance's key refused, a pause, a quota, a domain the
+// credential was not granted; else it reads.
 export type CollectionState =
   | { kind: 'unread' }
   | { kind: 'reauth' }
   | { kind: 'key'; refused: boolean }
+  | { kind: 'credential'; refused: boolean }
   | { kind: 'market' }
+  | { kind: 'unshared' }
   | { kind: 'waiting' }
   | { kind: 'stopped'; since: string }
   | { kind: 'paused'; until: string }
   | { kind: 'quota'; until: string; apis: string[] }
+  | { kind: 'notGranted'; endpoint: string | null }
   | { kind: 'reading' }
 
 // collectionState reads the status as of now: a pause or a quota the collector wrote may
@@ -29,7 +38,7 @@ export type CollectionState =
 // when everything is read again. unread: the account's limits leave the vehicle out
 // (the session's limits.unread_vehicles).
 export function collectionState(
-  v: Pick<Vehicle, 'connection' | 'collection' | 'market_refused_at'>,
+  v: Pick<Vehicle, 'connection' | 'collection' | 'market_refused_at' | 'unshared_at'>,
   now: number,
   unread = false,
 ): CollectionState {
@@ -37,8 +46,11 @@ export function collectionState(
   if (v.connection.status === 'reauth_required') return { kind: 'reauth' }
   if (v.connection.api_key === 'refused') return { kind: 'key', refused: true }
   if (v.connection.api_key === 'missing') return { kind: 'key', refused: false }
+  if (v.connection.credential === 'refused') return { kind: 'credential', refused: true }
+  if (v.connection.credential === 'missing') return { kind: 'credential', refused: false }
   // Marked for good by the collector: nothing of the vehicle is read any more.
   if (v.market_refused_at) return { kind: 'market' }
+  if (v.unshared_at) return { kind: 'unshared' }
   const c = v.collection
   if (!c) return { kind: 'waiting' }
   if (now - Date.parse(c.passed_at) > collectorStoppedAfter) {
@@ -62,6 +74,11 @@ export function collectionState(
   if (blocked.length) {
     const until = blocked.reduce((a, b) => (Date.parse(b.until) > Date.parse(a.until) ? b : a))
     return { kind: 'quota', until: until.until, apis: blocked.map((q) => q.api) }
+  }
+  // The other domains are read: the latest failure, while its domain is left out, is the
+  // only trace of it.
+  if (f?.kind === 'not_granted' && now - Date.parse(f.at) < notGrantedFor) {
+    return { kind: 'notGranted', endpoint: f.endpoint }
   }
   return { kind: 'reading' }
 }

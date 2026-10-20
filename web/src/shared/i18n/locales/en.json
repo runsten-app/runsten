@@ -35,8 +35,9 @@
     "empty": {
       "title": "No vehicle yet",
       "keyText": "Runsten reads your vehicles with the key of a Volvo application you create: give it first, then connect your Volvo ID.",
-      "text": "Connect your Volvo ID: Runsten will read the vehicles of the account."
-    }
+      "text": "Connect your Volvo ID, or give the credential of your Polestar: Runsten will read the vehicles of the account."
+    },
+    "connectPolestar": "Give a Polestar credential"
   },
   "vehicle": {
     "title": "Vehicle",
@@ -78,7 +79,8 @@
     "odometer": "Odometer",
     "map": "Map of the position",
     "position": "Last position",
-    "coordinates": "Coordinates"
+    "coordinates": "Coordinates",
+    "lastReported": "The car last measured {time}"
   },
   "charging": {
     "status": {
@@ -876,7 +878,7 @@
     "title": "Connection",
     "backToVehicle": "Back to the vehicle",
     "attention": "The connection needs your attention",
-    "intro": "Runsten reads your vehicles from the Volvo API in the background: that is its collector. This page tells whether it reads them, and if not, why.",
+    "intro": "Runsten reads your vehicles in the background, from Volvo's API and Polestar's Data Portal: that is its collector. This page tells whether it reads them, and if not, why.",
     "loading": "Loading the connection",
     "error": "The connection could not be loaded. Try again in a moment.",
     "refreshFailed": "The connection could not be refreshed: what it shows may be out of date.",
@@ -888,7 +890,7 @@
     },
     "volvoId": {
       "title": "Volvo ID",
-      "none": "No Volvo ID connected yet: Runsten reads nothing.",
+      "none": "No Volvo ID connected yet: Runsten reads no Volvo.",
       "connect": "Connect a Volvo ID",
       "reconnect": "Reconnect the Volvo ID",
       "reconnectHelp": "Connecting again only renews the authorization: nothing already read is lost.",
@@ -918,7 +920,13 @@
       "keyRefused": "Not read: Volvo refused the application key",
       "keyMissing": "Not read: no Volvo key given",
       "unread": "Not read for your account",
-      "market": "Not read: Volvo's API does not serve this vehicle's market"
+      "market": "Not read: Volvo's API does not serve this vehicle's market",
+      "credentialRefused": "Not read: Polestar refused the credential",
+      "credentialMissing": "Not read: no Polestar credential given",
+      "unshared": "Not read: the vehicle is no longer shared with the credential",
+      "notGranted": "Read in part: the credential was not granted every domain",
+      "pausedPolestar": "Paused by Polestar until {time}",
+      "quotaPolestar": "Polestar quota reached until {time}"
     },
     "notice": {
       "reauth": {
@@ -935,7 +943,13 @@
       "keyMissing": "Runsten reads your vehicles with your Volvo key: give it on the connection page.",
       "quotaOwnKey": "The daily quota of calls of your Volvo key is used up. Reading resumes by itself.",
       "unread": "Your account does not read this vehicle: nothing new is read of it, and what was read stays.",
-      "market": "Volvo's API for developers does not serve the market this vehicle was sold in: Runsten cannot read it, and no longer tries. Nothing on your side can change that. Should Volvo serve its market one day, connect the Volvo ID again: Runsten tries again."
+      "market": "Volvo's API for developers does not serve the market this vehicle was sold in: Runsten cannot read it, and no longer tries. Nothing on your side can change that. Should Volvo serve its market one day, connect the Volvo ID again: Runsten tries again.",
+      "credentialRefused": "Polestar's Data Portal refused the credential this vehicle is read with: it expired after its 90 days, or was deleted on the portal. Create a new one there and give it on the connection page: what was read stays.",
+      "credentialMissing": "Runsten reads this Polestar with your credential of Polestar's Data Portal, which was removed: give a new one on the connection page.",
+      "unshared": "The Data Portal no longer lets your credential read this vehicle. Let it read the car again on the portal, then give the credential again on the connection page: the vehicle is read again.",
+      "notGranted": "Your credential was not granted one of the domains Runsten reads ({endpoint}): what it gives is not read. Create a credential with the five domains, and give it on the connection page.",
+      "quotaPolestar": "The daily quota of calls of your Polestar credential is used up. Reading resumes by itself.",
+      "pausedPolestar": "Polestar limited the number of calls. Reading resumes by itself."
     },
     "facts": {
       "mode": "Polling mode",
@@ -950,12 +964,15 @@
       "lastFailure": "Latest failure",
       "noFailure": "None",
       "noneDueKey": "None until a Volvo key is given",
-      "noneDueMarket": "None: Volvo does not serve the vehicle's market"
+      "noneDueMarket": "None: Volvo does not serve the vehicle's market",
+      "noneDueCredential": "None until a Polestar credential is given",
+      "noneDueUnshared": "None: the vehicle is no longer shared with the credential"
     },
     "api": {
       "connectedVehicle": "vehicle data",
       "energy": "battery and charging",
-      "location": "position"
+      "location": "position",
+      "polestar": "Polestar Data Portal"
     },
     "failure": {
       "quota": "Quota reached",
@@ -966,7 +983,13 @@
       "token": "Volvo ID unreachable",
       "other": "Call refused",
       "keyRefused": "Volvo key refused",
-      "market": "Market not served by Volvo"
+      "market": "Market not served by Volvo",
+      "credentialRefused": "Polestar credential refused",
+      "unshared": "Vehicle no longer shared",
+      "notGranted": "Domain not granted",
+      "notFoundPolestar": "Vehicle unknown to Polestar",
+      "unavailablePolestar": "Polestar unreachable",
+      "tokenPolestar": "No token from Polestar"
     },
     "key": {
       "title": "Volvo key"
@@ -976,6 +999,9 @@
       "help": "The application of Volvo's developer portal this instance reads with, from its configuration (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_API_KEY): compare them with those of your application at developer.volvocars.com. Its key reads every vehicle; the secret is never shown.",
       "clientId": "Client ID",
       "key": "Application key"
+    },
+    "polestar": {
+      "title": "Polestar"
     }
   },
   "apiKey": {
@@ -1268,6 +1294,67 @@
       "confirm": "Delete",
       "error": "The import could not be deleted. Try again in a moment.",
       "done": "{what}: deleted."
+    }
+  },
+  "polestar": {
+    "intro": "Runsten reads your Polestar with a credential you create on Polestar's Data Portal, the access the EU Data Act gives its owners. Its quota of calls is yours alone.",
+    "beta": "Polestar support is in beta: how often a car sends its readings while driving is not verified yet.",
+    "guide": "Read the guide",
+    "refused": {
+      "title": "Your Polestar credential was refused",
+      "body": "Polestar refused it on {time}: expired, or deleted on the Data Portal. Your Polestar vehicles are not read until you give a new one; what was read stays."
+    },
+    "renew": {
+      "title": "Renew your Polestar credential",
+      "soon": "A credential of the Data Portal reads for 90 days: this one expires on {date}. Create a new one on the portal before then and give it here.",
+      "past": "A credential of the Data Portal reads for 90 days: this one should have expired on {date}. Create a new one on the portal and give it here."
+    },
+    "current": "Your credential",
+    "last4": "Client ID ending in {last4}",
+    "setAt": "Given",
+    "expiresAt": "Expires",
+    "replace": "Replace the credential",
+    "delete": {
+      "button": "Remove the credential",
+      "title": "Remove your Polestar credential?",
+      "text": "Your Polestar vehicles stay, with their history, but are no longer read until you give another credential.",
+      "error": "The credential could not be removed. Try again in a moment.",
+      "cancel": "Cancel",
+      "confirm": "Remove"
+    },
+    "steps": {
+      "title": "Create your credential",
+      "signIn": "Sign in with your Polestar ID at",
+      "newTab": "(opens in a new tab)",
+      "create": "Under the Data Portal's API, create a credential: any name will do.",
+      "domains": "Grant it the five domains Runsten reads: battery, odometer, location, availability and target state of charge.",
+      "share": "If the portal asks which cars it reads, choose yours.",
+      "copy": "Copy its client ID, its client secret (shown once only) and your Account ID, then paste them below: they are never shown again."
+    },
+    "field": {
+      "clientId": "Client ID",
+      "clientSecret": "Client secret",
+      "accountId": "Account ID"
+    },
+    "help": "Its quota: 10,000 calls a day, more than a car driven and charged all day needs. It reads for 90 days: Runsten reminds you before.",
+    "save": "Save the credential",
+    "cancel": "Cancel",
+    "saved": "Credential saved: its vehicles are read from the collector's next pass.",
+    "deleted": "Credential removed.",
+    "error": {
+      "summary": "The credential was not saved",
+      "required": "Paste the {field}.",
+      "spaces": "The {field} has no space: copy it again.",
+      "characters": "The {field} has only letters, digits and signs: copy it again.",
+      "tooShort": "The {field} has at least {min} characters: copy it whole.",
+      "tooLong": "The {field} has at most {max} characters: copy it alone.",
+      "refused": "Polestar refused this credential: check its three values, and that it has not expired.",
+      "invalidBody": "This credential was refused: copy its values again.",
+      "noVehicle": "This credential reads no vehicle: check on the Data Portal that it reads your car, then save it again.",
+      "tooManyVehicles": "With this credential's vehicles, your account would have more vehicles than it may: the credential was not saved.",
+      "portalUnavailable": "Polestar's Data Portal did not answer: the credential was not saved. Try again in a moment.",
+      "unavailable": "Runsten could not be reached. Try again in a moment.",
+      "internal": "The credential could not be saved. Try again in a moment."
     }
   }
 }

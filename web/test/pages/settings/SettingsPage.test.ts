@@ -197,6 +197,7 @@ describe('SettingsPage', () => {
       'YV1SMLT0000DT0002',
       'EX30 Single Motor Extended Range · 2024',
       'YV1SMLT0000DT0005',
+      'Polestar 2 Long Range Dual Motor / Performance · 2024',
     ])
     expect(links.map((l) => l.attributes('href'))).toEqual(
       vehicles.items.map((v) => `/vehicles/${v.id}/settings`),

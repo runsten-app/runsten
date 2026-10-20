@@ -35,8 +35,9 @@
     "empty": {
       "title": "Aucun véhicule pour l'instant",
       "keyText": "Runsten lit vos véhicules avec la clé d'une application Volvo que vous créez : donnez-la d'abord, puis connectez votre Volvo ID.",
-      "text": "Connectez votre Volvo ID : Runsten lira les véhicules du compte."
-    }
+      "text": "Connectez votre Volvo ID, ou donnez l'identifiant de votre Polestar : Runsten lira les véhicules du compte."
+    },
+    "connectPolestar": "Donner un identifiant Polestar"
   },
   "vehicle": {
     "title": "Véhicule",
@@ -78,7 +79,8 @@
     "odometer": "Odomètre",
     "map": "Carte de la position",
     "position": "Dernière position",
-    "coordinates": "Coordonnées"
+    "coordinates": "Coordonnées",
+    "lastReported": "Dernière mesure de la voiture : {time}"
   },
   "charging": {
     "status": {
@@ -876,7 +878,7 @@
     "title": "Connexion",
     "backToVehicle": "Retour au véhicule",
     "attention": "La connexion demande votre attention",
-    "intro": "Runsten lit vos véhicules par l'API Volvo, en arrière-plan : c'est son collecteur. Cette page dit s'il les lit, et sinon pourquoi.",
+    "intro": "Runsten lit vos véhicules en arrière-plan, par l'API de Volvo et le Data Portal de Polestar : c'est son collecteur. Cette page dit s'il les lit, et sinon pourquoi.",
     "loading": "Chargement de la connexion",
     "error": "La connexion n'a pas pu être chargée. Réessayez dans un instant.",
     "refreshFailed": "La connexion n'a pas pu être actualisée : ce qu'elle montre peut être dépassé.",
@@ -888,7 +890,7 @@
     },
     "volvoId": {
       "title": "Volvo ID",
-      "none": "Aucun Volvo ID connecté : Runsten ne lit rien.",
+      "none": "Aucun Volvo ID connecté : Runsten ne lit aucune Volvo.",
       "connect": "Connecter un Volvo ID",
       "reconnect": "Reconnecter le Volvo ID",
       "reconnectHelp": "Se reconnecter ne fait que renouveler l'autorisation : rien de ce qui a été lu n'est perdu.",
@@ -918,7 +920,13 @@
       "keyRefused": "Non lu : Volvo a refusé la clé d'application",
       "keyMissing": "Non lu : aucune clé Volvo donnée",
       "unread": "Non lu pour votre compte",
-      "market": "Non lu : l'API de Volvo ne dessert pas le marché de ce véhicule"
+      "market": "Non lu : l'API de Volvo ne dessert pas le marché de ce véhicule",
+      "credentialRefused": "Non lu : Polestar a refusé l'identifiant",
+      "credentialMissing": "Non lu : aucun identifiant Polestar donné",
+      "unshared": "Non lu : le véhicule n'est plus partagé avec l'identifiant",
+      "notGranted": "Lu en partie : l'identifiant n'a pas reçu tous les domaines",
+      "pausedPolestar": "Mis en pause par Polestar jusqu'à {time}",
+      "quotaPolestar": "Quota Polestar atteint jusqu'à {time}"
     },
     "notice": {
       "reauth": {
@@ -935,7 +943,13 @@
       "keyMissing": "Runsten lit vos véhicules avec votre clé Volvo : donnez-la sur la page Connexion.",
       "quotaOwnKey": "Le quota quotidien d'appels de votre clé Volvo est épuisé. La lecture reprend d'elle-même.",
       "unread": "Votre compte ne lit pas ce véhicule : rien de nouveau n'en est lu, et ce qui a été lu reste.",
-      "market": "L'API de Volvo pour les développeurs ne dessert pas le marché où ce véhicule a été vendu : Runsten ne peut pas le lire, et n'essaie plus. Rien de votre côté n'y changera. Si Volvo dessert un jour son marché, reconnectez le Volvo ID : Runsten essaiera à nouveau."
+      "market": "L'API de Volvo pour les développeurs ne dessert pas le marché où ce véhicule a été vendu : Runsten ne peut pas le lire, et n'essaie plus. Rien de votre côté n'y changera. Si Volvo dessert un jour son marché, reconnectez le Volvo ID : Runsten essaiera à nouveau.",
+      "credentialRefused": "Le Data Portal de Polestar a refusé l'identifiant avec lequel ce véhicule est lu : expiré au bout de ses 90 jours, ou supprimé sur le portail. Créez-en un nouveau là-bas et donnez-le sur la page Connexion : ce qui a été lu reste.",
+      "credentialMissing": "Runsten lit cette Polestar avec votre identifiant du Data Portal de Polestar, qui a été retiré : donnez-en un nouveau sur la page Connexion.",
+      "unshared": "Le Data Portal ne laisse plus votre identifiant lire ce véhicule. Laissez-le lire de nouveau la voiture sur le portail, puis redonnez l'identifiant sur la page Connexion : le véhicule est de nouveau lu.",
+      "notGranted": "Votre identifiant n'a pas reçu l'un des domaines que Runsten lit ({endpoint}) : ce qu'il donne n'est pas lu. Créez un identifiant avec les cinq domaines, et donnez-le sur la page Connexion.",
+      "quotaPolestar": "Le quota quotidien d'appels de votre identifiant Polestar est épuisé. La lecture reprend d'elle-même.",
+      "pausedPolestar": "Polestar a limité le nombre d'appels. La lecture reprend d'elle-même."
     },
     "facts": {
       "mode": "Mode de lecture",
@@ -950,12 +964,15 @@
       "lastFailure": "Dernier échec",
       "noFailure": "Aucun",
       "noneDueKey": "Aucune tant qu'aucune clé Volvo n'est donnée",
-      "noneDueMarket": "Aucune : Volvo ne dessert pas le marché du véhicule"
+      "noneDueMarket": "Aucune : Volvo ne dessert pas le marché du véhicule",
+      "noneDueCredential": "Aucune tant qu'aucun identifiant Polestar n'est donné",
+      "noneDueUnshared": "Aucune : le véhicule n'est plus partagé avec l'identifiant"
     },
     "api": {
       "connectedVehicle": "données du véhicule",
       "energy": "batterie et charge",
-      "location": "position"
+      "location": "position",
+      "polestar": "Data Portal de Polestar"
     },
     "failure": {
       "quota": "Quota atteint",
@@ -966,7 +983,13 @@
       "token": "Volvo ID injoignable",
       "other": "Appel refusé",
       "keyRefused": "Clé Volvo refusée",
-      "market": "Marché non desservi par Volvo"
+      "market": "Marché non desservi par Volvo",
+      "credentialRefused": "Identifiant Polestar refusé",
+      "unshared": "Véhicule plus partagé",
+      "notGranted": "Domaine non accordé",
+      "notFoundPolestar": "Véhicule inconnu de Polestar",
+      "unavailablePolestar": "Polestar injoignable",
+      "tokenPolestar": "Aucun jeton de Polestar"
     },
     "key": {
       "title": "Clé Volvo"
@@ -976,6 +999,9 @@
       "help": "L'application du portail développeur de Volvo avec laquelle cette instance lit, d'après sa configuration (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_API_KEY) : comparez-les à celles de votre application sur developer.volvocars.com. Sa clé lit tous les véhicules ; le secret n'est jamais affiché.",
       "clientId": "Client ID",
       "key": "Clé d'application"
+    },
+    "polestar": {
+      "title": "Polestar"
     }
   },
   "apiKey": {
@@ -1268,6 +1294,67 @@
       "confirm": "Supprimer",
       "error": "L'import n'a pas pu être supprimé. Réessayez dans un instant.",
       "done": "{what} : supprimé."
+    }
+  },
+  "polestar": {
+    "intro": "Runsten lit votre Polestar avec un identifiant que vous créez sur le Data Portal de Polestar, l'accès que le Data Act européen donne aux propriétaires. Son quota d'appels n'est qu'à vous.",
+    "beta": "La prise en charge de Polestar est en bêta : la fréquence d'envoi d'une voiture en roulage n'est pas encore vérifiée.",
+    "guide": "Lire le guide",
+    "refused": {
+      "title": "Votre identifiant Polestar a été refusé",
+      "body": "Polestar l'a refusé le {time} : expiré, ou supprimé sur le Data Portal. Vos véhicules Polestar ne sont plus lus tant que vous n'en donnez pas un nouveau ; ce qui a été lu reste."
+    },
+    "renew": {
+      "title": "Renouvelez votre identifiant Polestar",
+      "soon": "Un identifiant du Data Portal lit pendant 90 jours : celui-ci expire le {date}. Créez-en un nouveau sur le portail d'ici là et donnez-le ici.",
+      "past": "Un identifiant du Data Portal lit pendant 90 jours : celui-ci aurait dû expirer le {date}. Créez-en un nouveau sur le portail et donnez-le ici."
+    },
+    "current": "Votre identifiant",
+    "last4": "Client ID finissant par {last4}",
+    "setAt": "Donné",
+    "expiresAt": "Expire",
+    "replace": "Remplacer l'identifiant",
+    "delete": {
+      "button": "Retirer l'identifiant",
+      "title": "Retirer votre identifiant Polestar ?",
+      "text": "Vos véhicules Polestar restent, avec leur historique, mais ne sont plus lus tant que vous ne donnez pas un autre identifiant.",
+      "error": "L'identifiant n'a pas pu être retiré. Réessayez dans un instant.",
+      "cancel": "Annuler",
+      "confirm": "Retirer"
+    },
+    "steps": {
+      "title": "Créer votre identifiant",
+      "signIn": "Connectez-vous avec votre Polestar ID sur",
+      "newTab": "(s'ouvre dans un nouvel onglet)",
+      "create": "Dans l'API du Data Portal, créez un identifiant : n'importe quel nom convient.",
+      "domains": "Accordez-lui les cinq domaines que Runsten lit : batterie, odomètre, position, disponibilité et limite de charge.",
+      "share": "Si le portail demande quelles voitures il lit, choisissez la vôtre.",
+      "copy": "Copiez son client ID, son client secret (affiché une seule fois) et votre Account ID, puis collez-les ci-dessous : ils ne sont jamais réaffichés."
+    },
+    "field": {
+      "clientId": "Client ID",
+      "clientSecret": "Client secret",
+      "accountId": "Account ID"
+    },
+    "help": "Son quota : 10 000 appels par jour, plus qu'il n'en faut à une voiture qui roulerait et chargerait toute la journée. Il lit pendant 90 jours : Runsten vous le rappelle avant.",
+    "save": "Enregistrer l'identifiant",
+    "cancel": "Annuler",
+    "saved": "Identifiant enregistré : ses véhicules sont lus dès le prochain passage du collecteur.",
+    "deleted": "Identifiant retiré.",
+    "error": {
+      "summary": "L'identifiant n'a pas été enregistré",
+      "required": "Collez le {field}.",
+      "spaces": "Le {field} n'a pas d'espace : copiez-le de nouveau.",
+      "characters": "Le {field} n'a que des lettres, des chiffres et des signes : copiez-le de nouveau.",
+      "tooShort": "Le {field} a au moins {min} caractères : copiez-le en entier.",
+      "tooLong": "Le {field} a au plus {max} caractères : copiez-le seul.",
+      "refused": "Polestar a refusé cet identifiant : vérifiez ses trois valeurs, et qu'il n'a pas expiré.",
+      "invalidBody": "Cet identifiant a été refusé : copiez de nouveau ses valeurs.",
+      "noVehicle": "Cet identifiant ne lit aucun véhicule : vérifiez sur le Data Portal qu'il lit votre voiture, puis enregistrez-le de nouveau.",
+      "tooManyVehicles": "Avec les véhicules de cet identifiant, votre compte aurait plus de véhicules qu'il n'en permet : l'identifiant n'a pas été enregistré.",
+      "portalUnavailable": "Le Data Portal de Polestar n'a pas répondu : l'identifiant n'a pas été enregistré. Réessayez dans un instant.",
+      "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
+      "internal": "L'identifiant n'a pas pu être enregistré. Réessayez dans un instant."
     }
   }
 }

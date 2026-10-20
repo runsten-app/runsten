@@ -12,8 +12,10 @@ import { useI18n } from 'vue-i18n'
 import {
   detailsStaleAfter,
   isStale,
+  lastReport,
   ReadingItem,
   ReadingProvenance,
+  reportLateAfter,
   vehicleMode,
   type Cable,
   type ChargingStatus,
@@ -58,6 +60,26 @@ const batterySummary = computed(() => {
 
 const connection = computed(() => state.value?.connection ?? { status: 'active' as const })
 const mode = computed(() => (state.value ? vehicleMode(state.value) : null))
+// The car's own latest measure, when it is older than a car that uploads as it goes would
+// give: a Polestar parked may send values hours old, however recently they were read.
+const reportedLate = computed(() => {
+  const s = state.value
+  if (!s) return null
+  const c = s.charging
+  const last = lastReport([
+    s.soc_pct,
+    s.range_km,
+    s.odometer_km,
+    s.position,
+    s.engine,
+    c.status,
+    c.cable,
+    c.type,
+    c.power_w,
+    c.target_soc_pct,
+  ])
+  return last && now.value - Date.parse(last) > reportLateAfter ? last : null
+})
 const checkedStale = computed(() => {
   const c = state.value?.checked_at
   return !!c && isStale(c, now.value, connection.value)
@@ -148,6 +170,9 @@ const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_
         <template v-else>{{ t('state.neverChecked') }}</template>
       </span>
       <v-chip v-if="checkedStale" size="small" variant="outlined">{{ t('reading.stale') }}</v-chip>
+      <time v-if="reportedLate" :datetime="reportedLate" class="reported">{{
+        t('state.lastReported', { time: f.dateTime(reportedLate, now) })
+      }}</time>
       <slot />
     </div>
 
