@@ -19,6 +19,7 @@ import (
 	"runsten/internal/collector"
 	"runsten/internal/core"
 	"runsten/internal/platform/clock"
+	"runsten/internal/polestar"
 	"runsten/internal/simulator/scenario"
 	"runsten/internal/simulator/vehicle"
 	"runsten/internal/simulator/volvoapi"
@@ -26,6 +27,9 @@ import (
 )
 
 var quiet = slog.New(slog.NewTextHandler(io.Discard, nil))
+
+// Each source's normalizer is one the derivation reads.
+var _ = []Normalizer{volvo.Normalizer{}, polestar.Normalizer{}}
 
 // memStore is an in-memory collector.Store and Store, with the same deduplication and
 // the same uniqueness of events as PostgreSQL.

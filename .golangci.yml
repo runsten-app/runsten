@@ -172,6 +172,27 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/catalog
               desc: recognizing a variant is a reading of the API, not a normalization
+        # The Polestar client depends on neither storage nor the collector, nor on another
+        # vendor's client.
+        polestar-is-a-client:
+          files: ["**/internal/polestar/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: the client stores nothing
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/derive
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/api
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/catalog
+              desc: recognizing a variant is a reading of the API, not a normalization
+            - pkg: runsten/internal/volvo
+              desc: each vendor's client stands alone
+            - pkg: runsten/internal/oauth
+              desc: the M2M credential has no grant to keep, a token is asked again
         # The domain depends on no adapter, and never sees a vendor format.
         core-is-pure:
           files: ["**/internal/core/**"]
@@ -185,6 +206,8 @@ linters:
             - pkg: encoding/json
               desc: vendor formats are converted by the adapters (internal/volvo)
             - pkg: runsten/internal/volvo
+              desc: the domain knows no vendor
+            - pkg: runsten/internal/polestar
               desc: the domain knows no vendor
             - pkg: runsten/internal/simulator
               desc: the domain knows nothing about the simulator
@@ -313,6 +336,8 @@ linters:
               desc: api declares the interfaces it needs
             - pkg: runsten/internal/volvo
               desc: api declares its own Authorizer interface
+            - pkg: runsten/internal/polestar
+              desc: api declares the interfaces it needs
             - pkg: runsten/internal/collector
               desc: the API does not drive the collector
             - pkg: runsten/internal/derive

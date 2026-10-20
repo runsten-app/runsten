@@ -42,6 +42,10 @@ internal/
   volvo/               Volvo API client: endpoints, typed errors (APIError, Kind, RetryIn), value parsing,
                        fingerprint, normalization into core.Snapshot (Normalizer, derive's for the source
                        `volvo`); Volvo ID client (AuthClient, AuthError)
+  polestar/            Polestar Data Portal's M2M API client: token of the owner's credential, the VINs,
+                       the domains read (battery, odometer, location, availability, target-soc); typed
+                       errors (APIError, Kind, RetryIn); fingerprint; normalization into core.Snapshot
+                       (Normalizer, derive's for the source `polestar`); one call per method, no retry
   collector/           adaptive polling; declares its own API, Store, TokenSource, Observer, Deriver and
                        Publisher interfaces
   oauth/               token lifecycle (Manager), pending flows (state, PKCE), enrollment; declares its Store
