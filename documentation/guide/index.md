@@ -1,5 +1,5 @@
 ---
-description: "The web interface of Runsten: the state of the car, the connection and your Volvo key, settings and preferences, privacy and accessibility."
+description: "The web interface of Runsten: the state of the car, the connection, your Volvo key and your Polestar credential, settings and preferences, privacy and accessibility."
 ---
 
 # The web interface
@@ -10,19 +10,20 @@ The web interface works on a phone as well as a desktop, in English, French and 
 
 ## State
 
-The car as last read: its state of charge and range, whether it is charging, its odometer and its last position. Each value tells when it was last checked and since when it holds, and is marked as old when it is.
+The car as last read: its state of charge and range, whether it is charging, its odometer and its last position. Each value tells when it was last checked and since when it holds, and is marked as old when it is. When the car's own latest measure is more than half an hour old (a parked Polestar sends its readings when it chooses), the page tells when it was.
 
 A warning shows on every page of the vehicle when nothing new is read of it, with what to do ([Connection](#connection)).
 
 ## Connection
 
-The **Connection** page (in the menu under your name) tells whether Runsten reads your vehicles, and if not, why: the Volvo ID and when it was authorized, and for each vehicle its latest reading and the next one due. When nothing new is read of a vehicle, its pages say why:
+The **Connection** page (in the menu under your name) tells whether Runsten reads your vehicles, and if not, why: the Volvo ID and when it was authorized, your Polestar credential ([Your Polestar](./polestar.md)), and for each vehicle its latest reading and the next one due. When nothing new is read of a vehicle, its pages say why:
 
 - **Re-authentication required**: a Volvo authorization lasts 6 months at most. Select **Reconnect the Volvo ID**: nothing already read is lost.
 - **No Volvo key given**, or **Volvo refused the key**: on an instance without a Volvo key of its own, each account gives its own ([Your Volvo key](#your-volvo-key)). A key regenerated, or whose application was deleted on the developer portal, is refused: give the new one, the Volvo ID stays connected.
 - **Quota reached**: the day's calls of the Volvo key are used up. Reading resumes by itself when the quota is renewed; the trips and charges missed meanwhile are found afterwards, marked as reconstructed.
 - **Paused by Volvo**: Volvo limited the number of calls. Reading resumes by itself.
 - **The market of the vehicle is not served**: the Volvo Cars API does not serve the market the car was sold in, and refuses every call about it. Runsten marks the car as not supported and no longer reads it; neither you nor the instance can change that. Should Volvo serve its market one day, connect the Volvo ID again: Runsten tries the car again.
+- **Polestar refused the credential**, **no Polestar credential given**, **the vehicle is no longer shared with the credential**, or **read in part**: a Polestar's credential expired, was removed, no longer reads the car, or lacks one of the five domains ([When it is not read](./polestar.md#when-it-is-not-read)).
 - **The collector seems stopped**: nothing is read on the instance's side. Whoever runs the instance looks into it ([Troubleshooting](../self-hosting/troubleshooting.md#nothing-new-is-read)).
 
 ### Your Volvo key
