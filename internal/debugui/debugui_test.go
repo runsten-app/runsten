@@ -24,7 +24,7 @@ func page(t *testing.T, j *Journal, query string) (int, http.Header, string) {
 }
 
 func call(ep volvo.Endpoint, at time.Time) collector.Call {
-	return collector.Call{At: at, VehicleID: "v1", VIN: "YV1SMLT0000DT0001", Endpoint: ep, Status: 200, Stored: true, Payload: []byte(`{"a":1}`)}
+	return collector.Call{At: at, VehicleID: "v1", VIN: "YV1SMLT0000DT0001", Endpoint: collector.Endpoint(ep), Status: 200, Stored: true, Payload: []byte(`{"a":1}`)}
 }
 
 func TestRingKeepsMostRecent(t *testing.T) {
@@ -44,15 +44,15 @@ func TestPage(t *testing.T) {
 	j := New(10, clk)
 	j.Observed(collector.VehicleState{
 		At: t0, VehicleID: "v1", VIN: "YV1SMLT0000DT0001", Mode: "driving", Engine: "RUNNING",
-		Next:       map[volvo.Endpoint]time.Time{volvo.EngineStatus: t0.Add(time.Minute)},
+		Next:       map[collector.Endpoint]time.Time{collector.Endpoint(volvo.EngineStatus): t0.Add(time.Minute)},
 		APIBlocked: map[string]time.Time{volvo.APIEnergy: t0.Add(2 * time.Hour)},
 	})
 	j.Called(call(volvo.Odometer, t0))
 	dup := call(volvo.Location, t0)
 	dup.Stored = false
 	j.Called(dup)
-	j.Called(collector.Call{At: t0, VehicleID: "v1", VIN: "YV1SMLT0000DT0001", Endpoint: volvo.EnergyState, Status: 403, Err: "quota"})
-	j.Called(collector.Call{At: t0, VehicleID: "v1", Endpoint: volvo.Doors, Status: 200, Payload: []byte(`{"x":"<script>alert(1)</script>"}`)})
+	j.Called(collector.Call{At: t0, VehicleID: "v1", VIN: "YV1SMLT0000DT0001", Endpoint: collector.Endpoint(volvo.EnergyState), Status: 403, Err: "quota"})
+	j.Called(collector.Call{At: t0, VehicleID: "v1", Endpoint: collector.Endpoint(volvo.Doors), Status: 200, Payload: []byte(`{"x":"<script>alert(1)</script>"}`)})
 
 	code, h, body := page(t, j, "")
 	if code != http.StatusOK || !strings.HasPrefix(h.Get("Content-Type"), "text/html") ||
@@ -114,14 +114,14 @@ func TestCounters(t *testing.T) {
 		c.Stored = i == 0
 		j.Called(c)
 	}
-	j.Called(collector.Call{At: t0, Endpoint: volvo.Location, Status: 429, Err: "rate limited"})
+	j.Called(collector.Call{At: t0, Endpoint: collector.Endpoint(volvo.Location), Status: 429, Err: "rate limited"})
 	clk.Advance(time.Hour)
 
 	eps, tot, qs := j.counters()
 	if tot != (totals{Calls: 5, Stored: 2, Dups: 2, Errors: 1, ErrorRate: 20}) {
 		t.Errorf("totals = %+v", tot)
 	}
-	if len(eps) != 2 || eps[1].Endpoint != volvo.Odometer || eps[1].Calls != 4 || eps[1].AvgMS() != 325 ||
+	if len(eps) != 2 || eps[1].Endpoint != string(volvo.Odometer) || eps[1].Calls != 4 || eps[1].AvgMS() != 325 ||
 		eps[0].LastErr != "rate limited" {
 		t.Errorf("endpoints = %+v", eps)
 	}

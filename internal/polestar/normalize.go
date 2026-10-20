@@ -13,6 +13,9 @@ import (
 // Source names the Polestar Data Portal among the sources of readings.
 const Source = "polestar"
 
+// Brand is the maker of every vehicle the Data Portal reads, as the catalog names it.
+const Brand = "polestar"
+
 // Normalizer reads the stored responses of the Data Portal into snapshots, for the
 // derivation. Each domain is an endpoint of the source, named as the API names it.
 type Normalizer struct{}
@@ -178,12 +181,14 @@ func normalizeBattery(raw []byte, s *core.Snapshot) error {
 // model reads what the VIN tells of the model: the Data Portal gives nothing else
 // (GET /v1/vehicles lists VINs alone). The family is left absent: which VIN positions
 // tell a Polestar 2 from a 3, 4 or 5 is not known from real VINs, and a wrong family
-// would recognize a wrong variant. Read with the battery, the domain read most often.
+// would recognize a wrong variant; the brand stands in for it, among whose variants the
+// user chooses. Read with the battery, the domain read most often.
 func model(vin string, s *core.Snapshot) {
 	if len(vin) != 17 {
 		return
 	}
 	s.Covers |= core.FieldModel
+	s.Brand = core.Some(Brand, time.Time{})
 	if y, ok := modelYear(vin); ok {
 		s.ModelYear = core.Some(y, time.Time{})
 	}

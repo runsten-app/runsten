@@ -27,12 +27,12 @@ var allowed = map[string][]string{
 	// The binaries wire the adapters together. Only runsten-simulator knows the simulator.
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/catalog", "internal/core",
-		"internal/derive", "internal/geocode", "internal/importer", "internal/oauth", "internal/platform", "internal/store",
-		"internal/volvo", "internal/volvoportal",
+		"internal/derive", "internal/geocode", "internal/importer", "internal/oauth", "internal/platform", "internal/polestar",
+		"internal/store", "internal/volvo", "internal/volvoportal",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
-		"internal/oauth", "internal/platform", "internal/publish", "internal/store", "internal/volvo",
+		"internal/oauth", "internal/platform", "internal/polestar", "internal/publish", "internal/store", "internal/volvo",
 	},
 	"cmd/runsten-simulator": {"net/http", "internal/platform", "internal/simulator"},
 	"cmd/runsten-web":       {"net/http", "internal/platform", "internal/web"},
@@ -44,8 +44,10 @@ var allowed = map[string][]string{
 
 	// Orchestration: each declares the interfaces it needs, the binaries wire them.
 	"internal/collector": {"internal/platform/clock", "internal/volvo"},
-	"internal/derive":    {"internal/core"},
-	"internal/oauth":     {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
+	// The collector's Source of the Polestar Data Portal: the client, adapted.
+	"internal/collector/polestarsource": {"internal/collector", "internal/core", "internal/polestar"},
+	"internal/derive":                   {"internal/core"},
+	"internal/oauth":                    {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
 	// It reads the catalog, pure data like core, to recognize the vehicles' variants.
 	"internal/api": {
 		"net/http", "encoding/json", "github.com/danielgtaylor/huma/v2", "internal/auth", "internal/catalog", "internal/core",
@@ -72,8 +74,9 @@ var allowed = map[string][]string{
 		"github.com/eclipse/paho.mqtt.golang", "internal/core", "internal/platform/clock", "internal/platform/netguard",
 		"internal/publish",
 	},
+	// The Polestar credential is sealed as one JSON value.
 	"internal/store": {
-		"github.com/jackc/pgx/v5", "internal/api", "internal/auth", "internal/collector", "internal/core", "internal/derive",
+		"encoding/json", "github.com/jackc/pgx/v5", "internal/api", "internal/auth", "internal/collector", "internal/core", "internal/derive",
 		"internal/geocode", "internal/importer", "internal/oauth", "internal/platform/secretbox", "internal/publish",
 		"internal/volvo",
 	},

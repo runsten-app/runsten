@@ -180,7 +180,7 @@ func TestBudgetFairness(t *testing.T) {
 		st := &memStore{targets: fleetOfTwo(commute, parked)}
 		playDay(t, New(e.client, st, fixedToken{}, e.clk, DefaultIntervals(), q, quiet, rec, nil), e.clk)
 		for _, c := range rec.calls {
-			if c.Endpoint.API() != volvo.APIConnectedVehicle {
+			if volvo.Endpoint(c.Endpoint).API() != volvo.APIConnectedVehicle {
 				continue
 			}
 			if c.AccountID == "commuter" {
@@ -368,7 +368,7 @@ func TestCallsSaved(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, call := range rec.calls {
-		if call.Endpoint.API() == volvo.APIConnectedVehicle {
+		if volvo.Endpoint(call.Endpoint).API() == volvo.APIConnectedVehicle {
 			t.Errorf("restarted collector called %s at once: the budget spent before is forgotten", call.Endpoint)
 		}
 	}

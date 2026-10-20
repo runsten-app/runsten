@@ -22,6 +22,10 @@ func TestNetCapacity(t *testing.T) {
 	}
 	hybrid := ex30
 	hybrid.BatteryElectric = some(false)
+	// The Data Portal tells the brand, never the family: the variant chosen sets it.
+	polestar2 := core.Snapshot{
+		Covers: core.FieldModel, Brand: some("polestar"), ModelYear: some(2024), BatteryElectric: some(true),
+	}
 	tests := []struct {
 		name   string
 		vin    string
@@ -37,6 +41,9 @@ func TestNetCapacity(t *testing.T) {
 		{"a choice of another family is ignored", "YV12ZEL9XRS000001", "xc40-twin-2021", ex30, 64},
 		{"not battery electric", "YV12ZEL9XRS000001", "ex30-er-2024", hybrid, 0},
 		{"details never read", "YV12ZEL9XRS000001", "", core.Snapshot{}, 0},
+		{"a family unknown: the variant of the brand chosen", "LPSVSEDE5RL000001", "ps2-sr-2024", polestar2, 66},
+		{"a family unknown: a variant of another brand", "LPSVSEDE5RL000001", "ex30-er-2024", polestar2, 0},
+		{"a family unknown, nothing chosen", "LPSVSEDE5RL000001", "", polestar2, 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

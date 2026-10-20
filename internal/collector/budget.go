@@ -5,6 +5,8 @@ import (
 	"math"
 	"slices"
 	"time"
+
+	"runsten/internal/volvo"
 )
 
 // Quota is the Volvo quota the collector budgets. Volvo counts it on the application
@@ -59,10 +61,10 @@ type Calls struct {
 	N         int
 }
 
-// unit is what a quota is counted on: an API of a connection's own key, or of the
-// instance's key, with the account when each user has its own quota of it.
+// unit is what a quota is counted on: an API of a connection's own key or credential, or
+// of the instance's key, with the account when each user has its own quota of it.
 type unit struct {
-	key     string // the connection whose own key it is; empty: the instance's key
+	key     string // the connection whose own key or credential it is; empty: the instance's key
 	account string // the instance's key with Quota.PerUser; else empty
 	api     string
 }
@@ -78,23 +80,40 @@ type unit struct {
 // with no one: it spends its own quota, and waits for it alone.
 type budget struct {
 	perUser bool
-	rate    float64 // calls per second, per unit
-	burst   float64
-	tokens  map[unit]float64   // a unit not seen yet has a full bucket
-	at      time.Time          // when the tokens were counted
-	usage   map[string]float64 // recent calls with the instance's key, by account
-	usedAt  time.Time          // when the usages were decayed
-	short   map[unit]bool      // units whose calls wait, for the log
-	unsaved map[Calls]int      // calls not saved yet, N left at zero in the key
+	bucket                       // per unit, of the Volvo quota
+	sources map[string]sourceAPI // the APIs of the Sources, by name
+	tokens  map[unit]float64     // a unit not seen yet has a full bucket
+	at      time.Time            // when the tokens were counted
+	usage   map[string]float64   // recent calls with the instance's key, by account
+	usedAt  time.Time            // when the usages were decayed
+	short   map[unit]bool        // units whose calls wait, for the log
+	unsaved map[Calls]int        // calls not saved yet, N left at zero in the key
+}
+
+// bucket is how a unit's calls accrue.
+type bucket struct {
+	rate  float64 // calls per second
+	burst float64
+}
+
+// bucketOf spreads a quota of daily calls, less its reserve, over budgetWindow.
+func bucketOf(daily int) bucket {
+	usable := float64(daily) * (1 - quotaReserve)
+	burst := max(1, usable*budgetBurst.Hours()/24) // below one call, nothing would ever be called
+	return bucket{rate: (usable - burst) / budgetWindow.Seconds(), burst: burst}
+}
+
+// sourceAPI is an API of a Source: the provider it reads, and its quota per credential.
+type sourceAPI struct {
+	provider string
+	bucket
 }
 
 func newBudget(q Quota, now time.Time) *budget {
-	usable := float64(q.Daily) * (1 - quotaReserve)
-	burst := max(1, usable*budgetBurst.Hours()/24) // below one call, nothing would ever be called
 	return &budget{
 		perUser: q.PerUser,
-		rate:    (usable - burst) / budgetWindow.Seconds(),
-		burst:   burst,
+		bucket:  bucketOf(q.Daily),
+		sources: map[string]sourceAPI{},
 		tokens:  map[unit]float64{},
 		at:      now,
 		usage:   map[string]float64{},
@@ -104,9 +123,24 @@ func newBudget(q Quota, now time.Time) *budget {
 	}
 }
 
+// addSource has the calls of a Source's API counted per credential, daily a day.
+func (b *budget) addSource(provider, api string, daily int) {
+	b.sources[api] = sourceAPI{provider: provider, bucket: bucketOf(daily)}
+}
+
+// bucketOf returns how the calls of u accrue.
+func (b *budget) bucketOf(u unit) bucket {
+	if s, ok := b.sources[u.api]; ok {
+		return s.bucket
+	}
+	return b.bucket
+}
+
 // unitOf is the unit a call of t to api counts on.
 func (b *budget) unitOf(t Target, api string) unit {
 	switch {
+	case !t.readsVolvo(): // a Source's: its connection's credential
+		return unit{key: t.ConnectionID, api: api}
 	case t.ownKey():
 		return unit{key: t.ConnectionID, api: api}
 	case b.perUser:
@@ -119,7 +153,8 @@ func (b *budget) unitOf(t Target, api string) unit {
 func (b *budget) refill(now time.Time) {
 	if elapsed := now.Sub(b.at).Seconds(); elapsed > 0 {
 		for u, n := range b.tokens {
-			b.tokens[u] = min(b.burst, n+elapsed*b.rate)
+			bk := b.bucketOf(u)
+			b.tokens[u] = min(bk.burst, n+elapsed*bk.rate)
 		}
 		b.at = now
 	}
@@ -153,7 +188,7 @@ func (b *budget) take(u unit, n float64, now time.Time) {
 	b.refill(now)
 	left, seen := b.tokens[u]
 	if !seen {
-		left = b.burst
+		left = b.bucketOf(u).burst
 	}
 	b.tokens[u] = left - n
 }
@@ -186,13 +221,15 @@ func (b *budget) order(targets []Target, now time.Time) {
 // restore replays the calls saved since now less budgetWindow, oldest hour first, into
 // a fresh budget: each hour's calls are taken at its end (now, for the current hour),
 // the latest they may have been made, which leaves the fewest tokens. The calls are
-// saved per account: they count on the key each account's connection has now (among
-// targets), the instance's for an account without a vehicle.
+// saved per account: they count on the key or the credential each account's connection
+// of the API's provider has now (among targets); the Volvo API's on the instance's key
+// for an account without a vehicle, a Source's on nothing without its connection.
 func (b *budget) restore(calls []Calls, targets []Target, now time.Time) {
 	b.at, b.usedAt = now.Add(-budgetWindow), now
-	byAccount := map[string]Target{}
+	type reader struct{ account, provider string }
+	byAccount := map[reader]Target{}
 	for _, t := range targets {
-		byAccount[t.AccountID] = t
+		byAccount[reader{t.AccountID, t.provider()}] = t
 	}
 	calls = slices.Clone(calls)
 	slices.SortStableFunc(calls, func(x, y Calls) int { return x.Hour.Compare(y.Hour) })
@@ -201,8 +238,15 @@ func (b *budget) restore(calls []Calls, targets []Target, now time.Time) {
 		if end.After(now) {
 			end = now
 		}
-		t, ok := byAccount[c.AccountID]
-		if !ok {
+		provider := volvo.Source
+		if s, ok := b.sources[c.API]; ok {
+			provider = s.provider
+		}
+		t, ok := byAccount[reader{c.AccountID, provider}]
+		switch {
+		case !ok && provider != volvo.Source:
+			continue // its credential is gone, and its quota with it
+		case !ok:
 			t = Target{AccountID: c.AccountID}
 		}
 		u := b.unitOf(t, c.API)

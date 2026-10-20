@@ -86,7 +86,7 @@ func TestStatus(t *testing.T) {
 				if len(s.Quota) != 1 || !s.Quota[volvo.APIEnergy].Equal(t0.Add(2*time.Hour)) {
 					t.Errorf("quota: %+v", s.Quota)
 				}
-				if s.Failure != (Failure{At: t0, Endpoint: volvo.EnergyState, Status: 403, Kind: FailQuota}) {
+				if s.Failure != (Failure{At: t0, Endpoint: Endpoint(volvo.EnergyState), Status: 403, Kind: FailQuota}) {
 					t.Errorf("failure: %+v", s.Failure)
 				}
 				if !s.NextAt.Equal(t0.Add(iv.Parked)) || !s.ReadAt.Equal(t0) {
@@ -115,7 +115,7 @@ func TestStatus(t *testing.T) {
 			errs: map[volvo.Endpoint]error{volvo.Doors: errors.New("dial tcp: connection refused")},
 			want: func(t *testing.T, s Status) {
 				t.Helper()
-				if s.Failure != (Failure{At: t0, Endpoint: volvo.Doors, Kind: FailUnavailable}) {
+				if s.Failure != (Failure{At: t0, Endpoint: Endpoint(volvo.Doors), Kind: FailUnavailable}) {
 					t.Errorf("failure: %+v", s.Failure)
 				}
 			},

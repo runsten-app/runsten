@@ -279,7 +279,7 @@ func TestDayScenario(t *testing.T) {
 	t.Run("position read on arrival", func(t *testing.T) {
 		var arrivals []time.Time
 		for _, s := range st.saved {
-			if s.Endpoint == volvo.Location && lonOf(t, s.Payload) == 4.927 {
+			if s.Endpoint == Endpoint(volvo.Location) && lonOf(t, s.Payload) == 4.927 {
 				arrivals = append(arrivals, s.FetchedAt)
 			}
 		}
@@ -320,7 +320,7 @@ func TestDayScenario(t *testing.T) {
 		}
 		var details int
 		for _, s := range st.saved {
-			if s.Endpoint == volvo.Details {
+			if s.Endpoint == Endpoint(volvo.Details) {
 				details++
 			}
 		}
@@ -355,7 +355,7 @@ func TestMissedTrip(t *testing.T) {
 	var odometers []string
 	var workSeen time.Time
 	for _, s := range st.saved {
-		switch s.Endpoint {
+		switch volvo.Endpoint(s.Endpoint) {
 		case volvo.EngineStatus:
 			if e, _ := volvo.ParseEngineStatus(s.Payload); e == "RUNNING" {
 				t.Errorf("driving observed at %v despite the outage", s.FetchedAt)
@@ -435,7 +435,7 @@ func twoVehicles(first, second *scenario.Scenario) []Target {
 func callsIn(rec *recorder, vin string, ep volvo.Endpoint, from, to time.Time) int {
 	n := 0
 	for _, c := range rec.calls {
-		if c.VIN == vin && c.Endpoint == ep && !c.At.Before(from) && c.At.Before(to) {
+		if c.VIN == vin && c.Endpoint == Endpoint(ep) && !c.At.Before(from) && c.At.Before(to) {
 			n++
 		}
 	}
@@ -516,8 +516,8 @@ func TestTwoVehicles(t *testing.T) {
 			if !ok || s.AccountID != "a" {
 				t.Fatalf("snapshot of an unknown vehicle: %+v", s)
 			}
-			counts[s.Endpoint]++
-			switch s.Endpoint {
+			counts[volvo.Endpoint(s.Endpoint)]++
+			switch volvo.Endpoint(s.Endpoint) {
 			case volvo.Details:
 				var d struct {
 					Data struct {
@@ -574,7 +574,7 @@ func TestMarketRefused(t *testing.T) {
 	called := map[volvo.Endpoint]int{}
 	for _, c := range rec.calls {
 		if c.VIN == other.VIN {
-			called[c.Endpoint]++
+			called[volvo.Endpoint(c.Endpoint)]++
 		}
 	}
 	if len(called) != 2 || called[volvo.EngineStatus] != 1 || called[volvo.EnergyState] != 1 {
@@ -586,7 +586,7 @@ func TestMarketRefused(t *testing.T) {
 			last = s
 		}
 	}
-	if f := last.Failure; f.Kind != FailMarket || f.Endpoint != volvo.EnergyState || f.Status != 404 {
+	if f := last.Failure; f.Kind != FailMarket || f.Endpoint != Endpoint(volvo.EnergyState) || f.Status != 404 {
 		t.Errorf("failure told: %+v, want market on energy-state", f)
 	}
 	if !last.NextAt.IsZero() {
@@ -617,7 +617,7 @@ func TestTwoVehiclesShareTheQuota(t *testing.T) {
 	calls := map[string]int{}
 	refused := map[string]Call{} // first refusal per API
 	for _, c := range rec.calls {
-		name := c.Endpoint.API()
+		name := volvo.Endpoint(c.Endpoint).API()
 		if r, ok := refused[name]; ok {
 			t.Errorf("%s called for %s at %v, after the quota refusal for %s at %v",
 				name, c.VIN, c.At.Format("15:04:05"), r.VIN, r.At.Format("15:04:05"))
@@ -753,7 +753,7 @@ func TestFailures(t *testing.T) {
 			t.Errorf("calls: %v", api.calls)
 		}
 		for _, s := range store.statuses {
-			if f := s.Failure; f.Endpoint != "" && f.Endpoint != volvo.Engine {
+			if f := s.Failure; f.Endpoint != "" && f.Endpoint != Endpoint(volvo.Engine) {
 				t.Fatalf("failure told: %+v", f)
 			}
 		}
@@ -798,7 +798,7 @@ func TestObserver(t *testing.T) {
 		if call.VIN != simVIN || call.VehicleID != "v" {
 			t.Fatalf("misattributed call: %+v", call)
 		}
-		byEp[call.Endpoint] = append(byEp[call.Endpoint], call)
+		byEp[volvo.Endpoint(call.Endpoint)] = append(byEp[volvo.Endpoint(call.Endpoint)], call)
 	}
 	if es := byEp[volvo.EngineStatus]; len(es) != 2 || !es[0].Stored || es[1].Stored || es[0].Status != 200 {
 		t.Errorf("engine-status: expected stored then duplicate, %+v", es)

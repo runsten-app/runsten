@@ -57,7 +57,7 @@ func (c capacities) NetCapacity(ctx context.Context, accountID, vehicleID string
 // (empty: none), from the details n: catalog.Effective, the one rule.
 func (c capacities) effective(chosen, vin string, n core.Snapshot) (catalog.Variant, bool) {
 	return c.catalog.Effective(chosen, catalog.Reading{
-		Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
+		Brand: catalog.Brand(n.Brand.V), Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
 		BatteryElectric: n.BatteryElectric.OK && n.BatteryElectric.V,
 	})
 }

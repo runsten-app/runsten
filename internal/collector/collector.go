@@ -1,12 +1,18 @@
-// Package collector polls the vehicle API for every account and stores the deduplicated
+// Package collector polls the vehicle APIs for every account and stores the deduplicated
 // raw responses. After each pass over a vehicle, it has the derived events updated.
+//
+// Each vehicle is read through its connection's provider: the Volvo Cars API, built in,
+// or a Source the binary adds (the Polestar Data Portal), read with the connection's
+// credential.
 //
 // Polling is adaptive: the vehicle state (parked, driving, charging), inferred from the
 // latest responses, sets the interval of each endpoint. The end of a trip or of a
 // charge triggers an immediate reading of the location, statistics and odometer.
 //
-// Access tokens come from a TokenSource, asked once per pass and vehicle. A rejected
-// token is renewed once; a connection that lost its grant is no longer polled.
+// Volvo's access tokens come from a TokenSource, asked once per pass and vehicle; a
+// Source's access is asked for at the first call and kept until it expires. A rejected
+// token is renewed once; a connection that lost its grant, or whose credential was
+// refused, is no longer polled.
 //
 // Volvo counts its quota on the application key: a connection reads with the
 // instance's, which every account shares, or, on an instance without one (the hosted
@@ -39,6 +45,9 @@ type Target struct {
 	VehicleID    string
 	VIN          string
 	ConnectionID string
+	// Provider names the API the connection reads: volvo.Source (or empty), or a
+	// Source's.
+	Provider string
 	// ReauthReason is set when the connection lost its grant: the vehicle is not
 	// polled until the user authorizes again.
 	ReauthReason string
@@ -52,23 +61,43 @@ type Target struct {
 	// MarketRefused is set when the vendor's API does not serve the vehicle's market:
 	// nothing of it can be read, and it is not polled until it is listed again.
 	MarketRefused bool
+	// CredentialSetAt is when the connection's credential was set, for a Source: the
+	// credential itself is read by the Source, when a call is due.
+	CredentialSetAt time.Time
+	// CredentialRefused is set when the provider refused the connection's credential:
+	// the vehicle is not polled until the user sets another.
+	CredentialRefused bool
+	// Unshared is set when the vehicle is no longer shared with the connection's
+	// credential: it is not polled until it is listed again.
+	Unshared bool
 }
 
 // ownKey reports whether the target's connection reads with its own application key.
 func (t Target) ownKey() bool { return !t.KeySetAt.IsZero() }
 
+// readsVolvo reports whether the target is read through the Volvo Cars API.
+func (t Target) readsVolvo() bool { return t.Provider == "" || t.Provider == volvo.Source }
+
+// provider names the target's provider, volvo.Source for an empty one.
+func (t Target) provider() string {
+	if t.Provider == "" {
+		return volvo.Source
+	}
+	return t.Provider
+}
+
 // Snapshot is a raw response to store.
 type Snapshot struct {
 	AccountID string
 	VehicleID string
-	Source    string // volvo.Source: the collector reads the Volvo Cars API
-	Endpoint  volvo.Endpoint
+	Source    string // the provider's name: volvo.Source, or a Source's
+	Endpoint  Endpoint
 	FetchedAt time.Time
 	Payload   []byte
 	Hash      []byte // fingerprint of the values, timestamps excluded
 }
 
-// API queries the provider, with an application key (empty: the instance's) and a
+// API queries the Volvo Cars API, with an application key (empty: the instance's) and a
 // user's token.
 type API interface {
 	Fetch(ctx context.Context, key, token, vin string, ep volvo.Endpoint) ([]byte, error)
@@ -96,7 +125,7 @@ type Store interface {
 	SetMarketRefused(ctx context.Context, accountID, vehicleID string) error
 }
 
-// TokenSource provides the access tokens of the connections. An error implementing
+// TokenSource provides the access tokens of the Volvo connections. An error implementing
 // ReauthRequired() bool (returning true) means that the connection lost its grant.
 type TokenSource interface {
 	// Token returns a valid access token, refreshed first if it is about to expire.
@@ -170,7 +199,8 @@ type Call struct {
 	AccountID string
 	VehicleID string
 	VIN       string
-	Endpoint  volvo.Endpoint
+	Source    string // the provider's name
+	Endpoint  Endpoint
 	Status    int    // 200, HTTP status of the error, or 0 if the API did not respond
 	Err       string // empty if the call succeeded
 	Stored    bool   // new response, stored; false for a duplicate
@@ -186,13 +216,14 @@ type VehicleState struct {
 	Mode        string
 	Engine      string
 	Charging    string
-	Next        map[volvo.Endpoint]time.Time
+	Next        map[Endpoint]time.Time
 	PausedUntil time.Time            // rate limit or token rejected
 	APIBlocked  map[string]time.Time // quota exhausted, per API, of the key the vehicle reads with
 	// ReauthReason is set when the connection lost its grant: nothing is polled.
 	ReauthReason string
 	// Key is the application key the vehicle reads with: "own", "instance", "refused"
-	// (its own, refused) or "missing" (none, and the instance has none).
+	// (its own, refused) or "missing" (none, and the instance has none); for a Source,
+	// "credential", or "credential refused".
 	Key string
 }
 
@@ -205,10 +236,11 @@ type Status struct {
 	Mode      string
 	ReadAt    time.Time // the latest successful call; zero: none since the collector started
 	// NextAt is the earliest call due, blocks and pauses included; zero while the
-	// connection lost its grant, has no key it may read with, or the vehicle's market is
-	// refused: nothing is due until the user acts.
+	// connection lost its grant, has no key or credential it may read with, or the
+	// vehicle's market is refused or it is no longer shared: nothing is due until the
+	// user acts.
 	NextAt      time.Time
-	PausedUntil time.Time            // rate limit, token rejected, key refused; zero: not paused
+	PausedUntil time.Time            // rate limit, token rejected, key refused, no access; zero: not paused
 	Quota       map[string]time.Time // APIs whose quota is exhausted, until when
 	Failure     Failure              // the latest failed call; zero: none since the collector started
 }
@@ -217,9 +249,9 @@ type Status struct {
 // holds the VIN of a URL, or the vendor's words.
 type Failure struct {
 	At       time.Time
-	Endpoint volvo.Endpoint // empty when no call was made: no access token
-	Status   int            // HTTP status, or 0 if the API did not respond
-	Kind     string         // one of the Fail constants
+	Endpoint Endpoint // empty when no call was made: no access token
+	Status   int      // HTTP status, or 0 if the API did not respond
+	Kind     string   // one of the Fail constants
 }
 
 // The kinds of a Failure.
@@ -232,7 +264,11 @@ const (
 	FailToken       = "token"        // no access token, the grant still held (Volvo ID unreachable)
 	FailKeyRefused  = "key_refused"  // the application key refused, not the token
 	FailMarket      = "market"       // the API does not serve the vehicle's market
-	FailOther       = "other"
+	// FailCredentialRefused: a Source's provider refused the connection's credential.
+	FailCredentialRefused = "credential_refused" //nolint:gosec // a kind of failure, no credential
+	FailUnshared          = "unshared"           // the vehicle is no longer shared with the credential
+	FailNotGranted        = "not_granted"        // the endpoint is not granted to the credential
+	FailOther             = "other"
 )
 
 // statusEvery is how often an unchanged status is written again: its PassedAt tells
@@ -256,7 +292,8 @@ type nopObserver struct{}
 func (nopObserver) Called(Call)           {}
 func (nopObserver) Observed(VehicleState) {}
 
-// Intervals tunes the polling.
+// Intervals tunes the polling: each endpoint is read at one of them in each mode, its
+// Pace.
 type Intervals struct {
 	Parked  time.Duration // parked vehicle: charging and engine state
 	Active  time.Duration // driving or charging
@@ -279,17 +316,6 @@ const (
 
 func (m mode) String() string { return [...]string{"parked", "driving", "charging"}[m] }
 
-// endpoints in pass order: engine and charging state first, so that a transition
-// triggers the end-of-trip/charge readings within the same pass.
-func endpoints() []volvo.Endpoint {
-	return []volvo.Endpoint{
-		volvo.EngineStatus, volvo.EnergyState,
-		volvo.Odometer, volvo.Location, volvo.Statistics,
-		volvo.Details, volvo.Diagnostics, volvo.Brakes, volvo.Engine, volvo.Fuel,
-		volvo.Tyres, volvo.Warnings, volvo.Doors, volvo.Windows,
-	}
-}
-
 // optional reports whether ep may be missing for a vehicle: its scope absent from an
 // application or a grant made before it was requested, or the model without it.
 func optional(ep volvo.Endpoint) bool {
@@ -301,43 +327,30 @@ func optional(ep volvo.Endpoint) bool {
 	}
 }
 
-func (iv Intervals) of(m mode, ep volvo.Endpoint) time.Duration {
-	switch ep {
-	case volvo.EngineStatus:
-		if m == driving {
-			return iv.Active
-		}
-		return iv.Parked
-	case volvo.EnergyState:
-		if m == parked {
-			return iv.Parked
-		}
+func (iv Intervals) of(p Pace) time.Duration {
+	switch p {
+	case PaceActive:
 		return iv.Active
-	case volvo.Odometer:
-		if m == driving {
-			return iv.Active
-		}
+	case PaceRare:
 		return iv.Rare
-	case volvo.Details:
+	case PaceDetails:
 		return iv.Details
-	default:
-		return iv.Rare
 	}
+	return iv.Parked
 }
 
 type vehicleState struct {
 	mode     mode
-	engine   string
-	charging string
-	next     map[volvo.Endpoint]time.Time
+	activity Activity
+	next     map[Endpoint]time.Time
 	// missing holds the optional endpoints the API refused, until when they are not
 	// called: apart from next, which a transition or a policy brings forward.
-	missing map[volvo.Endpoint]time.Time
+	missing map[Endpoint]time.Time
 	// marketRefused: the API refused the vehicle's market, though the store may not have
-	// recorded it.
-	marketRefused bool
-	readAt        time.Time
-	failure       Failure
+	// recorded it; unshared, the same for a vehicle no longer shared with a credential.
+	marketRefused, unshared bool
+	readAt                  time.Time
+	failure                 Failure
 }
 
 // Collector polls the vehicles. It is not safe for concurrent use: Run and PollOnce
@@ -360,6 +373,16 @@ type Collector struct {
 	// own or not at all.
 	noInstanceKey bool
 
+	volvo   *source            // the Volvo Cars API, read with api and tokens
+	sources map[string]*source // the others, by provider
+	// sessions are the Sources' accesses, by ConnectionID.
+	sessions map[string]*session
+	// credentialRefused holds the credentials a Source's provider refused, though the
+	// store may not have recorded it.
+	credentialRefused map[keyID]bool
+	connectionPause   map[string]time.Time // a Source's rate limit or access rejected, per connection
+	sourceLogged      map[string]bool      // connections whose refused credential or unknown provider was logged
+
 	vehicles     map[string]*vehicleState          // by VehicleID
 	restored     bool                              // the budget replayed the saved calls
 	apiBlocked   map[unit]time.Time                // quota exhausted
@@ -373,7 +396,7 @@ type Collector struct {
 }
 
 // keyID is an application key: a connection's own, as set at a time, or the instance's
-// (zero).
+// (zero); or a connection's credential, as set at a time.
 type keyID struct {
 	connection string
 	setAt      time.Time
@@ -394,17 +417,23 @@ func New(api API, store Store, tokens TokenSource, clk clock.Clock, iv Intervals
 	}
 	return &Collector{
 		api: api, store: store, tokens: tokens, clk: clk, iv: iv, log: log, obs: obs, der: der,
-		budget:        newBudget(q, clk.Now()),
-		noInstanceKey: q.NoInstanceKey,
-		vehicles:      map[string]*vehicleState{},
-		apiBlocked:    map[unit]time.Time{},
-		keyRefused:    map[keyID]time.Time{},
-		keyStrikes:    map[keyID]int{},
-		keyAnswered:   map[keyID]map[volvo.Endpoint]bool{},
-		accountPause:  map[string]time.Time{},
-		reauthLogged:  map[string]bool{},
-		keyLogged:     map[string]bool{},
-		written:       map[string]Status{},
+		budget:            newBudget(q, clk.Now()),
+		noInstanceKey:     q.NoInstanceKey,
+		volvo:             volvoSource(),
+		sources:           map[string]*source{},
+		sessions:          map[string]*session{},
+		credentialRefused: map[keyID]bool{},
+		connectionPause:   map[string]time.Time{},
+		sourceLogged:      map[string]bool{},
+		vehicles:          map[string]*vehicleState{},
+		apiBlocked:        map[unit]time.Time{},
+		keyRefused:        map[keyID]time.Time{},
+		keyStrikes:        map[keyID]int{},
+		keyAnswered:       map[keyID]map[volvo.Endpoint]bool{},
+		accountPause:      map[string]time.Time{},
+		reauthLogged:      map[string]bool{},
+		keyLogged:         map[string]bool{},
+		written:           map[string]Status{},
 	}
 }
 
@@ -482,6 +511,15 @@ func (c *Collector) PollOnce(ctx context.Context) error {
 	targets = slices.DeleteFunc(targets, func(t Target) bool { return !c.reads[t.AccountID].reads(t) })
 	c.budget.order(targets, c.clk.Now())
 	seen := make(map[string]bool, len(targets))
+	connections := map[string]bool{}
+	for _, t := range targets {
+		connections[t.ConnectionID] = true
+	}
+	for id := range c.sessions {
+		if !connections[id] {
+			delete(c.sessions, id)
+		}
+	}
 	for _, t := range targets {
 		if ctx.Err() != nil {
 			return nil //nolint:nilerr // shutdown requested: not a polling error
@@ -537,10 +575,13 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 	vs, ok := c.vehicles[t.VehicleID]
 	if !ok {
 		// everything is due on the first pass
-		vs = &vehicleState{next: map[volvo.Endpoint]time.Time{}, missing: map[volvo.Endpoint]time.Time{}}
+		vs = &vehicleState{next: map[Endpoint]time.Time{}, missing: map[Endpoint]time.Time{}}
 		c.vehicles[t.VehicleID] = vs
 	}
 	defer func() { c.report(ctx, t, vs) }()
+	if !t.readsVolvo() {
+		return c.pollSource(ctx, t, vs, c.sourceOf(t))
+	}
 	if t.ReauthReason != "" {
 		c.reauthRequired(t, t.ReauthReason)
 		return false
@@ -553,16 +594,14 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 	}
 	var token, key string
 	renewed := false // a rejected token is renewed once per pass
-	for _, ep := range endpoints() {
+	for _, spec := range c.volvo.Endpoints {
+		ep := volvo.Endpoint(spec.Endpoint)
 		now := c.clk.Now()
 		if now.Before(c.accountPause[t.AccountID]) || c.keyBlocked(t, now) || vs.marketRefused {
 			return saved
 		}
-		// A policy lifted, or shortened, applies at once.
-		if soonest := now.Add(c.interval(t, vs.mode, ep)); vs.next[ep].After(soonest) {
-			vs.next[ep] = soonest
-		}
-		if now.Before(vs.next[ep]) || now.Before(vs.missing[ep]) || now.Before(c.apiBlocked[c.budget.unitOf(t, ep.API())]) || !c.allowed(t, ep.API(), now) {
+		c.bringForward(t, vs, spec, now)
+		if now.Before(c.apiBlocked[c.budget.unitOf(t, spec.API)]) || !c.due(t, vs, spec, now) {
 			continue
 		}
 		if token == "" {
@@ -578,7 +617,7 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 				}
 			}
 		}
-		vs.next[ep] = now.Add(c.interval(t, vs.mode, ep))
+		vs.next[spec.Endpoint] = now.Add(c.interval(t, vs.mode, spec))
 		raw, err := c.fetch(ctx, t, key, token, ep)
 		if isUnauthorized(err) && !renewed {
 			renewed = true
@@ -592,25 +631,51 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 			c.fetchFailed(ctx, t, vs, ep, now, err)
 			continue
 		}
-		delete(vs.missing, ep)
 		c.answered(t, ep)
-		stored, err := c.save(ctx, t, ep, now, raw)
-		if err == nil {
-			saved, vs.readAt = true, now
-		}
-		c.called(t, ep, now, raw, stored, err)
-		c.observe(t, vs, ep, raw, now)
+		saved = c.read(ctx, t, vs, c.volvo, spec.Endpoint, now, raw) || saved
 	}
 	return saved
 }
 
-// interval is how long after a call of ep t's next is due, in mode m: at the policy's
-// pace, whatever the mode, when it limits t's account.
-func (c *Collector) interval(t Target, m mode, ep volvo.Endpoint) time.Duration {
-	if every := c.reads[t.AccountID].Every; every > 0 {
-		return max(every, c.iv.of(parked, ep))
+// bringForward brings the next call of spec forward to its interval: a policy lifted,
+// or shortened, applies at once.
+func (c *Collector) bringForward(t Target, vs *vehicleState, spec EndpointSpec, now time.Time) {
+	if soonest := now.Add(c.interval(t, vs.mode, spec)); vs.next[spec.Endpoint].After(soonest) {
+		vs.next[spec.Endpoint] = soonest
 	}
-	return c.iv.of(m, ep)
+}
+
+// due reports whether a call of spec is due now for t, and the budget allows it.
+func (c *Collector) due(t Target, vs *vehicleState, spec EndpointSpec, now time.Time) bool {
+	return !now.Before(vs.next[spec.Endpoint]) && !now.Before(vs.missing[spec.Endpoint]) && c.allowed(t, spec.API, now)
+}
+
+// read saves a response of ep, tells the observer, and updates the vehicle's mode; it
+// reports whether the snapshot was saved (stored or checked again).
+func (c *Collector) read(ctx context.Context, t Target, vs *vehicleState, src *source, ep Endpoint, now time.Time, raw []byte) bool {
+	delete(vs.missing, ep)
+	stored, err := c.save(ctx, t, src, ep, now, raw)
+	if err == nil {
+		vs.readAt = now
+	}
+	c.called(t, src, ep, now, raw, stored, err)
+	c.observe(t, vs, src, ep, raw, now)
+	return err == nil
+}
+
+// interval is how long after a call of spec t's next is due, in mode m: at the policy's
+// pace, whatever the mode, when it limits t's account.
+func (c *Collector) interval(t Target, m mode, spec EndpointSpec) time.Duration {
+	if every := c.reads[t.AccountID].Every; every > 0 {
+		return max(every, c.iv.of(spec.Parked))
+	}
+	return c.iv.of(spec.pace(m))
+}
+
+// detailsInterval is how long an endpoint refused is left out: a details interval, or
+// the policy's pace when longer.
+func (c *Collector) detailsInterval(t Target) time.Duration {
+	return c.interval(t, parked, EndpointSpec{Parked: PaceDetails})
 }
 
 // allowed reports whether the budget lets t call api now; a call it defers stays due,
@@ -661,7 +726,7 @@ func (c *Collector) fetch(ctx context.Context, t Target, key, token string, ep v
 	if err != nil {
 		call := Call{
 			At: start, Duration: c.clk.Now().Sub(start), AccountID: t.AccountID, VehicleID: t.VehicleID,
-			VIN: t.VIN, Endpoint: ep, Err: err.Error(),
+			VIN: t.VIN, Source: volvo.Source, Endpoint: Endpoint(ep), Err: err.Error(),
 		}
 		var apiErr *volvo.APIError
 		if errors.As(err, &apiErr) {
@@ -673,10 +738,10 @@ func (c *Collector) fetch(ctx context.Context, t Target, key, token string, ep v
 }
 
 // called reports a successful call to the observer.
-func (c *Collector) called(t Target, ep volvo.Endpoint, at time.Time, raw []byte, stored bool, err error) {
+func (c *Collector) called(t Target, src *source, ep Endpoint, at time.Time, raw []byte, stored bool, err error) {
 	call := Call{
 		At: at, Duration: c.clk.Now().Sub(at), AccountID: t.AccountID, VehicleID: t.VehicleID, VIN: t.VIN,
-		Endpoint: ep, Status: http200, Payload: raw, Stored: stored,
+		Source: src.Name, Endpoint: ep, Status: http200, Payload: raw, Stored: stored,
 	}
 	if err != nil {
 		call.Err = err.Error()
@@ -734,6 +799,10 @@ func (c *Collector) keyBlocked(t Target, now time.Time) bool {
 // keyState names the key t reads with, for the debug page.
 func (c *Collector) keyState(t Target, now time.Time) string {
 	switch {
+	case !t.readsVolvo() && c.credentialBlocked(t):
+		return "credential refused"
+	case !t.readsVolvo():
+		return "credential"
 	case !t.ownKey() && c.noInstanceKey:
 		return "missing"
 	case c.keyBlocked(t, now) && t.ownKey():
@@ -766,15 +835,11 @@ const (
 // from another goroutine), and saves its status when it changed, or statusEvery after
 // the last write.
 func (c *Collector) report(ctx context.Context, t Target, vs *vehicleState) {
-	next := make(map[volvo.Endpoint]time.Time, len(vs.next))
-	for ep, at := range vs.next {
-		next[ep] = at
-	}
 	blocked := c.blockedAPIs(t)
 	c.obs.Observed(VehicleState{
 		At: c.clk.Now(), AccountID: t.AccountID, VehicleID: t.VehicleID, VIN: t.VIN,
-		Mode: vs.mode.String(), Engine: vs.engine, Charging: vs.charging, Next: next,
-		PausedUntil: c.accountPause[t.AccountID], APIBlocked: blocked, ReauthReason: t.ReauthReason,
+		Mode: vs.mode.String(), Engine: vs.activity.Engine, Charging: vs.activity.Charging, Next: maps.Clone(vs.next),
+		PausedUntil: c.pausedUntil(t), APIBlocked: blocked, ReauthReason: t.ReauthReason,
 		Key: c.keyState(t, c.clk.Now()),
 	})
 
@@ -798,7 +863,7 @@ func (c *Collector) status(t Target, vs *vehicleState) Status {
 		AccountID: t.AccountID, VehicleID: t.VehicleID, PassedAt: now, Mode: vs.mode.String(),
 		ReadAt: vs.readAt, Failure: vs.failure, Quota: map[string]time.Time{},
 	}
-	if pause := c.accountPause[t.AccountID]; pause.After(now) {
+	if pause := c.pausedUntil(t); pause.After(now) {
 		s.PausedUntil = pause
 	}
 	for api, until := range c.blockedAPIs(t) {
@@ -806,18 +871,30 @@ func (c *Collector) status(t Target, vs *vehicleState) Status {
 			s.Quota[api] = until
 		}
 	}
-	if t.ReauthReason != "" || (!t.ownKey() && c.noInstanceKey) || (t.ownKey() && t.KeyRefused) {
+	src := c.sourceOf(t)
+	switch {
+	case src == nil:
+		return s // nothing reads the vehicle
+	case !t.readsVolvo():
+		if c.credentialBlocked(t) {
+			return s // nothing is due until the user acts
+		}
+	case t.ReauthReason != "" || (!t.ownKey() && c.noInstanceKey) || (t.ownKey() && t.KeyRefused):
 		return s // nothing is due until the user acts
 	}
-	if t.MarketRefused || vs.marketRefused {
+	if t.MarketRefused || vs.marketRefused || t.Unshared || vs.unshared {
 		return s // nothing is due until the vehicle is listed again
 	}
-	if pause := c.keyRefused[keyOf(t)]; pause.After(now) && pause.After(s.PausedUntil) {
+	if pause := c.keyRefused[keyOf(t)]; t.readsVolvo() && pause.After(now) && pause.After(s.PausedUntil) {
 		s.PausedUntil = pause // a refusal that may not be the key's: tried again then
 	}
-	for i, ep := range endpoints() {
-		due := vs.next[ep]
-		for _, block := range []time.Time{vs.missing[ep], c.apiBlocked[c.budget.unitOf(t, ep.API())], c.accountPause[t.AccountID], c.keyRefused[keyOf(t)]} {
+	for i, spec := range src.Endpoints {
+		due := vs.next[spec.Endpoint]
+		blocks := []time.Time{vs.missing[spec.Endpoint], c.apiBlocked[c.budget.unitOf(t, spec.API)], c.pausedUntil(t)}
+		if t.readsVolvo() {
+			blocks = append(blocks, c.keyRefused[keyOf(t)])
+		}
+		for _, block := range blocks {
 			if block.After(due) {
 				due = block
 			}
@@ -850,14 +927,23 @@ func sameStatus(a, b Status) bool {
 		a.PausedUntil.Equal(b.PausedUntil) && maps.EqualFunc(a.Quota, b.Quota, time.Time.Equal) && a.Failure == b.Failure
 }
 
-func (c *Collector) save(ctx context.Context, t Target, ep volvo.Endpoint, now time.Time, raw []byte) (bool, error) {
-	hash, err := volvo.Fingerprint(raw)
+// pausedUntil is when t's pause ends: its account's for Volvo, its connection's for a
+// Source.
+func (c *Collector) pausedUntil(t Target) time.Time {
+	if t.readsVolvo() {
+		return c.accountPause[t.AccountID]
+	}
+	return c.connectionPause[t.ConnectionID]
+}
+
+func (c *Collector) save(ctx context.Context, t Target, src *source, ep Endpoint, now time.Time, raw []byte) (bool, error) {
+	hash, err := src.fingerprint(raw)
 	if err != nil {
 		c.log.Error("fingerprint", "vehicle", t.VehicleID, "endpoint", ep, "err", err)
-		return false, err //nolint:wrapcheck // already has context from volvo
+		return false, err //nolint:wrapcheck // already has context from the source
 	}
 	stored, err := c.store.SaveSnapshot(ctx, Snapshot{
-		AccountID: t.AccountID, VehicleID: t.VehicleID, Source: volvo.Source, Endpoint: ep, FetchedAt: now, Payload: raw,
+		AccountID: t.AccountID, VehicleID: t.VehicleID, Source: src.Name, Endpoint: ep, FetchedAt: now, Payload: raw,
 		Hash: hash,
 	})
 	if err != nil {
@@ -869,26 +955,19 @@ func (c *Collector) save(ctx context.Context, t Target, ep volvo.Endpoint, now t
 }
 
 // observe updates the vehicle state and reschedules on a transition.
-func (c *Collector) observe(t Target, vs *vehicleState, ep volvo.Endpoint, raw []byte, now time.Time) {
-	var err error
-	switch ep {
-	case volvo.EngineStatus:
-		vs.engine, err = volvo.ParseEngineStatus(raw)
-	case volvo.EnergyState:
-		vs.charging, err = volvo.ParseChargingStatus(raw)
-	default:
-		return
-	}
-	if err != nil {
+func (c *Collector) observe(t Target, vs *vehicleState, src *source, ep Endpoint, raw []byte, now time.Time) {
+	a := vs.activity
+	if err := src.observe(ep, raw, &a); err != nil {
 		c.log.Warn("read state", "vehicle", t.VehicleID, "endpoint", ep, "err", err)
 		return
 	}
+	vs.activity = a
 
 	m := parked
 	switch {
-	case vs.engine == "RUNNING":
+	case a.Driving:
 		m = driving
-	case vs.charging == "CHARGING":
+	case a.Charges:
 		m = charging
 	}
 	if m == vs.mode {
@@ -897,13 +976,15 @@ func (c *Collector) observe(t Target, vs *vehicleState, ep volvo.Endpoint, raw [
 	c.log.Info("transition", "vehicle", t.VehicleID, "from", vs.mode.String(), "to", m.String())
 	old := vs.mode
 	vs.mode = m
-	for e, at := range vs.next {
-		if sooner := now.Add(c.interval(t, m, e)); sooner.Before(at) {
-			vs.next[e] = sooner
+	for _, spec := range src.Endpoints {
+		if at, ok := vs.next[spec.Endpoint]; ok {
+			if sooner := now.Add(c.interval(t, m, spec)); sooner.Before(at) {
+				vs.next[spec.Endpoint] = sooner
+			}
 		}
 	}
 	if old != parked && c.reads[t.AccountID].Every == 0 { // end of trip or charge: immediate readings
-		for _, e := range []volvo.Endpoint{volvo.Location, volvo.Statistics, volvo.Odometer} {
+		for _, e := range src.Settled {
 			vs.next[e] = now
 		}
 	}
@@ -914,14 +995,14 @@ func (c *Collector) fetchFailed(ctx context.Context, t Target, vs *vehicleState,
 	if errors.As(err, &apiErr) && ((optional(ep) && missingEndpoint(apiErr)) || c.endpointRefused(t, ep, apiErr)) {
 		// Not a failure the user can act upon: tried again at the details' pace, logged
 		// once until it answers.
-		if _, logged := vs.missing[ep]; !logged {
+		if _, logged := vs.missing[Endpoint(ep)]; !logged {
 			c.log.Info("endpoint unavailable: tried again later", "vehicle", t.VehicleID, "endpoint", ep,
 				"status", apiErr.Status)
 		}
-		vs.missing[ep] = now.Add(c.interval(t, vs.mode, volvo.Details))
+		vs.missing[Endpoint(ep)] = now.Add(c.detailsInterval(t))
 		return
 	}
-	vs.failure = Failure{At: now, Endpoint: ep, Kind: FailUnavailable}
+	vs.failure = Failure{At: now, Endpoint: Endpoint(ep), Kind: FailUnavailable}
 	if apiErr == nil {
 		c.log.Warn("call", "vehicle", t.VehicleID, "endpoint", ep, "err", err)
 		return

@@ -14,7 +14,9 @@ import (
 	_ "embed"
 	"encoding/json"
 	"html/template"
+	"maps"
 	"net/http"
+	"slices"
 	"sort"
 	"sync"
 	"time"
@@ -34,7 +36,7 @@ const quotaPerDay = 10000
 
 // endpointStats accumulates the calls of an endpoint since the process started.
 type endpointStats struct {
-	Endpoint            volvo.Endpoint
+	Endpoint            string // its label
 	Calls, Stored, Dups int
 	Errors              int
 	total               time.Duration
@@ -61,7 +63,7 @@ type Journal struct {
 	next     int
 	full     bool
 	vehicles map[string]collector.VehicleState
-	stats    map[volvo.Endpoint]*endpointStats
+	stats    map[string]*endpointStats    // by label
 	hourly   map[string]map[time.Time]int // API → hour → calls
 }
 
@@ -70,7 +72,7 @@ func New(size int, clk clock.Clock) *Journal {
 	j := &Journal{
 		clk: clk, started: clk.Now(), calls: make([]collector.Call, size),
 		vehicles: map[string]collector.VehicleState{},
-		stats:    map[volvo.Endpoint]*endpointStats{},
+		stats:    map[string]*endpointStats{},
 		hourly:   map[string]map[time.Time]int{},
 	}
 	j.page = template.Must(template.New("page").Funcs(template.FuncMap{
@@ -91,10 +93,11 @@ func (j *Journal) Called(c collector.Call) {
 	j.next = (j.next + 1) % len(j.calls)
 	j.full = j.full || j.next == 0
 
-	st := j.stats[c.Endpoint]
+	name := label(c)
+	st := j.stats[name]
 	if st == nil {
-		st = &endpointStats{Endpoint: c.Endpoint}
-		j.stats[c.Endpoint] = st
+		st = &endpointStats{Endpoint: name}
+		j.stats[name] = st
 	}
 	st.Calls++
 	st.total += c.Duration
@@ -109,7 +112,10 @@ func (j *Journal) Called(c collector.Call) {
 		st.Dups++
 	}
 
-	api := c.Endpoint.API()
+	api := c.Source // a Source's quota is counted per credential, over its endpoints
+	if c.Source == "" || c.Source == volvo.Source {
+		api = volvo.Endpoint(c.Endpoint).API()
+	}
 	hours := j.hourly[api]
 	if hours == nil {
 		hours = map[time.Time]int{}
@@ -210,7 +216,13 @@ func (j *Journal) counters() ([]endpointStats, totals, []quotaView) {
 		t.ErrorRate = t.Errors * 100 / t.Calls
 	}
 	var qs []quotaView
-	for _, api := range []string{volvo.APIConnectedVehicle, volvo.APIEnergy, volvo.APILocation} {
+	apis := []string{volvo.APIConnectedVehicle, volvo.APIEnergy, volvo.APILocation}
+	for _, api := range slices.Sorted(maps.Keys(j.hourly)) {
+		if !slices.Contains(apis, api) {
+			apis = append(apis, api)
+		}
+	}
+	for _, api := range apis {
 		q := quotaView{API: api, Limit: quotaPerDay}
 		for h, n := range j.hourly[api] {
 			if now.Sub(h) < 24*time.Hour {
@@ -223,6 +235,15 @@ func (j *Journal) counters() ([]endpointStats, totals, []quotaView) {
 	return eps, t, qs
 }
 
+// label names a call's endpoint on the page: a Source's after its name, the Volvo API's
+// alone.
+func label(c collector.Call) string {
+	if c.Source == "" || c.Source == volvo.Source {
+		return string(c.Endpoint)
+	}
+	return c.Source + "/" + string(c.Endpoint)
+}
+
 func pretty(raw []byte) string {
 	var b bytes.Buffer
 	if json.Indent(&b, raw, "", "  ") != nil {
@@ -232,7 +253,7 @@ func pretty(raw []byte) string {
 }
 
 type nextDue struct {
-	Endpoint volvo.Endpoint
+	Endpoint collector.Endpoint
 	At       time.Time
 }
 
@@ -250,7 +271,7 @@ type pageData struct {
 	Stats     []endpointStats
 	Vehicles  []vehicleView
 	Calls     []collector.Call
-	Endpoints []volvo.Endpoint
+	Endpoints []string // labels
 	Filter    struct{ Vehicle, Endpoint string }
 	Errors    bool
 	Paused    bool
@@ -282,16 +303,16 @@ func (j *Journal) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		sort.Slice(vv.Due, func(a, b int) bool { return vv.Due[a].At.Before(vv.Due[b].At) })
 		d.Vehicles = append(d.Vehicles, vv)
 	}
-	seen := map[volvo.Endpoint]bool{}
+	seen := map[string]bool{}
 	all := j.recent(func(collector.Call) bool { return true })
 	d.Total = len(all)
 	for _, c := range all {
-		if !seen[c.Endpoint] {
-			seen[c.Endpoint] = true
-			d.Endpoints = append(d.Endpoints, c.Endpoint)
+		if name := label(c); !seen[name] {
+			seen[name] = true
+			d.Endpoints = append(d.Endpoints, name)
 		}
 		if (d.Filter.Vehicle == "" || c.VehicleID == d.Filter.Vehicle) &&
-			(d.Filter.Endpoint == "" || string(c.Endpoint) == d.Filter.Endpoint) &&
+			(d.Filter.Endpoint == "" || label(c) == d.Filter.Endpoint) &&
 			(!d.Errors || c.Err != "") {
 			d.Calls = append(d.Calls, c)
 		}

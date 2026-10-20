@@ -80,6 +80,9 @@ func TestRecognize(t *testing.T) {
 		{"a hybrid, or an unknown fuel type", with(ex30, func(r *Reading) { r.BatteryElectric = false }), ""},
 		{"unknown family", with(ex30, func(r *Reading) { r.Family = "" }), ""},
 		{"year and capacity unknown", Reading{Family: "EX90", BatteryElectric: true}, ""},
+		{"no family, its brand", Reading{Brand: Polestar, ModelYear: 2026, CapacityKWh: 92, BatteryElectric: true}, "ps3-rear-2026"},
+		{"no family, its brand: several fit", Reading{Brand: Polestar, ModelYear: 2024, BatteryElectric: true}, ""},
+		{"no family, its brand, a hybrid", Reading{Brand: Polestar, ModelYear: 2026, CapacityKWh: 92}, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -96,6 +99,7 @@ func TestEffective(t *testing.T) {
 	// Several EX30 fit without the VIN: nothing is recognized.
 	ex30 := Reading{Family: "EX30", ModelYear: 2024, CapacityKWh: 69.0, BatteryElectric: true}
 	recognized := with(ex30, func(r *Reading) { r.VIN = vin("EL") })
+	polestar := Reading{Brand: Polestar, ModelYear: 2024, BatteryElectric: true}
 	tests := []struct {
 		name   string
 		chosen string
@@ -109,12 +113,47 @@ func TestEffective(t *testing.T) {
 		{"a variant of another family", "xc40-twin-2021", recognized, "ex30-er-2024"},
 		{"a hybrid, even chosen", "ex30-er-2024", with(ex30, func(r *Reading) { r.BatteryElectric = false }), ""},
 		{"no family read", "ex30-er-2024", Reading{BatteryElectric: true}, ""},
+		// The Polestar Data Portal tells the brand alone: the choice sets the family.
+		{"no family, a variant of its brand", "ps2-lr-single-2024", polestar, "ps2-lr-single-2024"},
+		{"no family, a variant of another brand", "ex30-er-2024", polestar, ""},
+		{"a family read outranks the brand", "ps3-2024", with(polestar, func(r *Reading) { r.Family = "Polestar 2" }), ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v, ok := c.Effective(tt.chosen, tt.r)
 			if v.ID != tt.want || ok != (tt.want != "") {
 				t.Errorf("Effective = %q, %v; want %q", v.ID, ok, tt.want)
+			}
+		})
+	}
+}
+
+func TestMatchBrand(t *testing.T) {
+	c := mustLoad(t)
+	var every []string
+	for _, v := range c.Variants() {
+		if v.Brand == Polestar {
+			every = append(every, v.ID)
+		}
+	}
+	tests := []struct {
+		name       string
+		year       int
+		kwh        float64
+		want       []string
+		recognized bool
+	}{
+		{"every family of the year", 2026, 0, []string{
+			"ps2-sr-2025", "ps2-lr-single-2024", "ps2-lr-dual-2025", "ps3-rear-2026", "ps3-dual-2026", "ps4-2024", "ps5-2025",
+		}, false},
+		{"the capacity narrows them", 2026, 92, []string{"ps3-rear-2026"}, true},
+		{"none fits: the whole brand", 2019, 0, every, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := c.MatchBrand(Polestar, tt.year, tt.kwh, "")
+			if !slices.Equal(ids(got.Candidates), tt.want) || got.Recognized != tt.recognized {
+				t.Errorf("MatchBrand = %v, recognized %v; want %v, %v", ids(got.Candidates), got.Recognized, tt.want, tt.recognized)
 			}
 		})
 	}

@@ -119,7 +119,7 @@ func TestSnapshotsSince(t *testing.T) {
 	save := func(ep volvo.Endpoint, at time.Time, raw string) {
 		t.Helper()
 		h, _ := volvo.Fingerprint([]byte(raw))
-		if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Source: volvo.Source, Endpoint: ep, FetchedAt: at, Payload: []byte(raw), Hash: h}); err != nil {
+		if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Source: volvo.Source, Endpoint: collector.Endpoint(ep), FetchedAt: at, Payload: []byte(raw), Hash: h}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -158,7 +158,7 @@ func TestSnapshotSources(t *testing.T) {
 	h, _ := volvo.Fingerprint(raw)
 	save := func(source string, at time.Time) bool {
 		t.Helper()
-		stored, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Source: source, Endpoint: volvo.Odometer, FetchedAt: at, Payload: raw, Hash: h})
+		stored, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Source: source, Endpoint: collector.Endpoint(volvo.Odometer), FetchedAt: at, Payload: raw, Hash: h})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -179,7 +179,7 @@ func TestSnapshotSources(t *testing.T) {
 	if err != nil || len(got) != 1 || !got[0].CheckedAt.Equal(t0.Add(time.Hour)) {
 		t.Errorf("phone's: %+v, %v", got, err)
 	}
-	if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Endpoint: volvo.Odometer, FetchedAt: t0, Payload: raw, Hash: h}); err == nil {
+	if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: a, VehicleID: v, Endpoint: collector.Endpoint(volvo.Odometer), FetchedAt: t0, Payload: raw, Hash: h}); err == nil {
 		t.Error("snapshot without a source stored")
 	}
 }
@@ -196,7 +196,7 @@ func TestSnapshotsBetween(t *testing.T) {
 	save := func(acc, vehicle string, ep volvo.Endpoint, at time.Time, raw string) {
 		t.Helper()
 		h, _ := volvo.Fingerprint([]byte(raw))
-		if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: acc, VehicleID: vehicle, Source: volvo.Source, Endpoint: ep, FetchedAt: at, Payload: []byte(raw), Hash: h}); err != nil {
+		if _, err := s.SaveSnapshot(ctx, collector.Snapshot{AccountID: acc, VehicleID: vehicle, Source: volvo.Source, Endpoint: collector.Endpoint(ep), FetchedAt: at, Payload: []byte(raw), Hash: h}); err != nil {
 			t.Fatal(err)
 		}
 	}

@@ -197,7 +197,7 @@ func TestTokenLifecycle(t *testing.T) {
 	}
 	var trips int
 	for _, s := range st.saved {
-		if s.Endpoint == volvo.Location {
+		if s.Endpoint == Endpoint(volvo.Location) {
 			trips++
 		}
 	}

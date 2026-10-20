@@ -88,7 +88,7 @@ func accountData(t *testing.T, s *Store, account, vehicle, user string, t0 time.
 	raw := []byte(`{"data":{"odometer":{"value":1234,"unit":"km"}}}`)
 	h, _ := volvo.Fingerprint(raw)
 	if _, err := s.SaveSnapshot(ctx, collector.Snapshot{
-		AccountID: account, VehicleID: vehicle, Source: volvo.Source, Endpoint: volvo.Odometer, FetchedAt: t0, Payload: raw, Hash: h,
+		AccountID: account, VehicleID: vehicle, Source: volvo.Source, Endpoint: collector.Endpoint(volvo.Odometer), FetchedAt: t0, Payload: raw, Hash: h,
 	}); err != nil {
 		t.Fatal(err)
 	}

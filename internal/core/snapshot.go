@@ -90,8 +90,8 @@ const (
 	FieldTripMeter
 	FieldConsumption
 	FieldCapacity
-	// FieldModel covers Family, ModelYear and BatteryElectric: what identifies the model,
-	// always reported together, by the same response as the capacity.
+	// FieldModel covers Brand, Family, ModelYear and BatteryElectric: what identifies the
+	// model, always reported together, by the same response as the capacity.
 	FieldModel
 
 	fieldCount = iota
@@ -122,8 +122,9 @@ type Snapshot struct {
 	ConsumptionKWhPer100km Value[float64]
 	CapacityKWh            Value[float64] // battery capacity
 
-	// Family is the model as the vendor names it (XC40, EX30), without its powertrain or
-	// battery.
+	// Brand is the maker (volvo, polestar), when the source tells it; Family the model as
+	// the vendor names it (XC40, EX30), without its powertrain or battery.
+	Brand     Value[string]
 	Family    Value[string]
 	ModelYear Value[int]
 	// BatteryElectric tells whether the vehicle runs on its battery alone: false for a
@@ -176,7 +177,7 @@ func (s *Snapshot) merge(o Snapshot) {
 		s.CapacityKWh = o.CapacityKWh
 	}
 	if set(FieldModel) {
-		s.Family, s.ModelYear, s.BatteryElectric = o.Family, o.ModelYear, o.BatteryElectric
+		s.Brand, s.Family, s.ModelYear, s.BatteryElectric = o.Brand, o.Family, o.ModelYear, o.BatteryElectric
 	}
 }
 

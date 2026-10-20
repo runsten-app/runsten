@@ -1,5 +1,6 @@
-// Command runsten-collector polls the Volvo API for the vehicles of every account,
-// stores the raw responses in PostgreSQL and derives trips and charges from them.
+// Command runsten-collector polls the Volvo API and the Polestar Data Portal for the
+// vehicles of every account, stores the raw responses in PostgreSQL and derives trips
+// and charges from them.
 //
 // Usage:
 //
@@ -29,6 +30,10 @@
 //	RUNSTEN_VOLVO_BASE_URL      API address (default https://api.volvocars.com)
 //	RUNSTEN_VOLVO_AUTH_URL      Volvo ID address (default https://volvoid.eu.volvocars.com)
 //	RUNSTEN_VOLVO_ACCESS_TOKEN  user's OAuth token (connect only)
+//	RUNSTEN_POLESTAR_BASE_URL   Polestar Data Portal's M2M API address (default
+//	                            https://pc-api.polestar.com/eu-north-1/data-portal/m2m):
+//	                            the connections with a Polestar credential are read
+//	                            through it
 //	RUNSTEN_TOKEN_MARGIN        refresh an access token this long before it expires
 //	                            (default 2m)
 //	RUNSTEN_TOKEN_KEEPALIVE     refresh an idle connection whose refresh token is older
@@ -82,6 +87,7 @@ import (
 
 	"runsten/internal/catalog"
 	"runsten/internal/collector"
+	"runsten/internal/collector/polestarsource"
 	"runsten/internal/core"
 	"runsten/internal/debugui"
 	"runsten/internal/derive"
@@ -90,6 +96,7 @@ import (
 	"runsten/internal/platform/health"
 	"runsten/internal/platform/httpserver"
 	"runsten/internal/platform/secretbox"
+	"runsten/internal/polestar"
 	"runsten/internal/publish/mqtt"
 	"runsten/internal/store"
 	"runsten/internal/volvo"
@@ -101,6 +108,7 @@ type config struct {
 	apiKey       string
 	baseURL      string
 	authURL      string
+	polestarURL  string
 	clientID     string
 	clientSecret string
 	accessToken  string
@@ -200,7 +208,8 @@ func run(args []string) error {
 	if err != nil {
 		return fmt.Errorf("catalog: %w", err)
 	}
-	deriver := derive.New(st, volvo.Normalizer{}, core.DefaultParams(), capacities{catalog: cat, vehicle: vehicleOf(st)}, log)
+	norm := derive.Sources(volvo.Normalizer{}, polestar.Normalizer{})
+	deriver := derive.New(st, norm, core.DefaultParams(), capacities{catalog: cat, vehicle: vehicleOf(st)}, log)
 	if cmd == rebuild {
 		return rebuildAll(ctx, st, deriver, log)
 	}
@@ -266,6 +275,7 @@ func run(args []string) error {
 
 	cfg.quota.NoInstanceKey = cfg.apiKey == ""
 	log.Info("collector started", "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
+		"polestar_base_url", cfg.polestarURL,
 		"daily_quota", cfg.quota.Daily, "quota_per_user", cfg.quota.PerUser, "instance_key", cfg.apiKey != "",
 		"mqtt_private_brokers", cfg.privateBrokers)
 	der := variants{
@@ -273,6 +283,7 @@ func run(args []string) error {
 		current: deriver.Current, set: st.SetVariantInEffect, clk: clk,
 	}
 	c := collector.New(api, st, tokens, clk, cfg.intervals, cfg.quota, log, obs, der)
+	c.AddSource(polestarsource.New(polestar.NewClient(cfg.polestarURL, hc), polestarCredential(st)), st)
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
 	c.SetPublisher(pub)
@@ -290,6 +301,17 @@ func run(args []string) error {
 	}
 	log.Info("collector stopped")
 	return nil
+}
+
+// polestarCredential reads the credential of a Polestar connection from the store.
+func polestarCredential(st *store.Store) func(ctx context.Context, accountID, connectionID string) (polestar.Credential, error) {
+	return func(ctx context.Context, accountID, connectionID string) (polestar.Credential, error) {
+		c, err := st.PolestarCredential(ctx, accountID, connectionID)
+		if err != nil {
+			return polestar.Credential{}, fmt.Errorf("polestar credential: %w", err)
+		}
+		return polestar.Credential{ClientID: c.ClientID, ClientSecret: c.ClientSecret, AccountID: c.AccountID}, nil
+	}
 }
 
 // extensions is what registerExtensions gets: the premium build's modules set the
@@ -320,14 +342,15 @@ func rebuildAll(ctx context.Context, st *store.Store, d *derive.Deriver, log *sl
 
 func loadConfig(getenv func(string) string, cmd command) (config, error) {
 	cfg := config{
-		baseURL:    volvo.DefaultBaseURL,
-		authURL:    volvo.DefaultAuthURL,
-		tokens:     oauth.DefaultParams(),
-		tick:       10 * time.Second,
-		intervals:  collector.DefaultIntervals(),
-		quota:      collector.DefaultQuota(),
-		logLevel:   slog.LevelInfo,
-		clockSpeed: 1,
+		baseURL:     volvo.DefaultBaseURL,
+		authURL:     volvo.DefaultAuthURL,
+		polestarURL: polestar.DefaultBaseURL,
+		tokens:      oauth.DefaultParams(),
+		tick:        10 * time.Second,
+		intervals:   collector.DefaultIntervals(),
+		quota:       collector.DefaultQuota(),
+		logLevel:    slog.LevelInfo,
+		clockSpeed:  1,
 
 		privateBrokers: true,
 	}
@@ -378,7 +401,9 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 			*dst = b
 		}
 	}
-	for name, dst := range map[string]*string{"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.authURL} {
+	for name, dst := range map[string]*string{
+		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.authURL, "RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL,
+	} {
 		if v := getenv(name); v != "" {
 			if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
 				errs = append(errs, fmt.Errorf("%s %q: http(s) URL expected", name, v))

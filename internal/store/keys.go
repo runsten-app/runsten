@@ -90,17 +90,17 @@ func (s *Store) SetAPIKey(ctx context.Context, accountID, key string, at time.Ti
 	return id, err
 }
 
-// DeleteAPIKey implements api.Keys: the instance's key applies again. A connection
+// DeleteAPIKey implements api.Keys: the instance's key applies again. A Volvo connection
 // without a token keeps nothing: it is deleted.
 func (s *Store) DeleteAPIKey(ctx context.Context, accountID string) error {
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
-		if _, err := tx.Exec(ctx, "DELETE FROM connections WHERE access_token IS NULL"); err != nil {
+		if _, err := tx.Exec(ctx, "DELETE FROM connections WHERE provider = 'volvo' AND access_token IS NULL"); err != nil {
 			return err //nolint:wrapcheck // wrapped by inAccount
 		}
 		_, err := tx.Exec(ctx, `
 			UPDATE connections SET api_key = NULL, api_key_set_at = NULL, api_key_last4 = NULL, api_key_refused_at = NULL,
 				updated_at = now()
-			WHERE api_key IS NOT NULL`)
+			WHERE provider = 'volvo' AND api_key IS NOT NULL`)
 		return err //nolint:wrapcheck // wrapped by inAccount
 	})
 }
