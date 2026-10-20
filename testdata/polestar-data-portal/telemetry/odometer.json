@@ -1,0 +1,20 @@
+{
+  "data": {
+    "averageSpeedKmPerHour": 43,
+    "averageSpeedKmPerHourAutomatic": 88,
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-18T11:03:50.454Z",
+    "odometerMeters": 122952704,
+    "timestamp": {
+      "nanos": 41718424,
+      "seconds": "1789729423"
+    },
+    "tripMeterAutomaticKm": 136.3000030517578,
+    "tripMeterManualKm": 2863.199951171875,
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "odometer",
+    "vin": "YSMTEST22PL000001"
+  }
+}

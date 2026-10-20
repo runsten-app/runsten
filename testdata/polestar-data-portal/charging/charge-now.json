@@ -1,0 +1,19 @@
+{
+  "data": {
+    "id": "00000000-0000-4000-8000-000000000000",
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-18T00:06:08.842Z",
+    "syncedOverrideChargeTimer": {
+      "updatedAt": "1767225600000",
+      "updatedAtTimestamp": {
+        "nanos": 165000000,
+        "seconds": "1789689966"
+      }
+    },
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "charge-now",
+    "vin": "YSMTEST22PL000001"
+  }
+}

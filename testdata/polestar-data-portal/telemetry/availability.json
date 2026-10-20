@@ -1,0 +1,17 @@
+{
+  "data": {
+    "availabilityStatus": "AVAILABILITY_STATUS_AVAILABLE",
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-18T11:10:49.555Z",
+    "timestamp": {
+      "nanos": 66550399,
+      "seconds": "1789729843"
+    },
+    "usageMode": "USAGE_MODE_ABANDONED",
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "availability",
+    "vin": "YSMTEST22PL000001"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "data": {
+    "ampLimit": {
+      "ampLimit": 20,
+      "id": "00000000-0000-4000-8000-000000000000",
+      "source": "RCS",
+      "updatedAt": "1767225600000",
+      "updatedAtTimestamp": {
+        "nanos": 763000000,
+        "seconds": "1787056874"
+      }
+    },
+    "id": "00000000-0000-4000-8000-000000000000",
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-10T10:16:03.215Z",
+    "pendingAmpLimit": {
+      "ampLimit": 20,
+      "updatedAt": "1767225600000",
+      "updatedAtTimestamp": {
+        "nanos": 763000000,
+        "seconds": "1787056874"
+      },
+      "source": "RCS",
+      "id": "00000000-0000-4000-8000-000000000000"
+    },
+    "updatedAt": "1767225600000",
+    "updatedAtTimestamp": {
+      "nanos": 781000000,
+      "seconds": "1787056874"
+    },
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "amp-limit",
+    "vin": "YSMTEST22PL000001"
+  }
+}

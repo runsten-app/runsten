@@ -1,0 +1,42 @@
+{
+  "data": {
+    "globalChargeTimer": {
+      "activated": false,
+      "metadata": {
+        "id": "00000000-0000-4000-8000-000000000000",
+        "source": "RCS",
+        "syncStatus": {
+          "value": "SYNCED"
+        },
+        "updatedAt": "1767225600000",
+        "updatedAtTimestamp": {
+          "nanos": 918000000,
+          "seconds": "1786905554"
+        }
+      },
+      "start": {
+        "hour": 23,
+        "timeZone": {
+          "offsetMinutes": 120
+        }
+      },
+      "stop": {
+        "hour": 6,
+        "timeZone": {
+          "offsetMinutes": 120
+        }
+      }
+    },
+    "id": "00000000-0000-4000-8000-000000000000",
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-10T10:16:55.687Z",
+    "pendingGlobalChargeTimer": {
+      "metadata": {}
+    },
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "global-charge-timer",
+    "vin": "YSMTEST22PL000001"
+  }
+}

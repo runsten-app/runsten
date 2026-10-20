@@ -1,0 +1,45 @@
+{
+  "data": {
+    "brakeFluidLevelWarning": "BRAKE_FLUID_LEVEL_WARNING_NO_WARNING",
+    "daysToService": 313,
+    "distanceToServiceKm": 4150,
+    "engineCoolantLevelWarning": "ENGINE_COOLANT_LEVEL_WARNING_NO_WARNING",
+    "engineHoursToService": 773,
+    "lightWarnings": {
+      "brakeLightCenter": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "brakeLightLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "brakeLightRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "daytimeRunningLightLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "daytimeRunningLightRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "fogLightFront": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "fogLightRear": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "highBeamLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "highBeamRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "lowBeamLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "lowBeamRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "positionLightFrontLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "positionLightFrontRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "positionLightRear": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "registrationPlateLight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "turnIndicatorFrontLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "turnIndicatorFrontRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "turnIndicatorRearLeft": "EXTERIOR_LIGHT_WARNING_NO_WARNING",
+      "turnIndicatorRearRight": "EXTERIOR_LIGHT_WARNING_NO_WARNING"
+    },
+    "lowVoltageBatteryWarning": "LOW_VOLTAGE_BATTERY_WARNING_NO_WARNING",
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-18T11:03:50.425Z",
+    "oilLevelWarning": "OIL_LEVEL_WARNING_NO_WARNING",
+    "serviceWarning": "SERVICE_WARNING_NO_WARNING",
+    "timestamp": {
+      "nanos": 41718424,
+      "seconds": "1789729423"
+    },
+    "vin": "YSMTEST22PL000001",
+    "washerFluidLevelWarning": "WASHER_FLUID_LEVEL_WARNING_NO_WARNING"
+  },
+  "meta": {
+    "domain": "health",
+    "vin": "YSMTEST22PL000001"
+  }
+}

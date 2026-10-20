@@ -1,0 +1,22 @@
+{
+  "data": {
+    "altitude": "0",
+    "coordinate": {
+      "latitude": 47.6062,
+      "longitude": -122.3321
+    },
+    "heading": 121,
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-18T11:03:49.966Z",
+    "speed": "0",
+    "timestamp": {
+      "nanos": 0,
+      "seconds": "1789729422"
+    },
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "location",
+    "vin": "YSMTEST22PL000001"
+  }
+}

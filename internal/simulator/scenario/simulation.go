@@ -74,6 +74,14 @@ func newSimulation(sc *Scenario, policy vehicle.UploadPolicy, origin time.Time) 
 // VIN returns the simulated vehicle's VIN.
 func (s *Simulation) VIN() string { return s.sc.VIN }
 
+// Brand returns the vehicle's maker: BrandVolvo or BrandPolestar.
+func (s *Simulation) Brand() string {
+	if s.sc.Brand == "" {
+		return BrandVolvo
+	}
+	return s.sc.Brand
+}
+
 // MarketRefused reports whether the API does not serve the vehicle's market.
 func (s *Simulation) MarketRefused() bool { return s.sc.MarketRefused }
 

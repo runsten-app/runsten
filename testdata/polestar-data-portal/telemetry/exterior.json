@@ -1,0 +1,29 @@
+{
+  "data": {
+    "alarm": "ALARM_STATUS_IDLE",
+    "centralLock": "LOCK_STATUS_LOCKED",
+    "frontLeftDoor": "OPEN_STATUS_CLOSED",
+    "frontLeftWindow": "OPEN_STATUS_CLOSED",
+    "frontRightDoor": "OPEN_STATUS_CLOSED",
+    "frontRightWindow": "OPEN_STATUS_CLOSED",
+    "hood": "OPEN_STATUS_CLOSED",
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-18T11:10:22.676Z",
+    "rearLeftDoor": "OPEN_STATUS_CLOSED",
+    "rearLeftWindow": "OPEN_STATUS_CLOSED",
+    "rearRightDoor": "OPEN_STATUS_CLOSED",
+    "rearRightWindow": "OPEN_STATUS_CLOSED",
+    "tailgate": "OPEN_STATUS_CLOSED",
+    "tailgateLock": "LOCK_STATUS_LOCKED",
+    "tankLid": "OPEN_STATUS_CLOSED",
+    "timestamp": {
+      "nanos": 418289732,
+      "seconds": "1789729816"
+    },
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "exterior",
+    "vin": "YSMTEST22PL000001"
+  }
+}
