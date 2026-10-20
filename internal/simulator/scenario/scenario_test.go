@@ -63,6 +63,8 @@ func TestParseRejectsInvalidScenarios(t *testing.T) {
 		{"target out of bounds", [2]string{"untilSoc: 80", "untilSoc: 120"}, "charge.untilSoc"},
 		{"double step", [2]string{"- park: { duration: 1h }\n  - drive", "- park: { duration: 1h }\n    charge: { type: AC, powerKW: 1, untilSoc: 50 }\n  - drive"}, "exactly one"},
 		{"unknown field", [2]string{"soc: 60", "soc: 60\n  color: red"}, "color"},
+		{"unknown brand", [2]string{"vin: ", "brand: tesla\nvin: "}, "brand"},
+		{"refused polestar", [2]string{"vin: ", "brand: polestar\nmarketRefused: true\nvin: "}, "marketRefused"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -108,6 +110,22 @@ func TestParseAPI(t *testing.T) {
 				t.Errorf("err = %v", err)
 			}
 		})
+	}
+}
+
+func TestBrand(t *testing.T) {
+	for brand, want := range map[string]string{"": BrandVolvo, "brand: volvo\n": BrandVolvo, "brand: polestar\n": BrandPolestar} {
+		sc, err := Parse([]byte(brand + commute))
+		if err != nil {
+			t.Fatal(err)
+		}
+		sim, err := NewSimulation(sc, vehicle.DefaultUploadPolicy())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if sim.Brand() != want {
+			t.Errorf("%q: brand %q, want %q", brand, sim.Brand(), want)
+		}
 	}
 }
 

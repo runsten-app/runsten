@@ -1,0 +1,40 @@
+# The Polestar of demonstration: a Polestar 2 Long Range Single Motor of 2024, served on
+# the Polestar Data Portal's M2M API (brand polestar), read with the simulator's
+# credential (polestarapi.DevCredential). The same day as commute, then a DC charge on the
+# way to dinner.
+#
+# What the API gives differs from Volvo's: the VIN alone, no model nor battery
+# capacity, a usage mode instead of an engine status, and a battery and availability
+# uploaded every 10 minutes while parked. The position is the one of the end of the last
+# trip: whether the car uploads it while driving is unknown.
+#
+# The VIN is fictitious: LPS, the WMI of the Polestar 2, and R, model year 2024, at the
+# tenth position. Fictitious coordinates (Göteborg).
+brand: polestar
+vin: LPSVSEDE5RL000001
+start: 2026-09-28T05:00:00Z
+vehicle:
+  profile: bev-generic
+  model: Polestar 2
+  modelYear: 2024
+  batteryKWh: 82
+  usableKWh: 79
+  consumptionKWhPer100km: 19
+  chargingCurrentLimitA: 16
+  soc: 64
+  targetSoc: 80
+  odometerKm: 23800
+  place: home
+places:
+  home: { lat: 57.6890, lon: 11.9746 }
+  work: { lat: 57.7210, lon: 12.0400 }
+  fastcharger: { lat: 57.7075, lon: 11.9668 }
+steps:
+  - park: { duration: 2h }
+  - drive: { to: work, distanceKm: 9, duration: 22m }
+  - park: { duration: 9h }
+  - drive: { to: fastcharger, distanceKm: 6, duration: 15m }
+  - charge: { type: DC, powerKW: 120, untilSoc: 80 }
+  - drive: { to: home, distanceKm: 4, duration: 10m }
+  - park: { duration: 1h }
+  - charge: { type: AC, powerKW: 11, untilSoc: 90 }

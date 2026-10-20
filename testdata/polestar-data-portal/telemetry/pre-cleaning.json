@@ -1,0 +1,31 @@
+{
+  "data": {
+    "lastCycleCompleted": {
+      "seconds": "1789711340"
+    },
+    "lastCycleValid": true,
+    "measuredAirQualityIndex": 0,
+    "measuredParticulateMatter25": 0,
+    "measurementDate": {
+      "nanos": 897228933,
+      "seconds": "1789729453"
+    },
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-18T11:04:27.124Z",
+    "runningStatus": "RUNNING_STATUS_OFF",
+    "runtimeLeftMinutes": 0,
+    "startedAt": {
+      "nanos": 500385000,
+      "seconds": "1789258965"
+    },
+    "timestamp": {
+      "nanos": 897228933,
+      "seconds": "1789729453"
+    },
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "pre-cleaning",
+    "vin": "YSMTEST22PL000001"
+  }
+}

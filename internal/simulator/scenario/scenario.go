@@ -16,6 +16,9 @@ import (
 
 // Scenario describes a day (or more) in the life of a vehicle.
 type Scenario struct {
+	// Brand is the vehicle's maker, which says the API that serves it: volvo (the
+	// default, the Volvo Cars API) or polestar (the Polestar Data Portal's).
+	Brand   string           `yaml:"brand"`
 	VIN     string           `yaml:"vin"`
 	Start   time.Time        `yaml:"start"`
 	Vehicle VehicleConfig    `yaml:"vehicle"`
@@ -98,6 +101,12 @@ type Charge struct {
 	UntilSoC float64 `yaml:"untilSoc"`
 }
 
+// Brands of a scenario.
+const (
+	BrandVolvo    = "volvo"
+	BrandPolestar = "polestar"
+)
+
 var vinPattern = regexp.MustCompile(`^[A-HJ-NPR-Z0-9]{17}$`)
 
 // Parse reads and validates a YAML scenario. Unknown fields are rejected.
@@ -117,6 +126,12 @@ func Parse(data []byte) (*Scenario, error) {
 // Validate checks that the scenario is consistent.
 func (s *Scenario) Validate() error {
 	var errs []error
+	if s.Brand != "" && s.Brand != BrandVolvo && s.Brand != BrandPolestar {
+		errs = append(errs, fmt.Errorf("brand %q: volvo or polestar expected", s.Brand))
+	}
+	if s.Brand == BrandPolestar && s.MarketRefused {
+		errs = append(errs, errors.New("marketRefused: a Volvo API refusal, not for a polestar"))
+	}
 	if !vinPattern.MatchString(s.VIN) {
 		errs = append(errs, fmt.Errorf("vin %q: 17 characters, no I, O or Q", s.VIN))
 	}

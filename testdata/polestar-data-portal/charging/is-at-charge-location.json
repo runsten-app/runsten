@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "DATA_NOT_AVAILABLE",
+    "details": {
+      "requested_vin": "YSMTEST22PL000001"
+    },
+    "httpStatus": 404,
+    "message": "No is-at-charge-location data is available for this vehicle.",
+    "requestId": "191ec653-2e3d-4eae-93d1-47b8109b5361",
+    "timestamp": "2026-09-18T13:39:03.772Z"
+  }
+}

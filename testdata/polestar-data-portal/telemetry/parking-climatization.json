@@ -1,0 +1,23 @@
+{
+  "data": {
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-18T06:02:37.978Z",
+    "requestedFrontLeftSeat": "HEATING_INTENSITY_UNSPECIFIED",
+    "requestedFrontRightSeat": "HEATING_INTENSITY_UNSPECIFIED",
+    "requestedRearLeftSeat": "HEATING_INTENSITY_UNSPECIFIED",
+    "requestedRearRightSeat": "HEATING_INTENSITY_UNSPECIFIED",
+    "requestedSteeringWheelHeating": "HEATING_INTENSITY_UNSPECIFIED",
+    "runningStatus": "RUNNING_STATUS_OFF",
+    "runtimeLeftMinutes": 0,
+    "timestamp": {
+      "nanos": 560798450,
+      "seconds": "1789711349"
+    },
+    "ventilation": "VENTILATION_NEUTRAL",
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "parking-climatization",
+    "vin": "YSMTEST22PL000001"
+  }
+}

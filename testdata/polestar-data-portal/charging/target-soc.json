@@ -1,0 +1,28 @@
+{
+  "data": {
+    "id": "00000000-0000-4000-8000-000000000000",
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-18T10:59:49.673Z",
+    "targetSoc": {
+      "batteryChargeTargetLevel": 80,
+      "chargeTargetLevelSettingType": "CUSTOM",
+      "id": "00000000-0000-4000-8000-000000000000",
+      "source": "RCS",
+      "timestamp": {
+        "nanos": 767000000,
+        "seconds": "1789729185"
+      },
+      "updatedAt": "1767225600000"
+    },
+    "timestamp": {
+      "nanos": 785000000,
+      "seconds": "1789729185"
+    },
+    "updatedAt": "1767225600000",
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "target-soc",
+    "vin": "YSMTEST22PL000001"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "data": {
+    "averageEnergyConsumptionKwhPer100Km": 20.1,
+    "batteryChargeLevelPercentage": 52,
+    "chargerConnectionStatus": "CHARGER_CONNECTION_STATUS_DISCONNECTED",
+    "chargerPowerStatus": "CHARGER_POWER_STATUS_NO_POWER_AVAILABLE",
+    "chargingStatus": "CHARGING_STATUS_IDLE",
+    "chargingStatusV2": "CHARGING_STATUS_V2_IDLE",
+    "chargingType": "CHARGING_TYPE_NONE",
+    "estimatedChargingTimeToFullMinutes": 0,
+    "estimatedDistanceToEmptyKm": 170,
+    "estimatedDistanceToEmptyMiles": 100,
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-18T11:10:55.531Z",
+    "timestamp": {
+      "nanos": 818764407,
+      "seconds": "1789729847"
+    },
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "battery",
+    "vin": "YSMTEST22PL000001"
+  }
+}

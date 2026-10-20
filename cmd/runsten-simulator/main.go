@@ -1,5 +1,7 @@
-// Command runsten-simulator is a fake backend mimicking the Volvo Cars API, and
-// Aximote's public API for the imports (/api/public/v1/, its token
+// Command runsten-simulator is a fake backend mimicking the Volvo Cars API, the
+// Polestar Data Portal's M2M API (under polestarapi.Prefix, for the scenarios of
+// brand polestar, with the credential polestarapi.DevCredential), and Aximote's public
+// API for the imports (/api/public/v1/, its token
 // aximoteapi.DevToken): an electric car with the first scenario's VIN, whose history
 // ends a month before the simulator started.
 //
@@ -27,7 +29,17 @@
 //	                        in memory only)
 //	SIM_ERROR_RATE          share of random 5xx errors, in [0, 1] (default 0)
 //	SIM_LATENCY             latency added to each response, in real time (default 0)
+//	SIM_POLESTAR_CLIENT_ID  the Polestar credential's client ID (default runsten-dev)
+//	SIM_POLESTAR_CLIENT_SECRET  its secret (default runsten-dev-secret)
+//	SIM_POLESTAR_ACCOUNT_ID its account, the x-client-id header (default
+//	                        polestarapi.DevCredential's)
+//	SIM_POLESTAR_CREDENTIAL_TTL  the credential's lifetime from the start (default 0 =
+//	                        unlimited)
+//	SIM_POLESTAR_PARKED_UPLOAD  how often a Polestar not driving uploads its battery and
+//	                        availability (default 10m, 0 = only on a change)
 //	SIM_LOG_LEVEL           debug, info, warn, error (default info)
+//
+// SIM_DAILY_QUOTA and SIM_RATE_PER_MINUTE also set the Polestar credential's limits.
 //
 // Limits, faults and token lifetimes can also be set by the scenario's api section;
 // environment variables take precedence.
@@ -60,6 +72,7 @@ import (
 	"runsten/internal/simulator/aximoteapi"
 	"runsten/internal/simulator/control"
 	"runsten/internal/simulator/pgledger"
+	"runsten/internal/simulator/polestarapi"
 	"runsten/internal/simulator/scenario"
 	"runsten/internal/simulator/vehicle"
 	"runsten/internal/simulator/volvoapi"
@@ -80,6 +93,10 @@ type config struct {
 	clientID, clientSecret, redirectURI string
 	apiKeys                             []string
 	databaseURL                         string
+
+	polestar         polestarapi.Credential
+	polestarCredTTL  time.Duration
+	polestarBehavior polestarapi.Behavior
 }
 
 func main() {
@@ -100,10 +117,17 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	srcs := make([]volvoapi.Source, 0, len(scs))
+	var (
+		srcs     []volvoapi.Source
+		polestar []polestarapi.Source
+	)
 	vins := make([]string, 0, len(scs))
 	for _, sim := range fleet.Simulations() {
-		srcs = append(srcs, sim)
+		if sim.Brand() == scenario.BrandPolestar {
+			polestar = append(polestar, sim)
+		} else {
+			srcs = append(srcs, sim)
+		}
 		vins = append(vins, sim.VIN())
 	}
 
@@ -128,6 +152,8 @@ func run() error {
 	// In real time: the history must stay before the collector's first reading, which
 	// it stamps with its own clock.
 	mux.Handle(aximoteapi.Prefix, aximoteapi.NewHandler(aximoteapi.DevToken, aximoteapi.Default(clock.Real{}.Now(), vins[0])))
+	psLimits := cfg.polestarLimits()
+	mux.Handle(polestarapi.Prefix, polestarapi.NewHandler(polestar, clk, cfg.polestar, psLimits, cfg.polestarBehavior))
 	mux.Handle("/", volvoapi.NewHandler(srcs, clk, limits, faults, auth))
 
 	log.Info("simulation ready", "vins", vins, "start", fleet.Start(), "speed", cfg.speed,
@@ -135,7 +161,9 @@ func run() error {
 		"error_rate", faults.ErrorRate, "latency", faults.Latency.String(), "outages", len(faults.Outages),
 		"client_id", auth.ClientID, "redirect_uri", auth.RedirectURI, "access_token_ttl", auth.AccessTokenTTL.String(),
 		"refresh_token_ttl", auth.RefreshTokenTTL.String(), "grant_ttl", auth.GrantTTL.String(),
-		"grants_kept", auth.Ledger != nil, "grants_restored", len(auth.Issued.Grants))
+		"grants_kept", auth.Ledger != nil, "grants_restored", len(auth.Issued.Grants),
+		"polestar_vehicles", len(polestar), "polestar_client_id", cfg.polestar.ClientID,
+		"polestar_credential_ttl", psLimits.CredentialTTL.String(), "polestar_parked_upload", cfg.polestarBehavior.ParkedUpload.String())
 
 	if err := httpserver.Run(ctx, httpserver.New(cfg.addr, httpserver.LogRequests(log, mux), log), log); err != nil {
 		return fmt.Errorf("server: %w", err)
@@ -168,6 +196,9 @@ func loadConfig(getenv func(string) string) (config, error) {
 		speed:       1,
 		driveUpload: vehicle.DefaultUploadPolicy().DriveInterval,
 		logLevel:    slog.LevelInfo,
+
+		polestar:         polestarapi.DevCredential(),
+		polestarBehavior: polestarapi.DefaultBehavior(),
 	}
 	var errs []error
 	if v := getenv("SIM_ADDR"); v != "" {
@@ -245,6 +276,25 @@ func loadConfig(getenv func(string) string) (config, error) {
 		}
 		cfg.errorRate = &f
 	}
+	for name, dst := range map[string]*string{
+		"SIM_POLESTAR_CLIENT_ID": &cfg.polestar.ClientID, "SIM_POLESTAR_CLIENT_SECRET": &cfg.polestar.ClientSecret,
+		"SIM_POLESTAR_ACCOUNT_ID": &cfg.polestar.AccountID,
+	} {
+		if v := getenv(name); v != "" {
+			*dst = v
+		}
+	}
+	for name, dst := range map[string]*time.Duration{
+		"SIM_POLESTAR_CREDENTIAL_TTL": &cfg.polestarCredTTL, "SIM_POLESTAR_PARKED_UPLOAD": &cfg.polestarBehavior.ParkedUpload,
+	} {
+		if v := getenv(name); v != "" {
+			d, err := time.ParseDuration(v)
+			if err != nil || d < 0 {
+				errs = append(errs, fmt.Errorf("%s %q: duration ≥ 0 expected", name, v))
+			}
+			*dst = d
+		}
+	}
 	if v := getenv("SIM_LOG_LEVEL"); v != "" {
 		if err := cfg.logLevel.UnmarshalText([]byte(v)); err != nil {
 			errs = append(errs, fmt.Errorf("SIM_LOG_LEVEL %q: %w", v, err))
@@ -284,6 +334,20 @@ func (c config) apiBehavior(sc *scenario.Scenario) (volvoapi.Limits, volvoapi.Fa
 		faults.ErrorRate = *c.errorRate
 	}
 	return limits, faults, c.oauth(sc)
+}
+
+// polestarLimits are the observed limits of the Polestar API, with the environment's
+// quota, rate and credential lifetime.
+func (c config) polestarLimits() polestarapi.Limits {
+	l := polestarapi.DefaultLimits()
+	if c.dailyQuota != nil {
+		l.DailyQuota = *c.dailyQuota
+	}
+	if c.perMinute != nil {
+		l.PerMinute = *c.perMinute
+	}
+	l.CredentialTTL = c.polestarCredTTL
+	return l
 }
 
 func (c config) oauth(sc *scenario.Scenario) volvoapi.OAuth {

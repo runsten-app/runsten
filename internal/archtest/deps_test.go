@@ -93,7 +93,9 @@ var allowed = map[string][]string{
 	"internal/simulator/volvoapi": {
 		"net/http", "encoding/json", "golang.org/x/oauth2", "internal/platform/clock", "internal/simulator/vehicle",
 	},
-	"internal/simulator/control": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
+	// The fake Polestar Data Portal exposes the same vehicle model; it never imports the client.
+	"internal/simulator/polestarapi": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
+	"internal/simulator/control":     {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
 	// The fake Aximote writes its API's JSON on its own: it never imports the client.
 	"internal/simulator/aximoteapi": {"net/http", "encoding/json"},
 	// The simulated Volvo ID's grants, kept across restarts.

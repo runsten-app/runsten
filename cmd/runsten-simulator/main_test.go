@@ -119,6 +119,12 @@ func TestLoadFleet(t *testing.T) {
 			[]string{"YV1SMLT0000ER0001", "YV12ZEL000EX30001"},
 			time.Date(2026, 9, 28, 5, 0, 0, 0, time.UTC), "",
 		},
+		{
+			"a Volvo and a Polestar",
+			[]string{"commute.yaml", "polestar2.yaml"},
+			[]string{"YV1SMLT0000DT0001", "LPSVSEDE5RL000001"},
+			time.Date(2026, 9, 28, 5, 0, 0, 0, time.UTC), "",
+		},
 		{"the same VIN twice", []string{"commute.yaml", "commute.yaml"}, nil, time.Time{}, "same vin"},
 		{"api section not first", []string{"ex30.yaml", "errand.yaml"}, nil, time.Time{}, "only the first scenario may have an api section"},
 		{"missing file", []string{"commute.yaml", "nothing.yaml"}, nil, time.Time{}, "reading scenario"},
@@ -154,6 +160,7 @@ func TestLoadConfigErrors(t *testing.T) {
 	_, err := loadConfig(env(map[string]string{
 		"SIM_SPEED": "-1", "SIM_DRIVE_UPLOAD": "fast", "SIM_DAILY_QUOTA": "lots", "SIM_LOG_LEVEL": "loud",
 		"SIM_TOKEN_TTL": "-1s", "SIM_ERROR_RATE": "2", "SIM_LATENCY": "slow", "SIM_GRANT_TTL": "0s",
+		"SIM_POLESTAR_CREDENTIAL_TTL": "-1h", "SIM_POLESTAR_PARKED_UPLOAD": "often",
 	}))
 	if err == nil {
 		t.Fatal("expected error")
@@ -161,6 +168,7 @@ func TestLoadConfigErrors(t *testing.T) {
 	for _, want := range []string{
 		"SIM_SCENARIO", "SIM_SPEED", "SIM_DRIVE_UPLOAD", "SIM_DAILY_QUOTA", "SIM_LOG_LEVEL",
 		"SIM_TOKEN_TTL", "SIM_ERROR_RATE", "SIM_LATENCY", "SIM_GRANT_TTL",
+		"SIM_POLESTAR_CREDENTIAL_TTL", "SIM_POLESTAR_PARKED_UPLOAD",
 	} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error should mention %s: %v", want, err)

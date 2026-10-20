@@ -52,6 +52,7 @@ tilt up -- --scenario=errand,ex30     # two vehicles under one Volvo ID
 | `token-lifecycle` | three days with short-lived tokens, a rotation and a grant that ends |
 | `ex30` | a real model the catalog recognizes, with its net capacity and onboard charger |
 | `battery` | an EX30 driving and charging six times: the battery page estimates the capacity |
+| `polestar2` | a Polestar 2 on the simulated Polestar Data Portal API (`brand: polestar`): a commute, a DC charge, an AC charge |
 
 Each scenario has its own VIN: switching adds its vehicle next to the previous ones, which keep
 their history. To start from an empty database: stop Tilt, `task db-down`, `tilt up` again.
@@ -59,6 +60,12 @@ Several scenarios are as many vehicles under one Volvo ID; only the first may ha
 section, whose limits apply to them all. A scenario's `vehicle` takes `usableKWh`, the capacity
 its state of charge runs over (default `batteryKWh`, the nominal capacity the API reports), and
 `fadePerYear`, the share of it lost per simulated year.
+
+A scenario of `brand: polestar` is served on the Polestar Data Portal's M2M API, under
+`/eu-north-1/data-portal/m2m/`, not on the Volvo API: a token from `POST …/token` with the
+credential `runsten-dev` / `runsten-dev-secret`, then the `x-client-id` header
+`5e1ad0c3-7a2b-4c1d-9e8f-0123456789ab` on each call (`SIM_POLESTAR_*` change them). No part of
+Runsten reads it yet.
 
 ### Without Tilt
 

@@ -1,0 +1,43 @@
+{
+  "data": {
+    "id": "00000000-0000-4000-8000-000000000000",
+    "metaEventId": "shardId-000000000000:00000000000000000000000000000000000000000000000000000000",
+    "metaReceivedAt": "2026-09-17T22:40:02.647Z",
+    "parkingClimateTimers": [
+      {
+        "activated": false,
+        "index": 0,
+        "metadata": {
+          "id": "00000000-0000-4000-8000-000000000000",
+          "updatedAt": "1767225600000",
+          "updatedAtTimestamp": {
+            "nanos": 97000000,
+            "seconds": "1782043204"
+          }
+        },
+        "readyAt": {
+          "hour": 14,
+          "timeZone": {
+            "offsetMinutes": 120
+          }
+        },
+        "repeat": false,
+        "timerId": "a7371309-8150-4c80-b8c3-9ff9195e358b",
+        "weekdays": [
+          "SUNDAY"
+        ]
+      }
+    ],
+    "updatedAt": "1767225600000",
+    "updatedAtTimestamp": {
+      "nanos": 173000000,
+      "seconds": "1789684800"
+    },
+    "utc0": true,
+    "vin": "YSMTEST22PL000001"
+  },
+  "meta": {
+    "domain": "parking-climate-timer",
+    "vin": "YSMTEST22PL000001"
+  }
+}
