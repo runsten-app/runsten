@@ -63,6 +63,7 @@ var allowed = map[string][]string{
 
 	// Adapters.
 	"internal/volvo":             {"net/http", "encoding/json", "golang.org/x/oauth2", "internal/core", "internal/oauth"},
+	"internal/polestar":          {"net/http", "encoding/json", "internal/core"},
 	"internal/geocode/nominatim": {"net/http", "encoding/json", "internal/core"},
 	"internal/aximote":           {"net/http", "encoding/json"},
 	"internal/volvoportal":       nil,
