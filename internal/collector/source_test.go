@@ -377,6 +377,20 @@ func TestSourceRefusals(t *testing.T) {
 			t.Errorf("after the delay: %d logins, %d calls", src.logins, len(src.calls[psBattery]))
 		}
 	})
+	t.Run("no credential: not polled until one is set", func(t *testing.T) {
+		tg := sourceTarget()
+		tg.CredentialSetAt = time.Time{}
+		c, src, st, _ := newSourced(t, tg)
+		poll(t, c)
+		if src.logins != 0 || !st.statuses[0].NextAt.IsZero() {
+			t.Errorf("%d logins, status %+v", src.logins, st.statuses[0])
+		}
+		st.targets[0].CredentialSetAt = credentialSetAt
+		poll(t, c)
+		if src.logins != 1 || len(src.calls[psBattery]) != 1 {
+			t.Errorf("credential set: %d logins, %d calls", src.logins, len(src.calls[psBattery]))
+		}
+	})
 	t.Run("a provider no source reads: not polled", func(t *testing.T) {
 		tg := sourceTarget()
 		tg.Provider = "other"

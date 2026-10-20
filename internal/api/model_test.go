@@ -79,6 +79,31 @@ func TestEffectiveModel(t *testing.T) {
 	}
 }
 
+// TestEffectiveModelByBrand: a Polestar of the Data Portal tells its brand and model
+// year, not its family. A variant of the brand chosen holds and sets the family; one of
+// another brand does not.
+func TestEffectiveModelByBrand(t *testing.T) {
+	cat := mustCatalog(t)
+	for _, tt := range []struct {
+		name, chosen, variant, family string
+	}{
+		{"chosen", "ps2-lr-dual-2021", "ps2-lr-dual-2021", "Polestar 2"},
+		{"chosen, of another year", "ps3-dual-2026", "ps3-dual-2026", "Polestar 3"},
+		{"chosen, of another brand: none", "ex30-er-2024", "", ""},
+		{"none chosen, several fit: none", "", "", ""},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			m := effectiveModel(cat, polestarDetails(2024), Vehicle{VIN: polestarVIN, VariantID: tt.chosen})
+			if m.Variant.V.ID != tt.variant || m.Family.V != tt.family || m.Family.OK != (tt.family != "") {
+				t.Errorf("variant %q, family %+v; want %q, %q", m.Variant.V.ID, m.Family, tt.variant, tt.family)
+			}
+			if !m.ModelYear.OK || m.ModelYear.V != 2024 || len(m.Match.Candidates) == 0 {
+				t.Errorf("year %+v, candidates %v", m.ModelYear, m.Match.Candidates)
+			}
+		})
+	}
+}
+
 func TestVariantsJSON(t *testing.T) {
 	e, c := readerEnv(t)
 	resp, body := get(t, noFollow(), e.api.URL+"/api/v1/vehicles/"+chosen+"/variants", c)
@@ -126,6 +151,11 @@ func TestVariantsJSON(t *testing.T) {
 			"every one fits: no candidate", "",
 			core.Snapshot{Covers: core.FieldModel, Family: some("Polestar 3"), BatteryElectric: some(true)},
 			"ps3-2024 ps3-rear-2026 ps3-dual-2026",
+		},
+		{
+			"a Polestar of the Data Portal: the brand's, those of its year first", polestarVIN, polestarDetails(2024),
+			"ps2-sr-2024* ps2-lr-single-2024* ps2-lr-dual-2021* ps3-2024* ps4-2024* " +
+				"ps2-sr-2021 ps2-sr-2022 ps2-sr-2025 ps2-lr-single-2021 ps2-lr-dual-2025 ps3-rear-2026 ps3-dual-2026 ps5-2025",
 		},
 		{"unknown family", "", details("EX-SIM", 2026, 80, true), ""},
 		{"a hybrid", "", details("XC40", 2021, 78.012, false), ""},
@@ -197,8 +227,15 @@ func TestPutVehicleModel(t *testing.T) {
 		t.Errorf("charger of the recognized variant: %d %s", resp.status, body)
 	}
 
+	// A Polestar without a family: a variant of its brand, which sets the family.
+	resp, body = put(shared, `{"variant_id":"ps2-lr-single-2024","ac_max_kw":null}`)
+	if resp.status != http.StatusOK || !strings.HasPrefix(model(body), `{"family":"Polestar 2","model_year":2024,"variant":{"id":"ps2-lr-single-2024"`) {
+		t.Errorf("a variant of the brand: %d %s", resp.status, model(body))
+	}
+
 	writes := e.reader.writes
 	for _, tt := range []struct{ name, vehicle, body, field string }{
+		{"another brand", shared, `{"variant_id":"ex30-er-2024","ac_max_kw":null}`, "variant_id"},
 		{"unknown variant", chosen, `{"variant_id":"ex30-gone","ac_max_kw":null}`, "variant_id"},
 		{"another family", chosen, `{"variant_id":"xc40-twin-2021","ac_max_kw":null}`, "variant_id"},
 		{"no family read", parked, `{"variant_id":"ex30-er-2024","ac_max_kw":null}`, "variant_id"},

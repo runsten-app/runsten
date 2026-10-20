@@ -19,14 +19,17 @@
         "ac_max_kw": null
       },
       "connection": {
+        "provider": "volvo",
         "status": "active",
         "api_key": "instance",
+        "credential": null,
         "authorized_at": "2026-09-28T05:00:00Z",
         "refreshed_at": "2026-09-28T06:00:00Z",
         "reauth_at": null,
         "reauth_reason": null
       },
       "market_refused_at": null,
+      "unshared_at": null,
       "collection": {
         "passed_at": "2026-09-28T07:00:00Z",
         "mode": "charging",
@@ -62,14 +65,17 @@
         "ac_max_kw": null
       },
       "connection": {
+        "provider": "volvo",
         "status": "reauth_required",
         "api_key": "instance",
+        "credential": null,
         "authorized_at": "2026-09-28T05:00:00Z",
         "refreshed_at": null,
         "reauth_at": "2026-09-28T06:30:00Z",
         "reauth_reason": "refresh token expired"
       },
       "market_refused_at": null,
+      "unshared_at": null,
       "collection": {
         "passed_at": "2026-09-28T07:00:00Z",
         "mode": "parked",
@@ -104,14 +110,17 @@
         "ac_max_kw": 11
       },
       "connection": {
+        "provider": "volvo",
         "status": "active",
         "api_key": "instance",
+        "credential": null,
         "authorized_at": "2026-09-28T05:00:00Z",
         "refreshed_at": null,
         "reauth_at": null,
         "reauth_reason": null
       },
       "market_refused_at": null,
+      "unshared_at": null,
       "collection": null
     },
     {
@@ -125,14 +134,17 @@
         "ac_max_kw": null
       },
       "connection": {
+        "provider": "volvo",
         "status": "active",
         "api_key": "instance",
+        "credential": null,
         "authorized_at": "2026-09-28T05:00:00Z",
         "refreshed_at": null,
         "reauth_at": null,
         "reauth_reason": null
       },
       "market_refused_at": "2026-09-28T05:01:00Z",
+      "unshared_at": null,
       "collection": {
         "passed_at": "2026-09-28T05:01:00Z",
         "mode": "parked",
@@ -145,6 +157,51 @@
           "endpoint": "energy-state",
           "status": 404,
           "kind": "market"
+        }
+      }
+    },
+    {
+      "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a06",
+      "vin": "LPSVSEDE5RL000001",
+      "model": {
+        "family": "Polestar 2",
+        "model_year": 2024,
+        "variant": {
+          "id": "ps2-lr-dual-2021",
+          "name": "Polestar 2 Long Range Dual Motor / Performance",
+          "gross_kwh": 78,
+          "net_kwh": 75,
+          "ac_max_kw": 11,
+          "ac_option_kw": null,
+          "dc_max_kw": 155
+        },
+        "variant_source": "chosen",
+        "ac_max_kw": null
+      },
+      "connection": {
+        "provider": "polestar",
+        "status": "active",
+        "api_key": null,
+        "credential": "set",
+        "authorized_at": null,
+        "refreshed_at": null,
+        "reauth_at": null,
+        "reauth_reason": null
+      },
+      "market_refused_at": null,
+      "unshared_at": "2026-09-28T06:00:00Z",
+      "collection": {
+        "passed_at": "2026-09-28T07:00:00Z",
+        "mode": "parked",
+        "read_at": "2026-09-28T05:50:00Z",
+        "next_read_at": null,
+        "paused_until": null,
+        "quota": [],
+        "last_failure": {
+          "at": "2026-09-28T06:00:00Z",
+          "endpoint": "battery",
+          "status": 403,
+          "kind": "unshared"
         }
       }
     }

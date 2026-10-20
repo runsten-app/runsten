@@ -9,14 +9,17 @@
     "ac_max_kw": null
   },
   "connection": {
+    "provider": "volvo",
     "status": "reauth_required",
     "api_key": "instance",
+    "credential": null,
     "authorized_at": "2026-09-28T05:00:00Z",
     "refreshed_at": null,
     "reauth_at": "2026-09-28T06:30:00Z",
     "reauth_reason": "refresh token expired"
   },
   "market_refused_at": null,
+  "unshared_at": null,
   "collection": {
     "passed_at": "2026-09-28T07:00:00Z",
     "mode": "parked",

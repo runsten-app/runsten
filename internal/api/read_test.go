@@ -418,6 +418,9 @@ const (
 	chosen = "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a04"
 	// unserved is a vehicle whose market the vendor's API does not serve.
 	unserved = "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a05"
+	// shared is a Polestar of the Data Portal, which tells no family: its driver chose
+	// its variant. Its owner then stopped sharing it with the credential.
+	shared = "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a06"
 )
 
 func h(hh, mm int) time.Time {
@@ -457,6 +460,13 @@ func fixtures(m *memReader) {
 			Collection: &Collection{
 				PassedAt: h(5, 1), Mode: "parked", Quota: map[string]time.Time{},
 				Failure: CollectionFailure{At: h(5, 1), Endpoint: "energy-state", Status: 404, Kind: "market"},
+			},
+		},
+		{
+			ID: shared, VIN: polestarVIN, Provider: "polestar", VariantID: "ps2-lr-dual-2021", UnsharedAt: h(6, 0),
+			Collection: &Collection{
+				PassedAt: h(7, 0), Mode: "parked", ReadAt: h(5, 50), Quota: map[string]time.Time{},
+				Failure: CollectionFailure{At: h(6, 0), Endpoint: "battery", Status: 403, Kind: "unshared"},
 			},
 		},
 	}
@@ -516,6 +526,7 @@ func fixtures(m *memReader) {
 		{FetchedAt: h(5, 0), CheckedAt: h(5, 0), Snapshot: details("XC40", 2021, 78.012, true)},
 	}
 	m.current[chosen] = []core.Record{{FetchedAt: h(5, 0), CheckedAt: h(5, 0), Snapshot: details("EX30", 2024, 69.0, true)}}
+	m.current[shared] = []core.Record{{FetchedAt: h(5, 0), CheckedAt: h(5, 0), Snapshot: polestarDetails(2024)}}
 }
 
 // details is the snapshot of a details response.
@@ -523,6 +534,14 @@ func details(family string, year int, kwh float64, electric bool) core.Snapshot 
 	return core.Snapshot{
 		Covers: core.FieldCapacity | core.FieldModel, CapacityKWh: some(kwh),
 		Family: some(family), ModelYear: some(year), BatteryElectric: some(electric),
+	}
+}
+
+// polestarDetails is what the Data Portal tells of a Polestar's model, from its VIN: the
+// brand and the model year, no family nor capacity.
+func polestarDetails(year int) core.Snapshot {
+	return core.Snapshot{
+		Covers: core.FieldModel, Brand: some("polestar"), ModelYear: some(year), BatteryElectric: some(true),
 	}
 }
 
@@ -579,8 +598,8 @@ func TestVehiclesJSON(t *testing.T) {
 	// No vehicle yet: an empty list, not null.
 	_, body = get(t, noFollow(), e.api.URL+"/api/v1/vehicles", e.session(t, "other"))
 	if body != `{"items":[{"id":"`+foreign+`","vin":"YV1SMLT0000DT0003",`+
-		`"model":{"family":null,"model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null},"connection":{"status":"active","api_key":"instance","authorized_at":null,"refreshed_at":null,"reauth_at":null,"reauth_reason":null},`+
-		`"market_refused_at":null,"collection":null}]}`+"\n" {
+		`"model":{"family":null,"model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null},"connection":{"provider":"volvo","status":"active","api_key":"instance","credential":null,"authorized_at":null,"refreshed_at":null,"reauth_at":null,"reauth_reason":null},`+
+		`"market_refused_at":null,"unshared_at":null,"collection":null}]}`+"\n" {
 		t.Errorf("other account: %s", body)
 	}
 	e.reader.vehicles["other"] = nil

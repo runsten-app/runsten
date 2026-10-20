@@ -46,6 +46,12 @@ func TestEmbeddedCatalog(t *testing.T) {
 	if got := c.Family("Model 3"); len(got) != 0 {
 		t.Errorf("Family(Model 3) = %v, want none", ids(got))
 	}
+	if got := c.Brand(Polestar); len(got) != brands[Polestar] || got[0].ID != "ps2-sr-2021" {
+		t.Errorf("Brand(polestar) = %v", ids(got))
+	}
+	if got := c.Brand("tesla"); len(got) != 0 {
+		t.Errorf("Brand(tesla) = %v, want none", ids(got))
+	}
 }
 
 func TestVariant(t *testing.T) {

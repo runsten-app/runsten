@@ -62,7 +62,8 @@ type Target struct {
 	// nothing of it can be read, and it is not polled until it is listed again.
 	MarketRefused bool
 	// CredentialSetAt is when the connection's credential was set, for a Source: the
-	// credential itself is read by the Source, when a call is due.
+	// credential itself is read by the Source, when a call is due. Zero: the connection
+	// has none (removed by the user), and is not polled until one is set.
 	CredentialSetAt time.Time
 	// CredentialRefused is set when the provider refused the connection's credential:
 	// the vehicle is not polled until the user sets another.
@@ -799,6 +800,8 @@ func (c *Collector) keyBlocked(t Target, now time.Time) bool {
 // keyState names the key t reads with, for the debug page.
 func (c *Collector) keyState(t Target, now time.Time) string {
 	switch {
+	case !t.readsVolvo() && t.CredentialSetAt.IsZero():
+		return "no credential"
 	case !t.readsVolvo() && c.credentialBlocked(t):
 		return "credential refused"
 	case !t.readsVolvo():

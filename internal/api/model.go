@@ -51,10 +51,10 @@ type variantJSON struct {
 }
 
 type modelJSON struct {
-	Family        *string                 `json:"family" doc:"The model as the vendor names it (XC40, EX30), without its powertrain or battery; null until the vehicle's details are read."`
+	Family        *string                 `json:"family" doc:"The model as the vendor names it (XC40, EX30), without its powertrain or battery; null until the vehicle's details are read. A source that tells the brand alone (Polestar's Data Portal) gives none: the family is then the variant's in effect, null without one."`
 	ModelYear     *int                    `json:"model_year" minimum:"1" doc:"The model year, as the vendor reports it; null until the vehicle's details are read."`
-	Variant       null[variantJSON]       `json:"variant" doc:"The variant in effect, from Runsten's catalog: the one the user chose, else the one recognized, the only one that fits the family, model year, battery capacity and VIN the vendor reports. Its figures are the catalog's, from the manufacturer or else from public sources. null when none is chosen and none or several fit, for an unknown family, and for a vehicle that is not battery electric: hybrids are neither recognized nor offered."`
-	VariantSource null[variantSourceJSON] `json:"variant_source" doc:"chosen: by the user (PUT /vehicles/{vehicle}/model); detected: recognized from the vehicle's details, recomputed on every read. A chosen variant the catalog no longer has, or of another family than the vehicle reports, is ignored: the recognition applies again. null without a variant."`
+	Variant       null[variantJSON]       `json:"variant" doc:"The variant in effect, from Runsten's catalog: the one the user chose, else the one recognized, the only one that fits the family, model year, battery capacity and VIN the vendor reports. Its figures are the catalog's, from the manufacturer or else from public sources. null when none is chosen and none or several fit, for an unknown family and brand, and for a vehicle that is not battery electric: hybrids are neither recognized nor offered."`
+	VariantSource null[variantSourceJSON] `json:"variant_source" doc:"chosen: by the user (PUT /vehicles/{vehicle}/model); detected: recognized from the vehicle's details, recomputed on every read. A chosen variant the catalog no longer has, or of another family (brand) than the vehicle reports, is ignored: the recognition applies again. null without a variant."`
 	ACMaxKW       *float64                `json:"ac_max_kw" doc:"The onboard charger the user stated, one of the variant's (its ac_max_kw or ac_option_kw). null when not stated, or when it is not one of the chargers of the variant in effect (ignored): the costs then take the more powerful, an upper bound."`
 }
 
@@ -81,10 +81,19 @@ type vehicleModel struct {
 }
 
 // offered reports whether the catalog offers variants for what the details say: a family
-// read, of a battery-electric vehicle. Hybrids are left out, recognized or chosen alike:
-// their charges are not derived correctly.
+// read, or a brand when the source tells the maker alone (a Polestar of the Data Portal),
+// of a battery-electric vehicle. Hybrids are left out, recognized or chosen alike: their
+// charges are not derived correctly.
 func offered(n core.Snapshot) bool {
-	return n.Family.OK && n.BatteryElectric.OK && n.BatteryElectric.V
+	return (n.Family.OK || n.Brand.OK) && n.BatteryElectric.OK && n.BatteryElectric.V
+}
+
+// offer lists the variants the user may choose from: the family's, else the brand's.
+func offer(c *catalog.Catalog, n core.Snapshot) []catalog.Variant {
+	if n.Family.OK {
+		return c.Family(n.Family.V)
+	}
+	return c.Brand(catalog.Brand(n.Brand.V))
 }
 
 // effectiveModel decides the vehicle's model from its latest details n and what the user
@@ -97,7 +106,11 @@ func effectiveModel(c *catalog.Catalog, n core.Snapshot, v Vehicle) vehicleModel
 		return m
 	}
 	// Unknown year or capacity: zero, which Match does not filter on.
-	m.Match = c.Match(n.Family.V, n.ModelYear.V, n.CapacityKWh.V, v.VIN)
+	if n.Family.OK {
+		m.Match = c.Match(n.Family.V, n.ModelYear.V, n.CapacityKWh.V, v.VIN)
+	} else {
+		m.Match = c.MatchBrand(catalog.Brand(n.Brand.V), n.ModelYear.V, n.CapacityKWh.V, v.VIN)
+	}
 	// The rule of catalog.Effective, which the derivation's capacities follow, told apart
 	// for the source.
 	if chosen, ok := c.Chosen(v.VariantID, catalogReading(n, v.VIN)); ok {
@@ -106,6 +119,9 @@ func effectiveModel(c *catalog.Catalog, n core.Snapshot, v Vehicle) vehicleModel
 		m.Variant, m.Source = core.Value[catalog.Variant]{V: m.Match.Candidates[0], OK: true}, variantDetected
 	} else {
 		return m
+	}
+	if !m.Family.OK { // told by the brand alone: the variant sets the family
+		m.Family = core.Value[string]{V: m.Variant.V.Family, OK: true}
 	}
 	chargers := chargersOf(m.Variant.V)
 	if v.ACMaxKW.OK && slices.Contains(chargers, v.ACMaxKW.V) {
@@ -121,7 +137,7 @@ func effectiveModel(c *catalog.Catalog, n core.Snapshot, v Vehicle) vehicleModel
 // zero, which they do not filter on.
 func catalogReading(n core.Snapshot, vin string) catalog.Reading {
 	return catalog.Reading{
-		Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
+		Brand: catalog.Brand(n.Brand.V), Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
 		BatteryElectric: n.BatteryElectric.OK && n.BatteryElectric.V,
 	}
 }
@@ -185,6 +201,7 @@ func (s *Server) vehicleOf(ctx context.Context, v Vehicle) (vehicleJSON, error) 
 	m := effectiveModel(s.Catalog, n, v)
 	return vehicleJSON{
 		ID: v.ID, VIN: v.VIN, Model: modelOf(m), Connection: s.connectionOf(v), MarketRefusedAt: timeOrNil(v.MarketRefusedAt),
+		UnsharedAt: timeOrNil(v.UnsharedAt),
 		Collection: collectionOf(v),
 	}, nil
 }
@@ -222,7 +239,7 @@ type variantListJSON struct {
 }
 
 type vehicleModelUpdateJSON struct {
-	VariantID *string  `json:"variant_id" minLength:"1" doc:"The ID of a variant of the vehicle's family, from GET /vehicles/{vehicle}/variants: it outranks the recognition. null to go back to the recognition."`
+	VariantID *string  `json:"variant_id" minLength:"1" doc:"The ID of a variant of the vehicle's family (of its brand, when the vendor tells no family), from GET /vehicles/{vehicle}/variants: it outranks the recognition. null to go back to the recognition."`
 	ACMaxKW   *float64 `json:"ac_max_kw" exclusiveMinimum:"0" doc:"The vehicle's onboard charger, one of the variant's in effect after the write (its ac_max_kw or ac_option_kw). null when unknown: the costs take the more powerful."`
 }
 
@@ -248,13 +265,14 @@ func optionalLevel(v catalog.Variant, f catalog.Figure) null[sourceLevelJSON] {
 }
 
 // variantsOf lists the variants the user may choose from: the recognition's candidates
-// first, then the rest of the family, each in the order of the catalog.
-func (s *Server) variantsOf(m vehicleModel) variantListJSON {
+// first, then the rest of the family (of the brand, when the family is unknown), each in
+// the order of the catalog.
+func (s *Server) variantsOf(n core.Snapshot, m vehicleModel) variantListJSON {
 	out := variantListJSON{Items: []variantOptionJSON{}}
-	if !m.Family.OK || len(m.Match.Candidates) == 0 {
+	if !offered(n) || len(m.Match.Candidates) == 0 {
 		return out
 	}
-	family := s.Catalog.Family(m.Family.V)
+	family := offer(s.Catalog, n)
 	// Match gives the whole family when nothing fits: then, as when everything does, the
 	// details narrow nothing, and no variant is a candidate.
 	narrows := m.Match.Recognized || len(m.Match.Candidates) < len(family)
@@ -289,7 +307,7 @@ func (s *Server) listVariants(ctx context.Context, in *vehicleInput) (*body[vari
 	if err != nil {
 		return nil, err
 	}
-	return respond(s.variantsOf(effectiveModel(s.Catalog, n, v))), nil
+	return respond(s.variantsOf(n, effectiveModel(s.Catalog, n, v))), nil
 }
 
 // putModel writes the user's choice, checked against the details as they are: a choice
@@ -305,11 +323,11 @@ func (s *Server) putModel(ctx context.Context, in *vehicleModelInput) (*body[veh
 	}
 	v.VariantID, v.ACMaxKW = "", core.Value[float64]{}
 	if id := in.Body.VariantID; id != nil {
-		chosen, ok := s.Catalog.Variant(*id)
-		switch {
-		case !ok:
+		if _, ok := s.Catalog.Variant(*id); !ok {
 			return nil, invalidBody("variant_id", "unknown variant")
-		case !offered(n) || chosen.Family != n.Family.V:
+		}
+		// The rule of a choice that holds: of the family read, else of the brand read.
+		if _, ok := s.Catalog.Chosen(*id, catalogReading(n, v.VIN)); !ok {
 			return nil, invalidBody("variant_id", "not a variant of the vehicle's family")
 		}
 		v.VariantID = *id
@@ -338,8 +356,9 @@ func (s *Server) registerModel(api huma.API) {
 		OperationID: "listVariants", Method: http.MethodGet, Path: "/vehicles/{vehicle}/variants", Tags: []string{"vehicles"},
 		Summary: "The variants a vehicle may be",
 		Description: "The variants of the catalog of the family the vehicle reports: the candidates of the recognition " +
-			"first, then the rest of the family, whatever the model years. Empty until the details are read, for a " +
-			"family the catalog does not have, and for a vehicle that is not battery electric.",
+			"first, then the rest of the family, whatever the model years. A vehicle whose vendor tells its brand but not its " +
+			"family (Polestar's Data Portal) is offered the brand's variants, and the one chosen sets its family. Empty until " +
+			"the details are read, for a family the catalog does not have, and for a vehicle that is not battery electric.",
 	}, "The variants, candidates first.", map[int]string{
 		http.StatusUnauthorized: errUnauthorized, http.StatusNotFound: errVehicle, http.StatusInternalServerError: errInternal,
 	}), s.listVariants)
@@ -354,7 +373,7 @@ func (s *Server) registerModel(api huma.API) {
 		Middlewares: huma.Middlewares{s.requireJSON},
 	}, "The vehicle, with its model.", writeErrors(map[int]string{
 		http.StatusBadRequest: errBody + " Also: a `variant_id` the catalog does not have, or of another family than " +
-			"the vehicle's; an `ac_max_kw` that is not a charger of the variant in effect after the write, or without one.",
+			"the vehicle's (another brand, when the vendor tells no family); an `ac_max_kw` that is not a charger of the variant in effect after the write, or without one.",
 		http.StatusNotFound: errVehicle,
 	})), s.putModel)
 }

@@ -81,6 +81,11 @@ func (s *Server) importVolvoDataPortal(ctx context.Context, in *volvoDataPortalI
 	if err != nil {
 		return nil, err
 	}
+	// The portal's files are a Volvo's history: imported into a Polestar, they would be
+	// another car's.
+	if v.Provider == string(providerPolestar) {
+		return nil, apiError(http.StatusConflict, codeNotVolvo, "the Volvo Data Portal's files are a Volvo's: this vehicle is a Polestar")
+	}
 	// The form is strict, as every body: huma decodes the known fields only.
 	for name := range in.RawBody.Form.File {
 		if name != "trips" && name != "waypoints" {
@@ -124,6 +129,7 @@ func (s *Server) registerFileImports(api huma.API) {
 			"`invalid_file`: a file is not the portal's (not CSV, or a column missing); the message tells which and why.",
 		http.StatusForbidden:            errCrossOrigin + " " + errSessionOnly,
 		http.StatusNotFound:             errVehicle,
+		http.StatusConflict:             "`not_volvo`: the vehicle is a Polestar, read through Polestar's Data Portal; nothing is imported.",
 		http.StatusUnsupportedMediaType: "`unsupported_media_type`: the body is not `multipart/form-data`.",
 	})), s.importVolvoDataPortal)
 	// huma leaves a form open to other fields; the handler refuses them.

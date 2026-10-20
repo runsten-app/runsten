@@ -70,6 +70,10 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("%s: HTTP %d: %s", e.Endpoint, e.Status, e.Message)
 }
 
+// CredentialRefused reports whether the Data Portal refused the credential itself: only
+// a new one reads.
+func (e *APIError) CredentialRefused() bool { return e.Kind == KindCredentialRefused }
+
 func newAPIError(endpoint string, k call, resp *http.Response, body []byte) *APIError {
 	e := &APIError{Endpoint: endpoint, Status: resp.StatusCode}
 	e.Code, e.Message = errorBody(body)
