@@ -48,7 +48,7 @@ func importedCharge(id string, start time.Time) core.Charge {
 func saveOdometer(t *testing.T, s *Store, account, vehicle string, at time.Time) {
 	t.Helper()
 	_, err := s.SaveSnapshot(context.Background(), collector.Snapshot{
-		AccountID: account, VehicleID: vehicle, Source: volvo.Source, Endpoint: volvo.Odometer, FetchedAt: at,
+		AccountID: account, VehicleID: vehicle, Source: volvo.Source, Endpoint: collector.Endpoint(volvo.Odometer), FetchedAt: at,
 		Payload: []byte(`{"data":{"odometer":{"value":12400}}}`), Hash: []byte{1},
 	})
 	if err != nil {

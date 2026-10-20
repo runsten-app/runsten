@@ -101,7 +101,7 @@
     <dl>
       <dt>Seen</dt><dd>{{ago .At}} <span class="muted">({{clock .At}})</span></dd>
       <dt>Connection</dt><dd>{{if .ReauthReason}}<span class="pill err">re-authentication required</span><br><span class="muted">{{.ReauthReason}}</span><br>open <code>/auth/volvo/start</code> on runsten-api{{else}}<span class="pill ok">active</span>{{end}}</dd>
-      <dt>Application key</dt><dd>{{if or (eq .Key "refused") (eq .Key "instance refused") (eq .Key "missing")}}<span class="pill err">{{.Key}}</span>{{else}}{{or .Key "—"}}{{end}}</dd>
+      <dt>Application key</dt><dd>{{if or (eq .Key "refused") (eq .Key "instance refused") (eq .Key "missing") (eq .Key "credential refused")}}<span class="pill err">{{.Key}}</span>{{else}}{{or .Key "—"}}{{end}}</dd>
       <dt>Engine</dt><dd>{{or .Engine "—"}}</dd>
       <dt>Charging</dt><dd>{{or .Charging "—"}}</dd>
       {{if not .PausedUntil.IsZero}}<dt>Paused</dt><dd><span class="pill warn">account: {{until .PausedUntil}}</span></dd>{{end}}
@@ -146,7 +146,7 @@
   <tr>
     <td>{{clock .At}}</td>
     <td><code>{{.VIN}}</code></td>
-    <td><code>{{.Endpoint}}</code></td>
+    <td><code>{{if and .Source (ne .Source "volvo")}}{{.Source}}/{{end}}{{.Endpoint}}</code></td>
     <td>
       {{if .Err}}<span class="pill err">{{if .Status}}{{.Status}}{{else}}—{{end}}</span>
       {{else if .Stored}}<span class="pill ok">200 · stored</span>

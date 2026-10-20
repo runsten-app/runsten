@@ -41,7 +41,7 @@ type Store interface {
 }
 
 // Normalizer reads the stored responses of the sources it knows into snapshots. derive
-// does not know their formats: the binary provides it (the Volvo Cars API's today).
+// does not know their formats: the binary provides one per source (Sources).
 type Normalizer interface {
 	// Kinds returns the kinds of response the derivation reads.
 	Kinds() []core.Kind
@@ -50,6 +50,51 @@ type Normalizer interface {
 	EnergyKinds() []core.Kind
 	// Normalize reads a stored response of kind k.
 	Normalize(k core.Kind, raw []byte) (core.Snapshot, error)
+}
+
+// Sources returns a Normalizer of the responses of every source norms knows, each read
+// by the one whose kinds hold its source (core.Kind.Source): a vehicle read through
+// several sources, or another than Volvo, is derived from all its readings. A source
+// two of them know is read by the first.
+func Sources(norms ...Normalizer) Normalizer {
+	s := sources{norms: norms, bySource: map[string]int{}}
+	for i, n := range norms {
+		for _, k := range n.Kinds() {
+			if _, ok := s.bySource[k.Source]; !ok {
+				s.bySource[k.Source] = i
+			}
+		}
+	}
+	return s
+}
+
+type sources struct {
+	norms    []Normalizer
+	bySource map[string]int // the index of the one that reads it, by source
+}
+
+func (s sources) Kinds() []core.Kind { return s.kinds(Normalizer.Kinds) }
+
+func (s sources) EnergyKinds() []core.Kind { return s.kinds(Normalizer.EnergyKinds) }
+
+func (s sources) kinds(of func(Normalizer) []core.Kind) []core.Kind {
+	var out []core.Kind
+	for i, n := range s.norms {
+		for _, k := range of(n) {
+			if s.bySource[k.Source] == i {
+				out = append(out, k)
+			}
+		}
+	}
+	return out
+}
+
+func (s sources) Normalize(k core.Kind, raw []byte) (core.Snapshot, error) {
+	i, ok := s.bySource[k.Source]
+	if !ok {
+		return core.Snapshot{}, fmt.Errorf("normalize: unknown source %q", k.Source)
+	}
+	return s.norms[i].Normalize(k, raw) //nolint:wrapcheck // the source's, which names it
 }
 
 // Capacities gives the net battery capacity of each vehicle, for core.CapacityCatalogNet.

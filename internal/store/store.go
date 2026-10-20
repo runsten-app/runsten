@@ -98,13 +98,14 @@ func (s *Store) SingleAccount(ctx context.Context) (string, error) {
 }
 
 // AddVehicle attaches the VIN to the connection and returns the vehicle ID. A vehicle
-// listed again is tried again, should its market have been refused.
+// listed again is tried again, should its market have been refused or its sharing ended.
 func (s *Store) AddVehicle(ctx context.Context, accountID, connectionID, vin string) (string, error) {
 	var id string
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		return tx.QueryRow(ctx, `
 			INSERT INTO vehicles (account_id, connection_id, vin) VALUES ($1, $2, $3)
-			ON CONFLICT (account_id, vin) DO UPDATE SET connection_id = EXCLUDED.connection_id, market_refused_at = NULL
+			ON CONFLICT (account_id, vin) DO UPDATE SET connection_id = EXCLUDED.connection_id, market_refused_at = NULL,
+				unshared_at = NULL
 			RETURNING id`, accountID, connectionID, vin).Scan(&id)
 	})
 	return id, err
@@ -119,20 +120,26 @@ func (s *Store) SetMarketRefused(ctx context.Context, accountID, vehicleID strin
 	})
 }
 
-// Targets returns the vehicles of all accounts, with their connection, whether it
-// requires re-authentication, and whether it has its own application key. Tokens and
-// keys are read separately (Credentials, ConnectionKey).
+// Targets returns the vehicles of all accounts, with their connection and its provider,
+// whether it requires re-authentication, and whether it has its own application key or
+// a credential. Tokens, keys and credentials are read separately (Credentials,
+// ConnectionKey, PolestarCredential).
 func (s *Store) Targets(ctx context.Context) ([]collector.Target, error) {
-	rows, err := s.pool.Query(ctx, `SELECT account_id, vehicle_id, vin, connection_id, coalesce(reauth_reason, ''),
-		api_key_set_at, api_key_refused, market_refused FROM runsten_poll_targets()`)
+	rows, err := s.pool.Query(ctx, `SELECT account_id, vehicle_id, vin, connection_id, provider, coalesce(reauth_reason, ''),
+		api_key_set_at, api_key_refused, market_refused, credential_set_at, credential_refused, unshared
+		FROM runsten_poll_targets()`)
 	if err != nil {
 		return nil, fmt.Errorf("vehicles to poll: %w", err)
 	}
 	var out []collector.Target
 	var t collector.Target
-	var keySetAt *time.Time
-	_, err = pgx.ForEachRow(rows, []any{&t.AccountID, &t.VehicleID, &t.VIN, &t.ConnectionID, &t.ReauthReason, &keySetAt, &t.KeyRefused, &t.MarketRefused}, func() error {
-		t.KeySetAt = utcOrZero(keySetAt)
+	var keySetAt, credentialSetAt *time.Time
+	dest := []any{
+		&t.AccountID, &t.VehicleID, &t.VIN, &t.ConnectionID, &t.Provider, &t.ReauthReason, &keySetAt, &t.KeyRefused,
+		&t.MarketRefused, &credentialSetAt, &t.CredentialRefused, &t.Unshared,
+	}
+	_, err = pgx.ForEachRow(rows, dest, func() error {
+		t.KeySetAt, t.CredentialSetAt = utcOrZero(keySetAt), utcOrZero(credentialSetAt)
 		out = append(out, t)
 		return nil
 	})

@@ -45,7 +45,7 @@ func TestCollectorStatus(t *testing.T) {
 	save(collector.Status{
 		AccountID: a, VehicleID: va, PassedAt: t0, Mode: "charging", ReadAt: t0, NextAt: t0.Add(time.Minute),
 		PausedUntil: t0.Add(time.Hour), Quota: map[string]time.Time{volvo.APIEnergy: t0.Add(2 * time.Hour).In(paris)},
-		Failure: collector.Failure{At: t0, Endpoint: volvo.EnergyState, Status: 403, Kind: collector.FailQuota},
+		Failure: collector.Failure{At: t0, Endpoint: collector.Endpoint(volvo.EnergyState), Status: 403, Kind: collector.FailQuota},
 	})
 	want := &api.Collection{
 		PassedAt: t0, Mode: "charging", ReadAt: t0, NextAt: t0.Add(time.Minute), PausedUntil: t0.Add(time.Hour),
@@ -146,7 +146,7 @@ func TestEveryFailureKindStored(t *testing.T) {
 		at := t0.Add(time.Duration(i) * time.Minute)
 		err := s.SaveStatus(ctx, collector.Status{
 			AccountID: a, VehicleID: va, PassedAt: at, Mode: "parked",
-			Failure: collector.Failure{At: at, Endpoint: volvo.Odometer, Status: 401, Kind: kind},
+			Failure: collector.Failure{At: at, Endpoint: collector.Endpoint(volvo.Odometer), Status: 401, Kind: kind},
 		})
 		if err != nil {
 			t.Errorf("%s: %v", kind, err)

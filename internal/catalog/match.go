@@ -38,15 +38,30 @@ type Result struct {
 // skips step 2: an absent field or 0.0 tells nothing of the battery (0.0 is what a
 // combustion car returns, and the caller keeps those out by their fuel type).
 func (c *Catalog) Match(family string, modelYear int, capacityKWh float64, vin string) Result {
-	var fits []Variant
+	return c.match(func(v Variant) bool { return v.Family == family }, modelYear, capacityKWh, vin)
+}
+
+// MatchBrand is Match among the variants of a brand, every family, for a vehicle whose
+// source tells its maker but not its family (a Polestar of the Data Portal): when none
+// fits, the candidates are the whole brand.
+func (c *Catalog) MatchBrand(brand Brand, modelYear int, capacityKWh float64, vin string) Result {
+	return c.match(func(v Variant) bool { return v.Brand == brand }, modelYear, capacityKWh, vin)
+}
+
+func (c *Catalog) match(of func(Variant) bool, modelYear int, capacityKWh float64, vin string) Result {
+	var all, fits []Variant
 	for _, v := range c.variants {
-		if v.Family == family && (modelYear <= 0 || v.Years.Contains(modelYear)) {
+		if !of(v) {
+			continue
+		}
+		all = append(all, v)
+		if modelYear <= 0 || v.Years.Contains(modelYear) {
 			fits = append(fits, v)
 		}
 	}
 	fits = byMotorCode(byCapacity(fits, capacityKWh), vin)
 	if len(fits) == 0 {
-		return Result{Candidates: c.Family(family)}
+		return Result{Candidates: all}
 	}
 	return Result{Candidates: fits, Recognized: len(fits) == 1}
 }
@@ -54,6 +69,9 @@ func (c *Catalog) Match(family string, modelYear int, capacityKWh float64, vin s
 // Reading is what the vendor API says of a vehicle: its latest details and its VIN. The
 // zero value of a field is unknown.
 type Reading struct {
+	// Brand stands in for the family when the source tells the maker alone: the variants
+	// of the brand are then the candidates, and the one chosen sets the family.
+	Brand       Brand
 	Family      string
 	ModelYear   int     // ≤ 0: unknown
 	CapacityKWh float64 // batteryCapacityKWH; ≤ 0: unknown
@@ -68,10 +86,16 @@ type Reading struct {
 // variant's, and Runsten does not derive its charges correctly. It is the one rule of
 // recognition, for the API's reads and for the derivation alike.
 func (c *Catalog) Recognize(r Reading) (Variant, bool) {
-	if r.Family == "" || !r.BatteryElectric {
+	if !r.BatteryElectric {
 		return Variant{}, false
 	}
-	m := c.Match(r.Family, r.ModelYear, r.CapacityKWh, r.VIN)
+	var m Result
+	switch {
+	case r.Family != "":
+		m = c.Match(r.Family, r.ModelYear, r.CapacityKWh, r.VIN)
+	case r.Brand != "":
+		m = c.MatchBrand(r.Brand, r.ModelYear, r.CapacityKWh, r.VIN)
+	}
 	if !m.Recognized {
 		return Variant{}, false
 	}
@@ -79,14 +103,25 @@ func (c *Catalog) Recognize(r Reading) (Variant, bool) {
 }
 
 // Chosen returns the variant the user chose while the choice holds: one the catalog
-// still has, of the family read, for a battery electric vehicle. A choice that no longer
-// holds is ignored, never an error: the recognition applies again.
+// still has, of the family read (of the brand read, when the family is unknown: the
+// choice then sets it), for a battery electric vehicle. A choice that no longer holds is
+// ignored, never an error: the recognition applies again.
 func (c *Catalog) Chosen(id string, r Reading) (Variant, bool) {
-	if r.Family == "" || !r.BatteryElectric {
+	if !r.BatteryElectric {
 		return Variant{}, false
 	}
 	v, ok := c.Variant(id)
-	if !ok || v.Family != r.Family {
+	switch {
+	case !ok:
+		return Variant{}, false
+	case r.Family != "":
+		ok = v.Family == r.Family
+	case r.Brand != "":
+		ok = v.Brand == r.Brand
+	default:
+		ok = false
+	}
+	if !ok {
 		return Variant{}, false
 	}
 	return v, true

@@ -105,6 +105,7 @@ import (
 	"runsten/internal/platform/health"
 	"runsten/internal/platform/httpserver"
 	"runsten/internal/platform/secretbox"
+	"runsten/internal/polestar"
 	"runsten/internal/store"
 	"runsten/internal/volvo"
 	"runsten/internal/volvoportal"
@@ -209,7 +210,7 @@ func run(args []string) error {
 	if cfg.geocoder != nil {
 		addresses = st
 	}
-	deriver := derive.New(st, volvo.Normalizer{}, core.DefaultParams(), nil, log)
+	deriver := derive.New(st, derive.Sources(volvo.Normalizer{}, polestar.Normalizer{}), core.DefaultParams(), nil, log)
 	ax := aximote.NewClient(cfg.aximoteURL, hc)
 	handler := api.New(api.Config{
 		Sessions: sessions, AccessTokens: sessions,

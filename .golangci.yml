@@ -77,7 +77,7 @@ linters:
               desc: the simulator is only for tests and runsten-simulator
         # The collector orchestrates: it knows neither the transport nor the database.
         collector-without-adapters:
-          files: ["**/internal/collector/**", "!$test"]
+          files: ["**/internal/collector/*.go", "!$test"]
           deny:
             - pkg: net/http
               desc: the transport belongs to the volvo client
@@ -91,6 +91,18 @@ linters:
               desc: the collector declares its own TokenSource interface
             - pkg: runsten/internal/publish
               desc: the collector declares its own Publisher interface
+            - pkg: runsten/internal/polestar
+              desc: the collector declares its own Source, which collector/polestarsource adapts the Polestar client to
+        # The collector's Polestar source adapts the client: no transport, no storage.
+        polestarsource-adapts:
+          files: ["**/internal/collector/polestarsource/**", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the transport belongs to the polestar client
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: the binary reads the credential from the store
         # The addresses' worker orchestrates: it knows neither the transport nor the database.
         geocode-without-adapters:
           files: ["**/internal/geocode/*.go", "!$test"]

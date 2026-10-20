@@ -41,7 +41,7 @@ var exportTables = []exportTable{
 	{name: "sessions", orderBy: "created_at, id", omit: []string{"token_hash"}},
 	{name: "api_tokens", orderBy: "created_at, id", omit: []string{"token_hash"}},
 	{name: "account_settings", orderBy: "currency"},
-	{name: "connections", orderBy: "id", omit: []string{"access_token", "refresh_token", "api_key"}},
+	{name: "connections", orderBy: "id", omit: []string{"access_token", "refresh_token", "api_key", "credential"}},
 	{name: "vehicles", orderBy: "id"},
 	{name: "collector_status", orderBy: "vehicle_id"},
 	{name: "api_calls", orderBy: "hour, api"},
@@ -70,8 +70,8 @@ var notExported = map[string]string{
 // ExportAccount implements api.Accounts: writes to w, as one JSON document, every row
 // the account holds, raw snapshots included, then those of an extension's tables
 // (more), as of one snapshot of the database. Secrets are left out: tokens, the
-// application key, the MQTT broker's password, the password hash and the hashes of the
-// session and access tokens. It reads and writes row by row: a failure midway leaves w
+// application key, the Polestar credential, the MQTT broker's password, the password
+// hash and the hashes of the session and access tokens. It reads and writes row by row: a failure midway leaves w
 // with a truncated document.
 func (s *Store) ExportAccount(ctx context.Context, accountID string, at time.Time, more []api.ExportTable, w io.Writer) error {
 	tables := slices.Clone(exportTables)

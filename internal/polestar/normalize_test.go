@@ -48,6 +48,7 @@ func TestNormalizeFixtures(t *testing.T) {
 				// Left out of the response: no charge runs, the power is 0.
 				PowerW:                 core.Some(0.0, at),
 				ConsumptionKWhPer100km: core.Some(20.1, at),
+				Brand:                  core.Some(Brand, none),
 				ModelYear:              core.Some(2023, none), // YSMTEST22PL000001: P
 				BatteryElectric:        core.Some(true, none),
 			}
@@ -223,7 +224,7 @@ func TestModelYear(t *testing.T) {
 			t.Fatal(err)
 		}
 		if s.ModelYear.OK != tt.ok || s.ModelYear.V != tt.year || !s.BatteryElectric.OK || !s.BatteryElectric.V ||
-			s.Family.OK || s.Covers&core.FieldModel == 0 {
+			s.Family.OK || s.Brand != core.Some(Brand, time.Time{}) || s.Covers&core.FieldModel == 0 {
 			t.Errorf("%s: %+v", tt.vin, s)
 		}
 	}

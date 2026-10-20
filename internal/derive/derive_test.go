@@ -218,10 +218,16 @@ func (fixedToken) KeepAlive(context.Context) error { return nil }
 // derived incrementally, and that rebuilding again changes nothing.
 func checkRebuild(t *testing.T, st *memStore, d *Deriver) {
 	t.Helper()
-	v := st.vehicle("v")
+	checkRebuildOf(t, st, d, "v")
+}
+
+// checkRebuildOf is checkRebuild for the vehicle of ID id.
+func checkRebuildOf(t *testing.T, st *memStore, d *Deriver, id string) {
+	t.Helper()
+	v := st.vehicle(id)
 	trips, charges := v.trips, v.charges
 	for range 2 {
-		if _, err := d.Rebuild(context.Background(), "a", "v"); err != nil {
+		if _, err := d.Rebuild(context.Background(), "a", id); err != nil {
 			t.Fatal(err)
 		}
 		if !reflect.DeepEqual(v.trips, trips) {

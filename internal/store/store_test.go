@@ -118,8 +118,8 @@ func TestTargetsAndTokens(t *testing.T) {
 		t.Fatalf("targets = %+v", targets)
 	}
 	want := map[string]collector.Target{
-		va: {AccountID: a, VehicleID: va, VIN: "YV1AAAAAAAAAAAAA1"},
-		vb: {AccountID: b, VehicleID: vb, VIN: "YV1BBBBBBBBBBBBB1"},
+		va: {AccountID: a, VehicleID: va, VIN: "YV1AAAAAAAAAAAAA1", Provider: "volvo"},
+		vb: {AccountID: b, VehicleID: vb, VIN: "YV1BBBBBBBBBBBBB1", Provider: "volvo"},
 	}
 	conns := map[string]string{}
 	for _, got := range targets {
@@ -330,7 +330,7 @@ func TestSaveSnapshotDeduplicates(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		return collector.Snapshot{AccountID: a, VehicleID: v, Source: volvo.Source, Endpoint: volvo.Odometer, FetchedAt: at, Payload: raw, Hash: h}
+		return collector.Snapshot{AccountID: a, VehicleID: v, Source: volvo.Source, Endpoint: collector.Endpoint(volvo.Odometer), FetchedAt: at, Payload: raw, Hash: h}
 	}
 	steps := []struct {
 		at     time.Time
@@ -376,8 +376,8 @@ func TestAccountIsolation(t *testing.T) {
 	h, _ := volvo.Fingerprint(raw)
 	now := time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
 	for _, sn := range []collector.Snapshot{
-		{AccountID: a, VehicleID: va, Source: volvo.Source, Endpoint: volvo.Odometer, FetchedAt: now, Payload: raw, Hash: h},
-		{AccountID: b, VehicleID: vb, Source: volvo.Source, Endpoint: volvo.Odometer, FetchedAt: now, Payload: raw, Hash: h},
+		{AccountID: a, VehicleID: va, Source: volvo.Source, Endpoint: collector.Endpoint(volvo.Odometer), FetchedAt: now, Payload: raw, Hash: h},
+		{AccountID: b, VehicleID: vb, Source: volvo.Source, Endpoint: collector.Endpoint(volvo.Odometer), FetchedAt: now, Payload: raw, Hash: h},
 	} {
 		if _, err := s.SaveSnapshot(ctx, sn); err != nil {
 			t.Fatal(err)
@@ -409,7 +409,7 @@ func TestAccountIsolation(t *testing.T) {
 	})
 	t.Run("write into another account refused", func(t *testing.T) {
 		_, err := s.SaveSnapshot(ctx, collector.Snapshot{
-			AccountID: a, VehicleID: vb, Source: volvo.Source, Endpoint: volvo.Doors, FetchedAt: now, Payload: raw, Hash: h,
+			AccountID: a, VehicleID: vb, Source: volvo.Source, Endpoint: collector.Endpoint(volvo.Doors), FetchedAt: now, Payload: raw, Hash: h,
 		})
 		if err == nil {
 			t.Error("snapshot written to another account's vehicle")
