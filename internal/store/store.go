@@ -210,7 +210,8 @@ func (s *Store) queryVehicles(ctx context.Context, accountID, clause string, arg
 		rows, err := tx.Query(ctx, `
 			SELECT v.id, v.vin, c.authorized_at, c.refreshed_at, c.reauth_at, coalesce(c.reauth_reason, ''),
 				c.api_key IS NOT NULL, c.api_key_refused_at IS NOT NULL, coalesce(v.variant_id, ''), v.ac_max_kw,
-				v.market_refused_at, `+statusColumns+`
+				v.market_refused_at, c.provider, c.provider = 'polestar' AND c.credential IS NULL,
+				c.credential_refused_at IS NOT NULL, v.unshared_at, `+statusColumns+`
 			FROM vehicles v JOIN connections c ON c.account_id = v.account_id AND c.id = v.connection_id
 			LEFT JOIN collector_status s ON s.vehicle_id = v.id `+clause, args...)
 		if err != nil {
@@ -219,15 +220,15 @@ func (s *Store) queryVehicles(ctx context.Context, accountID, clause string, arg
 		var v api.Vehicle
 		var authorized, refreshed, reauth *time.Time
 		var acMaxKW *float64
-		var marketRefused *time.Time
+		var marketRefused, unshared *time.Time
 		var st statusScan
 		dest := append([]any{
 			&v.ID, &v.VIN, &authorized, &refreshed, &reauth, &v.ReauthReason, &v.OwnKey, &v.KeyRefused,
-			&v.VariantID, &acMaxKW, &marketRefused,
+			&v.VariantID, &acMaxKW, &marketRefused, &v.Provider, &v.CredentialMissing, &v.CredentialRefused, &unshared,
 		}, st.dest()...)
 		_, err = pgx.ForEachRow(rows, dest, func() error {
 			v.AuthorizedAt, v.RefreshedAt, v.ReauthAt = utcOrZero(authorized), utcOrZero(refreshed), utcOrZero(reauth)
-			v.MarketRefusedAt = utcOrZero(marketRefused)
+			v.MarketRefusedAt, v.UnsharedAt = utcOrZero(marketRefused), utcOrZero(unshared)
 			v.ACMaxKW = core.Value[float64]{}
 			if acMaxKW != nil {
 				v.ACMaxKW = core.Value[float64]{V: *acMaxKW, OK: true}

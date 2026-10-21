@@ -348,7 +348,7 @@ func TestReads(t *testing.T) {
 		t.Fatal(err)
 	}
 	if v, ok, err := s.Vehicle(ctx, b, vb); err != nil || !ok || !reflect.DeepEqual(v, api.Vehicle{
-		ID: vb, VIN: "YV1BBBBBBBBBBBBB1", AuthorizedAt: t0, ReauthAt: t0.Add(time.Hour), ReauthReason: "grant ended",
+		ID: vb, VIN: "YV1BBBBBBBBBBBBB1", Provider: "volvo", AuthorizedAt: t0, ReauthAt: t0.Add(time.Hour), ReauthReason: "grant ended",
 	}) {
 		t.Errorf("vehicle B = %+v, %v, %v", v, ok, err)
 	}

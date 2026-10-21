@@ -17,13 +17,16 @@
     "ac_max_kw": 11
   },
   "connection": {
+    "provider": "volvo",
     "status": "active",
     "api_key": "instance",
+    "credential": null,
     "authorized_at": "2026-09-28T05:00:00Z",
     "refreshed_at": null,
     "reauth_at": null,
     "reauth_reason": null
   },
   "market_refused_at": null,
+  "unshared_at": null,
   "collection": null
 }

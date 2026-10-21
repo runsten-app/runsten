@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"runsten/internal/api"
 	"runsten/internal/collector"
 )
 
@@ -76,6 +77,17 @@ func TestPolestarCredential(t *testing.T) {
 		t.Errorf("last4 %q, plaintext %d, %v", last4, plain, err)
 	}
 
+	// Shown again: its last four characters and when it was set, never the credential.
+	if pc, err := s.PolestarConnection(ctx, a); err != nil || pc != (api.PolestarConnection{ID: conn, Last4: "0123", SetAt: t0}) {
+		t.Errorf("connection %+v, %v", pc, err)
+	}
+	if v, ok, err := s.Vehicle(ctx, a, vp); err != nil || !ok || v.Provider != "polestar" || v.CredentialMissing || v.CredentialRefused {
+		t.Errorf("Polestar vehicle %+v, %v", v, err)
+	}
+	if v, _, err := s.Vehicle(ctx, a, va); err != nil || v.Provider != "volvo" || v.CredentialMissing {
+		t.Errorf("Volvo vehicle %+v, %v", v, err)
+	}
+
 	// Refused: only the credential set at the time given.
 	if err := s.SetCredentialRefused(ctx, a, conn, t0.Add(-time.Hour)); err != nil {
 		t.Fatal(err)
@@ -88,6 +100,12 @@ func TestPolestarCredential(t *testing.T) {
 	}
 	if !targetsOf(t, s, a)[vp].CredentialRefused || targetsOf(t, s, a)[va].CredentialRefused {
 		t.Error("credential not marked refused")
+	}
+	if pc, err := s.PolestarConnection(ctx, a); err != nil || pc.RefusedAt.IsZero() {
+		t.Errorf("refused connection %+v, %v", pc, err)
+	}
+	if v, _, err := s.Vehicle(ctx, a, vp); err != nil || !v.CredentialRefused {
+		t.Errorf("vehicle of a refused credential %+v, %v", v, err)
 	}
 	// A new credential is not known refused, and replaces the connection's.
 	t1 := t0.Add(24 * time.Hour)
@@ -108,6 +126,9 @@ func TestPolestarCredential(t *testing.T) {
 	if !targetsOf(t, s, a)[vp].Unshared || targetsOf(t, s, a)[va].Unshared {
 		t.Error("vehicle not marked unshared")
 	}
+	if v, _, err := s.Vehicle(ctx, a, vp); err != nil || v.UnsharedAt.IsZero() {
+		t.Errorf("unshared vehicle %+v, %v", v, err)
+	}
 	if _, err := s.AddVehicle(ctx, a, conn, polestarVIN); err != nil {
 		t.Fatal(err)
 	}
@@ -121,6 +142,26 @@ func TestPolestarCredential(t *testing.T) {
 	}
 	if _, ok := targetsOf(t, s, a)[vp]; !ok {
 		t.Error("Polestar connection deleted with the Volvo key")
+	}
+
+	// The credential removed: the connection and its vehicle stay, not read.
+	if err := s.DeletePolestarCredential(ctx, a); err != nil {
+		t.Fatal(err)
+	}
+	if tg, ok := targetsOf(t, s, a)[vp]; !ok || !tg.CredentialSetAt.IsZero() || tg.ConnectionID != conn {
+		t.Errorf("target after the removal: %+v, %v", tg, ok)
+	}
+	if v, ok, err := s.Vehicle(ctx, a, vp); err != nil || !ok || !v.CredentialMissing {
+		t.Errorf("vehicle after the removal %+v, %v", v, err)
+	}
+	if pc, err := s.PolestarConnection(ctx, a); err != nil || pc != (api.PolestarConnection{ID: conn}) {
+		t.Errorf("connection after the removal %+v, %v", pc, err)
+	}
+	if c, err := s.PolestarCredential(ctx, a, conn); err == nil {
+		t.Errorf("a credential read after the removal: %+v", c)
+	}
+	if again, err := s.SetPolestarCredential(ctx, a, credA, t1); err != nil || again != conn {
+		t.Fatalf("set again: %s, %v", again, err)
 	}
 
 	// What the collector writes of a Polestar vehicle: its calls and its failures.
@@ -150,10 +191,12 @@ func TestPolestarCredentialChecks(t *testing.T) {
 	}
 	defer func() { _ = db.Close(ctx) }()
 	for name, update := range map[string]string{
-		"a token":            "UPDATE connections SET access_token = 'x' WHERE id = $1",
-		"an application key": "UPDATE connections SET api_key = 'x', api_key_set_at = now(), api_key_last4 = 'x' WHERE id = $1",
-		"no credential":      "UPDATE connections SET credential = NULL, credential_set_at = NULL, credential_last4 = NULL WHERE id = $1",
-		"another provider":   "UPDATE connections SET provider = 'tesla' WHERE id = $1",
+		"a token":                       "UPDATE connections SET access_token = 'x' WHERE id = $1",
+		"an application key":            "UPDATE connections SET api_key = 'x', api_key_set_at = now(), api_key_last4 = 'x' WHERE id = $1",
+		"a credential without its time": "UPDATE connections SET credential_set_at = NULL WHERE id = $1",
+		"a refusal without a credential": `UPDATE connections SET credential = NULL, credential_set_at = NULL, credential_last4 = NULL,
+			credential_refused_at = now() WHERE id = $1`,
+		"another provider": "UPDATE connections SET provider = 'tesla' WHERE id = $1",
 	} {
 		if _, err := db.Exec(ctx, update, conn); err == nil {
 			t.Errorf("%s accepted", name)

@@ -9,8 +9,9 @@
 # names in .env, latest without it; docker compose up -d --build builds them from this
 # tree instead, under the same names.
 #
-# Without a car: the sim profile adds the Volvo API and Volvo ID simulator, and sim.env
-# points the stack at it (separate project, volume and data, images built as :dev):
+# Without a car: the sim profile adds the simulator (Volvo API, Volvo ID, Polestar Data
+# Portal), and sim.env points the stack at it (separate project, volume and data, images
+# built as :dev):
 #
 #   docker compose --env-file sim.env up -d --build
 #
@@ -50,9 +51,11 @@ x-runsten-env: &runsten-env
   RUNSTEN_VOLVO_API_KEY: ${RUNSTEN_VOLVO_API_KEY:-}
   RUNSTEN_VOLVO_CLIENT_ID: ${RUNSTEN_VOLVO_CLIENT_ID:?set RUNSTEN_VOLVO_CLIENT_ID in .env}
   RUNSTEN_VOLVO_CLIENT_SECRET: ${RUNSTEN_VOLVO_CLIENT_SECRET:?set RUNSTEN_VOLVO_CLIENT_SECRET in .env}
-  # Empty means the binary's default (the real Volvo API and Volvo ID).
+  # Empty means the binary's default (the real Volvo API and Volvo ID, the real Polestar
+  # Data Portal).
   RUNSTEN_VOLVO_BASE_URL: ${RUNSTEN_VOLVO_BASE_URL:-}
   RUNSTEN_VOLVO_AUTH_URL: ${RUNSTEN_VOLVO_AUTH_URL:-}
+  RUNSTEN_POLESTAR_BASE_URL: ${RUNSTEN_POLESTAR_BASE_URL:-}
   RUNSTEN_LOG_LEVEL: ${RUNSTEN_LOG_LEVEL:-}
   # false: the MQTT brokers set in the settings must be on the Internet, over TLS.
   RUNSTEN_MQTT_PRIVATE_BROKERS: ${RUNSTEN_MQTT_PRIVATE_BROKERS:-}

@@ -14,7 +14,7 @@ docker compose exec -T postgres pg_dump -U postgres --format=custom runsten > ru
 
 Schedule it with the host's cron or the NAS scheduler, and copy the dumps off the server. They contain VINs and locations: protect them.
 
-The tokens in them are encrypted with `RUNSTEN_TOKEN_KEY`: a dump restored without the key keeps all the data but loses the Volvo connection, which is then connected again.
+The tokens in them are encrypted with `RUNSTEN_TOKEN_KEY`: a dump restored without the key keeps all the data but loses the Volvo connection and the Polestar credentials, which are then connected and given again.
 
 ## Restore
 

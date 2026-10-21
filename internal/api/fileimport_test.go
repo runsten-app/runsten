@@ -136,6 +136,14 @@ func TestImportVolvoDataPortal(t *testing.T) {
 		t.Errorf("another account's vehicle: %d %s", resp.status, out)
 	}
 
+	// A Polestar has no history at the Volvo Data Portal: nothing is read of the files.
+	e.files.trips = ""
+	resp, out = do(t, noFollow(), http.MethodPost, e.api.URL+"/api/v1/vehicles/"+shared+"/imports/volvo_data_portal", ct, body, c)
+	if resp.status != http.StatusConflict || e.files.trips != "" {
+		t.Errorf("a Polestar: %d %s, files read %q", resp.status, out, e.files.trips)
+	}
+	wantError(t, out, codeNotVolvo)
+
 	e.files.err = errors.New("boom")
 	if resp, out := do(t, noFollow(), http.MethodPost, url, ct, body, c); resp.status != http.StatusInternalServerError {
 		t.Errorf("failing: %d %s", resp.status, out)

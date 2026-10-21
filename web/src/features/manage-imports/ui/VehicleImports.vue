@@ -9,11 +9,10 @@ import { useDeleteImport, useImports } from '../composables/useImports'
 import AximoteImport from './AximoteImport.vue'
 import VolvoDataPortalImport from './VolvoDataPortalImport.vue'
 
-// VehicleImports imports a vehicle's history from Aximote or from the files of the
-// Volvo Data Portal, then lists the trips and
-// charges imported into it from other applications, by source, and deletes one
-// source's: what Runsten derived stays.
-const props = defineProps<{ vehicle: string }>()
+// VehicleImports imports a vehicle's history from Aximote or, for a Volvo, from the files
+// of the Volvo Data Portal, then lists the trips and charges imported into it from other
+// applications, by source, and deletes one source's: what Runsten derived stays.
+const props = withDefaults(defineProps<{ vehicle: string; volvo?: boolean }>(), { volvo: true })
 const { t } = useI18n()
 const f = useFormat()
 const { imports, error } = useImports(() => props.vehicle)
@@ -70,7 +69,7 @@ async function confirm() {
     <h2 :id="titleId" class="text-title-large mb-2" tabindex="-1">{{ t('imports.title') }}</h2>
     <p class="text-body-medium mb-4">{{ t('imports.help') }}</p>
     <AximoteImport :vehicle />
-    <VolvoDataPortalImport :vehicle />
+    <VolvoDataPortalImport v-if="volvo" :vehicle />
     <h3 class="text-title-medium mb-2">{{ t('imports.listTitle') }}</h3>
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">
       {{ t('imports.error') }}

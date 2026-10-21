@@ -25,9 +25,10 @@ const (
 // credentialOf is the credential t reads with, as set at a time.
 func credentialOf(t Target) keyID { return keyID{connection: t.ConnectionID, setAt: t.CredentialSetAt} }
 
-// credentialBlocked reports whether the provider refused t's credential.
+// credentialBlocked reports whether t's connection has no credential that reads: the
+// user removed it, or the provider refused it.
 func (c *Collector) credentialBlocked(t Target) bool {
-	return t.CredentialRefused || c.credentialRefused[credentialOf(t)]
+	return t.CredentialSetAt.IsZero() || t.CredentialRefused || c.credentialRefused[credentialOf(t)]
 }
 
 // pollSource polls the due endpoints of t through src, with its connection's credential,
@@ -36,6 +37,9 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 	switch {
 	case src == nil:
 		c.logOnce(t, "no source reads the connection's provider: its vehicles are not polled", "provider", t.Provider)
+		return false
+	case t.CredentialSetAt.IsZero():
+		c.logOnce(t, "no credential: its vehicles are not polled until the user sets one")
 		return false
 	case c.credentialBlocked(t):
 		c.logOnce(t, "credential refused: its vehicles are not polled until the user sets another")

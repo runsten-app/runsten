@@ -34,3 +34,36 @@ test('Connection: the Volvo ID and how each vehicle is read, and the way back', 
   await page.getByRole('link', { name: 'Back to the vehicle' }).click()
   await expect(page).toHaveURL(vehicle)
 })
+
+// The Polestar credential is checked against the simulator's Data Portal before it is
+// stored. The scenario of the stack has no Polestar: the development credential reads no
+// vehicle, and nothing is stored, whichever project runs first.
+test('Connection: a Polestar credential is checked before it is stored', async ({
+  page,
+}, testInfo) => {
+  await signIn(page)
+  await page.goto('/connection')
+  const polestar = page.getByRole('region', { name: 'Polestar' })
+  await expect(polestar.getByRole('link', { name: /data-portal\.polestar\.com/ })).toHaveAttribute(
+    'href',
+    'https://data-portal.polestar.com/',
+  )
+  const fill = async (secret: string) => {
+    await polestar.getByLabel('Client ID', { exact: true }).fill('runsten-dev')
+    await polestar.getByLabel('Client secret', { exact: true }).fill(secret)
+    await polestar
+      .getByLabel('Account ID', { exact: true })
+      .fill('5e1ad0c3-7a2b-4c1d-9e8f-0123456789ab')
+    await polestar.getByRole('button', { name: 'Save the credential' }).click()
+  }
+
+  await fill('not-the-secret')
+  const summary = polestar.locator('.error-summary')
+  await expect(summary).toBeFocused()
+  await expect(summary).toContainText('Polestar refused this credential')
+
+  await fill('runsten-dev-secret')
+  await expect(summary).toContainText('This credential reads no vehicle')
+  await checkView(page, testInfo, 'connection-polestar')
+  await expect(polestar.getByText('Client ID ending in')).toHaveCount(0)
+})

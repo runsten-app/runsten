@@ -19,6 +19,7 @@
     "text": "Using Runsten",
     "items": [
       { "text": "The web interface", "link": "/docs/guide/" },
+      { "text": "Your Polestar (beta)", "link": "/docs/guide/polestar" },
       { "text": "Trips and charges", "link": "/docs/guide/trips-and-charges" },
       { "text": "Importing your history", "link": "/docs/guide/importing" },
       { "text": "Statistics", "link": "/docs/guide/statistics" },

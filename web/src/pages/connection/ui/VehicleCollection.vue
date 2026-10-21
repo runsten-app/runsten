@@ -3,10 +3,12 @@ import {
   mdiAccountAlert,
   mdiAlertCircle,
   mdiCheckCircle,
+  mdiCheckCircleOutline,
   mdiClockOutline,
   mdiEarthOff,
   mdiGaugeFull,
   mdiKeyAlert,
+  mdiLinkOff,
   mdiMinusCircle,
   mdiPauseCircle,
 } from '@mdi/js'
@@ -31,6 +33,9 @@ const looks: Record<CollectionState['kind'], { icon: string; color: string }> = 
   unread: { icon: mdiMinusCircle, color: 'info' },
   reauth: { icon: mdiAccountAlert, color: 'warning' },
   key: { icon: mdiKeyAlert, color: 'warning' },
+  credential: { icon: mdiKeyAlert, color: 'warning' },
+  unshared: { icon: mdiLinkOff, color: 'warning' },
+  notGranted: { icon: mdiCheckCircleOutline, color: 'warning' },
   waiting: { icon: mdiClockOutline, color: 'info' },
   stopped: { icon: mdiAlertCircle, color: 'error' },
   market: { icon: mdiEarthOff, color: 'warning' },
@@ -50,6 +55,8 @@ const nextRead = computed(() => {
   if (!next) {
     if (state.value.kind === 'key') return t('connection.facts.noneDueKey')
     if (state.value.kind === 'market') return t('connection.facts.noneDueMarket')
+    if (state.value.kind === 'credential') return t('connection.facts.noneDueCredential')
+    if (state.value.kind === 'unshared') return t('connection.facts.noneDueUnshared')
     return t('connection.facts.noneDue')
   }
   return Date.parse(next) <= props.now ? t('connection.facts.due') : f.dateTime(next, props.now)
@@ -59,7 +66,7 @@ const failure = computed(() => {
   if (!l) return null
   const where = [l.endpoint, l.status === null ? null : `HTTP ${l.status}`].filter(Boolean)
   return {
-    value: `${text.failure(l.kind)} · ${f.dateTime(l.at, props.now)}`,
+    value: `${text.failure(l.kind, props.vehicle.connection.provider)} · ${f.dateTime(l.at, props.now)}`,
     where: where.join(' · '),
   }
 })
@@ -71,7 +78,7 @@ const failure = computed(() => {
     <v-card-text>
       <p class="state d-flex align-center ga-2 text-body-large mb-4">
         <v-icon :icon="looks[state.kind].icon" :color="looks[state.kind].color" />
-        <span>{{ text.state(state, now) }}</span>
+        <span>{{ text.state(state, now, vehicle.connection.provider) }}</span>
       </p>
       <dl class="facts">
         <FactItem

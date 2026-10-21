@@ -1,8 +1,9 @@
 # Development stack: the simulator, runsten-api, the collector and the front end's dev
 # server (Vite, hot reload), each through its task, with PostgreSQL, the development user,
-# the simulated Volvo ID's connection, and an MQTT broker (Mosquitto) the collector
-# publishes to. `tilt up`, then http://localhost:10350; another
-# scenario: `tilt up -- --scenario=missed-trip` (errand,ex30: two vehicles), or `tilt args
+# the simulated Volvo ID's connection and Polestar credential, and an MQTT broker
+# (Mosquitto) the collector publishes to. `tilt up`, then http://localhost:10350; another
+# scenario: `tilt up -- --scenario=missed-trip` (errand,ex30: two vehicles; commute,polestar2:
+# a Volvo and a Polestar, read with the simulator's Polestar credential), or `tilt args
 # -- --scenario=ex30` while it runs. Ctrl-C stops them all (tilt down has nothing to remove);
 # PostgreSQL (task db-up) keeps its data, task db-down removes it. Needs curl, and ports
 # 8080, 8081, 8090, 5173 and 1883 free (not with task compose-sim running).
@@ -58,7 +59,7 @@ local_resource('dev-user', cmd=task + ' dev-user >/dev/null 2>&1 || echo "user a
                deps=['bin/tilt/sim-started'], resource_deps=['api'], labels=['backend'])
 
 local_resource('connect-sim', cmd=wait_for('http://127.0.0.1:8080/sim/status') + task + ' connect-sim >/dev/null'
-                   + ' || { echo "the simulated Volvo ID could not be connected"; exit 1; }',
+                   + ' || { echo "the simulated Volvo ID or Polestar credential could not be connected"; exit 1; }',
                deps=['bin/tilt/sim-started'], resource_deps=['sim', 'api', 'dev-user'], labels=['backend'])
 
 # Mosquitto, in a container removed when it stops; the user's broker is set to it once

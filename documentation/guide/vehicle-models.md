@@ -1,5 +1,5 @@
 ---
-description: "How Runsten recognizes the variant of your Volvo, choosing it, the onboard charger and the net battery capacity."
+description: "How Runsten recognizes the variant of your Volvo or Polestar, choosing it, the onboard charger and the net battery capacity."
 ---
 
 # Vehicle models
@@ -14,9 +14,11 @@ The variant is worked out from the details the Volvo API reports and the VIN; no
 
 When several variants fit, or none, the vehicle has no variant until you choose one: its energies rest on the capacity Volvo reports.
 
+A Polestar read through the Data Portal tells its model year (from its VIN), but neither its model nor its battery's capacity: several Polestar variants fit, and none is recognized. Choose yours: without a variant, its energies are unknown ([Your Polestar](./polestar.md#choose-its-variant)).
+
 ## Choosing
 
-In the vehicle's settings (the button by its name), choose the variant among those of its family, the candidates of the recognition first. Each shows its capacities and powers, and whether they come from the manufacturer or from public sources.
+In the vehicle's settings (the button by its name), choose the variant among those of its family (of its brand, for a Polestar of the Data Portal: the variant chosen sets its model), the candidates of the recognition first. Each shows its capacities and powers, and whether they come from the manufacturer or from public sources.
 
 The choice outranks the recognition; **Automatic recognition** goes back to it.
 

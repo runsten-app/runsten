@@ -1,8 +1,10 @@
 {
   "vehicle_id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a01",
   "connection": {
+    "provider": "volvo",
     "status": "active",
     "api_key": "instance",
+    "credential": null,
     "authorized_at": "2026-09-28T05:00:00Z",
     "refreshed_at": "2026-09-28T06:00:00Z",
     "reauth_at": null,

@@ -57,6 +57,9 @@ describe('HomePage', () => {
     // Relative to <base>: a full page load of runsten-api's flow, under any prefix.
     const link = wrapper.find('a[href="auth/volvo/start"]')
     expect(link.text()).toBe('Connect a Volvo ID')
+    // A Polestar's credential is given on the connection page.
+    expect(wrapper.find('a.polestar').attributes('href')).toBe('/connection')
+    expect(wrapper.find('a.polestar').text()).toBe('Give a Polestar credential')
     expect(router.currentRoute.value.name).toBe('home')
   })
 
@@ -67,6 +70,7 @@ describe('HomePage', () => {
       client_id: 'runsten-dev',
       instance_key: null,
       api_key: null,
+      polestar: null,
     })
     const { wrapper } = await home()
     expect(wrapper.text()).toContain('give it first, then connect your Volvo ID')

@@ -17,7 +17,7 @@ const props = withDefaults(
     reading: Reading | null
     value: string | null
     now: number
-    connection: Pick<Connection, 'status'>
+    connection: Pick<Connection, 'status'> & Partial<Pick<Connection, 'credential'>>
     staleAfter?: number
     size?: 'hero' | 'large' | 'small'
     tile?: Reading | null

@@ -6,6 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { limitsPage } from '@/entities/session'
 import { vehicleLabels } from '@/entities/vehicle'
 import { ApiKeyForm, useConnectionSettings } from '@/features/manage-api-key'
+import { PolestarForm } from '@/features/manage-polestar'
 import { useLimits } from '@/features/view-limits'
 import { useCollections } from '@/features/watch-collection'
 import { useFormat, useNow } from '@/shared/lib'
@@ -14,7 +15,8 @@ import { AppShell } from '@/widgets/app-shell'
 import VehicleCollection from './VehicleCollection.vue'
 
 // ConnectionPage is the hidden part: the Volvo ID that lets Runsten read, the application
-// key the vehicles are read with, and how the collector reads each vehicle. The other
+// key the vehicles are read with, the credential of Polestar's Data Portal, and how the
+// collector reads each vehicle. The other
 // pages only warn when nothing new is read; this one says why, and how to connect again.
 // The vehicle it was opened from, if any, is kept for the way back. The Volvo ID flow
 // comes back to it with its outcome (volvo=connected, key_refused, no_vehicle, which
@@ -67,8 +69,10 @@ const connectLabel = computed(() =>
   settings.value?.connected ? t('connection.volvoId.reconnect') : t('connection.volvoId.connect'),
 )
 const labels = computed(() => vehicleLabels(vehicles.value ?? []))
-// One Volvo ID per account: every vehicle carries the same connection.
-const connection = computed(() => vehicles.value?.[0]?.connection)
+// One Volvo ID per account: every Volvo carries the same connection.
+const connection = computed(
+  () => vehicles.value?.find((v) => v.connection.provider === 'volvo')?.connection,
+)
 const lost = computed(() => connection.value?.status === 'reauth_required')
 </script>
 
@@ -188,6 +192,13 @@ const lost = computed(() => connection.value?.status === 'reauth_required')
           </v-btn>
           <p class="text-body-medium mt-2">{{ t('connection.volvoId.reconnectHelp') }}</p>
         </template>
+      </section>
+
+      <section class="mb-8" aria-labelledby="connection-polestar-title">
+        <h2 id="connection-polestar-title" class="text-title-large mb-3">
+          {{ t('connection.polestar.title') }}
+        </h2>
+        <PolestarForm :connection="settings" />
       </section>
 
       <section v-if="settings.instance_key" class="mb-8" aria-labelledby="connection-app-title">

@@ -25,6 +25,7 @@ The **Connection** page of the web interface tells what the collector did on its
 - **Quota**: the daily call volume of the application is used up; reading resumes when it is renewed. Trips and charges missed meanwhile are found afterwards, as reconstructed.
 - **Paused**: the API refused too many calls; the collector waits.
 - **Market not served**: the Volvo Cars API refuses the car, its market being one it does not serve ("Vehicle does not belong to allowed markets"). Nothing can be read of it: the collector marks it and no longer polls it. A new connection of the Volvo ID tries it again.
+- **Polestar credential refused**, **vehicle no longer shared**, **domain not granted**: the Data Portal refused the owner's credential (expired after its 90 days), no longer lets it read the car, or it lacks a domain ([Your Polestar](../guide/polestar.md#when-it-is-not-read)). The instance must reach `pc-api.polestar.com` over https.
 - **Collector stopped**: no pass for 15 minutes. Look at `docker compose logs collector`.
 
 ## Debug page

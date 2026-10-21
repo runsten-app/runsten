@@ -63,6 +63,9 @@
 //	                             address, no position leaves the instance). It is sent
 //	                             the positions outside the places, one per
 //	                             RUNSTEN_GEOCODER_INTERVAL (default 1s)
+//	RUNSTEN_POLESTAR_BASE_URL    Polestar Data Portal's M2M API, which checks a credential
+//	                             before it is stored (default
+//	                             https://pc-api.polestar.com/eu-north-1/data-portal/m2m)
 //	RUNSTEN_AXIMOTE_BASE_URL     Aximote's public API, which the imports of a vehicle's
 //	                             history read with the user's token (default
 //	                             https://api.aximote.com)
@@ -133,6 +136,7 @@ type config struct {
 	apiKey      string
 	baseURL     string
 	aximoteURL  string
+	polestarURL string
 	app         volvo.AuthConfig
 	appURL      string
 	addr        string
@@ -239,6 +243,8 @@ func run(args []string) error {
 		// A new application key is checked by listing the vehicles, with a token
 		// refreshed here if needed, under the same row lock as the collector's.
 		Tokens:           oauth.NewManager(st, authorizer, clock.Real{}, oauth.DefaultParams(), log),
+		Polestar:         st,
+		PolestarVehicles: polestarVehicles{polestar.NewClient(cfg.polestarURL, hc)},
 		InstanceKey:      cfg.apiKey != "",
 		InstanceKeyLast4: cfg.apiKey[max(0, len(cfg.apiKey)-4):],
 		ClientID:         cfg.app.ClientID,
@@ -398,11 +404,12 @@ func readPassword(r io.Reader) (string, error) {
 
 func loadConfig(getenv func(string) string) (config, error) {
 	cfg := config{
-		baseURL:    volvo.DefaultBaseURL,
-		aximoteURL: aximote.DefaultBaseURL,
-		app:        volvo.AuthConfig{BaseURL: volvo.DefaultAuthURL, Scopes: volvo.DefaultScopes()},
-		addr:       defaultAddr,
-		logLevel:   slog.LevelInfo,
+		baseURL:     volvo.DefaultBaseURL,
+		aximoteURL:  aximote.DefaultBaseURL,
+		polestarURL: polestar.DefaultBaseURL,
+		app:         volvo.AuthConfig{BaseURL: volvo.DefaultAuthURL, Scopes: volvo.DefaultScopes()},
+		addr:        defaultAddr,
+		logLevel:    slog.LevelInfo,
 		// Self-hosting publishes to a broker on its own network.
 		privateBrokers: true,
 	}
@@ -426,6 +433,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 	}
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.app.BaseURL, "RUNSTEN_AXIMOTE_BASE_URL": &cfg.aximoteURL,
+		"RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL,
 	} {
 		if v := getenv(name); v != "" {
 			if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
@@ -526,6 +534,18 @@ func (i fileImports) ImportVolvoDataPortal(ctx context.Context, accountID, vehic
 		return api.FileImport{}, err //nolint:wrapcheck // the importer's, with its context
 	}
 	return api.FileImport{Imported: rep.Saved, Skipped: rep.Skipped, Invalid: rep.Invalid, Cutoff: rep.Cutoff}, nil
+}
+
+// polestarVehicles lists the vehicles of a Polestar credential for the API: a token, then
+// the VINs.
+type polestarVehicles struct{ c *polestar.Client }
+
+func (p polestarVehicles) PolestarVehicles(ctx context.Context, cred api.PolestarCredential) ([]string, error) {
+	tok, err := p.c.Token(ctx, polestar.Credential(cred))
+	if err != nil {
+		return nil, err //nolint:wrapcheck // the client's, with its context
+	}
+	return p.c.Vehicles(ctx, tok.Value, cred.AccountID) //nolint:wrapcheck // the client's, with its context
 }
 
 // aximoteVehicles lists an Aximote account's vehicles for the API.

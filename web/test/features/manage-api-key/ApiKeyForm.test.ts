@@ -20,6 +20,7 @@ const hosted: ConnectionSettings = {
   client_id: 'runsten-dev',
   instance_key: null,
   api_key: null,
+  polestar: null,
 }
 const withKey = connection as ConnectionSettings
 let wrapper: VueWrapper | undefined

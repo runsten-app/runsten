@@ -66,10 +66,11 @@ type instanceKeyJSON struct {
 }
 
 type connectionSettingsJSON struct {
-	Connected   bool                  `json:"connected" doc:"A Volvo ID is connected to the account."`
-	ClientID    string                `json:"client_id" doc:"The client ID of the instance's Volvo application (RUNSTEN_VOLVO_CLIENT_ID): the Volvo IDs connect through it, and its secret, never returned, refreshes the tokens."`
-	InstanceKey null[instanceKeyJSON] `json:"instance_key" doc:"The instance's own application key, which reads every vehicle: an account may not give one. null: none, the account's key is required, before connecting a Volvo ID."`
-	APIKey      null[apiKeyJSON]      `json:"api_key" doc:"The account's own application key; null: none. Not used while instance_key is true."`
+	Connected   bool                         `json:"connected" doc:"A Volvo ID is connected to the account."`
+	ClientID    string                       `json:"client_id" doc:"The client ID of the instance's Volvo application (RUNSTEN_VOLVO_CLIENT_ID): the Volvo IDs connect through it, and its secret, never returned, refreshes the tokens."`
+	InstanceKey null[instanceKeyJSON]        `json:"instance_key" doc:"The instance's own application key, which reads every vehicle: an account may not give one. null: none, the account's key is required, before connecting a Volvo ID."`
+	APIKey      null[apiKeyJSON]             `json:"api_key" doc:"The account's own application key; null: none. Not used while instance_key is true."`
+	Polestar    null[polestarCredentialJSON] `json:"polestar" doc:"The account's credential of Polestar's Data Portal, which reads its Polestar vehicles; null: none."`
 }
 
 type apiKeyUpdateJSON struct {
@@ -98,6 +99,11 @@ func (s *Server) connectionSettings(ctx context.Context, account string) (connec
 	if !c.Key.SetAt.IsZero() {
 		out.APIKey = known(apiKeyJSON{Last4: c.Key.Last4, SetAt: c.Key.SetAt, RefusedAt: timeOrNil(c.Key.RefusedAt)})
 	}
+	p, err := s.Polestar.PolestarConnection(ctx, account)
+	if err != nil {
+		return connectionSettingsJSON{}, s.internal("Polestar connection not read", err)
+	}
+	out.Polestar = polestarOf(p)
 	return out, nil
 }
 
@@ -169,8 +175,8 @@ func (s *Server) deleteAPIKey(ctx context.Context, _ *struct{}) (*struct{}, erro
 func (s *Server) registerConnection(api huma.API) {
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "getConnection", Method: http.MethodGet, Path: "/connection", Tags: []string{"connection"},
-		Summary:     "The account's connection to Volvo",
-		Description: "Whether a Volvo ID is connected, and the application key its vehicles are read with.",
+		Summary:     "The account's connections to Volvo and Polestar",
+		Description: "Whether a Volvo ID is connected, the application key its vehicles are read with, and the credential of Polestar's Data Portal.",
 	}, "The connection.", map[int]string{http.StatusUnauthorized: errUnauthorized, http.StatusInternalServerError: errInternal}),
 		s.getConnection)
 	huma.Register(api, s.operation(huma.Operation{

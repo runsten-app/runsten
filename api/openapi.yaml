@@ -859,20 +859,37 @@ components:
       additionalProperties: false
       properties:
         api_key:
-          description: "The application key the vehicle is read with: instance, the instance's, which reads every vehicle when the instance has one; own, the account's. refused: the account's, refused by Volvo; missing: none, the instance has none either. Neither refused nor missing is read, until the user gives a key (PUT /connection/api-key)."
-          enum:
-            - instance
-            - own
-            - refused
-            - missing
-          type: string
+          description: "The application key the vehicle is read with: instance, the instance's, which reads every vehicle when the instance has one; own, the account's. refused: the account's, refused by Volvo; missing: none, the instance has none either. Neither refused nor missing is read, until the user gives a key (PUT /connection/api-key). null for a Polestar connection, read with its own credential."
+          oneOf:
+            - enum:
+                - instance
+                - own
+                - refused
+                - missing
+              type: string
+            - type: "null"
         authorized_at:
-          description: When the user authorized the connection; null for a token pasted by hand.
+          description: When the user authorized the connection; null for a token pasted by hand, or a Polestar connection.
           format: date-time
           pattern: Z$
           type:
             - string
             - "null"
+        credential:
+          description: "The Polestar connection's credential: set; refused by the Data Portal (expired after its 90 days, or deleted there); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar). null for a Volvo connection."
+          oneOf:
+            - enum:
+                - set
+                - refused
+                - missing
+              type: string
+            - type: "null"
+        provider:
+          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal."
+          enum:
+            - volvo
+            - polestar
+          type: string
         reauth_at:
           description: When the grant was found lost; null while active.
           format: date-time
@@ -886,21 +903,23 @@ components:
             - string
             - "null"
         refreshed_at:
-          description: "When the current refresh token was issued: the collector renews an idle one daily, before it lapses. null without one (a token pasted by hand)."
+          description: "When the current refresh token was issued: the collector renews an idle one daily, before it lapses. null without one (a token pasted by hand, or a Polestar connection)."
           format: date-time
           pattern: Z$
           type:
             - string
             - "null"
         status:
-          description: "reauth_required once the grant is lost: the vehicle is no longer read until the user connects the Volvo ID again."
+          description: "reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. Always active for a Polestar connection: credential tells its state."
           enum:
             - active
             - reauth_required
           type: string
       required:
+        - provider
         - status
         - api_key
+        - credential
         - authorized_at
         - refreshed_at
         - reauth_at
@@ -925,11 +944,17 @@ components:
           oneOf:
             - $ref: "#/components/schemas/InstanceKey"
             - type: "null"
+        polestar:
+          description: "The account's credential of Polestar's Data Portal, which reads its Polestar vehicles; null: none."
+          oneOf:
+            - $ref: "#/components/schemas/PolestarCredential"
+            - type: "null"
       required:
         - connected
         - client_id
         - instance_key
         - api_key
+        - polestar
       type: object
     Cost:
       additionalProperties: false
@@ -1207,6 +1232,9 @@ components:
             - charge_has_cost
             - imported_charge
             - api_key_refused
+            - credential_refused
+            - no_vehicle
+            - not_volvo
             - instance_key
             - too_many_vehicles
             - feature_unavailable
@@ -1291,7 +1319,7 @@ components:
             - string
             - "null"
         kind:
-          description: "quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). other: another refusal."
+          description: "quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). credential_refused: Polestar's Data Portal refused the connection's credential. unshared: the vehicle is no longer shared with the credential (unshared_at). not_granted: the credential was not granted the endpoint's domain, left out for a day. other: another refusal."
           enum:
             - quota
             - rate_limited
@@ -1301,6 +1329,9 @@ components:
             - token
             - key_refused
             - market
+            - credential_refused
+            - unshared
+            - not_granted
             - other
           type: string
         status:
@@ -1629,7 +1660,7 @@ components:
             - number
             - "null"
         family:
-          description: The model as the vendor names it (XC40, EX30), without its powertrain or battery; null until the vehicle's details are read.
+          description: "The model as the vendor names it (XC40, EX30), without its powertrain or battery; null until the vehicle's details are read. A source that tells the brand alone (Polestar's Data Portal) gives none: the family is then the variant's in effect, null without one."
           type:
             - string
             - "null"
@@ -1641,12 +1672,12 @@ components:
             - integer
             - "null"
         variant:
-          description: "The variant in effect, from Runsten's catalog: the one the user chose, else the one recognized, the only one that fits the family, model year, battery capacity and VIN the vendor reports. Its figures are the catalog's, from the manufacturer or else from public sources. null when none is chosen and none or several fit, for an unknown family, and for a vehicle that is not battery electric: hybrids are neither recognized nor offered."
+          description: "The variant in effect, from Runsten's catalog: the one the user chose, else the one recognized, the only one that fits the family, model year, battery capacity and VIN the vendor reports. Its figures are the catalog's, from the manufacturer or else from public sources. null when none is chosen and none or several fit, for an unknown family and brand, and for a vehicle that is not battery electric: hybrids are neither recognized nor offered."
           oneOf:
             - $ref: "#/components/schemas/Variant"
             - type: "null"
         variant_source:
-          description: "chosen: by the user (PUT /vehicles/{vehicle}/model); detected: recognized from the vehicle's details, recomputed on every read. A chosen variant the catalog no longer has, or of another family than the vehicle reports, is ignored: the recognition applies again. null without a variant."
+          description: "chosen: by the user (PUT /vehicles/{vehicle}/model); detected: recognized from the vehicle's details, recomputed on every read. A chosen variant the catalog no longer has, or of another family (brand) than the vehicle reports, is ignored: the recognition applies again. null without a variant."
           oneOf:
             - enum:
                 - detected
@@ -2268,6 +2299,61 @@ components:
         - cost
         - cost_unknown
         - cost_entered
+      type: object
+    PolestarCredential:
+      additionalProperties: false
+      properties:
+        expires_at:
+          description: "When it expires at the latest: the Data Portal's credentials read for 90 days after they are created (an assumption: according to the community), counted here from when it was given. The user creates another then."
+          format: date-time
+          pattern: Z$
+          type: string
+        last4:
+          description: "The last four characters of the credential's client ID, to tell it apart: the credential itself is never returned."
+          type: string
+        refused_at:
+          description: "When the Data Portal refused it (expired, or deleted on the portal): its vehicles are not read until another. null: not refused."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        set_at:
+          description: When it was given.
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - last4
+        - set_at
+        - expires_at
+        - refused_at
+      type: object
+    PolestarCredentialUpdate:
+      additionalProperties: false
+      properties:
+        account_id:
+          description: The Account ID the portal shows with it, which every call names.
+          maxLength: 256
+          minLength: 4
+          pattern: ^[!-~]+$
+          type: string
+        client_id:
+          description: The client ID of a credential created on Polestar's Data Portal.
+          maxLength: 256
+          minLength: 4
+          pattern: ^[!-~]+$
+          type: string
+        client_secret:
+          description: Its client secret. It is never returned.
+          maxLength: 512
+          minLength: 4
+          pattern: ^[!-~]+$
+          type: string
+      required:
+        - client_id
+        - client_secret
+        - account_id
       type: object
     Position:
       additionalProperties: false
@@ -3280,6 +3366,13 @@ components:
         model:
           $ref: "#/components/schemas/Model"
           description: What the vehicle is, from its latest details.
+        unshared_at:
+          description: "When Polestar's Data Portal answered that the owner no longer shares the vehicle with the credential: it is no longer read. Giving a credential that lists it again reads it again. null: shared, or a Volvo."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
         vin:
           type: string
       required:
@@ -3288,6 +3381,7 @@ components:
         - model
         - connection
         - market_refused_at
+        - unshared_at
         - collection
       type: object
     VehicleList:
@@ -3311,7 +3405,7 @@ components:
             - number
             - "null"
         variant_id:
-          description: "The ID of a variant of the vehicle's family, from GET /vehicles/{vehicle}/variants: it outranks the recognition. null to go back to the recognition."
+          description: "The ID of a variant of the vehicle's family (of its brand, when the vendor tells no family), from GET /vehicles/{vehicle}/variants: it outranks the recognition. null to go back to the recognition."
           minLength: 1
           type:
             - string
@@ -3611,7 +3705,7 @@ paths:
         - costs
   /connection:
     get:
-      description: Whether a Volvo ID is connected, and the application key its vehicles are read with.
+      description: Whether a Volvo ID is connected, the application key its vehicles are read with, and the credential of Polestar's Data Portal.
       operationId: getConnection
       responses:
         "200":
@@ -3649,7 +3743,7 @@ paths:
         - session: []
         - sessionSecure: []
         - accessToken: []
-      summary: The account's connection to Volvo
+      summary: The account's connections to Volvo and Polestar
       tags:
         - connection
   /connection/api-key:
@@ -3739,6 +3833,101 @@ paths:
         - session: []
         - sessionSecure: []
       summary: Give the account's application key
+      tags:
+        - connection
+  /connection/polestar:
+    delete:
+      description: The credential is erased. The Polestar vehicles stay, with their history, and are no longer read until another credential is given.
+      operationId: deletePolestarCredential
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Remove the account's Polestar credential
+      tags:
+        - connection
+    put:
+      description: "A credential the owner created on Polestar's Data Portal reads their Polestar vehicles. It is checked first: a token is asked for with it and its vehicles are listed. A credential the portal refuses, or that reads no vehicle, is not stored; one it accepts replaces the previous one, and its vehicles are added to the account, unless they would be more than the instance lets an account have. The values travel in the body only, and are never returned."
+      operationId: putPolestarCredential
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolestarCredentialUpdate"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionSettings"
+          description: The connection.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `credential_refused`: the Data Portal refused the credential."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`no_vehicle`: the credential reads no vehicle, none being shared with it on the portal. `too_many_vehicles`: the account would have more vehicles than the instance lets it have. The credential is not stored."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: the Data Portal did not answer; the credential is not stored."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Give the account's Polestar credential
       tags:
         - connection
   /mqtt:
@@ -5459,6 +5648,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
           description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_volvo`: the vehicle is a Polestar, read through Polestar's Data Portal; nothing is imported."
         "415":
           content:
             application/json:
@@ -5561,7 +5756,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. Also: a `variant_id` the catalog does not have, or of another family than the vehicle's; an `ac_max_kw` that is not a charger of the variant in effect after the write, or without one."
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. Also: a `variant_id` the catalog does not have, or of another family than the vehicle's (another brand, when the vendor tells no family); an `ac_max_kw` that is not a charger of the variant in effect after the write, or without one."
         "401":
           content:
             application/json:
@@ -6180,7 +6375,7 @@ paths:
         - events
   /vehicles/{vehicle}/variants:
     get:
-      description: "The variants of the catalog of the family the vehicle reports: the candidates of the recognition first, then the rest of the family, whatever the model years. Empty until the details are read, for a family the catalog does not have, and for a vehicle that is not battery electric."
+      description: "The variants of the catalog of the family the vehicle reports: the candidates of the recognition first, then the rest of the family, whatever the model years. A vehicle whose vendor tells its brand but not its family (Polestar's Data Portal) is offered the brand's variants, and the one chosen sets its family. Empty until the details are read, for a family the catalog does not have, and for a vehicle that is not battery electric."
       operationId: listVariants
       parameters:
         - description: The vehicle ID.

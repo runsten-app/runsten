@@ -219,6 +219,17 @@ describe('VehicleState', () => {
     )
   })
 
+  it("tells the car's latest measure once it is older than half an hour", async () => {
+    let w = await mounted(state)
+    expect(w.find('.reported').exists()).toBe(false)
+    w.unmount()
+    vi.setSystemTime(Date.parse('2026-09-28T19:32:01Z'))
+    w = await mounted(state)
+    // The latest of the car's own times: the battery's, though the odometer's is older.
+    expect(w.find('.reported').text()).toBe('The car last measured 19:02')
+    expect(w.find('.reported').attributes('datetime')).toBe('2026-09-28T19:02:00Z')
+  })
+
   it('keeps the state whole when the battery cannot be read', async () => {
     getBattery.mockRejectedValue(new ApiError(502, 'unavailable', ''))
     const w = await mounted(state)

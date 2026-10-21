@@ -215,6 +215,17 @@ func (c *Catalog) Variant(id string) (Variant, bool) {
 	return c.variants[i], true
 }
 
+// Brand lists the variants of a brand, every family and year, in the order of the file.
+func (c *Catalog) Brand(brand Brand) []Variant {
+	var vs []Variant
+	for _, v := range c.variants {
+		if v.Brand == brand {
+			vs = append(vs, v)
+		}
+	}
+	return vs
+}
+
 // Family lists the variants of a family, every year, in the order of the file.
 func (c *Catalog) Family(family string) []Variant {
 	var vs []Variant
