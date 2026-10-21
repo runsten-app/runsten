@@ -130,7 +130,7 @@ describe('ApiKeyForm', () => {
     await type(key)
     await submit()
     expect(summary()).toEqual([
-      'Your Volvo ID gives access to more vehicles than your account may have: the key was not saved.',
+      "With your Volvo ID's vehicles, your account would have more vehicles than it may: the key was not saved.",
     ])
   })
 

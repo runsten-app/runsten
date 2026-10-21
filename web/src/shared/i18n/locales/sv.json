@@ -886,7 +886,7 @@
       "connected": "Volvo ID anslutet: insamlaren läser dina fordon från sitt nästa varv.",
       "keyRefused": "Ditt Volvo ID är anslutet, men Volvo avvisade din nyckel: rätta den nedan, fordonen listas då, utan att du ansluter igen.",
       "noVehicle": "Ditt Volvo ID har inget fordon: det anslöts inte. Lägg till din bil i detta Volvo ID i Volvo Cars-appen och klicka sedan på ”{button}” igen.",
-      "tooManyVehicles": "Ditt Volvo ID ger åtkomst till fler fordon än ditt konto tillåter: det anslöts inte."
+      "tooManyVehicles": "Med ditt Volvo ID:s fordon skulle ditt konto få fler fordon än det tillåter: det anslöts inte."
     },
     "volvoId": {
       "title": "Volvo ID",
@@ -1044,7 +1044,7 @@
       "characters": "En nyckel har bara bokstäver, siffror och tecken: kopiera den igen.",
       "tooShort": "En nyckel har minst {min} tecken: kopiera hela.",
       "tooLong": "En nyckel har högst {max} tecken: kopiera bara den.",
-      "tooManyVehicles": "Ditt Volvo ID ger åtkomst till fler fordon än ditt konto tillåter: nyckeln sparades inte.",
+      "tooManyVehicles": "Med ditt Volvo ID:s fordon skulle ditt konto få fler fordon än det tillåter: nyckeln sparades inte.",
       "refused": "Volvo avvisade nyckeln: kontrollera att det är din applikations primära nyckel.",
       "invalidBody": "Nyckeln avvisades: kopiera den igen.",
       "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",

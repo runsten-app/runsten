@@ -342,27 +342,44 @@ func (twoVehicles) Vehicles(context.Context, string, string) ([]string, error) {
 	return []string{"VIN1", "VIN2"}, nil
 }
 
-// TestTooManyVehicles: a Volvo ID that gives access to more vehicles than the cap is not
-// connected, and the Connection page tells why.
+// TestTooManyVehicles: a Volvo ID that would take the account over the cap is not
+// connected, and the Connection page tells why. The account's Polestar counts; a vehicle
+// it has already does not count twice.
 func TestTooManyVehicles(t *testing.T) {
-	clk := clock.NewManual(t0)
-	flows := oauth.NewFlows(clk, time.Minute, 1)
-	st := &enrollStore{}
-	sessions := newFakeSessions(clk)
-	token, _, _ := sessions.Login(context.Background(), "admin", password, "test")
-	s := New(Config{
-		Sessions: sessions, Authorizer: &fakeAuthorizer{}, Flows: flows, Enrollment: st, Vehicles: twoVehicles{},
-		Keys: st, Tokens: st, InstanceKey: true, MaxVehicles: 1,
-		Clock: clk, Log: quiet,
-	})
-	state, _, _ := flows.Start(account)
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/auth/volvo/callback?code=c&state="+state, http.NoBody)
-	req.AddCookie(reqCookie(stateCookie, state))
-	req.AddCookie(reqCookie("runsten_session", token))
-	s.ServeHTTP(rec, req)
-	if rec.Code != http.StatusSeeOther || !strings.HasSuffix(rec.Header().Get("Location"), "connection?volvo="+outcomeTooManyVehicles) ||
-		st.count() != 0 || len(st.vehicles) != 0 {
-		t.Errorf("status %d, Location %q, %d saved, vehicles %v", rec.Code, rec.Header().Get("Location"), st.count(), st.vehicles)
+	polestar := Vehicle{ID: car, VIN: "LPSVSEDEEML000001", Provider: "polestar"}
+	again := Vehicle{ID: car, VIN: "VIN1", Provider: "volvo"}
+	for name, tt := range map[string]struct {
+		max     int
+		others  []Vehicle
+		refused bool
+	}{
+		"its own":         {max: 1, refused: true},
+		"with a Polestar": {max: 2, others: []Vehicle{polestar}, refused: true},
+		"again":           {max: 2, others: []Vehicle{again}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			clk := clock.NewManual(t0)
+			flows := oauth.NewFlows(clk, time.Minute, 1)
+			st := &enrollStore{}
+			sessions := newFakeSessions(clk)
+			token, _, _ := sessions.Login(context.Background(), "admin", password, "test")
+			reader := newMemReader(nil)
+			reader.vehicles[account] = tt.others
+			s := New(Config{
+				Sessions: sessions, Authorizer: &fakeAuthorizer{}, Flows: flows, Enrollment: st, Vehicles: twoVehicles{},
+				Keys: st, Tokens: st, Reader: reader, InstanceKey: true, MaxVehicles: tt.max,
+				Clock: clk, Log: quiet,
+			})
+			state, _, _ := flows.Start(account)
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/auth/volvo/callback?code=c&state="+state, http.NoBody)
+			req.AddCookie(reqCookie(stateCookie, state))
+			req.AddCookie(reqCookie("runsten_session", token))
+			s.ServeHTTP(rec, req)
+			refused := strings.HasSuffix(rec.Header().Get("Location"), "connection?volvo="+outcomeTooManyVehicles)
+			if rec.Code != http.StatusSeeOther || refused != tt.refused || refused != (len(st.vehicles) == 0) {
+				t.Errorf("status %d, Location %q, %d saved, vehicles %v", rec.Code, rec.Header().Get("Location"), st.count(), st.vehicles)
+			}
+		})
 	}
 }

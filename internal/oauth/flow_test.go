@@ -124,7 +124,7 @@ func (refusedKey) KeyRefused() bool { return true }
 func TestEnroll(t *testing.T) {
 	creds := Credentials{AccessToken: "a", RefreshToken: "r"}
 	st := &enrollStore{}
-	vins, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1", "VIN2"}}, "acc", APIKey{}, creds, 0)
+	vins, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1", "VIN2"}}, "acc", APIKey{}, creds, Cap{})
 	if err != nil || len(vins) != 2 || st.creds != creds || len(st.vehicles) != 2 || st.refused != nil {
 		t.Fatalf("Enroll = %v, %v; store %+v", vins, err, st)
 	}
@@ -141,7 +141,7 @@ func TestEnroll(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			st := &enrollStore{failAt: tt.failAt}
-			if _, err := Enroll(context.Background(), st, tt.lister, "acc", APIKey{}, tt.creds, 0); err == nil {
+			if _, err := Enroll(context.Background(), st, tt.lister, "acc", APIKey{}, tt.creds, Cap{}); err == nil {
 				t.Error("error expected")
 			}
 			if tt.failAt == "" && st.creds.AccessToken != "" {
@@ -154,23 +154,33 @@ func TestEnroll(t *testing.T) {
 // TestEnrollNoVehicle: credentials that give access to no vehicle store nothing.
 func TestEnrollNoVehicle(t *testing.T) {
 	st := &enrollStore{}
-	if _, err := Enroll(context.Background(), st, lister{}, "acc", APIKey{}, Credentials{AccessToken: "a"}, 0); !errors.Is(err, ErrNoVehicle) ||
+	if _, err := Enroll(context.Background(), st, lister{}, "acc", APIKey{}, Credentials{AccessToken: "a"}, Cap{}); !errors.Is(err, ErrNoVehicle) ||
 		st.creds.AccessToken != "" || len(st.vehicles) != 0 {
 		t.Errorf("no vehicle: %v; store %+v", err, st)
 	}
 }
 
 // TestEnrollCapped: more vehicles than the cap store nothing; as many are enrolled.
+// The account's other vehicles count, once each.
 func TestEnrollCapped(t *testing.T) {
 	creds := Credentials{AccessToken: "a", RefreshToken: "r"}
 	st := &enrollStore{}
-	if _, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1", "VIN2", "VIN3"}}, "acc", APIKey{}, creds, 2); !errors.Is(err, ErrTooManyVehicles) ||
+	if _, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1", "VIN2", "VIN3"}}, "acc", APIKey{}, creds, Cap{Max: 2}); !errors.Is(err, ErrTooManyVehicles) ||
 		st.creds.AccessToken != "" || len(st.vehicles) != 0 {
 		t.Errorf("over the cap: %v; store %+v", err, st)
 	}
 	st = &enrollStore{}
-	if vins, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1", "VIN2"}}, "acc", APIKey{}, creds, 2); err != nil || len(vins) != 2 || len(st.vehicles) != 2 {
+	if vins, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1", "VIN2"}}, "acc", APIKey{}, creds, Cap{Max: 2}); err != nil || len(vins) != 2 || len(st.vehicles) != 2 {
 		t.Errorf("at the cap: %v, %v; store %+v", vins, err, st)
+	}
+	st = &enrollStore{}
+	if _, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1"}}, "acc", APIKey{}, creds, Cap{Max: 2, Others: []string{"PS1", "PS2"}}); !errors.Is(err, ErrTooManyVehicles) ||
+		len(st.vehicles) != 0 {
+		t.Errorf("over the cap with another provider's: %v; store %+v", err, st)
+	}
+	st = &enrollStore{}
+	if _, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1", "VIN2"}}, "acc", APIKey{}, creds, Cap{Max: 2, Others: []string{"VIN1"}}); err != nil {
+		t.Errorf("a vehicle the account has already counted twice: %v", err)
 	}
 }
 
@@ -184,7 +194,7 @@ func TestEnrollWithKey(t *testing.T) {
 
 	var used string
 	st := &enrollStore{}
-	if _, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1"}, key: &used}, "acc", key, creds, 0); err != nil {
+	if _, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1"}, key: &used}, "acc", key, creds, Cap{}); err != nil {
 		t.Fatal(err)
 	}
 	if used != "own-key" || st.refused[setAt] || len(st.vehicles) != 1 {
@@ -195,31 +205,31 @@ func TestEnrollWithKey(t *testing.T) {
 	}
 
 	st = &enrollStore{}
-	_, err := Enroll(context.Background(), st, lister{err: refusedKey{}}, "acc", key, creds, 0)
+	_, err := Enroll(context.Background(), st, lister{err: refusedKey{}}, "acc", key, creds, Cap{})
 	if !errors.Is(err, ErrKeyRefused) || !errors.Is(err, refusedKey{}) || st.creds != creds || !st.refused[setAt] || len(st.vehicles) != 0 {
 		t.Errorf("own key refused: %v (the provider's answer kept); store %+v", err, st)
 	}
 
 	// A key refused before, which lists no vehicle now: accepted again, nothing stored.
 	st = &enrollStore{refused: map[time.Time]bool{setAt: true}}
-	if _, err := Enroll(context.Background(), st, lister{}, "acc", key, creds, 0); !errors.Is(err, ErrNoVehicle) ||
+	if _, err := Enroll(context.Background(), st, lister{}, "acc", key, creds, Cap{}); !errors.Is(err, ErrNoVehicle) ||
 		st.refused[setAt] || st.creds.AccessToken != "" {
 		t.Errorf("own key, no vehicle: %v; store %+v", err, st)
 	}
 
 	st = &enrollStore{}
-	_, err = Enroll(context.Background(), st, lister{err: refusedKey{}}, "acc", APIKey{}, creds, 0)
+	_, err = Enroll(context.Background(), st, lister{err: refusedKey{}}, "acc", APIKey{}, creds, Cap{})
 	if err == nil || errors.Is(err, ErrKeyRefused) || st.creds.AccessToken != "" || st.refused != nil {
 		t.Errorf("instance key refused: %v; store %+v", err, st)
 	}
 
 	for _, failAt := range []string{"connection", "key"} {
 		st = &enrollStore{failAt: failAt}
-		if _, err := Enroll(context.Background(), st, lister{err: refusedKey{}}, "acc", key, creds, 0); err == nil || errors.Is(err, ErrKeyRefused) {
+		if _, err := Enroll(context.Background(), st, lister{err: refusedKey{}}, "acc", key, creds, Cap{}); err == nil || errors.Is(err, ErrKeyRefused) {
 			t.Errorf("%s fails: %v", failAt, err)
 		}
 		st = &enrollStore{failAt: failAt}
-		if _, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1"}}, "acc", key, creds, 0); err == nil {
+		if _, err := Enroll(context.Background(), st, lister{vins: []string{"VIN1"}}, "acc", key, creds, Cap{}); err == nil {
 			t.Errorf("%s fails after listing: no error", failAt)
 		}
 	}

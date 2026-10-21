@@ -3,9 +3,7 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
-	"slices"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -103,22 +101,12 @@ func (s *Server) putPolestar(ctx context.Context, in *polestarInput) (*body[conn
 	case len(vins) == 0:
 		return nil, apiError(http.StatusConflict, codeNoVehicle, "the credential reads no vehicle: share one with it on the Data Portal")
 	}
-	if s.MaxVehicles > 0 {
-		// The cap is the account's: its other vehicles count, those of the Volvo ID too.
-		vs, err := s.Reader.Vehicles(ctx, account)
-		if err != nil {
-			return nil, s.internal("vehicles not read", err)
-		}
-		all := slices.Clone(vins)
-		for _, v := range vs {
-			if !slices.Contains(all, v.VIN) {
-				all = append(all, v.VIN)
-			}
-		}
-		if len(all) > s.MaxVehicles {
-			return nil, apiError(http.StatusConflict, codeTooManyVehicles,
-				fmt.Sprintf("the account would have more than %d vehicles", s.MaxVehicles))
-		}
+	limit, err := s.vehicleCap(ctx, account)
+	if err != nil {
+		return nil, s.internal("vehicles not read", err)
+	}
+	if limit.Exceeded(vins) {
+		return nil, s.tooManyVehicles()
 	}
 	id, err := s.Polestar.SetPolestarCredential(ctx, account, cred, s.Clock.Now())
 	if err != nil {
