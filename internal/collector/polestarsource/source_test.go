@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -63,6 +64,12 @@ func TestLoginAndFetch(t *testing.T) {
 		if _, err := s.Fingerprint(raw); err != nil {
 			t.Fatal(err)
 		}
+		if u, err := s.Upload(ep.Endpoint, raw); err != nil || u.At.IsZero() || len(u.Fields) == 0 || slices.Contains(u.Fields, "vin") {
+			t.Errorf("%s: upload %+v, %v", ep.Endpoint, u, err)
+		}
+	}
+	if _, err := s.Upload(collector.Endpoint(polestar.Battery), []byte("{")); err == nil {
+		t.Error("upload of invalid JSON: no error")
 	}
 	// Parked at home: the engine stopped, no charge.
 	if a.Driving || a.Charges || a.Engine == "" || a.Charging == "" {

@@ -316,7 +316,9 @@ describe('ConnectionPage', () => {
         props: { outcome: 'too_many_vehicles' },
       })
       await flushPromises()
-      expect(w.find('.v-alert').text()).toContain('more vehicles than your account may have')
+      expect(w.find('.v-alert').text()).toContain(
+        'your account would have more vehicles than it may',
+      )
       const lift = w.find('.v-alert a.lift')
       expect(lift.exists() ? lift.attributes('href') : null).toBe(limitsPage)
     },

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -53,7 +55,7 @@ const (
 )
 
 // APIError is a non-200 response from the API. It holds neither the token nor the
-// credential.
+// credential, nor a VIN: the logs carry it.
 type APIError struct {
 	Endpoint string // token, vehicles, or the domain
 	Status   int
@@ -61,21 +63,54 @@ type APIError struct {
 	Message  string
 	Kind     Kind
 	RetryIn  time.Duration // for KindRateLimited
+	// Headers are the response's headers that tell about a limit or a refusal (see
+	// toldHeaders), as "Name=value" sorted by name: what a 401 or a 429 of the real API
+	// comes with is not known yet.
+	Headers []string
 }
 
 func (e *APIError) Error() string {
+	msg := fmt.Sprintf("%s: HTTP %d: %s", e.Endpoint, e.Status, e.Message)
 	if e.Code != "" {
-		return fmt.Sprintf("%s: HTTP %d %s: %s", e.Endpoint, e.Status, e.Code, e.Message)
+		msg = fmt.Sprintf("%s: HTTP %d %s: %s", e.Endpoint, e.Status, e.Code, e.Message)
 	}
-	return fmt.Sprintf("%s: HTTP %d: %s", e.Endpoint, e.Status, e.Message)
+	if len(e.Headers) > 0 {
+		msg += " [" + strings.Join(e.Headers, " ") + "]"
+	}
+	return msg
 }
+
+// toldHeaders reports whether a header tells about a limit or a refusal: Retry-After,
+// the rate limit headers of any convention, and the gateway's error type (AWS).
+func toldHeaders(name string) bool {
+	n := strings.ToLower(name)
+	return n == "retry-after" || n == "x-amzn-errortype" || strings.Contains(n, "ratelimit") || strings.Contains(n, "rate-limit")
+}
+
+func headersOf(h http.Header) []string {
+	var out []string
+	for name, vs := range h {
+		if toldHeaders(name) && len(vs) > 0 {
+			out = append(out, name+"="+maskVINs(vs[0]))
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
+// vinPattern is a VIN: 17 characters, without I, O nor Q (ISO 3779).
+var vinPattern = regexp.MustCompile(`\b[A-HJ-NPR-Z0-9]{17}\b`)
+
+// maskVINs hides the VINs a message of the API may name ("VIN … is not authorized"):
+// the message goes to the logs.
+func maskVINs(s string) string { return vinPattern.ReplaceAllString(s, "[VIN]") }
 
 // CredentialRefused reports whether the Data Portal refused the credential itself: only
 // a new one reads.
 func (e *APIError) CredentialRefused() bool { return e.Kind == KindCredentialRefused }
 
 func newAPIError(endpoint string, k call, resp *http.Response, body []byte) *APIError {
-	e := &APIError{Endpoint: endpoint, Status: resp.StatusCode}
+	e := &APIError{Endpoint: endpoint, Status: resp.StatusCode, Headers: headersOf(resp.Header)}
 	e.Code, e.Message = errorBody(body)
 	switch {
 	case resp.StatusCode == http.StatusTooManyRequests:
@@ -130,6 +165,7 @@ func errorBody(body []byte) (code, message string) {
 	if message == "" {
 		message = strings.TrimSpace(string(body))
 	}
+	message = maskVINs(message)
 	const maxLen = 200
 	if len(message) > maxLen {
 		message = message[:maxLen]

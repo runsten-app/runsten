@@ -139,7 +139,13 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request, sess auth.Sess
 		s.fail(w, r, http.StatusConflict, "Volvo key required", noKeyMessage)
 		return
 	}
-	vins, err := oauth.Enroll(ctx, s.Enrollment, s.Vehicles, sess.AccountID, key, oauth.NewCredentials(g, at), s.MaxVehicles)
+	limit, err := s.vehicleCap(ctx, sess.AccountID)
+	if err != nil {
+		s.Log.Error("vehicles not read", "err", err)
+		s.fail(w, r, http.StatusInternalServerError, "Connection failed", "The connection could not be recorded: see the logs.")
+		return
+	}
+	vins, err := oauth.Enroll(ctx, s.Enrollment, s.Vehicles, sess.AccountID, key, oauth.NewCredentials(g, at), limit)
 	if errors.Is(err, oauth.ErrKeyRefused) {
 		// The grant is kept: a corrected key lists the vehicles, without a new consent.
 		s.Log.Warn("Volvo ID connected, application key refused", "account", sess.AccountID, "err", err)

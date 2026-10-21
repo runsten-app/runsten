@@ -91,6 +91,15 @@ func (Source) Fingerprint(raw []byte) ([]byte, error) {
 	return polestar.Fingerprint(raw) //nolint:wrapcheck // polestar's, which says what failed
 }
 
+// Upload implements collector.Source.
+func (Source) Upload(_ collector.Endpoint, raw []byte) (collector.Upload, error) {
+	u, err := polestar.UploadOf(raw)
+	if err != nil {
+		return collector.Upload{}, err //nolint:wrapcheck // polestar's, which says what failed
+	}
+	return collector.Upload{At: u.At, ReceivedAt: u.ReceivedAt, ModelYear: u.ModelYear, Fields: u.Fields}, nil
+}
+
 // session reads with a token of a credential.
 type session struct {
 	client    *polestar.Client

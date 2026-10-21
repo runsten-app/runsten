@@ -144,9 +144,12 @@ func (s *Server) putAPIKey(ctx context.Context, in *apiKeyInput) (*body[connecti
 			s.Log.Warn("application key not checked", "err", err)
 		}
 	}
-	if s.MaxVehicles > 0 && len(vins) > s.MaxVehicles {
-		return nil, apiError(http.StatusConflict, codeTooManyVehicles,
-			fmt.Sprintf("the Volvo ID gives access to more than %d vehicles", s.MaxVehicles))
+	limit, err := s.vehicleCap(ctx, account)
+	if err != nil {
+		return nil, s.internal("vehicles not read", err)
+	}
+	if limit.Exceeded(vins) {
+		return nil, s.tooManyVehicles()
 	}
 	id, err := s.Keys.SetAPIKey(ctx, account, in.Body.Key, s.Clock.Now())
 	if err != nil {
@@ -161,6 +164,28 @@ func (s *Server) putAPIKey(ctx context.Context, in *apiKeyInput) (*body[connecti
 		return nil, err
 	}
 	return respond(out), nil
+}
+
+// vehicleCap is the account's cap on vehicles, with those it has already, of any
+// provider: a Volvo ID and a Polestar credential share it.
+func (s *Server) vehicleCap(ctx context.Context, account string) (oauth.Cap, error) {
+	limit := oauth.Cap{Max: s.MaxVehicles}
+	if limit.Max <= 0 {
+		return limit, nil
+	}
+	vs, err := s.Reader.Vehicles(ctx, account)
+	if err != nil {
+		return oauth.Cap{}, fmt.Errorf("vehicles: %w", err)
+	}
+	for _, v := range vs {
+		limit.Others = append(limit.Others, v.VIN)
+	}
+	return limit, nil
+}
+
+func (s *Server) tooManyVehicles() error {
+	return apiError(http.StatusConflict, codeTooManyVehicles,
+		fmt.Sprintf("the account would have more than %d vehicles", s.MaxVehicles))
 }
 
 func (s *Server) deleteAPIKey(ctx context.Context, _ *struct{}) (*struct{}, error) {
@@ -185,12 +210,12 @@ func (s *Server) registerConnection(api huma.API) {
 		Description: "Only on an instance without a key of its own (`instance_key` false). Volvo counts its quota of calls on " +
 			"the application of the key: with the account's own, its vehicles spend their own quota. With a Volvo ID connected, " +
 			"the vehicles are listed with the key first: a key Volvo refuses is not stored, one it accepts records them, unless " +
-			"they are more than the instance lets an account have. The tokens are left alone: no new consent.",
+			"the account would then have more vehicles, of any provider, than the instance lets it have. The tokens are left alone: no new consent.",
 		Middlewares: huma.Middlewares{s.requireJSON},
 	}, "The connection.", writeErrors(map[int]string{
 		http.StatusBadRequest: errBody + " `api_key_refused`: Volvo refused the key.",
 		http.StatusConflict: "`instance_key`: the instance has a key of its own, which reads every vehicle. " +
-			"`too_many_vehicles`: the Volvo ID gives access to more vehicles than the instance lets an account have; the key is not stored.",
+			"`too_many_vehicles`: with the vehicles of the Volvo ID, the account would have more than the instance lets it have; the key is not stored.",
 	})), s.putAPIKey)
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "deleteAPIKey", Method: http.MethodDelete, Path: "/connection/api-key", Tags: []string{"connection"},

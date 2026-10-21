@@ -1,6 +1,6 @@
 module runsten
 
-go 1.27.2
+go 1.27.3
 
 // npm packages may ship Go files (flatted does): keep them out of ./...
 ignore ./web/node_modules

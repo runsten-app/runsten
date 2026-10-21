@@ -204,4 +204,12 @@ func TestKeyTooManyVehicles(t *testing.T) {
 		t.Errorf("%d %s; key %q, vehicles %v", resp.status, body, e.store.key.Value, e.store.vehicles)
 	}
 	wantError(t, body, codeTooManyVehicles)
+	// The account's Polestar counts too.
+	e.server.MaxVehicles = 2
+	e.reader.vehicles[account] = []Vehicle{{ID: car, VIN: "LPSVSEDEEML000001", Provider: "polestar"}}
+	resp, body = do(t, b, http.MethodPut, u+"/api-key", jsonType, keyBody(otherKey))
+	if resp.status != http.StatusConflict || e.store.key.Value != goodKey || len(e.store.vehicles) != 1 {
+		t.Errorf("with a Polestar: %d %s; key %q, vehicles %v", resp.status, body, e.store.key.Value, e.store.vehicles)
+	}
+	wantError(t, body, codeTooManyVehicles)
 }

@@ -886,7 +886,7 @@
       "connected": "Volvo ID connected: the collector reads your vehicles from its next pass.",
       "keyRefused": "Your Volvo ID is connected, but Volvo refused your key: correct it below, the vehicles are listed then, without connecting again.",
       "noVehicle": "Your Volvo ID has no vehicle: it was not connected. Add your car to this Volvo ID in the Volvo Cars app, then click “{button}” again.",
-      "tooManyVehicles": "Your Volvo ID gives access to more vehicles than your account may have: it was not connected."
+      "tooManyVehicles": "With your Volvo ID's vehicles, your account would have more vehicles than it may: it was not connected."
     },
     "volvoId": {
       "title": "Volvo ID",
@@ -1044,7 +1044,7 @@
       "characters": "A key has only letters, digits and signs: copy it again.",
       "tooShort": "A key has at least {min} characters: copy it whole.",
       "tooLong": "A key has at most {max} characters: copy it alone.",
-      "tooManyVehicles": "Your Volvo ID gives access to more vehicles than your account may have: the key was not saved.",
+      "tooManyVehicles": "With your Volvo ID's vehicles, your account would have more vehicles than it may: the key was not saved.",
       "refused": "Volvo refused this key: check that it is the primary key of your application.",
       "invalidBody": "This key was refused: copy it again.",
       "unavailable": "Runsten could not be reached. Try again in a moment.",

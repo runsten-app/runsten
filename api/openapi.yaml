@@ -3778,7 +3778,7 @@ paths:
       tags:
         - connection
     put:
-      description: "Only on an instance without a key of its own (`instance_key` false). Volvo counts its quota of calls on the application of the key: with the account's own, its vehicles spend their own quota. With a Volvo ID connected, the vehicles are listed with the key first: a key Volvo refuses is not stored, one it accepts records them, unless they are more than the instance lets an account have. The tokens are left alone: no new consent."
+      description: "Only on an instance without a key of its own (`instance_key` false). Volvo counts its quota of calls on the application of the key: with the account's own, its vehicles spend their own quota. With a Volvo ID connected, the vehicles are listed with the key first: a key Volvo refuses is not stored, one it accepts records them, unless the account would then have more vehicles, of any provider, than the instance lets it have. The tokens are left alone: no new consent."
       operationId: putAPIKey
       requestBody:
         content:
@@ -3816,7 +3816,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`instance_key`: the instance has a key of its own, which reads every vehicle. `too_many_vehicles`: the Volvo ID gives access to more vehicles than the instance lets an account have; the key is not stored."
+          description: "`instance_key`: the instance has a key of its own, which reads every vehicle. `too_many_vehicles`: with the vehicles of the Volvo ID, the account would have more than the instance lets it have; the key is not stored."
         "415":
           content:
             application/json:

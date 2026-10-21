@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 )
 
@@ -46,6 +47,28 @@ var ErrNoVehicle = errors.New("no vehicle accessible with this token")
 // vehicles than the account may have: nothing is stored.
 var ErrTooManyVehicles = errors.New("more vehicles than the account may have")
 
+// Cap is the number of vehicles an account may have, Max (0: no cap), counted with
+// Others, the VINs it has already, of any provider.
+type Cap struct {
+	Max    int
+	Others []string
+}
+
+// Exceeded reports whether adding vins would take the account over the cap. A VIN the
+// account has already does not count twice.
+func (c Cap) Exceeded(vins []string) bool {
+	if c.Max <= 0 {
+		return false
+	}
+	n := len(c.Others)
+	for _, v := range vins {
+		if !slices.Contains(c.Others, v) {
+			n++
+		}
+	}
+	return n > c.Max
+}
+
 // keyRefused reports whether err is the provider's refusal of the application key.
 func keyRefused(err error) bool {
 	var r interface{ KeyRefused() bool }
@@ -56,9 +79,9 @@ func keyRefused(err error) bool {
 // to, listed with key. The vehicles are listed first: a token that gives access to
 // nothing is not stored (ErrNoVehicle). A refusal of the account's own key is not the grant's: the
 // connection is stored, the key marked refused, and ErrKeyRefused returned; any answer
-// of the provider marks it accepted again, before anything is stored. More than
-// maxVehicles vehicles (0: no cap) are refused with ErrTooManyVehicles.
-func Enroll(ctx context.Context, st Enrollment, api VehicleLister, accountID string, key APIKey, c Credentials, maxVehicles int) ([]string, error) {
+// of the provider marks it accepted again, before anything is stored. Vehicles that
+// would exceed the account's cap are refused with ErrTooManyVehicles.
+func Enroll(ctx context.Context, st Enrollment, api VehicleLister, accountID string, key APIKey, c Credentials, limit Cap) ([]string, error) {
 	if c.AccessToken == "" {
 		return nil, errors.New("empty access token")
 	}
@@ -85,7 +108,7 @@ func Enroll(ctx context.Context, st Enrollment, api VehicleLister, accountID str
 	if len(vins) == 0 {
 		return nil, ErrNoVehicle
 	}
-	if maxVehicles > 0 && len(vins) > maxVehicles {
+	if limit.Exceeded(vins) {
 		return nil, ErrTooManyVehicles
 	}
 	conn, err := st.SaveConnection(ctx, accountID, c)

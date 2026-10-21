@@ -886,7 +886,7 @@
       "connected": "Volvo ID connecté : le collecteur lit vos véhicules dès son prochain passage.",
       "keyRefused": "Votre Volvo ID est connecté, mais Volvo a refusé votre clé : corrigez-la ci-dessous, les véhicules seront listés, sans vous reconnecter.",
       "noVehicle": "Votre Volvo ID n'a aucun véhicule : il n'a pas été connecté. Ajoutez votre voiture à ce Volvo ID dans l'app Volvo Cars, puis cliquez à nouveau sur « {button} ».",
-      "tooManyVehicles": "Votre Volvo ID donne accès à plus de véhicules que votre compte n'en permet : il n'a pas été connecté."
+      "tooManyVehicles": "Avec les véhicules de votre Volvo ID, votre compte aurait plus de véhicules qu'il n'en permet : il n'a pas été connecté."
     },
     "volvoId": {
       "title": "Volvo ID",
@@ -1044,7 +1044,7 @@
       "characters": "Une clé n'a que des lettres, des chiffres et des signes : copiez-la de nouveau.",
       "tooShort": "Une clé a au moins {min} caractères : copiez-la en entier.",
       "tooLong": "Une clé a au plus {max} caractères : copiez-la seule.",
-      "tooManyVehicles": "Votre Volvo ID donne accès à plus de véhicules que votre compte n'en permet : la clé n'a pas été enregistrée.",
+      "tooManyVehicles": "Avec les véhicules de votre Volvo ID, votre compte aurait plus de véhicules qu'il n'en permet : la clé n'a pas été enregistrée.",
       "refused": "Volvo a refusé cette clé : vérifiez que c'est la clé primaire de votre application.",
       "invalidBody": "Cette clé a été refusée : copiez-la de nouveau.",
       "unavailable": "Runsten est injoignable. Réessayez dans un instant.",

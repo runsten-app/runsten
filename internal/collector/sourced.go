@@ -3,6 +3,7 @@ package collector
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -10,7 +11,7 @@ import (
 type session struct {
 	Session
 	credential keyID // the credential it was asked for with
-	until      time.Time
+	at, until  time.Time
 }
 
 const (
@@ -71,6 +72,13 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 		var se *SourceError
 		if errors.As(err, &se) && se.Kind == KindUnauthorized && !renewed {
 			renewed = true
+			// How long an access lasts at the provider, and what it answers past its end, are
+			// measured here: an access told to last longer may not.
+			args := []any{"account", t.AccountID, "connection", t.ConnectionID, "vehicle", t.VehicleID, "endpoint", spec.Endpoint, "status", se.Status}
+			if s, ok := c.sessions[t.ConnectionID]; ok {
+				args = append(args, "access_age", now.Sub(s.at).String())
+			}
+			c.log.Info("access rejected: asked for again", append(args, "err", err)...)
 			delete(c.sessions, t.ConnectionID)
 			if sess, err = c.session(ctx, t, src, now); err != nil {
 				c.sourceFailed(ctx, t, vs, src, "", now, err)
@@ -99,7 +107,7 @@ func (c *Collector) session(ctx context.Context, t Target, src *source, now time
 	if err != nil {
 		return nil, err //nolint:wrapcheck // the Source's; its type drives the reaction
 	}
-	c.sessions[t.ConnectionID] = &session{Session: s, credential: cred, until: now.Add(ttl - min(sessionMargin, ttl/2))}
+	c.sessions[t.ConnectionID] = &session{Session: s, credential: cred, at: now, until: now.Add(ttl - min(sessionMargin, ttl/2))}
 	return s, nil
 }
 
@@ -107,6 +115,7 @@ func (c *Collector) session(ctx context.Context, t Target, src *source, now time
 // call to the observer.
 func (c *Collector) fetchSource(ctx context.Context, t Target, src *source, sess Session, spec EndpointSpec, start time.Time) ([]byte, error) {
 	c.budget.spend(t, spec.API, start)
+	c.recentCalls[t.ConnectionID] = append(recent(c.recentCalls[t.ConnectionID], start), start)
 	raw, err := sess.Fetch(ctx, t.VIN, spec.Endpoint)
 	if err != nil {
 		call := Call{
@@ -168,7 +177,10 @@ func (c *Collector) sourceFailed(ctx context.Context, t Target, vs *vehicleState
 		return
 	case KindRateLimited:
 		c.connectionPause[t.ConnectionID] = now.Add(se.RetryIn)
-		c.log.Warn("rate limit", append(args, "retry_in", se.RetryIn.String())...)
+		// What the provider's limit is, and what it answers past it, are measured here.
+		c.log.Warn("rate limit", append(args, "retry_in", se.RetryIn.String(),
+			"calls_last_minute", len(recent(c.recentCalls[t.ConnectionID], now)),
+			"budget_left", int(c.budget.left(t, src.Endpoints[0].API, now)), "err", err)...)
 		vs.failure = Failure{At: now, Endpoint: ep, Status: se.Status, Kind: FailRateLimited}
 		return
 	case KindUnauthorized:
@@ -201,4 +213,44 @@ func (c *Collector) logOnce(t Target, msg string, args ...any) {
 	}
 	c.sourceLogged[t.ConnectionID] = true
 	c.log.Error(msg, append([]any{"account", t.AccountID, "connection", t.ConnectionID}, args...)...)
+}
+
+// recent keeps the calls of the last minute, at now.
+func recent(calls []time.Time, now time.Time) []time.Time {
+	i := 0
+	for i < len(calls) && !calls[i].After(now.Add(-time.Minute)) {
+		i++
+	}
+	return calls[i:]
+}
+
+// logUpload logs a new upload of the vehicle seen in a response of ep: when the vehicle
+// sent it, how old it was when read, and how long after the previous one, in the
+// vehicle's mode; and the fields it gives when they change. They measure how often a
+// provider's vehicles upload, driving above all, and what each model gives.
+func (c *Collector) logUpload(t Target, vs *vehicleState, src *source, ep Endpoint, now time.Time, raw []byte) {
+	u, err := src.ext.Upload(ep, raw)
+	if err != nil {
+		c.log.Warn("read upload", "vehicle", t.VehicleID, "endpoint", ep, "err", err)
+		return
+	}
+	prev, seen := vs.uploads[ep]
+	if !u.At.IsZero() && !u.At.Equal(prev.at) {
+		args := []any{"vehicle", t.VehicleID, "endpoint", ep, "mode", vs.mode.String(), "sent_at", u.At, "age", now.Sub(u.At).String()}
+		if !u.ReceivedAt.IsZero() {
+			args = append(args, "received_after", u.ReceivedAt.Sub(u.At).String())
+		}
+		if !prev.at.IsZero() {
+			args = append(args, "since_previous", u.At.Sub(prev.at).String())
+		}
+		c.log.Info("vehicle upload", args...)
+	}
+	fields := strings.Join(u.Fields, ",")
+	if !seen || fields != prev.fields {
+		c.log.Info("upload fields", "vehicle", t.VehicleID, "endpoint", ep, "model_year", u.ModelYear, "fields", fields)
+	}
+	if u.At.IsZero() {
+		u.At = prev.at
+	}
+	vs.uploads[ep] = uploadSeen{at: u.At, fields: fields}
 }

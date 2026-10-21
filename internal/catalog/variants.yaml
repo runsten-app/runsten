@@ -641,6 +641,7 @@
   name: Polestar 2 Long Range Single Motor
   years: [2024]
   gross_kwh: 82
+  net_kwh: 79 # Polestar gives no usable capacity
   chemistry: nmc
   ac_max_kw: 11
   dc_max_kw: 205
@@ -649,6 +650,12 @@
     - url: https://www.polestar.com/uk/polestar-2/specifications/
       level: manufacturer
       for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://www.autoguide.com/auto/manufacturers/polestar/2024-polestar-2-review-first-drive-44607499
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://ev-database.org/car/1818/Polestar-2-Long-Range-Single-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh]
 
 - id: ps2-lr-dual-2021
   brand: polestar

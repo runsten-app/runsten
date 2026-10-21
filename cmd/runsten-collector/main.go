@@ -222,7 +222,7 @@ func run(args []string) error {
 		if err != nil {
 			return fmt.Errorf("connect: account: %w", err)
 		}
-		vins, err := oauth.Enroll(ctx, st, api, account, oauth.APIKey{}, oauth.Credentials{AccessToken: cfg.accessToken}, 0)
+		vins, err := oauth.Enroll(ctx, st, api, account, oauth.APIKey{}, oauth.Credentials{AccessToken: cfg.accessToken}, oauth.Cap{})
 		if err != nil {
 			return fmt.Errorf("connect: %w", err)
 		}
