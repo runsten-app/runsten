@@ -8,7 +8,7 @@
 # The build stages run on the builder's platform and cross-compile for the target one
 # (--platform linux/arm64 on an amd64 machine, for a Raspberry Pi): no emulation needed.
 
-FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:738d1cf061836894ff6bb8c33881080ac66de8cf0586615012a0c8f592649cfa AS build
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:f2c872bcee949b7be9c490efd02b48a8a2fbf947cdf533f1c58525ec9d8170fd AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
