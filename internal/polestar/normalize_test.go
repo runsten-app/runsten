@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -372,5 +373,32 @@ func TestFingerprintSimulator(t *testing.T) {
 	b, _ := Fingerprint(second)
 	if bytes.Equal(first, second) || !bytes.Equal(a, b) {
 		t.Errorf("parked: responses equal %v, fingerprints equal %v", bytes.Equal(first, second), bytes.Equal(a, b))
+	}
+}
+
+// TestUploadOf: the upload of the real responses, without the VIN nor any value.
+func TestUploadOf(t *testing.T) {
+	for _, tt := range []struct {
+		name   string
+		at     int64
+		fields []string
+	}{
+		{"telemetry/location.json", 1789729422, []string{"altitude", "coordinate.latitude", "coordinate.longitude", "heading", "speed"}},
+		{"charging/target-soc.json", 1789729185, []string{
+			"id", "targetSoc.batteryChargeTargetLevel", "targetSoc.chargeTargetLevelSettingType", "targetSoc.id",
+			"targetSoc.source", "targetSoc.updatedAt", "updatedAt",
+		}},
+	} {
+		u, err := UploadOf(fixture(t, tt.name))
+		if err != nil || u.At.Unix() != tt.at || u.ReceivedAt.IsZero() || u.ModelYear != 2023 || !slices.Equal(u.Fields, tt.fields) {
+			t.Errorf("%s: %+v, %v", tt.name, u, err)
+		}
+	}
+	u, err := UploadOf([]byte(`{"data":{"ampLimit":{"updatedAtTimestamp":{"seconds":"1"}}},"meta":{}}`))
+	if err != nil || !u.At.IsZero() || !u.ReceivedAt.IsZero() || u.ModelYear != 0 || !slices.Equal(u.Fields, []string{"ampLimit.updatedAtTimestamp"}) {
+		t.Errorf("no upload's keys: %+v, %v", u, err)
+	}
+	if _, err := UploadOf([]byte(`{"data":[]}`)); err == nil {
+		t.Error("data not an object: no error")
 	}
 }

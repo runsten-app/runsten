@@ -207,6 +207,13 @@ func TestErrorKinds(t *testing.T) {
 	if e := newAPIError("x", domainCall, &http.Response{StatusCode: http.StatusInternalServerError}, []byte(strings.Repeat("a", 300))); len(e.Message) != 200 || e.Error() != "x: HTTP 500: "+e.Message {
 		t.Errorf("long body: %q", e.Error())
 	}
+	// What a refusal comes with is logged, the VINs masked.
+	h := http.Header{"Retry-After": {"30"}, "X-Ratelimit-Remaining": {"0"}, "X-Amzn-Errortype": {"UnauthorizedException"}, "Content-Type": {"application/json"}}
+	e = newAPIError("battery", domainCall, &http.Response{StatusCode: http.StatusForbidden, Header: h}, []byte(
+		`{"error":{"code":"AUTHZ_VIN_UNAUTHORIZED","message":"VIN LPSVSEDE5RL999999 is not authorized"}}`))
+	if want := "battery: HTTP 403 AUTHZ_VIN_UNAUTHORIZED: VIN [VIN] is not authorized [Retry-After=30 X-Amzn-Errortype=UnauthorizedException X-Ratelimit-Remaining=0]"; e.Error() != want {
+		t.Errorf("Error() = %q", e.Error())
+	}
 }
 
 func TestRateRetry(t *testing.T) {

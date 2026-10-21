@@ -1,10 +1,13 @@
 package collector
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
+	"log/slog"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -29,6 +32,7 @@ type fakeSource struct {
 	ttl      time.Duration
 	loginErr error
 	answer   func(ep Endpoint, login int, at time.Time) ([]byte, error)
+	upload   func(ep Endpoint, raw []byte) (Upload, error) // nil: nothing told
 	logins   int
 	calls    map[Endpoint][]time.Time
 }
@@ -74,6 +78,13 @@ func (*fakeSource) Observe(ep Endpoint, raw []byte, a *Activity) error {
 func (*fakeSource) Fingerprint(raw []byte) ([]byte, error) {
 	sum := sha256.Sum256(raw)
 	return sum[:], nil
+}
+
+func (f *fakeSource) Upload(ep Endpoint, raw []byte) (Upload, error) {
+	if f.upload == nil {
+		return Upload{}, nil
+	}
+	return f.upload(ep, raw)
 }
 
 type fakeSession struct {
@@ -447,5 +458,68 @@ func TestSourceQuota(t *testing.T) {
 	g.restore(st.calls, []Target{target()}, clk.Now())
 	if _, ok := g.tokens[unit{api: "fake"}]; ok || g.usage["a"] != float64(volvo) {
 		t.Errorf("tokens %v, usage %v", g.tokens, g.usage)
+	}
+}
+
+// TestSourceLogs: what measures a provider on real vehicles is logged, never the VIN: each
+// new upload with its age and the time since the previous, the fields when they change,
+// an access rejected with its age, a rate limit with the calls of the last minute.
+func TestSourceLogs(t *testing.T) {
+	c, src, _, clk := newSourced(t, sourceTarget())
+	var logs bytes.Buffer
+	c.log = slog.New(slog.NewJSONHandler(&logs, nil))
+	t0 := clk.Now()
+	fields := []string{"a"}
+	src.upload = func(ep Endpoint, _ []byte) (Upload, error) {
+		if ep != psBattery {
+			return Upload{}, nil
+		}
+		// The car uploads every 20 minutes, its cloud receiving each a second later.
+		at := t0.Add(clk.Now().Sub(t0).Truncate(20 * time.Minute)).Add(-time.Minute)
+		return Upload{At: at, ReceivedAt: at.Add(time.Second), ModelYear: 2024, Fields: fields}, nil
+	}
+	for range 4 { // battery read at 0, 10, 20 and 30 minutes
+		poll(t, c)
+		clk.Advance(10 * time.Minute)
+	}
+	if n := strings.Count(logs.String(), `"msg":"vehicle upload"`); n != 2 {
+		t.Errorf("%d uploads logged, want 2:\n%s", n, &logs)
+	}
+	for _, want := range []string{`"age":"1m0s"`, `"received_after":"1s"`, `"since_previous":"20m0s"`, `"mode":"parked"`} {
+		if !strings.Contains(logs.String(), want) {
+			t.Errorf("no %s in the logs:\n%s", want, &logs)
+		}
+	}
+	if n := strings.Count(logs.String(), `"fields":"a"`); n != 1 {
+		t.Errorf("the battery's fields logged %d times, want once", n)
+	}
+	fields = []string{"a", "b"}
+	poll(t, c)
+	if !strings.Contains(logs.String(), `"model_year":2024,"fields":"a,b"`) {
+		t.Errorf("new fields not logged:\n%s", &logs)
+	}
+
+	src.answer = func(_ Endpoint, login int, _ time.Time) ([]byte, error) {
+		if login == 1 {
+			return nil, &SourceError{Kind: KindUnauthorized, Status: 401, Err: errors.New("expired")}
+		}
+		return []byte("parked"), nil
+	}
+	clk.Advance(10 * time.Minute)
+	poll(t, c)
+	if !strings.Contains(logs.String(), `"msg":"access rejected: asked for again"`) || !strings.Contains(logs.String(), `"access_age":"50m0s"`) {
+		t.Errorf("access rejected not logged with its age:\n%s", &logs)
+	}
+
+	src.answer = func(Endpoint, int, time.Time) ([]byte, error) {
+		return nil, &SourceError{Kind: KindRateLimited, Status: 429, RetryIn: time.Minute, Err: errors.New("Too Many Requests [Retry-After=60]")}
+	}
+	clk.Advance(10 * time.Minute)
+	poll(t, c)
+	if !strings.Contains(logs.String(), `"calls_last_minute":1,"budget_left":`) || !strings.Contains(logs.String(), `Retry-After=60`) {
+		t.Errorf("rate limit not logged with the calls:\n%s", &logs)
+	}
+	if strings.Contains(logs.String(), sourceTarget().VIN) {
+		t.Errorf("the VIN is in the logs:\n%s", &logs)
 	}
 }

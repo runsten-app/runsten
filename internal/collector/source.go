@@ -81,6 +81,19 @@ type Source interface {
 	// Fingerprint returns the fingerprint of a response's values, the provider's
 	// timestamps excluded: two responses with the same bring nothing new.
 	Fingerprint(raw []byte) ([]byte, error)
+	// Upload reads what a response of ep tells of the vehicle's upload it carries, for
+	// the logs.
+	Upload(ep Endpoint, raw []byte) (Upload, error)
+}
+
+// Upload is what a response tells of the vehicle's upload it carries: the logs measure
+// with it how often a provider's vehicles upload, and what each model gives, which no
+// documentation says. It holds neither the VIN nor any value.
+type Upload struct {
+	At         time.Time // when the vehicle sent it; zero if not told
+	ReceivedAt time.Time // when the provider received it; zero if not told
+	ModelYear  int       // 0 if not known
+	Fields     []string  // the paths of its fields, sorted
 }
 
 // Session reads vehicles with an access of a credential.

@@ -184,6 +184,17 @@ func (b *budget) spend(t Target, api string, now time.Time) {
 	b.unsaved[Calls{AccountID: t.AccountID, API: api, Hour: now.UTC().Truncate(time.Hour)}]++
 }
 
+// left is how many calls t may still make to api now, for the logs: below zero when
+// it called more than allowed.
+func (b *budget) left(t Target, api string, now time.Time) float64 {
+	b.refill(now)
+	u := b.unitOf(t, api)
+	if n, seen := b.tokens[u]; seen {
+		return n
+	}
+	return b.bucketOf(u).burst
+}
+
 func (b *budget) take(u unit, n float64, now time.Time) {
 	b.refill(now)
 	left, seen := b.tokens[u]

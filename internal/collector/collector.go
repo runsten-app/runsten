@@ -352,6 +352,14 @@ type vehicleState struct {
 	marketRefused, unshared bool
 	readAt                  time.Time
 	failure                 Failure
+	// uploads is the latest upload of each endpoint of a Source, for the logs.
+	uploads map[Endpoint]uploadSeen
+}
+
+// uploadSeen is an upload of a vehicle, as the logs compare the next with it.
+type uploadSeen struct {
+	at     time.Time
+	fields string
 }
 
 // Collector polls the vehicles. It is not safe for concurrent use: Run and PollOnce
@@ -381,8 +389,9 @@ type Collector struct {
 	// credentialRefused holds the credentials a Source's provider refused, though the
 	// store may not have recorded it.
 	credentialRefused map[keyID]bool
-	connectionPause   map[string]time.Time // a Source's rate limit or access rejected, per connection
-	sourceLogged      map[string]bool      // connections whose refused credential or unknown provider was logged
+	connectionPause   map[string]time.Time   // a Source's rate limit or access rejected, per connection
+	recentCalls       map[string][]time.Time // a Source's calls of the last minute, per connection, for the logs
+	sourceLogged      map[string]bool        // connections whose refused credential or unknown provider was logged
 
 	vehicles     map[string]*vehicleState          // by VehicleID
 	restored     bool                              // the budget replayed the saved calls
@@ -425,6 +434,7 @@ func New(api API, store Store, tokens TokenSource, clk clock.Clock, iv Intervals
 		sessions:          map[string]*session{},
 		credentialRefused: map[keyID]bool{},
 		connectionPause:   map[string]time.Time{},
+		recentCalls:       map[string][]time.Time{},
 		sourceLogged:      map[string]bool{},
 		vehicles:          map[string]*vehicleState{},
 		apiBlocked:        map[unit]time.Time{},
@@ -576,7 +586,7 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 	vs, ok := c.vehicles[t.VehicleID]
 	if !ok {
 		// everything is due on the first pass
-		vs = &vehicleState{next: map[Endpoint]time.Time{}, missing: map[Endpoint]time.Time{}}
+		vs = &vehicleState{next: map[Endpoint]time.Time{}, missing: map[Endpoint]time.Time{}, uploads: map[Endpoint]uploadSeen{}}
 		c.vehicles[t.VehicleID] = vs
 	}
 	defer func() { c.report(ctx, t, vs) }()
@@ -661,6 +671,9 @@ func (c *Collector) read(ctx context.Context, t Target, vs *vehicleState, src *s
 	}
 	c.called(t, src, ep, now, raw, stored, err)
 	c.observe(t, vs, src, ep, raw, now)
+	if src.ext != nil {
+		c.logUpload(t, vs, src, ep, now, raw)
+	}
 	return err == nil
 }
 
