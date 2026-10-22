@@ -177,6 +177,39 @@ describe('ConnectionPage', () => {
     expect(w.find('#connection-polestar-title .beta').exists()).toBe(true)
   })
 
+  // jsdom has no scrollIntoView: the page calls it when there is one.
+  describe('opened at a section', () => {
+    const scrolled = vi.fn()
+    beforeEach(() => {
+      scrolled.mockReset()
+      Element.prototype.scrollIntoView = function (this: Element) {
+        scrolled(this.id)
+      }
+    })
+    afterEach(() => {
+      delete (Element.prototype as Partial<Element>).scrollIntoView
+    })
+
+    it('scrolls to the Polestar section, once loaded', async () => {
+      mocks.fetchConnection.mockResolvedValue(hosted)
+      const router = testRouter()
+      await router.push('/connection#polestar')
+      // In the document: the section is found by its id.
+      const { wrapper } = mountWith(ConnectionPage, { router, attachTo: document.body })
+      await flushPromises()
+      expect(scrolled).toHaveBeenCalledWith('polestar')
+      wrapper.unmount()
+    })
+
+    it('scrolls nowhere without a section', async () => {
+      const { wrapper } = mountWith(ConnectionPage, { attachTo: document.body })
+      await flushPromises()
+      expect(wrapper.find('#polestar').exists()).toBe(true)
+      expect(scrolled).not.toHaveBeenCalled()
+      wrapper.unmount()
+    })
+  })
+
   it('takes the Volvo ID from a Volvo, whatever comes first', async () => {
     const [car, , , , polestar] = items
     if (!car || !polestar) throw new Error('fixture')

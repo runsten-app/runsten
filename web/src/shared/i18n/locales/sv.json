@@ -29,15 +29,16 @@
     "range": "från {min} till {max}"
   },
   "home": {
-    "connectVolvo": "Anslut ett Volvo ID",
-    "giveKey": "Ange din Volvo-nyckel",
     "error": "Fordonen kunde inte laddas. Försök igen om en stund.",
     "empty": {
       "title": "Inga fordon ännu",
-      "keyText": "Runsten läser dina fordon med nyckeln till en Volvo-applikation som du skapar: ange den först och anslut sedan ditt Volvo ID.",
-      "text": "Anslut ditt Volvo ID, eller ange uppgifterna för din Polestar: Runsten läser kontots fordon."
+      "keyText": "Vilken bil har du? Runsten läser en Volvo med nyckeln till en Volvo-applikation som du skapar och sedan ditt Volvo ID; en Polestar med uppgifter från Polestars Data Portal.",
+      "text": "Vilken bil har du? Runsten läser en Volvo via ditt Volvo ID, en Polestar via uppgifter från Polestars Data Portal."
     },
-    "connectPolestar": "Ange Polestar-uppgifter"
+    "choose": {
+      "volvo": "Jag har en Volvo",
+      "polestar": "Jag har en Polestar (beta)"
+    }
   },
   "vehicle": {
     "title": "Fordon",

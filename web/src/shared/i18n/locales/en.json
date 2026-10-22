@@ -29,15 +29,16 @@
     "range": "from {min} to {max}"
   },
   "home": {
-    "connectVolvo": "Connect a Volvo ID",
-    "giveKey": "Give your Volvo key",
     "error": "The vehicles could not be loaded. Try again in a moment.",
     "empty": {
       "title": "No vehicle yet",
-      "keyText": "Runsten reads your vehicles with the key of a Volvo application you create: give it first, then connect your Volvo ID.",
-      "text": "Connect your Volvo ID, or give the credential of your Polestar: Runsten will read the vehicles of the account."
+      "keyText": "Which car is yours? Runsten reads a Volvo with the key of a Volvo application you create, then your Volvo ID; a Polestar with a credential of Polestar's Data Portal.",
+      "text": "Which car is yours? Runsten reads a Volvo through your Volvo ID, a Polestar through a credential of Polestar's Data Portal."
     },
-    "connectPolestar": "Give a Polestar credential"
+    "choose": {
+      "volvo": "I have a Volvo",
+      "polestar": "I have a Polestar (beta)"
+    }
   },
   "vehicle": {
     "title": "Vehicle",
