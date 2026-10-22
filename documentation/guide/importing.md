@@ -1,5 +1,5 @@
 ---
-description: "Import your Volvo's trips and charges from before Runsten read it: from Aximote, with a personal access token, or from the files of the Volvo Data Portal (EU Data Act)."
+description: "Import your car's trips and charges from before Runsten read it: from Aximote, with a personal access token, or from the files of the Volvo Data Portal (EU Data Act)."
 ---
 
 # Importing your history

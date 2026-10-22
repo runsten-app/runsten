@@ -1,5 +1,5 @@
 ---
-description: "Read the trips and charges of your Volvo in Runsten: times as ranges, reconstructed events and estimated energies."
+description: "Read the trips and charges of your car in Runsten: times as ranges, reconstructed events and estimated energies."
 ---
 
 # Trips and charges

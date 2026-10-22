@@ -1,10 +1,15 @@
 ---
-description: "The web interface of Runsten: the state of the car, the connection, your Volvo key and your Polestar credential, settings and preferences, privacy and accessibility."
+description: "The web interface of Runsten: the supported cars, the state of the car, the connection, your Volvo key, settings and preferences, privacy and accessibility."
 ---
 
 # The web interface
 
 The web interface works on a phone as well as a desktop, in English, French and Swedish, light or dark. Each vehicle has five tabs: **State**, **Trips**, **Charges**, **Stats** and **Battery**.
+
+Runsten reads your car from its manufacturer:
+
+- **Volvo**, through the Volvo Cars API: a Volvo ID, and on some instances a key of your own ([Your Volvo key](#your-volvo-key)).
+- **Polestar** (beta), through Polestar's Data Portal: a credential of your own ([Your Polestar](./polestar.md)).
 
 <Screen view="state" alt="The State tab: charge level, range, odometer and last position." />
 

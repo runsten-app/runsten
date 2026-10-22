@@ -1,10 +1,10 @@
 ---
-description: "What Runsten records of a Volvo or Polestar electric car, how it reads it, and what a self-hosted instance needs."
+description: "What Runsten records of your electric car, the cars it reads, how it reads them, and what a self-hosted instance needs."
 ---
 
 # What Runsten is
 
-Runsten records the trips, charges and costs of Volvo and Polestar electric cars, and shows them as a history and as statistics. It reads the car through the Volvo Cars API, or Polestar's Data Portal, on a server of your own.
+Runsten records the trips, charges and costs of your electric car, and shows them as a history and as statistics. It reads the car from its manufacturer, on a server of your own.
 
 The name comes from runestones (*runsten* in Swedish), which often commemorated journeys.
 
@@ -12,9 +12,14 @@ The name comes from runestones (*runsten* in Swedish), which often commemorated 
 Runsten works end to end, but is young: expect changes between versions. Polestar cars are read through Polestar's Data Portal, in beta until it is checked on real cars ([Your Polestar](./guide/polestar.md)). A hosted version, for those who don't want to run a server, will come later.
 :::
 
+## Supported cars
+
+- **Volvo**, through the Volvo Cars API: [Your Volvo application](./self-hosting/volvo.md).
+- **Polestar** (beta), through Polestar's Data Portal: [Your Polestar](./guide/polestar.md).
+
 ## How it works
 
-- **The collector** polls the Volvo API, or Polestar's Data Portal: every 10 minutes while the car is parked, every minute while it drives or charges. It stores every response as it came, and the Volvo ID tokens and the Polestar credential encrypted.
+- **The collector** polls the manufacturer's API (the Volvo Cars API, Polestar's Data Portal): every 10 minutes while the car is parked, every minute while it drives or charges. It stores every response as it came, and the Volvo ID tokens and the Polestar credential encrypted.
 - **Trips and charges** are worked out from those responses. A trip or a charge that happened while nothing could be read (an outage of the API, an exhausted quota) is still found, from the odometer or the state of charge, and marked as **reconstructed**. Since the responses are kept, the whole history can be worked out again after an update that improves it.
 - **The web interface** shows the car's state, its trips and charges, their costs from your tariffs, statistics and an estimate of the battery's capacity. It works on a phone as well as a desktop, in English, French and Swedish, light or dark.
 - **The API** (`/api/v1`) serves the same data to your own scripts.
@@ -31,8 +36,8 @@ Runsten shows what it read, and when:
 ## What you need
 
 - A Linux server with Docker: a NAS, a small VPS, or a Raspberry Pi 4 or 5 on a 64-bit system.
-- A Volvo electric car and its Volvo ID, sold in a market the Volvo Cars API serves. Volvo publishes no list of them: a car of another market is refused by every call, and Runsten says so on its pages.
-- An application of your own on the [Volvo Cars developer portal](https://developer.volvocars.com/): see [Your Volvo application](./self-hosting/volvo.md).
+- An electric car of a [supported brand](#supported-cars), with what its manufacturer asks for: for a Volvo, its Volvo ID, and a car sold in a market the Volvo Cars API serves (Volvo publishes no list of them: a car of another market is refused by every call, and Runsten says so on its pages); for a Polestar, a credential of your own on its Data Portal ([Your Polestar](./guide/polestar.md)).
+- For the instance, an application of your own on the [Volvo Cars developer portal](https://developer.volvocars.com/): see [Your Volvo application](./self-hosting/volvo.md).
 
 Then follow the [installation](./self-hosting/index.md).
 

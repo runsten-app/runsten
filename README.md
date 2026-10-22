@@ -13,10 +13,10 @@
   <img alt="The state of a vehicle in Runsten: state of charge, range, charging, odometer and last position" src="https://runsten.app/screens/state-light-desktop.png">
 </picture>
 
-Runsten records the trips, charges and costs of Volvo electric cars, and shows them as a history and as statistics. It reads the car through the Volvo Cars API, on a server of your own.
+Runsten records the trips, charges and costs of your electric car, and shows them as a history and as statistics. It reads the car from its manufacturer (the Volvo Cars API, Polestar's Data Portal in beta), on a server of your own.
 The name comes from runestones (*runsten* in Swedish), which often commemorated journeys: Runsten carves your car's trips in stone.
 
-- **A collector** polls the Volvo API and keeps every response as it came; trips and charges are worked out from them, including those that happened while nothing could be read, marked as reconstructed.
+- **A collector** polls the manufacturer's API and keeps every response as it came; trips and charges are worked out from them, including those that happened while nothing could be read, marked as reconstructed.
 - **A web interface**, on a phone as well as a desktop, in English, French and Swedish: the car's state, its trips and charges, their costs from your tariffs, statistics, and an estimate of the battery's capacity.
 - **An API** (`/api/v1`) and **MQTT** publishing, with Home Assistant's discovery, for your own scripts and home automation.
 
@@ -25,7 +25,7 @@ Status: **early development**. Expect changes between versions.
 ## Self-hosting
 
 Runsten runs with Docker Compose on any Linux server: a NAS, a small VPS, a Raspberry Pi 4 or 5. It needs an application of your own on the [Volvo Cars developer portal](https://developer.volvocars.com/).
-The [documentation](https://runsten.app/docs/) covers [installing](https://runsten.app/docs/self-hosting/), [the Volvo application](https://runsten.app/docs/self-hosting/volvo), [updating](https://runsten.app/docs/self-hosting/updating), [backups](https://runsten.app/docs/self-hosting/backup) and [the API](https://runsten.app/docs/reference/api); its sources are in [`documentation/`](documentation/).
+The [documentation](https://runsten.app/docs/) covers [installing](https://runsten.app/docs/self-hosting/), [connecting a Volvo](https://runsten.app/docs/self-hosting/volvo) or [a Polestar](https://runsten.app/docs/guide/polestar), [updating](https://runsten.app/docs/self-hosting/updating), [backups](https://runsten.app/docs/self-hosting/backup) and [the API](https://runsten.app/docs/reference/api); its sources are in [`documentation/`](documentation/).
 
 ## Development
 
