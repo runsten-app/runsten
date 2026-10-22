@@ -29,6 +29,7 @@ An update that changes how trips and charges are worked out says so below: the n
 
 - **Energies on the net capacity** (migration `0007`): the energy of a trip or a charge rests on the net (usable) capacity of the vehicle's variant when the catalog knows it, rather than on the gross one Volvo reports: for an EX30 of 69 kWh gross, 64 net, energies, consumptions and costs are 7 % lower. Rebuild after updating: until then, the past events keep their energies.
 - **Spans and odometers of charges** (migration `0009`): each charge stores what the battery's estimate rests on. Nothing visible changes with it; the battery page reads it. Rebuild after updating: until then, the past charges give no estimate.
+- **Net capacities of the Polestars**: the catalog gives the net capacity of every Polestar variant but the Polestar 2 Standard Range of 2022 and 2023 (its sources disagree), those of the Polestar 4 and 5 and of the Polestar 3 of 2026 included. The Data Portal reports no capacity: until then, the trips and charges of these variants had no energy. Rebuild after updating: until then, the past events stay without one.
 
 ## PostgreSQL
 
