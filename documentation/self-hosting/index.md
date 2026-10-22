@@ -11,8 +11,8 @@ The stack has four services:
 | Service | Role |
 |---|---|
 | `postgres` | PostgreSQL 18, the database |
-| `api` | `runsten-api`: sign-in, the Volvo ID connection and the API |
-| `collector` | `runsten-collector`: polls the Volvo API, works out trips and charges |
+| `api` | `runsten-api`: sign-in, the connection of the cars and the API |
+| `collector` | `runsten-collector`: polls the manufacturers' APIs, works out trips and charges |
 | `web` | `runsten-web`: the web interface, which relays to `api` at the same origin |
 
 Its data lives in the `runsten_postgres` volume, which survives restarts and updates; the containers restart on their own.
@@ -46,12 +46,12 @@ openssl rand -base64 32   # RUNSTEN_TOKEN_KEY
 ```
 
 ::: danger Keep a copy of RUNSTEN_TOKEN_KEY
-Put it in a password manager, apart from the backups. It encrypts the Volvo tokens stored in the database and is stored nowhere else: without it, the tokens cannot be decrypted and the Volvo ID must be connected again. The collected data does not depend on it.
+Put it in a password manager, apart from the backups. It encrypts the Volvo tokens and the Polestar credentials stored in the database and is stored nowhere else: without it, the tokens cannot be decrypted, the Volvo ID must be connected again and the Polestar credentials given again. The collected data does not depend on it.
 :::
 
 A configuration error stops `api`, `collector` or `web` at startup, with the reason in `docker compose logs`. Compose itself refuses to start without the required variables.
 
-Then [connect your Volvo ID](./volvo.md#connecting-your-volvo-id).
+Then connect your car: [your Volvo ID](./volvo.md#connecting-your-volvo-id), or [your Polestar credential](../guide/polestar.md#give-it-to-runsten).
 
 ## What the stack exposes
 

@@ -1,5 +1,5 @@
 ---
-description: "How Runsten recognizes the variant of your Volvo or Polestar, choosing it, the onboard charger and the net battery capacity."
+description: "How Runsten recognizes the variant of your car, choosing it, the onboard charger and the net battery capacity."
 ---
 
 # Vehicle models
