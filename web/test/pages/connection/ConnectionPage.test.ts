@@ -78,7 +78,7 @@ describe('ConnectionPage', () => {
     // Self-hosting: the instance's key reads every vehicle, there is none to give.
     expect(w.findAll('h2').map((h) => h.text())).toEqual([
       'Volvo ID',
-      'Polestar',
+      'Polestar Beta',
       'Volvo application',
       'Vehicles',
     ])
@@ -172,6 +172,9 @@ describe('ConnectionPage', () => {
     expect(w.find('[aria-labelledby="connection-polestar-title"] .polestar-form').exists()).toBe(
       true,
     )
+    // In beta: the heading's name says so.
+    expect(w.find('#connection-polestar-title').text().replace(/\s+/g, ' ')).toBe('Polestar Beta')
+    expect(w.find('#connection-polestar-title .beta').exists()).toBe(true)
   })
 
   it('takes the Volvo ID from a Volvo, whatever comes first', async () => {
@@ -198,7 +201,7 @@ describe('ConnectionPage', () => {
     expect(w.find('a[href="auth/volvo/start"]').text()).toBe('Connect a Volvo ID')
     expect(w.findAll('h2').map((h) => h.text())).toEqual([
       'Volvo ID',
-      'Polestar',
+      'Polestar Beta',
       'Volvo application',
     ])
   })
@@ -207,7 +210,7 @@ describe('ConnectionPage', () => {
     mocks.fetchVehicles.mockResolvedValue([])
     mocks.fetchConnection.mockResolvedValue(hosted)
     const w = await page()
-    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID', 'Polestar'])
+    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID', 'Polestar Beta'])
     expect(w.find('.api-key-form form').exists()).toBe(true)
     expect(w.find('a[href="auth/volvo/start"]').exists()).toBe(false)
     expect(w.find('[aria-labelledby="connection-volvo-title"]').text()).toContain(
@@ -222,7 +225,7 @@ describe('ConnectionPage', () => {
       api_key: { last4: 'cdef', set_at: '2026-09-28T05:00:00Z', refused_at: null },
     })
     const w = await page()
-    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID', 'Polestar'])
+    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID', 'Polestar Beta'])
     expect(w.find('a[href="auth/volvo/start"]').text()).toBe('Connect a Volvo ID')
   })
 

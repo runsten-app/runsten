@@ -1001,7 +1001,8 @@
       "key": "Application key"
     },
     "polestar": {
-      "title": "Polestar"
+      "title": "Polestar",
+      "beta": "Beta"
     }
   },
   "apiKey": {

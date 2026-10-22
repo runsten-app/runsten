@@ -1001,7 +1001,8 @@
       "key": "Applikationsnyckel"
     },
     "polestar": {
-      "title": "Polestar"
+      "title": "Polestar",
+      "beta": "Beta"
     }
   },
   "apiKey": {

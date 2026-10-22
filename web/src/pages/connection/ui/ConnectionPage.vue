@@ -197,6 +197,9 @@ const lost = computed(() => connection.value?.status === 'reauth_required')
       <section class="mb-8" aria-labelledby="connection-polestar-title">
         <h2 id="connection-polestar-title" class="text-title-large mb-3">
           {{ t('connection.polestar.title') }}
+          <v-chip size="small" variant="tonal" color="primary" class="ms-2 beta">
+            {{ t('connection.polestar.beta') }}
+          </v-chip>
         </h2>
         <PolestarForm :connection="settings" />
       </section>

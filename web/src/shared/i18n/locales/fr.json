@@ -1001,7 +1001,8 @@
       "key": "Clé d'application"
     },
     "polestar": {
-      "title": "Polestar"
+      "title": "Polestar",
+      "beta": "Bêta"
     }
   },
   "apiKey": {
