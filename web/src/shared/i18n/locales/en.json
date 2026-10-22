@@ -678,11 +678,14 @@
     "noVariant": "Runsten's catalog has no variant of the {family}: it lists the battery-electric Volvo and Polestar models only.",
     "variant": "Variant",
     "variantHelp": "The figures are those of the catalog. The variants the vehicle's details fit come first.",
+    "model": "Model",
     "automatic": "Automatic recognition",
     "automaticIs": "Recognized: {name}",
     "automaticNone": "No variant recognized: several fit, or none. Choose yours below.",
     "option": "{name}, {years}",
     "recognized": "recognized automatically",
+    "chooseModel": "Choose the model to see its variants.",
+    "otherYears": "Other model years ({count})",
     "yearsSince": "since {from}",
     "yearsRange": "{from} to {to}",
     "grossOnly": "{gross} battery",
@@ -1001,7 +1004,8 @@
       "key": "Application key"
     },
     "polestar": {
-      "title": "Polestar"
+      "title": "Polestar",
+      "beta": "Beta"
     }
   },
   "apiKey": {
@@ -1045,6 +1049,7 @@
       "tooShort": "A key has at least {min} characters: copy it whole.",
       "tooLong": "A key has at most {max} characters: copy it alone.",
       "tooManyVehicles": "With your Volvo ID's vehicles, your account would have more vehicles than it may: the key was not saved.",
+      "notAdmitted": "Your account must take a step first, such as accepting terms: reload the page. The key was not saved.",
       "refused": "Volvo refused this key: check that it is the primary key of your application.",
       "invalidBody": "This key was refused: copy it again.",
       "unavailable": "Runsten could not be reached. Try again in a moment.",
@@ -1352,6 +1357,7 @@
       "invalidBody": "This credential was refused: copy its values again.",
       "noVehicle": "This credential reads no vehicle: check on the Data Portal that it reads your car, then save it again.",
       "tooManyVehicles": "With this credential's vehicles, your account would have more vehicles than it may: the credential was not saved.",
+      "notAdmitted": "Your account must take a step first, such as accepting terms: reload the page. The credential was not saved.",
       "portalUnavailable": "Polestar's Data Portal did not answer: the credential was not saved. Try again in a moment.",
       "unavailable": "Runsten could not be reached. Try again in a moment.",
       "internal": "The credential could not be saved. Try again in a moment."

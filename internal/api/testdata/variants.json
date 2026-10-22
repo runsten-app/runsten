@@ -8,6 +8,7 @@
       "ac_max_kw": 11,
       "ac_option_kw": 22,
       "dc_max_kw": 153,
+      "family": "EX30",
       "model_years": {
         "from": 2024,
         "to": 2026
@@ -29,6 +30,7 @@
       "ac_max_kw": 11,
       "ac_option_kw": 22,
       "dc_max_kw": 153,
+      "family": "EX30",
       "model_years": {
         "from": 2024,
         "to": 2026
@@ -50,6 +52,7 @@
       "ac_max_kw": 11,
       "ac_option_kw": null,
       "dc_max_kw": 134,
+      "family": "EX30",
       "model_years": {
         "from": 2024,
         "to": 2026
@@ -71,6 +74,7 @@
       "ac_max_kw": 11,
       "ac_option_kw": null,
       "dc_max_kw": 134,
+      "family": "EX30",
       "model_years": {
         "from": 2027,
         "to": null
@@ -92,6 +96,7 @@
       "ac_max_kw": 11,
       "ac_option_kw": 22,
       "dc_max_kw": 158,
+      "family": "EX30",
       "model_years": {
         "from": 2027,
         "to": null
@@ -113,6 +118,7 @@
       "ac_max_kw": 11,
       "ac_option_kw": 22,
       "dc_max_kw": 158,
+      "family": "EX30",
       "model_years": {
         "from": 2027,
         "to": null

@@ -27,12 +27,30 @@ type Authorizer interface {
 	Exchange(ctx context.Context, code, verifier string) (oauth.Grant, error)
 }
 
-// Admission may hold an account back from connecting a Volvo ID: an extension's, such
-// as terms the account has yet to accept. Without one, every account may connect.
+// Admission may hold an account back from connecting a vehicle: an extension's, such as
+// terms the account has yet to accept. It is asked before a Volvo ID's authorization
+// starts and before an account's application key or Polestar credential is stored.
+// Without one, every account may connect.
 type Admission interface {
 	// Admit returns where the account must go first, a route of the web interface
 	// (as "terms"), from the extension's configuration; empty: it may connect.
 	Admit(ctx context.Context, accountID string) (route string, err error)
+}
+
+// admit refuses the credentials of an account the Admission holds back: 403
+// not_admitted, naming where it must go first.
+func (s *Server) admit(ctx context.Context, account string) error {
+	if s.Admission == nil {
+		return nil
+	}
+	route, err := s.Admission.Admit(ctx, account)
+	if err != nil {
+		return s.internal("admission not read", err)
+	}
+	if route != "" {
+		return apiError(http.StatusForbidden, codeNotAdmitted, "the account must first go to "+route+" in the web interface")
+	}
+	return nil
 }
 
 // stateCookie binds a pending flow to the browser that started it.

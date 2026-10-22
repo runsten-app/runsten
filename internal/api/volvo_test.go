@@ -12,6 +12,7 @@ import (
 
 	"runsten/internal/oauth"
 	"runsten/internal/platform/clock"
+	"runsten/internal/simulator/polestarapi"
 	"runsten/internal/simulator/volvoapi"
 )
 
@@ -123,6 +124,44 @@ func TestAdmission(t *testing.T) {
 	}
 	e.server.Admission = admission{held: map[string]bool{"another": true}}
 	e.start(t, session)
+}
+
+// TestAdmissionOfCredentials: an account the extension holds back stores neither an
+// application key nor a Polestar credential; once admitted, it does.
+func TestAdmissionOfCredentials(t *testing.T) {
+	e := newEnvKeys(t, 10, "", []string{goodKey})
+	b := e.signedIn(t)
+	e.server.PolestarVehicles = polestarSim(t, e.clk, polestarVIN)
+	key := e.api.URL + apiPrefix + "/connection/api-key"
+	ps := e.api.URL + apiPrefix + "/connection/polestar"
+	dev := credentialBody(polestarapi.DevCredential())
+
+	e.server.Admission = admission{held: map[string]bool{account: true}}
+	resp, body := do(t, b, http.MethodPut, key, jsonType, keyBody(goodKey))
+	if resp.status != http.StatusForbidden || e.store.key.Value != "" || !strings.Contains(body, "terms") {
+		t.Errorf("key held back: %d %s", resp.status, body)
+	}
+	wantError(t, body, codeNotAdmitted)
+	resp, body = do(t, b, http.MethodPut, ps, jsonType, dev)
+	if resp.status != http.StatusForbidden || !e.polestar.setAt.IsZero() {
+		t.Errorf("credential held back: %d %s", resp.status, body)
+	}
+	wantError(t, body, codeNotAdmitted)
+
+	e.server.Admission = admission{err: errors.New("down")}
+	resp, body = do(t, b, http.MethodPut, ps, jsonType, dev)
+	if resp.status != http.StatusInternalServerError || strings.Contains(body, "down") || !e.polestar.setAt.IsZero() {
+		t.Errorf("admission failed: %d %s", resp.status, body)
+	}
+	wantError(t, body, codeInternal)
+
+	e.server.Admission = admission{held: map[string]bool{"another": true}}
+	if resp, body := do(t, b, http.MethodPut, key, jsonType, keyBody(goodKey)); resp.status != http.StatusOK || e.store.key.Value != goodKey {
+		t.Errorf("key admitted: %d %s", resp.status, body)
+	}
+	if resp, body := do(t, b, http.MethodPut, ps, jsonType, dev); resp.status != http.StatusOK || e.polestar.setAt.IsZero() {
+		t.Errorf("credential admitted: %d %s", resp.status, body)
+	}
 }
 
 func TestCallbackRejections(t *testing.T) {

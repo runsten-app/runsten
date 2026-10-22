@@ -229,6 +229,7 @@ type modelYearsJSON struct {
 
 type variantOptionJSON struct {
 	VariantFields
+	Family     string           `json:"family" minLength:"1" doc:"The model the variant is of, such as EX30 or Polestar 2: an interface groups the variants by it. A Polestar's are offered across the brand's models."`
 	ModelYears modelYearsJSON   `json:"model_years" doc:"The model years of the variant, included: two variants of the same name differ by them."`
 	Candidate  bool             `json:"candidate" doc:"The vehicle's details fit the variant, and not every variant of the family: the only candidate is the recognized variant. false for all when the details tell none apart, or fit none."`
 	Levels     figureLevelsJSON `json:"levels" doc:"Where each figure comes from: manufacturer, published by the maker; secondary, from public sources (press, encyclopedias), cross-checked."`
@@ -285,7 +286,7 @@ func (s *Server) variantsOf(n core.Snapshot, m vehicleModel) variantListJSON {
 				continue
 			}
 			out.Items = append(out.Items, variantOptionJSON{
-				VariantFields: variantFieldsOf(v), ModelYears: modelYearsJSON{From: v.Years.From, To: yearOrNil(v.Years.To)},
+				VariantFields: variantFieldsOf(v), Family: v.Family, ModelYears: modelYearsJSON{From: v.Years.From, To: yearOrNil(v.Years.To)},
 				Candidate: first,
 				Levels: figureLevelsJSON{
 					GrossKWh: levelOf(v, catalog.FigureGrossKWh), NetKWh: optionalLevel(v, catalog.FigureNetKWh),

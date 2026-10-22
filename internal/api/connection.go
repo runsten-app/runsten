@@ -124,6 +124,9 @@ func (s *Server) putAPIKey(ctx context.Context, in *apiKeyInput) (*body[connecti
 		return nil, apiError(http.StatusConflict, codeInstanceKey, "this instance reads every vehicle with its own application key")
 	}
 	account := sessionFrom(ctx).AccountID
+	if err := s.admit(ctx, account); err != nil {
+		return nil, err
+	}
 	c, err := s.Keys.Connection(ctx, account)
 	if err != nil {
 		return nil, s.internal("connection not read", err)
@@ -214,6 +217,7 @@ func (s *Server) registerConnection(api huma.API) {
 		Middlewares: huma.Middlewares{s.requireJSON},
 	}, "The connection.", writeErrors(map[int]string{
 		http.StatusBadRequest: errBody + " `api_key_refused`: Volvo refused the key.",
+		http.StatusForbidden:  errNotAdmitted,
 		http.StatusConflict: "`instance_key`: the instance has a key of its own, which reads every vehicle. " +
 			"`too_many_vehicles`: with the vehicles of the Volvo ID, the account would have more than the instance lets it have; the key is not stored.",
 	})), s.putAPIKey)

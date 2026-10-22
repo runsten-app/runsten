@@ -678,11 +678,14 @@
     "noVariant": "Runstens katalog har ingen variant av {family}: den listar bara helt eldrivna Volvo- och Polestar-modeller.",
     "variant": "Variant",
     "variantHelp": "Siffrorna är katalogens. De varianter som fordonets detaljer passar kommer först.",
+    "model": "Modell",
     "automatic": "Automatisk igenkänning",
     "automaticIs": "Igenkänd: {name}",
     "automaticNone": "Ingen variant igenkänd: flera passar, eller ingen. Välj din nedan.",
     "option": "{name}, {years}",
     "recognized": "automatiskt igenkänd",
+    "chooseModel": "Välj modell för att se dess varianter.",
+    "otherYears": "Andra årsmodeller ({count})",
     "yearsSince": "sedan {from}",
     "yearsRange": "{from} till {to}",
     "grossOnly": "{gross} batteri",
@@ -1001,7 +1004,8 @@
       "key": "Applikationsnyckel"
     },
     "polestar": {
-      "title": "Polestar"
+      "title": "Polestar",
+      "beta": "Beta"
     }
   },
   "apiKey": {
@@ -1045,6 +1049,7 @@
       "tooShort": "En nyckel har minst {min} tecken: kopiera hela.",
       "tooLong": "En nyckel har högst {max} tecken: kopiera bara den.",
       "tooManyVehicles": "Med ditt Volvo ID:s fordon skulle ditt konto få fler fordon än det tillåter: nyckeln sparades inte.",
+      "notAdmitted": "Ditt konto måste först ta ett steg, till exempel godkänna villkor: ladda om sidan. Nyckeln sparades inte.",
       "refused": "Volvo avvisade nyckeln: kontrollera att det är din applikations primära nyckel.",
       "invalidBody": "Nyckeln avvisades: kopiera den igen.",
       "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
@@ -1352,6 +1357,7 @@
       "invalidBody": "Uppgifterna avvisades: kopiera värdena igen.",
       "noVehicle": "Uppgifterna läser inget fordon: kontrollera på Data Portal att de läser din bil och spara dem sedan igen.",
       "tooManyVehicles": "Med de här uppgifternas fordon skulle ditt konto få fler fordon än det tillåter: uppgifterna sparades inte.",
+      "notAdmitted": "Ditt konto måste först ta ett steg, till exempel godkänna villkor: ladda om sidan. Uppgifterna sparades inte.",
       "portalUnavailable": "Polestars Data Portal svarade inte: uppgifterna sparades inte. Försök igen om en stund.",
       "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
       "internal": "Uppgifterna kunde inte sparas. Försök igen om en stund."
