@@ -87,6 +87,9 @@ func polestarOf(c PolestarConnection) null[polestarCredentialJSON] {
 // the listing is how its vehicles come in, and none would.
 func (s *Server) putPolestar(ctx context.Context, in *polestarInput) (*body[connectionSettingsJSON], error) {
 	account := sessionFrom(ctx).AccountID
+	if err := s.admit(ctx, account); err != nil {
+		return nil, err
+	}
 	cred := PolestarCredential{ClientID: in.Body.ClientID, ClientSecret: in.Body.ClientSecret, AccountID: in.Body.AccountID}
 	check, cancel := context.WithTimeout(ctx, keyCheckTimeout)
 	defer cancel()
@@ -143,6 +146,7 @@ func (s *Server) registerPolestar(api huma.API) {
 		Middlewares: huma.Middlewares{s.requireJSON},
 	}, "The connection.", writeErrors(map[int]string{
 		http.StatusBadRequest: errBody + " `credential_refused`: the Data Portal refused the credential.",
+		http.StatusForbidden:  errNotAdmitted,
 		http.StatusConflict: "`no_vehicle`: the credential reads no vehicle, none being shared with it on the portal. " +
 			"`too_many_vehicles`: the account would have more vehicles than the instance lets it have. The credential is not stored.",
 		http.StatusBadGateway: "`source_unavailable`: the Data Portal did not answer; the credential is not stored.",

@@ -1045,6 +1045,7 @@
       "tooShort": "Une clé a au moins {min} caractères : copiez-la en entier.",
       "tooLong": "Une clé a au plus {max} caractères : copiez-la seule.",
       "tooManyVehicles": "Avec les véhicules de votre Volvo ID, votre compte aurait plus de véhicules qu'il n'en permet : la clé n'a pas été enregistrée.",
+      "notAdmitted": "Votre compte doit d'abord franchir une étape, comme accepter des conditions : rechargez la page. La clé n'a pas été enregistrée.",
       "refused": "Volvo a refusé cette clé : vérifiez que c'est la clé primaire de votre application.",
       "invalidBody": "Cette clé a été refusée : copiez-la de nouveau.",
       "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
@@ -1352,6 +1353,7 @@
       "invalidBody": "Cet identifiant a été refusé : copiez de nouveau ses valeurs.",
       "noVehicle": "Cet identifiant ne lit aucun véhicule : vérifiez sur le Data Portal qu'il lit votre voiture, puis enregistrez-le de nouveau.",
       "tooManyVehicles": "Avec les véhicules de cet identifiant, votre compte aurait plus de véhicules qu'il n'en permet : l'identifiant n'a pas été enregistré.",
+      "notAdmitted": "Votre compte doit d'abord franchir une étape, comme accepter des conditions : rechargez la page. L'identifiant n'a pas été enregistré.",
       "portalUnavailable": "Le Data Portal de Polestar n'a pas répondu : l'identifiant n'a pas été enregistré. Réessayez dans un instant.",
       "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
       "internal": "L'identifiant n'a pas pu être enregistré. Réessayez dans un instant."

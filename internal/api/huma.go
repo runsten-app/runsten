@@ -138,6 +138,7 @@ const (
 	codeNotVolvo             errorCode = "not_volvo"
 	codeInstanceKey          errorCode = "instance_key"
 	codeTooManyVehicles      errorCode = "too_many_vehicles"
+	codeNotAdmitted          errorCode = "not_admitted"
 	codeFeatureUnavailable   errorCode = "feature_unavailable"
 	codeBrokerRefused        errorCode = "broker_refused"
 	codeTokenRefused         errorCode = "token_refused" //nolint:gosec // an error code, not a credential
@@ -153,7 +154,7 @@ const (
 func (errorCode) Schema(huma.Registry) *huma.Schema {
 	return enumSchema(codeInvalidParameter, codeInvalidBody, codeUnauthorized, codeInvalidCredentials,
 		codeCrossOrigin, codeNotFound, codeMethodNotAllowed, codeUnsupportedMediaType, codeTooManyAttempts,
-		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeImportedCharge, codeAPIKeyRefused, codeCredentialRefused, codeNoVehicle, codeNotVolvo, codeInstanceKey, codeTooManyVehicles, codeFeatureUnavailable,
+		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeImportedCharge, codeAPIKeyRefused, codeCredentialRefused, codeNoVehicle, codeNotVolvo, codeInstanceKey, codeTooManyVehicles, codeNotAdmitted, codeFeatureUnavailable,
 		codeBrokerRefused, codeTokenRefused, codeSourceUnavailable, codeImportActive, codeInvalidFile, codeInsufficientScope, codeRateLimited,
 		codeInternal)
 }
@@ -337,6 +338,11 @@ func writeErrors(more map[int]string) map[int]string {
 	}
 	return errs
 }
+
+// errNotAdmitted is the 403 of the operations that store a credential, which an
+// extension's Admission may hold back.
+const errNotAdmitted = errCrossOrigin + " `not_admitted`: the account must first go to a page of the web " +
+	"interface, such as terms to accept, which the message names; nothing is stored."
 
 // internal logs err and returns the 500 of the contract, without its details.
 func (s *Server) internal(msg string, err error) error {

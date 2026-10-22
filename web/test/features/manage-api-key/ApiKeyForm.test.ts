@@ -134,6 +134,16 @@ describe('ApiKeyForm', () => {
     ])
   })
 
+  it('tells an account held back by the instance', async () => {
+    api.setApiKey.mockRejectedValue(new ApiError(403, 'not_admitted', 'terms'))
+    form(hosted)
+    await type(key)
+    await submit()
+    expect(summary()).toEqual([
+      'Your account must take a step first, such as accepting terms: reload the page. The key was not saved.',
+    ])
+  })
+
   it('tells a failure of the server', async () => {
     api.setApiKey.mockRejectedValue(new ApiError(502, 'unavailable', ''))
     form(hosted)

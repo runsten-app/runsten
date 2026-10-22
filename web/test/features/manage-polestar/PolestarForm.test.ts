@@ -184,6 +184,10 @@ describe('PolestarForm', () => {
       "With this credential's vehicles, your account would have more vehicles than it may: the credential was not saved.",
     ],
     [
+      new ApiError(403, 'not_admitted', ''),
+      'Your account must take a step first, such as accepting terms: reload the page. The credential was not saved.',
+    ],
+    [
       new ApiError(502, 'source_unavailable', ''),
       "Polestar's Data Portal did not answer: the credential was not saved. Try again in a moment.",
     ],

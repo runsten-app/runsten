@@ -58,6 +58,7 @@ const serverError = computed(() => {
   if (isApiError(e, 'api_key_refused')) return { field, text: t('apiKey.error.refused') }
   if (isApiError(e, 'invalid_body')) return { field, text: t('apiKey.error.invalidBody') }
   if (isApiError(e, 'too_many_vehicles')) return { text: t('apiKey.error.tooManyVehicles') }
+  if (isApiError(e, 'not_admitted')) return { text: t('apiKey.error.notAdmitted') }
   if (isApiError(e, 'unavailable') || isApiError(e, 'network'))
     return { text: t('apiKey.error.unavailable') }
   return { text: t('apiKey.error.internal') }

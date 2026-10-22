@@ -213,7 +213,7 @@ type Config struct {
 	CostParams core.CostParams
 	// Limits are the accounts' limits; nil: none.
 	Limits Limits
-	// Admission may hold an account back from connecting a Volvo ID; nil: none does.
+	// Admission may hold an account back from connecting a vehicle; nil: none does.
 	Admission Admission
 	// Accounts exports the accounts' data, and ExportTables are the tables an extension
 	// adds to it; nil: none.

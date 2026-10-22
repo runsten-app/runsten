@@ -80,6 +80,7 @@ const serverError = computed(() => {
     return { field: fieldId('client_id'), text: t('polestar.error.invalidBody') }
   if (isApiError(e, 'no_vehicle')) return { text: t('polestar.error.noVehicle') }
   if (isApiError(e, 'too_many_vehicles')) return { text: t('polestar.error.tooManyVehicles') }
+  if (isApiError(e, 'not_admitted')) return { text: t('polestar.error.notAdmitted') }
   if (isApiError(e, 'source_unavailable')) return { text: t('polestar.error.portalUnavailable') }
   if (isApiError(e, 'unavailable') || isApiError(e, 'network'))
     return { text: t('polestar.error.unavailable') }
