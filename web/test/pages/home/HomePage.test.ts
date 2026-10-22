@@ -50,20 +50,26 @@ describe('HomePage', () => {
     expect(window.history.length).toBe(1)
   })
 
-  it('offers to connect a Volvo ID without a vehicle', async () => {
+  it('asks which car without a vehicle, Volvo or Polestar', async () => {
     fetchVehicles.mockResolvedValue([])
     const { wrapper, router } = await home()
     expect(wrapper.text()).toContain('No vehicle yet')
+    expect(wrapper.text()).toContain('Which car is yours?')
     // Relative to <base>: a full page load of runsten-api's flow, under any prefix.
-    const link = wrapper.find('a[href="auth/volvo/start"]')
-    expect(link.text()).toBe('Connect a Volvo ID')
-    // A Polestar's credential is given on the connection page.
-    expect(wrapper.find('a.polestar').attributes('href')).toBe('/connection')
-    expect(wrapper.find('a.polestar').text()).toBe('Give a Polestar credential')
+    const volvo = wrapper.find('a.volvo')
+    expect(volvo.attributes('href')).toBe('auth/volvo/start')
+    expect(volvo.text()).toBe('I have a Volvo')
+    // A Polestar's credential is given in the connection page's Polestar section.
+    const polestar = wrapper.find('a.polestar')
+    expect(polestar.attributes('href')).toBe('/connection#polestar')
+    expect(polestar.text()).toBe('I have a Polestar (beta)')
+    // Two choices of equal weight.
+    expect(volvo.classes()).toContain('v-btn--variant-flat')
+    expect(polestar.classes()).toContain('v-btn--variant-flat')
     expect(router.currentRoute.value.name).toBe('home')
   })
 
-  it('asks for the Volvo key first on an instance without its own', async () => {
+  it('leads a Volvo to the key first on an instance without its own', async () => {
     fetchVehicles.mockResolvedValue([])
     fetchConnection.mockResolvedValue({
       connected: false,
@@ -73,10 +79,11 @@ describe('HomePage', () => {
       polestar: null,
     })
     const { wrapper } = await home()
-    expect(wrapper.text()).toContain('give it first, then connect your Volvo ID')
+    expect(wrapper.text()).toContain('the key of a Volvo application you create')
+    expect(wrapper.text()).toContain("a Polestar with a credential of Polestar's Data Portal")
     expect(wrapper.find('a[href="auth/volvo/start"]').exists()).toBe(false)
-    const link = wrapper.find('a[href="/connection"]')
-    expect(link.text()).toBe('Give your Volvo key')
+    expect(wrapper.find('a.volvo').attributes('href')).toBe('/connection')
+    expect(wrapper.find('a.polestar').attributes('href')).toBe('/connection#polestar')
   })
 
   it('says when the vehicles cannot be loaded', async () => {

@@ -7,10 +7,11 @@ import { useConnectionSettings } from '@/features/manage-api-key'
 import { useVehicles } from '@/features/select-vehicle'
 import { AppShell } from '@/widgets/app-shell'
 
-// Home leads to the first vehicle of the account; without one, to the Volvo ID connection,
-// or first to the Connection page while the account's key is missing: without it,
-// runsten-api refuses to start the flow (an instance without a key of its own). The
-// Connection page also takes a Polestar's credential.
+// Home leads to the first vehicle of the account; without one, it asks which car, Volvo or
+// Polestar, two choices of equal weight. A Volvo leads to the Volvo ID connection, or first
+// to the Connection page while the account's key is missing: without it, runsten-api
+// refuses to start the flow (an instance without a key of its own). A Polestar leads to the
+// Connection page's Polestar section, which takes its credential.
 const { t } = useI18n()
 const router = useRouter()
 const { vehicles, isPending, error } = useVehicles()
@@ -36,16 +37,25 @@ watchEffect(() => {
       :text="keyMissing ? t('home.empty.keyText') : t('home.empty.text')"
     >
       <template #actions>
-        <v-btn v-if="keyMissing" :to="{ name: 'connection' }" color="primary" variant="flat">{{
-          t('home.giveKey')
-        }}</v-btn>
+        <v-btn
+          v-if="keyMissing"
+          :to="{ name: 'connection' }"
+          color="primary"
+          variant="flat"
+          class="volvo"
+          >{{ t('home.choose.volvo') }}</v-btn
+        >
         <!-- A full page load: the Volvo ID flow is served by runsten-api. -->
-        <v-btn v-else href="auth/volvo/start" color="primary" variant="flat">{{
-          t('home.connectVolvo')
+        <v-btn v-else href="auth/volvo/start" color="primary" variant="flat" class="volvo">{{
+          t('home.choose.volvo')
         }}</v-btn>
-        <v-btn :to="{ name: 'connection' }" variant="tonal" class="polestar">{{
-          t('home.connectPolestar')
-        }}</v-btn>
+        <v-btn
+          :to="{ name: 'connection', hash: '#polestar' }"
+          color="primary"
+          variant="flat"
+          class="polestar"
+          >{{ t('home.choose.polestar') }}</v-btn
+        >
       </template>
     </v-empty-state>
   </AppShell>

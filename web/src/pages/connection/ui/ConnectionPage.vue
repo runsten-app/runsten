@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { mdiArrowLeft } from '@mdi/js'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { limitsPage } from '@/entities/session'
@@ -27,6 +27,9 @@ import VehicleCollection from './VehicleCollection.vue'
 // Without the instance's key (the hosted offer), the account's comes first: the Volvo ID
 // is connected after, the vehicles listed with it. With it (self-hosting), it reads every
 // vehicle: there is no key to give.
+//
+// Opened at a section (#polestar, from the home's choice of a Polestar), it scrolls to it
+// once the page is loaded: the section is not there before.
 const props = defineProps<{ vehicle?: string; outcome?: string }>()
 const { t } = useI18n()
 const { unread } = useLimits()
@@ -74,6 +77,16 @@ const connection = computed(
   () => vehicles.value?.find((v) => v.connection.provider === 'volvo')?.connection,
 )
 const lost = computed(() => connection.value?.status === 'reauth_required')
+const loaded = computed(() => !!vehicles.value && !!settings.value)
+watch(
+  loaded,
+  async (now) => {
+    if (!now || !route.hash) return
+    await nextTick()
+    document.getElementById(route.hash.slice(1))?.scrollIntoView?.()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -194,7 +207,7 @@ const lost = computed(() => connection.value?.status === 'reauth_required')
         </template>
       </section>
 
-      <section class="mb-8" aria-labelledby="connection-polestar-title">
+      <section id="polestar" class="mb-8" aria-labelledby="connection-polestar-title">
         <h2 id="connection-polestar-title" class="text-title-large mb-3">
           {{ t('connection.polestar.title') }}
           <v-chip size="small" variant="tonal" color="primary" class="ms-2 beta">
