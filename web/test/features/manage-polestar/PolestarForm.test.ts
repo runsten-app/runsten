@@ -157,7 +157,7 @@ describe('PolestarForm', () => {
     })
     props.connection = given
     await flushPromises()
-    expect(status()).toBe("Credential saved: its vehicles are read from the collector's next pass.")
+    expect(status()).toBe('Credential saved: Runsten reads its vehicles from its next pass.')
     expect(w().find('form').exists()).toBe(false)
   })
 

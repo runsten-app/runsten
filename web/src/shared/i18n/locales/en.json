@@ -1344,7 +1344,7 @@
     "help": "Its quota: 10,000 calls a day, more than a car driven and charged all day needs. It reads for 90 days: Runsten reminds you before.",
     "save": "Save the credential",
     "cancel": "Cancel",
-    "saved": "Credential saved: its vehicles are read from the collector's next pass.",
+    "saved": "Credential saved: Runsten reads its vehicles from its next pass.",
     "deleted": "Credential removed.",
     "error": {
       "summary": "The credential was not saved",

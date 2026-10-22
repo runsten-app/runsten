@@ -1344,7 +1344,7 @@
     "help": "Son quota : 10 000 appels par jour, plus qu'il n'en faut à une voiture qui roulerait et chargerait toute la journée. Il lit pendant 90 jours : Runsten vous le rappelle avant.",
     "save": "Enregistrer l'identifiant",
     "cancel": "Annuler",
-    "saved": "Identifiant enregistré : ses véhicules sont lus dès le prochain passage du collecteur.",
+    "saved": "Identifiant enregistré : Runsten lit ses véhicules dès son prochain passage.",
     "deleted": "Identifiant retiré.",
     "error": {
       "summary": "L'identifiant n'a pas été enregistré",
