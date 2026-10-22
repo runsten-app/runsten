@@ -611,6 +611,7 @@
   name: Polestar 2 Standard Range Single Motor
   years: [2025]
   gross_kwh: 70
+  net_kwh: 67
   chemistry: nmc
   ac_max_kw: 11
   dc_max_kw: 180
@@ -618,6 +619,12 @@
     - url: https://www.polestar.com/uk/polestar-2/specifications/
       level: manufacturer
       for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/uk/car/2225/Polestar-2-Standard-Range-Single-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://ev-database.org/uk/car/3150/Polestar-2-Standard-Range-Single-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh]
 
 - id: ps2-lr-single-2021
   brand: polestar
@@ -678,6 +685,7 @@
   name: Polestar 2 Long Range Dual Motor / Performance
   years: [2025]
   gross_kwh: 82
+  net_kwh: 79
   chemistry: nmc
   ac_max_kw: 11
   dc_max_kw: 205
@@ -685,13 +693,19 @@
     - url: https://www.polestar.com/uk/polestar-2/specifications/
       level: manufacturer
       for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/uk/car/2227/Polestar-2-Long-Range-Dual-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://ev-database.org/uk/car/3152/Polestar-2-Long-Range-Dual-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh]
 
 # --- Polestar 3, 4 and 5 --------------------------------------------------------------
 
 - id: ps3-2024
   brand: polestar
   family: Polestar 3
-  name: Polestar 3 Long Range Dual Motor
+  name: Polestar 3 Long Range Single Motor / Dual Motor
   years: [2024, 2025]
   gross_kwh: 111
   net_kwh: 107
@@ -700,6 +714,9 @@
   dc_max_kw: 250
   sources:
     - url: https://ev-database.org/uk/car/1758/Polestar-3-Long-Range-Dual-motor
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/uk/car/2229/Polestar-3-Long-Range-Single-motor
       level: secondary
       for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
 
@@ -711,12 +728,16 @@
   name: Polestar 3 Long Range Rear Motor (800 V)
   years: [2026]
   gross_kwh: 92
+  net_kwh: 88
   ac_max_kw: 11
   dc_max_kw: 310
   sources:
     - url: https://www.polestar.com/uk/polestar-3/specifications/
       level: manufacturer
       for: [gross_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/uk/car/3326/Polestar-3-Rear-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh]
 
 - id: ps3-dual-2026
   brand: polestar
@@ -724,12 +745,16 @@
   name: Polestar 3 Long Range Dual Motor / Performance (800 V)
   years: [2026]
   gross_kwh: 106
+  net_kwh: 102
   ac_max_kw: 11
   dc_max_kw: 350
   sources:
     - url: https://www.polestar.com/uk/polestar-3/specifications/
       level: manufacturer
       for: [gross_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/uk/car/3327/Polestar-3-Dual-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh]
 
 # The Plus pack is said to bring a 22 kW charger, but no source at hand says so: no
 # ac_option_kw yet.
@@ -737,14 +762,21 @@
   brand: polestar
   family: Polestar 4
   name: Polestar 4 Long Range Single Motor / Dual Motor
-  years: [2024]
+  years: [2024] # the coupé, and the SUV from 2026: one battery
   gross_kwh: 100
+  net_kwh: 94
   ac_max_kw: 11
   dc_max_kw: 200
   sources:
     - url: https://www.polestar.com/uk/polestar-4/specifications/
       level: manufacturer
       for: [gross_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/1842/Polestar-4-Long-Range-Dual-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://ev-database.org/car/3607/Polestar-4-Coupe-Dual-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh]
 
 - id: ps5-2025
   brand: polestar
@@ -752,6 +784,7 @@
   name: Polestar 5 Dual Motor / Performance
   years: [2025]
   gross_kwh: 112 # Polestar 112, Wikipedia 103
+  net_kwh: 106
   chemistry: nmc
   ac_max_kw: 11
   dc_max_kw: 350
@@ -759,3 +792,6 @@
     - url: https://www.polestar.com/uk/polestar-5/specifications/
       level: manufacturer
       for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/uk/car/3298/Polestar-5-Dual-Motor
+      level: secondary
+      for: [gross_kwh, net_kwh]
