@@ -43,7 +43,9 @@ test('Connection: a Polestar credential is checked before it is stored', async (
 }, testInfo) => {
   await signIn(page)
   await page.goto('/connection')
-  const polestar = page.getByRole('region', { name: 'Polestar' })
+  await page.getByRole('tab', { name: /Polestar/ }).click()
+  await expect(page).toHaveURL(/#polestar$/)
+  const polestar = page.getByRole('region', { name: 'Polestar Data Portal' })
   await expect(polestar.getByRole('link', { name: /data-portal\.polestar\.com/ })).toHaveAttribute(
     'href',
     'https://data-portal.polestar.com/',

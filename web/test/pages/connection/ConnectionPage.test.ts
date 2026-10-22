@@ -72,13 +72,18 @@ function facts(dl: DOMWrapper<Element>) {
 }
 
 describe('ConnectionPage', () => {
-  it('has the Volvo ID and the vehicles, under their headings', async () => {
+  it('has one tab per brand, each with its connection and its vehicles', async () => {
     const w = await page()
     expect(w.find('h1').text()).toBe('Connection')
+    // A dot on each tab whose vehicles need the user: a lost grant, a Polestar unshared.
+    expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
+      'Volvo needs your attention',
+      'Polestar Beta needs your attention',
+    ])
+    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Volvo')
     // Self-hosting: the instance's key reads every vehicle, there is none to give.
     expect(w.findAll('h2').map((h) => h.text())).toEqual([
       'Volvo ID',
-      'Polestar Beta',
       'Volvo application',
       'Vehicles',
     ])
@@ -88,8 +93,26 @@ describe('ConnectionPage', () => {
       'YV1SMLT0000DT0002',
       'EX30 Single Motor Extended Range · 2024',
       'YV1SMLT0000DT0005',
+    ])
+
+    await w.findAll('[role="tab"]')[1]?.trigger('click')
+    await flushPromises()
+    // The Volvo panel, once shown, stays in the page, hidden.
+    const panel = w.find('#connection-panel-polestar')
+    expect(panel.findAll('h2').map((h) => h.text())).toEqual(['Polestar Data Portal', 'Vehicles'])
+    expect(panel.findAll('.vehicle-collection h3').map((h) => h.text())).toEqual([
       'Polestar 2 Long Range Dual Motor / Performance · 2024',
     ])
+  })
+
+  it('puts no dot on a tab whose vehicles are read', async () => {
+    const [car] = items
+    if (!car) throw new Error('fixture')
+    mocks.fetchVehicles.mockResolvedValue([
+      { ...car, collection: { ...car.collection, quota: [] } },
+    ])
+    const w = await page()
+    expect(w.findAll('[role="tab"] .attention')).toHaveLength(0)
   })
 
   it('tells the Volvo ID, and connects it again', async () => {
@@ -160,8 +183,11 @@ describe('ConnectionPage', () => {
   })
 
   it('tells how a Polestar is read, and takes its credential', async () => {
-    const w = await page()
-    const v = w.findAll('.vehicle-collection')[4]
+    const router = testRouter()
+    await router.push('/connection#polestar')
+    const { wrapper: w } = mountWith(ConnectionPage, { router })
+    await flushPromises()
+    const v = w.find('.vehicle-collection')
     expect(v?.find('.state').text()).toBe(
       'Not read: the vehicle is no longer shared with the credential',
     )
@@ -172,41 +198,46 @@ describe('ConnectionPage', () => {
     expect(w.find('[aria-labelledby="connection-polestar-title"] .polestar-form').exists()).toBe(
       true,
     )
-    // In beta: the heading's name says so.
-    expect(w.find('#connection-polestar-title').text().replace(/\s+/g, ' ')).toBe('Polestar Beta')
-    expect(w.find('#connection-polestar-title .beta').exists()).toBe(true)
+    // In beta: its tab says so.
+    expect(w.find('#connection-tab-polestar .beta').text()).toBe('Beta')
   })
 
-  // jsdom has no scrollIntoView: the page calls it when there is one.
-  describe('opened at a section', () => {
-    const scrolled = vi.fn()
-    beforeEach(() => {
-      scrolled.mockReset()
-      Element.prototype.scrollIntoView = function (this: Element) {
-        scrolled(this.id)
-      }
-    })
-    afterEach(() => {
-      delete (Element.prototype as Partial<Element>).scrollIntoView
-    })
+  describe('opened at a tab', () => {
+    const selected = (w: { find: (s: string) => DOMWrapper<Element> }) =>
+      w.find('[role="tab"][aria-selected="true"]').attributes('id')
 
-    it('scrolls to the Polestar section, once loaded', async () => {
+    it("opens the hash's tab", async () => {
       mocks.fetchConnection.mockResolvedValue(hosted)
       const router = testRouter()
       await router.push('/connection#polestar')
-      // In the document: the section is found by its id.
-      const { wrapper } = mountWith(ConnectionPage, { router, attachTo: document.body })
+      const { wrapper } = mountWith(ConnectionPage, { router })
       await flushPromises()
-      expect(scrolled).toHaveBeenCalledWith('polestar')
-      wrapper.unmount()
+      expect(selected(wrapper)).toBe('connection-tab-polestar')
+      expect(wrapper.find('.polestar-form').exists()).toBe(true)
     })
 
-    it('scrolls nowhere without a section', async () => {
-      const { wrapper } = mountWith(ConnectionPage, { attachTo: document.body })
+    it('opens the tab of the vehicle it was opened from', async () => {
+      const w = await page({ vehicle: '0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a06' })
+      expect(selected(w)).toBe('connection-tab-polestar')
+    })
+
+    it('opens the tab of the only brand the account has', async () => {
+      const polestar = items[4]
+      if (!polestar) throw new Error('fixture')
+      mocks.fetchVehicles.mockResolvedValue([polestar])
+      const w = await page()
+      expect(selected(w)).toBe('connection-tab-polestar')
+    })
+
+    it('keeps the tab chosen in the hash', async () => {
+      const router = testRouter()
+      await router.push('/connection?vehicle=v1')
+      const { wrapper } = mountWith(ConnectionPage, { router })
       await flushPromises()
-      expect(wrapper.find('#polestar').exists()).toBe(true)
-      expect(scrolled).not.toHaveBeenCalled()
-      wrapper.unmount()
+      expect(selected(wrapper)).toBe('connection-tab-volvo')
+      await wrapper.find('#connection-tab-polestar').trigger('click')
+      await vi.waitFor(() => expect(router.currentRoute.value.hash).toBe('#polestar'))
+      expect(router.currentRoute.value.query).toEqual({ vehicle: 'v1' })
     })
   })
 
@@ -232,18 +263,14 @@ describe('ConnectionPage', () => {
     const w = await page()
     expect(w.text()).toContain('No Volvo ID connected yet: Runsten reads no Volvo.')
     expect(w.find('a[href="auth/volvo/start"]').text()).toBe('Connect a Volvo ID')
-    expect(w.findAll('h2').map((h) => h.text())).toEqual([
-      'Volvo ID',
-      'Polestar Beta',
-      'Volvo application',
-    ])
+    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo ID', 'Volvo application'])
   })
 
   it('asks for the key before the Volvo ID, on an instance without its own', async () => {
     mocks.fetchVehicles.mockResolvedValue([])
     mocks.fetchConnection.mockResolvedValue(hosted)
     const w = await page()
-    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID', 'Polestar Beta'])
+    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID'])
     expect(w.find('.api-key-form form').exists()).toBe(true)
     expect(w.find('a[href="auth/volvo/start"]').exists()).toBe(false)
     expect(w.find('[aria-labelledby="connection-volvo-title"]').text()).toContain(
@@ -258,7 +285,7 @@ describe('ConnectionPage', () => {
       api_key: { last4: 'cdef', set_at: '2026-09-28T05:00:00Z', refused_at: null },
     })
     const w = await page()
-    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID', 'Polestar Beta'])
+    expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo key', 'Volvo ID'])
     expect(w.find('a[href="auth/volvo/start"]').text()).toBe('Connect a Volvo ID')
   })
 
