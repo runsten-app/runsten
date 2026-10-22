@@ -886,6 +886,12 @@
     "loading": "Chargement de la connexion",
     "error": "La connexion n'a pas pu être chargée. Réessayez dans un instant.",
     "refreshFailed": "La connexion n'a pas pu être actualisée : ce qu'elle montre peut être dépassé.",
+    "brands": "Marques de véhicules",
+    "brand": {
+      "volvo": "Volvo",
+      "polestar": "Polestar"
+    },
+    "brandAttention": "demande votre attention",
     "outcome": {
       "connected": "Volvo ID connecté : le collecteur lit vos véhicules dès son prochain passage.",
       "keyRefused": "Votre Volvo ID est connecté, mais Volvo a refusé votre clé : corrigez-la ci-dessous, les véhicules seront listés, sans vous reconnecter.",
@@ -1005,7 +1011,7 @@
       "key": "Clé d'application"
     },
     "polestar": {
-      "title": "Polestar",
+      "title": "Data Portal de Polestar",
       "beta": "Bêta"
     }
   },

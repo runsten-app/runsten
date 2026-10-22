@@ -886,6 +886,12 @@
     "loading": "Läser in anslutningen",
     "error": "Anslutningen kunde inte läsas in. Försök igen om en stund.",
     "refreshFailed": "Anslutningen kunde inte uppdateras: det som visas kan vara inaktuellt.",
+    "brands": "Bilmärken",
+    "brand": {
+      "volvo": "Volvo",
+      "polestar": "Polestar"
+    },
+    "brandAttention": "behöver din uppmärksamhet",
     "outcome": {
       "connected": "Volvo ID anslutet: insamlaren läser dina fordon från sitt nästa varv.",
       "keyRefused": "Ditt Volvo ID är anslutet, men Volvo avvisade din nyckel: rätta den nedan, fordonen listas då, utan att du ansluter igen.",
@@ -1005,7 +1011,7 @@
       "key": "Applikationsnyckel"
     },
     "polestar": {
-      "title": "Polestar",
+      "title": "Polestars Data Portal",
       "beta": "Beta"
     }
   },

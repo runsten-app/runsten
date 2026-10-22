@@ -886,6 +886,12 @@
     "loading": "Loading the connection",
     "error": "The connection could not be loaded. Try again in a moment.",
     "refreshFailed": "The connection could not be refreshed: what it shows may be out of date.",
+    "brands": "Vehicle brands",
+    "brand": {
+      "volvo": "Volvo",
+      "polestar": "Polestar"
+    },
+    "brandAttention": "needs your attention",
     "outcome": {
       "connected": "Volvo ID connected: the collector reads your vehicles from its next pass.",
       "keyRefused": "Your Volvo ID is connected, but Volvo refused your key: correct it below, the vehicles are listed then, without connecting again.",
@@ -1005,7 +1011,7 @@
       "key": "Application key"
     },
     "polestar": {
-      "title": "Polestar",
+      "title": "Polestar Data Portal",
       "beta": "Beta"
     }
   },
