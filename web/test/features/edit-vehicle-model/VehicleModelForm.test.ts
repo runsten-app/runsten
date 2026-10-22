@@ -82,6 +82,21 @@ describe('VehicleModelForm', () => {
     expect(group.attributes('aria-labelledby')).toBe(w.findAll('legend')[0]?.attributes('id'))
     expect(api.fetchVariants).toHaveBeenCalledWith(ex30.id)
 
+    // One model: no model to choose. The variants of 2024, the others folded.
+    expect(w.find('.models').exists()).toBe(false)
+    const toggle = w.find('.other-years-toggle')
+    expect(toggle.text()).toBe('Other model years (3)')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    expect(labels(w, 'variants')).toHaveLength(4)
+    await toggle.trigger('click')
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+    expect(w.find('.other-years [role="radiogroup"]').attributes('aria-labelledby')).toBe(
+      toggle.attributes('id'),
+    )
+    // One set of radios across both groups.
+    expect(new Set(radios(w, 'variants').map((r) => r.element.name))).toEqual(
+      new Set([`vehicle-${ex30.id}-variant`]),
+    )
     const shown = labels(w, 'variants')
     expect(shown).toHaveLength(options.length + 1)
     expect(shown[0]).toBe(
@@ -233,6 +248,78 @@ describe('VehicleModelForm', () => {
     })
     expect(w.find('.none').exists()).toBe(false)
     expect(w.find('form').exists()).toBe(true)
+  })
+
+  it('opens the other years when they hold the variant chosen', async () => {
+    const p5: Vehicle = {
+      ...ex30,
+      model: { ...ex30.model, variant: { ...chosen.model.variant, id: 'ex30-p5-2027' } },
+    }
+    const w = await form(p5)
+    expect(w.find('.other-years-toggle').attributes('aria-expanded')).toBe('true')
+    expect(radios(w, 'other-years')[checked(w, 'other-years')]?.element.value).toBe('ex30-p5-2027')
+  })
+
+  it('shows every variant when the model year is unknown', async () => {
+    const w = await form({ ...ex30, model: { ...ex30.model, model_year: null } })
+    expect(w.find('.other-years-toggle').exists()).toBe(false)
+    expect(labels(w, 'variants')).toHaveLength(options.length + 1)
+  })
+
+  describe('a Polestar, offered its brand', () => {
+    const polestar = vehicles.items[4] as Vehicle
+    const unknown: Vehicle = {
+      ...polestar,
+      model: { ...polestar.model, family: null, variant: null, variant_source: null },
+    }
+    // The fixtures' variants as two models' of the brand.
+    const brand: VariantOption[] = [
+      ...options.map((o) => ({ ...o, family: 'Polestar 2', candidate: false })),
+      { ...(options[2] as VariantOption), id: 'ps3', name: 'Polestar 3', family: 'Polestar 3' },
+    ].map((o) => ({ ...o, candidate: false }))
+    const models = (w: VueWrapper) => w.findAll('.models button')
+
+    it('asks the model first, then shows its variants', async () => {
+      const w = await form(unknown, brand)
+      const group = w.find('.models')
+      expect(group.attributes('role')).toBe('group')
+      expect(w.find(`#${group.attributes('aria-labelledby')}`).text()).toBe('Model')
+      expect(models(w).map((b) => [b.text(), b.attributes('aria-pressed')])).toEqual([
+        ['Polestar 2', 'false'],
+        ['Polestar 3', 'false'],
+      ])
+      // No model yet: Automatic alone, and why.
+      expect(labels(w, 'variants')).toHaveLength(1)
+      expect(w.find('.choose-model').text()).toBe('Choose the model to see its variants.')
+
+      await models(w)[1]?.trigger('click')
+      expect(models(w)[1]?.attributes('aria-pressed')).toBe('true')
+      expect(w.find('.choose-model').exists()).toBe(false)
+      expect(labels(w, 'variants').slice(1)).toEqual([expect.stringContaining('Polestar 3')])
+      expect(w.find('.other-years-toggle').exists()).toBe(false)
+      // Pressed again, it stays.
+      await models(w)[1]?.trigger('click')
+      expect(models(w)[1]?.attributes('aria-pressed')).toBe('true')
+    })
+
+    it('forgets a variant of another model', async () => {
+      api.setVehicleModel.mockResolvedValue(chosen)
+      const w = await form(unknown, brand)
+      await models(w)[1]?.trigger('click')
+      await pick(w, 'variants', 1)
+      await models(w)[0]?.trigger('click')
+      expect(checked(w, 'variants')).toBe(0)
+      await save(w)
+      expect(api.setVehicleModel).toHaveBeenCalledWith(polestar.id, {
+        variant_id: null,
+        ac_max_kw: null,
+      })
+    })
+
+    it('presses the model of the variant in effect', async () => {
+      const w = await form(polestar, brand)
+      expect(models(w).map((b) => b.attributes('aria-pressed'))).toEqual(['true', 'false'])
+    })
   })
 
   it('tells when the variants cannot be read', async () => {

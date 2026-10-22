@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest'
 import type { Model, VariantOption } from '@/entities/vehicle'
 import {
   automatic,
+  byYear,
   chargersOf,
   draftOf,
   effectiveOf,
   field,
+  fitsYear,
+  modelOf,
+  modelsOf,
   recognizedOf,
   validate,
   withVariant,
@@ -109,5 +113,65 @@ describe('validate', () => {
     expect(validate(vehicle, { variant: automatic, charger: '11' }, options).issues).toEqual([
       { field: field.charger(vehicle), rule: 'notACharger' },
     ])
+  })
+})
+
+describe('the models', () => {
+  const brand: VariantOption[] = [
+    { ...byId('ex30-lfp-2024'), id: 'ps10', family: 'Polestar 10' },
+    { ...byId('ex30-lfp-2024'), id: 'ps3', family: 'Polestar 3' },
+    { ...byId('ex30-p5-2027'), id: 'ps2-2027', family: 'Polestar 2' },
+    { ...byId('ex30-lfp-2024'), id: 'ps2', family: 'Polestar 2' },
+  ].map((o) => ({ ...o, candidate: false }))
+  const auto = { variant: automatic, charger: automatic }
+
+  it('lists them once, in a natural order', () => {
+    expect(modelsOf(brand)).toEqual(['Polestar 2', 'Polestar 3', 'Polestar 10'])
+    expect(modelsOf(options)).toEqual(['EX30'])
+  })
+
+  it.each<[string, ReturnType<typeof draftOf>, VariantOption[], string | null, string | null]>([
+    [
+      'the chosen variant',
+      { variant: 'ps3', charger: automatic },
+      brand,
+      'Polestar 2',
+      'Polestar 3',
+    ],
+    ['the recognized one', auto, recognizing, null, 'EX30'],
+    ['the vehicle', auto, brand, 'Polestar 10', 'Polestar 10'],
+    ['a vehicle the variants lack', auto, brand, 'Polestar 9', null],
+    [
+      'the candidates',
+      auto,
+      brand.map((o) => ({ ...o, candidate: o.family === 'Polestar 2' })),
+      null,
+      'Polestar 2',
+    ],
+    ['the only one', auto, options.map((o) => ({ ...o, candidate: false })), null, 'EX30'],
+    ['none', auto, brand, null, null],
+  ])('shows first the model of %s', (_, d, list, family, want) => {
+    expect(modelOf(d, list, family)).toBe(want)
+  })
+
+  it('tells the variants of a model year', () => {
+    expect(fitsYear(byId('ex30-er-2024'), 2026)).toBe(true)
+    expect(fitsYear(byId('ex30-er-2024'), 2027)).toBe(false)
+    expect(fitsYear(byId('ex30-p5-2027'), 2030)).toBe(true)
+    expect(fitsYear(byId('ex30-p5-2027'), 2026)).toBe(false)
+  })
+
+  it.each<[string, number | null, string[], string[]]>([
+    ['its model year', 2024, ['ps2'], ['ps2-2027']],
+    ['an unknown year', null, ['ps2-2027', 'ps2'], []],
+    ['a year no variant fits', 2010, ['ps2-2027', 'ps2'], []],
+  ])("splits a model's variants by %s", (_, year, fitting, others) => {
+    const split = byYear(brand, 'Polestar 2', year)
+    expect(split.fitting.map((o) => o.id)).toEqual(fitting)
+    expect(split.others.map((o) => o.id)).toEqual(others)
+  })
+
+  it('shows nothing without a model', () => {
+    expect(byYear(brand, null, 2024)).toEqual({ fitting: [], others: [] })
   })
 })

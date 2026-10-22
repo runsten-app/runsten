@@ -3309,6 +3309,10 @@ components:
           description: Maximum DC charging power.
           format: double
           type: number
+        family:
+          description: "The model the variant is of, such as EX30 or Polestar 2: an interface groups the variants by it. A Polestar's are offered across the brand's models."
+          minLength: 1
+          type: string
         gross_kwh:
           description: Gross battery capacity.
           format: double
@@ -3332,6 +3336,7 @@ components:
             - number
             - "null"
       required:
+        - family
         - model_years
         - candidate
         - levels

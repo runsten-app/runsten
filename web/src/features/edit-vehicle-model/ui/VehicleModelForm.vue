@@ -1,19 +1,23 @@
 <script setup lang="ts">
-import { mdiContentSave } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiContentSave } from '@mdi/js'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { SourceLevel, VariantOption, Vehicle } from '@/entities/vehicle'
+import type { Vehicle } from '@/entities/vehicle'
 import { isApiError } from '@/shared/api'
 import { useFormat } from '@/shared/lib'
 import { ErrorSummary, FactItem } from '@/shared/ui'
 import { useSetVehicleModel } from '../composables/useSetVehicleModel'
 import { useVariants } from '../composables/useVariants'
+import VariantLabel from './VariantLabel.vue'
 import {
   automatic,
+  byYear,
   chargersOf,
   draftOf,
   effectiveOf,
   field,
+  modelOf,
+  modelsOf,
   recognizedOf,
   validate,
   withVariant,
@@ -22,8 +26,11 @@ import {
 } from '../model/draft'
 
 // VehicleModelForm is the model of a vehicle, on its settings page: what it reports of itself, and the
-// variant and onboard charger its driver chooses, which outrank the recognition. Saved on
-// request; the save keeps the focus where it is and says so in a status region.
+// variant and onboard charger its driver chooses, which outrank the recognition. The model
+// first, when the variants are of several (a Polestar of the Data Portal is offered its
+// brand's), then its variants, those of the vehicle's model year first and the others
+// folded. Saved on request; the save keeps the focus where it is and says so in a status
+// region.
 const props = defineProps<{ vehicle: Vehicle; label: string }>()
 const { t } = useI18n()
 const f = useFormat()
@@ -35,6 +42,9 @@ const ids = computed(() => ({
   title: `vehicle-${id.value}-title`,
   variant: field.variant(id.value),
   variantLegend: `vehicle-${id.value}-variant-legend`,
+  models: `vehicle-${id.value}-models`,
+  otherYears: `vehicle-${id.value}-other-years`,
+  otherYearsToggle: `vehicle-${id.value}-other-years-toggle`,
   charger: field.charger(id.value),
   chargerLegend: `vehicle-${id.value}-charger-legend`,
 }))
@@ -43,6 +53,32 @@ const draft = ref<ModelDraft>(draftOf(props.vehicle.model))
 const options = computed(() => variants.value ?? [])
 const recognized = computed(() => recognizedOf(options.value))
 const effective = computed(() => effectiveOf(draft.value, options.value))
+
+// The model the variants are shown of: the one pressed, else the draft's or the
+// recognition's. Pressing another forgets a variant of the previous one, which would no
+// longer show.
+const models = computed(() => modelsOf(options.value))
+const pressed = ref<string | null>(null)
+const model = computed(
+  () => pressed.value ?? modelOf(draft.value, options.value, props.vehicle.model.family),
+)
+const split = computed(() => byYear(options.value, model.value, props.vehicle.model.model_year))
+// Mandatory: the toggle never unpresses a model, but its type allows it.
+function chooseModel(m: string | null) {
+  if (m === null) return
+  pressed.value = m
+  if (effectiveOf(draft.value, options.value)?.family !== m && draft.value.variant !== automatic)
+    chooseVariant(automatic)
+}
+// The other years open by themselves when they hold the variant chosen.
+const othersOpen = ref(false)
+watch(
+  split,
+  (s) => {
+    if (s.others.some((o) => o.id === draft.value.variant)) othersOpen.value = true
+  },
+  { immediate: true },
+)
 // The charger is asked only when the variant in effect has an option.
 const chargers = computed(() => {
   const v = effective.value
@@ -117,41 +153,6 @@ async function submit() {
 }
 
 const kw = (v: number) => f.quantity(v, 'kW')
-const kwh = (v: number | null) => f.quantity(v, 'kWh')
-function years(o: VariantOption): string {
-  const y = o.model_years
-  if (y.to === null) return t('vehicleModel.yearsSince', { from: y.from })
-  if (y.to === y.from) return String(y.from)
-  return t('vehicleModel.yearsRange', { from: y.from, to: y.to })
-}
-function figures(o: VariantOption): string {
-  const capacity =
-    o.net_kwh === null
-      ? t('vehicleModel.grossOnly', { gross: kwh(o.gross_kwh) })
-      : t('vehicleModel.capacity', { gross: kwh(o.gross_kwh), net: kwh(o.net_kwh) })
-  const ac =
-    o.ac_option_kw === null
-      ? t('vehicleModel.ac', { kw: kw(o.ac_max_kw) })
-      : t('vehicleModel.acOption', { kw: kw(o.ac_max_kw), option: kw(o.ac_option_kw) })
-  return [capacity, ac, t('vehicleModel.dc', { kw: kw(o.dc_max_kw) })].join(' · ')
-}
-// sources tells where the figures come from: the manufacturer, public sources, or both,
-// naming the figures public sources give.
-function sources(o: VariantOption): string {
-  const l = o.levels
-  const named: [SourceLevel | null, string][] = [
-    [l.gross_kwh, t('vehicleModel.figure.gross')],
-    [l.net_kwh, t('vehicleModel.figure.net')],
-    [l.ac_max_kw, t('vehicleModel.figure.ac')],
-    [l.ac_option_kw, t('vehicleModel.figure.acOption')],
-    [l.dc_max_kw, t('vehicleModel.figure.dc')],
-  ]
-  const present = named.filter(([level]) => level !== null)
-  const secondary = present.filter(([level]) => level === 'secondary').map(([, name]) => name)
-  if (secondary.length === 0) return t('vehicleModel.fromManufacturer')
-  if (secondary.length === present.length) return t('vehicleModel.fromPublic')
-  return t('vehicleModel.fromBoth', { figures: secondary.join(', ') })
-}
 function chargerLabel(c: number): string {
   const v = effective.value
   return v && c === v.ac_option_kw
@@ -199,8 +200,27 @@ function chargerLabel(c: number): string {
           {{ t('vehicleModel.variant') }}
         </legend>
         <p class="text-body-medium mb-2">{{ t('vehicleModel.variantHelp') }}</p>
+        <div v-if="models.length > 1" class="mb-2">
+          <p :id="ids.models" class="text-body-medium mb-1">{{ t('vehicleModel.model') }}</p>
+          <v-btn-toggle
+            :model-value="model"
+            mandatory
+            density="compact"
+            class="segmented models"
+            role="group"
+            :aria-labelledby="ids.models"
+            @update:model-value="chooseModel"
+          >
+            <v-btn v-for="m in models" :key="m" :value="m" :aria-pressed="m === model">
+              {{ m }}
+            </v-btn>
+          </v-btn-toggle>
+        </div>
+        <!-- Two groups of one name: the browser keeps one radio checked across them, and
+             the arrows go from one to the other. -->
         <v-radio-group
           :model-value="draft.variant"
+          :name="ids.variant"
           :aria-labelledby="ids.variantLegend"
           :error-messages="errorOf(ids.variant)"
           class="variants"
@@ -221,23 +241,45 @@ function chargerLabel(c: number): string {
               </span>
             </template>
           </v-radio>
-          <v-radio v-for="o in options" :key="o.id" :value="o.id" class="option">
+          <v-radio v-for="o in split.fitting" :key="o.id" :value="o.id" class="option">
             <template #label>
-              <span>
-                <span class="d-block text-body-large">
-                  {{ t('vehicleModel.option', { name: o.name, years: years(o) }) }}
-                  <span v-if="recognized?.id === o.id" class="recognized text-primary">
-                    · {{ t('vehicleModel.recognized') }}
-                  </span>
-                </span>
-                {{ ' ' }}
-                <span class="d-block text-body-medium">{{ figures(o) }}</span>
-                {{ ' ' }}
-                <span class="d-block text-body-small text-medium-emphasis">{{ sources(o) }}</span>
-              </span>
+              <VariantLabel :option="o" :recognized="recognized?.id === o.id" />
             </template>
           </v-radio>
         </v-radio-group>
+        <p v-if="model === null" class="choose-model text-body-medium mb-2">
+          {{ t('vehicleModel.chooseModel') }}
+        </p>
+        <template v-if="split.others.length">
+          <v-btn
+            :id="ids.otherYearsToggle"
+            variant="text"
+            class="other-years-toggle mb-2"
+            :append-icon="othersOpen ? mdiChevronUp : mdiChevronDown"
+            :aria-expanded="othersOpen"
+            :aria-controls="ids.otherYears"
+            @click="othersOpen = !othersOpen"
+          >
+            {{ t('vehicleModel.otherYears', { count: split.others.length }) }}
+          </v-btn>
+          <div :id="ids.otherYears">
+            <v-radio-group
+              v-if="othersOpen"
+              :model-value="draft.variant"
+              :name="ids.variant"
+              :aria-labelledby="ids.otherYearsToggle"
+              class="variants other-years"
+              hide-details
+              @update:model-value="chooseVariant"
+            >
+              <v-radio v-for="o in split.others" :key="o.id" :value="o.id" class="option">
+                <template #label>
+                  <VariantLabel :option="o" :recognized="recognized?.id === o.id" />
+                </template>
+              </v-radio>
+            </v-radio-group>
+          </div>
+        </template>
       </fieldset>
 
       <fieldset v-if="chargers.length" class="mb-4">

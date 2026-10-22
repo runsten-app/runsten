@@ -86,3 +86,45 @@ export function validate(
     },
   }
 }
+
+// modelsOf lists the models the variants are of, in a natural order: a Volvo is offered
+// its own model's, a Polestar of the Data Portal its brand's.
+export function modelsOf(options: readonly VariantOption[]): string[] {
+  return [...new Set(options.map((o) => o.family))].sort((a, b) =>
+    a.localeCompare(b, 'en', { numeric: true }),
+  )
+}
+
+// modelOf is the model shown first: that of the variant chosen, else of the recognized
+// one, else the vehicle's, else the one the candidates share, else the only one.
+export function modelOf(
+  d: ModelDraft,
+  options: readonly VariantOption[],
+  family: string | null,
+): string | null {
+  const models = modelsOf(options)
+  const v = effectiveOf(d, options)
+  if (v) return v.family
+  if (family !== null && models.includes(family)) return family
+  const candidates = new Set(options.filter((o) => o.candidate).map((o) => o.family))
+  if (candidates.size === 1) return [...candidates][0] ?? null
+  return models.length === 1 ? (models[0] ?? null) : null
+}
+
+// fitsYear tells whether a variant was made in a model year.
+export function fitsYear(o: VariantOption, year: number): boolean {
+  return o.model_years.from <= year && (o.model_years.to === null || year <= o.model_years.to)
+}
+
+// byYear splits a model's variants: those of the vehicle's model year, in the API's order
+// (the candidates first), and the others. All fit when the year is unknown, or fits none.
+export function byYear(
+  options: readonly VariantOption[],
+  model: string | null,
+  year: number | null,
+): { fitting: VariantOption[]; others: VariantOption[] } {
+  const of = options.filter((o) => o.family === model)
+  const fitting = year === null ? of : of.filter((o) => fitsYear(o, year))
+  if (fitting.length === 0) return { fitting: of, others: [] }
+  return { fitting, others: of.filter((o) => !fitting.includes(o)) }
+}

@@ -143,6 +143,7 @@ function variant(id: string, name: string, option: number | null, candidate: boo
     ac_max_kw: 11,
     ac_option_kw: option,
     dc_max_kw: option ? 153 : 134,
+    family: 'EX30',
     model_years: { from: 2024, to: 2026 },
     candidate,
     levels: {
@@ -232,6 +233,108 @@ test('Vehicle settings: the variant and the charger of an EX30, as its driver ch
   // A variant without the option: the charger is no longer asked.
   await variants.getByRole('radio', { name: /^EX30 Single Motor,/ }).check()
   await expect(chargers).toHaveCount(0)
+})
+
+// A Polestar of the Data Portal tells its brand, not its family: it is offered the brand's
+// variants, of several models and years, which the form asks for the model first. The
+// figures are placeholders: the form shows them, the rules are tested in Go.
+function polestar(id: string, name: string, family: string, from: number, to: number) {
+  const level = 'secondary'
+  return {
+    ...variant(id, name, null, false),
+    gross_kwh: 82,
+    net_kwh: 79,
+    dc_max_kw: 205,
+    family,
+    model_years: { from, to },
+    levels: {
+      gross_kwh: level,
+      net_kwh: level,
+      ac_max_kw: level,
+      ac_option_kw: null,
+      dc_max_kw: level,
+    },
+  }
+}
+
+test('Vehicle settings: the model, then the variant of a Polestar', async ({ page }, testInfo) => {
+  await signIn(page)
+  const vehicle = await vehicleId(page)
+  const model = {
+    family: null,
+    model_year: 2024,
+    variant: null,
+    variant_source: null,
+    ac_max_kw: null,
+  }
+  await page.route('**/api/v1/vehicles', async (route) => {
+    const res = await route.fetch()
+    const body = (await res.json()) as { items: { model: unknown }[] }
+    await route.fulfill({
+      response: res,
+      json: { items: body.items.map((v) => ({ ...v, model })) },
+    })
+  })
+  await page.route(`**/api/v1/vehicles/${vehicle}`, async (route) => {
+    const res = await route.fetch()
+    const body = (await res.json()) as { model: unknown }
+    await route.fulfill({ response: res, json: { ...body, model } })
+  })
+  await page.route('**/api/v1/vehicles/*/variants', (route) =>
+    route.fulfill({
+      json: {
+        items: [
+          polestar(
+            'ps2-lr-sm-2024',
+            'Polestar 2 Long Range Single Motor',
+            'Polestar 2',
+            2024,
+            2026,
+          ),
+          polestar('ps2-lr-dm-2024', 'Polestar 2 Long Range Dual Motor', 'Polestar 2', 2024, 2026),
+          polestar(
+            'ps2-lr-sm-2021',
+            'Polestar 2 Long Range Single Motor',
+            'Polestar 2',
+            2021,
+            2023,
+          ),
+          polestar('ps3-lr-dm-2025', 'Polestar 3 Long Range Dual Motor', 'Polestar 3', 2025, 2026),
+        ],
+      },
+    }),
+  )
+
+  await page.goto(`/vehicles/${vehicle}/settings`)
+  const section = page.locator('.vehicle-model')
+  const models = section.getByRole('group', { name: 'Model', exact: true })
+  const variants = section.getByRole('group', { name: 'Variant' })
+  // No family and no candidate: no model pressed, automatic recognition alone.
+  await expect(models.getByRole('button')).toHaveCount(2)
+  await expect(models.getByRole('button', { pressed: true })).toHaveCount(0)
+  await expect(variants.getByRole('radio')).toHaveCount(1)
+  await expect(section.getByText('Choose the model to see its variants.')).toBeVisible()
+  await checkView(page, testInfo, 'vehicle-settings-polestar')
+
+  // The model: the variants of the vehicle's model year, the others folded.
+  const ps2 = models.getByRole('button', { name: 'Polestar 2' })
+  await ps2.click()
+  await expect(ps2).toHaveAttribute('aria-pressed', 'true')
+  await expect(variants.getByRole('radio')).toHaveCount(3)
+  const others = section.getByRole('button', { name: 'Other model years (1)' })
+  await expect(others).toHaveAttribute('aria-expanded', 'false')
+  await others.click()
+  await expect(others).toHaveAttribute('aria-expanded', 'true')
+  await expect(variants.getByRole('radio')).toHaveCount(4)
+  const older = section.getByRole('radiogroup', { name: 'Other model years (1)' })
+  await older.getByRole('radio').check()
+  await expect(older.getByRole('radio')).toBeChecked()
+  await checkView(page, testInfo, 'vehicle-settings-polestar-other-years')
+
+  // Another model forgets the variant of the previous one.
+  await models.getByRole('button', { name: 'Polestar 3' }).click()
+  await expect(variants.getByRole('radio', { name: /^Automatic recognition/ })).toBeChecked()
+  await expect(variants.getByRole('radio')).toHaveCount(2)
 })
 
 // The account's data: the export is downloaded whole.
