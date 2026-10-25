@@ -113,6 +113,22 @@ describe('VehicleState', () => {
     expect(reading(await mounted(none), 'Type').value).toBe('Aucun')
   })
 
+  it('tells no power where the car says no charge runs, an unknown one during a charge', async () => {
+    const idle = {
+      ...state,
+      charging: {
+        ...state.charging,
+        power_w: null,
+        status: { ...state.charging.status, value: 'idle' },
+      },
+    }
+    expect(reading(await mounted(idle), 'Power').value).toBe('None')
+    const charging = { ...state, charging: { ...state.charging, power_w: null } }
+    expect(reading(await mounted(charging), 'Power').value).toBe('Unknown')
+    i18n.global.locale.value = 'fr'
+    expect(reading(await mounted(idle), 'Puissance').value).toBe('Aucune')
+  })
+
   it('links to OpenStreetMap, nowhere else, only on a click', async () => {
     const w = await mounted(state)
     const link = w.find('a[target="_blank"]')

@@ -101,6 +101,9 @@
     },
     "type": {
       "none": "Aucun"
+    },
+    "power": {
+      "none": "Aucune"
     }
   },
   "engine": {
