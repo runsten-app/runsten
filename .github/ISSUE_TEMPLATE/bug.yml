@@ -13,14 +13,22 @@ body:
       description: What you did, what you expected, and what happened instead.
     validations:
       required: true
+  - type: dropdown
+    id: instance
+    attributes:
+      label: Instance
+      description: Where your Runsten runs.
+      options:
+        - Self-hosted
+        - Hosted (my.runsten.app)
+    validations:
+      required: true
   - type: input
     id: version
     attributes:
       label: Version
-      description: "`RUNSTEN_VERSION` or the image tag, or the commit if you built it."
-      placeholder: v0.4.0
-    validations:
-      required: true
+      description: "Self-hosted only: `RUNSTEN_VERSION` or the image tag, or the commit if you built it."
+      placeholder: v0.10.1
   - type: input
     id: car
     attributes:
