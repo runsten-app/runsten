@@ -8,7 +8,8 @@ import { useCollection } from '../composables/useCollection'
 import { useCollectionText } from '../composables/useCollectionText'
 
 // CollectionNotice warns, on every page of a vehicle, that nothing new is read of it,
-// and why: the grant lost, with the way to connect again; no application key it may be
+// and why: the instance without a Volvo application, which its administrator sets; the
+// grant lost, with the way to connect again; no application key it may be
 // read with, which the connection page takes; the Polestar credential refused or removed,
 // or the vehicle no longer shared with it, or a domain it was not granted, which the
 // connection page takes too; the vehicle's market not served by Volvo's API, which no one
@@ -28,6 +29,8 @@ const connection = computed(() => v.value?.connection)
 
 function body(s: CollectionState): string {
   switch (s.kind) {
+    case 'notConfigured':
+      return t('connection.notice.notConfigured')
     case 'key':
       return s.refused ? t('connection.notice.keyRefused') : t('connection.notice.keyMissing')
     case 'stopped':

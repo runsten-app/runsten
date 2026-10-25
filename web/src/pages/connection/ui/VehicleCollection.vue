@@ -31,6 +31,7 @@ const state = computed(() => collectionState(props.vehicle, props.now, props.unr
 const c = computed(() => props.vehicle.collection)
 const looks: Record<CollectionState['kind'], { icon: string; color: string }> = {
   unread: { icon: mdiMinusCircle, color: 'info' },
+  notConfigured: { icon: mdiMinusCircle, color: 'warning' },
   reauth: { icon: mdiAccountAlert, color: 'warning' },
   key: { icon: mdiKeyAlert, color: 'warning' },
   credential: { icon: mdiKeyAlert, color: 'warning' },
@@ -53,6 +54,7 @@ const nextRead = computed(() => {
   const next = c.value?.next_read_at
   if (!c.value) return f.unknown()
   if (!next) {
+    if (state.value.kind === 'notConfigured') return t('connection.facts.noneDueNotConfigured')
     if (state.value.kind === 'key') return t('connection.facts.noneDueKey')
     if (state.value.kind === 'market') return t('connection.facts.noneDueMarket')
     if (state.value.kind === 'credential') return t('connection.facts.noneDueCredential')

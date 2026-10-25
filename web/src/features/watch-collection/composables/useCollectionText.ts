@@ -57,6 +57,8 @@ export function useCollectionText() {
     switch (s.kind) {
       case 'unread':
         return t('connection.state.unread')
+      case 'notConfigured':
+        return t('connection.state.notConfigured')
       case 'reauth':
         return t('connection.state.reauth')
       case 'key':

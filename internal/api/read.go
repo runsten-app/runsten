@@ -64,12 +64,14 @@ type connectionStatus string
 
 // Schema lists the statuses.
 func (connectionStatus) Schema(huma.Registry) *huma.Schema {
-	return enumSchema(connectionActive, connectionReauth)
+	return enumSchema(connectionActive, connectionReauth, connectionNotConfigured)
 }
 
 const (
 	connectionActive connectionStatus = "active"
 	connectionReauth connectionStatus = "reauth_required"
+	// connectionNotConfigured: the instance has no application of the provider.
+	connectionNotConfigured connectionStatus = "not_configured"
 )
 
 // apiKeyStatus is the application key a vehicle is read with.
@@ -116,7 +118,7 @@ const (
 
 type connectionJSON struct {
 	Provider     providerJSON           `json:"provider" doc:"volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal."`
-	Status       connectionStatus       `json:"status" doc:"reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. Always active for a Polestar connection: credential tells its state."`
+	Status       connectionStatus       `json:"status" doc:"reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. not_configured: the instance has no Volvo application, the vehicle is not read until its administrator sets one. Always active for a Polestar connection: credential tells its state."`
 	APIKey       null[apiKeyStatus]     `json:"api_key" doc:"The application key the vehicle is read with: instance, the instance's, which reads every vehicle when the instance has one; own, the account's. refused: the account's, refused by Volvo; missing: none, the instance has none either. Neither refused nor missing is read, until the user gives a key (PUT /connection/api-key). null for a Polestar connection, read with its own credential."`
 	Credential   null[credentialStatus] `json:"credential" doc:"The Polestar connection's credential: set; refused by the Data Portal (expired after its 90 days, or deleted there); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar). null for a Volvo connection."`
 	AuthorizedAt *time.Time             `json:"authorized_at" pattern:"Z$" doc:"When the user authorized the connection; null for a token pasted by hand, or a Polestar connection."`
@@ -231,6 +233,9 @@ func (s *Server) connectionOf(v Vehicle) connectionJSON {
 	}
 	if v.ReauthReason != "" {
 		c.Status, c.ReauthAt, c.ReauthReason = connectionReauth, timeOrNil(v.ReauthAt), &v.ReauthReason
+	}
+	if !s.volvo() { // nothing of Volvo is read, whatever the grant or the key
+		c.Status = connectionNotConfigured
 	}
 	return c
 }

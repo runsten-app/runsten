@@ -938,7 +938,8 @@
       "unshared": "Not read: the vehicle is no longer shared with the credential",
       "notGranted": "Read in part: the credential was not granted every domain",
       "pausedPolestar": "Paused by Polestar until {time}",
-      "quotaPolestar": "Polestar quota reached until {time}"
+      "quotaPolestar": "Polestar quota reached until {time}",
+      "notConfigured": "Not read: Volvo is not configured on this instance"
     },
     "notice": {
       "reauth": {
@@ -961,7 +962,8 @@
       "unshared": "The Data Portal no longer lets your credential read this vehicle. Let it read the car again on the portal, then give the credential again on the connection page: the vehicle is read again.",
       "notGranted": "Your credential was not granted one of the domains Runsten reads ({endpoint}): what it gives is not read. Create a credential with the five domains, and give it on the connection page.",
       "quotaPolestar": "The daily quota of calls of your Polestar credential is used up. Reading resumes by itself.",
-      "pausedPolestar": "Polestar limited the number of calls. Reading resumes by itself."
+      "pausedPolestar": "Polestar limited the number of calls. Reading resumes by itself.",
+      "notConfigured": "This instance has no Volvo application: nothing new is read of this vehicle until its administrator sets one. Its history stays."
     },
     "facts": {
       "mode": "Polling mode",
@@ -978,7 +980,8 @@
       "noneDueKey": "None until a Volvo key is given",
       "noneDueMarket": "None: Volvo does not serve the vehicle's market",
       "noneDueCredential": "None until a Polestar credential is given",
-      "noneDueUnshared": "None: the vehicle is no longer shared with the credential"
+      "noneDueUnshared": "None: the vehicle is no longer shared with the credential",
+      "noneDueNotConfigured": "None until Volvo is configured"
     },
     "api": {
       "connectedVehicle": "vehicle data",

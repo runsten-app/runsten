@@ -14,13 +14,15 @@ export const collectorStoppedAfter = 15 * 60_000
 export const notGrantedFor = 24 * 60 * 60_000
 
 // CollectionState is what the user is told of the reading of a vehicle, the worst first:
-// the account's offer leaves it unread, the grant lost, no application key it may be
+// the account's offer leaves it unread, the instance without the provider's application,
+// the grant lost, no application key it may be
 // read with, the Polestar credential refused or removed, the vehicle's market not served
 // by the API, the vehicle no longer shared with the credential, no pass yet, the
 // collector stopped, the instance's key refused, a pause, a quota, a domain the
 // credential was not granted; else it reads.
 export type CollectionState =
   | { kind: 'unread' }
+  | { kind: 'notConfigured' }
   | { kind: 'reauth' }
   | { kind: 'key'; refused: boolean }
   | { kind: 'credential'; refused: boolean }
@@ -43,6 +45,7 @@ export function collectionState(
   unread = false,
 ): CollectionState {
   if (unread) return { kind: 'unread' }
+  if (v.connection.status === 'not_configured') return { kind: 'notConfigured' }
   if (v.connection.status === 'reauth_required') return { kind: 'reauth' }
   if (v.connection.api_key === 'refused') return { kind: 'key', refused: true }
   if (v.connection.api_key === 'missing') return { kind: 'key', refused: false }

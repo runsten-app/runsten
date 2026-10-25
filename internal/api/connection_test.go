@@ -215,11 +215,22 @@ func TestKeyTooManyVehicles(t *testing.T) {
 }
 
 // TestWithoutVolvo: on an instance without a Volvo application, no Volvo ID connects
-// and no key is taken; the connection settings tell it.
+// and no key is taken; the connection settings tell it, and a Volvo from before is told
+// not configured.
 func TestWithoutVolvo(t *testing.T) {
 	e := newEnvKeys(t, 10, "", nil)
-	e.server.ClientID = ""
 	b := e.signedIn(t)
+	if resp, body := do(t, b, http.MethodPut, e.api.URL+apiPrefix+"/connection/api-key", jsonType, keyBody(goodKey)); resp.status != http.StatusOK {
+		t.Fatalf("PUT with Volvo: %d %s", resp.status, body)
+	}
+	if resp, body := get(t, b, e.api.URL+"/auth/volvo/start"); resp.status != http.StatusOK || len(e.store.vehicles) != 1 {
+		t.Fatalf("connection with Volvo: %d %s", resp.status, body)
+	}
+	e.server.ClientID = "" // the application removed from the configuration
+	e.reader.vehicles[account] = []Vehicle{{ID: car, VIN: simVIN, AuthorizedAt: t0}}
+	if _, body := get(t, b, e.api.URL+apiPrefix+"/vehicles"); !strings.Contains(body, `"status":"not_configured"`) {
+		t.Errorf("vehicles: %s", body)
+	}
 	if _, body := get(t, b, e.api.URL+"/"); strings.Contains(body, "auth/volvo/start") {
 		t.Errorf("home page: %s", body)
 	}
@@ -232,12 +243,9 @@ func TestWithoutVolvo(t *testing.T) {
 	if _, body := get(t, b, u); !strings.Contains(body, `"volvo":false`) || !strings.Contains(body, `"client_id":""`) {
 		t.Errorf("connection: %s", body)
 	}
-	resp, body := do(t, b, http.MethodPut, u+"/api-key", jsonType, keyBody(goodKey))
-	if resp.status != http.StatusConflict || e.store.key.Value != "" {
+	resp, body := do(t, b, http.MethodPut, u+"/api-key", jsonType, keyBody(otherKey))
+	if resp.status != http.StatusConflict || e.store.key.Value != goodKey {
 		t.Errorf("PUT without Volvo: %d %s", resp.status, body)
 	}
 	wantError(t, body, codeVolvoNotConfigured)
-	if len(e.store.vehicles) != 0 {
-		t.Errorf("vehicles: %v", e.store.vehicles)
-	}
 }

@@ -27,6 +27,15 @@ const notGranted = {
 }
 
 describe('collectionState', () => {
+  it('tells a Volvo unread on an instance without a Volvo application, before its grant', () => {
+    const v = lost && {
+      ...lost,
+      connection: { ...lost.connection, status: 'not_configured' as const },
+    }
+    expect(v && collectionState(v, at('2026-09-28T07:05:00Z'))).toEqual({ kind: 'notConfigured' })
+    expect(needsAttention({ kind: 'notConfigured' })).toBe(true)
+  })
+
   it('reads a vehicle whose quota is exhausted until the latest of its APIs', () => {
     expect(car && collectionState(car, at('2026-09-28T07:05:00Z'))).toEqual({
       kind: 'quota',

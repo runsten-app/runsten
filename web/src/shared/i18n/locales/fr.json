@@ -938,7 +938,8 @@
       "unshared": "Non lu : le véhicule n'est plus partagé avec l'identifiant",
       "notGranted": "Lu en partie : l'identifiant n'a pas reçu tous les domaines",
       "pausedPolestar": "Mis en pause par Polestar jusqu'à {time}",
-      "quotaPolestar": "Quota Polestar atteint jusqu'à {time}"
+      "quotaPolestar": "Quota Polestar atteint jusqu'à {time}",
+      "notConfigured": "Non lu : Volvo n'est pas configuré sur cette instance"
     },
     "notice": {
       "reauth": {
@@ -961,7 +962,8 @@
       "unshared": "Le Data Portal ne laisse plus votre identifiant lire ce véhicule. Laissez-le lire de nouveau la voiture sur le portail, puis redonnez l'identifiant sur la page Connexion : le véhicule est de nouveau lu.",
       "notGranted": "Votre identifiant n'a pas reçu l'un des domaines que Runsten lit ({endpoint}) : ce qu'il donne n'est pas lu. Créez un identifiant avec les cinq domaines, et donnez-le sur la page Connexion.",
       "quotaPolestar": "Le quota quotidien d'appels de votre identifiant Polestar est épuisé. La lecture reprend d'elle-même.",
-      "pausedPolestar": "Polestar a limité le nombre d'appels. La lecture reprend d'elle-même."
+      "pausedPolestar": "Polestar a limité le nombre d'appels. La lecture reprend d'elle-même.",
+      "notConfigured": "Cette instance n'a pas d'application Volvo : rien de nouveau n'est lu de ce véhicule tant que son administrateur n'en a pas renseigné une. Son historique reste."
     },
     "facts": {
       "mode": "Mode de lecture",
@@ -978,7 +980,8 @@
       "noneDueKey": "Aucune tant qu'aucune clé Volvo n'est donnée",
       "noneDueMarket": "Aucune : Volvo ne dessert pas le marché du véhicule",
       "noneDueCredential": "Aucune tant qu'aucun identifiant Polestar n'est donné",
-      "noneDueUnshared": "Aucune : le véhicule n'est plus partagé avec l'identifiant"
+      "noneDueUnshared": "Aucune : le véhicule n'est plus partagé avec l'identifiant",
+      "noneDueNotConfigured": "Aucune tant que Volvo n'est pas configuré"
     },
     "api": {
       "connectedVehicle": "données du véhicule",

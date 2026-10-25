@@ -938,7 +938,8 @@
       "unshared": "Läses inte: fordonet delas inte längre med uppgifterna",
       "notGranted": "Läses delvis: uppgifterna har inte fått alla domäner",
       "pausedPolestar": "Pausad av Polestar till {time}",
-      "quotaPolestar": "Polestars kvot nådd till {time}"
+      "quotaPolestar": "Polestars kvot nådd till {time}",
+      "notConfigured": "Läses inte: Volvo är inte konfigurerat på den här instansen"
     },
     "notice": {
       "reauth": {
@@ -961,7 +962,8 @@
       "unshared": "Data Portal låter inte längre dina uppgifter läsa fordonet. Låt dem läsa bilen igen på portalen och ange sedan uppgifterna igen på anslutningssidan: då läses fordonet igen.",
       "notGranted": "Dina uppgifter har inte fått en av domänerna som Runsten läser ({endpoint}): det den ger läses inte. Skapa uppgifter med alla fem domäner och ange dem på anslutningssidan.",
       "quotaPolestar": "Dina Polestar-uppgifters dagliga kvot av anrop är förbrukad. Läsningen återupptas av sig själv.",
-      "pausedPolestar": "Polestar har begränsat antalet anrop. Läsningen återupptas av sig själv."
+      "pausedPolestar": "Polestar har begränsat antalet anrop. Läsningen återupptas av sig själv.",
+      "notConfigured": "Den här instansen har ingen Volvo-applikation: inget nytt läses från fordonet förrän administratören anger en. Dess historik finns kvar."
     },
     "facts": {
       "mode": "Läsläge",
@@ -978,7 +980,8 @@
       "noneDueKey": "Ingen förrän en Volvo-nyckel anges",
       "noneDueMarket": "Ingen: Volvo betjänar inte fordonets marknad",
       "noneDueCredential": "Ingen förrän Polestar-uppgifter anges",
-      "noneDueUnshared": "Ingen: fordonet delas inte längre med uppgifterna"
+      "noneDueUnshared": "Ingen: fordonet delas inte längre med uppgifterna",
+      "noneDueNotConfigured": "Ingen förrän Volvo är konfigurerat"
     },
     "api": {
       "connectedVehicle": "fordonsdata",
