@@ -1,0 +1,1 @@
+Screenshots shown in pull requests: one folder per pull request branch. Not code.
