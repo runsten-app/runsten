@@ -84,9 +84,9 @@ describe('StatsPage', () => {
     })
     expect(wrapper.find('.v-main h1').text()).toBe('Statistics')
     expect(wrapper.find('.stats-tiles').exists()).toBe(true)
-    // The driving's view by default: three charts by interval, then the trips by
+    // The driving's view by default: four charts by interval, then the trips by
     // distance and what each band consumed.
-    expect(wrapper.findAll('.chart-frame')).toHaveLength(5)
+    expect(wrapper.findAll('.chart-frame')).toHaveLength(6)
     expect(wrapper.find('.view-toggle [aria-pressed="true"]').text()).toBe('Driving')
     expect(wrapper.find('.v-tab[aria-current="page"]').text()).toBe('Stats')
   })

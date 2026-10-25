@@ -7,8 +7,8 @@ import { useStats, type StatsView } from '@/features/view-stats'
 import { majorUnits, useFormat, type Bucket } from '@/shared/lib'
 import { ChartFrame, type Series } from '@/shared/ui/chart'
 
-// StatsCharts draws the intervals of the period: distance, energy charged by type,
-// consumption, the time spent driving and charging, the loss while parked, and, with the
+// StatsCharts draws the intervals of the period: distance, the odometer, energy charged
+// by type, consumption, the time spent driving and charging, the loss while parked, and, with the
 // account's currency,
 // the cost of the charges and what 100 km cost. Pressing an interval leads to its
 // events, in the list of trips or of charges: the raw data behind the bar. The view
@@ -82,6 +82,26 @@ const distance = computed(() => {
           at: top.at,
         })
       : t('stats.chart.distance.none')
+  return { series, summary }
+})
+
+// odometer is the odometer at the end of each interval: a level, not a sum, so its axis
+// follows the line rather than starting at zero. It holds over an interval without a
+// trip; before the first reading it is unknown, a gap.
+const odometer = computed(() => {
+  const data = intervals.value.map((b) => b.odometer.end_km)
+  const series: Series[] = [
+    { label: t('stats.chart.odometer.series'), data, color: color('chart-1') },
+  ]
+  const o = stats.value?.totals.odometer
+  const summary =
+    o && o.start_km !== null && o.end_km !== null && o.distance_km !== null
+      ? t('stats.chart.odometer.summary', {
+          start: f.quantity(o.start_km, 'km'),
+          end: f.quantity(o.end_km, 'km'),
+          distance: f.quantity(o.distance_km, 'km'),
+        })
+      : t('stats.chart.odometer.none')
   return { series, summary }
 })
 
@@ -348,6 +368,21 @@ const time = computed(() => {
       :summary="distance.summary"
       :labels
       :series="distance.series"
+      unit="km"
+      :interval-header="intervalHeader"
+      :format="(v) => f.quantity(v, 'km')"
+      @select="(i: number) => open('trips', i)"
+    />
+    <ChartFrame
+      v-if="view === 'driving'"
+      class="odometer"
+      :hint="t('stats.chart.odometer.hint')"
+      kind="line"
+      :begin-at-zero="false"
+      :title="t('stats.chart.odometer.title')"
+      :summary="odometer.summary"
+      :labels
+      :series="odometer.series"
       unit="km"
       :interval-header="intervalHeader"
       :format="(v) => f.quantity(v, 'km')"

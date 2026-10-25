@@ -42,9 +42,16 @@ async function charts(s: unknown, bucket = 'day') {
 type Dataset = { label: string; data: (number | null)[]; backgroundColor: string }
 function datasets(w: Awaited<ReturnType<typeof charts>>, chart: string): Dataset[] {
   const c = w.find(`.${chart}`).findComponent({
-    name: ['consumption', 'cost-per-distance', 'parked'].includes(chart) ? 'Line' : 'Bar',
+    name: ['odometer', 'consumption', 'cost-per-distance', 'parked'].includes(chart)
+      ? 'Line'
+      : 'Bar',
   })
   return (c.props('data') as { datasets: Dataset[] }).datasets
+}
+
+// chartOf is the chart of a class.
+function chartOf(w: Awaited<ReturnType<typeof charts>>, chart: string) {
+  return w.findAllComponents(ChartFrame).find((c) => c.classes(chart))
 }
 
 describe('StatsCharts', () => {
@@ -57,6 +64,7 @@ describe('StatsCharts', () => {
     }
     expect(await titles('driving')).toEqual([
       'Distance',
+      'Odometer',
       'Consumption (estimated)',
       'Time driving and charging',
     ])
@@ -71,6 +79,7 @@ describe('StatsCharts', () => {
     const w = await charts(stats)
     expect(w.findAll('h2').map((h) => h.text())).toEqual([
       'Distance',
+      'Odometer',
       'Consumption (estimated)',
       'Time driving and charging',
       'Energy charged (from the state of charge)',
@@ -82,6 +91,9 @@ describe('StatsCharts', () => {
     expect(w.find('.distance tbody th').text()).toBe('27 Sept')
     expect(w.find('.distance thead th').text()).toBe('Day')
     expect(datasets(w, 'distance')[0]?.data).toEqual([73, 0, 0])
+    // The odometer holds over the days without a trip: a level, its axis not from zero.
+    expect(datasets(w, 'odometer')[0]?.data).toEqual([12473, 12473, 12473])
+    expect(chartOf(w, 'odometer')?.props('beginAtZero')).toBe(false)
     // The fixture's reconstructed charge has no type: a third series, so the bars add up.
     expect(datasets(w, 'energy').map((d) => [d.label, d.data])).toEqual([
       ['AC', [26.4, 0, 0]],
@@ -99,6 +111,7 @@ describe('StatsCharts', () => {
     const w = await charts(stats)
     const label = (c: string) => plain(w.find(`.${c} canvas`).attributes('aria-label'))
     expect(label('distance')).toBe('Distance: 73 km in all, the most for 27 Sept (73 km).')
+    expect(label('odometer')).toBe('Odometer: from 12,400 km to 12,473 km, 73 km over the period.')
     expect(label('energy')).toBe('Energy charged: 26 kWh in AC, 0 kWh in DC.')
     expect(label('consumption')).toBe(
       'Consumption: 18.8 kWh/100 km on average, from 18.8 kWh/100 km to 18.8 kWh/100 km.',
@@ -109,6 +122,9 @@ describe('StatsCharts', () => {
     const w = await charts(empty, 'week')
     const label = (c: string) => plain(w.find(`.${c} canvas`).attributes('aria-label'))
     expect(label('distance')).toBe('No distance in this period.')
+    expect(label('odometer')).toBe('No odometer reading in this period.')
+    // Unknown before the first reading: a gap, never a zero.
+    expect(datasets(w, 'odometer')[0]?.data.every((v) => v === null)).toBe(true)
     expect(label('energy')).toBe('No charge in this period.')
     expect(label('consumption')).toBe('No consumption known in this period.')
     expect(datasets(w, 'energy')).toHaveLength(2)
@@ -180,7 +196,7 @@ describe('StatsCharts', () => {
     ])
     const [min, gap] = datasets(w, 'cost')
     expect(min?.backgroundColor).not.toBe(gap?.backgroundColor)
-    const frame = w.findAllComponents(ChartFrame).at(5)
+    const frame = chartOf(w, 'cost')
     expect(frame?.props('stacked')).toBe(true)
     expect(frame?.props('unit')).toBe('€')
     expect(frame?.props('format')(null)).toBe('Unknown')
@@ -236,7 +252,7 @@ describe('StatsCharts', () => {
 
   it('draws no cost without a currency', async () => {
     const w = await charts({ ...stats, currency: null })
-    expect(w.findAll('.chart-frame')).toHaveLength(5)
+    expect(w.findAll('.chart-frame')).toHaveLength(6)
     expect(w.find('.cost').exists()).toBe(false)
     expect(w.find('.cost-per-distance').exists()).toBe(false)
   })
@@ -249,7 +265,7 @@ describe('StatsCharts', () => {
       ['Lowest cost', [18.82, null, null]],
       ['Range, up to the highest cost', [19.58, null, null]],
     ])
-    const frame = w.findAllComponents(ChartFrame).at(6)
+    const frame = chartOf(w, 'cost-per-distance')
     expect(frame?.props('unit')).toBe('€/100 km')
     expect(frame?.props('series')[1]?.band).toBe(true)
     expect(
@@ -338,7 +354,7 @@ describe('StatsCharts', () => {
   it('draws the loss while parked per day, a gap where it is unknown, leading nowhere', async () => {
     const w = await charts(stats)
     expect(datasets(w, 'parked')[0]?.data).toEqual([0, null, null])
-    const frame = w.findAllComponents(ChartFrame).at(4)
+    const frame = chartOf(w, 'parked')
     expect(frame?.props('selectable')).toBe(false)
     expect(frame?.props('unit')).toBe('%/day')
     expect(frame?.props('format')(null)).toBe('Unknown')

@@ -21,6 +21,11 @@ test('Stats: the totals and the charts of this month, each chart with its table'
   await expect(page.locator('.tile.trips .value')).toHaveText('2')
   await expect(page.locator('.tile.trips .note')).toHaveText('including 1 reconstructed')
   await expect(page.locator('.tile.distance .value')).toHaveText(/^1\d(\.\d)?\s?km$/)
+  // The odometer, the reconstructed trip's way included.
+  await expect(page.locator('.tile.mileage .value')).toHaveText(/^[\d,]+\s?km$/)
+  await expect(page.locator('.tile.mileage .note')).toHaveText(
+    /^1\d(\.\d)?\s?km over the period, by the odometer$/,
+  )
   await expect(page.locator('.tile.charges .value')).toHaveText('1')
   await expect(page.locator('.tile.charges .note').first()).toHaveText('0 AC, 1 DC')
 
@@ -28,9 +33,9 @@ test('Stats: the totals and the charts of this month, each chart with its table'
   await expect(distance.getByRole('img')).toHaveAttribute('aria-label', /^Distance: .+ in all/)
   // Its figures, for screen readers: one row per day of the month.
   await expect(distance.locator('tbody tr')).not.toHaveCount(0)
-  // The driving's view by default: distance, consumption, time, and the trips by
-  // distance with what each band consumed.
-  await expect(page.locator('.chart-frame')).toHaveCount(5)
+  // The driving's view by default: distance, odometer, consumption, time, and the trips
+  // by distance with what each band consumed.
+  await expect(page.locator('.chart-frame')).toHaveCount(6)
   await expect(page.locator('.tile.cost')).toBeVisible()
   await checkView(page, testInfo, 'stats')
 

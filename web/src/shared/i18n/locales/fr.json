@@ -331,6 +331,8 @@
       "monthHeader": "Mois"
     },
     "tile": {
+      "mileage": "Kilométrage",
+      "mileageDriven": "{distance} sur la période, d'après le compteur",
       "distance": "Distance",
       "distanceUnknown": "inconnue pour {n} trajet | inconnue pour {n} trajets",
       "trips": "Trajets",
@@ -352,6 +354,13 @@
       "costUnknown": "inconnu pour {n} charge | inconnu pour {n} charges"
     },
     "chart": {
+      "odometer": {
+        "title": "Kilométrage",
+        "series": "Kilométrage",
+        "summary": "Kilométrage : de {start} à {end}, {distance} sur la période.",
+        "none": "Aucun relevé du compteur dans cette période.",
+        "hint": "Sélectionnez un point pour voir les trajets de l'intervalle."
+      },
       "distance": {
         "title": "Distance",
         "series": "Distance",

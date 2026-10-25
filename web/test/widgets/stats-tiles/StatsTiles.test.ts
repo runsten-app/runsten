@@ -43,6 +43,11 @@ describe('StatsTiles', () => {
     // A description list of div groups only.
     expect(w.findAll('dl > *').every((c) => c.element.tagName === 'DIV')).toBe(true)
     expect(tile(w, 'distance')).toEqual({ label: 'Distance', value: '73 km', notes: [] })
+    expect(tile(w, 'mileage')).toEqual({
+      label: 'Odometer',
+      value: '12,473 km',
+      notes: ['73 km over the period, by the odometer'],
+    })
     expect(tile(w, 'trips')).toEqual({
       label: 'Trips',
       value: '3',
@@ -78,6 +83,10 @@ describe('StatsTiles', () => {
     const w = await tiles()
     expect(tile(w, 'consumption').value).toBe('Unknown')
     expect(tile(w, 'distance').notes).toEqual(['unknown for 2 trips'])
+    s.totals.odometer = { start_km: null, end_km: null, distance_km: null }
+    fetchStats.mockResolvedValue(s)
+    const none = await tiles({ vehicle: 'v2' })
+    expect(tile(none, 'mileage')).toEqual({ label: 'Odometer', value: 'Unknown', notes: [] })
     expect(tile(w, 'parked').value).toBe('Unknown')
     expect(tile(w, 'energy').notes).toContain('energy unknown for 1 charge')
   })
