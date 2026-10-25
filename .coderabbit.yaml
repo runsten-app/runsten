@@ -1,0 +1,84 @@
+# CodeRabbit's configuration: https://docs.coderabbit.ai/reference/configuration
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+early_access: false
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+
+  # What the review posts: a summary and the walkthrough, nothing decorative.
+  high_level_summary: true
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: false
+  estimate_code_review_effort: false
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: false
+  suggested_reviewers: false
+  poem: false
+  in_progress_fortune: false
+  review_status: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+  # Nothing is written to a branch by CodeRabbit: the maintainer commits.
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+    simplify:
+      enabled: false
+    autofix:
+      enabled: false
+    fix_ci:
+      enabled: false
+    resolve_merge_conflict:
+      enabled: false
+
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+    title:
+      mode: warning
+      requirements: "Short, imperative, in English (\"Add …\", \"Fix …\"), describing what the change does for the user or the code."
+    description:
+      mode: warning
+    issue_assessment:
+      mode: warning
+
+  # Generated, vendored or recorded files: not reviewed.
+  path_filters:
+    - "!go.sum"
+    - "!tools/go.sum"
+    - "!web/package-lock.json"
+    - "!api/openapi.yaml"
+    - "!**/testdata/**"
+
+  path_instructions:
+    - path: "internal/core/**"
+      instructions: "Pure domain: no adapter imports (net/http, database/sql, pgx, encoding/json, vendor clients, platform, simulator)."
+    - path: "internal/store/**"
+      instructions: "Every row belongs to an account and is isolated by row-level security: check that new tables and queries keep that isolation. Migrations are embedded and never edited once released."
+    - path: "internal/**"
+      instructions: "Dependencies point inward and interfaces are declared by their consumer (see AGENTS.md, \"Architecture rules\"). A new package or dependency must update both .golangci.yml (depguard) and internal/archtest's allowlist."
+    - path: "web/src/**"
+      instructions: "Feature-Sliced Design: imports go down the layers only, through a slice's index.ts; TanStack Query in features/*/composables only; types come from the generated OpenAPI schema, never hand-written. Every user-facing string goes through vue-i18n, in English, French and Swedish."
+    - path: "documentation/**"
+      instructions: "User documentation in English, published on the public site: check accuracy against the code and plain wording."
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "AGENTS.md"
+      - "ARCHITECTURE.md"
+      - "CONTRIBUTING.md"
