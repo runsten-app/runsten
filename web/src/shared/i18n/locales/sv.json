@@ -331,6 +331,8 @@
       "monthHeader": "Månad"
     },
     "tile": {
+      "mileage": "Mätarställning",
+      "mileageDriven": "{distance} under perioden, enligt vägmätaren",
       "distance": "Sträcka",
       "distanceUnknown": "okänd för {n} resa | okänd för {n} resor",
       "trips": "Resor",
@@ -352,6 +354,13 @@
       "costUnknown": "okänd för {n} laddning | okänd för {n} laddningar"
     },
     "chart": {
+      "odometer": {
+        "title": "Mätarställning",
+        "series": "Mätarställning",
+        "summary": "Mätarställning: från {start} till {end}, {distance} under perioden.",
+        "none": "Ingen avläsning av vägmätaren under perioden.",
+        "hint": "Välj en punkt för att se intervallets resor."
+      },
       "distance": {
         "title": "Sträcka",
         "series": "Sträcka",

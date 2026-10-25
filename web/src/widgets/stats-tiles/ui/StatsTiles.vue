@@ -6,7 +6,7 @@ import { isApiError } from '@/shared/api'
 import { useFormat, type Bucket } from '@/shared/lib'
 import { TileFigure } from '@/shared/ui'
 
-// StatsTiles are the totals of the period: each figure with what it lacks (unknown
+// StatsTiles are the totals of the period, and the odometer at its end: each figure with what it lacks (unknown
 // values, reconstructed events) and whether it is an estimate. The cost of the charges
 // needs the account's currency; the entered costs no charge takes are told apart, never
 // added to it (they would count a charge twice).
@@ -33,7 +33,7 @@ type Tile = {
 const tiles = computed<Tile[]>(() => {
   const s = stats.value?.totals
   if (!s) return []
-  const { trips: tr, charges: ch, parked: pk } = s
+  const { trips: tr, charges: ch, parked: pk, odometer: odo } = s
   const note = (cond: unknown, text: string) => (cond ? [text] : [])
   return [
     {
@@ -41,6 +41,17 @@ const tiles = computed<Tile[]>(() => {
       label: t('stats.tile.distance'),
       value: f.quantity(tr.distance_km, 'km'),
       notes: note(tr.distance_unknown, t('stats.tile.distanceUnknown', tr.distance_unknown)),
+    },
+    // The odometer at the end of the period, and how far it went: not the trips' sum,
+    // which misses those without a distance.
+    {
+      key: 'mileage',
+      label: t('stats.tile.mileage'),
+      value: f.quantity(odo.end_km, 'km'),
+      notes: note(
+        odo.distance_km !== null,
+        t('stats.tile.mileageDriven', { distance: f.quantity(odo.distance_km, 'km') }),
+      ),
     },
     {
       key: 'trips',

@@ -116,11 +116,25 @@ type ParkedStats struct {
 	SoCLossPctPerDay Value[float64]
 }
 
+// OdometerStats is the odometer at both ends of a period or an interval, as the events
+// read it: their trips' odometers at start and end, their charges' at end. It moves only
+// while driving, and every trip is an event, a reconstructed one included, so the
+// latest reading before an instant holds until the next trip.
+type OdometerStats struct {
+	// StartKm is the highest reading of the events before the interval, else the lowest
+	// of its own; EndKm the highest of those that started before it ends. Unknown
+	// without one.
+	StartKm, EndKm Value[float64]
+	// DistanceKm is EndKm − StartKm: unknown without both.
+	DistanceKm Value[float64]
+}
+
 // Stats are the aggregates of a period or of one of its intervals.
 type Stats struct {
-	Trips   TripStats
-	Charges ChargeStats
-	Parked  ParkedStats
+	Trips    TripStats
+	Charges  ChargeStats
+	Parked   ParkedStats
+	Odometer OdometerStats
 }
 
 // BucketStats are the aggregates of an interval [Start, End).
@@ -238,9 +252,22 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 		}
 	}
 
+	// before is the highest odometer of the events before the period: where it starts.
+	var before Value[float64]
+	reading := func(t time.Time, kms ...Value[float64]) {
+		if t.Before(from) {
+			for _, km := range kms {
+				before = highest(before, km)
+			}
+			return
+		}
+		add(t, func(a *acc) { a.odometer(kms...) })
+	}
+
 	evs := make([]event, 0, len(trips)+len(charges))
 	for _, t := range trips {
 		add(t.Start.After, func(a *acc) { a.trip(t) })
+		reading(t.Start.After, t.StartOdometerKm, t.EndOdometerKm)
 		if in(t.Start.After, from, to) {
 			dist.add(t)
 		}
@@ -252,6 +279,7 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 			cost = costs.Charges[i]
 		}
 		add(c.Start.After, func(a *acc) { a.charge(c, cost) })
+		reading(c.Start.After, c.OdometerKm)
 		if in(c.Start.After, from, to) {
 			bySoC.add(c)
 			byPlace.add(c, cost)
@@ -272,6 +300,10 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 		add(next.start.After, func(a *acc) { a.parked(prev, next, p.MinChargeSoC) })
 	}
 
+	total.odometerFrom(before)
+	for i, odo := 0, before; i < len(accs); i++ {
+		odo = accs[i].odometerFrom(odo)
+	}
 	s := Summary{
 		Totals: total.stats(), TripsByDistance: dist.result(), ChargesBySoC: bySoC, ChargesByPlace: byPlace.result(),
 	}
@@ -438,6 +470,8 @@ type acc struct {
 	consKWh, consKm float64
 	// Parked time of the intervals with a known loss.
 	lossTime time.Duration
+	// The lowest and highest odometers of the events.
+	odoLow, odoHigh Value[float64]
 }
 
 func (a *acc) trip(t Trip) {
@@ -510,6 +544,37 @@ func (a *acc) parked(prev, next event, minRise float64) {
 	}
 	s.SoCLossPct += max(0, loss)
 	a.lossTime += d
+}
+
+func (a *acc) odometer(kms ...Value[float64]) {
+	for _, km := range kms {
+		if km.OK && (!a.odoLow.OK || km.V < a.odoLow.V) {
+			a.odoLow = km
+		}
+		a.odoHigh = highest(a.odoHigh, km)
+	}
+}
+
+// odometerFrom sets the odometer at both ends of the interval from start, the one when
+// it starts as the events before it read it, and returns the one when it ends.
+func (a *acc) odometerFrom(start Value[float64]) Value[float64] {
+	o := OdometerStats{StartKm: start, EndKm: highest(start, a.odoHigh)}
+	if !o.StartKm.OK {
+		o.StartKm = a.odoLow
+	}
+	if o.StartKm.OK && o.EndKm.OK {
+		o.DistanceKm = Value[float64]{V: o.EndKm.V - o.StartKm.V, OK: true}
+	}
+	a.s.Odometer = o
+	return o.EndKm
+}
+
+// highest is the higher of two values, either one when the other is unknown.
+func highest(a, b Value[float64]) Value[float64] {
+	if !a.OK || (b.OK && b.V > a.V) {
+		return b
+	}
+	return a
 }
 
 func (a *acc) stats() Stats {

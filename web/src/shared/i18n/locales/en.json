@@ -331,6 +331,8 @@
       "monthHeader": "Month"
     },
     "tile": {
+      "mileage": "Odometer",
+      "mileageDriven": "{distance} over the period, by the odometer",
       "distance": "Distance",
       "distanceUnknown": "unknown for {n} trip | unknown for {n} trips",
       "trips": "Trips",
@@ -352,6 +354,13 @@
       "costUnknown": "unknown for {n} charge | unknown for {n} charges"
     },
     "chart": {
+      "odometer": {
+        "title": "Odometer",
+        "series": "Odometer",
+        "summary": "Odometer: from {start} to {end}, {distance} over the period.",
+        "none": "No odometer reading in this period.",
+        "hint": "Select a point to see the trips of its interval."
+      },
       "distance": {
         "title": "Distance",
         "series": "Distance",

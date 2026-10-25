@@ -86,6 +86,11 @@
       "soc_loss_pct": 0,
       "soc_loss_unknown": 3,
       "soc_loss_pct_per_day": 0
+    },
+    "odometer": {
+      "start_km": 12400,
+      "end_km": 12473,
+      "distance_km": 73
     }
   },
   "buckets": [],
