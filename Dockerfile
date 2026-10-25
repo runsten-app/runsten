@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags=
 
 # The front end's build: HTML, JavaScript and CSS, the same for every platform. Its types
 # are generated from the API description.
-FROM --platform=$BUILDPLATFORM node:26.12.0-alpine@sha256:6f08a523443ddedf52941874c203475b0ad503e859ad70cb26ab8be9a517dbd5 AS web
+FROM --platform=$BUILDPLATFORM node:26.12.1-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json web/.npmrc web/.nvmrc ./
 RUN npm ci --no-audit
@@ -31,7 +31,7 @@ COPY api/openapi.yaml /src/api/openapi.yaml
 COPY web ./
 RUN npm run build
 
-FROM gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087 AS runtime
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:18f4cc26c9ffa7f20a359298be7deadac5c607c8e03a02b8119f1a5fc2f82c99 AS runtime
 # A release adds its version and commit (scripts/release-images.sh).
 LABEL org.opencontainers.image.source="https://github.com/runsten-app/runsten" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later"
