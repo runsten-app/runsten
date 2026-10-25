@@ -913,10 +913,11 @@ components:
             - string
             - "null"
         status:
-          description: "reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. Always active for a Polestar connection: credential tells its state."
+          description: "reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. not_configured: the instance has no Volvo application, the vehicle is not read until its administrator sets one. Always active for a Polestar connection: credential tells its state."
           enum:
             - active
             - reauth_required
+            - not_configured
           type: string
       required:
         - provider
@@ -952,7 +953,11 @@ components:
           oneOf:
             - $ref: "#/components/schemas/PolestarCredential"
             - type: "null"
+        volvo:
+          description: "The instance has a Volvo application: a Volvo ID may be connected and an application key given. false: Volvo is not configured on this instance, only the other providers read vehicles."
+          type: boolean
       required:
+        - volvo
         - connected
         - client_id
         - instance_key
@@ -1239,6 +1244,7 @@ components:
             - no_vehicle
             - not_volvo
             - instance_key
+            - volvo_not_configured
             - too_many_vehicles
             - not_admitted
             - feature_unavailable
@@ -3854,7 +3860,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`instance_key`: the instance has a key of its own, which reads every vehicle. `too_many_vehicles`: with the vehicles of the Volvo ID, the account would have more than the instance lets it have; the key is not stored."
+          description: "`volvo_not_configured`: the instance has no Volvo application. `instance_key`: the instance has a key of its own, which reads every vehicle. `too_many_vehicles`: with the vehicles of the Volvo ID, the account would have more than the instance lets it have; the key is not stored."
         "415":
           content:
             application/json:

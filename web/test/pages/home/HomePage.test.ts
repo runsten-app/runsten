@@ -23,6 +23,7 @@ beforeEach(() => {
   fetchConnection.mockReset()
   // Self-hosting: the instance's key reads the vehicles.
   fetchConnection.mockResolvedValue({
+    volvo: true,
     connected: false,
     client_id: 'runsten-dev',
     instance_key: { last4: 'e123' },
@@ -72,6 +73,7 @@ describe('HomePage', () => {
   it('leads a Volvo to the key first on an instance without its own', async () => {
     fetchVehicles.mockResolvedValue([])
     fetchConnection.mockResolvedValue({
+      volvo: true,
       connected: false,
       client_id: 'runsten-dev',
       instance_key: null,
@@ -84,6 +86,24 @@ describe('HomePage', () => {
     expect(wrapper.find('a[href="auth/volvo/start"]').exists()).toBe(false)
     expect(wrapper.find('a.volvo').attributes('href')).toBe('/connection')
     expect(wrapper.find('a.polestar').attributes('href')).toBe('/connection#polestar')
+  })
+
+  it('leads to the Polestar alone on an instance without a Volvo application', async () => {
+    fetchVehicles.mockResolvedValue([])
+    fetchConnection.mockResolvedValue({
+      volvo: false,
+      connected: false,
+      client_id: '',
+      instance_key: null,
+      api_key: null,
+      polestar: null,
+    })
+    const { wrapper } = await home()
+    expect(wrapper.text()).toContain('This instance is not set up to read a Volvo.')
+    expect(wrapper.find('.volvo').exists()).toBe(false)
+    const polestar = wrapper.find('a.polestar')
+    expect(polestar.attributes('href')).toBe('/connection#polestar')
+    expect(polestar.text()).toBe('Connect a Polestar (beta)')
   })
 
   it('says when the vehicles cannot be loaded', async () => {

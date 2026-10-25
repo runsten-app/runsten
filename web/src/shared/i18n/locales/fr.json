@@ -33,12 +33,14 @@
     "empty": {
       "title": "Aucun véhicule pour l'instant",
       "keyText": "Quelle est votre voiture ? Runsten lit une Volvo avec la clé d'une application Volvo que vous créez, puis votre Volvo ID ; une Polestar avec un identifiant du Data Portal de Polestar.",
-      "text": "Quelle est votre voiture ? Runsten lit une Volvo par votre Volvo ID, une Polestar par un identifiant du Data Portal de Polestar."
+      "text": "Quelle est votre voiture ? Runsten lit une Volvo par votre Volvo ID, une Polestar par un identifiant du Data Portal de Polestar.",
+      "polestarText": "Runsten lit une Polestar avec un identifiant du Data Portal de Polestar. Cette instance n'est pas configurée pour lire une Volvo."
     },
     "choose": {
       "volvo": "J'ai une Volvo",
       "polestar": "J'ai une Polestar (bêta)"
-    }
+    },
+    "connectPolestar": "Connecter une Polestar (bêta)"
   },
   "vehicle": {
     "title": "Véhicule",
@@ -945,7 +947,8 @@
       "unshared": "Non lu : le véhicule n'est plus partagé avec l'identifiant",
       "notGranted": "Lu en partie : l'identifiant n'a pas reçu tous les domaines",
       "pausedPolestar": "Mis en pause par Polestar jusqu'à {time}",
-      "quotaPolestar": "Quota Polestar atteint jusqu'à {time}"
+      "quotaPolestar": "Quota Polestar atteint jusqu'à {time}",
+      "notConfigured": "Non lu : Volvo n'est pas configuré sur cette instance"
     },
     "notice": {
       "reauth": {
@@ -968,7 +971,8 @@
       "unshared": "Le Data Portal ne laisse plus votre identifiant lire ce véhicule. Laissez-le lire de nouveau la voiture sur le portail, puis redonnez l'identifiant sur la page Connexion : le véhicule est de nouveau lu.",
       "notGranted": "Votre identifiant n'a pas reçu l'un des domaines que Runsten lit ({endpoint}) : ce qu'il donne n'est pas lu. Créez un identifiant avec les cinq domaines, et donnez-le sur la page Connexion.",
       "quotaPolestar": "Le quota quotidien d'appels de votre identifiant Polestar est épuisé. La lecture reprend d'elle-même.",
-      "pausedPolestar": "Polestar a limité le nombre d'appels. La lecture reprend d'elle-même."
+      "pausedPolestar": "Polestar a limité le nombre d'appels. La lecture reprend d'elle-même.",
+      "notConfigured": "Cette instance n'a pas d'application Volvo : rien de nouveau n'est lu de ce véhicule tant que son administrateur n'en a pas renseigné une. Son historique reste."
     },
     "facts": {
       "mode": "Mode de lecture",
@@ -985,7 +989,8 @@
       "noneDueKey": "Aucune tant qu'aucune clé Volvo n'est donnée",
       "noneDueMarket": "Aucune : Volvo ne dessert pas le marché du véhicule",
       "noneDueCredential": "Aucune tant qu'aucun identifiant Polestar n'est donné",
-      "noneDueUnshared": "Aucune : le véhicule n'est plus partagé avec l'identifiant"
+      "noneDueUnshared": "Aucune : le véhicule n'est plus partagé avec l'identifiant",
+      "noneDueNotConfigured": "Aucune tant que Volvo n'est pas configuré"
     },
     "api": {
       "connectedVehicle": "données du véhicule",
@@ -1022,6 +1027,10 @@
     "polestar": {
       "title": "Data Portal de Polestar",
       "beta": "Bêta"
+    },
+    "noVolvo": {
+      "title": "Volvo non configuré",
+      "text": "Cette instance n'a pas d'application Volvo : ses Volvo ne sont pas lues. Son administrateur peut en créer une sur le portail développeur de Volvo et la renseigner dans la configuration (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_CLIENT_SECRET) : le Volvo ID est alors lu de nouveau."
     }
   },
   "apiKey": {

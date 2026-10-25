@@ -29,7 +29,7 @@ func TestAPIKey(t *testing.T) {
 	u := e.api.URL + apiPrefix + "/connection"
 
 	resp, body := get(t, noFollow(), u, c)
-	if resp.status != http.StatusOK || body != `{"connected":false,"client_id":"runsten-dev","instance_key":null,"api_key":null,"polestar":null}`+"\n" {
+	if resp.status != http.StatusOK || body != `{"volvo":true,"connected":false,"client_id":"runsten-dev","instance_key":null,"api_key":null,"polestar":null}`+"\n" {
 		t.Errorf("no connection: %d %s", resp.status, body)
 	}
 	resp, body = do(t, noFollow(), http.MethodPut, u+"/api-key", jsonType, keyBody(goodKey), c)
@@ -212,4 +212,40 @@ func TestKeyTooManyVehicles(t *testing.T) {
 		t.Errorf("with a Polestar: %d %s; key %q, vehicles %v", resp.status, body, e.store.key.Value, e.store.vehicles)
 	}
 	wantError(t, body, codeTooManyVehicles)
+}
+
+// TestWithoutVolvo: on an instance without a Volvo application, no Volvo ID connects
+// and no key is taken; the connection settings tell it, and a Volvo from before is told
+// not configured.
+func TestWithoutVolvo(t *testing.T) {
+	e := newEnvKeys(t, 10, "", nil)
+	b := e.signedIn(t)
+	if resp, body := do(t, b, http.MethodPut, e.api.URL+apiPrefix+"/connection/api-key", jsonType, keyBody(goodKey)); resp.status != http.StatusOK {
+		t.Fatalf("PUT with Volvo: %d %s", resp.status, body)
+	}
+	if resp, body := get(t, b, e.api.URL+"/auth/volvo/start"); resp.status != http.StatusOK || len(e.store.vehicles) != 1 {
+		t.Fatalf("connection with Volvo: %d %s", resp.status, body)
+	}
+	e.server.ClientID = "" // the application removed from the configuration
+	e.reader.vehicles[account] = []Vehicle{{ID: car, VIN: simVIN, AuthorizedAt: t0}}
+	if _, body := get(t, b, e.api.URL+apiPrefix+"/vehicles"); !strings.Contains(body, `"status":"not_configured"`) {
+		t.Errorf("vehicles: %s", body)
+	}
+	if _, body := get(t, b, e.api.URL+"/"); strings.Contains(body, "auth/volvo/start") {
+		t.Errorf("home page: %s", body)
+	}
+	for _, route := range []string{"/auth/volvo/start", "/auth/volvo/callback?state=x&code=y"} {
+		if resp, body := get(t, b, e.api.URL+route); resp.status != http.StatusNotFound || !strings.Contains(body, "Volvo not configured") {
+			t.Errorf("%s: %d %s", route, resp.status, body)
+		}
+	}
+	u := e.api.URL + apiPrefix + "/connection"
+	if _, body := get(t, b, u); !strings.Contains(body, `"volvo":false`) || !strings.Contains(body, `"client_id":""`) {
+		t.Errorf("connection: %s", body)
+	}
+	resp, body := do(t, b, http.MethodPut, u+"/api-key", jsonType, keyBody(otherKey))
+	if resp.status != http.StatusConflict || e.store.key.Value != goodKey {
+		t.Errorf("PUT without Volvo: %d %s", resp.status, body)
+	}
+	wantError(t, body, codeVolvoNotConfigured)
 }

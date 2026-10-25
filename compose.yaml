@@ -47,10 +47,11 @@ x-runsten-env: &runsten-env
   # Plain text on the internal db network, which only these containers join.
   RUNSTEN_DATABASE_URL: postgres://runsten:${RUNSTEN_DB_PASSWORD:?set RUNSTEN_DB_PASSWORD in .env}@postgres:5432/runsten?sslmode=disable
   RUNSTEN_TOKEN_KEY: ${RUNSTEN_TOKEN_KEY:?set RUNSTEN_TOKEN_KEY in .env (openssl rand -base64 32)}
+  # Empty: no Volvo application, the instance reads no Volvo.
+  RUNSTEN_VOLVO_CLIENT_ID: ${RUNSTEN_VOLVO_CLIENT_ID:-}
+  RUNSTEN_VOLVO_CLIENT_SECRET: ${RUNSTEN_VOLVO_CLIENT_SECRET:-}
   # Empty: no key of the instance; each account gives its own on the Connection page.
   RUNSTEN_VOLVO_API_KEY: ${RUNSTEN_VOLVO_API_KEY:-}
-  RUNSTEN_VOLVO_CLIENT_ID: ${RUNSTEN_VOLVO_CLIENT_ID:?set RUNSTEN_VOLVO_CLIENT_ID in .env}
-  RUNSTEN_VOLVO_CLIENT_SECRET: ${RUNSTEN_VOLVO_CLIENT_SECRET:?set RUNSTEN_VOLVO_CLIENT_SECRET in .env}
   # Empty means the binary's default (the real Volvo API and Volvo ID, the real Polestar
   # Data Portal).
   RUNSTEN_VOLVO_BASE_URL: ${RUNSTEN_VOLVO_BASE_URL:-}
@@ -96,7 +97,10 @@ services:
     environment:
       <<: *runsten-env
       RUNSTEN_API_ADDR: 0.0.0.0:8081
-      RUNSTEN_VOLVO_REDIRECT_URI: ${RUNSTEN_VOLVO_REDIRECT_URI:?set RUNSTEN_VOLVO_REDIRECT_URI in .env}
+      # runsten-api requires one of them: the address Runsten is opened at, or (as
+      # before RUNSTEN_APP_URL) the Volvo redirect URI on it.
+      RUNSTEN_APP_URL: ${RUNSTEN_APP_URL:-}
+      RUNSTEN_VOLVO_REDIRECT_URI: ${RUNSTEN_VOLVO_REDIRECT_URI:-}
       RUNSTEN_VOLVO_SCOPES: ${RUNSTEN_VOLVO_SCOPES:-}
       RUNSTEN_GEOCODER_URL: ${RUNSTEN_GEOCODER_URL:-}
       RUNSTEN_GEOCODER_INTERVAL: ${RUNSTEN_GEOCODER_INTERVAL:-}

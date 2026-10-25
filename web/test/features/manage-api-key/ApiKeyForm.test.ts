@@ -16,6 +16,7 @@ vi.mock('@/entities/connection', async (original) => ({
 
 const key = '0123456789abcdef0123456789abcdef'
 const hosted: ConnectionSettings = {
+  volvo: true,
   connected: false,
   client_id: 'runsten-dev',
   instance_key: null,

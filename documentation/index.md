@@ -37,7 +37,7 @@ Runsten shows what it read, and when:
 
 - A Linux server with Docker: a NAS, a small VPS, or a Raspberry Pi 4 or 5 on a 64-bit system.
 - An electric car of a [supported brand](#supported-cars), with what its manufacturer asks for: for a Volvo, its Volvo ID, and a car sold in a market the Volvo Cars API serves (Volvo publishes no list of them: a car of another market is refused by every call, and Runsten says so on its pages); for a Polestar, a credential of your own on its Data Portal ([Your Polestar](./guide/polestar.md)).
-- For the instance, an application of your own on the [Volvo Cars developer portal](https://developer.volvocars.com/): see [Your Volvo application](./self-hosting/volvo.md).
+- To read a Volvo, an application of your own on the [Volvo Cars developer portal](https://developer.volvocars.com/), for the instance: see [Your Volvo application](./self-hosting/volvo.md). A Polestar needs none.
 
 Then follow the [installation](./self-hosting/index.md).
 

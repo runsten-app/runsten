@@ -1,4 +1,5 @@
 {
+  "volvo": true,
   "connected": false,
   "client_id": "runsten-dev",
   "instance_key": {

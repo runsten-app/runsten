@@ -66,6 +66,7 @@ type instanceKeyJSON struct {
 }
 
 type connectionSettingsJSON struct {
+	Volvo       bool                         `json:"volvo" doc:"The instance has a Volvo application: a Volvo ID may be connected and an application key given. false: Volvo is not configured on this instance, only the other providers read vehicles."`
 	Connected   bool                         `json:"connected" doc:"A Volvo ID is connected to the account."`
 	ClientID    string                       `json:"client_id" doc:"The client ID of the instance's Volvo application (RUNSTEN_VOLVO_CLIENT_ID): the Volvo IDs connect through it, and its secret, never returned, refreshes the tokens."`
 	InstanceKey null[instanceKeyJSON]        `json:"instance_key" doc:"The instance's own application key, which reads every vehicle: an account may not give one. null: none, the account's key is required, before connecting a Volvo ID."`
@@ -92,7 +93,7 @@ func (s *Server) connectionSettings(ctx context.Context, account string) (connec
 	if err != nil {
 		return connectionSettingsJSON{}, s.internal("connection not read", err)
 	}
-	out := connectionSettingsJSON{Connected: c.Connected, ClientID: s.ClientID}
+	out := connectionSettingsJSON{Volvo: s.volvo(), Connected: c.Connected, ClientID: s.ClientID}
 	if s.InstanceKey {
 		out.InstanceKey = known(instanceKeyJSON{Last4: s.InstanceKeyLast4})
 	}
@@ -120,6 +121,9 @@ func (s *Server) getConnection(ctx context.Context, _ *struct{}) (*body[connecti
 // those a key refused at the connection could not list. When Volvo cannot tell (no
 // token, no response), the key is stored as is: the collector finds out.
 func (s *Server) putAPIKey(ctx context.Context, in *apiKeyInput) (*body[connectionSettingsJSON], error) {
+	if !s.volvo() {
+		return nil, apiError(http.StatusConflict, codeVolvoNotConfigured, volvoNotConfigured)
+	}
 	if s.InstanceKey {
 		return nil, apiError(http.StatusConflict, codeInstanceKey, "this instance reads every vehicle with its own application key")
 	}
@@ -218,7 +222,8 @@ func (s *Server) registerConnection(api huma.API) {
 	}, "The connection.", writeErrors(map[int]string{
 		http.StatusBadRequest: errBody + " `api_key_refused`: Volvo refused the key.",
 		http.StatusForbidden:  errNotAdmitted,
-		http.StatusConflict: "`instance_key`: the instance has a key of its own, which reads every vehicle. " +
+		http.StatusConflict: "`volvo_not_configured`: the instance has no Volvo application. " +
+			"`instance_key`: the instance has a key of its own, which reads every vehicle. " +
 			"`too_many_vehicles`: with the vehicles of the Volvo ID, the account would have more than the instance lets it have; the key is not stored.",
 	})), s.putAPIKey)
 	huma.Register(api, s.operation(huma.Operation{

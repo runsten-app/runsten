@@ -523,3 +523,48 @@ func TestSourceLogs(t *testing.T) {
 		t.Errorf("the VIN is in the logs:\n%s", &logs)
 	}
 }
+
+// countingTokens is a TokenSource that counts its calls.
+type countingTokens struct{ calls int }
+
+func (c *countingTokens) Token(context.Context, string, string) (string, error) {
+	c.calls++
+	return "token", nil
+}
+
+func (c *countingTokens) Refresh(context.Context, string, string, string) (string, error) {
+	c.calls++
+	return "token", nil
+}
+
+func (c *countingTokens) KeepAlive(context.Context) error {
+	c.calls++
+	return nil
+}
+
+// TestWithoutVolvo: on an instance without a Volvo application, a Volvo ID's vehicle is
+// not polled and no token is asked for or refreshed; a Polestar's is read as usual.
+func TestWithoutVolvo(t *testing.T) {
+	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+	src := newFakeSource(clk)
+	st := &sourceStore{memStore: memStore{targets: []Target{target(), sourceTarget()}}}
+	api, tokens := &scriptedAPI{}, &countingTokens{}
+	c := New(api, st, tokens, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+	c.AddSource(src, st)
+	c.WithoutVolvo()
+	for range 3 {
+		poll(t, c)
+		clk.Advance(time.Minute)
+	}
+	if len(api.calls) != 0 || tokens.calls != 0 {
+		t.Errorf("Volvo called: API %v, tokens %d", api.calls, tokens.calls)
+	}
+	if len(src.calls[psBattery]) == 0 {
+		t.Error("the Polestar was not read")
+	}
+	for _, s := range st.statuses {
+		if s.VehicleID == "v" && !s.NextAt.IsZero() {
+			t.Errorf("the Volvo is due at %s", s.NextAt)
+		}
+	}
+}

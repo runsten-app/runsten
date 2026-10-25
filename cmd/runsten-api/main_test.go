@@ -38,7 +38,8 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.addr != "127.0.0.1:8081" || cfg.baseURL != volvo.DefaultBaseURL || cfg.app.BaseURL != volvo.DefaultAuthURL ||
 		cfg.aximoteURL != "https://api.aximote.com" || cfg.polestarURL != polestar.DefaultBaseURL ||
 		!slices.Equal(cfg.app.Scopes, volvo.DefaultScopes()) || cfg.app.ClientID != "id" || cfg.app.ClientSecret != "secret" ||
-		cfg.logLevel != slog.LevelInfo || cfg.geocoder != nil || cfg.geocode.Interval != time.Second || !cfg.privateBrokers {
+		cfg.logLevel != slog.LevelInfo || cfg.geocoder != nil || cfg.geocode.Interval != time.Second || !cfg.privateBrokers ||
+		cfg.appURL != "" || !cfg.secureCookies {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -64,7 +65,8 @@ func TestLoadConfigOverrides(t *testing.T) {
 		!slices.Equal(cfg.app.Scopes, []string{"openid", "conve:odometer_status"}) || cfg.logLevel != slog.LevelDebug ||
 		cfg.appURL != "http://127.0.0.1:5173/" || cfg.geocoder == nil || cfg.geocode.Interval != 2*time.Second ||
 		cfg.healthToken != strings.Repeat("h", minHealthToken) || cfg.privateBrokers || cfg.aximoteURL != "http://localhost:8080" ||
-		cfg.polestarURL != "http://localhost:8080/eu-north-1/data-portal/m2m" {
+		cfg.polestarURL != "http://localhost:8080/eu-north-1/data-portal/m2m" || cfg.secureCookies ||
+		cfg.app.RedirectURI != "http://127.0.0.1:8081/auth/volvo/callback" {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -79,6 +81,73 @@ func TestLoadConfigWithoutAPIKey(t *testing.T) {
 	}
 }
 
+// TestLoadConfigWithoutVolvo: an instance without a Volvo application needs only the
+// address it is opened at.
+func TestLoadConfigWithoutVolvo(t *testing.T) {
+	cfg, err := loadConfig(env(map[string]string{
+		"RUNSTEN_DATABASE_URL": "postgres://x", "RUNSTEN_TOKEN_KEY": "k", "RUNSTEN_APP_URL": "https://runsten.example",
+	}))
+	if err != nil || cfg.app.ClientID != "" || cfg.app.RedirectURI != "" || cfg.appURL != "https://runsten.example/" || !cfg.secureCookies {
+		t.Errorf("without Volvo: %+v, %v", cfg, err)
+	}
+	// An instance set up with the redirect URI alone, before RUNSTEN_APP_URL, still starts.
+	cfg, err = loadConfig(env(map[string]string{
+		"RUNSTEN_DATABASE_URL": "postgres://x", "RUNSTEN_TOKEN_KEY": "k",
+		"RUNSTEN_VOLVO_REDIRECT_URI": "https://runsten.example/auth/volvo/callback",
+	}))
+	if err != nil || cfg.app.ClientID != "" || !cfg.secureCookies {
+		t.Errorf("without Volvo, with the redirect URI: %+v, %v", cfg, err)
+	}
+}
+
+// TestLoadConfigRedirectFromAppURL: the redirect URI defaults to RUNSTEN_APP_URL's
+// callback route, prefix included, and is checked as a given one.
+func TestLoadConfigRedirectFromAppURL(t *testing.T) {
+	m := base()
+	delete(m, "RUNSTEN_VOLVO_REDIRECT_URI")
+	m["RUNSTEN_APP_URL"] = "https://example.org/runsten"
+	cfg, err := loadConfig(env(m))
+	if err != nil || cfg.app.RedirectURI != "https://example.org/runsten/auth/volvo/callback" || !cfg.secureCookies {
+		t.Errorf("redirect URI from RUNSTEN_APP_URL: %+v, %v", cfg, err)
+	}
+	m["RUNSTEN_APP_URL"] = "http://192.168.1.20:8082"
+	if _, err := loadConfig(env(m)); err == nil || !strings.Contains(err.Error(), "RUNSTEN_APP_URL") {
+		t.Errorf("http on the network: %v", err)
+	}
+	// Given, the redirect URI wins: development, where Vite serves the interface.
+	m["RUNSTEN_APP_URL"] = "http://127.0.0.1:5173"
+	m["RUNSTEN_VOLVO_REDIRECT_URI"] = "http://127.0.0.1:8081/auth/volvo/callback"
+	if cfg, err := loadConfig(env(m)); err != nil || cfg.app.RedirectURI != m["RUNSTEN_VOLVO_REDIRECT_URI"] || cfg.secureCookies {
+		t.Errorf("given redirect URI: %+v, %v", cfg, err)
+	}
+}
+
+func TestLoadConfigVolvoErrors(t *testing.T) {
+	for name, tt := range map[string]struct {
+		set, unset []string
+		want       string
+	}{
+		"no address":         {unset: []string{"RUNSTEN_VOLVO_REDIRECT_URI"}, want: "RUNSTEN_APP_URL is required"},
+		"client ID alone":    {unset: []string{"RUNSTEN_VOLVO_CLIENT_SECRET"}, want: "go together"},
+		"secret alone":       {unset: []string{"RUNSTEN_VOLVO_CLIENT_ID"}, want: "go together"},
+		"key without client": {unset: []string{"RUNSTEN_VOLVO_CLIENT_ID", "RUNSTEN_VOLVO_CLIENT_SECRET"}, want: "RUNSTEN_VOLVO_API_KEY needs"},
+		"redirect over http": {set: []string{"RUNSTEN_VOLVO_REDIRECT_URI", "http://nas.local/auth/volvo/callback"}, want: "RUNSTEN_VOLVO_REDIRECT_URI"},
+		// The session cookie would not be Secure, and would cross the network in clear text.
+		"address over http": {set: []string{"RUNSTEN_APP_URL", "http://nas.local:8082"}, want: "http is only accepted on a loopback host"},
+	} {
+		m := base()
+		for _, k := range tt.unset {
+			delete(m, k)
+		}
+		for i := 0; i+1 < len(tt.set); i += 2 {
+			m[tt.set[i]] = tt.set[i+1]
+		}
+		if _, err := loadConfig(env(m)); err == nil || !strings.Contains(err.Error(), tt.want) {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+}
+
 func TestLoadConfigErrors(t *testing.T) {
 	_, err := loadConfig(env(map[string]string{
 		"RUNSTEN_VOLVO_AUTH_URL": "volvoid", "RUNSTEN_VOLVO_SCOPES": "openid conve:unlock", "RUNSTEN_LOG_LEVEL": "loud",
@@ -90,8 +159,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		t.Fatal("error expected")
 	}
 	for _, want := range []string{
-		"RUNSTEN_DATABASE_URL", "RUNSTEN_TOKEN_KEY", "RUNSTEN_VOLVO_CLIENT_ID",
-		"RUNSTEN_VOLVO_CLIENT_SECRET", "RUNSTEN_VOLVO_REDIRECT_URI", "RUNSTEN_VOLVO_AUTH_URL", "conve:unlock", "RUNSTEN_LOG_LEVEL",
+		"RUNSTEN_DATABASE_URL", "RUNSTEN_TOKEN_KEY", "RUNSTEN_VOLVO_AUTH_URL", "conve:unlock", "RUNSTEN_LOG_LEVEL",
 		"RUNSTEN_ACCESS_RESTRICTED", "RUNSTEN_APP_URL", "RUNSTEN_GEOCODER_URL", "RUNSTEN_GEOCODER_INTERVAL",
 		"RUNSTEN_HEALTH_TOKEN", "RUNSTEN_MQTT_PRIVATE_BROKERS", "RUNSTEN_AXIMOTE_BASE_URL", "RUNSTEN_POLESTAR_BASE_URL",
 	} {

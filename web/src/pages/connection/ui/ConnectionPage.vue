@@ -32,6 +32,8 @@ import VehicleCollection from './VehicleCollection.vue'
 // tab more. The tab is the URL's hash (#volvo, #polestar: the home's choice of a Polestar
 // opens its tab); without one, that of the vehicle the page was opened from, else the
 // first brand the account has a vehicle of, else Volvo's. A dot marks a tab whose vehicles need the user.
+// On an instance without a Volvo application, Volvo's tab is left out, unless the account
+// has Volvos from before: it then says why they are not read.
 const props = defineProps<{ vehicle?: string; outcome?: string }>()
 const { t } = useI18n()
 const { unread } = useLimits()
@@ -87,14 +89,22 @@ const brandLabels = computed<Record<Brand, string>>(() => ({
   polestar: t('connection.brand.polestar'),
 }))
 const ofBrand = (b: Brand) => (vehicles.value ?? []).filter((v) => v.connection.provider === b)
-const asBrand = (s?: string) => brands.find((b) => b === s)
+const shown = computed(() =>
+  brands.filter((b) => b !== 'volvo' || settings.value?.volvo !== false || ofBrand(b).length),
+)
+const asBrand = (s?: string) => shown.value.find((b) => b === s)
 const tab = computed<Brand>({
   get() {
     const fromHash = asBrand(route.hash.slice(1))
     if (fromHash) return fromHash
-    if (props.outcome) return 'volvo'
+    if (props.outcome && asBrand('volvo')) return 'volvo'
     const from = vehicles.value?.find((v) => v.id === props.vehicle)
-    return from?.connection.provider ?? brands.find((b) => ofBrand(b).length) ?? 'volvo'
+    return (
+      asBrand(from?.connection.provider) ??
+      shown.value.find((b) => ofBrand(b).length) ??
+      shown.value[0] ??
+      'polestar'
+    )
   },
   set(b) {
     void router.replace({ query: route.query, hash: `#${b}` })
@@ -165,7 +175,7 @@ const alerted = computed(() => new Set(brands.filter((b) => ofBrand(b).some(atte
         class="brands mb-6"
       >
         <v-tab
-          v-for="b in brands"
+          v-for="b in shown"
           :id="`connection-tab-${b}`"
           :key="b"
           :value="b"
@@ -192,14 +202,24 @@ const alerted = computed(() => new Set(brands.filter((b) => ofBrand(b).some(atte
 
       <v-tabs-window v-model="tab">
         <v-tabs-window-item
-          v-for="b in brands"
+          v-for="b in shown"
           :id="`connection-panel-${b}`"
           :key="b"
           :value="b"
           role="tabpanel"
           :aria-labelledby="`connection-tab-${b}`"
         >
-          <template v-if="b === 'volvo'">
+          <section
+            v-if="b === 'volvo' && !settings.volvo"
+            class="mb-8"
+            aria-labelledby="connection-no-volvo-title"
+          >
+            <h2 id="connection-no-volvo-title" class="text-title-large mb-3">
+              {{ t('connection.noVolvo.title') }}
+            </h2>
+            <p class="text-body-medium">{{ t('connection.noVolvo.text') }}</p>
+          </section>
+          <template v-else-if="b === 'volvo'">
             <section
               v-if="!settings.instance_key"
               class="mb-8"

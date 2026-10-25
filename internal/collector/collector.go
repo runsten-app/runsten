@@ -384,6 +384,9 @@ type Collector struct {
 
 	volvo   *source            // the Volvo Cars API, read with api and tokens
 	sources map[string]*source // the others, by provider
+	// noVolvo: the instance has no Volvo application, so nothing of Volvo is called
+	// (WithoutVolvo).
+	noVolvo bool
 	// sessions are the Sources' accesses, by ConnectionID.
 	sessions map[string]*session
 	// credentialRefused holds the credentials a Source's provider refused, though the
@@ -452,6 +455,12 @@ func New(api API, store Store, tokens TokenSource, clk clock.Clock, iv Intervals
 // Call it before Run.
 func (c *Collector) SetPolicy(p Policy) { c.policy = p }
 
+// WithoutVolvo has the collector call nothing of Volvo, on an instance without a Volvo
+// application: the Volvo IDs' vehicles are not polled, and their tokens not refreshed
+// (Volvo would refuse a refresh by an unknown client, and the grants would be taken for
+// lost). Call it before Run.
+func (c *Collector) WithoutVolvo() { c.noVolvo = true }
+
 // SetPublisher has the vehicles' state published after each pass that read them, from
 // the next pass on. Call it before Run.
 func (c *Collector) SetPublisher(p Publisher) { c.pub = p }
@@ -490,8 +499,10 @@ func (c *Collector) PollOnce(ctx context.Context) error {
 	defer c.saveCalls(ctx)
 	// The tokens are refreshed whatever the keys: a key refused, or missing, leaves the
 	// grant alive for the day the user gives one.
-	if err := c.tokens.KeepAlive(ctx); err != nil {
-		c.log.Error("token keep-alive", "err", err)
+	if !c.noVolvo {
+		if err := c.tokens.KeepAlive(ctx); err != nil {
+			c.log.Error("token keep-alive", "err", err)
+		}
 	}
 	targets, err := c.store.Targets(ctx)
 	if err != nil {
@@ -590,6 +601,10 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 		c.vehicles[t.VehicleID] = vs
 	}
 	defer func() { c.report(ctx, t, vs) }()
+	if t.readsVolvo() && c.noVolvo {
+		c.logOnce(t, "no Volvo application on this instance: the Volvo ID's vehicles are not polled")
+		return false
+	}
 	if !t.readsVolvo() {
 		return c.pollSource(ctx, t, vs, c.sourceOf(t))
 	}
