@@ -51,10 +51,10 @@ test('Connection: a Polestar credential is checked before it is stored', async (
     'https://data-portal.polestar.com/',
   )
   const fill = async (secret: string) => {
-    await polestar.getByLabel('Client ID', { exact: true }).fill('runsten-dev')
+    await polestar.getByLabel('App client ID', { exact: true }).fill('runsten-dev')
     await polestar.getByLabel('Client secret', { exact: true }).fill(secret)
     await polestar
-      .getByLabel('Account ID', { exact: true })
+      .getByLabel('Expected x-client-id header', { exact: true })
       .fill('5e1ad0c3-7a2b-4c1d-9e8f-0123456789ab')
     await polestar.getByRole('button', { name: 'Save the credential' }).click()
   }
@@ -67,5 +67,5 @@ test('Connection: a Polestar credential is checked before it is stored', async (
   await fill('runsten-dev-secret')
   await expect(summary).toContainText('This credential reads no vehicle')
   await checkView(page, testInfo, 'connection-polestar')
-  await expect(polestar.getByText('Client ID ending in')).toHaveCount(0)
+  await expect(polestar.getByText('App client ID ending in')).toHaveCount(0)
 })

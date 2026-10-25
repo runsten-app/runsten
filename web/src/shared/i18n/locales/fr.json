@@ -1322,7 +1322,7 @@
       "past": "Un identifiant du Data Portal lit pendant 90 jours : celui-ci aurait dû expirer le {date}. Créez-en un nouveau sur le portail et donnez-le ici."
     },
     "current": "Votre identifiant",
-    "last4": "Client ID finissant par {last4}",
+    "last4": "App client ID finissant par {last4}",
     "setAt": "Donné",
     "expiresAt": "Expire",
     "replace": "Remplacer l'identifiant",
@@ -1341,12 +1341,12 @@
       "create": "Dans l'API du Data Portal, créez un identifiant : n'importe quel nom convient.",
       "domains": "Accordez-lui les cinq domaines que Runsten lit : batterie, odomètre, position, disponibilité et limite de charge.",
       "share": "Si le portail demande quelles voitures il lit, choisissez la vôtre.",
-      "copy": "Copiez son client ID, son client secret (affiché une seule fois) et votre Account ID, puis collez-les ci-dessous : ils ne sont jamais réaffichés."
+      "copy": "Sur la page de l'identifiant, copiez son App client ID, son Client secret (affiché une seule fois) et son Expected x-client-id header, puis collez-les ci-dessous : ils ne sont jamais réaffichés. Le point d'accès du jeton affiché avec eux n'est pas utile."
     },
     "field": {
-      "clientId": "Client ID",
+      "clientId": "App client ID",
       "clientSecret": "Client secret",
-      "accountId": "Account ID"
+      "accountId": "Expected x-client-id header"
     },
     "help": "Son quota : 10 000 appels par jour, plus qu'il n'en faut à une voiture qui roulerait et chargerait toute la journée. Il lit pendant 90 jours : Runsten vous le rappelle avant.",
     "save": "Enregistrer l'identifiant",

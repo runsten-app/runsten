@@ -2334,7 +2334,7 @@ components:
       additionalProperties: false
       properties:
         account_id:
-          description: The Account ID the portal shows with it, which every call names.
+          description: The account ID the portal shows with it, labelled Expected x-client-id header, which every call names.
           maxLength: 256
           minLength: 4
           pattern: ^[!-~]+$
