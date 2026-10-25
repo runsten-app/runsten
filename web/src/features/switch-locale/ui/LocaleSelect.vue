@@ -3,12 +3,13 @@ import { useI18n } from 'vue-i18n'
 import { isLocale, localeNames, locales, setLocale } from '@/shared/i18n'
 
 const { t, locale } = useI18n()
+const items = locales.map((l) => ({ value: l, title: localeNames[l] }))
 </script>
 
 <template>
   <v-select
     :model-value="locale"
-    :items="locales.map((l) => ({ value: l, title: localeNames[l] }))"
+    :items="items"
     :label="t('locale.label')"
     density="compact"
     hide-details
