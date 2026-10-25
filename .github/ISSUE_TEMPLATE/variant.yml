@@ -10,8 +10,8 @@ body:
   - type: input
     id: model
     attributes:
-      label: Model and model year
-      placeholder: EX40 Extended Range, 2025
+      label: Make, model and model year
+      placeholder: Volvo EX40 Extended Range, 2025
     validations:
       required: true
   - type: textarea
@@ -32,4 +32,4 @@ body:
     id: api-kwh
     attributes:
       label: Battery capacity reported by the API
-      description: "`batteryCapacityKWH`, as your instance shows it, if you have one."
+      description: "Volvo only: `batteryCapacityKWH`, as your instance shows it, if you have one."

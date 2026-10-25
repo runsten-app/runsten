@@ -1,24 +1,35 @@
-name: Volvo API behavior
-description: What the Volvo API returned for your car, when Runsten reads it wrong or not at all.
+name: Car API behavior
+description: What a car's API returned, when Runsten reads it wrong or not at all.
 labels: [question]
 body:
   - type: markdown
     attributes:
       value: |
-        The Volvo API is little documented: what it really returns helps every user.
+        The car makers' APIs are little documented: what they really return helps every user.
         Remove the VIN, positions and tokens from the responses before pasting them.
+  - type: dropdown
+    id: source
+    attributes:
+      label: Source
+      options:
+        - Volvo Cars API
+        - Polestar Data Portal
+    validations:
+      required: true
   - type: input
     id: car
     attributes:
       label: Car
       description: Model and model year.
+      placeholder: EX30, 2024
     validations:
       required: true
   - type: input
     id: endpoint
     attributes:
       label: Endpoint
-      placeholder: /energy/v2/vehicles/{vin}/state
+      description: As stored in the `endpoint` column of the `snapshots` table.
+      placeholder: energy-state
     validations:
       required: true
   - type: textarea
