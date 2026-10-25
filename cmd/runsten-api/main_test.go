@@ -111,7 +111,7 @@ func TestLoadConfigRedirectFromAppURL(t *testing.T) {
 		t.Errorf("redirect URI from RUNSTEN_APP_URL: %+v, %v", cfg, err)
 	}
 	m["RUNSTEN_APP_URL"] = "http://192.168.1.20:8082"
-	if _, err := loadConfig(env(m)); err == nil || !strings.Contains(err.Error(), "derived from RUNSTEN_APP_URL") {
+	if _, err := loadConfig(env(m)); err == nil || !strings.Contains(err.Error(), "RUNSTEN_APP_URL") {
 		t.Errorf("http on the network: %v", err)
 	}
 	// Given, the redirect URI wins: development, where Vite serves the interface.
@@ -132,6 +132,8 @@ func TestLoadConfigVolvoErrors(t *testing.T) {
 		"secret alone":       {unset: []string{"RUNSTEN_VOLVO_CLIENT_ID"}, want: "go together"},
 		"key without client": {unset: []string{"RUNSTEN_VOLVO_CLIENT_ID", "RUNSTEN_VOLVO_CLIENT_SECRET"}, want: "RUNSTEN_VOLVO_API_KEY needs"},
 		"redirect over http": {set: []string{"RUNSTEN_VOLVO_REDIRECT_URI", "http://nas.local/auth/volvo/callback"}, want: "RUNSTEN_VOLVO_REDIRECT_URI"},
+		// The session cookie would not be Secure, and would cross the network in clear text.
+		"address over http": {set: []string{"RUNSTEN_APP_URL", "http://nas.local:8082"}, want: "http is only accepted on a loopback host"},
 	} {
 		m := base()
 		for _, k := range tt.unset {

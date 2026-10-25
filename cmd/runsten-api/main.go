@@ -34,9 +34,9 @@
 //	RUNSTEN_TOKEN_KEY            token encryption key, 32 bytes in base64 (required)
 //	RUNSTEN_APP_URL              the address Runsten is opened at, the web interface
 //	                             (required, unless RUNSTEN_VOLVO_REDIRECT_URI is set: its
-//	                             host then). Its scheme decides whether cookies are
-//	                             Secure; the Volvo ID connection comes back to it (Vite in
-//	                             development)
+//	                             host then); https, or http on a loopback host. Its
+//	                             scheme decides whether cookies are Secure; the Volvo ID
+//	                             connection comes back to it (Vite in development)
 //	RUNSTEN_VOLVO_CLIENT_ID      Volvo application client ID (default none: no Volvo ID
 //	                             can be connected)
 //	RUNSTEN_VOLVO_CLIENT_SECRET  its client secret, with it; it never leaves this backend
@@ -431,9 +431,13 @@ func loadConfig(getenv func(string) string) (config, error) {
 		}
 	}
 	if v := getenv("RUNSTEN_APP_URL"); v != "" {
-		if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" ||
-			u.RawQuery != "" || u.Fragment != "" {
+		// Its scheme decides whether the session cookie is Secure: over plain http, only
+		// on the loopback, where it does not cross a network.
+		switch u, err := url.Parse(v); {
+		case err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.RawQuery != "" || u.Fragment != "":
 			errs = append(errs, fmt.Errorf("RUNSTEN_APP_URL %q: http(s) URL expected, without query or fragment", v))
+		case u.Scheme == "http" && !httpserver.IsLoopbackHost(u.Hostname()):
+			errs = append(errs, fmt.Errorf("RUNSTEN_APP_URL %q: http is only accepted on a loopback host (localhost, 127.0.0.1, [::1]): use https", v))
 		}
 		cfg.appURL = strings.TrimSuffix(v, "/") + "/"
 	}
