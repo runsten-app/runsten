@@ -25,8 +25,17 @@ body:
     id: car
     attributes:
       label: Car
-      description: Model and model year, if it matters.
-      placeholder: EX30, 2024
+      description: Make, model and model year, if it matters.
+      placeholder: Polestar 2, 2023
+  - type: dropdown
+    id: source
+    attributes:
+      label: Source
+      description: How the car is read, if it matters.
+      options:
+        - Volvo Cars API
+        - Polestar Data Portal
+        - Imports only
   - type: textarea
     id: logs
     attributes:
