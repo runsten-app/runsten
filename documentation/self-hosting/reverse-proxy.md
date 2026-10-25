@@ -16,13 +16,13 @@ runsten.example.org {
 }
 ```
 
-Then, in `.env`, `RUNSTEN_VOLVO_REDIRECT_URI=https://runsten.example.org/auth/volvo/callback` (the application registered with the same URI), and `docker compose up -d`. The https redirect URI makes the session cookie `Secure`.
+Then, in `.env`, `RUNSTEN_APP_URL=https://runsten.example.org`, and `docker compose up -d`. The https address makes the session cookie `Secure`; for a Volvo, the application's redirect URI is `https://runsten.example.org/auth/volvo/callback`.
 
 If Caddy runs in a container, attach it to the `runsten_default` network and proxy to `web:8082`.
 
 ## Under a path
 
-The proxy strips the prefix, and `RUNSTEN_WEB_BASE_PATH` tells it to the interface; the redirect URI includes it:
+The proxy strips the prefix, and `RUNSTEN_WEB_BASE_PATH` tells it to the interface; the address includes it:
 
 ```text
 example.org {
@@ -32,7 +32,7 @@ example.org {
 }
 ```
 
-with `RUNSTEN_WEB_BASE_PATH=/runsten/` and `RUNSTEN_VOLVO_REDIRECT_URI=https://example.org/runsten/auth/volvo/callback`.
+with `RUNSTEN_WEB_BASE_PATH=/runsten/` and `RUNSTEN_APP_URL=https://example.org/runsten` (for a Volvo, the redirect URI `https://example.org/runsten/auth/volvo/callback`).
 
 ## Good to know
 

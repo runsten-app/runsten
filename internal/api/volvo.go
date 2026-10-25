@@ -53,6 +53,13 @@ func (s *Server) admit(ctx context.Context, account string) error {
 	return nil
 }
 
+// volvoNotConfigured tells why nothing of Volvo is taken on an instance without its
+// application.
+const volvoNotConfigured = "this instance has no Volvo application (RUNSTEN_VOLVO_CLIENT_ID): a Volvo ID cannot be connected"
+
+// volvo reports whether the instance has a Volvo application.
+func (s *Server) volvo() bool { return s.ClientID != "" }
+
 // stateCookie binds a pending flow to the browser that started it.
 const stateCookie = "runsten_volvo_state"
 
@@ -61,6 +68,10 @@ const stateCookie = "runsten_volvo_state"
 const callbackTimeout = 20 * time.Second
 
 func (s *Server) start(w http.ResponseWriter, r *http.Request, sess auth.Session) {
+	if !s.volvo() {
+		s.fail(w, r, http.StatusNotFound, "Volvo not configured", "This instance has no Volvo application: a Volvo ID cannot be connected.")
+		return
+	}
 	if s.Admission != nil {
 		route, err := s.Admission.Admit(r.Context(), sess.AccountID)
 		if err != nil {
@@ -104,6 +115,10 @@ func (s *Server) start(w http.ResponseWriter, r *http.Request, sess auth.Session
 }
 
 func (s *Server) callback(w http.ResponseWriter, r *http.Request, sess auth.Session) {
+	if !s.volvo() {
+		s.fail(w, r, http.StatusNotFound, "Volvo not configured", "This instance has no Volvo application: a Volvo ID cannot be connected.")
+		return
+	}
 	q := r.URL.Query()
 	state := q.Get("state")
 	cookie, err := r.Cookie(stateCookie)

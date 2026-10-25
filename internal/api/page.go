@@ -15,6 +15,7 @@ type view struct {
 	Error    string
 	Login    bool   // the sign-in form
 	Username string // the signed-in home page
+	Volvo    bool   // the home page's link to connect a Volvo ID
 	Back     string // the way back to the Connection page (Server.appURL)
 }
 
@@ -39,8 +40,10 @@ background:#1c6bb5;color:#fff;text-decoration:none;cursor:pointer}.error{color:#
 {{- end}}
 {{- if .Username}}
 <p>Signed in as <strong>{{.Username}}</strong>.</p>
+{{- if .Volvo}}
 <p><a href="auth/volvo/start">Connect a Volvo ID</a>, or connect it again after a
 "re-authentication required".</p>
+{{- end}}
 <form method="post" action="logout"><button>Sign out</button></form>
 {{- end}}
 {{- with .Back}}

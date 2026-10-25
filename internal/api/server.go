@@ -246,7 +246,8 @@ type Config struct {
 	MaxVehicles int
 	// InstanceKeyLast4 and ClientID tell the user which application of the developer
 	// portal the instance uses: the last four characters of its key, and its client ID,
-	// which is no secret (every authorization URL carries it).
+	// which is no secret (every authorization URL carries it). ClientID is empty on an
+	// instance without a Volvo application: no Volvo ID connects, no key is taken.
 	InstanceKeyLast4 string
 	ClientID         string
 

@@ -4,7 +4,7 @@ description: "Read a Polestar with Runsten: create your credential on Polestar's
 
 # Your Polestar
 
-Runsten reads a Polestar through **Polestar's Data Portal**: the access to their car's data that the EU Data Act gives its owners. On the portal, you create a credential of your own, and give its three values to Runsten. Runsten never asks for your Polestar ID or its password.
+Runsten reads a Polestar through **Polestar's Data Portal**: the access to their car's data that the EU Data Act gives its owners. On the portal, you create a credential of your own, and give its three values to Runsten. Runsten never asks for your Polestar ID or its password. A self-hosted instance needs no Volvo application to read a Polestar.
 
 ::: warning Beta
 Polestar support is in beta. It was built against a simulator of the Data Portal, from its specification and responses of real cars, and has not yet been checked on a car of our own. What is not known yet is **how often a car sends its readings while it drives**. If it sends them often, trips are found as for a Volvo; if it sends them rarely, trips are only found from the odometer, as reconstructed trips, without their route. Tell us how yours behaves.

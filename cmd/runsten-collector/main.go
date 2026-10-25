@@ -24,9 +24,10 @@
 //	                            it reads the connections without their own key (required
 //	                            for connect; default: none, only the connections with
 //	                            their own key are read)
-//	RUNSTEN_VOLVO_CLIENT_ID     Volvo application client ID (required to collect)
-//	RUNSTEN_VOLVO_CLIENT_SECRET its client secret (required to collect): tokens are
-//	                            refreshed by the collector
+//	RUNSTEN_VOLVO_CLIENT_ID     Volvo application client ID (default none: the Volvo IDs'
+//	                            vehicles are not read, nor their tokens refreshed)
+//	RUNSTEN_VOLVO_CLIENT_SECRET its client secret, with it: tokens are refreshed by the
+//	                            collector
 //	RUNSTEN_VOLVO_BASE_URL      API address (default https://api.volvocars.com)
 //	RUNSTEN_VOLVO_AUTH_URL      Volvo ID address (default https://volvoid.eu.volvocars.com)
 //	RUNSTEN_VOLVO_ACCESS_TOKEN  user's OAuth token (connect only)
@@ -283,6 +284,10 @@ func run(args []string) error {
 		current: deriver.Current, set: st.SetVariantInEffect, clk: clk,
 	}
 	c := collector.New(api, st, tokens, clk, cfg.intervals, cfg.quota, log, obs, der)
+	if cfg.clientID == "" {
+		c.WithoutVolvo()
+		log.Warn("no Volvo application (RUNSTEN_VOLVO_CLIENT_ID): the Volvo IDs' vehicles are not read")
+	}
 	c.AddSource(polestarsource.New(polestar.NewClient(cfg.polestarURL, hc), polestarCredential(st)), st)
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
@@ -379,8 +384,10 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		required["RUNSTEN_VOLVO_ACCESS_TOKEN"] = &cfg.accessToken
 	}
 	if cmd == collect {
-		required["RUNSTEN_VOLVO_CLIENT_ID"] = &cfg.clientID
-		required["RUNSTEN_VOLVO_CLIENT_SECRET"] = &cfg.clientSecret
+		cfg.clientID, cfg.clientSecret = getenv("RUNSTEN_VOLVO_CLIENT_ID"), getenv("RUNSTEN_VOLVO_CLIENT_SECRET")
+		if (cfg.clientID == "") != (cfg.clientSecret == "") {
+			errs = append(errs, errors.New("RUNSTEN_VOLVO_CLIENT_ID and RUNSTEN_VOLVO_CLIENT_SECRET go together: set both, or neither on an instance without Volvo"))
+		}
 	}
 	for name, dst := range required {
 		if *dst = getenv(name); *dst == "" {

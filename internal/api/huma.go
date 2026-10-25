@@ -137,6 +137,7 @@ const (
 	codeNoVehicle            errorCode = "no_vehicle"
 	codeNotVolvo             errorCode = "not_volvo"
 	codeInstanceKey          errorCode = "instance_key"
+	codeVolvoNotConfigured   errorCode = "volvo_not_configured"
 	codeTooManyVehicles      errorCode = "too_many_vehicles"
 	codeNotAdmitted          errorCode = "not_admitted"
 	codeFeatureUnavailable   errorCode = "feature_unavailable"
@@ -154,7 +155,7 @@ const (
 func (errorCode) Schema(huma.Registry) *huma.Schema {
 	return enumSchema(codeInvalidParameter, codeInvalidBody, codeUnauthorized, codeInvalidCredentials,
 		codeCrossOrigin, codeNotFound, codeMethodNotAllowed, codeUnsupportedMediaType, codeTooManyAttempts,
-		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeImportedCharge, codeAPIKeyRefused, codeCredentialRefused, codeNoVehicle, codeNotVolvo, codeInstanceKey, codeTooManyVehicles, codeNotAdmitted, codeFeatureUnavailable,
+		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeImportedCharge, codeAPIKeyRefused, codeCredentialRefused, codeNoVehicle, codeNotVolvo, codeInstanceKey, codeVolvoNotConfigured, codeTooManyVehicles, codeNotAdmitted, codeFeatureUnavailable,
 		codeBrokerRefused, codeTokenRefused, codeSourceUnavailable, codeImportActive, codeInvalidFile, codeInsufficientScope, codeRateLimited,
 		codeInternal)
 }

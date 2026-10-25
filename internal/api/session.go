@@ -168,13 +168,13 @@ func (s *Server) logoutForm(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) home(w http.ResponseWriter, _ *http.Request, sess auth.Session) {
-	render(w, http.StatusOK, view{Title: "Runsten", Username: sess.Username})
+	render(w, http.StatusOK, view{Title: "Runsten", Username: sess.Username, Volvo: s.volvo()})
 }
 
 // connectionPage stands for the Connection page of the web interface when runsten-api
 // is served alone: the outcome of the Volvo ID flow, else the home page.
 func (s *Server) connectionPage(w http.ResponseWriter, r *http.Request, sess auth.Session) {
-	v := view{Title: "Runsten", Username: sess.Username}
+	v := view{Title: "Runsten", Username: sess.Username, Volvo: s.volvo()}
 	switch r.URL.Query().Get("volvo") {
 	case outcomeConnected:
 		v = view{Title: "Volvo ID connected", Message: "Your vehicles are recorded: the collector reads them from its next pass. You can close this page.", Back: "./"}

@@ -4,15 +4,17 @@ description: "Create your application on the Volvo Cars developer portal, choose
 
 # Your Volvo application
 
-Runsten reads the car through the [Volvo Cars API](https://developer.volvocars.com/). Each self-hosted instance uses an application of its own on the Volvo Cars developer portal, as Home Assistant's [Volvo integration](https://www.home-assistant.io/integrations/volvo/) does with its own credentials: its client ID, client secret and API key go into `.env`.
+Runsten reads a Volvo through the [Volvo Cars API](https://developer.volvocars.com/). Each self-hosted instance that reads a Volvo uses an application of its own on the Volvo Cars developer portal, as Home Assistant's [Volvo integration](https://www.home-assistant.io/integrations/volvo/) does with its own credentials: its client ID, client secret and API key go into `.env`.
 
 The application is yours, for your own Volvo ID: Volvo has nothing to review or approve. Its **Publish** form only gives it its OAuth credentials, at once.
+
+An instance that reads only Polestars needs none: leave the Volvo variables of `.env` empty, and the Connection page offers no Volvo.
 
 Why publish at all: the access tokens of the portal's generation tool last 30 minutes at most and cannot be renewed. The collector runs for weeks; it renews its tokens itself, which Volvo allows only with the client ID and secret of a published application.
 
 ## Creating the application
 
-Choose the **redirect URI** first: the settings of the application cannot be changed once it is published. It must lead to `/auth/volvo/callback` on the host where you sign in to Runsten:
+Choose the **redirect URI** first: the settings of the application cannot be changed once it is published. It is the address you open Runsten at (`RUNSTEN_APP_URL`) followed by `/auth/volvo/callback`:
 
 - behind a [reverse proxy](./reverse-proxy.md): `https://runsten.example.org/auth/volvo/callback`;
 - under a path: `https://example.org/runsten/auth/volvo/callback`;
@@ -33,10 +35,9 @@ In `.env`:
 RUNSTEN_VOLVO_CLIENT_ID=…
 RUNSTEN_VOLVO_CLIENT_SECRET=…
 RUNSTEN_VOLVO_API_KEY=…
-RUNSTEN_VOLVO_REDIRECT_URI=https://runsten.example.org/auth/volvo/callback
 ```
 
-The redirect URI in `.env` must be the one registered with the application, on the host your browser uses.
+Runsten derives the redirect URI from `RUNSTEN_APP_URL`: it must be the one registered with the application. Set `RUNSTEN_VOLVO_REDIRECT_URI` only if you registered another, on the host your browser uses.
 
 ## The quota
 

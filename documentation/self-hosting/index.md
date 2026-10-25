@@ -19,7 +19,9 @@ Its data lives in the `runsten_postgres` volume, which survives restarts and upd
 
 ## Before you start
 
-Create your application on the Volvo developer portal first: its redirect URI cannot be changed afterwards, so settle the host name you will use ([Your Volvo application](./volvo.md)).
+Settle the address you will open Runsten at: `https://runsten.example.org` behind a [reverse proxy](./reverse-proxy.md), or `http://127.0.0.1:8082` on the server itself. It goes into `RUNSTEN_APP_URL`.
+
+To read a Volvo, create your application on the Volvo developer portal first: its redirect URI, on that address, cannot be changed afterwards ([Your Volvo application](./volvo.md)). A Polestar needs no application: leave the Volvo variables empty.
 
 ## Install
 
@@ -38,7 +40,7 @@ docker compose run --rm api user create <name>   # your user: asks for a passwor
 docker compose logs -f api collector
 ```
 
-`.env` holds the passwords, the token encryption key and your Volvo application. Generate the secrets with standard tools:
+`.env` holds the passwords, the token encryption key, the address and, for a Volvo, your Volvo application. Generate the secrets with standard tools:
 
 ```sh
 openssl rand -hex 24      # POSTGRES_PASSWORD, RUNSTEN_DB_PASSWORD

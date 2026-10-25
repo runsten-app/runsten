@@ -32,23 +32,25 @@
 //
 //	RUNSTEN_DATABASE_URL         PostgreSQL URL (required)
 //	RUNSTEN_TOKEN_KEY            token encryption key, 32 bytes in base64 (required)
+//	RUNSTEN_APP_URL              the address Runsten is opened at, the web interface
+//	                             (required, unless RUNSTEN_VOLVO_REDIRECT_URI is set: its
+//	                             host then). Its scheme decides whether cookies are
+//	                             Secure; the Volvo ID connection comes back to it (Vite in
+//	                             development)
+//	RUNSTEN_VOLVO_CLIENT_ID      Volvo application client ID (default none: no Volvo ID
+//	                             can be connected)
+//	RUNSTEN_VOLVO_CLIENT_SECRET  its client secret, with it; it never leaves this backend
+//	RUNSTEN_VOLVO_REDIRECT_URI   redirect URI registered with the application (default:
+//	                             RUNSTEN_APP_URL + auth/volvo/callback), ending with
+//	                             /auth/volvo/callback; https, or http on a loopback host
 //	RUNSTEN_VOLVO_API_KEY        the instance's Volvo application key (vcc-api-key), to list
 //	                             the vehicles of the accounts without their own (default:
 //	                             none; each account must then give its own key, on the
 //	                             Connection page, before connecting a Volvo ID)
-//	RUNSTEN_VOLVO_CLIENT_ID      Volvo application client ID (required)
-//	RUNSTEN_VOLVO_CLIENT_SECRET  its client secret (required); it never leaves this backend
-//	RUNSTEN_VOLVO_REDIRECT_URI   redirect URI registered with the application (required),
-//	                             ending with /auth/volvo/callback; https, or http on a
-//	                             loopback host. Its scheme also decides whether cookies
-//	                             are Secure: it is on the host users open.
 //	RUNSTEN_VOLVO_SCOPES         requested scopes, space separated (default: the read
 //	                             scopes of the polled endpoints, location:read included)
 //	RUNSTEN_VOLVO_BASE_URL       API address (default https://api.volvocars.com)
 //	RUNSTEN_VOLVO_AUTH_URL       Volvo ID address (default https://volvoid.eu.volvocars.com)
-//	RUNSTEN_APP_URL              the web interface, where the Volvo ID connection comes
-//	                             back to, when it is not on the host of the redirect URI
-//	                             (default: there; Vite in development)
 //	RUNSTEN_API_ADDR             listen address (default 127.0.0.1:8081). runsten-api
 //	                             serves plain http: beyond this machine, put an https
 //	                             reverse proxy in front of it, or passwords and session
@@ -139,9 +141,11 @@ type config struct {
 	polestarURL string
 	app         volvo.AuthConfig
 	appURL      string
-	addr        string
-	restricted  bool
-	logLevel    slog.Level
+	// secureCookies: the address users open is https.
+	secureCookies bool
+	addr          string
+	restricted    bool
+	logLevel      slog.Level
 	// geocoder is a Nominatim-compatible reverse geocoder; nil: no address.
 	geocoder *nominatim.Client
 	geocode  geocode.Params
@@ -205,7 +209,6 @@ func run(args []string) error {
 	defer st.Close()
 
 	hc := &http.Client{Timeout: 15 * time.Second}
-	redirect, _ := url.Parse(cfg.app.RedirectURI) // validated by loadConfig
 	sessions := auth.New(st, clock.Real{}, auth.DefaultParams(), rand.Reader)
 	authorizer := volvo.NewAuthClient(cfg.app, hc)
 	// Only with a geocoder are the positions asked for: nothing leaves for a third party
@@ -252,10 +255,9 @@ func run(args []string) error {
 		// The collector checks the addresses again when it connects.
 		PublicBrokersOnly: !cfg.privateBrokers,
 		Clock:             clock.Real{},
-		// The redirect URI is on the host users open: https there means https here.
-		SecureCookies: redirect.Scheme == "https",
-		AppURL:        cfg.appURL,
-		Log:           log,
+		SecureCookies:     cfg.secureCookies,
+		AppURL:            cfg.appURL,
+		Log:               log,
 	})
 	if cfg.geocoder != nil {
 		go geocode.New(st, cfg.geocoder, clock.Real{}, cfg.geocode, log).Run(ctx)
@@ -268,9 +270,15 @@ func run(args []string) error {
 	} else if !ok {
 		log.Warn("no user yet: create one with runsten-api user create <name> (docker compose run --rm api user create <name>)")
 	}
-	log.Info("runsten-api started: sign in, then open the start URL to connect a Volvo ID",
-		"addr", cfg.addr, "login", siteURL(redirect, "/login"), "start", siteURL(redirect, "/auth/volvo/start"),
-		"scopes", strings.Join(cfg.app.Scopes, " "), "instance_key", cfg.apiKey != "", "geocoder", cfg.geocoder != nil)
+	if cfg.app.ClientID == "" {
+		log.Info("runsten-api started without a Volvo application: the Volvo IDs cannot be connected",
+			"addr", cfg.addr, "app_url", cfg.appURL, "geocoder", cfg.geocoder != nil)
+	} else {
+		redirect, _ := url.Parse(cfg.app.RedirectURI) // validated by loadConfig
+		log.Info("runsten-api started: sign in, then open the start URL to connect a Volvo ID",
+			"addr", cfg.addr, "login", siteURL(redirect, "/login"), "start", siteURL(redirect, "/auth/volvo/start"),
+			"scopes", strings.Join(cfg.app.Scopes, " "), "instance_key", cfg.apiKey != "", "geocoder", cfg.geocoder != nil)
+	}
 	mux := http.NewServeMux()
 	mux.Handle("GET "+health.Path, health.OK()) // not logged: probed every 30 s
 	if cfg.healthToken != "" {                  // not logged either: an uptime monitor's
@@ -414,23 +422,22 @@ func loadConfig(getenv func(string) string) (config, error) {
 		privateBrokers: true,
 	}
 	var errs []error
-	cfg.apiKey = getenv("RUNSTEN_VOLVO_API_KEY")
 	for name, dst := range map[string]*string{
-		"RUNSTEN_DATABASE_URL":        &cfg.databaseURL,
-		"RUNSTEN_TOKEN_KEY":           &cfg.tokenKey,
-		"RUNSTEN_VOLVO_CLIENT_ID":     &cfg.app.ClientID,
-		"RUNSTEN_VOLVO_CLIENT_SECRET": &cfg.app.ClientSecret,
-		"RUNSTEN_VOLVO_REDIRECT_URI":  &cfg.app.RedirectURI,
+		"RUNSTEN_DATABASE_URL": &cfg.databaseURL,
+		"RUNSTEN_TOKEN_KEY":    &cfg.tokenKey,
 	} {
 		if *dst = getenv(name); *dst == "" {
 			errs = append(errs, fmt.Errorf("%s is required", name))
 		}
 	}
-	if cfg.app.RedirectURI != "" {
-		if err := validateRedirectURI(cfg.app.RedirectURI); err != nil {
-			errs = append(errs, fmt.Errorf("RUNSTEN_VOLVO_REDIRECT_URI %q: %w", cfg.app.RedirectURI, err))
+	if v := getenv("RUNSTEN_APP_URL"); v != "" {
+		if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" ||
+			u.RawQuery != "" || u.Fragment != "" {
+			errs = append(errs, fmt.Errorf("RUNSTEN_APP_URL %q: http(s) URL expected, without query or fragment", v))
 		}
+		cfg.appURL = strings.TrimSuffix(v, "/") + "/"
 	}
+	errs = append(errs, loadVolvoApp(&cfg, getenv)...)
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.app.BaseURL, "RUNSTEN_AXIMOTE_BASE_URL": &cfg.aximoteURL,
 		"RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL,
@@ -447,13 +454,6 @@ func loadConfig(getenv func(string) string) (config, error) {
 	}
 	if err := volvo.ValidateScopes(cfg.app.Scopes); err != nil {
 		errs = append(errs, fmt.Errorf("RUNSTEN_VOLVO_SCOPES: %w", err))
-	}
-	if v := getenv("RUNSTEN_APP_URL"); v != "" {
-		if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" ||
-			u.RawQuery != "" || u.Fragment != "" {
-			errs = append(errs, fmt.Errorf("RUNSTEN_APP_URL %q: http(s) URL expected, without query or fragment", v))
-		}
-		cfg.appURL = strings.TrimSuffix(v, "/") + "/"
 	}
 	if v := getenv("RUNSTEN_API_ADDR"); v != "" {
 		cfg.addr = v
@@ -499,6 +499,49 @@ func loadConfig(getenv func(string) string) (config, error) {
 		}
 	}
 	return cfg, errors.Join(errs...)
+}
+
+// loadVolvoApp reads the instance's Volvo application, optional: its client ID and
+// secret go together, and its redirect URI defaults to RUNSTEN_APP_URL's callback
+// route. Without one, the Volvo IDs cannot connect. The address users open is
+// RUNSTEN_APP_URL, or the redirect URI's host when only that is set (as before
+// RUNSTEN_APP_URL was): one of them is required, and its scheme decides whether the
+// cookies are Secure.
+func loadVolvoApp(cfg *config, getenv func(string) string) []error {
+	var errs []error
+	cfg.apiKey = getenv("RUNSTEN_VOLVO_API_KEY")
+	cfg.app.ClientID = getenv("RUNSTEN_VOLVO_CLIENT_ID")
+	cfg.app.ClientSecret = getenv("RUNSTEN_VOLVO_CLIENT_SECRET")
+	cfg.app.RedirectURI = getenv("RUNSTEN_VOLVO_REDIRECT_URI")
+	given := cfg.app.RedirectURI != ""
+	switch {
+	case (cfg.app.ClientID == "") != (cfg.app.ClientSecret == ""):
+		errs = append(errs, errors.New("RUNSTEN_VOLVO_CLIENT_ID and RUNSTEN_VOLVO_CLIENT_SECRET go together: set both, or neither on an instance without Volvo"))
+	case cfg.app.ClientID == "" && cfg.apiKey != "":
+		errs = append(errs, errors.New("RUNSTEN_VOLVO_API_KEY needs the Volvo application: set RUNSTEN_VOLVO_CLIENT_ID and RUNSTEN_VOLVO_CLIENT_SECRET, or remove it"))
+	case cfg.app.ClientID != "" && !given && cfg.appURL != "":
+		cfg.app.RedirectURI = cfg.appURL + strings.TrimPrefix(callbackPath, "/")
+	}
+	switch {
+	case cfg.appURL == "" && !given:
+		errs = append(errs, errors.New("RUNSTEN_APP_URL is required: the address Runsten is opened at, as https://runsten.example.org"))
+	case cfg.app.RedirectURI == "":
+	default:
+		if err := validateRedirectURI(cfg.app.RedirectURI); err != nil && given {
+			errs = append(errs, fmt.Errorf("RUNSTEN_VOLVO_REDIRECT_URI %q: %w", cfg.app.RedirectURI, err))
+		} else if err != nil {
+			errs = append(errs, fmt.Errorf("the Volvo redirect URI derived from RUNSTEN_APP_URL, %q: %w", cfg.app.RedirectURI, err))
+		}
+	}
+	// The address users open: https there means https here.
+	site := cfg.appURL
+	if site == "" {
+		site = cfg.app.RedirectURI
+	}
+	if u, err := url.Parse(site); err == nil {
+		cfg.secureCookies = u.Scheme == "https"
+	}
+	return errs
 }
 
 // validateRedirectURI checks that the redirect URI leads to the callback route and

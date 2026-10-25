@@ -28,6 +28,7 @@ vi.mock('@/entities/connection', async (original) => ({
 
 // Self-hosting: the instance's key reads the vehicles.
 const selfHosted: ConnectionSettings = {
+  volvo: true,
   connected: true,
   client_id: 'runsten-dev',
   instance_key: { last4: 'e123' },
@@ -36,6 +37,7 @@ const selfHosted: ConnectionSettings = {
 }
 // The hosted offer: no instance key, the account gives its own.
 const hosted: ConnectionSettings = {
+  volvo: true,
   connected: false,
   client_id: 'runsten-dev',
   instance_key: null,
@@ -103,6 +105,38 @@ describe('ConnectionPage', () => {
     expect(panel.findAll('.vehicle-collection h3').map((h) => h.text())).toEqual([
       'Polestar 2 Long Range Dual Motor / Performance · 2024',
     ])
+  })
+
+  it('leaves Volvo out on an instance without its application', async () => {
+    mocks.fetchConnection.mockResolvedValue({
+      ...selfHosted,
+      volvo: false,
+      client_id: '',
+      instance_key: null,
+    })
+    mocks.fetchVehicles.mockResolvedValue(items.filter((v) => v.connection.provider === 'polestar'))
+    const w = await page()
+    expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
+      'Polestar Beta needs your attention',
+    ])
+    expect(w.find('#connection-panel-polestar').exists()).toBe(true)
+    expect(w.find('a[href="auth/volvo/start"]').exists()).toBe(false)
+  })
+
+  it('tells why the Volvos from before are not read, without the application', async () => {
+    mocks.fetchConnection.mockResolvedValue({
+      ...selfHosted,
+      volvo: false,
+      client_id: '',
+      instance_key: null,
+    })
+    const w = await page()
+    expect(w.findAll('[role="tab"]')).toHaveLength(2)
+    const panel = w.find('#connection-panel-volvo')
+    expect(panel.findAll('h2').map((h) => h.text())).toEqual(['Volvo not configured', 'Vehicles'])
+    expect(panel.text()).toContain('This instance has no Volvo application')
+    expect(w.find('a[href="auth/volvo/start"]').exists()).toBe(false)
+    expect(w.find('.api-key-form').exists()).toBe(false)
   })
 
   it('puts no dot on a tab whose vehicles are read', async () => {
@@ -292,6 +326,7 @@ describe('ConnectionPage', () => {
   it('tells a key refused at the connection, the Volvo ID kept', async () => {
     mocks.fetchVehicles.mockResolvedValue([])
     mocks.fetchConnection.mockResolvedValue({
+      volvo: true,
       connected: true,
       client_id: 'runsten-dev',
       instance_key: null,
@@ -312,6 +347,7 @@ describe('ConnectionPage', () => {
     mocks.fetchVehicles.mockResolvedValue([])
     mocks.fetchConnection.mockResolvedValue({
       ...hosted,
+      volvo: true,
       connected: true,
       api_key: { last4: 'cdef', set_at: '2026-09-28T05:00:00Z', refused_at: null },
     })

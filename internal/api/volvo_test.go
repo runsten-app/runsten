@@ -327,7 +327,7 @@ func TestEnrollmentFailure(t *testing.T) {
 	sessions := newFakeSessions(clk)
 	token, _, _ := sessions.Login(context.Background(), "admin", password, "test")
 	s := New(Config{
-		Sessions: sessions, Authorizer: &fakeAuthorizer{}, Flows: flows, Enrollment: st, Vehicles: failingVehicles{},
+		Sessions: sessions, ClientID: "runsten-dev", Authorizer: &fakeAuthorizer{}, Flows: flows, Enrollment: st, Vehicles: failingVehicles{},
 		Keys: st, Tokens: st, InstanceKey: true,
 		Clock: clk, Log: quiet,
 	})
@@ -358,7 +358,7 @@ func TestNoVehicle(t *testing.T) {
 	sessions := newFakeSessions(clk)
 	token, _, _ := sessions.Login(context.Background(), "admin", password, "test")
 	s := New(Config{
-		Sessions: sessions, Authorizer: &fakeAuthorizer{}, Flows: flows, Enrollment: st, Vehicles: emptyVehicles{},
+		Sessions: sessions, ClientID: "runsten-dev", Authorizer: &fakeAuthorizer{}, Flows: flows, Enrollment: st, Vehicles: emptyVehicles{},
 		Keys: st, Tokens: st, InstanceKey: true,
 		Clock: clk, Log: quiet,
 	})
@@ -405,7 +405,7 @@ func TestTooManyVehicles(t *testing.T) {
 			reader := newMemReader(nil)
 			reader.vehicles[account] = tt.others
 			s := New(Config{
-				Sessions: sessions, Authorizer: &fakeAuthorizer{}, Flows: flows, Enrollment: st, Vehicles: twoVehicles{},
+				Sessions: sessions, ClientID: "runsten-dev", Authorizer: &fakeAuthorizer{}, Flows: flows, Enrollment: st, Vehicles: twoVehicles{},
 				Keys: st, Tokens: st, Reader: reader, InstanceKey: true, MaxVehicles: tt.max,
 				Clock: clk, Log: quiet,
 			})

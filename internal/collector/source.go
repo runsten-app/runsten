@@ -221,7 +221,10 @@ func (c *Collector) AddSource(src Source, st SourceStore) {
 
 // sourceOf returns the source t is read through; nil when none reads its provider.
 func (c *Collector) sourceOf(t Target) *source {
-	if t.readsVolvo() {
+	switch {
+	case t.readsVolvo() && c.noVolvo:
+		return nil
+	case t.readsVolvo():
 		return c.volvo
 	}
 	return c.sources[t.Provider]

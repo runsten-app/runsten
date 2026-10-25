@@ -31,6 +31,8 @@ An update that changes how trips and charges are worked out says so below: the n
 - **Spans and odometers of charges** (migration `0009`): each charge stores what the battery's estimate rests on. Nothing visible changes with it; the battery page reads it. Rebuild after updating: until then, the past charges give no estimate.
 - **Net capacities of the Polestars**: the catalog gives the net capacity of every Polestar variant but the Polestar 2 Standard Range of 2022 and 2023 (its sources disagree), those of the Polestar 4 and 5 and of the Polestar 3 of 2026 included. The Data Portal reports no capacity: until then, the trips and charges of these variants had no energy. Rebuild after updating: until then, the past events stay without one.
 
+- **The address, and Volvo optional**: `RUNSTEN_APP_URL` is the address Runsten is opened at, and the Volvo application is only needed to read a Volvo. An `.env` that sets `RUNSTEN_VOLVO_REDIRECT_URI` works as before; `RUNSTEN_APP_URL` may replace it, the redirect URI then being derived from it. An instance that reads only Polestars may leave the Volvo variables empty.
+
 ## PostgreSQL
 
 The PostgreSQL image is pinned in `compose.yaml` and updated with Runsten. A new major version (after 18) changes the format of the volume: Runsten will announce it, and the migration will be a backup, a new volume and a restore.

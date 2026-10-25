@@ -29,7 +29,7 @@ func TestAPIKey(t *testing.T) {
 	u := e.api.URL + apiPrefix + "/connection"
 
 	resp, body := get(t, noFollow(), u, c)
-	if resp.status != http.StatusOK || body != `{"connected":false,"client_id":"runsten-dev","instance_key":null,"api_key":null,"polestar":null}`+"\n" {
+	if resp.status != http.StatusOK || body != `{"volvo":true,"connected":false,"client_id":"runsten-dev","instance_key":null,"api_key":null,"polestar":null}`+"\n" {
 		t.Errorf("no connection: %d %s", resp.status, body)
 	}
 	resp, body = do(t, noFollow(), http.MethodPut, u+"/api-key", jsonType, keyBody(goodKey), c)
@@ -212,4 +212,32 @@ func TestKeyTooManyVehicles(t *testing.T) {
 		t.Errorf("with a Polestar: %d %s; key %q, vehicles %v", resp.status, body, e.store.key.Value, e.store.vehicles)
 	}
 	wantError(t, body, codeTooManyVehicles)
+}
+
+// TestWithoutVolvo: on an instance without a Volvo application, no Volvo ID connects
+// and no key is taken; the connection settings tell it.
+func TestWithoutVolvo(t *testing.T) {
+	e := newEnvKeys(t, 10, "", nil)
+	e.server.ClientID = ""
+	b := e.signedIn(t)
+	if _, body := get(t, b, e.api.URL+"/"); strings.Contains(body, "auth/volvo/start") {
+		t.Errorf("home page: %s", body)
+	}
+	for _, route := range []string{"/auth/volvo/start", "/auth/volvo/callback?state=x&code=y"} {
+		if resp, body := get(t, b, e.api.URL+route); resp.status != http.StatusNotFound || !strings.Contains(body, "Volvo not configured") {
+			t.Errorf("%s: %d %s", route, resp.status, body)
+		}
+	}
+	u := e.api.URL + apiPrefix + "/connection"
+	if _, body := get(t, b, u); !strings.Contains(body, `"volvo":false`) || !strings.Contains(body, `"client_id":""`) {
+		t.Errorf("connection: %s", body)
+	}
+	resp, body := do(t, b, http.MethodPut, u+"/api-key", jsonType, keyBody(goodKey))
+	if resp.status != http.StatusConflict || e.store.key.Value != "" {
+		t.Errorf("PUT without Volvo: %d %s", resp.status, body)
+	}
+	wantError(t, body, codeVolvoNotConfigured)
+	if len(e.store.vehicles) != 0 {
+		t.Errorf("vehicles: %v", e.store.vehicles)
+	}
 }

@@ -120,13 +120,17 @@ func TestParseCommand(t *testing.T) {
 	}
 }
 
-func TestLoadConfigClientRequiredToCollect(t *testing.T) {
+// TestLoadConfigClient: the Volvo application is optional to collect, its client ID and
+// secret together.
+func TestLoadConfigClient(t *testing.T) {
 	m := base()
-	delete(m, "RUNSTEN_VOLVO_CLIENT_ID")
 	delete(m, "RUNSTEN_VOLVO_CLIENT_SECRET")
-	_, err := loadConfig(env(m), collect)
-	if err == nil || !strings.Contains(err.Error(), "RUNSTEN_VOLVO_CLIENT_ID") || !strings.Contains(err.Error(), "RUNSTEN_VOLVO_CLIENT_SECRET") {
-		t.Errorf("collect without the client credentials: %v", err)
+	if _, err := loadConfig(env(m), collect); err == nil || !strings.Contains(err.Error(), "go together") {
+		t.Errorf("collect with a client ID alone: %v", err)
+	}
+	delete(m, "RUNSTEN_VOLVO_CLIENT_ID")
+	if cfg, err := loadConfig(env(m), collect); err != nil || cfg.clientID != "" {
+		t.Errorf("collect without Volvo: %+v, %v", cfg, err)
 	}
 	m["RUNSTEN_VOLVO_ACCESS_TOKEN"] = "t"
 	if _, err := loadConfig(env(m), connect); err != nil {

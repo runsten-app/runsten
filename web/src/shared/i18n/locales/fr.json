@@ -33,12 +33,14 @@
     "empty": {
       "title": "Aucun véhicule pour l'instant",
       "keyText": "Quelle est votre voiture ? Runsten lit une Volvo avec la clé d'une application Volvo que vous créez, puis votre Volvo ID ; une Polestar avec un identifiant du Data Portal de Polestar.",
-      "text": "Quelle est votre voiture ? Runsten lit une Volvo par votre Volvo ID, une Polestar par un identifiant du Data Portal de Polestar."
+      "text": "Quelle est votre voiture ? Runsten lit une Volvo par votre Volvo ID, une Polestar par un identifiant du Data Portal de Polestar.",
+      "polestarText": "Runsten lit une Polestar avec un identifiant du Data Portal de Polestar. Cette instance n'est pas configurée pour lire une Volvo."
     },
     "choose": {
       "volvo": "J'ai une Volvo",
       "polestar": "J'ai une Polestar (bêta)"
-    }
+    },
+    "connectPolestar": "Connecter une Polestar (bêta)"
   },
   "vehicle": {
     "title": "Véhicule",
@@ -1013,6 +1015,10 @@
     "polestar": {
       "title": "Data Portal de Polestar",
       "beta": "Bêta"
+    },
+    "noVolvo": {
+      "title": "Volvo non configuré",
+      "text": "Cette instance n'a pas d'application Volvo : ses Volvo ne sont pas lues. Son administrateur peut en créer une sur le portail développeur de Volvo et la renseigner dans la configuration (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_CLIENT_SECRET) : le Volvo ID est alors lu de nouveau."
     }
   },
   "apiKey": {
