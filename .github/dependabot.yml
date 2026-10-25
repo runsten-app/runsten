@@ -22,6 +22,11 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+    # TypeScript stays on 5.x until the ecosystem accepts 7 (openapi-typescript refuses it):
+    # a major is raised by hand.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
