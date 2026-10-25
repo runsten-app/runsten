@@ -101,6 +101,9 @@
     },
     "type": {
       "none": "None"
+    },
+    "power": {
+      "none": "None"
     }
   },
   "engine": {

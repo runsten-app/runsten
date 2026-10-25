@@ -13,6 +13,7 @@ import {
   detailsStaleAfter,
   isStale,
   lastReport,
+  noChargeReading,
   ReadingItem,
   ReadingProvenance,
   reportLateAfter,
@@ -94,6 +95,16 @@ const modeIcons = {
 const errorMessage = computed(() =>
   isApiError(error.value, 'not_found') ? t('vehicle.notFound') : t('state.error'),
 )
+
+// The power the car measures, else, where the car says no charge runs, none: a power it
+// leaves out then is no unknown.
+const power = computed(() => {
+  const c = state.value?.charging
+  if (!c) return null
+  if (c.power_w) return { reading: c.power_w, value: quantity(c.power_w, 'kW', kilowatts) }
+  const none = noChargeReading(c)
+  return none ? { reading: none, value: t('charging.power.none') } : null
+})
 
 function quantity(r: Reading<number> | null, unit: Unit, convert = (v: number) => v) {
   return r ? f.quantity(convert(r.value), unit) : null
@@ -256,8 +267,8 @@ const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_
             <dl class="fields">
               <ReadingItem
                 :label="t('state.charging.power')"
-                :reading="state.charging.power_w"
-                :value="quantity(state.charging.power_w, 'kW', kilowatts)"
+                :reading="power?.reading ?? null"
+                :value="power?.value ?? null"
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"

@@ -101,6 +101,9 @@
     },
     "type": {
       "none": "Ingen"
+    },
+    "power": {
+      "none": "Ingen"
     }
   },
   "engine": {

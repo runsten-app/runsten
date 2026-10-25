@@ -23,7 +23,21 @@ const (
 	Supported   Availability = iota // data is uploaded
 	Unsupported                     // the model does not support it (e.g. EX30, charging current limit)
 	NotFound                        // property missing on the cloud side (e.g. EX90, charging power)
+	// NotFoundIdle is uploaded while charging only, missing on the cloud side otherwise
+	// (an EX30's charging power while idle, reported; uploaded while charging: assumption).
+	NotFoundIdle
 )
+
+// While is the availability while the vehicle charges, or not.
+func (a Availability) While(charging bool) Availability {
+	if a != NotFoundIdle {
+		return a
+	}
+	if charging {
+		return Supported
+	}
+	return NotFound
+}
 
 // Capabilities lists the optional data of a vehicle profile.
 type Capabilities struct {
@@ -37,7 +51,7 @@ func Profile(name string) (Capabilities, bool) {
 	case "bev-generic":
 		return Capabilities{ChargingPower: Supported, ChargingCurrentLimit: Supported}, true
 	case "ex30-like":
-		return Capabilities{ChargingPower: Supported, ChargingCurrentLimit: Unsupported}, true
+		return Capabilities{ChargingPower: NotFoundIdle, ChargingCurrentLimit: Unsupported}, true
 	case "ex90-like":
 		return Capabilities{ChargingPower: NotFound, ChargingCurrentLimit: Supported}, true
 	}

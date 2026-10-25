@@ -23,7 +23,7 @@ export {
   staleAfter,
 } from './model/freshness'
 export { vehicleLabel, vehicleLabels } from './model/label'
-export { vehicleMode, type Mode } from './model/mode'
+export { noChargeReading, vehicleMode, type Mode } from './model/mode'
 export { vehicleKeys } from './model/queryKeys'
 export type {
   Cable,

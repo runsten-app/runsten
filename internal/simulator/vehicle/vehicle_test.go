@@ -289,7 +289,7 @@ func TestProfiles(t *testing.T) {
 		limit Availability
 	}{
 		{"bev-generic", Supported, Supported},
-		{"ex30-like", Supported, Unsupported},
+		{"ex30-like", NotFoundIdle, Unsupported},
 		{"ex90-like", NotFound, Supported},
 	}
 	for _, tt := range tests {
@@ -300,5 +300,25 @@ func TestProfiles(t *testing.T) {
 	}
 	if _, ok := Profile("unknown"); ok {
 		t.Error("an unknown profile must not be found")
+	}
+}
+
+func TestAvailabilityWhile(t *testing.T) {
+	tests := []struct {
+		a                Availability
+		idle, onCharging Availability
+	}{
+		{Supported, Supported, Supported},
+		{Unsupported, Unsupported, Unsupported},
+		{NotFound, NotFound, NotFound},
+		{NotFoundIdle, NotFound, Supported},
+	}
+	for _, tt := range tests {
+		if got := tt.a.While(false); got != tt.idle {
+			t.Errorf("%d.While(false) = %d, want %d", tt.a, got, tt.idle)
+		}
+		if got := tt.a.While(true); got != tt.onCharging {
+			t.Errorf("%d.While(true) = %d, want %d", tt.a, got, tt.onCharging)
+		}
 	}
 }

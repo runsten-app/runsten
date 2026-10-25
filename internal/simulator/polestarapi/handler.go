@@ -184,7 +184,7 @@ func (h *Handler) renderBattery(_ string, r vehicle.Report, now time.Time) (any,
 	}
 	// Power, current and voltage only while charging, as on the real car (a zero is
 	// omitted), and only on a model that reports them.
-	if e.Charging == vehicle.Charging && e.ChargingPowerW > 0 && r.Spec.Capabilities.ChargingPower == vehicle.Supported {
+	if e.Charging == vehicle.Charging && e.ChargingPowerW > 0 && r.Spec.Capabilities.ChargingPower.While(true) == vehicle.Supported {
 		volts := 400.0 // assumption: 400 V, three-phase AC or a DC charge
 		m["chargingPowerWatts"] = int(e.ChargingPowerW)
 		m["chargingVoltageVolts"] = int(volts)

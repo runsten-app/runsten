@@ -50,7 +50,7 @@ func NormalizedEndpoints() []Endpoint {
 }
 
 // Normalize converts a raw response of ep into a vendor-neutral snapshot. A value that
-// is null, missing, in error (NOT_SUPPORTED, PROPERTY_NOT_FOUND…), in an unknown unit
+// is null, missing, in error (PROPERTY_NOT_SUPPORTED, PROPERTY_NOT_FOUND…), in an unknown unit
 // or with an unknown enum value is absent, never zero.
 func Normalize(ep Endpoint, raw []byte) (core.Snapshot, error) {
 	var s core.Snapshot
