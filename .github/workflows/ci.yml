@@ -3,8 +3,9 @@
 # minutes, `task integration` (containers: PostgreSQL, Redocly, Trivy) and `task system`
 # (the Compose stack, browser tests included) wait for nothing else, and a failed one is
 # re-run alone. unit-go and unit-web run only when their side changed; integration and
-# system, which check the whole, always run. Task is the one pinned in tools/go.mod, so every
-# job sets Go up.
+# system, which check the whole, whenever the code changed at all: a pull request of prose or
+# of the repository's tooling (templates, Dependabot, CodeRabbit, the other workflows) skips
+# them all. Task is the one pinned in tools/go.mod, so every job sets Go up.
 # Actions are pinned by SHA, kept up to date by Dependabot.
 name: ci
 
@@ -30,6 +31,7 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
+      code: ${{ steps.filter.outputs.code }}
       go: ${{ steps.filter.outputs.go }}
       web: ${{ steps.filter.outputs.web }}
     steps:
@@ -41,14 +43,24 @@ jobs:
         with:
           # A file counts when some pattern matches it and no exclusion does.
           predicate-quantifier: some-with-excludes
-          # Go: anything outside the front end, but prose; a new directory is included
-          # rather than forgotten (embedded migrations, the catalog, scenarios, testdata).
-          # The front end: its own files, and what its types and fixtures come from.
+          # The code: anything but prose and the repository's tooling, which no job builds
+          # or tests; a new directory is included rather than forgotten (embedded
+          # migrations, the catalog, scenarios, testdata). Go: the code outside the front
+          # end. The front end: its own files, and what its types and fixtures come from.
           filters: |
-            go:
+            code: &code
               - '**'
-              - '!web/**'
               - '!**/*.md'
+              - '!LICENSE'
+              - '!.coderabbit.yaml'
+              - '!.github/ISSUE_TEMPLATE/**'
+              - '!.github/dependabot.yml'
+              - '!.github/scripts/**'
+              - '!.github/workflows/cla.yml'
+              - '!.github/workflows/release.yml'
+            go:
+              - *code
+              - '!web/**'
             web:
               - 'web/**'
               - 'api/openapi.yaml'
@@ -98,6 +110,7 @@ jobs:
 
   integration:
     needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -120,6 +133,7 @@ jobs:
 
   system:
     needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
