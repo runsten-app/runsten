@@ -263,6 +263,8 @@ components:
           format: date-time
           pattern: Z$
           type: string
+        odometer:
+          $ref: "#/components/schemas/OdometerStats"
         parked:
           $ref: "#/components/schemas/ParkedStats"
         start:
@@ -278,6 +280,7 @@ components:
         - trips
         - charges
         - parked
+        - odometer
       type: object
     CapacityChange:
       additionalProperties: false
@@ -1888,6 +1891,32 @@ components:
         - name
         - expiry
       type: object
+    OdometerStats:
+      additionalProperties: false
+      properties:
+        distance_km:
+          description: "end_km − start_km: the distance the odometer tells. null without both."
+          format: double
+          type:
+            - number
+            - "null"
+        end_km:
+          description: "The odometer when it ends: the highest reading of the events that started before. It moves only while driving, and every trip is an event, so it holds over an interval without one. null without a reading."
+          format: double
+          type:
+            - number
+            - "null"
+        start_km:
+          description: "The odometer when the period or interval starts: the highest reading of the events before it (a trip's odometers at start and end, a charge's at end), else the lowest of its own. null without one."
+          format: double
+          type:
+            - number
+            - "null"
+      required:
+        - start_km
+        - end_km
+        - distance_km
+      type: object
     Orphan:
       additionalProperties: false
       properties:
@@ -2061,6 +2090,8 @@ components:
       properties:
         charges:
           $ref: "#/components/schemas/ChargeStats"
+        odometer:
+          $ref: "#/components/schemas/OdometerStats"
         parked:
           $ref: "#/components/schemas/ParkedStats"
         trips:
@@ -2069,6 +2100,7 @@ components:
         - trips
         - charges
         - parked
+        - odometer
       type: object
     Place:
       additionalProperties: false
@@ -5942,7 +5974,7 @@ paths:
         - vehicles
   /vehicles/{vehicle}/stats:
     get:
-      description: "Totals of the trips, charges and parked intervals of the period, and, with `bucket`, the same figures by day, week or month. An event counts once, in the interval that holds its `start.after`: unlike the lists, which keep the events that may overlap the period, an event across a limit counts only where it started. A sum covers the known values, and its `_unknown` companion counts the events that lacked one; a sum over no event is 0, an average `null`. Energies, consumption, costs and the loss of the state of charge are estimates. At most 400 intervals."
+      description: "Totals of the trips, charges and parked intervals of the period, the odometer at its ends, and, with `bucket`, the same figures by day, week or month. An event counts once, in the interval that holds its `start.after`: unlike the lists, which keep the events that may overlap the period, an event across a limit counts only where it started. A sum covers the known values, and its `_unknown` companion counts the events that lacked one; a sum over no event is 0, an average `null`. Energies, consumption, costs and the loss of the state of charge are estimates. At most 400 intervals."
       operationId: getVehicleStats
       parameters:
         - description: The vehicle ID.

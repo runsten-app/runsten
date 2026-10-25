@@ -86,6 +86,11 @@
       "soc_loss_pct": 0,
       "soc_loss_unknown": 0,
       "soc_loss_pct_per_day": null
+    },
+    "odometer": {
+      "start_km": null,
+      "end_km": null,
+      "distance_km": null
     }
   },
   "buckets": [
@@ -170,6 +175,11 @@
         "soc_loss_pct": 0,
         "soc_loss_unknown": 0,
         "soc_loss_pct_per_day": null
+      },
+      "odometer": {
+        "start_km": null,
+        "end_km": null,
+        "distance_km": null
       }
     },
     {
@@ -253,6 +263,11 @@
         "soc_loss_pct": 0,
         "soc_loss_unknown": 0,
         "soc_loss_pct_per_day": null
+      },
+      "odometer": {
+        "start_km": null,
+        "end_km": null,
+        "distance_km": null
       }
     },
     {
@@ -336,6 +351,11 @@
         "soc_loss_pct": 0,
         "soc_loss_unknown": 0,
         "soc_loss_pct_per_day": null
+      },
+      "odometer": {
+        "start_km": null,
+        "end_km": null,
+        "distance_km": null
       }
     }
   ],

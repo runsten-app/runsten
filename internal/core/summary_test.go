@@ -776,6 +776,93 @@ func TestSummarizeParked(t *testing.T) {
 // history is a pseudo-random history of trips and charges across the changes of time
 // of 2026, with unknown values and reconstructed events, and the costs of the charges:
 // computed, entered or unknown, and orphaned entered costs.
+func TestSummarizeOdometer(t *testing.T) {
+	from, to := pt("2026-06-01 00:00"), pt("2026-06-04 00:00")
+	day := func(d int, h int) time.Time { return from.Add(time.Duration(24*(d-1)+h) * time.Hour) }
+	trip := func(start time.Time, startKm, endKm float64) Trip {
+		tr := drive(start, start.Add(time.Hour), endKm-startKm, 2, 80, 70)
+		tr.StartOdometerKm, tr.EndOdometerKm = val(startKm), val(endKm)
+		return tr
+	}
+	odo := func(start, end Value[float64]) OdometerStats {
+		o := OdometerStats{StartKm: start, EndKm: end}
+		if start.OK && end.OK {
+			o.DistanceKm = val(end.V - start.V)
+		}
+		return o
+	}
+	none := unknown[float64]()
+	for _, tt := range []struct {
+		name    string
+		trips   []Trip
+		charges []Charge
+		want    OdometerStats
+		perDay  []OdometerStats
+	}{
+		{name: "no event: unknown", perDay: []OdometerStats{{}, {}, {}}},
+		{
+			// Between trips the car is parked: the odometer holds until the next one.
+			name:  "carried over the days without a trip",
+			trips: []Trip{trip(day(1, 8), 1000, 1012), trip(day(3, 8), 1012, 1050)},
+			want:  odo(val(1000), val(1050)),
+			perDay: []OdometerStats{
+				odo(val(1000), val(1012)), odo(val(1012), val(1012)), odo(val(1012), val(1050)),
+			},
+		},
+		{
+			name:  "from the event before the period, a charge's",
+			trips: []Trip{trip(day(2, 8), 1012, 1030)},
+			charges: []Charge{func() Charge {
+				c := plug(day(0, 20), day(0, 23), AC, 30, 31, 20, 80)
+				c.OdometerKm = val(1012)
+				return c
+			}()},
+			want: odo(val(1012), val(1030)),
+			perDay: []OdometerStats{
+				odo(val(1012), val(1012)), odo(val(1012), val(1030)), odo(val(1030), val(1030)),
+			},
+		},
+		{
+			// An imported trip may have none (Aximote's): the day stays unknown.
+			name:   "a trip without odometers, then one with",
+			trips:  []Trip{drive(day(1, 8), day(1, 9), 10, 2, 80, 70), trip(day(2, 8), 1012, 1030)},
+			want:   odo(val(1012), val(1030)),
+			perDay: []OdometerStats{{}, odo(val(1012), val(1030)), odo(val(1030), val(1030))},
+		},
+		{
+			name: "an event after the period counts nowhere",
+			trips: []Trip{
+				trip(day(1, 8), 1000, 1012), trip(day(4, 8), 1012, 1100),
+			},
+			want: odo(val(1000), val(1012)),
+			perDay: []OdometerStats{
+				odo(val(1000), val(1012)), odo(val(1012), val(1012)), odo(val(1012), val(1012)),
+			},
+		},
+		{
+			name:   "start unknown, end known",
+			trips:  []Trip{func() Trip { tr := trip(day(1, 8), 0, 1012); tr.StartOdometerKm = none; return tr }()},
+			want:   odo(val(1012), val(1012)),
+			perDay: []OdometerStats{odo(val(1012), val(1012)), odo(val(1012), val(1012)), odo(val(1012), val(1012))},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			s, err := Summarize(tt.trips, tt.charges, Costs{}, nil, from, to, paris, BucketDay, DefaultParams())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if s.Totals.Odometer != tt.want {
+				t.Errorf("totals = %+v, want %+v", s.Totals.Odometer, tt.want)
+			}
+			for i, b := range s.Buckets {
+				if b.Odometer != tt.perDay[i] {
+					t.Errorf("day %d = %+v, want %+v", i+1, b.Odometer, tt.perDay[i])
+				}
+			}
+		})
+	}
+}
+
 func history(seed uint64) ([]Trip, []Charge, Costs) {
 	r := rand.New(rand.NewPCG(seed, seed)) //nolint:gosec // reproducible test data
 	maybe := func(v float64) Value[float64] {
@@ -787,6 +874,7 @@ func history(seed uint64) ([]Trip, []Charge, Costs) {
 	var trips []Trip
 	var charges []Charge
 	var costs Costs
+	odometer := 20000.0
 	t := pt("2026-02-20 06:00")
 	for t.Before(pt("2026-11-10 00:00")) {
 		t = t.Add(time.Duration(1+r.IntN(20*60)) * time.Minute)
@@ -808,6 +896,7 @@ func history(seed uint64) ([]Trip, []Charge, Costs) {
 				DetectedAt: start.Before, Reconstructed: reconstructed, Start: start, End: stop, Type: typ,
 				StartSoC: maybe(20 + float64(r.IntN(30))), EndSoC: maybe(60 + float64(r.IntN(30))),
 				EnergySoCKWh: maybe(r.Float64() * 50), EnergyPowerKWh: maybe(r.Float64() * 50),
+				OdometerKm: val(odometer),
 			})
 			var cost Value[Cost]
 			if r.IntN(5) > 0 {
@@ -819,11 +908,15 @@ func history(seed uint64) ([]Trip, []Charge, Costs) {
 				costs.Orphans = append(costs.Orphans, EnteredCost{WindowAfter: start.After, WindowBefore: stop.Before, AmountMinor: int64(r.IntN(3000))})
 			}
 		} else {
-			trips = append(trips, Trip{
+			tr := Trip{
 				DetectedAt: start.Before, Reconstructed: reconstructed, Start: start, End: stop,
 				StartSoC: maybe(40 + float64(r.IntN(50))), EndSoC: maybe(30 + float64(r.IntN(40))),
 				DistanceKm: maybe(float64(r.IntN(80))), EnergyKWh: maybe(r.Float64() * 15),
-			})
+			}
+			tr.StartOdometerKm = val(odometer)
+			odometer += tr.DistanceKm.V
+			tr.EndOdometerKm = val(odometer)
+			trips = append(trips, tr)
 		}
 		t = end
 	}
@@ -853,11 +946,20 @@ func TestSummarizeTotalsAreSums(t *testing.T) {
 				t.Errorf("seed %d, %s: totals = %+v, want %+v", seed, bucket, s.Totals, none.Totals)
 			}
 			var sum Stats
+			var odometer float64
 			for i, b := range s.Buckets {
 				if i > 0 && !b.Start.Equal(s.Buckets[i-1].End) {
 					t.Errorf("seed %d, %s: gap before %s", seed, bucket, b.Start)
 				}
+				if i > 0 && b.Odometer.StartKm != s.Buckets[i-1].Odometer.EndKm {
+					t.Errorf("seed %d, %s: odometer at %s = %+v, the previous one ended at %+v",
+						seed, bucket, b.Start, b.Odometer.StartKm, s.Buckets[i-1].Odometer.EndKm)
+				}
 				addNumbers(reflect.ValueOf(&sum).Elem(), reflect.ValueOf(b.Stats))
+				odometer += b.Odometer.DistanceKm.V
+			}
+			if got, want := odometer, none.Totals.Odometer.DistanceKm; !want.OK || math.Abs(got-want.V) > 1e-6 {
+				t.Errorf("seed %d, %s: odometer's distance of the intervals %g, total %+v", seed, bucket, got, want)
 			}
 			checkSums(t, fmt.Sprintf("seed %d, %s", seed, bucket), reflect.ValueOf(sum), reflect.ValueOf(s.Totals))
 		}

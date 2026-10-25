@@ -104,21 +104,31 @@ type parkedStatsJSON struct {
 	SoCLossPctPerDay *float64 `json:"soc_loss_pct_per_day" doc:"soc_loss_pct over the time of the intervals whose loss is known, per day. The state of charge has a resolution of one point: meaningful over weeks, not over a night. null without such time."`
 }
 
+type odometerStatsJSON struct {
+	StartKm *float64 `json:"start_km" doc:"The odometer when the period or interval starts: the highest reading of the events before it (a trip's odometers at start and end, a charge's at end), else the lowest of its own. null without one."`
+	EndKm   *float64 `json:"end_km" doc:"The odometer when it ends: the highest reading of the events that started before. It moves only while driving, and every trip is an event, so it holds over an interval without one. null without a reading."`
+	// Not the sum of the trips' distances: those without one, or an imported trip's
+	// rounding, would make them differ.
+	DistanceKm *float64 `json:"distance_km" doc:"end_km − start_km: the distance the odometer tells. null without both."`
+}
+
 // periodStatsJSON are the aggregates of a period.
 type periodStatsJSON struct {
-	Trips   tripStatsJSON   `json:"trips"`
-	Charges chargeStatsJSON `json:"charges"`
-	Parked  parkedStatsJSON `json:"parked"`
+	Trips    tripStatsJSON     `json:"trips"`
+	Charges  chargeStatsJSON   `json:"charges"`
+	Parked   parkedStatsJSON   `json:"parked"`
+	Odometer odometerStatsJSON `json:"odometer"`
 }
 
 // bucketStatsJSON repeats the fields of periodStatsJSON: huma ignores the fields of an
 // unexported embedded struct.
 type bucketStatsJSON struct {
-	Start   time.Time       `json:"start" pattern:"Z$" doc:"The start of the interval, in the requested time zone, written in UTC."`
-	End     time.Time       `json:"end" pattern:"Z$" doc:"The end of the interval, excluded."`
-	Trips   tripStatsJSON   `json:"trips"`
-	Charges chargeStatsJSON `json:"charges"`
-	Parked  parkedStatsJSON `json:"parked"`
+	Start    time.Time         `json:"start" pattern:"Z$" doc:"The start of the interval, in the requested time zone, written in UTC."`
+	End      time.Time         `json:"end" pattern:"Z$" doc:"The end of the interval, excluded."`
+	Trips    tripStatsJSON     `json:"trips"`
+	Charges  chargeStatsJSON   `json:"charges"`
+	Parked   parkedStatsJSON   `json:"parked"`
+	Odometer odometerStatsJSON `json:"odometer"`
 }
 
 type distanceBandJSON struct {
@@ -258,8 +268,17 @@ func parkedStatsOf(s core.ParkedStats) parkedStatsJSON {
 	}
 }
 
+func odometerStatsOf(s core.OdometerStats) odometerStatsJSON {
+	return odometerStatsJSON{
+		StartKm: opt(s.StartKm, same), EndKm: opt(s.EndKm, same), DistanceKm: opt(s.DistanceKm, same),
+	}
+}
+
 func periodStatsOf(s core.Stats) periodStatsJSON {
-	return periodStatsJSON{Trips: tripStatsOf(s.Trips), Charges: chargeStatsOf(s.Charges), Parked: parkedStatsOf(s.Parked)}
+	return periodStatsJSON{
+		Trips: tripStatsOf(s.Trips), Charges: chargeStatsOf(s.Charges), Parked: parkedStatsOf(s.Parked),
+		Odometer: odometerStatsOf(s.Odometer),
+	}
 }
 
 // loadZone loads an IANA time zone. Local is refused: the server's own zone means
@@ -359,6 +378,7 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 		out.Buckets = append(out.Buckets, bucketStatsJSON{
 			Start: b.Start, End: b.End,
 			Trips: tripStatsOf(b.Trips), Charges: chargeStatsOf(b.Charges), Parked: parkedStatsOf(b.Parked),
+			Odometer: odometerStatsOf(b.Odometer),
 		})
 	}
 	return respond(out), nil
@@ -388,7 +408,7 @@ func (s *Server) registerStats(api huma.API) {
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "getVehicleStats", Method: http.MethodGet, Path: "/vehicles/{vehicle}/stats", Tags: []string{"stats"},
 		Summary: "The statistics of a vehicle over a period",
-		Description: "Totals of the trips, charges and parked intervals of the period, and, with `bucket`, the same " +
+		Description: "Totals of the trips, charges and parked intervals of the period, the odometer at its ends, and, with `bucket`, the same " +
 			"figures by day, week or month. An event counts once, in the interval that holds its `start.after`: " +
 			"unlike the lists, which keep the events that may overlap the period, an event across a limit counts " +
 			"only where it started. A sum covers the known values, and its `_unknown` companion counts the events " +
