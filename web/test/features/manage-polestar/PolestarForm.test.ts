@@ -88,7 +88,7 @@ describe('PolestarForm', () => {
       .findAll('.fact')
       .map((f) => [f.find('dt').text(), f.find('dd').text()])
     expect(facts).toEqual([
-      ['Your credential', 'Client ID ending in -dev'],
+      ['Your credential', 'App client ID ending in -dev'],
       ['Given', '05:00'],
       ['Expires', 'Sunday, 27 December 2026'],
     ])
@@ -132,16 +132,16 @@ describe('PolestarForm', () => {
     await submit()
     expect(api.setPolestarCredential).not.toHaveBeenCalled()
     expect(summary()).toEqual([
-      'Paste the Client ID.',
+      'Paste the App client ID.',
       'Paste the Client secret.',
-      'Paste the Account ID.',
+      'Paste the Expected x-client-id header.',
     ])
     expect(document.activeElement).toBe(w().find('.error-summary').element)
     expect(input('account-id').attributes('aria-invalid')).toBe('true')
     await fill('runsten dev', secret, 'abc')
     expect(summary()).toEqual([
-      'The Client ID has no space: copy it again.',
-      'The Account ID has at least 4 characters: copy it whole.',
+      'The App client ID has no space: copy it again.',
+      'The Expected x-client-id header has at least 4 characters: copy it whole.',
     ])
   })
 

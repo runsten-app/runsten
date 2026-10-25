@@ -21,7 +21,8 @@ import {
 
 // PolestarForm gives the account's credential of Polestar's Data Portal, which the owner
 // creates there (the EU Data Act's machine-to-machine access): a client ID, its secret and
-// the Account ID. The steps lead to the portal and to the guide. The credential is never
+// the account ID, each named as the portal labels it (the account ID is its "Expected
+// x-client-id header"). The steps lead to the portal and to the guide. The credential is never
 // shown again: the last four characters of its client ID, when it was given and when it
 // expires (90 days), with a reminder two weeks before. Without one, the form is open;
 // with one, it is replaced behind a button.

@@ -66,7 +66,7 @@ type polestarCredentialUpdateJSON struct {
 	// are UUIDs and random strings); the bounds only catch a paste gone wrong.
 	ClientID     string `json:"client_id" minLength:"4" maxLength:"256" pattern:"^[!-~]+$" doc:"The client ID of a credential created on Polestar's Data Portal."`
 	ClientSecret string `json:"client_secret" minLength:"4" maxLength:"512" pattern:"^[!-~]+$" doc:"Its client secret. It is never returned."`
-	AccountID    string `json:"account_id" minLength:"4" maxLength:"256" pattern:"^[!-~]+$" doc:"The Account ID the portal shows with it, which every call names."`
+	AccountID    string `json:"account_id" minLength:"4" maxLength:"256" pattern:"^[!-~]+$" doc:"The account ID the portal shows with it, labelled Expected x-client-id header, which every call names."`
 }
 
 type polestarInput struct {
