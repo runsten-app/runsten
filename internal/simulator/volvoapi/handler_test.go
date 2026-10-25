@@ -301,7 +301,7 @@ func TestProfilesProduceFieldErrors(t *testing.T) {
 	tests := []struct {
 		profile, field, code string
 	}{
-		{"ex30-like", "chargingCurrentLimit", "NOT_SUPPORTED"},
+		{"ex30-like", "chargingCurrentLimit", "PROPERTY_NOT_SUPPORTED"},
 		{"ex90-like", "chargingPower", "PROPERTY_NOT_FOUND"},
 	}
 	for _, tt := range tests {
@@ -319,6 +319,35 @@ func TestProfilesProduceFieldErrors(t *testing.T) {
 				t.Errorf("capabilities.%s = %v, want isSupported false", tt.field, c)
 			}
 		})
+	}
+}
+
+// An EX30 answers its charging power PROPERTY_NOT_FOUND while idle, as reported; uploaded
+// while charging, an assumption.
+func TestChargingPowerOnlyWhileCharging(t *testing.T) {
+	caps, _ := vehicle.Profile("ex30-like")
+	for _, tt := range []struct {
+		status vehicle.ChargingStatus
+		want   map[string]any
+	}{
+		{vehicle.Charging, map[string]any{"status": "OK", "value": 7400.0}},
+		{vehicle.Idle, map[string]any{"status": "ERROR", "code": "PROPERTY_NOT_FOUND"}},
+	} {
+		rep := report(caps)
+		rep.Energy.Charging = tt.status
+		srv := httptest.NewServer(NewHandler([]Source{fakeSource{rep}}, clock.NewManual(t0), Limits{}, Faults{}, DefaultOAuth()))
+		t.Cleanup(srv.Close)
+		_, state := get(t, srv, "/energy/v2/vehicles/"+vin+"/state", true)
+		f := state["chargingPower"].(map[string]any)
+		for k, v := range tt.want {
+			if f[k] != v {
+				t.Errorf("charging %d: chargingPower = %v, want %s %v", tt.status, f, k, v)
+			}
+		}
+		_, capsBody := get(t, srv, "/energy/v2/vehicles/"+vin+"/capabilities", true)
+		if c := capsBody["getEnergyState"].(map[string]any)["chargingPower"].(map[string]any); c["isSupported"] != true {
+			t.Errorf("capabilities.chargingPower = %v, want isSupported true", c)
+		}
 	}
 }
 

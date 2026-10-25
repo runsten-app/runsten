@@ -11,11 +11,13 @@
 # the Twin Motor (EK), which have the same battery. With another code (for instance
 # YV12ZSM000EX30001), both remain candidates and nothing is recognized: the settings then
 # ask for the variant.
+# Its profile, ex30-like, answers the charging power PROPERTY_NOT_FOUND while idle and the
+# current limit PROPERTY_NOT_SUPPORTED, as a real EX30 does.
 # Fictitious coordinates (Lyon).
 vin: YV12ZEL000EX30001
 start: 2026-09-28T05:00:00Z
 vehicle:
-  profile: bev-generic
+  profile: ex30-like
   model: EX30
   modelYear: 2024
   batteryKWh: 69

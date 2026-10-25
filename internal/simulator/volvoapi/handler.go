@@ -289,7 +289,7 @@ func (h *Handler) energyState(w http.ResponseWriter, r *http.Request) {
 		"estimatedChargingTimeToTargetBatteryChargeLevel": energyOK(at, "minutes", minutes),
 		"targetBatteryChargeLevel":                        energyOK(at, "percentage", int(e.TargetSoC)),
 		"chargingCurrentLimit":                            optional(caps.ChargingCurrentLimit, energyOK(at, "ampere", int(rep.Spec.ChargingCurrentLimitA))),
-		"chargingPower":                                   optional(caps.ChargingPower, energyOK(at, "watts", int(e.ChargingPowerW))),
+		"chargingPower":                                   optional(caps.ChargingPower.While(e.Charging == vehicle.Charging), energyOK(at, "watts", int(e.ChargingPowerW))),
 	}
 	writeJSON(w, http.StatusOK, state)
 }
@@ -310,7 +310,7 @@ func (h *Handler) energyCapabilities(w http.ResponseWriter, r *http.Request) {
 		state[f] = supported(true)
 	}
 	state["chargingCurrentLimit"] = supported(caps.ChargingCurrentLimit == vehicle.Supported)
-	state["chargingPower"] = supported(caps.ChargingPower == vehicle.Supported)
+	state["chargingPower"] = supported(caps.ChargingPower.While(true) == vehicle.Supported)
 	writeJSON(w, http.StatusOK, map[string]any{"getEnergyState": state})
 }
 
@@ -340,9 +340,9 @@ func (h *Handler) location(w http.ResponseWriter, r *http.Request) {
 func optional(a vehicle.Availability, ok energyValue) energyValue {
 	switch a {
 	case vehicle.Unsupported:
-		return energyErr("NOT_SUPPORTED", "Property is not supported by this vehicle")
+		return energyErr("PROPERTY_NOT_SUPPORTED", "Property is not supported for this vehicle")
 	case vehicle.NotFound:
-		return energyErr("PROPERTY_NOT_FOUND", "Property not found")
+		return energyErr("PROPERTY_NOT_FOUND", "No valid value could be found for the requested resource")
 	default:
 		return ok
 	}
