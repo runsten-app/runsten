@@ -6,6 +6,8 @@ description: "Install Runsten with Docker Compose on a NAS, a VPS or a Raspberry
 
 Runsten runs with Docker Compose on any Linux server with Docker Engine 25 or later: a NAS, a VPS, a Raspberry Pi 4 or 5 on a 64-bit system. The images are built for `linux/amd64` and `linux/arm64`. It is also reported running in an unprivileged Debian 13 LXC container on Proxmox, with nesting and keyctl enabled, Docker 29, 2 cores and 2 GB of RAM.
 
+A self-hosted instance is free and complete: everything of the hosted version's Plus, without a limit of cars, except its AI assistant ([how they compare](https://runsten.app/pricing)).
+
 The stack has four services:
 
 | Service | Role |

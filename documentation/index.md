@@ -9,7 +9,7 @@ Runsten records the trips, charges and costs of your electric car, and shows the
 The name comes from runestones (*runsten* in Swedish), which often commemorated journeys.
 
 ::: warning Early development
-Runsten works end to end, but is young: expect changes between versions. Polestar cars are read through Polestar's Data Portal, in beta until it is checked on real cars ([Your Polestar](./guide/polestar.md)). A hosted version, for those who don't want to run a server, will come later.
+Runsten works end to end, but is young: expect changes between versions. Polestar cars are read through Polestar's Data Portal, in beta until it is checked on real cars ([Your Polestar](./guide/polestar.md)). For those who don't want to run a server, a hosted version runs at [runsten.app](https://runsten.app), in beta; its [pricing](https://runsten.app/pricing) compares it with self-hosting.
 :::
 
 ## Supported cars
