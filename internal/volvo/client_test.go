@@ -190,6 +190,12 @@ func TestRetryParsing(t *testing.T) {
 	if got := rateRetry("", "?"); got != defaultRateRetry {
 		t.Errorf("default: %v", got)
 	}
+	if got := quotaRetry("Quota will be replenished in 01:02:03."); got != time.Hour+2*time.Minute+3*time.Second {
+		t.Errorf("quota: %v", got)
+	}
+	if got := quotaRetry("Quota will be replenished in 3000000:00:00."); got != math.MaxInt64/time.Second/3600*time.Hour { // the longest whole hours
+		t.Errorf("quota beyond a Duration: %v", got)
+	}
 	if got := quotaRetry("?"); got != defaultQuotaRetry {
 		t.Errorf("default quota: %v", got)
 	}

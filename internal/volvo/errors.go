@@ -135,8 +135,10 @@ func quotaRetry(msg string) time.Duration {
 	if m == nil {
 		return defaultQuotaRetry
 	}
-	h, _ := strconv.Atoi(m[1])
-	mi, _ := strconv.Atoi(m[2])
-	s, _ := strconv.Atoi(m[3])
-	return time.Duration(h)*time.Hour + time.Duration(mi)*time.Minute + time.Duration(s)*time.Second
+	h, _ := strconv.ParseInt(m[1], 10, 64) // out of range: the largest int64
+	mi, _ := strconv.ParseInt(m[2], 10, 64)
+	s, _ := strconv.ParseInt(m[3], 10, 64)
+	// The hours capped first, so that the seconds they make cannot wrap either.
+	h = min(h, math.MaxInt64/int64(time.Second)/3600)
+	return seconds(h*3600 + mi*60 + s)
 }
