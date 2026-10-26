@@ -55,7 +55,7 @@ func tyresAt(f, c time.Time, kPa float64) core.HealthRecord {
 	return core.HealthRecord{FetchedAt: f, CheckedAt: c, Health: core.Health{
 		Covers: core.HealthTyres | core.HealthService,
 		Tyres: map[core.Wheel]core.Tyre{
-			core.FrontLeft:  {PressureKPa: core.Some(282.0, f), Warning: core.Some(core.TyreOK, f)},
+			core.FrontLeft: {PressureKPa: core.Some(282.0, f), Warning: core.Some(core.TyreOK, f)},
 			// A pressure without the monitoring's warning.
 			core.FrontRight: {PressureKPa: core.Some(280.0, f)},
 			core.RearLeft:   {PressureKPa: core.Some(kPa, f), Warning: core.Some(warning, f)},
