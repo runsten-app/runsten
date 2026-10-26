@@ -200,13 +200,14 @@ func (s *memStore) PublishCredentials(context.Context, string) (map[string]publi
 	return creds, s.credsErr
 }
 
-func (s *memStore) setCredential(vehicleID string, c publish.Credential) {
+// setCredential sets the credential vehicle is read with.
+func (s *memStore) setCredential(c publish.Credential) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.creds == nil {
 		s.creds = map[string]publish.Credential{}
 	}
-	s.creds[vehicleID] = c
+	s.creds[vehicle] = c
 }
 
 func (s *memStore) statusOf() publish.Status {
@@ -434,7 +435,7 @@ func TestPublishCredential(t *testing.T) {
 	b := startBroker(t, nil, nil)
 	st := newStore(brokerAt("mqtt://" + b.addr))
 	expires := t0.Add(20 * 24 * time.Hour)
-	st.setCredential(vehicle, publish.Credential{ExpiresAt: expires})
+	st.setCredential(publish.Credential{ExpiresAt: expires})
 	sts := &states{current: map[string]core.Current{vehicle: currentWith(80), second: currentWith(55)}}
 	clk := clock.NewManual(t0)
 	p := New(st, sts, models{vehicle: ex30, second: ex30}, clk, false, quiet)
@@ -466,7 +467,7 @@ func TestPublishCredential(t *testing.T) {
 	clk.Advance(7 * 24 * time.Hour)
 	synced(t, p, nil)
 	eventually(t, "expiring", func() bool { return b.retained()[state+"credential_status"] == "expiring" })
-	st.setCredential(vehicle, publish.Credential{ExpiresAt: expires, RefusedAt: clk.Now()})
+	st.setCredential(publish.Credential{ExpiresAt: expires, RefusedAt: clk.Now()})
 	synced(t, p, nil)
 	eventually(t, "refused", func() bool { return b.retained()[state+"credential_status"] == "refused" })
 
@@ -495,7 +496,7 @@ func TestPublishCredential(t *testing.T) {
 	eventually(t, "read again", func() bool { return b.retainedUnder("homeassistant/#")[batteryConfig] != "" })
 
 	// The credential removed: missing, without an expiry, its entities kept.
-	st.setCredential(vehicle, publish.Credential{})
+	st.setCredential(publish.Credential{})
 	synced(t, p, nil)
 	eventually(t, "missing", func() bool {
 		_, expiry := b.retained()[state+"credential_expires_at"]
@@ -518,7 +519,7 @@ func TestPublishCredential(t *testing.T) {
 	}
 
 	// Gone from the account, its credential goes with it.
-	st.setCredential(vehicle, publish.Credential{ExpiresAt: expires})
+	st.setCredential(publish.Credential{ExpiresAt: expires})
 	synced(t, p, nil)
 	eventually(t, "credential again", func() bool { return b.retained()[state+"credential_status"] == "expiring" })
 	syncedWith(t, p, map[string][]string{account: {second}}, nil)
