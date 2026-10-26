@@ -93,3 +93,23 @@ func TestUnreadableSnapshotSkipped(t *testing.T) {
 }
 
 func kind(ep volvo.Endpoint) core.Kind { return core.Kind{Source: volvo.Source, Endpoint: string(ep)} }
+
+func TestHealthErrors(t *testing.T) {
+	boom := errors.New("boom")
+	at := time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
+	d := New(&scriptedStore{snapErr: boom}, volvo.Normalizer{}, core.DefaultParams(), nil, quiet)
+	if _, err := d.Health(context.Background(), "a", "v", at); !errors.Is(err, boom) {
+		t.Errorf("health: %v", err)
+	}
+	if _, err := d.HealthReadings(context.Background(), "a", "v", at, at.Add(time.Hour), 10); !errors.Is(err, boom) {
+		t.Errorf("readings: %v", err)
+	}
+	// An unreadable response is skipped; one of a source no normalizer knows too.
+	d = New(&scriptedStore{snaps: []Snapshot{
+		{Kind: kind(volvo.Tyres), FetchedAt: at, CheckedAt: at, Payload: []byte("{")},
+		{Kind: core.Kind{Source: "other", Endpoint: "tyres"}, FetchedAt: at, CheckedAt: at, Payload: []byte("{}")},
+	}}, Sources(volvo.Normalizer{}), core.DefaultParams(), nil, quiet)
+	if got, err := d.HealthReadings(context.Background(), "a", "v", at, at.Add(time.Hour), 10); err != nil || len(got) != 0 {
+		t.Errorf("readings = %+v, %v", got, err)
+	}
+}

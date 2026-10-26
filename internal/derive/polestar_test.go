@@ -222,3 +222,48 @@ func TestFleetOfBothBrands(t *testing.T) {
 		checkRebuildOf(t, st, d, id)
 	}
 }
+
+// TestFleetHealth: the health of both brands, read every rare interval: the Polestar's
+// tyres with their pressures, the Volvo's with a warning each, the service and the checks
+// of both; the Polestar's pressures over the day.
+func TestFleetHealth(t *testing.T) {
+	_, d, day := playFleet(t, 12*time.Hour, "commute.yaml", "polestar2.yaml")
+	ctx, now := context.Background(), day.Add(12*time.Hour)
+
+	p, err := d.Health(ctx, "a", "p", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Covers != core.HealthTyres|core.HealthService || !p.Pressures() || p.RecommendedFrontKPa.V != 280 ||
+		!p.DaysToService.OK || !p.Service.OK || p.Service.V != core.ServiceOK || len(p.Checks) != 24 ||
+		now.Sub(p.CheckedAt) > time.Hour {
+		t.Errorf("Polestar: %+v", p)
+	}
+	v, err := d.Health(ctx, "a", "v", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v.Covers != core.HealthTyres|core.HealthService || v.Pressures() || len(v.Tyres) != 4 ||
+		v.Tyres[core.RearLeft].Warning.V != core.TyreOK || !v.MonthsToService.OK || !v.DistanceToServiceKm.OK ||
+		len(v.Checks) != 27 {
+		t.Errorf("Volvo: %+v", v)
+	}
+	// Before the first pass, nothing is known.
+	if h, err := d.Health(ctx, "a", "p", day); err != nil || h.Covers != 0 || !h.CheckedAt.IsZero() {
+		t.Errorf("before: %+v, %v", h, err)
+	}
+
+	records, err := d.HealthReadings(ctx, "a", "p", day, now, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runs := core.TyreRuns(records, day, now, 90*time.Minute)
+	if len(runs) != 1 || len(runs[0]) < 2 {
+		t.Fatalf("runs %+v", runs)
+	}
+	for _, r := range runs[0] {
+		if !r.PressureKPa[core.FrontLeft].OK || !r.RecommendedRearKPa.OK {
+			t.Errorf("reading %+v", r)
+		}
+	}
+}
