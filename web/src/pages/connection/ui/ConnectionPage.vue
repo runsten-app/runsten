@@ -6,7 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { limitsPage } from '@/entities/session'
 import { collectionState, needsAttention, vehicleLabels, type Vehicle } from '@/entities/vehicle'
 import { ApiKeyForm, useConnectionSettings } from '@/features/manage-api-key'
-import { PolestarForm } from '@/features/manage-polestar'
+import { PolestarForm, renewalDue } from '@/features/manage-polestar'
 import { useLimits } from '@/features/view-limits'
 import { useCollections } from '@/features/watch-collection'
 import { useFormat, useNow } from '@/shared/lib'
@@ -31,7 +31,8 @@ import VehicleCollection from './VehicleCollection.vue'
 // One tab per brand, each with its connection and its vehicles: a brand added later is a
 // tab more. The tab is the URL's hash (#volvo, #polestar: the home's choice of a Polestar
 // opens its tab); without one, that of the vehicle the page was opened from, else the
-// first brand the account has a vehicle of, else Volvo's. A dot marks a tab whose vehicles need the user.
+// first brand the account has a vehicle of, else Volvo's. A dot marks a tab whose vehicles need the user,
+// or whose credential is to be renewed (Polestar's).
 // On an instance without a Volvo application, Volvo's tab is left out, unless the account
 // has Volvos from before: it then says why they are not read.
 const props = defineProps<{ vehicle?: string; outcome?: string }>()
@@ -116,7 +117,16 @@ const attention = (v: Vehicle) => {
   const s = collectionState(v, now.value, unread(v.id))
   return s.kind !== 'unread' && needsAttention(s)
 }
-const alerted = computed(() => new Set(brands.filter((b) => ofBrand(b).some(attention))))
+const alerted = computed(
+  () =>
+    new Set(
+      brands.filter(
+        (b) =>
+          ofBrand(b).some(attention) ||
+          (b === 'polestar' && renewalDue(settings.value?.polestar, now.value)),
+      ),
+    ),
+)
 </script>
 
 <template>

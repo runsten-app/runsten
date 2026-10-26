@@ -149,6 +149,29 @@ describe('ConnectionPage', () => {
     expect(w.findAll('[role="tab"] .attention')).toHaveLength(0)
   })
 
+  // The vehicles still read: the credential alone needs the user.
+  it("puts a dot on Polestar's tab when its credential is to be renewed", async () => {
+    const [car] = items
+    if (!car) throw new Error('fixture')
+    mocks.fetchVehicles.mockResolvedValue([
+      { ...car, collection: { ...car.collection, quota: [] } },
+    ])
+    mocks.fetchConnection.mockResolvedValue({
+      ...selfHosted,
+      polestar: {
+        last4: '0123',
+        set_at: '2026-07-01T07:00:00Z',
+        expires_at: '2026-09-29T07:00:00Z',
+        refused_at: null,
+      },
+    })
+    const w = await page()
+    expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
+      'Volvo',
+      'Polestar Beta needs your attention',
+    ])
+  })
+
   it('tells the Volvo ID, and connects it again', async () => {
     const w = await page()
     const section = w.find('[aria-labelledby="connection-volvo-title"]')

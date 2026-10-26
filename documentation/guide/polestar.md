@@ -46,7 +46,7 @@ The Data Portal gives the car's VIN, not its model: Runsten reads the model year
 
 ## Every 90 days
 
-A credential of the Data Portal reads for **90 days**, then expires: create a new one on the portal, and give it in place of the old one with **Replace the credential**. Nothing already read is lost. The Connection page reminds you two weeks before, counted from the day you gave the credential.
+A credential of the Data Portal reads for **90 days**, then expires: create a new one on the portal, and give it in place of the old one with **Replace the credential**. Nothing already read is lost. The Connection page reminds you two weeks before, counted from the day you gave the credential, and a dot on the menu and on **Connection** tells it from every page. Home Assistant can tell you too, without opening Runsten: the vehicle's **Credential** entity turns on then ([Home Assistant and MQTT](./mqtt.md#home-assistant-entities)).
 
 ## How it is read
 
