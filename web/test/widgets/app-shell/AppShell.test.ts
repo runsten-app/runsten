@@ -2,18 +2,26 @@ import { enableAutoUnmount, flushPromises, type VueWrapper } from '@vue/test-uti
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 import { AppShell } from '@/widgets/app-shell'
+import health from '@fixtures/health.json'
+import unknown from '@fixtures/health-unknown.json'
 import vehicles from '@fixtures/vehicles.json'
 import { mountWith, testRouter } from '@test/utils'
 
-const { fetchVehicle, fetchVehicles, fetchConnection } = vi.hoisted(() => ({
+const { fetchVehicle, fetchVehicles, fetchConnection, fetchHealth } = vi.hoisted(() => ({
   fetchVehicle: vi.fn(),
   fetchVehicles: vi.fn(),
   fetchConnection: vi.fn(),
+  fetchHealth: vi.fn(),
 }))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
   fetchVehicle,
   fetchVehicles,
+}))
+
+vi.mock('@/entities/health', async (original) => ({
+  ...(await original<typeof import('@/entities/health')>()),
+  fetchHealth,
 }))
 
 vi.mock('@/entities/connection', async (original) => ({
@@ -48,6 +56,8 @@ beforeEach(() => {
   fetchVehicles.mockResolvedValue(vehicles.items)
   fetchConnection.mockReset()
   fetchConnection.mockResolvedValue({ polestar: null })
+  fetchHealth.mockReset()
+  fetchHealth.mockResolvedValue(unknown)
 })
 
 // menuItem opens the user menu and gives its item: the menu is teleported to the body.
@@ -156,6 +166,44 @@ describe('AppShell', () => {
   it('warns of nothing without a vehicle', async () => {
     await shell()
     expect(fetchVehicle).not.toHaveBeenCalled()
+    expect(fetchHealth).not.toHaveBeenCalled()
+  })
+})
+
+describe('AppShell tabs', () => {
+  async function tabs(path: string) {
+    const router = testRouter()
+    await router.push(path)
+    const { wrapper } = mountWith(AppShell, { props: { vehicle: 'v1' }, router })
+    await flushPromises()
+    return wrapper
+  }
+
+  it('leads to the health second, current on the battery too', async () => {
+    const w = await tabs('/vehicles/v1/battery')
+    const links = w.findAll('nav a')
+    expect(links.map((a) => a.text())).toEqual(['State', 'Health', 'Trips', 'Charges', 'Stats'])
+    expect(links[1]?.attributes('href')).toBe('/vehicles/v1/health')
+    expect(links[1]?.attributes('aria-current')).toBe('page')
+  })
+
+  // A dot that the vehicle needs attention, from every page of it; the tab's name stays
+  // its label, the dot describes it.
+  it('puts a dot on the health when something needs attention', async () => {
+    fetchHealth.mockResolvedValue(health)
+    const w = await tabs('/vehicles/v1/trips')
+    expect(fetchHealth).toHaveBeenCalledWith('v1')
+    const tab = w.findAll('nav a')[1]
+    expect(tab?.attributes('aria-describedby')).toBe('health-attention')
+    const dot = tab?.find('#health-attention')
+    expect(dot?.attributes('aria-hidden')).toBe('true')
+    expect(dot?.text()).toBe('Needs attention')
+  })
+
+  it('puts no dot while nothing of the health is known', async () => {
+    const w = await tabs('/vehicles/v1')
+    expect(w.findAll('nav a')[1]?.attributes('aria-describedby')).toBeUndefined()
+    expect(w.find('.tab-dot').exists()).toBe(false)
   })
 })
 

@@ -36,13 +36,14 @@ describe('BatteryPage', () => {
     expect(wrapper.findAll('.chart-frame')).toHaveLength(2)
   })
 
-  it('keeps the vehicle shell, its own tab current', async () => {
+  // An estimate among the health's figures: the health's tab is current.
+  it('keeps the vehicle shell, the health’s tab current', async () => {
     const router = testRouter()
     await router.push(`/vehicles/${vehicle}/battery`)
     const { wrapper } = mountWith(BatteryPage, { router, props: { vehicle } })
     await flushPromises()
     expect(wrapper.findAll('.v-tab')).toHaveLength(5)
-    expect(wrapper.find('.v-tab[aria-current="page"]').text()).toBe('Battery')
+    expect(wrapper.find('.v-tab[aria-current="page"]').text()).toMatch(/^Health/)
     expect(wrapper.findComponent({ name: 'CollectionNotice' }).exists()).toBe(true)
   })
 })

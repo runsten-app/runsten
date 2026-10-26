@@ -131,7 +131,7 @@ describe('TripsPage', () => {
     const { wrapper } = await page()
     expect(wrapper.find('[role="tablist"]').exists()).toBe(false)
     const links = wrapper.findAll('nav a.v-tab')
-    expect(links.map((l) => l.text())).toEqual(['State', 'Battery', 'Trips', 'Charges', 'Stats'])
+    expect(links.map((l) => l.text())).toEqual(['State', 'Health', 'Trips', 'Charges', 'Stats'])
     for (const l of links) {
       expect(l.attributes('role')).toBeUndefined()
       expect(l.attributes('tabindex')).toBeUndefined()

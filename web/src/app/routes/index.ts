@@ -59,14 +59,15 @@ export function createAppRouter(history: RouterHistory, queryClient: QueryClient
         component: () => import('@/pages/stats').then((m) => m.StatsPage),
         props: true,
       },
-      // The battery's estimated capacity, loaded on demand like the statistics.
+      // The battery's estimated capacity, from the health page: loaded on demand like the
+      // statistics.
       {
         path: '/vehicles/:vehicle/battery',
         name: 'battery',
         component: () => import('@/pages/battery').then((m) => m.BatteryPage),
         props: true,
       },
-      // The vehicle's health, from its page: its chart loads Chart.js.
+      // The vehicle's health, a tab of its own: its chart loads Chart.js.
       {
         path: '/vehicles/:vehicle/health',
         name: 'health',

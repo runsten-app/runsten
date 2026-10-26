@@ -5,7 +5,8 @@ import { BatteryCharts } from '@/widgets/battery-charts'
 import { BatteryTiles } from '@/widgets/battery-tiles'
 
 // BatteryPage shows the estimated capacity of a vehicle over its whole history: no
-// period is chosen, unlike the statistics. The three sentences under the title say where
+// period is chosen, unlike the statistics. Reached from the health page, whose tab it
+// keeps: an estimate among the health's figures. The sentences under the title say where
 // the estimate comes from and what it is not: a measurement.
 defineProps<{ vehicle: string }>()
 const { t } = useI18n()

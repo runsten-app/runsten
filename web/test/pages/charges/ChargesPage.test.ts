@@ -72,7 +72,7 @@ describe('ChargesPage', () => {
     const tabs = wrapper.findAll('.v-tab')
     expect(tabs.map((t) => t.attributes('href'))).toEqual([
       `/vehicles/${vehicle}`,
-      `/vehicles/${vehicle}/battery`,
+      `/vehicles/${vehicle}/health`,
       `/vehicles/${vehicle}/trips?to=2026-09-28`,
       `/vehicles/${vehicle}/charges?to=2026-09-28`,
       `/vehicles/${vehicle}/stats?to=2026-09-28`,

@@ -15,8 +15,8 @@ test('Shortcuts: the list, a tab by its digit, the keys shown', async ({ page },
   await expect(dialog).toBeHidden()
 
   await page.keyboard.press('2')
-  await expect(page).toHaveURL(/\/battery$/)
-  await expect(page.getByRole('link', { name: 'Battery' })).toHaveAttribute('aria-current', 'page')
+  await expect(page).toHaveURL(/\/health$/)
+  await expect(page.getByRole('link', { name: 'Health' })).toHaveAttribute('aria-current', 'page')
 
   await page.keyboard.down('Shift')
   await expect(page.locator('.key-hint')).toHaveText(['1', '2', '3', '4', '5'])

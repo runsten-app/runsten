@@ -59,7 +59,13 @@ test('Health: the Volvo’s tyres, service and warnings', async ({ page }, testI
   )
   await expect(page.locator('[data-test="warnings"]')).toContainText('No warning')
   await expect(page.locator('.chart-frame')).toHaveCount(0)
-  await expect(page.locator('.v-tab[aria-current="page"]')).toHaveText('State')
+  // Nothing needs attention: the tab has no dot.
+  const tab = page
+    .getByRole('navigation', { name: 'Vehicle' })
+    .getByRole('link', { name: 'Health' })
+  await expect(tab).toHaveAttribute('aria-current', 'page')
+  await expect(tab.locator('.tab-dot')).toHaveCount(0)
+  await expect(page.locator('.battery-summary')).toContainText('Not enough charges yet')
   await checkView(page, testInfo, 'health')
 })
 
@@ -88,6 +94,11 @@ test('Health: the pressures of a Polestar over time', async ({ page }, testInfo)
   await expect(page.locator('[data-test="tyres"] .wheel').nth(2)).toContainText('2.48')
   await expect(page.locator('[data-test="warnings"] li')).toHaveText(['Washer fluid'])
   await expect(page.locator('.chart-frame')).toHaveCount(2)
+  // A low tyre and a warning: the tab says the vehicle needs attention, its name unchanged.
+  const tab = page
+    .getByRole('navigation', { name: 'Vehicle' })
+    .getByRole('link', { name: 'Health' })
+  await expect(tab).toHaveAccessibleDescription('Needs attention')
   const group = page.getByRole('group', { name: 'Period' })
   const year = group.getByRole('button', { name: '12 months' })
   await year.click()

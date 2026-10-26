@@ -113,7 +113,7 @@
   "nav": {
     "label": "Vehicle",
     "state": "State",
-    "battery": "Battery",
+    "health": "Health",
     "trips": "Trips",
     "charges": "Charges",
     "stats": "Stats"
@@ -583,7 +583,7 @@
   },
   "health": {
     "title": "Health",
-    "intro": "What the vehicle tells of its tyres, its next service and its warnings, read every hour. What it tells depends on its model and its source: a Volvo gives a warning per tyre, not its pressure.",
+    "intro": "The battery's capacity, estimated from the charges, and what the vehicle tells of its tyres, its next service and its warnings, read every hour. What it tells depends on its model and its source: a Volvo gives a warning per tyre, not its pressure.",
     "loading": "Loading the health",
     "error": "The health could not be loaded. Try again in a moment.",
     "none": "The vehicle has told nothing of its health yet.",

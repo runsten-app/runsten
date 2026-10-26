@@ -113,7 +113,7 @@
   "nav": {
     "label": "Véhicule",
     "state": "État",
-    "battery": "Batterie",
+    "health": "Santé",
     "trips": "Trajets",
     "charges": "Charges",
     "stats": "Stats"
@@ -583,7 +583,7 @@
   },
   "health": {
     "title": "Santé",
-    "intro": "Ce que le véhicule dit de ses pneus, de son prochain entretien et de ses alertes, lu toutes les heures. Ce qu'il dit dépend de son modèle et de sa source : une Volvo donne une alerte par pneu, pas sa pression.",
+    "intro": "La capacité de la batterie, estimée à partir des charges, et ce que le véhicule dit de ses pneus, de son prochain entretien et de ses alertes, lu toutes les heures. Ce qu'il dit dépend de son modèle et de sa source : une Volvo donne une alerte par pneu, pas sa pression.",
     "loading": "Chargement de la santé",
     "error": "La santé n’a pas pu être chargée. Réessayez dans un instant.",
     "none": "Le véhicule n’a encore rien dit de sa santé.",
