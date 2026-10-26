@@ -47,11 +47,13 @@ with `RUNSTEN_WEB_BASE_PATH=/runsten/` and `RUNSTEN_APP_URL=https://example.org/
 
 The site address can be a local name instead, resolved by your router or local DNS (`runsten.home.arpa`). Give the server a fixed address (a static DHCP lease): it goes into `RUNSTEN_APP_URL`, here `https://192.168.1.20`, and into the redirect URI of a Volvo application, which cannot be changed afterwards.
 
-The browsers do not know Caddy's authority, and warn at the first visit. Either accept the warning on each device, or make them trust its root certificate, `root.crt`:
+The browsers do not know Caddy's authority, and warn at the first visit. Make each device that opens Runsten trust its root certificate, `root.crt`:
 
 - Caddy on the host installs it in the host's own trust store (`caddy trust`); the file is in its data directory, `/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt` for the Debian package;
 - Caddy in a container keeps it in its `/data` volume: `/data/caddy/pki/authorities/local/root.crt`;
-- copy it to each device that opens Runsten and import it as a trusted authority (the system's certificate settings, or the browser's).
+- copy it to each device and import it as a trusted authority (the system's certificate settings, or the browser's).
+
+Accepting the warning instead is for a try only: it does not authenticate the server, and whoever stands between the device and the server could present a certificate of their own and read the passwords and the session cookies, should the new warning be accepted too.
 
 For a Volvo, the redirect URI is `https://192.168.1.20/auth/volvo/callback`. Volvo ID only redirects the browser to it and never reaches the server: it works from any device of the network. A self-hoster reports Volvo accepting such a private address; it is not verified otherwise.
 
