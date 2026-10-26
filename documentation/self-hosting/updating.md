@@ -4,6 +4,10 @@ description: "Update a self-hosted Runsten, and the notes of the updates that ch
 
 # Updating
 
+## Knowing a release is out
+
+**Settings → About Runsten** shows the release the instance runs. With `RUNSTEN_UPDATE_CHECK=true` in `.env`, `runsten-api` reads the latest release on GitHub once a day, and that section tells a newer one, with its notes. It is off by default: nothing is asked of GitHub, and the section only links to the [releases](https://github.com/runsten-app/runsten/releases). Either way, `deploy/update.sh --check` tells it on demand, and the health report (`/healthz/full`, with `RUNSTEN_HEALTH_TOKEN`) gives the version running.
+
 ## With the update script
 
 In the directory of the [installation](./index.md#install):

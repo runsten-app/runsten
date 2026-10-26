@@ -17,7 +17,7 @@ func TestReporter(t *testing.T) {
 		<-ctx.Done()
 		return "timed out", false
 	}
-	rp := NewReporter("secret", map[string]Check{"database": healthy, "collector": failing, "slow": slow}, 10*time.Millisecond)
+	rp := NewReporter("secret", "0.11.0", map[string]Check{"database": healthy, "collector": failing, "slow": slow}, 10*time.Millisecond)
 	for _, tt := range []struct {
 		name   string
 		auth   string
@@ -29,17 +29,17 @@ func TestReporter(t *testing.T) {
 		{name: "wrong token", auth: "Bearer secreT", status: http.StatusUnauthorized},
 		{name: "not bearer", auth: "secret", status: http.StatusUnauthorized},
 		{name: "every check", auth: "Bearer secret", status: http.StatusServiceUnavailable, want: Report{
-			Status: "failing", Checks: map[string]Result{
+			Status: "failing", Version: "0.11.0", Checks: map[string]Result{
 				"database":  {"ok", "fine"},
 				"collector": {"failing", "broken"},
 				"slow":      {"failing", "timed out"},
 			},
 		}},
 		{name: "one healthy", auth: "Bearer secret", query: "?check=database", status: http.StatusOK, want: Report{
-			Status: "ok", Checks: map[string]Result{"database": {"ok", "fine"}},
+			Status: "ok", Version: "0.11.0", Checks: map[string]Result{"database": {"ok", "fine"}},
 		}},
 		{name: "one failing", auth: "Bearer secret", query: "?check=collector", status: http.StatusServiceUnavailable, want: Report{
-			Status: "failing", Checks: map[string]Result{"collector": {"failing", "broken"}},
+			Status: "failing", Version: "0.11.0", Checks: map[string]Result{"collector": {"failing", "broken"}},
 		}},
 		{name: "unknown check", auth: "Bearer secret", query: "?check=nope", status: http.StatusNotFound},
 	} {

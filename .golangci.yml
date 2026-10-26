@@ -141,6 +141,14 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/core
               desc: the client returns Aximote's values; importer converts them
+        # The latest release on GitHub: a client, which no business code reaches.
+        release-is-a-client:
+          files: ["**/internal/release/**"]
+          deny:
+            - pkg: runsten/internal/api
+              desc: the API declares Releases, the binary adapts the checker
+            - pkg: runsten/internal/core
+              desc: no business code
         # The reader of the Volvo Data Portal's files returns their values as they are.
         volvoportal-is-a-reader:
           files: ["**/internal/volvoportal/**"]

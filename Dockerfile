@@ -18,8 +18,10 @@ COPY internal ./internal
 COPY premiu[m] ./premium/
 ARG CMD=runsten-simulator
 ARG TAGS=""
+# The release built, which the binaries tell (their main.version); dev otherwise.
+ARG VERSION=dev
 ARG TARGETOS TARGETARCH
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -tags "${TAGS}" -o /out/app "./cmd/${CMD}"
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -tags "${TAGS}" -o /out/app "./cmd/${CMD}"
 
 # The front end's build: HTML, JavaScript and CSS, the same for every platform. Its types
 # are generated from the API description.

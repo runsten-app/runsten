@@ -1605,6 +1605,33 @@ components:
         - token
         - vehicle
       type: object
+    Instance:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: "When the latest release was last read; null: the instance does not check, or no read succeeded yet."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        update:
+          description: "A newer release than the one running, as last read; null: none, or not known."
+          oneOf:
+            - $ref: "#/components/schemas/Release"
+            - type: "null"
+        update_check:
+          description: "Whether the instance checks for a newer release (RUNSTEN_UPDATE_CHECK): it reads the latest one on GitHub once a day."
+          type: boolean
+        version:
+          description: The release the instance runs, as 0.11.0; dev for a build from the sources.
+          type: string
+      required:
+        - version
+        - update_check
+        - checked_at
+        - update
+      type: object
     InstanceKey:
       additionalProperties: false
       properties:
@@ -2716,6 +2743,20 @@ components:
         - reported_at
         - fetched_at
         - checked_at
+      type: object
+    Release:
+      additionalProperties: false
+      properties:
+        url:
+          description: Its page, with its notes.
+          format: uri
+          type: string
+        version:
+          description: Its version, as 0.12.0.
+          type: string
+      required:
+        - version
+        - url
       type: object
     Series:
       additionalProperties: false
@@ -3974,6 +4015,49 @@ paths:
       summary: Give the account's Polestar credential
       tags:
         - connection
+  /instance:
+    get:
+      description: The release running, and a newer one when the instance checks for it. The same for every account.
+      operationId: getInstance
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instance"
+          description: The instance's release.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: The release the instance runs
+      tags:
+        - instance
   /mqtt:
     delete:
       description: The collector disconnects from it, at its next pass, and publishes nothing more. The retained messages stay on the broker.
@@ -6499,3 +6583,5 @@ tags:
     name: tokens
   - description: The account's MQTT broker, which the collector publishes the vehicles' state to.
     name: mqtt
+  - description: "The instance itself: the release it runs, and a newer one."
+    name: instance

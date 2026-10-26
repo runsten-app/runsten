@@ -1390,5 +1390,18 @@
       "unavailable": "Runsten could not be reached. Try again in a moment.",
       "internal": "The credential could not be saved. Try again in a moment."
     }
+  },
+  "release": {
+    "title": "About Runsten",
+    "loading": "Loading the version",
+    "error": "The version could not be loaded. Try again in a moment.",
+    "version": "Version {version}",
+    "update": "Runsten {version} is out.",
+    "notes": "Release notes",
+    "howTo": "How to update",
+    "latest": "No newer release, checked {age}.",
+    "unread": "The latest release could not be read yet.",
+    "releases": "All the releases",
+    "newTab": "(opens in a new tab)"
   }
 }

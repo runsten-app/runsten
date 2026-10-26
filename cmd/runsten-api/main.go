@@ -73,6 +73,9 @@
 //	                             https://api.aximote.com)
 //	RUNSTEN_HEALTH_TOKEN         the bearer token of /healthz/full, 32 characters at
 //	                             least (default none: no report)
+//	RUNSTEN_UPDATE_CHECK         true to read the latest release of Runsten on GitHub
+//	                             once a day, and tell a newer one in the settings
+//	                             (default false: nothing is asked of GitHub)
 //	RUNSTEN_LOG_LEVEL            debug, info, warn, error (default info)
 package main
 
@@ -111,6 +114,7 @@ import (
 	"runsten/internal/platform/httpserver"
 	"runsten/internal/platform/secretbox"
 	"runsten/internal/polestar"
+	"runsten/internal/release"
 	"runsten/internal/store"
 	"runsten/internal/volvo"
 	"runsten/internal/volvoportal"
@@ -122,6 +126,10 @@ const (
 	flowTTL    = 10 * time.Minute
 	maxPending = 16
 )
+
+// version is the release built, set by the build (-ldflags "-X main.version=0.11.0":
+// the Dockerfile's VERSION, which a release passes); dev from the sources.
+var version = "dev"
 
 // callbackPath is the route the redirect URI must lead to.
 const callbackPath = "/auth/volvo/callback"
@@ -151,6 +159,8 @@ type config struct {
 	geocode  geocode.Params
 	// healthToken guards the health report; empty: no report.
 	healthToken string
+	// updateCheck: read the latest release on GitHub, to tell a newer one.
+	updateCheck bool
 	// privateBrokers: an account's MQTT broker may be on a local network, or over
 	// plain mqtt://. False on an instance open to the Internet's users.
 	privateBrokers bool
@@ -219,6 +229,13 @@ func run(args []string) error {
 	}
 	deriver := derive.New(st, derive.Sources(volvo.Normalizer{}, polestar.Normalizer{}), core.DefaultParams(), nil, log)
 	ax := aximote.NewClient(cfg.aximoteURL, hc)
+	// Only when asked is GitHub read: nothing leaves for it otherwise.
+	var releases api.Releases
+	if cfg.updateCheck {
+		checker := release.NewChecker(release.DefaultURL, version, hc, clock.Real{}, log)
+		go checker.Run(ctx)
+		releases = latestRelease{checker}
+	}
 	handler := api.New(api.Config{
 		Sessions: sessions, AccessTokens: sessions,
 		Addresses:   addresses,
@@ -257,6 +274,8 @@ func run(args []string) error {
 		Clock:             clock.Real{},
 		SecureCookies:     cfg.secureCookies,
 		AppURL:            cfg.appURL,
+		Version:           version,
+		Releases:          releases,
 		Log:               log,
 	})
 	if cfg.geocoder != nil {
@@ -272,17 +291,18 @@ func run(args []string) error {
 	}
 	if cfg.app.ClientID == "" {
 		log.Info("runsten-api started without a Volvo application: the Volvo IDs cannot be connected",
-			"addr", cfg.addr, "app_url", cfg.appURL, "geocoder", cfg.geocoder != nil)
+			"version", version, "addr", cfg.addr, "app_url", cfg.appURL, "geocoder", cfg.geocoder != nil, "update_check", cfg.updateCheck)
 	} else {
 		redirect, _ := url.Parse(cfg.app.RedirectURI) // validated by loadConfig
 		log.Info("runsten-api started: sign in, then open the start URL to connect a Volvo ID",
-			"addr", cfg.addr, "login", siteURL(redirect, "/login"), "start", siteURL(redirect, "/auth/volvo/start"),
-			"scopes", strings.Join(cfg.app.Scopes, " "), "instance_key", cfg.apiKey != "", "geocoder", cfg.geocoder != nil)
+			"version", version, "addr", cfg.addr, "login", siteURL(redirect, "/login"), "start", siteURL(redirect, "/auth/volvo/start"),
+			"scopes", strings.Join(cfg.app.Scopes, " "), "instance_key", cfg.apiKey != "", "geocoder", cfg.geocoder != nil,
+			"update_check", cfg.updateCheck)
 	}
 	mux := http.NewServeMux()
 	mux.Handle("GET "+health.Path, health.OK()) // not logged: probed every 30 s
 	if cfg.healthToken != "" {                  // not logged either: an uptime monitor's
-		mux.Handle("GET "+health.ReportPath, health.NewReporter(cfg.healthToken, healthChecks(st, clock.Real{}), checkTimeout))
+		mux.Handle("GET "+health.ReportPath, health.NewReporter(cfg.healthToken, version, healthChecks(st, clock.Real{}), checkTimeout))
 	}
 	mux.Handle("/", httpserver.LogRequests(log, handler))
 	if err := registerExtensions(ctx, extensions{
@@ -490,6 +510,13 @@ func loadConfig(getenv func(string) string) (config, error) {
 			errs = append(errs, fmt.Errorf("RUNSTEN_GEOCODER_INTERVAL %q: a duration of 100ms at least expected", v))
 		}
 		cfg.geocode.Interval = d
+	}
+	if v := getenv("RUNSTEN_UPDATE_CHECK"); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("RUNSTEN_UPDATE_CHECK %q: true or false expected", v))
+		}
+		cfg.updateCheck = b
 	}
 	if v := getenv("RUNSTEN_HEALTH_TOKEN"); v != "" {
 		if len(v) < minHealthToken {

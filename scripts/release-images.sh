@@ -42,7 +42,7 @@ for c in $IMAGES; do
 	# The labels go into each platform's image, the annotations onto the index, which
 	# the registry's page reads (the package's repository, licence and description).
 	docker buildx build --push --platform "$(tr ' ' , <<<"$PLATFORMS")" \
-		--build-arg CMD="$c" "${target[@]}" "${tags[@]}" \
+		--build-arg CMD="$c" --build-arg VERSION="$version" "${target[@]}" "${tags[@]}" \
 		--label org.opencontainers.image.version="$version" \
 		--label org.opencontainers.image.revision="$revision" \
 		--annotation index:org.opencontainers.image.source="$source" \

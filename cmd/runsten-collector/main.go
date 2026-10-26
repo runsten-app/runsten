@@ -127,6 +127,10 @@ type config struct {
 	privateBrokers bool
 }
 
+// version is the release built, set by the build (-ldflags "-X main.version=0.11.0":
+// the Dockerfile's VERSION, which a release passes); dev from the sources.
+var version = "dev"
+
 const (
 	// debugCalls is the number of calls kept in memory by the debug page.
 	debugCalls = 500
@@ -275,7 +279,7 @@ func run(args []string) error {
 	healthDone := serve(cfg.healthAddr, healthMux)
 
 	cfg.quota.NoInstanceKey = cfg.apiKey == ""
-	log.Info("collector started", "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
+	log.Info("collector started", "version", version, "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
 		"polestar_base_url", cfg.polestarURL,
 		"daily_quota", cfg.quota.Daily, "quota_per_user", cfg.quota.PerUser, "instance_key", cfg.apiKey != "",
 		"mqtt_private_brokers", cfg.privateBrokers)

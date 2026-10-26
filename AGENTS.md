@@ -53,6 +53,8 @@ internal/
                        and Refresher
   aximote/             Aximote's public API client (vehicles, trips, refuels, the tracks' GeoJSON export),
                        typed errors (APIError: token refused, 429 with RetryIn); one call per method, no retry
+  release/             the latest release of Runsten on GitHub, read once a day when RUNSTEN_UPDATE_CHECK
+                       asks for it, and compared with the one running (Checker, Newer)
   importer/            the import worker: claims the jobs, reads the source page by page, converts and checks
                        its events (convert.go), writes them with the job's progress; declares its Store and
                        Source
@@ -64,7 +66,8 @@ internal/
                        vehicle's model; account.go: the export of an account; polestar.go: the account's
                        Polestar credential (PolestarCredentials, PolestarVehicles); mqtt.go: the account's
                        MQTT broker; imports.go: a vehicle's imports, by source; importjob.go: the import
-                       jobs and Aximote's vehicles (ImportJobs, AximoteVehicles);
+                       jobs and Aximote's vehicles (ImportJobs, AximoteVehicles); instance.go: the release
+                       the instance runs, and a newer one (Releases);
                        testdata/ holds the golden responses, openapi_test.go generates api/openapi.yaml and
                        validates the responses against it
   catalog/             data sheet of the electric Volvo and Polestar variants (variants.yaml, embedded and
@@ -91,7 +94,7 @@ internal/
   web/                 HTTP handler of runsten-web: files, SPA fallback, <base href>, CSP with a nonce per
                        response, reverse proxy to runsten-api
   platform/            generic building blocks: clock, health (/healthz, heartbeat, probe, the report of
-                       named checks behind a bearer token), httpserver,
+                       named checks behind a bearer token, with the version), httpserver,
                        netguard (the addresses of the Internet, for a host a user names), secretbox
   simulator/
     vehicle/           pure vehicle model
@@ -146,6 +149,7 @@ The import graph is also checked by `internal/archtest` (`TestDependencies`, aft
   - `volvo` depends on neither `store` nor `collector`.
   - `importer` knows neither HTTP, JSON, pgx, `store` nor `api`: it converts the values of `aximote` (the client, which knows no business code and returns Aximote's values as they are) and declares its `Store` and `Source`; the store implements the first, `aximote.Client` the second. `api` declares `ImportJobs` and `AximoteVehicles`, which `runsten-api` wires.
   - `platform` depends on no business code.
+  - `release` is a client: `api` declares `Releases`, which `runsten-api` adapts the checker to. The binaries know their version from the build (`main.version`, `-ldflags -X`: the Dockerfile's `VERSION`, which `scripts/release-images.sh` passes), `dev` otherwise.
   - `web` knows neither pgx, `store`, `api`, `auth`, `core`, `volvo` nor `collector`: it reaches `runsten-api` over HTTP only, and holds no session, database or secret.
   - The simulator is used only by its binary and by tests.
   - Vendor-specific formats (Volvo JSON, the Polestar Data Portal's) are converted on the vendor side, never in `core`: both produce the same types.

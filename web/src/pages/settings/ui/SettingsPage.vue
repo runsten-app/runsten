@@ -11,8 +11,9 @@ import { MqttBroker } from '@/features/manage-mqtt'
 import { OrphanCosts } from '@/features/manage-orphan-costs'
 import { useVehicles } from '@/features/select-vehicle'
 import { FeatureUnavailable, useLimits } from '@/features/view-limits'
+import { ReleaseInfo } from '@/features/view-release'
 import { AppShell } from '@/widgets/app-shell'
-import { extensionAccountActions, extensionSections } from '../extensions'
+import { extensionAccountActions, extensionSections, releaseSection } from '../extensions'
 
 // SettingsPage is the account's, shared by its vehicles: its currency, its places with
 // their tariffs, and the entered costs no charge takes any more, if any. What belongs to
@@ -20,8 +21,8 @@ import { extensionAccountActions, extensionSections } from '../extensions'
 // The entered costs are left out where the account's offer leaves the costs out. Then
 // the access tokens programs read the API with, the MQTT broker the vehicles' state is
 // published to (locked where the offer leaves it out), the sections an extension adds, and
-// last, all the account's data, to download whatever the offer, with what an extension
-// adds beside it.
+// then all the account's data, to download whatever the offer, with what an extension
+// adds beside it, and last the release the instance runs, unless the build leaves it out.
 const { t } = useI18n()
 const { settings, isPending, error } = useSettings()
 const { vehicles, isPending: vehiclesPending, error: vehiclesError } = useVehicles()
@@ -123,6 +124,13 @@ const { lacks } = useLimits()
       <AccountData>
         <component :is="action" v-for="(action, i) in extensionAccountActions" :key="i" />
       </AccountData>
+    </section>
+
+    <section v-if="releaseSection" class="mt-8" aria-labelledby="settings-release-title">
+      <h2 id="settings-release-title" class="text-title-large mb-2">
+        {{ t('release.title') }}
+      </h2>
+      <ReleaseInfo />
     </section>
   </AppShell>
 </template>

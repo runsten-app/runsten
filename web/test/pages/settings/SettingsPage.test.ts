@@ -11,6 +11,7 @@ import unset from '@fixtures/settings-unset.json'
 import vehicles from '@fixtures/vehicles.json'
 import mqtt from '@fixtures/mqtt.json'
 import mqttNone from '@fixtures/mqtt-none.json'
+import instance from '@fixtures/instance.json'
 import { sessionKeys } from '@/entities/session'
 import session from '@fixtures/session.json'
 import { mountWith, testQueryClient } from '@test/utils'
@@ -23,6 +24,11 @@ const mocks = vi.hoisted(() => ({
   fetchVehicles: vi.fn(),
   fetchAccessTokens: vi.fn(),
   fetchMqtt: vi.fn(),
+  fetchInstance: vi.fn(),
+}))
+vi.mock('@/entities/instance', async (original) => ({
+  ...(await original<typeof import('@/entities/instance')>()),
+  fetchInstance: mocks.fetchInstance,
 }))
 vi.mock('@/entities/mqtt', async (original) => ({
   ...(await original<typeof import('@/entities/mqtt')>()),
@@ -51,13 +57,17 @@ vi.mock('@/entities/place', async (original) => ({
 }))
 
 // The extensions' sections and account's actions: none in the public build, some in a test.
-const { sections, actions } = vi.hoisted(() => ({
+const { sections, actions, build } = vi.hoisted(() => ({
   sections: [] as unknown[],
   actions: [] as unknown[],
+  build: { releaseSection: true },
 }))
 vi.mock('@/pages/settings/extensions', () => ({
   extensionSections: sections,
   extensionAccountActions: actions,
+  get releaseSection() {
+    return build.releaseSection
+  },
 }))
 // The page that lifts the limits: none in the public build.
 vi.mock('@/entities/session/extensions', () => ({ limitsPage: null }))
@@ -65,12 +75,14 @@ vi.mock('@/entities/session/extensions', () => ({ limitsPage: null }))
 beforeEach(() => {
   sections.length = 0
   actions.length = 0
+  build.releaseSection = true
   Object.values(mocks).forEach((m) => m.mockReset())
   mocks.fetchPlaces.mockResolvedValue(places.items)
   mocks.fetchOrphanCosts.mockResolvedValue([])
   mocks.fetchVehicles.mockResolvedValue(vehicles.items)
   mocks.fetchAccessTokens.mockResolvedValue([])
   mocks.fetchMqtt.mockResolvedValue(mqttNone)
+  mocks.fetchInstance.mockResolvedValue(instance)
 })
 
 async function page(unavailable: string[] = []) {
@@ -98,6 +110,7 @@ describe('SettingsPage', () => {
       'API access',
       'MQTT',
       'Your data',
+      'About Runsten',
     ])
     expect(w.findAll('.orphan')).toHaveLength(1)
   })
@@ -113,6 +126,7 @@ describe('SettingsPage', () => {
       'API access',
       'MQTT',
       'Your data',
+      'About Runsten',
     ])
     expect(mocks.fetchOrphanCosts).not.toHaveBeenCalled()
   })
@@ -128,6 +142,7 @@ describe('SettingsPage', () => {
       'API access',
       'MQTT',
       'Your data',
+      'About Runsten',
     ])
     expect(w.findComponent({ name: 'VSelect' }).props('modelValue')).toBe('EUR')
     // The prices are in the account's currency.
@@ -174,6 +189,21 @@ describe('SettingsPage', () => {
     expect(section.find('.toggle').exists()).toBe(false)
     expect(section.find('.delete-broker').exists()).toBe(true)
     expect(section.find('form').exists()).toBe(false)
+  })
+
+  it('ends with the release the instance runs', async () => {
+    mocks.fetchSettings.mockResolvedValue(settings)
+    const w = await page()
+    const section = w.find('[aria-labelledby="settings-release-title"]')
+    expect(section.find('.version').text()).toBe('Version 0.11.0')
+  })
+
+  it('leaves the release out where the build does', async () => {
+    mocks.fetchSettings.mockResolvedValue(settings)
+    build.releaseSection = false
+    const w = await page()
+    expect(w.findAll('h2').map((h) => h.text())).not.toContain('About Runsten')
+    expect(mocks.fetchInstance).not.toHaveBeenCalled()
   })
 
   it('says costs need a currency, and explains a refused change', async () => {

@@ -271,6 +271,8 @@ var goldenRequests = map[string]string{
 	"vehicle-model.json":            "PUT /api/v1/vehicles/" + chosen + "/model",
 	"mqtt-none.json":                "GET /api/v1/mqtt",
 	"mqtt.json":                     "GET /api/v1/mqtt",
+	"instance.json":                 "GET /api/v1/instance",
+	"instance-update.json":          "GET /api/v1/instance",
 }
 
 func goldenFiles(t *testing.T) map[string][]byte {

@@ -1390,5 +1390,18 @@
       "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
       "internal": "Uppgifterna kunde inte sparas. Försök igen om en stund."
     }
+  },
+  "release": {
+    "title": "Om Runsten",
+    "loading": "Läser in versionen",
+    "error": "Versionen kunde inte läsas in. Försök igen om en stund.",
+    "version": "Version {version}",
+    "update": "Runsten {version} har släppts.",
+    "notes": "Versionsinformation",
+    "howTo": "Så uppdaterar du",
+    "latest": "Ingen nyare version, kontrollerat {age}.",
+    "unread": "Den senaste versionen har inte kunnat läsas in än.",
+    "releases": "Alla versioner",
+    "newTab": "(öppnas i en ny flik)"
   }
 }
