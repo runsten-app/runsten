@@ -61,6 +61,10 @@ import (
 	"runsten/internal/web"
 )
 
+// version is the release built, set by the build (-ldflags "-X main.version=0.11.0":
+// the Dockerfile's VERSION, which a release passes); dev from the sources.
+var version = "dev"
+
 const (
 	defaultAddr = "127.0.0.1:8082"
 	defaultAPI  = "http://127.0.0.1:8081"
@@ -118,7 +122,7 @@ func run(args []string) error {
 	}
 	httpserver.WarnIfExposed(log, cfg.addr, cfg.restricted,
 		"listening beyond this machine over plain http: put an https reverse proxy in front of runsten-web, passwords and session cookies travel in clear text otherwise")
-	log.Info("runsten-web started", "addr", cfg.addr, "api", cfg.api.String(), "api_host", cfg.apiHost, "dir", cfg.dir, "base_path", cfg.basePath, "maps", cfg.mapTiles != nil, "noindex", cfg.noIndex)
+	log.Info("runsten-web started", "version", version, "addr", cfg.addr, "api", cfg.api.String(), "api_host", cfg.apiHost, "dir", cfg.dir, "base_path", cfg.basePath, "maps", cfg.mapTiles != nil, "noindex", cfg.noIndex)
 	if err := httpserver.Run(ctx, httpserver.New(cfg.addr, handler, log), log); err != nil {
 		return fmt.Errorf("server: %w", err)
 	}

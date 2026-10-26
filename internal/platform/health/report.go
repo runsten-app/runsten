@@ -25,10 +25,12 @@ type Result struct {
 	Detail string `json:"detail"`
 }
 
-// Report is the detailed health report: every check's result, and failing if any is.
+// Report is the detailed health report: the service's version, every check's result,
+// and failing if any is.
 type Report struct {
-	Status string            `json:"status"`
-	Checks map[string]Result `json:"checks"`
+	Status  string            `json:"status"`
+	Version string            `json:"version"`
+	Checks  map[string]Result `json:"checks"`
 }
 
 // Reporter serves the detailed health report to whoever presents its token, for an
@@ -38,13 +40,15 @@ type Report struct {
 // details are not public.
 type Reporter struct {
 	token   [sha256.Size]byte
+	version string
 	checks  map[string]Check
 	timeout time.Duration
 }
 
-// NewReporter creates a reporter for the checks, behind a bearer token.
-func NewReporter(token string, checks map[string]Check, timeout time.Duration) *Reporter {
-	return &Reporter{token: sha256.Sum256([]byte(token)), checks: checks, timeout: timeout}
+// NewReporter creates a reporter for the checks of the service at version, behind a
+// bearer token.
+func NewReporter(token, version string, checks map[string]Check, timeout time.Duration) *Reporter {
+	return &Reporter{token: sha256.Sum256([]byte(token)), version: version, checks: checks, timeout: timeout}
 }
 
 func (rp *Reporter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -70,7 +74,7 @@ func (rp *Reporter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), rp.timeout)
 	defer cancel()
-	rep := Report{Status: "ok", Checks: make(map[string]Result, len(names))}
+	rep := Report{Status: "ok", Version: rp.version, Checks: make(map[string]Result, len(names))}
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	for _, name := range names {

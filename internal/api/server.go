@@ -251,6 +251,12 @@ type Config struct {
 	InstanceKeyLast4 string
 	ClientID         string
 
+	// Version is the release the instance runs, X.Y.Z, or dev for a build from the
+	// sources. Releases tells whether a newer one is out; nil: the instance does not
+	// check (RUNSTEN_UPDATE_CHECK).
+	Version  string
+	Releases Releases
+
 	// Brokers keeps the account's MQTT broker. PublicBrokersOnly: the instance
 	// publishes to brokers on the Internet only, over TLS (the hosted offer's rule).
 	Brokers           Brokers
@@ -314,6 +320,7 @@ func New(cfg Config) *Server {
 	s.registerAccount(s.api)
 	s.registerTokens(s.api)
 	s.registerMQTT(s.api)
+	s.registerInstance(s.api)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		if allowed := allowedMethods(mux, r); allowed != "" {
 			w.Header().Set("Allow", allowed)

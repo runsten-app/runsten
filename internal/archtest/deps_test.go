@@ -28,7 +28,7 @@ var allowed = map[string][]string{
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/catalog", "internal/core",
 		"internal/derive", "internal/geocode", "internal/importer", "internal/oauth", "internal/platform", "internal/polestar",
-		"internal/store", "internal/volvo", "internal/volvoportal",
+		"internal/release", "internal/store", "internal/volvo", "internal/volvoportal",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
@@ -68,7 +68,9 @@ var allowed = map[string][]string{
 	"internal/polestar":          {"net/http", "encoding/json", "internal/core"},
 	"internal/geocode/nominatim": {"net/http", "encoding/json", "internal/core"},
 	"internal/aximote":           {"net/http", "encoding/json"},
-	"internal/volvoportal":       nil,
+	// The latest release on GitHub, compared with the one running.
+	"internal/release":     {"net/http", "encoding/json"},
+	"internal/volvoportal": nil,
 	// The only package that knows paho.
 	"internal/publish/mqtt": {
 		"github.com/eclipse/paho.mqtt.golang", "internal/core", "internal/platform/clock", "internal/platform/netguard",

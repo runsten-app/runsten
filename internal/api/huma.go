@@ -85,6 +85,7 @@ func humaConfig() huma.Config {
 		{Name: "account", Description: "The account itself: the export of all its data."},
 		{Name: "tokens", Description: "The user's personal access tokens, with which a program reads the API without a session."},
 		{Name: "mqtt", Description: "The account's MQTT broker, which the collector publishes the vehicles' state to."},
+		{Name: "instance", Description: "The instance itself: the release it runs, and a newer one."},
 	}
 	cfg.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
 		"session": {

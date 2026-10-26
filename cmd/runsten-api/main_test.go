@@ -39,7 +39,7 @@ func TestLoadConfigDefaults(t *testing.T) {
 		cfg.aximoteURL != "https://api.aximote.com" || cfg.polestarURL != polestar.DefaultBaseURL ||
 		!slices.Equal(cfg.app.Scopes, volvo.DefaultScopes()) || cfg.app.ClientID != "id" || cfg.app.ClientSecret != "secret" ||
 		cfg.logLevel != slog.LevelInfo || cfg.geocoder != nil || cfg.geocode.Interval != time.Second || !cfg.privateBrokers ||
-		cfg.appURL != "" || !cfg.secureCookies {
+		cfg.appURL != "" || !cfg.secureCookies || cfg.updateCheck {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -53,7 +53,7 @@ func TestLoadConfigOverrides(t *testing.T) {
 		"RUNSTEN_APP_URL": "http://127.0.0.1:5173", "RUNSTEN_GEOCODER_URL": "https://nominatim.example",
 		"RUNSTEN_GEOCODER_INTERVAL": "2s", "RUNSTEN_HEALTH_TOKEN": strings.Repeat("h", minHealthToken),
 		"RUNSTEN_MQTT_PRIVATE_BROKERS": "false", "RUNSTEN_AXIMOTE_BASE_URL": "http://localhost:8080",
-		"RUNSTEN_POLESTAR_BASE_URL": "http://localhost:8080/eu-north-1/data-portal/m2m",
+		"RUNSTEN_POLESTAR_BASE_URL": "http://localhost:8080/eu-north-1/data-portal/m2m", "RUNSTEN_UPDATE_CHECK": "true",
 	} {
 		m[k] = v
 	}
@@ -66,7 +66,7 @@ func TestLoadConfigOverrides(t *testing.T) {
 		cfg.appURL != "http://127.0.0.1:5173/" || cfg.geocoder == nil || cfg.geocode.Interval != 2*time.Second ||
 		cfg.healthToken != strings.Repeat("h", minHealthToken) || cfg.privateBrokers || cfg.aximoteURL != "http://localhost:8080" ||
 		cfg.polestarURL != "http://localhost:8080/eu-north-1/data-portal/m2m" || cfg.secureCookies ||
-		cfg.app.RedirectURI != "http://127.0.0.1:8081/auth/volvo/callback" {
+		cfg.app.RedirectURI != "http://127.0.0.1:8081/auth/volvo/callback" || !cfg.updateCheck {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -154,6 +154,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_ACCESS_RESTRICTED": "maybe", "RUNSTEN_APP_URL": "/connection",
 		"RUNSTEN_GEOCODER_URL": "nominatim", "RUNSTEN_GEOCODER_INTERVAL": "10ms", "RUNSTEN_HEALTH_TOKEN": "short",
 		"RUNSTEN_MQTT_PRIVATE_BROKERS": "sometimes", "RUNSTEN_AXIMOTE_BASE_URL": "aximote", "RUNSTEN_POLESTAR_BASE_URL": "polestar",
+		"RUNSTEN_UPDATE_CHECK": "daily",
 	}))
 	if err == nil {
 		t.Fatal("error expected")
@@ -162,6 +163,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_DATABASE_URL", "RUNSTEN_TOKEN_KEY", "RUNSTEN_VOLVO_AUTH_URL", "conve:unlock", "RUNSTEN_LOG_LEVEL",
 		"RUNSTEN_ACCESS_RESTRICTED", "RUNSTEN_APP_URL", "RUNSTEN_GEOCODER_URL", "RUNSTEN_GEOCODER_INTERVAL",
 		"RUNSTEN_HEALTH_TOKEN", "RUNSTEN_MQTT_PRIVATE_BROKERS", "RUNSTEN_AXIMOTE_BASE_URL", "RUNSTEN_POLESTAR_BASE_URL",
+		"RUNSTEN_UPDATE_CHECK",
 	} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("the error should mention %s: %v", want, err)

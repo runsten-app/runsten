@@ -11,6 +11,7 @@ import unset from '@fixtures/settings-unset.json'
 import vehicles from '@fixtures/vehicles.json'
 import mqtt from '@fixtures/mqtt.json'
 import mqttNone from '@fixtures/mqtt-none.json'
+import instance from '@fixtures/instance.json'
 import { sessionKeys } from '@/entities/session'
 import session from '@fixtures/session.json'
 import { mountWith, testQueryClient } from '@test/utils'
@@ -23,6 +24,11 @@ const mocks = vi.hoisted(() => ({
   fetchVehicles: vi.fn(),
   fetchAccessTokens: vi.fn(),
   fetchMqtt: vi.fn(),
+  fetchInstance: vi.fn(),
+}))
+vi.mock('@/entities/instance', async (original) => ({
+  ...(await original<typeof import('@/entities/instance')>()),
+  fetchInstance: mocks.fetchInstance,
 }))
 vi.mock('@/entities/mqtt', async (original) => ({
   ...(await original<typeof import('@/entities/mqtt')>()),
@@ -71,6 +77,7 @@ beforeEach(() => {
   mocks.fetchVehicles.mockResolvedValue(vehicles.items)
   mocks.fetchAccessTokens.mockResolvedValue([])
   mocks.fetchMqtt.mockResolvedValue(mqttNone)
+  mocks.fetchInstance.mockResolvedValue(instance)
 })
 
 async function page(unavailable: string[] = []) {
@@ -98,6 +105,7 @@ describe('SettingsPage', () => {
       'API access',
       'MQTT',
       'Your data',
+      'About Runsten',
     ])
     expect(w.findAll('.orphan')).toHaveLength(1)
   })
@@ -113,6 +121,7 @@ describe('SettingsPage', () => {
       'API access',
       'MQTT',
       'Your data',
+      'About Runsten',
     ])
     expect(mocks.fetchOrphanCosts).not.toHaveBeenCalled()
   })
@@ -128,6 +137,7 @@ describe('SettingsPage', () => {
       'API access',
       'MQTT',
       'Your data',
+      'About Runsten',
     ])
     expect(w.findComponent({ name: 'VSelect' }).props('modelValue')).toBe('EUR')
     // The prices are in the account's currency.
@@ -174,6 +184,13 @@ describe('SettingsPage', () => {
     expect(section.find('.toggle').exists()).toBe(false)
     expect(section.find('.delete-broker').exists()).toBe(true)
     expect(section.find('form').exists()).toBe(false)
+  })
+
+  it('ends with the release the instance runs', async () => {
+    mocks.fetchSettings.mockResolvedValue(settings)
+    const w = await page()
+    const section = w.find('[aria-labelledby="settings-release-title"]')
+    expect(section.find('.version').text()).toBe('Version 0.11.0')
   })
 
   it('says costs need a currency, and explains a refused change', async () => {

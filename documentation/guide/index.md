@@ -44,7 +44,7 @@ The key's quota is yours alone: 10,000 calls a day for each Volvo API, about sev
 
 ## Settings and preferences
 
-- **Settings** (the cog in the bar) are the account's: the currency, the places and their tariffs, and the costs left without a charge ([Places, tariffs and costs](./costs.md)).
+- **Settings** (the cog in the bar) are the account's: the currency, the places and their tariffs, and the costs left without a charge ([Places, tariffs and costs](./costs.md)). At the bottom, **About Runsten** shows the release the instance runs, and a newer one when the instance checks ([Updating](../self-hosting/updating.md#knowing-a-release-is-out)).
 - **A vehicle's settings** (the button by its name): its model and onboard charger ([Vehicle models](./vehicle-models.md)).
 - **Preferences** (the menu under your name, which also signs out): the language and the appearance, automatic, light or dark, kept in the browser.
 
