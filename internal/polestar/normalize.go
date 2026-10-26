@@ -21,7 +21,20 @@ const Brand = "polestar"
 type Normalizer struct{}
 
 // Kinds returns the kinds of response Normalize reads.
-func (Normalizer) Kinds() []core.Kind { return kinds(Domains()...) }
+func (Normalizer) Kinds() []core.Kind {
+	return kinds(Battery, Availability, Odometer, Location, TargetSoC)
+}
+
+// HealthKinds returns the kinds of response NormalizeHealth reads.
+func (Normalizer) HealthKinds() []core.Kind { return kinds(Health) }
+
+// NormalizeHealth reads a stored response of kind k into a health reading.
+func (Normalizer) NormalizeHealth(k core.Kind, raw []byte) (core.Health, error) {
+	if k.Source != Source {
+		return core.Health{}, fmt.Errorf("normalize health: source %q is not %s", k.Source, Source)
+	}
+	return NormalizeHealth(Domain(k.Endpoint), raw)
+}
 
 // EnergyKinds returns the kinds holding the energy state: the state of charge, the range
 // and the charging power.

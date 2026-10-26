@@ -240,7 +240,11 @@ func TestModelYear(t *testing.T) {
 
 func TestNormalizeInvalidJSON(t *testing.T) {
 	for _, d := range Domains() {
-		if _, err := Normalize(d, []byte("[")); err == nil {
+		_, err := Normalize(d, []byte("["))
+		if d == Health {
+			_, err = NormalizeHealth(d, []byte("["))
+		}
+		if err == nil {
 			t.Errorf("%s: invalid JSON accepted", d)
 		}
 	}
@@ -248,8 +252,20 @@ func TestNormalizeInvalidJSON(t *testing.T) {
 
 func TestNormalizer(t *testing.T) {
 	var n Normalizer
-	if got := n.Kinds(); len(got) != len(Domains()) || got[0] != (core.Kind{Source: Source, Endpoint: string(Battery)}) {
+	// The health is no reading of the derivation.
+	if got := n.Kinds(); len(got) != len(Domains())-1 || got[0] != (core.Kind{Source: Source, Endpoint: string(Battery)}) ||
+		slices.Contains(got, core.Kind{Source: Source, Endpoint: string(Health)}) {
 		t.Errorf("kinds %v", got)
+	}
+	if got := n.HealthKinds(); len(got) != 1 || got[0] != (core.Kind{Source: Source, Endpoint: "health"}) {
+		t.Errorf("health kinds %v", got)
+	}
+	if h, err := n.NormalizeHealth(core.Kind{Source: Source, Endpoint: "health"}, fixture(t, "telemetry/health.json")); err != nil ||
+		!h.DaysToService.OK {
+		t.Errorf("health: %+v, %v", h, err)
+	}
+	if _, err := n.NormalizeHealth(core.Kind{Source: "volvo", Endpoint: "health"}, nil); err == nil {
+		t.Error("another source's health read")
 	}
 	if got := n.EnergyKinds(); len(got) != 1 || got[0] != (core.Kind{Source: Source, Endpoint: "battery"}) {
 		t.Errorf("energy kinds %v", got)

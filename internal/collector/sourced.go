@@ -145,7 +145,8 @@ func (c *Collector) sourceFailed(ctx context.Context, t Target, vs *vehicleState
 	switch se.Kind {
 	case KindNotAvailable, KindNotGranted:
 		// The endpoint's, not the vehicle's: tried again later, logged once until it
-		// answers. Not given is nothing the user can act upon; not granted is told.
+		// answers. Not given is nothing the user can act upon; not granted is told, but
+		// for an optional endpoint.
 		if _, logged := vs.missing[ep]; !logged {
 			c.log.Info("endpoint not given: tried again later", append(args, "err", err)...)
 		}
@@ -154,7 +155,9 @@ func (c *Collector) sourceFailed(ctx context.Context, t Target, vs *vehicleState
 			return
 		}
 		vs.missing[ep] = now.Add(c.detailsInterval(t))
-		vs.failure = Failure{At: now, Endpoint: ep, Status: se.Status, Kind: FailNotGranted}
+		if !src.optional(ep) {
+			vs.failure = Failure{At: now, Endpoint: ep, Status: se.Status, Kind: FailNotGranted}
+		}
 		return
 	case KindCredentialRefused:
 		// Not a passing state: refused, expired, or an account ID not the credential's.

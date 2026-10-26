@@ -98,10 +98,13 @@ func TestFetchDomains(t *testing.T) {
 			if _, err := Normalize(d, raw); err != nil {
 				t.Error(err)
 			}
+			if _, err := NormalizeHealth(d, raw); err != nil {
+				t.Error(err)
+			}
 		})
 	}
-	if _, err := c.Fetch(ctx, tok, devCredential().AccountID, simVIN, "health"); !errors.Is(err, ErrUnknownDomain) {
-		t.Errorf("health: %v", err)
+	if _, err := c.Fetch(ctx, tok, devCredential().AccountID, simVIN, "exterior"); !errors.Is(err, ErrUnknownDomain) {
+		t.Errorf("exterior: %v", err)
 	}
 }
 

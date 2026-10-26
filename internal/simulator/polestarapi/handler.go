@@ -86,6 +86,7 @@ func NewHandler(srcs []Source, clk clock.Clock, cred Credential, limits Limits, 
 		"location":     renderLocation,
 		"availability": h.renderAvailability,
 		"target-soc":   renderTargetSoC,
+		"health":       renderHealth,
 	}
 	v1 := http.NewServeMux()
 	v1.HandleFunc("GET "+Prefix+"v1/vehicles", h.vehicles)
@@ -254,6 +255,59 @@ func renderTargetSoC(vin string, r vehicle.Report, _ time.Time) (any, time.Time)
 			"timestamp":                    timestamp(at),
 			"updatedAt":                    millis,
 		},
+	}, at
+}
+
+// Tyres of the simulated car: the recommended pressure, and the rear left tyre's slow
+// leak, refilled every leakRefill driven, which its warning follows.
+const (
+	recommendedKPa = 280
+	leakPer100km   = 1.0
+	leakRefill     = 3000.0 // km
+)
+
+// renderHealth reports the tyres, the service and the warnings, uploaded with the status.
+// The fields of the tyres are the client's assumption: the real car's are unknown.
+func renderHealth(_ string, r vehicle.Report, _ time.Time) (any, time.Time) {
+	s, at := r.Status, r.StatusAt
+	leaked := math.Round(math.Mod(s.OdometerKm, leakRefill) / 100 * leakPer100km)
+	rearLeft := recommendedKPa - leaked
+	tyre := "TYRE_PRESSURE_WARNING_NO_WARNING"
+	if rearLeft < recommendedKPa*0.9 {
+		tyre = "TYRE_PRESSURE_WARNING_LOW"
+	}
+	const serviceKm = 30_000
+	lights := map[string]any{}
+	for _, name := range []string{
+		"brakeLightCenter", "brakeLightLeft", "brakeLightRight", "daytimeRunningLightLeft",
+		"daytimeRunningLightRight", "fogLightFront", "fogLightRear", "highBeamLeft", "highBeamRight",
+		"lowBeamLeft", "lowBeamRight", "positionLightFrontLeft", "positionLightFrontRight",
+		"positionLightRear", "registrationPlateLight", "turnIndicatorFrontLeft",
+		"turnIndicatorFrontRight", "turnIndicatorRearLeft", "turnIndicatorRearRight",
+	} {
+		lights[name] = "EXTERIOR_LIGHT_WARNING_NO_WARNING"
+	}
+	return map[string]any{
+		"timestamp":                       timestamp(at),
+		"frontLeftTyrePressureKpa":        recommendedKPa + 2,
+		"frontRightTyrePressureKpa":       recommendedKPa,
+		"rearLeftTyrePressureKpa":         rearLeft,
+		"rearRightTyrePressureKpa":        recommendedKPa - 1,
+		"recommendedFrontTyrePressureKpa": recommendedKPa,
+		"recommendedRearTyrePressureKpa":  recommendedKPa,
+		"tyrePressureFrontLeftWarning":    "TYRE_PRESSURE_WARNING_NO_WARNING",
+		"tyrePressureFrontRightWarning":   "TYRE_PRESSURE_WARNING_NO_WARNING",
+		"tyrePressureRearLeftWarning":     tyre,
+		"tyrePressureRearRightWarning":    "TYRE_PRESSURE_WARNING_NO_WARNING",
+		"daysToService":                   300,
+		"distanceToServiceKm":             int(serviceKm - math.Mod(s.OdometerKm, serviceKm)),
+		"serviceWarning":                  "SERVICE_WARNING_NO_WARNING",
+		"brakeFluidLevelWarning":          "BRAKE_FLUID_LEVEL_WARNING_NO_WARNING",
+		"engineCoolantLevelWarning":       "ENGINE_COOLANT_LEVEL_WARNING_NO_WARNING",
+		"oilLevelWarning":                 "OIL_LEVEL_WARNING_NO_WARNING",
+		"washerFluidLevelWarning":         "WASHER_FLUID_LEVEL_WARNING_NO_WARNING",
+		"lowVoltageBatteryWarning":        "LOW_VOLTAGE_BATTERY_WARNING_NO_WARNING",
+		"lightWarnings":                   lights,
 	}, at
 }
 

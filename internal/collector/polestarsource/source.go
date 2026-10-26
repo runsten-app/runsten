@@ -32,7 +32,7 @@ const Daily = 10_000
 // Spec implements collector.Source. The paces are set for a credential's 10,000 calls a
 // day: parked, the battery and the availability every parked interval, the rest every
 // rare one; driving or charging, the four telemetries every active interval; the
-// target level every rare interval.
+// target level and the health every rare interval, the health being optional.
 func (Source) Spec() collector.SourceSpec {
 	telemetry := func(d polestar.Domain, parked collector.Pace) collector.EndpointSpec {
 		return collector.EndpointSpec{
@@ -50,6 +50,12 @@ func (Source) Spec() collector.SourceSpec {
 			{
 				Endpoint: collector.Endpoint(polestar.TargetSoC), API: polestar.Source,
 				Parked: collector.PaceRare, Driving: collector.PaceRare, Charging: collector.PaceRare,
+			},
+			{
+				// It changes slowly: the pressures with the temperature, the rest seldom.
+				Endpoint: collector.Endpoint(polestar.Health), API: polestar.Source,
+				Parked: collector.PaceRare, Driving: collector.PaceRare, Charging: collector.PaceRare,
+				Optional: true,
 			},
 		},
 		Settled: []collector.Endpoint{collector.Endpoint(polestar.Odometer), collector.Endpoint(polestar.Location)},

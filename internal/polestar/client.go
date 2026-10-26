@@ -26,24 +26,28 @@ const maxBody = 1 << 20
 // Domain is a resource read for a vehicle, named as the API names it.
 type Domain string
 
-// Domains read: the others (doors, health, climatisation, timers) serve neither trips
-// nor charges, and would only spend the quota.
+// Domains read: the others (doors, climatisation, timers) serve neither trips, charges
+// nor the vehicle's health, and would only spend the quota.
 const (
 	Battery      Domain = "battery"
 	Odometer     Domain = "odometer"
 	Location     Domain = "location"
 	Availability Domain = "availability"
 	TargetSoC    Domain = "target-soc"
+	// Health is optional: a credential granted the others only reads them as before.
+	Health Domain = "health"
 )
 
 // Domains returns every domain the client reads.
-func Domains() []Domain { return []Domain{Battery, Availability, Odometer, Location, TargetSoC} }
+func Domains() []Domain {
+	return []Domain{Battery, Availability, Odometer, Location, TargetSoC, Health}
+}
 
 // section is the part of /v1/vehicles/{vin}/ the domain is served under; empty for a
 // domain the client does not read.
 func (d Domain) section() string {
 	switch d {
-	case Battery, Odometer, Location, Availability:
+	case Battery, Odometer, Location, Availability, Health:
 		return "telemetry"
 	case TargetSoC:
 		return "charging"
