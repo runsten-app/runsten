@@ -6,6 +6,8 @@ description: "A vehicle's health in Runsten: its battery's estimated capacity, i
 
 The **Health** tab shows the vehicle's latest health and the tyres' pressures over time. A dot on the tab, from every page of the vehicle, says that something needs your attention: a tyre, the service, a warning. Runsten reads it every hour: it changes slowly.
 
+<Screen view="health" alt="The Health tab: the battery, the tyres, the service and the warnings." />
+
 - **Battery**: its estimated capacity, which leads to the [battery page](./battery.md): its estimates and their evolution.
 - **Tyres**: each tyre's pressure, against the pressure the car recommends at its axle, and what the tyre pressure monitoring says of it: OK, low, very low, high, or a fault (of a sensor, or of the system).
 - **Service**: whether it is due (not yet, soon, due, overdue), and the time and the distance left until it.
