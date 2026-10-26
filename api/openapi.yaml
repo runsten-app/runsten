@@ -803,6 +803,57 @@ components:
         - power_w
         - target_soc_pct
       type: object
+    Check:
+      additionalProperties: false
+      properties:
+        check:
+          description: "The part watched: a fluid (brake_fluid, coolant, oil, washer_fluid), the low voltage battery, or an exterior light (light_*)."
+          enum:
+            - brake_fluid
+            - coolant
+            - oil
+            - washer_fluid
+            - low_voltage_battery
+            - light_brake_center
+            - light_brake_left
+            - light_brake_right
+            - light_daytime_left
+            - light_daytime_right
+            - light_fog_front
+            - light_fog_rear
+            - light_hazard
+            - light_high_beam_left
+            - light_high_beam_right
+            - light_low_beam_left
+            - light_low_beam_right
+            - light_position_front_left
+            - light_position_front_right
+            - light_position_rear
+            - light_position_rear_left
+            - light_position_rear_right
+            - light_registration_plate
+            - light_reverse
+            - light_side_mark
+            - light_turn_front_left
+            - light_turn_front_right
+            - light_turn_rear_left
+            - light_turn_rear_right
+          type: string
+        reported_at:
+          description: When the vehicle told it; null when unknown.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        warning:
+          description: "true where the vehicle warns: a level too low or too high, a failure."
+          type: boolean
+      required:
+        - check
+        - warning
+        - reported_at
+      type: object
     Collection:
       additionalProperties: false
       properties:
@@ -1431,6 +1482,41 @@ components:
         - skipped
         - invalid
         - cutoff
+      type: object
+    Health:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The latest reading of the health. null before the first one.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        checks:
+          description: "The checks the vehicle reports, with a known state: the fluids and the battery first, then the lights. Which the vehicle reports depends on its model and its source."
+          items:
+            $ref: "#/components/schemas/Check"
+          type: array
+        service:
+          description: null when the vehicle never reported its service.
+          oneOf:
+            - $ref: "#/components/schemas/Service"
+            - type: "null"
+        tyres:
+          description: null when the vehicle never reported its tyres.
+          oneOf:
+            - $ref: "#/components/schemas/Tyres"
+            - type: "null"
+        vehicle_id:
+          format: uuid
+          type: string
+      required:
+        - vehicle_id
+        - checked_at
+        - tyres
+        - service
+        - checks
       type: object
     Import:
       additionalProperties: false
@@ -2824,6 +2910,49 @@ components:
       required:
         - readings
       type: object
+    Service:
+      additionalProperties: false
+      properties:
+        days:
+          description: Days left until the service; null when the vehicle counts months, or does not tell.
+          format: double
+          type:
+            - number
+            - "null"
+        distance_km:
+          description: Distance left until the service; null when not reported.
+          format: double
+          type:
+            - number
+            - "null"
+        months:
+          description: Months left until the service; null when the vehicle counts days, or does not tell.
+          format: double
+          type:
+            - number
+            - "null"
+        reported_at:
+          description: When the vehicle told it; null when unknown.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        state:
+          description: ok, soon (almost time for it), due, or overdue, as the vehicle warns of it; null when unknown.
+          enum:
+            - ok
+            - soon
+            - due
+            - overdue
+          type: string
+      required:
+        - state
+        - days
+        - months
+        - distance_km
+        - reported_at
+      type: object
     Session:
       additionalProperties: false
       properties:
@@ -3285,6 +3414,152 @@ components:
       required:
         - bands
         - left_out
+      type: object
+    Tyre:
+      additionalProperties: false
+      properties:
+        pressure_kpa:
+          description: "The tyre's pressure, in kPa (100 kPa = 1 bar); null when the vehicle does not report it: a Volvo reports a warning only."
+          format: double
+          type:
+            - number
+            - "null"
+        reported_at:
+          description: When the vehicle measured it; null when unknown.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        warning:
+          description: "What the tyre pressure monitoring tells: ok, low, very_low, high, or fault (a sensor's or the system's, or a warning not known here); null when not reported."
+          enum:
+            - ok
+            - low
+            - very_low
+            - high
+            - fault
+          type: string
+        wheel:
+          enum:
+            - front_left
+            - front_right
+            - rear_left
+            - rear_right
+          type: string
+      required:
+        - wheel
+        - pressure_kpa
+        - warning
+        - reported_at
+      type: object
+    TyreReading:
+      additionalProperties: false
+      properties:
+        at:
+          description: "When it was read: the response's fetched_at, or the latest time it was read again unchanged; a response read before from or again after to gives its value at that edge."
+          format: date-time
+          pattern: Z$
+          type: string
+        front_left_kpa:
+          description: In kPa; null when the response lacked it.
+          format: double
+          type:
+            - number
+            - "null"
+        front_right_kpa:
+          format: double
+          type:
+            - number
+            - "null"
+        rear_left_kpa:
+          format: double
+          type:
+            - number
+            - "null"
+        rear_right_kpa:
+          format: double
+          type:
+            - number
+            - "null"
+        recommended_front_kpa:
+          description: The pressure the vehicle recommended at the front then; null when the response lacked it.
+          format: double
+          type:
+            - number
+            - "null"
+        recommended_rear_kpa:
+          format: double
+          type:
+            - number
+            - "null"
+      required:
+        - at
+        - front_left_kpa
+        - front_right_kpa
+        - rear_left_kpa
+        - rear_right_kpa
+        - recommended_front_kpa
+        - recommended_rear_kpa
+      type: object
+    TyreRun:
+      additionalProperties: false
+      properties:
+        readings:
+          description: "Oldest first, at most 90 minutes between two responses: a line joins them."
+          items:
+            $ref: "#/components/schemas/TyreReading"
+          minItems: 1
+          type: array
+      required:
+        - readings
+      type: object
+    TyreSeries:
+      additionalProperties: false
+      properties:
+        from:
+          description: "The start of the window: the one asked for, or the start of the history the account sees when later."
+          format: date-time
+          pattern: Z$
+          type: string
+        runs:
+          description: "The readings giving a pressure, oldest first, in runs: a new run starts where more than 90 minutes separate two responses. [] when none was read in the window, or the vehicle reports no pressure (a Volvo)."
+          items:
+            $ref: "#/components/schemas/TyreRun"
+          type: array
+        to:
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - from
+        - to
+        - runs
+      type: object
+    Tyres:
+      additionalProperties: false
+      properties:
+        recommended_front_kpa:
+          description: The pressure the vehicle recommends at the front, in kPa; null when not reported.
+          format: double
+          type:
+            - number
+            - "null"
+        recommended_rear_kpa:
+          description: The pressure the vehicle recommends at the rear, in kPa; null when not reported.
+          format: double
+          type:
+            - number
+            - "null"
+        wheels:
+          description: The wheels the vehicle reports, front left, front right, rear left, rear right.
+          items:
+            $ref: "#/components/schemas/Tyre"
+          type: array
+      required:
+        - wheels
+        - recommended_front_kpa
+        - recommended_rear_kpa
       type: object
     UnpricedCharges:
       additionalProperties: false
@@ -5521,6 +5796,147 @@ paths:
       summary: Enter the cost of a charge
       tags:
         - costs
+  /vehicles/{vehicle}/health:
+    get:
+      description: "The latest the vehicle told of its tyres (their pressures and warnings, and the recommended pressures), its next service, and its warnings (fluids, low voltage battery, exterior lights). What is told depends on the vehicle's source: a Volvo reports a warning per tyre and no pressure; a Polestar's credential reads the health only when it was granted its domain. Read every hour."
+      operationId: getVehicleHealth
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+          description: The health.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: The health of a vehicle
+      tags:
+        - vehicles
+  /vehicles/{vehicle}/health/tyres:
+    get:
+      description: "The pressures as the vehicle gave them within `[from, to]`, both included, with the recommended ones. As the energy states' series: a stored response is two readings, nothing is interpolated, and the readings come in runs, a new one where more than 90 minutes separate two responses. At most 366 days, and 20,000 responses; the history the account does not see is left out, as from the lists."
+      operationId: getVehicleTyres
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+        - description: The start of the window [from, to], included.
+          explode: false
+          in: query
+          name: from
+          required: true
+          schema:
+            description: The start of the window [from, to], included.
+            examples:
+              - "2026-09-01T00:00:00Z"
+            format: date-time
+            type: string
+        - description: The end of the window, included; it must come after from, at most 366 days later. Without it, now.
+          explode: false
+          in: query
+          name: to
+          schema:
+            description: The end of the window, included; it must come after from, at most 366 days later. Without it, now.
+            examples:
+              - "2026-10-01T00:00:00Z"
+            format: date-time
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TyreSeries"
+          description: The pressures.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_parameter`: `from` or `to`, a window over 366 days, or more than 20,000 responses in it; the message names the parameter."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: The tyres' pressures of a vehicle over a window
+      tags:
+        - vehicles
   /vehicles/{vehicle}/import-job:
     get:
       description: "How it stands: pending, running, or over with its report. Never its token."

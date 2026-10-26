@@ -248,10 +248,11 @@ func run(args []string) error {
 		Aximote:     aximoteVehicles{ax},
 		FileImports: fileImports{importer.NewFiles(st, clock.Real{})},
 		Accounts:    st,
-		// It only reads the current state and the readings: it derives nothing, and
+		// It only reads the current state, the readings and the health: it derives nothing, and
 		// needs no capacity.
 		States:     deriver,
 		Readings:   deriver,
+		Health:     deriver,
 		Params:     core.DefaultParams(),
 		CostParams: core.DefaultCostParams(), CapacityParams: core.DefaultCapacityParams(),
 		Catalog:    cat,

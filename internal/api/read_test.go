@@ -52,6 +52,7 @@ type memReader struct {
 	charges  map[string][]core.Charge
 	tracks   map[string][][2]float64 // of the imported trips, by source:id
 	current  map[string][]core.Record
+	health   map[string][]core.HealthRecord
 	entered  []EnteredCost
 	settings *memSettings
 	next     int // of the entered costs' IDs
