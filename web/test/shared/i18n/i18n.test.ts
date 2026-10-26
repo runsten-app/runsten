@@ -31,9 +31,11 @@ describe('intlLocale', () => {
     { locale: 'sv', languages: ['SV-fi'], want: 'SV-fi' },
     { locale: 'sv', languages: [], want: 'sv' },
     { locale: 'en', languages: [], want: 'en' },
-    // English as a fallback: the browser's first language.
-    { locale: 'en', languages: ['nl-NL'], want: 'nl-NL' },
-    { locale: 'en', languages: ['nl-NL', 'de-DE'], want: 'nl-NL' },
+    // English as a fallback: the region of the browser's first language.
+    { locale: 'en', languages: ['nl-NL'], want: 'en-NL' },
+    { locale: 'en', languages: ['nl-BE', 'de-DE'], want: 'en-BE' },
+    { locale: 'en', languages: ['nl'], want: 'en-NL' },
+    { locale: 'en', languages: ['x-invalid!'], want: 'en' },
     // A language spoken among the browser's: today's rule.
     { locale: 'en', languages: ['nl-NL', 'en-US'], want: 'en-US' },
   ] as const)('$locale $languages → $want', ({ locale, languages, want }) => {

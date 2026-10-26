@@ -34,11 +34,25 @@ export function initialLocale(stored: string | null, languages: readonly string[
 // intlLocale is the locale of dates and numbers for a language: the browser's own region
 // of it when it has one ("en" with "en-GB" → 24-hour times), else the bare language. When
 // the language is English only because no browser language is spoken (not chosen), dates
-// and numbers follow the browser's first language ("nl-NL" → 24-hour times, "1.234,5").
+// and numbers take the region of the browser's first language, their words staying
+// English ("nl-NL" or "nl" → "en-NL": 24-hour times, "1.234,5").
 export function intlLocale(l: Locale, languages: readonly string[], chosen: boolean): string {
   const first = languages[0]
-  if (!chosen && first && !languages.some((b) => isLocale(base(b)))) return first
+  if (!chosen && first && !languages.some((b) => isLocale(base(b)))) {
+    const region = regionOf(first)
+    if (region) return `${l}-${region}`
+  }
   return languages.find((b) => base(b) === l) ?? l
+}
+
+// regionOf is a browser language's region, the likeliest when it names none ("nl" → "NL");
+// undefined for a tag Intl does not read.
+function regionOf(tag: string): string | undefined {
+  try {
+    return new Intl.Locale(tag).maximize().region
+  } catch {
+    return undefined
+  }
 }
 
 const stored = localStorage.getItem(storageKey)
