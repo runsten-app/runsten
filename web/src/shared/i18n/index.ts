@@ -1,3 +1,4 @@
+import { ref } from 'vue'
 import { createI18n } from 'vue-i18n'
 import en from './locales/en.json'
 import fr from './locales/fr.json'
@@ -16,32 +17,46 @@ export function isLocale(s: string): s is Locale {
   return (locales as readonly string[]).includes(s)
 }
 
+// base is the language of a browser's tag ("sv-SE" → "sv").
+const base = (tag: string) => tag.toLowerCase().split('-')[0] ?? ''
+
 // initialLocale picks the stored choice, else the first browser language Runsten speaks
 // ("sv-SE" → "sv"), else English.
 export function initialLocale(stored: string | null, languages: readonly string[]): Locale {
   if (stored && isLocale(stored)) return stored
   for (const l of languages) {
-    const base = l.toLowerCase().split('-')[0] ?? ''
-    if (isLocale(base)) return base
+    const b = base(l)
+    if (isLocale(b)) return b
   }
   return 'en'
 }
 
 // intlLocale is the locale of dates and numbers for a language: the browser's own region
-// of it when it has one ("en" with "en-GB" → 24-hour times), else the bare language.
-export function intlLocale(l: Locale, languages: readonly string[]): string {
-  return languages.find((b) => b.toLowerCase().split('-')[0] === l) ?? l
+// of it when it has one ("en" with "en-GB" → 24-hour times), else the bare language. When
+// the language is English only because no browser language is spoken (not chosen), dates
+// and numbers follow the browser's first language ("nl-NL" → 24-hour times, "1.234,5").
+export function intlLocale(l: Locale, languages: readonly string[], chosen: boolean): string {
+  const first = languages[0]
+  if (!chosen && first && !languages.some((b) => isLocale(base(b)))) return first
+  return languages.find((b) => base(b) === l) ?? l
 }
+
+const stored = localStorage.getItem(storageKey)
+
+// localeChosen tells whether the language was chosen in the preferences, rather than
+// taken from the browser's.
+export const localeChosen = ref(stored !== null && isLocale(stored))
 
 export const i18n = createI18n({
   legacy: false,
-  locale: initialLocale(localStorage.getItem(storageKey), navigator.languages),
+  locale: initialLocale(stored, navigator.languages),
   fallbackLocale: 'en',
   messages: { en, fr, sv },
 })
 
 export function setLocale(l: Locale) {
   i18n.global.locale.value = l
+  localeChosen.value = true
   localStorage.setItem(storageKey, l)
   document.documentElement.lang = l
 }

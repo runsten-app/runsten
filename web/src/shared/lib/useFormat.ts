@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { intlLocale, isLocale } from '@/shared/i18n'
+import { intlLocale, isLocale, localeChosen } from '@/shared/i18n'
 import {
   formatCalendarDay,
   formatCalendarMonth,
@@ -44,7 +44,9 @@ type ChargeCost = Amounts & { currency: string }
 export function useFormat() {
   const { t, locale } = useI18n()
   const intl = computed(() =>
-    isLocale(locale.value) ? intlLocale(locale.value, navigator.languages) : locale.value,
+    isLocale(locale.value)
+      ? intlLocale(locale.value, navigator.languages, localeChosen.value)
+      : locale.value,
   )
   const unknown = () => t('common.unknown')
   // amounts shows the bounds of a cost; unknown without them or without a currency.
