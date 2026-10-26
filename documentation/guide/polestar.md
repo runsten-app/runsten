@@ -50,7 +50,7 @@ A credential of the Data Portal reads for **90 days**, then expires: create a ne
 
 ## How it is read
 
-- Parked, Runsten reads the battery and whether the car is driving every 10 minutes, and the odometer, the position, the charge limit and the health every hour. While the car drives or charges, it reads all but the charge limit and the health every minute. When a trip or a charge ends, it reads the odometer and the position at once.
+- Parked, Runsten reads the battery and whether the car is driving every 10 minutes, and the odometer, the position, the charge limit and the health every hour. While the car drives or charges, it reads all but the charge limit and the health every minute. When a trip or a charge ends, or a charge starts, it reads the odometer and the position at once.
 - The data is the last the car sent. A parked car sends it when it chooses, and the values may be hours old however recently Runsten read them: the vehicle's page tells when the car last measured them, once that is more than half an hour ago.
 - Polestar allows 10,000 calls a day per credential (according to other owners: Polestar does not document it). That is more than a car that would drive and charge all day long needs, and it is your credential's alone.
 

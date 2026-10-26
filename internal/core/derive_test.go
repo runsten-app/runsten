@@ -599,6 +599,55 @@ func checkCharges(t *testing.T, got, want []Charge) {
 	}
 }
 
+// A charge takes the first position read after its end, within the settle window and
+// before a trip starts: unplugged at home and driven straight to a charger, unseen, the
+// vehicle uploads its new position during the second charge, read only after its end.
+func TestChargePosition(t *testing.T) {
+	twoCharges := func(more ...Record) []Record {
+		return append([]Record{
+			rec(0, 0, capacity(80)),
+			rec(0, 0, engine(EngineStopped)),
+			rec(0, 62, loc(home, m(0))), // read again as the first charge ends
+			rec(0, 10, nrg(50, ChargingIdle)),
+			rec(20, 59, charging(51, 7000, AC)),
+			rec(60, 74, nrg(60, ChargingIdle)),
+			rec(75, 94, charging(55, 50000, DC)),
+			rec(95, 95, nrg(80, ChargingDone)),
+		}, more...)
+	}
+	tests := []struct {
+		name    string
+		records []Record
+		want    Value[Position]
+	}{
+		{"read after the end", twoCharges(rec(96, 96, loc(work, m(77)))), Some(work, m(77))},
+		{"read after the window", twoCharges(rec(111, 111, loc(work, m(77)))), Some(home, m(0))},
+		{"trip first", twoCharges(rec(100, 100, engine(EngineRunning)), rec(101, 101, loc(work, m(77)))), Some(home, m(0))},
+		// One reading tells both: the position may be the one read as the trip starts.
+		{"read as a trip starts", twoCharges(rec(100, 100, func() Snapshot {
+			s := loc(work, m(77))
+			s.Covers |= FieldEngine
+			s.Engine = Some(EngineRunning, time.Time{})
+			return s
+		}())), Some(home, m(0))},
+		{"none yet", twoCharges(), Some(home, m(0))},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := Derive(tt.records, Cursor{}, DefaultParams(), nil)
+			if len(res.Charges) != 2 {
+				t.Fatalf("charges %+v", res.Charges)
+			}
+			if got := res.Charges[0].Position; got != Some(home, m(0)) {
+				t.Errorf("first charge at %+v", got)
+			}
+			if got := res.Charges[1].Position; got != tt.want {
+				t.Errorf("second charge at %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
+
 // A trip starting while charging ends the charge; the trip's SoC ends before the next
 // charge starts.
 func TestTripAndCharge(t *testing.T) {
@@ -655,6 +704,15 @@ func TestDeriveInProgress(t *testing.T) {
 	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 0 || !res.Cursor.Settled.Equal(m(10)) {
 		t.Errorf("charging: %+v", res)
 	}
+	// Over, it is returned, but still waits for its position.
+	charge = append(charge, rec(31, 40, nrg(60, ChargingDone)))
+	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(10)) {
+		t.Errorf("charge over: %+v", res)
+	}
+	charge = append(charge, rec(50, 60, nrg(61, ChargingDone)))
+	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(50)) {
+		t.Errorf("charge settled: %+v", res)
+	}
 }
 
 // TestIncrementalMatchesRebuild feeds readings one at a time, as the collector stores
@@ -698,6 +756,9 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 		}
 		if i == 100 {
 			add(i, loc(work, m(100)))
+		}
+		if i == 560 { // read after the charge, which takes it
+			add(i, loc(home, m(555)))
 		}
 	}
 
@@ -751,6 +812,9 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 	apiCap := Value[Capacity]{V: Capacity{KWh: 66, Source: CapacityAPI}, OK: true}
 	if full.Trips[0].Capacity != netCap || full.Trips[1].Capacity != netCap || full.Charges[0].Capacity != apiCap {
 		t.Errorf("capacities %+v, %+v, %+v", full.Trips[0].Capacity, full.Trips[1].Capacity, full.Charges[0].Capacity)
+	}
+	if got := full.Charges[0].Position; got != Some(home, m(555)) {
+		t.Errorf("charge at %+v", got)
 	}
 	if got := full.Trips[0].Sources; !slices.Equal(got, []string{"car", "volvo"}) {
 		t.Errorf("sources %q", got)

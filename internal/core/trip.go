@@ -95,6 +95,7 @@ func (d *detector) startTrip(p point, prev state) {
 // reconstructTrip opens a trip that was not seen: the odometer rose since its last
 // reading. It started after that reading; its start values are those of that time.
 func (d *detector) reconstructTrip(p point, prev state) {
+	d.releaseCharge()
 	m := d.odoMark
 	after := prev.seenAt(FieldOdometer)
 	d.trip = &tripBuilder{
