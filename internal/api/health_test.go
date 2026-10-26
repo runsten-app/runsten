@@ -76,6 +76,11 @@ func tyresAt(f, c time.Time, kPa float64) core.HealthRecord {
 // minutes, then read again in the evening, the rear left tyre leaking.
 func healthFixtures(m *memReader) {
 	m.health = map[string][]core.HealthRecord{car: {
+		// The distance of a later response: the service's reported_at is its time.
+		{FetchedAt: h(18, 30), CheckedAt: h(18, 30), Health: core.Health{
+			Covers: core.HealthService, Service: core.Some(core.ServiceSoon, h(18, 0)),
+			DaysToService: core.Some(21.0, h(18, 0)), DistanceToServiceKm: core.Some(1200.0, h(18, 30)),
+		}},
 		tyresAt(h(18, 0), h(19, 0), 248),
 		tyresAt(h(14, 0), h(15, 0), 270),
 		// Warnings only: no pressure, out of the series.

@@ -112,11 +112,10 @@ func healthOf(vehicleID string, h core.CurrentHealth) healthJSON {
 		out.Tyres = known(t)
 	}
 	if h.Covers&core.HealthService != 0 {
-		at := h.Service.At
-		for _, v := range []core.Value[float64]{h.DistanceToServiceKm, h.DaysToService, h.MonthsToService} {
-			if at.IsZero() {
-				at = v.At
-			}
+		// Its values may come of responses read apart: the latest of them.
+		var at time.Time
+		for _, t := range []time.Time{h.Service.At, h.DistanceToServiceKm.At, h.DaysToService.At, h.MonthsToService.At} {
+			at = later(at, t)
 		}
 		out.Service = known(serviceJSON{
 			State: nullOf(h.Service, text[core.ServiceState, serviceStateJSON]),
