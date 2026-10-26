@@ -65,10 +65,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag=$GITHUB_REF_NAME
+          # deploy/update.sh takes releases only, not pre-releases.
+          how=In
+          [[ $tag == *-* ]] || how="\`deploy/update.sh ${tag#v}\`, or in"
           {
             echo "## Images"
             echo
-            echo "For \`linux/amd64\` and \`linux/arm64\`. In \`.env\`, \`RUNSTEN_VERSION=${tag#v}\`, then \`docker compose pull && docker compose up -d\` (https://runsten.app/docs/self-hosting/updating)."
+            echo "For \`linux/amd64\` and \`linux/arm64\`. ${how} \`.env\`, \`RUNSTEN_VERSION=${tag#v}\`, then \`docker compose pull && docker compose up -d\` (https://runsten.app/docs/self-hosting/updating)."
             echo
             cat "$RUNNER_TEMP/images.md"
           } > "$RUNNER_TEMP/notes.md"

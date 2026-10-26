@@ -220,7 +220,11 @@ The workflow `release` publishes the images and creates the GitHub Release, its 
 generated from the pull requests merged since the previous tag, with the images' digests. A
 change that asks something of those who update (a rebuild, a new variable) goes into the
 [update notes](documentation/self-hosting/updating.md#update-notes) with its pull request,
-and the notes point to it.
+and the notes point to it. `deploy/update.sh` shows the notes added since the release
+running: each one a single line starting with `- `, and one that needs a rebuild says
+"Rebuild after updating", for the script to offer it. A new variable in `.env.example`
+stops the script until `.env` has it; a new file of an installation goes into the
+script's `files` and into the lists of the installation and of the update by hand.
 
 ## Conventions in short
 
