@@ -21,10 +21,11 @@ It stops, changing nothing, when:
 - the release adds a variable to `.env.example` that `.env` lacks: it shows the variable with its comments; add it to `.env`, empty when you do not need it, and run it again;
 - the images cannot be pulled, or the backup cannot be taken (`--no-backup` goes on without one: take one yourself).
 
-`--yes` asks nothing, the rebuild included, for a scheduled update. The script needs bash, curl and Docker Compose. It runs the newer release's own `update.sh` when it differs, so that a release's new files and checks apply on the way to it. An installation from before the script has none: fetch it once, from the release it runs or a newer one:
+`--yes` asks nothing, the rebuild included, for a scheduled update. The script needs bash, curl and Docker Compose. It runs the newer release's own `update.sh` when it differs, so that a release's new files and checks apply on the way to it. An installation from before the script has none: fetch it once, from the latest release (`X.Y.Z` below), which has it:
 
 ```sh
-curl -fsSL --create-dirs -o deploy/update.sh https://raw.githubusercontent.com/runsten-app/runsten/vX.Y.Z/deploy/update.sh
+v=X.Y.Z   # the latest release: https://github.com/runsten-app/runsten/releases
+curl -fsSL --create-dirs -o deploy/update.sh "https://raw.githubusercontent.com/runsten-app/runsten/v$v/deploy/update.sh"
 chmod +x deploy/update.sh
 ```
 

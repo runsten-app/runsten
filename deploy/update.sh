@@ -80,9 +80,11 @@ latest() {
 }
 
 # The update notes of a release: the bullets of its updating.md's section, one a line.
+# Fails when updating.md cannot be read: every release has one.
 notes() {
-	curl -fsSL "$raw/v$1/documentation/self-hosting/updating.md" 2>/dev/null |
-		sed -n '/^## Update notes/,/^## [^U]/p' | grep '^- ' || true
+	local md
+	md=$(curl -fsSL "$raw/v$1/documentation/self-hosting/updating.md") || return 1
+	sed -n '/^## Update notes/,/^## [^U]/p' <<<"$md" | grep '^- ' || true
 }
 
 # The variables a .env-like file sets, one a line, sorted.
@@ -195,6 +197,11 @@ main() {
 		fail "nothing done: add them to .env (empty when not needed), then run it again"
 	fi
 
+	# Without the target's notes, a rebuild they ask for would go unnoticed.
+	target_notes=$(notes "$target") || {
+		echo "The update notes of $target cannot be read: https://runsten.app/docs/self-hosting/updating#update-notes"
+		$yes && fail "nothing done: read them, then run it again"
+	}
 	echo
 	if [ -n "$current" ]; then
 		echo "Runsten $current → $target"
@@ -203,11 +210,13 @@ main() {
 		elif [ -z "$restore" ]; then
 			echo "An older release, on the database of $current: --restore a backup taken on $target to have its own."
 		fi
-		added_notes=$(grep -vxF -f <(notes "$current") <(notes "$target") || true)
+		# Those of the release running unread, all the target's are shown.
+		current_notes=$(notes "$current") || current_notes=''
+		added_notes=$(grep -vxF -f <(echo "$current_notes") <<<"$target_notes" || true)
 	else
 		echo "Runsten → $target (the release running is unknown: RUNSTEN_VERSION is not a release)"
 		echo "Its notes: $releases/tag/v$target"
-		added_notes=$(notes "$target")
+		added_notes=$target_notes
 	fi
 	rebuild=false
 	if [ -n "$added_notes" ]; then
@@ -261,6 +270,8 @@ main() {
 		printf '\nRUNSTEN_VERSION=%s\n' "$target" >>.env
 	fi
 
+	# A RUNSTEN_VERSION of the shell would win over .env's.
+	export RUNSTEN_VERSION=$target
 	echo "Starting Runsten $target."
 	docker compose up -d --wait
 
