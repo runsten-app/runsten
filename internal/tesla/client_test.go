@@ -5,6 +5,8 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"math"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -277,6 +279,12 @@ func TestRefreshRequiresTLS13(t *testing.T) {
 	if _, err := c.Refresh(context.Background(), "refresh-1"); !errors.Is(err, errAuthTransport) {
 		t.Errorf("custom transport: %v", err)
 	}
+	// Nor one with its own TLS dialer, which would ignore the TLS configuration.
+	dialer := &http.Transport{DialTLSContext: func(context.Context, string, string) (net.Conn, error) { return nil, errors.New("unused") }}
+	c = NewClient(Hosts{Auth: srv.URL}, &http.Client{Transport: dialer})
+	if _, err := c.Refresh(context.Background(), "refresh-1"); !errors.Is(err, errAuthTransport) {
+		t.Errorf("TLS dialer: %v", err)
+	}
 	// Without a transport, the default one, held to TLS 1.3.
 	c = NewClient(Hosts{Auth: srv.URL}, &http.Client{})
 	if c.authHC.Transport.(*http.Transport).TLSClientConfig.MinVersion != tls.VersionTLS13 { //nolint:forcetypeassert // the client's
@@ -319,6 +327,12 @@ func TestAPIErrors(t *testing.T) {
 			"Retry-After": {"Mon, 26 Oct 2026 10:02:00 GMT"}, "Date": {"Mon, 26 Oct 2026 10:00:00 GMT"},
 		}, ``, KindRateLimited, 2 * time.Minute, ""},
 		{"rate limited, nothing said", 429, nil, `{}`, KindRateLimited, 5 * time.Minute, "{}"},
+		{
+			"rate limited, beyond a Duration", 429,
+			http.Header{"Retry-After": {"10000000000"}},
+			`{}`,
+			KindRateLimited, math.MaxInt64 / time.Second * time.Second, "{}",
+		},
 		{"server", 502, nil, `<html>Bad gateway</html>`, KindOther, 0, "<html>Bad gateway</html>"},
 		{
 			"a VIN masked", 404, nil, `{"response": null, "error": "not_found", "error_description": "vehicle LRWYGCEK9MC000000 not found"}`,

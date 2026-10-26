@@ -87,8 +87,9 @@ type Client struct {
 }
 
 // NewClient creates a client. hc must have a timeout; its transport, nil or an
-// *http.Transport, is copied for the authentication, held to TLS 1.3 at least: below it,
-// the authentication gives a token the Owner API refuses (403, see the Fleet API).
+// *http.Transport without a TLS dialer of its own, is copied for the authentication,
+// held to TLS 1.3 at least: below it, the authentication gives a token the Owner API
+// refuses (403, see the Fleet API).
 func NewClient(h Hosts, hc *http.Client) *Client {
 	c := &Client{api: strings.TrimRight(h.API, "/"), auth: strings.TrimRight(h.Auth, "/"), hc: hc}
 	var t *http.Transport
@@ -96,6 +97,9 @@ func NewClient(h Hosts, hc *http.Client) *Client {
 	case nil:
 		t = http.DefaultTransport.(*http.Transport).Clone() //nolint:forcetypeassert // the standard library's
 	case *http.Transport:
+		if rt.DialTLSContext != nil || rt.DialTLS != nil { //nolint:staticcheck // DialTLS is deprecated, still honoured
+			return c // its own TLS dialer would ignore TLSClientConfig
+		}
 		t = rt.Clone()
 	default:
 		return c
@@ -112,7 +116,7 @@ func NewClient(h Hosts, hc *http.Client) *Client {
 
 // errAuthTransport is returned by Refresh when the client could not hold the
 // authentication to TLS 1.3.
-var errAuthTransport = errors.New("refresh: the HTTP client's transport is not an *http.Transport: TLS 1.3 cannot be required")
+var errAuthTransport = errors.New("refresh: the HTTP client's transport cannot be held to TLS 1.3")
 
 // Refresh exchanges the refresh token for an access token (RFC 6749 §6), with the Tesla
 // app's client and scopes.
