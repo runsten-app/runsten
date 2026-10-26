@@ -247,8 +247,10 @@ until_mqtt '.["runsten/status"] == "online"
 	and .[$v + "engine"] == $s.engine.value and .[$v + "charging_status"] == $s.charging.status.value
 	and (.[$v + "read_at"] | test("^[0-9-]{10}T[0-9:.]{8,}Z$"))
 	and (.[$v + "location"] | fromjson) == {latitude: $s.position.value.lat, longitude: $s.position.value.lon}
+	and .[$v + "tyre_warning"] == "ok" and .[$v + "service"] == "ok" and .[$v + "warning_lights"] == "ok"
+	and .[$v + "tyre_pressure_rear_left_kpa"] == null
 	and ([to_entries[] | select(.key | startswith("homeassistant/"))] as $configs
-		| ($configs | length) == 12
+		| ($configs | length) == 27
 		and all($configs[]; (.key | test("^homeassistant/(sensor|binary_sensor|device_tracker)/runsten_[^/]+/[a-z_]+/config$"))
 			and (.value | fromjson | .device.identifiers == [$v | split("/")[2] | "runsten_" + .]
 				and .availability_topic == "runsten/status" and .device.name == "EX-SIM · 2026")))'

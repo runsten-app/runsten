@@ -200,14 +200,20 @@ func (s *memStore) set(b publish.Broker) {
 	delete(s.status, b.AccountID)
 }
 
-// states gives each vehicle's current state.
+// states gives each vehicle's current state and health.
 type states struct {
-	current map[string]core.Current
-	err     error
+	current   map[string]core.Current
+	health    map[string]core.CurrentHealth
+	err       error
+	healthErr error
 }
 
 func (s *states) Current(_ context.Context, _, vehicleID string, _ time.Time) (core.Current, error) {
 	return s.current[vehicleID], s.err
+}
+
+func (s *states) Health(_ context.Context, _, vehicleID string, _ time.Time) (core.CurrentHealth, error) {
+	return s.health[vehicleID], s.healthErr
 }
 
 // models gives each vehicle's model; unknown by default.
@@ -301,8 +307,9 @@ func TestPublish(t *testing.T) {
 	if w := cl.Properties.Will; w.TopicName != "runsten/status" || string(w.Payload) != "offline" || !w.Retain || w.Qos != 1 {
 		t.Errorf("testament = %+v", w)
 	}
-	if n := len(b.takeAtLeast(t, 12)); n != 12 { // online, and the 11 values, the unknown ones empty
-		t.Errorf("%d messages on connection, want 12", n)
+	// online, and the 11 values of the state and the 15 of the health, the unknown ones empty
+	if n := len(b.takeAtLeast(t, 27)); n != 27 {
+		t.Errorf("%d messages on connection, want 27", n)
 	}
 
 	// Only the value that changed.
@@ -328,7 +335,7 @@ func TestPublish(t *testing.T) {
 	eventually(t, "reconnected", func() bool {
 		synced(t, p, nil)
 		again = append(again, b.take()...)
-		return len(again) >= 12
+		return len(again) >= 27
 	})
 	if s := st.statusOf(); s.Failure != publish.FailUnreachable || s.ConnectedAt.Before(connectedAt) {
 		t.Errorf("status after a loss = %+v", s)
@@ -373,8 +380,8 @@ func TestPublishDiscovery(t *testing.T) {
 	if got := deviceName(t, b.retainedUnder("homeassistant/#")[batteryConfig]); got != "EX30 Extended Range · 2024" {
 		t.Errorf("device = %q", got)
 	}
-	if n := len(b.retainedUnder("homeassistant/#")); n != 12 {
-		t.Errorf("%d configurations, want 12", n)
+	if n := len(b.retainedUnder("homeassistant/#")); n != 27 {
+		t.Errorf("%d configurations, want 27", n)
 	}
 
 	if err := p.Publish(context.Background(), account, second); err != nil {

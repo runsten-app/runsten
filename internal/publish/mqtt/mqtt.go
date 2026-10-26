@@ -54,9 +54,11 @@ type Store interface {
 	SaveMQTTStatus(ctx context.Context, accountID string, updatedAt time.Time, s publish.Status) error
 }
 
-// States reads a vehicle's current state, as GET /vehicles/{id}/state does.
+// States reads a vehicle's current state, as GET /vehicles/{id}/state does, and its
+// health, as GET /vehicles/{id}/health.
 type States interface {
 	Current(ctx context.Context, accountID, vehicleID string, at time.Time) (core.Current, error)
+	Health(ctx context.Context, accountID, vehicleID string, at time.Time) (core.CurrentHealth, error)
 }
 
 // Models tells what a vehicle is, from its current state, for its device in Home
@@ -228,13 +230,17 @@ func (p *Publisher) Publish(ctx context.Context, accountID, vehicleID string) er
 	if err != nil {
 		return fmt.Errorf("state of vehicle %s: %w", vehicleID, err)
 	}
+	health, err := p.states.Health(ctx, accountID, vehicleID, p.clk.Now())
+	if err != nil {
+		return fmt.Errorf("health of vehicle %s: %w", vehicleID, err)
+	}
 	m, err := p.models.Model(ctx, accountID, vehicleID, cur)
 	if err != nil {
 		return fmt.Errorf("model of vehicle %s: %w", vehicleID, err)
 	}
 	delete(c.removed, vehicleID) // back in the account
 	c.models[vehicleID] = m
-	c.values[vehicleID] = publish.State(c.b, vehicleID, cur)
+	c.values[vehicleID] = append(publish.State(c.b, vehicleID, cur), publish.Health(c.b, vehicleID, health)...)
 	c.describe()
 	err = p.flush(c)
 	p.saveStatus(ctx, c)

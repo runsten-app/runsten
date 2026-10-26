@@ -113,7 +113,7 @@ func TestDiscovery(t *testing.T) {
 
 func TestRemoveState(t *testing.T) {
 	msgs := RemoveState(broker(true), vehicle)
-	if len(msgs) != 11 {
+	if len(msgs) != 11+15 {
 		t.Fatalf("%d messages", len(msgs))
 	}
 	for _, m := range msgs {
