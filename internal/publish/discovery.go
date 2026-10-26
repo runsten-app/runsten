@@ -116,6 +116,13 @@ func entities() []entity {
 			DeviceClass: deviceClass, ValueTemplate: template, PayloadOn: "ON", PayloadOff: "OFF",
 		}}
 	}
+	pressure := func(object, name string, w core.Wheel) entity {
+		return sensor(object, name, "tyre_pressure_"+string(w)+"_kpa", "pressure", "kPa", "measurement")
+	}
+	// A problem is on for any word but ok: the tyres' low, very_low, high or fault.
+	problem := func(object, name, topic string) entity {
+		return binary(object, name, topic, "problem", "{{ 'None' if value == '' else ('OFF' if value == 'ok' else 'ON') }}")
+	}
 	readAt := sensor("read_at", "Last read", "read_at", "timestamp", "", "")
 	readAt.config.EntityCategory = "diagnostic"
 	credential := binary("credential", "Credential", "credential_status", "problem", problemTemplate)
@@ -136,6 +143,23 @@ func entities() []entity {
 		binary("plug", "Plug", "plug", "plug", onOff(string(core.Connected), string(core.Disconnected))),
 		binary("charging", "Charging", "charging_status", "battery_charging", chargingTemplate),
 		binary("engine", "Engine", "engine", "running", onOff(string(core.EngineRunning), string(core.EngineStopped))),
+		// The health: the pressures (unknown where the vehicle gives none, as a Volvo),
+		// the service, and the warnings as problems.
+		pressure("tyre_pressure_front_left", "Tyre pressure front left", core.FrontLeft),
+		pressure("tyre_pressure_front_right", "Tyre pressure front right", core.FrontRight),
+		pressure("tyre_pressure_rear_left", "Tyre pressure rear left", core.RearLeft),
+		pressure("tyre_pressure_rear_right", "Tyre pressure rear right", core.RearRight),
+		problem("tyres", "Tyres", "tyre_warning"),
+		enum("service", "Service", "service", values(core.ServiceOK, core.ServiceSoon, core.ServiceDue, core.ServiceOverdue)...),
+		sensor("service_days", "Days to service", "service_days", "duration", "d", ""),
+		sensor("service_months", "Months to service", "service_months", "", "months", ""),
+		sensor("service_distance", "Distance to service", "service_distance_km", "distance", "km", ""),
+		problem("brake_fluid", "Brake fluid", "warning_brake_fluid"),
+		problem("coolant", "Coolant", "warning_coolant"),
+		problem("oil", "Oil", "warning_oil"),
+		problem("washer_fluid", "Washer fluid", "warning_washer_fluid"),
+		problem("low_voltage_battery", "12 V battery", "warning_low_voltage_battery"),
+		problem("lights", "Lights", "warning_lights"),
 		credential,
 		expiresAt,
 		// Its position from the attributes of the location's JSON; an empty location
@@ -242,10 +266,10 @@ func RemoveDiscovery(b Broker, vehicleID string) []Message {
 	return msgs
 }
 
-// RemoveState empties the vehicle's state topics, its credential's included: the broker
-// keeps none of its values.
+// RemoveState empties the vehicle's state topics, its health's and its credential's
+// included: the broker keeps none of its values.
 func RemoveState(b Broker, vehicleID string) []Message {
-	msgs := State(b, vehicleID, core.Current{})
+	msgs := append(State(b, vehicleID, core.Current{}), Health(b, vehicleID, core.CurrentHealth{})...)
 	for i := range msgs {
 		msgs[i].Payload = ""
 	}

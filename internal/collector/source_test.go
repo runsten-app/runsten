@@ -21,6 +21,7 @@ const (
 	psOdometer     Endpoint = "odometer"
 	psLocation     Endpoint = "location"
 	psTargetSoC    Endpoint = "target-soc"
+	psHealth       Endpoint = "health"
 )
 
 // fakeSource is a Source whose vehicle drives when its availability answers "driving"
@@ -51,6 +52,7 @@ func (f *fakeSource) Spec() SourceSpec {
 			telemetry(psBattery, PaceParked), telemetry(psAvailability, PaceParked),
 			telemetry(psOdometer, PaceRare), telemetry(psLocation, PaceRare),
 			{Endpoint: psTargetSoC, API: "fake", Parked: PaceRare, Driving: PaceRare, Charging: PaceRare},
+			{Endpoint: psHealth, API: "fake", Parked: PaceRare, Driving: PaceRare, Charging: PaceRare, Optional: true},
 		},
 		Settled: []Endpoint{psOdometer, psLocation},
 		Daily:   f.daily,
@@ -336,6 +338,23 @@ func TestSourceRefusals(t *testing.T) {
 		s := st.statuses[len(st.statuses)-1]
 		if len(src.calls[psLocation]) != 1 || len(src.calls[psOdometer]) != 24 || s.Failure.Kind != FailNotGranted {
 			t.Errorf("location %d, odometer %d calls in a day; status %+v", len(src.calls[psLocation]), len(src.calls[psOdometer]), s)
+		}
+	})
+	t.Run("optional endpoint not granted: left out a day, not told", func(t *testing.T) {
+		c, src, st, clk := newSourced(t, sourceTarget())
+		src.answer = func(ep Endpoint, _ int, _ time.Time) ([]byte, error) {
+			if ep == psHealth {
+				return nil, refusal(KindNotGranted, 403)
+			}
+			return []byte("parked"), nil
+		}
+		for range 24 * 6 {
+			poll(t, c)
+			clk.Advance(10 * time.Minute)
+		}
+		s := st.statuses[len(st.statuses)-1]
+		if len(src.calls[psHealth]) != 1 || len(src.calls[psOdometer]) != 24 || s.Failure.Kind != "" {
+			t.Errorf("health %d, odometer %d calls in a day; status %+v", len(src.calls[psHealth]), len(src.calls[psOdometer]), s)
 		}
 	})
 	t.Run("endpoint not available: left out an hour, not told", func(t *testing.T) {

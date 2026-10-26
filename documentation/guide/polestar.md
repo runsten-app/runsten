@@ -1,5 +1,5 @@
 ---
-description: "Read a Polestar with Runsten: create your credential on Polestar's Data Portal (EU Data Act), the five domains to grant, the 90 days, and what is still in beta."
+description: "Read a Polestar with Runsten: create your credential on Polestar's Data Portal (EU Data Act), the domains to grant, the 90 days, and what is still in beta."
 ---
 
 # Your Polestar
@@ -14,14 +14,14 @@ Polestar support is in beta. It was built against a simulator of the Data Portal
 
 1. Sign in with your Polestar ID on [Polestar's Data Portal](https://data-portal.polestar.com/).
 2. In its API section, create a credential: any name will do.
-3. Grant it the five domains Runsten reads:
+3. Grant it the five domains Runsten needs:
    - **battery** (state of charge, range, charging),
    - **odometer**,
    - **location**,
    - **availability** (whether the car is driving),
    - **target state of charge** (the charge limit).
 
-   The others (doors, health, climate, timers) are not needed: Runsten does not read them.
+   And, if you want the car's [health](./health.md), a sixth, optional: **health** (the tyres, the service, the warnings). A credential without it reads the rest as well. The others (doors, climate, timers) are not needed: Runsten does not read them.
 4. If the portal asks which cars the credential reads, choose yours.
 5. On the credential's page, copy the three values Runsten needs, as the portal labels them:
    - **App client ID**,
@@ -50,7 +50,7 @@ A credential of the Data Portal reads for **90 days**, then expires: create a ne
 
 ## How it is read
 
-- Parked, Runsten reads the battery and whether the car is driving every 10 minutes, and the odometer, the position and the charge limit every hour. While the car drives or charges, it reads all but the charge limit every minute. When a trip or a charge ends, it reads the odometer and the position at once.
+- Parked, Runsten reads the battery and whether the car is driving every 10 minutes, and the odometer, the position, the charge limit and the health every hour. While the car drives or charges, it reads all but the charge limit and the health every minute. When a trip or a charge ends, it reads the odometer and the position at once.
 - The data is the last the car sent. A parked car sends it when it chooses, and the values may be hours old however recently Runsten read them: the vehicle's page tells when the car last measured them, once that is more than half an hour ago.
 - Polestar allows 10,000 calls a day per credential (according to other owners: Polestar does not document it). That is more than a car that would drive and charge all day long needs, and it is your credential's alone.
 
@@ -61,7 +61,7 @@ The vehicle's pages warn when nothing new is read of it; the Connection page say
 - **Polestar refused the credential**: it expired, or was deleted on the portal. Create a new one and give it.
 - **No Polestar credential given**: it was removed. Give a new one.
 - **The vehicle is no longer shared with the credential**: the portal no longer lets the credential read the car. Let it read the car again on the portal, then give the credential again: the car is read again.
-- **Read in part**: the credential was not granted one of the five domains, and what it gives is not read. Runsten tries it again a day later; create a credential with the five domains to read it all.
+- **Read in part**: the credential was not granted one of the five domains, and what it gives is not read. Runsten tries it again a day later; create a credential with the five domains to read it all. The health, optional, is never told so: without it, the health page says the car told nothing of it.
 - **Paused by Polestar** or **Polestar quota reached**: reading resumes by itself.
 
 ## Removing the credential

@@ -1,10 +1,10 @@
 ---
-description: "Publish each vehicle's state to your MQTT broker: Home Assistant's entities created by discovery, the topics and their payloads, and how to expose a broker over TLS."
+description: "Publish each vehicle's state and health to your MQTT broker: Home Assistant's entities created by discovery, the topics and their payloads, and how to expose a broker over TLS."
 ---
 
 # Home Assistant and MQTT
 
-Runsten publishes the state of your vehicles to your MQTT broker: battery, range, charging, plug, engine, odometer and position. Home Assistant creates a device for each vehicle with its entities, without any configuration; Node-RED, openHAB or any MQTT client read the same topics, in plain text.
+Runsten publishes the state of your vehicles to your MQTT broker: battery, range, charging, plug, engine, odometer and position, and their [health](./health.md): tyres, service and warnings. Home Assistant creates a device for each vehicle with its entities, without any configuration; Node-RED, openHAB or any MQTT client read the same topics, in plain text.
 
 It only publishes: nothing sent to the broker reaches the car, and Runsten sends it no command.
 
@@ -30,7 +30,7 @@ Runsten connects within a minute. The section then says since when it is connect
 
 ## When it publishes
 
-After each reading of a vehicle: every 10 minutes while it is parked, every minute while it drives or charges. Only the values that changed are sent; nothing between two readings, since Runsten knows nothing more. At each connection, it publishes everything again.
+After each reading of a vehicle: every 10 minutes while it is parked, every minute while it drives or charges. The health is read every hour. Only the values that changed are sent; nothing between two readings, since Runsten knows nothing more. At each connection, it publishes everything again.
 
 Every message is retained, with QoS 1: a client that subscribes (Home Assistant after a restart) gets the latest values at once.
 
@@ -51,6 +51,13 @@ Under `<prefix>/vehicles/<vehicle id>/`, where the prefix is `runsten` by defaul
 | `engine` | `running` or `stopped` |
 | `location` | `{"latitude": 45.764, "longitude": 4.8357}`, when the position is published |
 | `read_at` | the latest reading of the vehicle, in RFC 3339, UTC (`2026-10-04T10:00:00Z`) |
+| `tyre_pressure_front_left_kpa`, `…_front_right_kpa`, `…_rear_left_kpa`, `…_rear_right_kpa` | each tyre's pressure, in kPa (100 kPa = 1 bar); unknown for a car that gives a warning per tyre only, as a Volvo |
+| `tyre_warning` | the worst warning of the tyres: `high`, `fault`, `low` or `very_low` as soon as one tyre says so; `ok` only when the four are known |
+| `service` | `ok`, `soon`, `due` or `overdue` |
+| `service_days`, `service_months` | the time left until the service, in days or in months, as the car counts it |
+| `service_distance_km` | the distance left until the service, in km |
+| `warning_brake_fluid`, `warning_coolant`, `warning_oil`, `warning_washer_fluid`, `warning_low_voltage_battery` | `warning` or `ok` |
+| `warning_lights` | `warning` when an exterior light fails; `ok` only when every light the car reports is known; the web interface names which |
 | `credential_status` | a Polestar's only: `valid`, `expiring` (two weeks before its expiry), `expired`, `refused` (Polestar refused it) or `missing` (none given) |
 | `credential_expires_at` | a Polestar's only: when its credential expires at the latest, in RFC 3339, UTC; empty without one |
 
@@ -85,6 +92,12 @@ With discovery on, each vehicle is a device named as the web interface names it 
 | Charging | binary sensor, battery charging | `charging_status` |
 | Engine | binary sensor, running | `engine` |
 | Location | device tracker | `location` |
+| Tyre pressure front left, front right, rear left, rear right | sensor, pressure, kPa | `tyre_pressure_…_kpa` |
+| Tyres | binary sensor, problem | `tyre_warning` |
+| Service | sensor, enum | `service` |
+| Days to service, Months to service | sensor | `service_days`, `service_months` |
+| Distance to service | sensor, distance, km | `service_distance_km` |
+| Brake fluid, Coolant, Oil, Washer fluid, 12 V battery, Lights | binary sensor, problem | `warning_…` |
 | Credential | binary sensor, problem: on unless `valid` (a Polestar's only) | `credential_status` |
 | Credential expiry | sensor, timestamp, diagnostic (a Polestar's only) | `credential_expires_at` |
 
@@ -109,7 +122,7 @@ automation:
 
 The entity IDs follow the device's name: check them in Home Assistant.
 
-Their configurations are published under `<discovery prefix>/<component>/runsten_<vehicle id>/<object>/config`. An unknown value shows as *Unknown*; while Runsten is stopped or cut off from the broker, the entities are *Unavailable*, and come back as they were.
+Their configurations are published under `<discovery prefix>/<component>/runsten_<vehicle id>/<object>/config`. An unknown value shows as *Unknown*: what a car does not report (a Volvo's tyre pressures, a model's oil) stays so; while Runsten is stopped or cut off from the broker, the entities are *Unavailable*, and come back as they were.
 
 Runsten clears what it published, and Home Assistant removes the entities:
 

@@ -1,0 +1,50 @@
+{
+  "from": "2026-09-28T12:00:00Z",
+  "to": "2026-09-28T23:00:00Z",
+  "runs": [
+    {
+      "readings": [
+        {
+          "at": "2026-09-28T14:00:00Z",
+          "front_left_kpa": 282,
+          "front_right_kpa": 280,
+          "rear_left_kpa": 270,
+          "rear_right_kpa": null,
+          "recommended_front_kpa": 280,
+          "recommended_rear_kpa": 290
+        },
+        {
+          "at": "2026-09-28T15:00:00Z",
+          "front_left_kpa": 282,
+          "front_right_kpa": 280,
+          "rear_left_kpa": 270,
+          "rear_right_kpa": null,
+          "recommended_front_kpa": 280,
+          "recommended_rear_kpa": 290
+        }
+      ]
+    },
+    {
+      "readings": [
+        {
+          "at": "2026-09-28T18:00:00Z",
+          "front_left_kpa": 282,
+          "front_right_kpa": 280,
+          "rear_left_kpa": 248,
+          "rear_right_kpa": null,
+          "recommended_front_kpa": 280,
+          "recommended_rear_kpa": 290
+        },
+        {
+          "at": "2026-09-28T19:00:00Z",
+          "front_left_kpa": 282,
+          "front_right_kpa": 280,
+          "rear_left_kpa": 248,
+          "rear_right_kpa": null,
+          "recommended_front_kpa": 280,
+          "recommended_rear_kpa": 290
+        }
+      ]
+    }
+  ]
+}

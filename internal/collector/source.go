@@ -30,6 +30,9 @@ type EndpointSpec struct {
 	// they are made with.
 	API                       string
 	Parked, Driving, Charging Pace
+	// Optional: the credential may not be granted it, which is then no failure told to
+	// the user (the vehicle's health, which the trips and charges do without).
+	Optional bool
 }
 
 func (s EndpointSpec) pace(m mode) Pace {
@@ -156,6 +159,16 @@ type source struct {
 	fingerprint func(raw []byte) ([]byte, error)
 	ext         Source // nil for Volvo's, which the collector's API reads
 	store       SourceStore
+}
+
+// optional reports whether ep is an optional endpoint of the source.
+func (s *source) optional(ep Endpoint) bool {
+	for _, spec := range s.Endpoints {
+		if spec.Endpoint == ep {
+			return spec.Optional
+		}
+	}
+	return false
 }
 
 // volvoSource is the Volvo Cars API: its calls count on the key's quota (Quota).

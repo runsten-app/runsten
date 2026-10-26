@@ -82,6 +82,7 @@ An update that changes how trips and charges are worked out says so below: the n
 - **Net capacities of the Polestars**: the catalog gives the net capacity of every Polestar variant but the Polestar 2 Standard Range of 2022 and 2023 (its sources disagree), those of the Polestar 4 and 5 and of the Polestar 3 of 2026 included. The Data Portal reports no capacity: until then, the trips and charges of these variants had no energy. Rebuild after updating: until then, the past events stay without one.
 
 - **The address, and Volvo optional**: `RUNSTEN_APP_URL` is the address Runsten is opened at, and the Volvo application is only needed to read a Volvo. An `.env` that sets `RUNSTEN_VOLVO_REDIRECT_URI` works as before; `RUNSTEN_APP_URL` may replace it, the redirect URI then being derived from it. An instance that reads only Polestars may leave the Volvo variables empty.
+- **The vehicles' health**: a vehicle's page leads to its health (tyres, service, warnings), read from the responses already stored: a Volvo's history shows at once. MQTT publishes it under new topics (`tyre_pressure_…_kpa`, `tyre_warning`, `service…`, `warning_…`), and Home Assistant gets 15 new entities per vehicle; the existing topics are unchanged. A Polestar's needs its credential granted the Data Portal's optional health domain.
 
 ## PostgreSQL
 

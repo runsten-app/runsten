@@ -1,0 +1,63 @@
+{
+  "vehicle_id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a01",
+  "checked_at": "2026-09-28T19:00:00Z",
+  "tyres": {
+    "wheels": [
+      {
+        "wheel": "front_left",
+        "pressure_kpa": 282,
+        "warning": "ok",
+        "reported_at": "2026-09-28T18:00:00Z"
+      },
+      {
+        "wheel": "front_right",
+        "pressure_kpa": 280,
+        "warning": null,
+        "reported_at": "2026-09-28T18:00:00Z"
+      },
+      {
+        "wheel": "rear_left",
+        "pressure_kpa": 248,
+        "warning": "low",
+        "reported_at": "2026-09-28T18:00:00Z"
+      },
+      {
+        "wheel": "rear_right",
+        "pressure_kpa": null,
+        "warning": "fault",
+        "reported_at": "2026-09-28T18:00:00Z"
+      }
+    ],
+    "recommended_front_kpa": 280,
+    "recommended_rear_kpa": 290
+  },
+  "service": {
+    "state": "soon",
+    "days": 21,
+    "months": null,
+    "distance_km": 1200,
+    "reported_at": "2026-09-28T18:30:00Z"
+  },
+  "checks": [
+    {
+      "check": "brake_fluid",
+      "warning": false,
+      "reported_at": "2026-09-28T18:00:00Z"
+    },
+    {
+      "check": "coolant",
+      "warning": false,
+      "reported_at": "2026-09-28T16:00:00Z"
+    },
+    {
+      "check": "washer_fluid",
+      "warning": true,
+      "reported_at": "2026-09-28T18:00:00Z"
+    },
+    {
+      "check": "light_brake_left",
+      "warning": false,
+      "reported_at": "2026-09-28T18:00:00Z"
+    }
+  ]
+}

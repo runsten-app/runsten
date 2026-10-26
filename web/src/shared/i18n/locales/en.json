@@ -581,6 +581,113 @@
       "open": "See the battery page"
     }
   },
+  "health": {
+    "title": "Health",
+    "intro": "What the vehicle tells of its tyres, its next service and its warnings, read every hour. What it tells depends on its model and its source: a Volvo gives a warning per tyre, not its pressure.",
+    "loading": "Loading the health",
+    "error": "The health could not be loaded. Try again in a moment.",
+    "none": "The vehicle has told nothing of its health yet.",
+    "reported": "Measured {time}",
+    "attention": "Needs attention",
+    "fine": "Nothing to report",
+    "open": "See its health",
+    "tyres": {
+      "title": "Tyres",
+      "notReported": "The vehicle does not report its tyres.",
+      "noPressure": "The vehicle gives a warning per tyre, not its pressure.",
+      "recommendedFront": "Recommended at the front",
+      "recommendedRear": "Recommended at the rear",
+      "wheel": {
+        "front_left": "Front left",
+        "front_right": "Front right",
+        "rear_left": "Rear left",
+        "rear_right": "Rear right"
+      },
+      "warning": {
+        "ok": "OK",
+        "low": "Low",
+        "very_low": "Very low",
+        "high": "High",
+        "fault": "Fault"
+      },
+      "summary": {
+        "ok": "Tyres: OK",
+        "trouble": "Tyres: {wheel} · {warning}"
+      }
+    },
+    "service": {
+      "title": "Service",
+      "notReported": "The vehicle does not tell when its next service is.",
+      "time": "Time left",
+      "distance": "Distance left",
+      "days": "{n} day | {n} days",
+      "months": "{n} month | {n} months",
+      "state": {
+        "ok": "Not due",
+        "soon": "Soon",
+        "due": "Due",
+        "overdue": "Overdue"
+      },
+      "summary": "Service: {state}"
+    },
+    "warnings": {
+      "title": "Warnings",
+      "notReported": "The vehicle reports no check.",
+      "none": "No warning, out of {n} check reported. | No warning, out of {n} checks reported.",
+      "summary": "Warnings: {list}",
+      "summaryNone": "Warnings: none"
+    },
+    "check": {
+      "brake_fluid": "Brake fluid",
+      "coolant": "Coolant",
+      "oil": "Oil",
+      "washer_fluid": "Washer fluid",
+      "low_voltage_battery": "12 V battery",
+      "light_brake_center": "Centre brake light",
+      "light_brake_left": "Left brake light",
+      "light_brake_right": "Right brake light",
+      "light_daytime_left": "Left daytime running light",
+      "light_daytime_right": "Right daytime running light",
+      "light_fog_front": "Front fog light",
+      "light_fog_rear": "Rear fog light",
+      "light_hazard": "Hazard lights",
+      "light_high_beam_left": "Left high beam",
+      "light_high_beam_right": "Right high beam",
+      "light_low_beam_left": "Left low beam",
+      "light_low_beam_right": "Right low beam",
+      "light_position_front_left": "Front left position light",
+      "light_position_front_right": "Front right position light",
+      "light_position_rear": "Rear position light",
+      "light_position_rear_left": "Rear left position light",
+      "light_position_rear_right": "Rear right position light",
+      "light_registration_plate": "Number plate light",
+      "light_reverse": "Reversing lights",
+      "light_side_mark": "Side marker lights",
+      "light_turn_front_left": "Front left indicator",
+      "light_turn_front_right": "Front right indicator",
+      "light_turn_rear_left": "Rear left indicator",
+      "light_turn_rear_right": "Rear right indicator"
+    },
+    "chart": {
+      "front": "Front tyres",
+      "rear": "Rear tyres",
+      "left": "Left",
+      "right": "Right",
+      "recommended": "Recommended",
+      "leftLow": "Left, lowest",
+      "rightLow": "Right, lowest",
+      "leftHigh": "Left, highest",
+      "rightHigh": "Right, highest",
+      "interval": "Interval",
+      "hint": "The pressure rises as the tyres warm up while driving, and falls in the cold. The dashed line is the pressure the vehicle recommends; the line breaks where nothing was read.",
+      "summary": "From {first} to {last} on the left, from {firstRight} to {lastRight} on the right.",
+      "none": "No pressure was read in this period.",
+      "window": "Period",
+      "week": "7 days",
+      "month": "30 days",
+      "year": "12 months"
+    }
+  },
   "timeline": {
     "title": "State of charge, last 7 days",
     "soc": "State of charge",

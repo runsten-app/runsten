@@ -50,6 +50,11 @@ type Normalizer interface {
 	EnergyKinds() []core.Kind
 	// Normalize reads a stored response of kind k.
 	Normalize(k core.Kind, raw []byte) (core.Snapshot, error)
+	// HealthKinds returns the kinds of response holding the vehicle's health: its tyres,
+	// its service and its warnings, which the derivation does not read.
+	HealthKinds() []core.Kind
+	// NormalizeHealth reads a stored response of kind k into a health reading.
+	NormalizeHealth(k core.Kind, raw []byte) (core.Health, error)
 }
 
 // Sources returns a Normalizer of the responses of every source norms knows, each read
@@ -77,6 +82,8 @@ func (s sources) Kinds() []core.Kind { return s.kinds(Normalizer.Kinds) }
 
 func (s sources) EnergyKinds() []core.Kind { return s.kinds(Normalizer.EnergyKinds) }
 
+func (s sources) HealthKinds() []core.Kind { return s.kinds(Normalizer.HealthKinds) }
+
 func (s sources) kinds(of func(Normalizer) []core.Kind) []core.Kind {
 	var out []core.Kind
 	for i, n := range s.norms {
@@ -95,6 +102,14 @@ func (s sources) Normalize(k core.Kind, raw []byte) (core.Snapshot, error) {
 		return core.Snapshot{}, fmt.Errorf("normalize: unknown source %q", k.Source)
 	}
 	return s.norms[i].Normalize(k, raw) //nolint:wrapcheck // the source's, which names it
+}
+
+func (s sources) NormalizeHealth(k core.Kind, raw []byte) (core.Health, error) {
+	i, ok := s.bySource[k.Source]
+	if !ok {
+		return core.Health{}, fmt.Errorf("normalize health: unknown source %q", k.Source)
+	}
+	return s.norms[i].NormalizeHealth(k, raw) //nolint:wrapcheck // the source's, which names it
 }
 
 // Capacities gives the net battery capacity of each vehicle, for core.CapacityCatalogNet.
@@ -158,6 +173,28 @@ func (d *Deriver) Readings(ctx context.Context, accountID, vehicleID string, fro
 	return d.normalize(vehicleID, snaps), nil
 }
 
+// Health returns the vehicle's latest known health, from the latest response of each
+// of its kinds fetched at or before at.
+func (d *Deriver) Health(ctx context.Context, accountID, vehicleID string, at time.Time) (core.CurrentHealth, error) {
+	snaps, err := d.st.SnapshotsSince(ctx, accountID, vehicleID, at, d.norm.HealthKinds())
+	if err != nil {
+		return core.CurrentHealth{}, fmt.Errorf("snapshots: %w", err)
+	}
+	// Those fetched after at are returned too: at is in the past.
+	snaps = slices.DeleteFunc(snaps, func(s Snapshot) bool { return s.FetchedAt.After(at) })
+	return core.LatestHealth(d.normalizeHealth(vehicleID, snaps)), nil
+}
+
+// HealthReadings returns, oldest first and at most limit of them, the vehicle's health
+// read within [from, to], each record valid from its FetchedAt to its CheckedAt.
+func (d *Deriver) HealthReadings(ctx context.Context, accountID, vehicleID string, from, to time.Time, limit int) ([]core.HealthRecord, error) {
+	snaps, err := d.st.SnapshotsBetween(ctx, accountID, vehicleID, from, to, d.norm.HealthKinds(), limit)
+	if err != nil {
+		return nil, fmt.Errorf("snapshots: %w", err)
+	}
+	return d.normalizeHealth(vehicleID, snaps), nil
+}
+
 func (d *Deriver) run(ctx context.Context, accountID, vehicleID string, c core.Cursor) (core.Result, error) {
 	records, err := d.records(ctx, accountID, vehicleID, c.From)
 	if err != nil {
@@ -198,6 +235,21 @@ func (d *Deriver) normalize(vehicleID string, snaps []Snapshot) []core.Record {
 			continue
 		}
 		records = append(records, core.Record{Source: s.Kind.Source, FetchedAt: s.FetchedAt, CheckedAt: s.CheckedAt, Snapshot: n})
+	}
+	return records
+}
+
+// normalizeHealth reads the stored responses into health records.
+func (d *Deriver) normalizeHealth(vehicleID string, snaps []Snapshot) []core.HealthRecord {
+	records := make([]core.HealthRecord, 0, len(snaps))
+	for _, s := range snaps {
+		h, err := d.norm.NormalizeHealth(s.Kind, s.Payload)
+		if err != nil {
+			d.log.Warn("unreadable snapshot", "vehicle", vehicleID, "source", s.Kind.Source, "endpoint", s.Kind.Endpoint,
+				"fetched_at", s.FetchedAt, "err", err)
+			continue
+		}
+		records = append(records, core.HealthRecord{Source: s.Kind.Source, FetchedAt: s.FetchedAt, CheckedAt: s.CheckedAt, Health: h})
 	}
 	return records
 }

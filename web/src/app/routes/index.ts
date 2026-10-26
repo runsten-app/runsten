@@ -66,6 +66,13 @@ export function createAppRouter(history: RouterHistory, queryClient: QueryClient
         component: () => import('@/pages/battery').then((m) => m.BatteryPage),
         props: true,
       },
+      // The vehicle's health, from its page: its chart loads Chart.js.
+      {
+        path: '/vehicles/:vehicle/health',
+        name: 'health',
+        component: () => import('@/pages/health').then((m) => m.HealthPage),
+        props: true,
+      },
       // A vehicle's own settings (its model), on demand like the statistics.
       {
         path: '/vehicles/:vehicle/settings',

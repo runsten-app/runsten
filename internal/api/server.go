@@ -192,6 +192,7 @@ type Config struct {
 	Reader       Reader
 	States       States
 	Readings     Readings
+	Health       VehicleHealth
 	Settings     Settings
 	Models       VehicleModels
 	Costs        ChargeCosts
@@ -313,6 +314,7 @@ func New(cfg Config) *Server {
 	s.registerStats(s.api)
 	s.registerBattery(s.api)
 	s.registerSeries(s.api)
+	s.registerHealth(s.api)
 	s.registerSettings(s.api)
 	s.registerCosts(s.api)
 	s.registerConnection(s.api)

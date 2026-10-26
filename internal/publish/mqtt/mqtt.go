@@ -58,9 +58,11 @@ type Store interface {
 	PublishCredentials(ctx context.Context, accountID string) (map[string]publish.Credential, error)
 }
 
-// States reads a vehicle's current state, as GET /vehicles/{id}/state does.
+// States reads a vehicle's current state, as GET /vehicles/{id}/state does, and its
+// health, as GET /vehicles/{id}/health.
 type States interface {
 	Current(ctx context.Context, accountID, vehicleID string, at time.Time) (core.Current, error)
+	Health(ctx context.Context, accountID, vehicleID string, at time.Time) (core.CurrentHealth, error)
 }
 
 // Models tells what a vehicle is, from its current state, for its device in Home
@@ -241,14 +243,27 @@ func (p *Publisher) Publish(ctx context.Context, accountID, vehicleID string) er
 	if err != nil {
 		return fmt.Errorf("model of vehicle %s: %w", vehicleID, err)
 	}
+	// The health is read apart: its failure keeps the health published before, and
+	// never holds the state back.
+	values := publish.State(c.b, vehicleID, cur)
+	health, healthErr := p.states.Health(ctx, accountID, vehicleID, p.clk.Now())
+	switch prev := c.values[vehicleID]; {
+	case healthErr == nil:
+		values = append(values, publish.Health(c.b, vehicleID, health)...)
+	case len(prev) > len(values):
+		values = append(values, prev[len(values):]...)
+	}
 	delete(c.removed, vehicleID) // back in the account
 	c.models[vehicleID] = m
-	c.values[vehicleID] = publish.State(c.b, vehicleID, cur)
+	c.values[vehicleID] = values
 	c.describe()
 	err = p.flush(c)
 	p.saveStatus(ctx, c)
 	if err != nil {
 		return fmt.Errorf("account %s: %w", accountID, err)
+	}
+	if healthErr != nil {
+		return fmt.Errorf("health of vehicle %s: %w", vehicleID, healthErr)
 	}
 	return nil
 }
