@@ -1,5 +1,5 @@
 ---
-description: "Serve Runsten over https behind Caddy or another reverse proxy, on a host of its own or under a path."
+description: "Serve Runsten over https behind Caddy or another reverse proxy, on a host of its own, under a path or on the local network only."
 ---
 
 # Reverse proxy (https)
@@ -33,6 +33,29 @@ example.org {
 ```
 
 with `RUNSTEN_WEB_BASE_PATH=/runsten/` and `RUNSTEN_APP_URL=https://example.org/runsten` (for a Volvo, the redirect URI `https://example.org/runsten/auth/volvo/callback`).
+
+## On the local network only
+
+`runsten-api` accepts plain http on a loopback address only: an instance opened from other machines of the local network, by its IP address or a local name, needs https too. No public name is needed: with `tls internal`, Caddy signs the certificate with a certificate authority of its own.
+
+```text
+192.168.1.20 {
+	tls internal
+	reverse_proxy 127.0.0.1:8082
+}
+```
+
+The site address can be a local name instead, resolved by your router or local DNS (`runsten.home.arpa`). Give the server a fixed address (a static DHCP lease): it goes into `RUNSTEN_APP_URL`, here `https://192.168.1.20`, and into the redirect URI of a Volvo application, which cannot be changed afterwards.
+
+The browsers do not know Caddy's authority, and warn at the first visit. Either accept the warning on each device, or make them trust its root certificate, `root.crt`:
+
+- Caddy on the host installs it in the host's own trust store (`caddy trust`); the file is in its data directory, `/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt` for the Debian package;
+- Caddy in a container keeps it in its `/data` volume: `/data/caddy/pki/authorities/local/root.crt`;
+- copy it to each device that opens Runsten and import it as a trusted authority (the system's certificate settings, or the browser's).
+
+For a Volvo, the redirect URI is `https://192.168.1.20/auth/volvo/callback`. Volvo ID only redirects the browser to it and never reaches the server: it works from any device of the network. A self-hoster reports Volvo accepting such a private address; it is not verified otherwise.
+
+Without a proxy, an SSH tunnel brings the server's loopback to your machine: `ssh -L 8082:127.0.0.1:8082 server`, then open `http://127.0.0.1:8082`, with `RUNSTEN_APP_URL=http://127.0.0.1:8082` (and the redirect URI `http://127.0.0.1:8082/auth/volvo/callback`, if Volvo accepts it, not verified yet). Only the machines with an SSH access to the server can open it.
 
 ## Good to know
 
