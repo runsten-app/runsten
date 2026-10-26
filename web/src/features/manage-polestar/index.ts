@@ -1,5 +1,5 @@
 export { useDeletePolestarCredential } from './composables/useDeletePolestarCredential'
 export { useSetPolestarCredential } from './composables/useSetPolestarCredential'
-export { expiry, renewAhead } from './model/expiry'
+export { expiry, renewAhead, renewalDue } from './model/expiry'
 export { credentialLimits, validate } from './model/validate'
 export { default as PolestarForm } from './ui/PolestarForm.vue'

@@ -9,6 +9,7 @@ import (
 
 	"runsten/internal/api"
 	"runsten/internal/collector"
+	"runsten/internal/publish"
 )
 
 var (
@@ -87,6 +88,11 @@ func TestPolestarCredential(t *testing.T) {
 	if v, _, err := s.Vehicle(ctx, a, va); err != nil || v.Provider != "volvo" || v.CredentialMissing {
 		t.Errorf("Volvo vehicle %+v, %v", v, err)
 	}
+	// Published: the Polestar alone, with its credential's expiry.
+	expires := t0.Add(api.PolestarLifetime)
+	if got := publishCredentials(t, s, a); len(got) != 1 || got[vp] != (publish.Credential{ExpiresAt: expires}) {
+		t.Errorf("published credentials %+v", got)
+	}
 
 	// Refused: only the credential set at the time given.
 	if err := s.SetCredentialRefused(ctx, a, conn, t0.Add(-time.Hour)); err != nil {
@@ -106,6 +112,9 @@ func TestPolestarCredential(t *testing.T) {
 	}
 	if v, _, err := s.Vehicle(ctx, a, vp); err != nil || !v.CredentialRefused {
 		t.Errorf("vehicle of a refused credential %+v, %v", v, err)
+	}
+	if got := publishCredentials(t, s, a)[vp]; !got.ExpiresAt.Equal(expires) || got.RefusedAt.IsZero() {
+		t.Errorf("published refused credential %+v", got)
 	}
 	// A new credential is not known refused, and replaces the connection's.
 	t1 := t0.Add(24 * time.Hour)
@@ -157,6 +166,9 @@ func TestPolestarCredential(t *testing.T) {
 	if pc, err := s.PolestarConnection(ctx, a); err != nil || pc != (api.PolestarConnection{ID: conn}) {
 		t.Errorf("connection after the removal %+v, %v", pc, err)
 	}
+	if got, ok := publishCredentials(t, s, a)[vp]; !ok || got != (publish.Credential{}) {
+		t.Errorf("published credential after the removal %+v, %v", got, ok)
+	}
 	if c, err := s.PolestarCredential(ctx, a, conn); err == nil {
 		t.Errorf("a credential read after the removal: %+v", c)
 	}
@@ -174,6 +186,15 @@ func TestPolestarCredential(t *testing.T) {
 			t.Errorf("status %s: %v", kind, err)
 		}
 	}
+}
+
+func publishCredentials(t *testing.T, s *Store, accountID string) map[string]publish.Credential {
+	t.Helper()
+	creds, err := s.PublishCredentials(context.Background(), accountID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return creds
 }
 
 // TestPolestarCredentialChecks: a Polestar connection is its credential alone.
@@ -227,6 +248,9 @@ func TestPolestarCredentialIsolation(t *testing.T) {
 	}
 	if c, err := s.PolestarCredential(ctx, a, connB); err == nil {
 		t.Errorf("A reads B's credential: %+v", c)
+	}
+	if got := publishCredentials(t, s, a); len(got) != 0 {
+		t.Errorf("A publishes B's credential: %+v", got)
 	}
 	if err := s.SetCredentialRefused(ctx, a, connB, t0); err != nil {
 		t.Fatal(err)

@@ -50,9 +50,9 @@ type PolestarVehicles interface {
 	PolestarVehicles(ctx context.Context, c PolestarCredential) ([]string, error)
 }
 
-// polestarLifetime is how long a credential reads after it is created, as the Data
+// PolestarLifetime is how long a credential reads after it is created, as the Data
 // Portal tells (according to the community): the user creates another after it.
-const polestarLifetime = 90 * 24 * time.Hour
+const PolestarLifetime = 90 * 24 * time.Hour
 
 type polestarCredentialJSON struct {
 	Last4     string     `json:"last4" doc:"The last four characters of the credential's client ID, to tell it apart: the credential itself is never returned."`
@@ -78,7 +78,7 @@ func polestarOf(c PolestarConnection) null[polestarCredentialJSON] {
 		return null[polestarCredentialJSON]{}
 	}
 	return known(polestarCredentialJSON{
-		Last4: c.Last4, SetAt: c.SetAt, ExpiresAt: c.SetAt.Add(polestarLifetime), RefusedAt: timeOrNil(c.RefusedAt),
+		Last4: c.Last4, SetAt: c.SetAt, ExpiresAt: c.SetAt.Add(PolestarLifetime), RefusedAt: timeOrNil(c.RefusedAt),
 	})
 }
 

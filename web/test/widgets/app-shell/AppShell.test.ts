@@ -5,14 +5,20 @@ import { AppShell } from '@/widgets/app-shell'
 import vehicles from '@fixtures/vehicles.json'
 import { mountWith, testRouter } from '@test/utils'
 
-const { fetchVehicle, fetchVehicles } = vi.hoisted(() => ({
+const { fetchVehicle, fetchVehicles, fetchConnection } = vi.hoisted(() => ({
   fetchVehicle: vi.fn(),
   fetchVehicles: vi.fn(),
+  fetchConnection: vi.fn(),
 }))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
   fetchVehicle,
   fetchVehicles,
+}))
+
+vi.mock('@/entities/connection', async (original) => ({
+  ...(await original<typeof import('@/entities/connection')>()),
+  fetchConnection,
 }))
 
 // The extensions' notices and menu items: none in the public build, some in a test.
@@ -40,6 +46,8 @@ beforeEach(() => {
   fetchVehicle.mockResolvedValue(vehicles.items[0])
   fetchVehicles.mockReset()
   fetchVehicles.mockResolvedValue(vehicles.items)
+  fetchConnection.mockReset()
+  fetchConnection.mockResolvedValue({ polestar: null })
 })
 
 // menuItem opens the user menu and gives its item: the menu is teleported to the body.
@@ -92,6 +100,25 @@ describe('AppShell', () => {
     const { wrapper } = await shell({}, '/', 'connection')
     expect(wrapper.find('button.user-menu').attributes('aria-describedby')).toBeUndefined()
     expect(document.querySelector('.attention-dot')).toBeNull()
+  })
+
+  // A credential forgotten expires: the reminder reaches every page, not only the connection.
+  it('puts a dot on the menu and on the connection when the Polestar credential is to be renewed', async () => {
+    fetchVehicles.mockResolvedValue([vehicles.items[2]])
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60_000).toISOString()
+    fetchConnection.mockResolvedValue({
+      polestar: {
+        last4: '0123',
+        set_at: '2026-09-28T05:00:00Z',
+        expires_at: expiresAt,
+        refused_at: null,
+      },
+    })
+    const { wrapper, link } = await shell({}, '/', 'connection')
+    expect(wrapper.find('button.user-menu').attributes('aria-describedby')).toBeDefined()
+    expect(link?.querySelector('.attention-dot')?.textContent).toBe(
+      'The connection needs your attention',
+    )
   })
 
   it('warns on the pages of a vehicle that nothing new is read', async () => {
