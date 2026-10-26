@@ -113,7 +113,7 @@
   "nav": {
     "label": "Fordon",
     "state": "Status",
-    "battery": "Batteri",
+    "health": "Hälsa",
     "trips": "Resor",
     "charges": "Laddningar",
     "stats": "Statistik"
@@ -577,20 +577,18 @@
       }
     },
     "state": {
-      "withDeviation": "{capacity}, {deviation} från databladet",
       "open": "Se batterisidan"
     }
   },
   "health": {
     "title": "Hälsa",
-    "intro": "Vad bilen berättar om sina däck, nästa service och sina varningar, läst varje timme. Vad den berättar beror på modell och källa: en Volvo ger en varning per däck, inte dess tryck.",
+    "intro": "Batteriets kapacitet, uppskattad utifrån laddningarna, och vad bilen berättar om sina däck, nästa service och sina varningar, läst varje timme. Vad den berättar beror på modell och källa: en Volvo ger en varning per däck, inte dess tryck.",
     "loading": "Hälsan läses in",
     "error": "Hälsan kunde inte läsas in. Försök igen om en stund.",
     "none": "Bilen har ännu inte berättat något om sin hälsa.",
     "reported": "Uppmätt {time}",
     "attention": "Behöver åtgärdas",
     "fine": "Inget att rapportera",
-    "open": "Se dess hälsa",
     "tyres": {
       "title": "Däck",
       "notReported": "Bilen rapporterar inte sina däck.",
@@ -609,10 +607,6 @@
         "very_low": "Mycket lågt",
         "high": "Högt",
         "fault": "Fel"
-      },
-      "summary": {
-        "ok": "Däck: OK",
-        "trouble": "Däck: {wheel} · {warning}"
       }
     },
     "service": {
@@ -627,15 +621,12 @@
         "soon": "Snart",
         "due": "Dags",
         "overdue": "Försenad"
-      },
-      "summary": "Service: {state}"
+      }
     },
     "warnings": {
       "title": "Varningar",
       "notReported": "Bilen rapporterar inga kontroller.",
-      "none": "Ingen varning av {n} rapporterad kontroll. | Ingen varning av {n} rapporterade kontroller.",
-      "summary": "Varningar: {list}",
-      "summaryNone": "Varningar: inga"
+      "none": "Ingen varning av {n} rapporterad kontroll. | Ingen varning av {n} rapporterade kontroller."
     },
     "check": {
       "brake_fluid": "Bromsvätska",

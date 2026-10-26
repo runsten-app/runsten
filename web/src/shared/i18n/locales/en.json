@@ -113,7 +113,7 @@
   "nav": {
     "label": "Vehicle",
     "state": "State",
-    "battery": "Battery",
+    "health": "Health",
     "trips": "Trips",
     "charges": "Charges",
     "stats": "Stats"
@@ -577,20 +577,18 @@
       }
     },
     "state": {
-      "withDeviation": "{capacity}, {deviation} from the data sheet",
       "open": "See the battery page"
     }
   },
   "health": {
     "title": "Health",
-    "intro": "What the vehicle tells of its tyres, its next service and its warnings, read every hour. What it tells depends on its model and its source: a Volvo gives a warning per tyre, not its pressure.",
+    "intro": "The battery's capacity, estimated from the charges, and what the vehicle tells of its tyres, its next service and its warnings, read every hour. What it tells depends on its model and its source: a Volvo gives a warning per tyre, not its pressure.",
     "loading": "Loading the health",
     "error": "The health could not be loaded. Try again in a moment.",
     "none": "The vehicle has told nothing of its health yet.",
     "reported": "Measured {time}",
     "attention": "Needs attention",
     "fine": "Nothing to report",
-    "open": "See its health",
     "tyres": {
       "title": "Tyres",
       "notReported": "The vehicle does not report its tyres.",
@@ -609,10 +607,6 @@
         "very_low": "Very low",
         "high": "High",
         "fault": "Fault"
-      },
-      "summary": {
-        "ok": "Tyres: OK",
-        "trouble": "Tyres: {wheel} · {warning}"
       }
     },
     "service": {
@@ -627,15 +621,12 @@
         "soon": "Soon",
         "due": "Due",
         "overdue": "Overdue"
-      },
-      "summary": "Service: {state}"
+      }
     },
     "warnings": {
       "title": "Warnings",
       "notReported": "The vehicle reports no check.",
-      "none": "No warning, out of {n} check reported. | No warning, out of {n} checks reported.",
-      "summary": "Warnings: {list}",
-      "summaryNone": "Warnings: none"
+      "none": "No warning, out of {n} check reported. | No warning, out of {n} checks reported."
     },
     "check": {
       "brake_fluid": "Brake fluid",

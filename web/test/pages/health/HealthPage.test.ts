@@ -1,6 +1,7 @@
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { HealthPage } from '@/pages/health'
+import battery from '@fixtures/battery.json'
 import health from '@fixtures/health.json'
 import unknown from '@fixtures/health-unknown.json'
 import tyres from '@fixtures/tyres.json'
@@ -12,11 +13,16 @@ const mocks = vi.hoisted(() => ({
   fetchHealth: vi.fn(),
   fetchTyres: vi.fn(),
   fetchVehicles: vi.fn(),
+  getBattery: vi.fn(),
 }))
 vi.mock('@/entities/health', async (original) => ({
   ...(await original<typeof import('@/entities/health')>()),
   fetchHealth: mocks.fetchHealth,
   fetchTyres: mocks.fetchTyres,
+}))
+vi.mock('@/entities/battery', async (original) => ({
+  ...(await original<typeof import('@/entities/battery')>()),
+  getBattery: mocks.getBattery,
 }))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
@@ -28,6 +34,7 @@ beforeEach(() => {
   mocks.fetchHealth.mockResolvedValue(health)
   mocks.fetchTyres.mockResolvedValue(tyres)
   mocks.fetchVehicles.mockResolvedValue(vehicles.items)
+  mocks.getBattery.mockResolvedValue(battery)
 })
 
 const vehicle = vehicles.items[0]?.id ?? ''
@@ -41,13 +48,23 @@ async function mounted() {
 }
 
 describe('HealthPage', () => {
-  it('shows the tiles and the pressures, in the vehicle’s tab', async () => {
+  it('shows the tiles and the pressures, in its own tab', async () => {
     const w = await mounted()
     expect(w.find('.v-main h1').text()).toBe('Health')
     expect(w.find('.intro').text()).toContain('a Volvo gives a warning per tyre')
     expect(w.find('.health-tiles').exists()).toBe(true)
     await vi.waitFor(() => expect(w.findAll('.chart-frame')).toHaveLength(2))
-    expect(w.find('.v-tab[aria-current="page"]').text()).toBe('State')
+    // The fixture needs attention: the dot's description follows the label.
+    expect(w.find('.v-tab[aria-current="page"]').text()).toBe('Health Needs attention')
+  })
+
+  // The battery's capacity is derived from the charges: told whatever the vehicle told.
+  it('leads to the battery’s page from its estimated capacity', async () => {
+    mocks.fetchHealth.mockResolvedValue(unknown)
+    const tile = (await mounted()).find('.battery-summary')
+    expect(tile.find('h2').text()).toBe('Battery')
+    expect(tile.find('dt').text()).toBe('Remaining capacity')
+    expect(tile.find('a').attributes('href')).toBe(`/vehicles/${vehicle}/battery`)
   })
 
   it('draws no chart for a vehicle without pressures', async () => {

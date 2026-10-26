@@ -1,12 +1,12 @@
 ---
-description: "How Runsten estimates the remaining capacity of the battery from its charges, and why it is not a health measurement."
+description: "How Runsten estimates the remaining capacity of the battery from its charges: an estimate among the vehicle's health figures, not a measurement."
 ---
 
 # Battery
 
-The **Battery** tab estimates the remaining capacity of the battery, from its charges.
+The battery page estimates the remaining capacity of the battery, from its charges. It is reached from the **Health** tab, whose battery tile gives the estimate: one of the [health](./health.md)'s figures.
 
-<Screen view="battery" alt="The Battery tab: the estimated capacity against the data sheet, and its estimates over time." />
+<Screen view="battery" alt="The battery page: the estimated capacity against the data sheet, and its estimates over time." />
 
 - **The gauge** compares the current estimate with the capacity of the model's data sheet, with its margin.
 - **The chart** shows each charge's estimate against the date or the mileage, with the monthly median and its middle half.
@@ -17,6 +17,6 @@ The **Battery** tab estimates the remaining capacity of the battery, from its ch
 
 Each charge gives an estimate: the energy it took, over the rise of the state of charge it gave. The energy is the charging power the car reports, added up over the charge, or the energy billed on a receipt you entered. The current capacity is the median of the latest 20 estimates.
 
-::: warning An estimate, not a health measurement
+::: warning An estimate, not a measurement
 The car exposes no energy meter, and its state of charge is a whole number of percent. A single estimate is approximate; the trend over the months tells more than the level. Some charges are set aside, and the page says how many and why: a rise of less than 20 points, a slow charge (under 2 kW), readings too far apart, a charge above 95 %, an estimate far from the data sheet, or a reconstructed charge.
 :::

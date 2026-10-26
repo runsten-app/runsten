@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  mdiArrowRight,
-  mdiBatteryCharging,
-  mdiCar,
-  mdiHelpCircleOutline,
-  mdiOpenInNew,
-  mdiParking,
-} from '@mdi/js'
+import { mdiBatteryCharging, mdiCar, mdiHelpCircleOutline, mdiOpenInNew, mdiParking } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
@@ -25,7 +18,6 @@ import {
   type Mode,
   type Reading,
 } from '@/entities/vehicle'
-import { useBattery } from '@/features/view-battery'
 import { useVehicleState } from '@/features/watch-vehicle-state'
 import { isApiError } from '@/shared/api'
 import { kilowatts, openStreetMapUrl, useFormat, useMapsOn, useNow, type Unit } from '@/shared/lib'
@@ -42,22 +34,6 @@ const f = useFormat()
 const mapsOn = useMapsOn()
 const now = useNow()
 const { state, isPending, error } = useVehicleState(() => props.vehicle)
-
-// The battery's estimated capacity, under the readings it rests on: not a reading
-// itself, never checked for freshness. Its own failure leaves the link alone: the state
-// stays whole.
-const { battery, error: batteryError } = useBattery(() => props.vehicle)
-const batterySummary = computed(() => {
-  const b = battery.value
-  if (batteryError.value || !b) return null
-  if (!b.current) return t('battery.tile.notEnough')
-  return b.deviation_pct === null
-    ? f.quantity(b.current.capacity_kwh, 'kWh')
-    : t('battery.state.withDeviation', {
-        capacity: f.quantity(b.current.capacity_kwh, 'kWh'),
-        deviation: f.signedPercent(b.deviation_pct),
-      })
-})
 
 const connection = computed(() => state.value?.connection ?? { status: 'active' as const })
 const mode = computed(() => (state.value ? vehicleMode(state.value) : null))
@@ -234,18 +210,6 @@ const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_
                   <strong>{{ quantity(state.charging.target_soc_pct, 'percent') }}</strong>
                 </span>
               </div>
-            </div>
-            <!-- The estimated capacity is not a reading: it is history, derived from the
-                 charges. An inset of the battery's tile, not a fifth tile. -->
-            <div class="estimated-capacity inset">
-              <p v-if="batterySummary" class="mb-0">
-                <span class="text-medium-emphasis">{{ t('battery.tile.capacity') }}:</span>
-                {{ batterySummary }}
-              </p>
-              <router-link :to="{ name: 'battery', params: { vehicle } }" class="text-primary">
-                {{ t('battery.state.open') }}
-                <v-icon :icon="mdiArrowRight" size="16" aria-hidden="true" />
-              </router-link>
             </div>
           </v-card-text>
         </v-card>
@@ -425,17 +389,6 @@ const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_
 .target strong {
   font-weight: 500;
   color: rgb(var(--v-theme-on-surface));
-}
-.inset {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 16px;
-  padding: 12px 14px;
-  border-radius: var(--v-control-radius);
-  background: rgb(var(--v-theme-surface-variant));
-  font-size: 0.875rem;
 }
 .osm {
   color: rgb(var(--v-theme-primary)) !important;

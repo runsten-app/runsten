@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import {
-  mdiBatteryHeartOutline,
   mdiChartBoxOutline,
   mdiCogOutline,
   mdiConnection,
   mdiEvPlugType2,
   mdiGauge,
+  mdiHeartPulse,
   mdiMapMarkerPath,
 } from '@mdi/js'
 import { computed } from 'vue'
@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { VAppBar, VBottomNavigation } from 'vuetify/components'
+import { needsAttention as healthNeedsAttention } from '@/entities/health'
 import { collectionState, needsAttention } from '@/entities/vehicle'
 import { UserMenu } from '@/features/auth'
 import { ShortcutsHelp, shortcutsEnabled, useShortcuts } from '@/features/keyboard-shortcuts'
@@ -20,14 +21,15 @@ import { periodQuery } from '@/features/filter-period'
 import { useConnectionSettings } from '@/features/manage-api-key'
 import { renewalDue } from '@/features/manage-polestar'
 import { VehicleSelect } from '@/features/select-vehicle'
+import { useHealth } from '@/features/view-health'
 import { useLimits } from '@/features/view-limits'
 import { CollectionNotice, useCollections } from '@/features/watch-collection'
 import { useNow } from '@/shared/lib'
 import { AttentionDot } from '@/shared/ui'
 import { extensionMenuItems, extensionNotices } from '../extensions'
 
-// With a vehicle, the bar leads to its state (Verdandi) and its battery, its trips and its
-// charges (Urd), and their statistics. Tabs on every screen: a single navigation stays at
+// With a vehicle, the bar leads to its state (Verdandi) and its health, its battery's
+// included, its trips and its charges (Urd), and their statistics. Tabs on every screen: a single navigation stays at
 // the same place from one width to another: under the bar, and at the bottom of a phone,
 // within the thumb's reach. The icon goes above the label, and on a phone the tabs shrink
 // below Vuetify's 90 px: five labels side by side do not fit 360 px in Swedish otherwise,
@@ -36,19 +38,21 @@ import { extensionMenuItems, extensionNotices } from '../extensions'
 // to the tabs, in their order, "," to the settings; Shift held alone shows them, "?" lists
 // them. The settings, the connection and the user's own pages share one menu: the bar
 // keeps the vehicle. The connection is looked at when the reading fails, or the Polestar
-// credential is to be renewed: a dot on the menu and on it says so, from every page.
+// credential is to be renewed: a dot on the menu and on it says so, from every page. A dot
+// on the health's tab says the vehicle needs attention (a tyre, the service, a warning),
+// from every page of the vehicle.
 const props = defineProps<{ vehicle?: string }>()
 const { t } = useI18n()
 const { unread } = useLimits()
 const route = useRoute()
 const { xs } = useDisplay()
 
-type Section = 'state' | 'battery' | 'trips' | 'charges' | 'stats'
+type Section = 'state' | 'health' | 'trips' | 'charges' | 'stats'
 const sections: Record<string, Section> = {
   vehicle: 'state',
-  // The health is reached from the vehicle's page.
-  health: 'state',
-  battery: 'battery',
+  health: 'health',
+  // The battery's estimated capacity is a figure of the health, reached from its page.
+  battery: 'health',
   trips: 'trips',
   trip: 'trips',
   charges: 'charges',
@@ -76,6 +80,16 @@ const attention = computed(() =>
     ? t('connection.attention')
     : undefined,
 )
+// The health is read on a vehicle's pages only: beyond them, the tabs are not shown.
+const { health } = useHealth(
+  () => props.vehicle ?? '',
+  () => !!props.vehicle,
+)
+const healthAttention = computed(() =>
+  health.value?.checked_at && healthNeedsAttention(health.value)
+    ? t('health.attention')
+    : undefined,
+)
 function sectionsOf(vehicle: string) {
   const params = { vehicle }
   // The lists keep the period from one to the other.
@@ -83,10 +97,10 @@ function sectionsOf(vehicle: string) {
   return [
     { value: 'state', icon: mdiGauge, label: t('nav.state'), to: { name: 'vehicle', params } },
     {
-      value: 'battery',
-      icon: mdiBatteryHeartOutline,
-      label: t('nav.battery'),
-      to: { name: 'battery', params },
+      value: 'health',
+      icon: mdiHeartPulse,
+      label: t('nav.health'),
+      to: { name: 'health', params },
     },
     {
       value: 'trips',
@@ -190,8 +204,19 @@ const keys = (key: string) => (shortcutsEnabled.value ? key : undefined)
           :aria-selected="undefined"
           :aria-current="tab.value === current ? 'page' : undefined"
           :aria-keyshortcuts="keys(String(i + 1))"
+          :aria-describedby="
+            tab.value === 'health' && healthAttention ? 'health-attention' : undefined
+          "
         >
           {{ tab.label }}
+          <!-- Out of the tab's name, which stays its label: its description. -->
+          <AttentionDot
+            v-if="tab.value === 'health' && healthAttention"
+            id="health-attention"
+            :label="healthAttention"
+            aria-hidden="true"
+            class="tab-dot"
+          />
           <kbd v-if="hints" class="key-hint" aria-hidden="true">{{ i + 1 }}</kbd>
         </v-tab>
       </v-tabs>
@@ -307,6 +332,12 @@ const keys = (key: string) => (shortcutsEnabled.value ? key : undefined)
   line-height: 1.25rem;
   text-align: center;
   pointer-events: none;
+}
+/* The health's dot, at the icon's corner. */
+.tab-dot {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-start: calc(50% + 8px);
 }
 /* The settings' key, as a menu tells its shortcuts. */
 .menu-key {

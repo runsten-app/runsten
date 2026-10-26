@@ -4,7 +4,7 @@ description: "The web interface of Runsten: the supported cars, the state of the
 
 # The web interface
 
-The web interface works on a phone as well as a desktop, in English, French and Swedish, light or dark. Each vehicle has five tabs: **State**, **Trips**, **Charges**, **Stats** and **Battery**. Its [health](./health.md) is reached from its state.
+The web interface works on a phone as well as a desktop, in English, French and Swedish, light or dark. Each vehicle has five tabs: **State**, **[Health](./health.md)**, **Trips**, **Charges** and **Stats**. The [battery](./battery.md)'s estimated capacity is part of its health.
 
 Runsten reads your car from its manufacturer:
 

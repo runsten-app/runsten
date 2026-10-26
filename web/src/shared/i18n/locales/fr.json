@@ -113,7 +113,7 @@
   "nav": {
     "label": "Véhicule",
     "state": "État",
-    "battery": "Batterie",
+    "health": "Santé",
     "trips": "Trajets",
     "charges": "Charges",
     "stats": "Stats"
@@ -577,20 +577,18 @@
       }
     },
     "state": {
-      "withDeviation": "{capacity}, {deviation} par rapport à la fiche",
       "open": "Voir la page Batterie"
     }
   },
   "health": {
     "title": "Santé",
-    "intro": "Ce que le véhicule dit de ses pneus, de son prochain entretien et de ses alertes, lu toutes les heures. Ce qu'il dit dépend de son modèle et de sa source : une Volvo donne une alerte par pneu, pas sa pression.",
+    "intro": "La capacité de la batterie, estimée à partir des charges, et ce que le véhicule dit de ses pneus, de son prochain entretien et de ses alertes, lu toutes les heures. Ce qu'il dit dépend de son modèle et de sa source : une Volvo donne une alerte par pneu, pas sa pression.",
     "loading": "Chargement de la santé",
     "error": "La santé n’a pas pu être chargée. Réessayez dans un instant.",
     "none": "Le véhicule n’a encore rien dit de sa santé.",
     "reported": "Mesuré {time}",
     "attention": "À surveiller",
     "fine": "Rien à signaler",
-    "open": "Voir sa santé",
     "tyres": {
       "title": "Pneus",
       "notReported": "Le véhicule ne donne pas ses pneus.",
@@ -609,10 +607,6 @@
         "very_low": "Très basse",
         "high": "Haute",
         "fault": "Défaut"
-      },
-      "summary": {
-        "ok": "Pneus : OK",
-        "trouble": "Pneus : {wheel} · {warning}"
       }
     },
     "service": {
@@ -627,15 +621,12 @@
         "soon": "Bientôt",
         "due": "À faire",
         "overdue": "En retard"
-      },
-      "summary": "Entretien : {state}"
+      }
     },
     "warnings": {
       "title": "Alertes",
       "notReported": "Le véhicule ne donne aucun contrôle.",
-      "none": "Aucune alerte sur {n} contrôle remonté. | Aucune alerte sur {n} contrôles remontés.",
-      "summary": "Alertes : {list}",
-      "summaryNone": "Alertes : aucune"
+      "none": "Aucune alerte sur {n} contrôle remonté. | Aucune alerte sur {n} contrôles remontés."
     },
     "check": {
       "brake_fluid": "Liquide de frein",

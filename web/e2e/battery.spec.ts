@@ -108,7 +108,9 @@ test('Battery: the errand so far, without promising a measurement', async ({ pag
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Battery')
   await expect(page.locator('.tile.capacity .value')).toHaveText('Not enough charges yet')
   await expect(page.locator('.tile.capacity .note')).toHaveText('5 more usable charges needed')
-  await expect(page.locator('.v-tab[aria-current="page"]')).toHaveText('Battery')
+  await expect(
+    page.getByRole('navigation', { name: 'Vehicle' }).getByRole('link', { name: 'Health' }),
+  ).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('.chart-frame')).toHaveCount(2)
   await checkView(page, testInfo, 'battery')
 })
@@ -143,25 +145,16 @@ test('Battery: the capacity chart by date or by mileage', async ({ page }, testI
   await checkView(page, testInfo, 'battery-axis')
 })
 
-test('the state tells the estimated capacity, and leads to the page', async ({
-  page,
-}, testInfo) => {
-  await signIn(page)
-  const vehicle = await vehicleId(page)
-  await page.goto(`/vehicles/${vehicle}`)
-  await expect(page.locator('.estimated-capacity')).toContainText('Not enough charges yet')
-  await checkView(page, testInfo, 'state-battery')
-  await page.getByRole('link', { name: 'See the battery page' }).click()
-  await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/battery$`))
-})
-
-test('the vehicle tabs lead to the battery', async ({ page }) => {
+// The battery's estimated capacity is a figure of the health: its tab, then its tile.
+test('the health tab leads to the battery', async ({ page }) => {
   await signIn(page)
   const vehicle = await vehicleId(page)
   await page.goto(`/vehicles/${vehicle}`)
   await page
     .getByRole('navigation', { name: 'Vehicle' })
-    .getByRole('link', { name: 'Battery' })
+    .getByRole('link', { name: 'Health' })
     .click()
+  await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/health$`))
+  await page.locator('.battery-summary').getByRole('link', { name: 'See the battery page' }).click()
   await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/battery$`))
 })
