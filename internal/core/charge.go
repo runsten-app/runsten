@@ -116,6 +116,7 @@ func (d *detector) stepCharge(p point, prev state) {
 }
 
 func (d *detector) startCharge(p point, prev state) {
+	d.releaseCharge()
 	s := d.st.snap
 	after := d.lastNotCharging
 	if after.IsZero() {
@@ -136,6 +137,7 @@ func (d *detector) startCharge(p point, prev state) {
 // reconstructCharge opens a charge that was not seen: the SoC rose since its previous
 // reading.
 func (d *detector) reconstructCharge(p point, prev state) {
+	d.releaseCharge()
 	s := d.st.snap
 	after := prev.seenAt(FieldSoC)
 	d.charge = &chargeBuilder{
@@ -208,6 +210,7 @@ func (d *detector) interruptCharge(p point, prev state) {
 	cb := d.charge
 	switch {
 	case cb == nil:
+		d.releaseCharge()
 		return
 	case !cb.c.Reconstructed:
 		cb.c.End.After, cb.endLimit, cb.hints = cb.lastCharging, p.at, nil
@@ -216,11 +219,49 @@ func (d *detector) interruptCharge(p point, prev state) {
 		cb.c.EndSoC = prev.snap.SoC
 	}
 	d.finishCharge()
+	d.releaseCharge()
 }
 
+// finishCharge ends the charge in progress. It then waits SettleWindow for a position
+// read after its end: the vehicle may upload its position late, after the reading that
+// ended the charge, and the one it had before may be the previous charge's place
+// (unplugged there, driven straight to another charger before the position changed).
 func (d *detector) finishCharge() {
-	d.res.Charges = append(d.res.Charges, d.buildCharge(d.charge))
+	d.releaseCharge()
+	cb := d.charge
 	d.charge = nil
+	d.ended = &endedCharge{c: d.buildCharge(cb), since: cb.endLimit}
+}
+
+// endedCharge is a charge over, waiting for its position.
+type endedCharge struct {
+	c     Charge
+	since time.Time // the reading that ended it
+}
+
+// settleCharge gives the ended charge the first position read after its end, or
+// releases it with the one it had when the settle window is over.
+func (d *detector) settleCharge(p point) {
+	e := d.ended
+	if e == nil || !p.at.After(e.since) {
+		return
+	}
+	if pos := d.st.snap.Position; p.at.Before(e.since.Add(d.p.SettleWindow)) {
+		if p.snap.Covers&FieldPosition == 0 || !pos.OK {
+			return
+		}
+		e.c.Position = pos
+	}
+	d.releaseCharge()
+}
+
+// releaseCharge adds the ended charge to the result as it stands: a trip or a charge
+// starting, the vehicle may no longer be where it charged.
+func (d *detector) releaseCharge() {
+	if d.ended != nil {
+		d.res.Charges = append(d.res.Charges, d.ended.c)
+		d.ended = nil
+	}
 }
 
 func (d *detector) buildCharge(cb *chargeBuilder) Charge {

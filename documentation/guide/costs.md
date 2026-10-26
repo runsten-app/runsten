@@ -8,7 +8,7 @@ Costs appear once a currency is chosen in **Settings**. Every price and cost is 
 
 ## Places
 
-A place is a circle, a position and a radius (100 m by default), with a tariff: home, work, a charging station you use. A charge takes the tariff of the nearest place that holds it. There can be up to 100 places.
+A place is a circle, a position and a radius (100 m by default), with a tariff: home, work, a charging station you use. A charge takes the tariff of the nearest place that holds its position: the first one the car reports after the charge ends, within 15 minutes and before it drives off, else the last one it reported before. There can be up to 100 places.
 
 - The position is typed, or taken from a vehicle's current position. No map is loaded.
 - A charge outside every place offers **Create a place here**, at its position.

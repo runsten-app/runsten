@@ -23,8 +23,9 @@ type Params struct {
 	// rebuild to change the stored spans.
 	MaxSpanSoC float64
 	// SettleWindow is how long after a trip ends the readings that complete it (odometer,
-	// arrival position, trip statistics) are still attached to it. The collector takes
-	// them right after the transition.
+	// arrival position, trip statistics) are still attached to it, and how long a charge
+	// over waits for a position read after its end. The collector takes them right after
+	// the transition.
 	SettleWindow time.Duration
 	// ResumeBeforeArrival: the engine running again after a stop, before any new position
 	// was read, continues the same trip (a short stop) instead of starting another.
@@ -88,8 +89,8 @@ type Cursor struct {
 // started from, and the cursor to resume from.
 //
 // A trip that has ended but may still be completed by upcoming readings is included:
-// the next derivation, which starts before it, replaces it. Trips and charges still in
-// progress are not.
+// the next derivation, which starts before it, replaces it; so is a charge that has
+// ended but may still get its position. Trips and charges still in progress are not.
 type Result struct {
 	Trips   []Trip
 	Charges []Charge
@@ -110,19 +111,21 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		d.st.apply(pt)
 		live := pt.at.After(from.Settled)
 		if live {
+			d.settleCharge(pt)
 			d.stepTrip(pt, prev)
 			d.stepCharge(pt, prev)
 		}
 		d.track(pt)
 		// Never settle on the last readings: a reading stored later may bear their time.
 		groupEnd := i < len(ps)-1 && !ps[i+1].at.Equal(pt.at)
-		if live && groupEnd && d.trip == nil && d.charge == nil {
+		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil {
 			d.res.Cursor = Cursor{Settled: pt.at, From: d.st.rowAt(FieldOdometer)}
 		}
 	}
 	if d.trip != nil && d.trip.phase == tripEnding {
 		d.res.Trips = append(d.res.Trips, d.buildTrip(d.trip))
 	}
+	d.releaseCharge()
 	if d.charge != nil && d.charge.c.Reconstructed {
 		d.res.Charges = append(d.res.Charges, d.buildCharge(d.charge))
 	}
@@ -248,6 +251,7 @@ type detector struct {
 
 	trip   *tripBuilder
 	charge *chargeBuilder
+	ended  *endedCharge
 }
 
 func (d *detector) track(p point) {
