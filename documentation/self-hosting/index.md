@@ -25,14 +25,15 @@ To read a Volvo, create your application on the Volvo developer portal first: it
 
 ## Install
 
-Nothing to build: the stack runs the published [images](#images). It needs only `compose.yaml`, `.env.example` and the two files of `deploy/` of a release, fetched into a directory of their own:
+Nothing to build: the stack runs the published [images](#images). It needs only `compose.yaml`, `.env.example` and the three files of `deploy/` of a release, fetched into a directory of their own:
 
 ```sh
 mkdir runsten && cd runsten
 v=X.Y.Z   # the latest release: https://github.com/runsten-app/runsten/releases
-for f in compose.yaml .env.example deploy/postgres/init-runsten.sh deploy/mosquitto/mosquitto.conf; do
+for f in compose.yaml .env.example deploy/postgres/init-runsten.sh deploy/mosquitto/mosquitto.conf deploy/update.sh; do
   curl -fsSL --create-dirs -o "$f" "https://raw.githubusercontent.com/runsten-app/runsten/v$v/$f"
 done
+chmod +x deploy/update.sh                 # the updates: deploy/update.sh (Updating)
 cp .env.example .env && chmod 600 .env   # fill it in, following its comments; RUNSTEN_VERSION=X.Y.Z
 docker compose pull && docker compose up -d
 docker compose ps                         # postgres, api, collector and web: running (healthy)
@@ -66,6 +67,6 @@ Everything listens on the host's loopback: from another machine, go through an h
 
 ## Images
 
-Each release publishes `ghcr.io/runsten-app/runsten-api`, `runsten-collector` and `runsten-web`, for `linux/amd64` and `linux/arm64`, tagged with its version (`0.4.1`), its minor (`0.4`, which follows the fixes) and `latest`, each with its SBOM and provenance; the release's notes give their digests. `RUNSTEN_VERSION` in `.env` chooses the tag, `latest` when empty: set it to a release, so that an update is a choice ([Updating](./updating.md)).
+Each release publishes `ghcr.io/runsten-app/runsten-api`, `runsten-collector` and `runsten-web`, for `linux/amd64` and `linux/arm64`, tagged with its version (`0.4.1`), its minor (`0.4`, which follows the fixes) and `latest`, each with its SBOM and provenance; the release's notes give their digests. `RUNSTEN_VERSION` in `.env` chooses the tag, `latest` when empty: set it to a release, so that an update is a choice: `deploy/update.sh` sets it ([Updating](./updating.md)).
 
 To run the sources instead (a branch, a change of your own), clone the repository and run `docker compose up -d --build`: it builds the images under the same names.

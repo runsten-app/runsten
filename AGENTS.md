@@ -117,6 +117,8 @@ compose.yaml           self-hosted stack: PostgreSQL, runsten-api, runsten-colle
 .env.example           documented configuration of compose.yaml (.env itself is ignored by git)
 sim.env                compose.yaml against the simulator (own project, development values only)
 deploy/postgres/       PostgreSQL init script: the non-superuser `runsten` user and its database
+deploy/update.sh       the update of an installation to a release (documentation/self-hosting/updating.md):
+                       fetched with compose.yaml, run by the self-hoster; bash, curl and Compose only
 deploy/mosquitto/      Mosquitto's configuration for development and tests (compose.yaml's mqtt profile, task
                        run-mqtt): anonymous, plain, nothing kept
 scripts/compose-test.sh  end-to-end test of compose.yaml (task compose-test)
