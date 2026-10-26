@@ -73,7 +73,10 @@ const checksAt = computed(() => props.health.checks.find((c) => c.reported_at)?.
                     text.tyreWarnings.value[w.warning]
                   }}</StatusPill>
                 </dd>
-                <dd v-if="pressures && recommendedFor(health, w) !== null" class="text-medium-emphasis">
+                <dd
+                  v-if="pressures && recommendedFor(health, w) !== null"
+                  class="text-medium-emphasis"
+                >
                   {{
                     w.wheel.startsWith('front')
                       ? t('health.tyres.recommendedFront')
@@ -161,7 +164,10 @@ const checksAt = computed(() => props.health.checks.find((c) => c.reported_at)?.
               t('health.warnings.none', { n: f.number(health.checks.length) }, health.checks.length)
             }}
           </p>
-          <p v-if="health.checks.length && measured(checksAt)" class="text-medium-emphasis footer mb-0">
+          <p
+            v-if="health.checks.length && measured(checksAt)"
+            class="text-medium-emphasis footer mb-0"
+          >
             {{ measured(checksAt) }}
           </p>
         </v-card-text>
