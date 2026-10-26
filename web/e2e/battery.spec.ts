@@ -145,18 +145,6 @@ test('Battery: the capacity chart by date or by mileage', async ({ page }, testI
   await checkView(page, testInfo, 'battery-axis')
 })
 
-test('the state tells the estimated capacity, and leads to the page', async ({
-  page,
-}, testInfo) => {
-  await signIn(page)
-  const vehicle = await vehicleId(page)
-  await page.goto(`/vehicles/${vehicle}`)
-  await expect(page.locator('.estimated-capacity')).toContainText('Not enough charges yet')
-  await checkView(page, testInfo, 'state-battery')
-  await page.getByRole('link', { name: 'See the battery page' }).click()
-  await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/battery$`))
-})
-
 // The battery's estimated capacity is a figure of the health: its tab, then its tile.
 test('the health tab leads to the battery', async ({ page }) => {
   await signIn(page)

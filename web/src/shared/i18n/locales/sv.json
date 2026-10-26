@@ -577,7 +577,6 @@
       }
     },
     "state": {
-      "withDeviation": "{capacity}, {deviation} från databladet",
       "open": "Se batterisidan"
     }
   },
@@ -590,7 +589,6 @@
     "reported": "Uppmätt {time}",
     "attention": "Behöver åtgärdas",
     "fine": "Inget att rapportera",
-    "open": "Se dess hälsa",
     "tyres": {
       "title": "Däck",
       "notReported": "Bilen rapporterar inte sina däck.",
@@ -609,10 +607,6 @@
         "very_low": "Mycket lågt",
         "high": "Högt",
         "fault": "Fel"
-      },
-      "summary": {
-        "ok": "Däck: OK",
-        "trouble": "Däck: {wheel} · {warning}"
       }
     },
     "service": {
@@ -627,15 +621,12 @@
         "soon": "Snart",
         "due": "Dags",
         "overdue": "Försenad"
-      },
-      "summary": "Service: {state}"
+      }
     },
     "warnings": {
       "title": "Varningar",
       "notReported": "Bilen rapporterar inga kontroller.",
-      "none": "Ingen varning av {n} rapporterad kontroll. | Ingen varning av {n} rapporterade kontroller.",
-      "summary": "Varningar: {list}",
-      "summaryNone": "Varningar: inga"
+      "none": "Ingen varning av {n} rapporterad kontroll. | Ingen varning av {n} rapporterade kontroller."
     },
     "check": {
       "brake_fluid": "Bromsvätska",

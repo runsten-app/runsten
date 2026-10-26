@@ -577,7 +577,6 @@
       }
     },
     "state": {
-      "withDeviation": "{capacity}, {deviation} par rapport à la fiche",
       "open": "Voir la page Batterie"
     }
   },
@@ -590,7 +589,6 @@
     "reported": "Mesuré {time}",
     "attention": "À surveiller",
     "fine": "Rien à signaler",
-    "open": "Voir sa santé",
     "tyres": {
       "title": "Pneus",
       "notReported": "Le véhicule ne donne pas ses pneus.",
@@ -609,10 +607,6 @@
         "very_low": "Très basse",
         "high": "Haute",
         "fault": "Défaut"
-      },
-      "summary": {
-        "ok": "Pneus : OK",
-        "trouble": "Pneus : {wheel} · {warning}"
       }
     },
     "service": {
@@ -627,15 +621,12 @@
         "soon": "Bientôt",
         "due": "À faire",
         "overdue": "En retard"
-      },
-      "summary": "Entretien : {state}"
+      }
     },
     "warnings": {
       "title": "Alertes",
       "notReported": "Le véhicule ne donne aucun contrôle.",
-      "none": "Aucune alerte sur {n} contrôle remonté. | Aucune alerte sur {n} contrôles remontés.",
-      "summary": "Alertes : {list}",
-      "summaryNone": "Alertes : aucune"
+      "none": "Aucune alerte sur {n} contrôle remonté. | Aucune alerte sur {n} contrôles remontés."
     },
     "check": {
       "brake_fluid": "Liquide de frein",

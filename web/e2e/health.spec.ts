@@ -43,15 +43,10 @@ test('Health: the Volvo’s tyres, service and warnings', async ({ page }, testI
   await signIn(page)
   const vehicle = await vehicleId(page)
   await page.goto(`/vehicles/${vehicle}`)
-  const summary = page.locator('.health-summary')
-  await expect(summary).toContainText('Nothing to report')
-  await expect(summary.locator('li')).toHaveText([
-    'Tyres: OK',
-    'Service: Not due',
-    'Warnings: none',
-  ])
-  await checkView(page, testInfo, 'state-health')
-  await summary.getByRole('link', { name: 'See its health' }).click()
+  await page
+    .getByRole('navigation', { name: 'Vehicle' })
+    .getByRole('link', { name: 'Health' })
+    .click()
   await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/health$`))
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Health')
   await expect(page.locator('[data-test="tyres"]')).toContainText(

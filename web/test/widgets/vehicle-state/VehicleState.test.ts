@@ -3,23 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '@/shared/api'
 import { i18n, type Locale } from '@/shared/i18n'
 import { VehicleState } from '@/widgets/vehicle-state'
-import battery from '@fixtures/battery.json'
-import empty from '@fixtures/battery-empty.json'
 import state from '@fixtures/state.json'
 import unknown from '@fixtures/state-unknown.json'
 import { mountWith } from '@test/utils'
 
-const { fetchVehicleState, getBattery } = vi.hoisted(() => ({
-  fetchVehicleState: vi.fn(),
-  getBattery: vi.fn(),
-}))
+const { fetchVehicleState } = vi.hoisted(() => ({ fetchVehicleState: vi.fn() }))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
   fetchVehicleState,
-}))
-vi.mock('@/entities/battery', async (original) => ({
-  ...(await original<typeof import('@/entities/battery')>()),
-  getBattery,
 }))
 
 // Three and a half minutes after the latest reading of the fixture.
@@ -27,7 +18,6 @@ const now = Date.parse('2026-09-28T19:06:30Z')
 
 beforeEach(() => {
   fetchVehicleState.mockReset()
-  getBattery.mockReset()
   vi.useFakeTimers({ now, toFake: ['Date'] })
 })
 afterEach(() => {
@@ -215,26 +205,6 @@ describe('VehicleState', () => {
     expect(w.find('[role="meter"]').attributes('aria-valuenow')).toBe('64')
   })
 
-  // The estimated capacity is history, not a reading: a section of the battery's card.
-  it('tells the estimated capacity with its deviation, and links to the page', async () => {
-    getBattery.mockResolvedValue(battery)
-    const w = await mounted(state)
-    const section = w.find('.estimated-capacity')
-    expect(plain(section.find('p').text())).toBe(
-      'Estimated capacity: 73.5 kWh, -2% from the data sheet',
-    )
-    expect(section.find('a').text()).toBe('See the battery page')
-    expect(section.find('a').attributes('href')).toBe(`/vehicles/${state.vehicle_id}/battery`)
-  })
-
-  it('says when there are not enough charges yet', async () => {
-    getBattery.mockResolvedValue(empty)
-    const w = await mounted(state)
-    expect(plain(w.find('.estimated-capacity p').text())).toBe(
-      'Estimated capacity: Not enough charges yet',
-    )
-  })
-
   it("tells the car's latest measure once it is older than half an hour", async () => {
     let w = await mounted(state)
     expect(w.find('.reported').exists()).toBe(false)
@@ -244,16 +214,5 @@ describe('VehicleState', () => {
     // The latest of the car's own times: the battery's, though the odometer's is older.
     expect(w.find('.reported').text()).toBe('The car last measured 19:02')
     expect(w.find('.reported').attributes('datetime')).toBe('2026-09-28T19:02:00Z')
-  })
-
-  it('keeps the state whole when the battery cannot be read', async () => {
-    getBattery.mockRejectedValue(new ApiError(502, 'unavailable', ''))
-    const w = await mounted(state)
-    expect(w.find('.estimated-capacity p').exists()).toBe(false)
-    expect(w.find('.estimated-capacity a').attributes('href')).toBe(
-      `/vehicles/${state.vehicle_id}/battery`,
-    )
-    expect(reading(w, 'State of charge').value).toBe('64%')
-    expect(w.find('.v-alert').exists()).toBe(false)
   })
 })
