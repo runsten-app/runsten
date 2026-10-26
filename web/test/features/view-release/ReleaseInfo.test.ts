@@ -52,6 +52,7 @@ describe('ReleaseInfo', () => {
     api.fetchInstance.mockResolvedValue({ ...instance, update_check: false })
     const w = await info()
     expect(w.find('.latest').exists()).toBe(false)
+    expect(w.find('a.releases .d-sr-only').text()).toBe('(opens in a new tab)')
     expect(w.find('a.releases').attributes('href')).toBe(
       'https://github.com/runsten-app/runsten/releases',
     )

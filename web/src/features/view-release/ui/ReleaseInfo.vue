@@ -34,6 +34,7 @@ const updating = 'https://runsten.app/docs/self-hosting/updating'
             class="notes"
           >
             {{ t('release.notes') }}
+            <span class="d-sr-only">{{ t('release.newTab') }}</span>
           </v-btn>
           <v-btn
             :href="updating"
@@ -46,6 +47,7 @@ const updating = 'https://runsten.app/docs/self-hosting/updating'
             class="how-to"
           >
             {{ t('release.howTo') }}
+            <span class="d-sr-only">{{ t('release.newTab') }}</span>
           </v-btn>
         </div>
       </v-alert>
@@ -54,7 +56,8 @@ const updating = 'https://runsten.app/docs/self-hosting/updating'
       </p>
       <p v-else class="text-body-medium">
         <a :href="releases" target="_blank" rel="noreferrer" class="releases">
-          {{ t('release.releases') }}
+          {{ t('release.releases') }}<v-icon :icon="mdiOpenInNew" size="x-small" class="ms-1" />
+          <span class="d-sr-only">{{ t('release.newTab') }}</span>
         </a>
       </p>
     </template>

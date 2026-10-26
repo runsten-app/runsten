@@ -1400,6 +1400,7 @@
     "notes": "Versionsinformation",
     "howTo": "Så uppdaterar du",
     "latest": "Ingen nyare version.",
-    "releases": "Alla versioner"
+    "releases": "Alla versioner",
+    "newTab": "(öppnas i en ny flik)"
   }
 }

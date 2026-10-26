@@ -1400,6 +1400,7 @@
     "notes": "Notes de version",
     "howTo": "Comment mettre à jour",
     "latest": "Aucune version plus récente.",
-    "releases": "Toutes les versions"
+    "releases": "Toutes les versions",
+    "newTab": "(s'ouvre dans un nouvel onglet)"
   }
 }

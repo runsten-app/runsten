@@ -1400,6 +1400,7 @@
     "notes": "Release notes",
     "howTo": "How to update",
     "latest": "No newer release.",
-    "releases": "All the releases"
+    "releases": "All the releases",
+    "newTab": "(opens in a new tab)"
   }
 }
