@@ -54,10 +54,10 @@ func (serviceStateJSON) Schema(huma.Registry) *huma.Schema {
 func (checkNameJSON) Schema(huma.Registry) *huma.Schema { return enumSchema(core.Checks()...) }
 
 type tyreJSON struct {
-	Wheel       wheelJSON        `json:"wheel"`
-	PressureKPa *float64         `json:"pressure_kpa" doc:"The tyre's pressure, in kPa (100 kPa = 1 bar); null when the vehicle does not report it: a Volvo reports a warning only."`
-	Warning     *tyreWarningJSON `json:"warning" doc:"What the tyre pressure monitoring tells: ok, low, very_low, high, or fault (a sensor's or the system's, or a warning not known here); null when not reported."`
-	ReportedAt  *time.Time       `json:"reported_at" pattern:"Z$" doc:"When the vehicle measured it; null when unknown."`
+	Wheel       wheelJSON             `json:"wheel"`
+	PressureKPa *float64              `json:"pressure_kpa" doc:"The tyre's pressure, in kPa (100 kPa = 1 bar); null when the vehicle does not report it: a Volvo reports a warning only."`
+	Warning     null[tyreWarningJSON] `json:"warning" doc:"What the tyre pressure monitoring tells: ok, low, very_low, high, or fault (a sensor's or the system's, or a warning not known here); null when not reported."`
+	ReportedAt  *time.Time            `json:"reported_at" pattern:"Z$" doc:"When the vehicle measured it; null when unknown."`
 }
 
 type tyresJSON struct {
@@ -67,11 +67,11 @@ type tyresJSON struct {
 }
 
 type serviceJSON struct {
-	State      *serviceStateJSON `json:"state" doc:"ok, soon (almost time for it), due, or overdue, as the vehicle warns of it; null when unknown."`
-	Days       *float64          `json:"days" doc:"Days left until the service; null when the vehicle counts months, or does not tell."`
-	Months     *float64          `json:"months" doc:"Months left until the service; null when the vehicle counts days, or does not tell."`
-	DistanceKm *float64          `json:"distance_km" doc:"Distance left until the service; null when not reported."`
-	ReportedAt *time.Time        `json:"reported_at" pattern:"Z$" doc:"When the vehicle told it; null when unknown."`
+	State      null[serviceStateJSON] `json:"state" doc:"ok, soon (almost time for it), due, or overdue, as the vehicle warns of it; null when unknown."`
+	Days       *float64               `json:"days" doc:"Days left until the service; null when the vehicle counts months, or does not tell."`
+	Months     *float64               `json:"months" doc:"Months left until the service; null when the vehicle counts days, or does not tell."`
+	DistanceKm *float64               `json:"distance_km" doc:"Distance left until the service; null when not reported."`
+	ReportedAt *time.Time             `json:"reported_at" pattern:"Z$" doc:"When the vehicle told it; null when unknown."`
 }
 
 type checkJSON struct {
@@ -106,7 +106,7 @@ func healthOf(vehicleID string, h core.CurrentHealth) healthJSON {
 			}
 			t.Wheels = append(t.Wheels, tyreJSON{
 				Wheel: wheelJSON(w), PressureKPa: opt(tyre.PressureKPa, same),
-				Warning: opt(tyre.Warning, text[core.TyreWarning, tyreWarningJSON]), ReportedAt: timeOrNil(at),
+				Warning: nullOf(tyre.Warning, text[core.TyreWarning, tyreWarningJSON]), ReportedAt: timeOrNil(at),
 			})
 		}
 		out.Tyres = known(t)
@@ -119,7 +119,7 @@ func healthOf(vehicleID string, h core.CurrentHealth) healthJSON {
 			}
 		}
 		out.Service = known(serviceJSON{
-			State: opt(h.Service, text[core.ServiceState, serviceStateJSON]),
+			State: nullOf(h.Service, text[core.ServiceState, serviceStateJSON]),
 			Days:  opt(h.DaysToService, same), Months: opt(h.MonthsToService, same),
 			DistanceKm: opt(h.DistanceToServiceKm, same), ReportedAt: timeOrNil(at),
 		})

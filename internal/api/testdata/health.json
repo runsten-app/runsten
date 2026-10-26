@@ -12,7 +12,7 @@
       {
         "wheel": "front_right",
         "pressure_kpa": 280,
-        "warning": "ok",
+        "warning": null,
         "reported_at": "2026-09-28T18:00:00Z"
       },
       {

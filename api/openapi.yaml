@@ -2940,12 +2940,14 @@ components:
             - "null"
         state:
           description: ok, soon (almost time for it), due, or overdue, as the vehicle warns of it; null when unknown.
-          enum:
-            - ok
-            - soon
-            - due
-            - overdue
-          type: string
+          oneOf:
+            - enum:
+                - ok
+                - soon
+                - due
+                - overdue
+              type: string
+            - type: "null"
       required:
         - state
         - days
@@ -3433,13 +3435,15 @@ components:
             - "null"
         warning:
           description: "What the tyre pressure monitoring tells: ok, low, very_low, high, or fault (a sensor's or the system's, or a warning not known here); null when not reported."
-          enum:
-            - ok
-            - low
-            - very_low
-            - high
-            - fault
-          type: string
+          oneOf:
+            - enum:
+                - ok
+                - low
+                - very_low
+                - high
+                - fault
+              type: string
+            - type: "null"
         wheel:
           enum:
             - front_left
