@@ -93,6 +93,8 @@ linters:
               desc: the collector declares its own Publisher interface
             - pkg: runsten/internal/polestar
               desc: the collector declares its own Source, which collector/polestarsource adapts the Polestar client to
+            - pkg: runsten/internal/tesla
+              desc: the collector declares its own Source, which a Tesla source will adapt the client to
         # The collector's Polestar source adapts the client: no transport, no storage.
         polestarsource-adapts:
           files: ["**/internal/collector/polestarsource/**", "!$test"]
@@ -213,6 +215,29 @@ linters:
               desc: each vendor's client stands alone
             - pkg: runsten/internal/oauth
               desc: the M2M credential has no grant to keep, a token is asked again
+        # The Tesla client depends on neither storage nor the collector, nor on another
+        # vendor's client.
+        tesla-is-a-client:
+          files: ["**/internal/tesla/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: the client stores nothing
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/derive
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/api
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/catalog
+              desc: recognizing a variant is a reading of the API, not a normalization
+            - pkg: runsten/internal/volvo
+              desc: each vendor's client stands alone
+            - pkg: runsten/internal/polestar
+              desc: each vendor's client stands alone
+            - pkg: runsten/internal/oauth
+              desc: the refresh token is the collector's to keep and rotate, not oauth's Manager's
         # The domain depends on no adapter, and never sees a vendor format.
         core-is-pure:
           files: ["**/internal/core/**"]
@@ -228,6 +253,8 @@ linters:
             - pkg: runsten/internal/volvo
               desc: the domain knows no vendor
             - pkg: runsten/internal/polestar
+              desc: the domain knows no vendor
+            - pkg: runsten/internal/tesla
               desc: the domain knows no vendor
             - pkg: runsten/internal/simulator
               desc: the domain knows nothing about the simulator
@@ -357,6 +384,8 @@ linters:
             - pkg: runsten/internal/volvo
               desc: api declares its own Authorizer interface
             - pkg: runsten/internal/polestar
+              desc: api declares the interfaces it needs
+            - pkg: runsten/internal/tesla
               desc: api declares the interfaces it needs
             - pkg: runsten/internal/collector
               desc: the API does not drive the collector

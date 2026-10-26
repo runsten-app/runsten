@@ -1,0 +1,23 @@
+{
+  "response": {
+    "id": 1234567890123456,
+    "vehicle_id": 9876543210987654,
+    "vin": "LRWYGCEK9MC000000",
+    "color": null,
+    "access_type": "OWNER",
+    "display_name": "Demo",
+    "option_codes": null,
+    "granular_access": {
+      "hide_private": false
+    },
+    "tokens": null,
+    "state": "online",
+    "in_service": false,
+    "id_s": "1234567890123456",
+    "calendar_enabled": true,
+    "api_version": 95,
+    "backseat_token": null,
+    "backseat_token_updated_at": null,
+    "ble_autopair_enrolled": false
+  }
+}
