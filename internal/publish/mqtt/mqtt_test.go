@@ -435,6 +435,36 @@ func TestPublishDiscovery(t *testing.T) {
 	}
 }
 
+// TestPublishHealthFailure: a health that cannot be read holds neither the state back nor
+// removes the health published before.
+func TestPublishHealthFailure(t *testing.T) {
+	b := startBroker(t, nil, nil)
+	st := newStore(brokerAt("mqtt://" + b.addr))
+	sts := &states{
+		current: map[string]core.Current{vehicle: currentWith(80)},
+		health: map[string]core.CurrentHealth{vehicle: core.LatestHealth([]core.HealthRecord{{
+			FetchedAt: t0, CheckedAt: t0, Health: core.Health{Covers: core.HealthService, Service: core.Some(core.ServiceDue, t0)},
+		}})},
+	}
+	p := New(st, sts, models{}, clock.NewManual(t0), false, quiet)
+	defer p.Close()
+	connected(t, p, st)
+	if err := p.Publish(context.Background(), account, vehicle); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "health retained", func() bool { return b.retained()[state+"service"] == "due" })
+
+	sts.current[vehicle] = currentWith(70)
+	sts.healthErr = errors.New("database down")
+	if err := p.Publish(context.Background(), account, vehicle); err == nil {
+		t.Error("the health's failure is not told")
+	}
+	eventually(t, "state published", func() bool { return b.retained()[state+"battery_level"] == "70" })
+	if got := b.retained()[state+"service"]; got != "due" {
+		t.Errorf("service after a failed read: %q", got)
+	}
+}
+
 // TestPublishCredential: a vehicle read with a credential has its state and its expiry
 // published, and its entities configured, at each pass, even one that reads nothing (a
 // credential refused); a vehicle read without one has neither.

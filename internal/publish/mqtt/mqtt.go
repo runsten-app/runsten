@@ -239,22 +239,31 @@ func (p *Publisher) Publish(ctx context.Context, accountID, vehicleID string) er
 	if err != nil {
 		return fmt.Errorf("state of vehicle %s: %w", vehicleID, err)
 	}
-	health, err := p.states.Health(ctx, accountID, vehicleID, p.clk.Now())
-	if err != nil {
-		return fmt.Errorf("health of vehicle %s: %w", vehicleID, err)
-	}
 	m, err := p.models.Model(ctx, accountID, vehicleID, cur)
 	if err != nil {
 		return fmt.Errorf("model of vehicle %s: %w", vehicleID, err)
 	}
+	// The health is read apart: its failure keeps the health published before, and
+	// never holds the state back.
+	values := publish.State(c.b, vehicleID, cur)
+	health, healthErr := p.states.Health(ctx, accountID, vehicleID, p.clk.Now())
+	switch prev := c.values[vehicleID]; {
+	case healthErr == nil:
+		values = append(values, publish.Health(c.b, vehicleID, health)...)
+	case len(prev) > len(values):
+		values = append(values, prev[len(values):]...)
+	}
 	delete(c.removed, vehicleID) // back in the account
 	c.models[vehicleID] = m
-	c.values[vehicleID] = append(publish.State(c.b, vehicleID, cur), publish.Health(c.b, vehicleID, health)...)
+	c.values[vehicleID] = values
 	c.describe()
 	err = p.flush(c)
 	p.saveStatus(ctx, c)
 	if err != nil {
 		return fmt.Errorf("account %s: %w", accountID, err)
+	}
+	if healthErr != nil {
+		return fmt.Errorf("health of vehicle %s: %w", vehicleID, healthErr)
 	}
 	return nil
 }
