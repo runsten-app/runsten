@@ -236,23 +236,34 @@ func (d *detector) finishCharge() {
 // endedCharge is a charge over, waiting for its position.
 type endedCharge struct {
 	c     Charge
-	since time.Time // the reading that ended it
+	since time.Time       // the reading that ended it
+	read  Value[Position] // a position read after it, taken once its readings are all in
 }
 
-// settleCharge gives the ended charge the first position read after its end, or
-// releases it with the one it had when the settle window is over.
+// settleCharge notes the first position read after the ended charge's end, or releases
+// it with the one it had when the settle window is over.
 func (d *detector) settleCharge(p point) {
 	e := d.ended
 	if e == nil || !p.at.After(e.since) {
 		return
 	}
-	if pos := d.st.snap.Position; p.at.Before(e.since.Add(d.p.SettleWindow)) {
-		if p.snap.Covers&FieldPosition == 0 || !pos.OK {
-			return
-		}
-		e.c.Position = pos
+	if !p.at.Before(e.since.Add(d.p.SettleWindow)) {
+		d.releaseCharge()
+		return
 	}
-	d.releaseCharge()
+	if pos := d.st.snap.Position; p.snap.Covers&FieldPosition != 0 && pos.OK && !e.read.OK {
+		e.read = pos
+	}
+}
+
+// placeCharge gives the ended charge the position read after its end, once every
+// reading of that time is in: a trip or a charge starting at the same time releases it
+// first, with the position it had, since the vehicle may have read that one elsewhere.
+func (d *detector) placeCharge() {
+	if e := d.ended; e != nil && e.read.OK {
+		e.c.Position = e.read
+		d.releaseCharge()
+	}
 }
 
 // releaseCharge adds the ended charge to the result as it stands: a trip or a charge

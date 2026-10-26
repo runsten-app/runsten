@@ -116,8 +116,12 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 			d.stepCharge(pt, prev)
 		}
 		d.track(pt)
+		lastOfTime := i == len(ps)-1 || !ps[i+1].at.Equal(pt.at)
+		if live && lastOfTime {
+			d.placeCharge()
+		}
 		// Never settle on the last readings: a reading stored later may bear their time.
-		groupEnd := i < len(ps)-1 && !ps[i+1].at.Equal(pt.at)
+		groupEnd := lastOfTime && i < len(ps)-1
 		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil {
 			d.res.Cursor = Cursor{Settled: pt.at, From: d.st.rowAt(FieldOdometer)}
 		}

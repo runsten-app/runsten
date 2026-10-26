@@ -623,6 +623,13 @@ func TestChargePosition(t *testing.T) {
 		{"read after the end", twoCharges(rec(96, 96, loc(work, m(77)))), Some(work, m(77))},
 		{"read after the window", twoCharges(rec(111, 111, loc(work, m(77)))), Some(home, m(0))},
 		{"trip first", twoCharges(rec(100, 100, engine(EngineRunning)), rec(101, 101, loc(work, m(77)))), Some(home, m(0))},
+		// One reading tells both: the position may be the one read as the trip starts.
+		{"read as a trip starts", twoCharges(rec(100, 100, func() Snapshot {
+			s := loc(work, m(77))
+			s.Covers |= FieldEngine
+			s.Engine = Some(EngineRunning, time.Time{})
+			return s
+		}())), Some(home, m(0))},
 		{"none yet", twoCharges(), Some(home, m(0))},
 	}
 	for _, tt := range tests {
