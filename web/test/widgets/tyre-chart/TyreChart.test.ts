@@ -31,11 +31,11 @@ async function mounted() {
 }
 
 describe('TyreChart', () => {
-  it('asks the last 30 days, on a window that moves every hour', async () => {
+  it('asks the last 30 days, up to the next hour', async () => {
     await mounted()
     expect(mocks.fetchTyres).toHaveBeenCalledWith('v1', {
-      from: '2026-08-29T23:00:00.000Z',
-      to: '2026-09-28T23:00:00.000Z',
+      from: '2026-08-30T00:00:00.000Z',
+      to: '2026-09-29T00:00:00.000Z',
     })
   })
 
@@ -63,8 +63,8 @@ describe('TyreChart', () => {
     await buttons[2]?.trigger('click')
     await flushPromises()
     expect(mocks.fetchTyres).toHaveBeenLastCalledWith('v1', {
-      from: '2025-09-28T23:00:00.000Z',
-      to: '2026-09-28T23:00:00.000Z',
+      from: '2025-09-29T00:00:00.000Z',
+      to: '2026-09-29T00:00:00.000Z',
     })
     expect(w.find('[role="group"] button[aria-pressed="true"]').text()).toBe('12 months')
     const [front] = w.findAllComponents({ name: 'ChartFrame' })

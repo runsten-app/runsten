@@ -26,10 +26,11 @@ const windowLabels = computed<Record<Window, string>>(() => ({
 const days: Record<Window, number> = { week: 7, month: 30, year: 365 }
 const chosen = ref<Window>('month')
 
-// The window moves on every hour: the health is read no more often.
+// The window moves on every hour, the health being read no more often; it ends at the
+// next hour, so that a reading of the current one is in it.
 const step = 3600_000
 const now = useNow(60_000)
-const end = computed(() => Math.floor(now.value / step) * step)
+const end = computed(() => Math.ceil(now.value / step) * step)
 const start = computed(() => end.value - days[chosen.value] * 24 * 3600_000)
 const { tyres } = useTyres(
   () => props.vehicle,
