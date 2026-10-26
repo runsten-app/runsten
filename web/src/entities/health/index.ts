@@ -16,6 +16,7 @@ export type {
 export { healthKeys } from './model/queryKeys'
 export {
   activeWarnings,
+  allFine,
   bar,
   hasPressures,
   needsAttention,

@@ -2,7 +2,7 @@
 import { mdiArrowRight } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { activeWarnings, needsAttention, tyresFine, tyreTrouble } from '@/entities/health'
+import { activeWarnings, allFine, needsAttention, tyresFine, tyreTrouble } from '@/entities/health'
 import { useHealth, useHealthText } from '@/features/view-health'
 import { StatusPill } from '@/shared/ui'
 
@@ -47,9 +47,11 @@ const lines = computed(() => {
   <v-card v-if="shown" class="tile health-summary">
     <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
       {{ t('health.title') }}
-      <StatusPill :tone="needsAttention(shown) ? 'warning' : 'success'">
-        {{ needsAttention(shown) ? t('health.attention') : t('health.fine') }}
-      </StatusPill>
+      <!-- Fine only when known in full: an incomplete health gives no pill. -->
+      <StatusPill v-if="needsAttention(shown)" tone="warning">{{
+        t('health.attention')
+      }}</StatusPill>
+      <StatusPill v-else-if="allFine(shown)" tone="success">{{ t('health.fine') }}</StatusPill>
     </v-card-title>
     <v-card-text>
       <ul class="lines">

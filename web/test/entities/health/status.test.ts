@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   activeWarnings,
+  allFine,
   bar,
   hasPressures,
   needsAttention,
@@ -77,6 +78,11 @@ describe('health status', () => {
       checks: h.checks.map((c) => ({ ...c, warning: false })),
     }
     expect(needsAttention(fine)).toBe(false)
+    // Fine only when known in full.
+    expect(allFine(fine)).toBe(true)
+    expect(allFine({ ...fine, tyres: h.tyres })).toBe(false)
+    const noState = { days: null, months: null, distance_km: null, reported_at: null, state: null }
+    expect(allFine({ ...fine, service: noState })).toBe(false)
     const due = (state: 'ok' | 'soon' | 'due' | 'overdue'): Health => ({
       ...fine,
       service: {

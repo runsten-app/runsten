@@ -44,6 +44,14 @@ export function activeWarnings(h: Health) {
   return h.checks.filter((c) => c.warning)
 }
 
+// allFine tells whether the health is known in full and nothing warns: the tyres all
+// known, the service's state known; an incomplete health is neither fine nor a warning.
+export function allFine(h: Health): boolean {
+  return (
+    !needsAttention(h) && (!h.tyres || tyresFine(h)) && (!h.service || h.service.state !== null)
+  )
+}
+
 // needsAttention tells whether anything of the health warns: a tyre, the service due or
 // overdue, a check.
 export function needsAttention(h: Health): boolean {

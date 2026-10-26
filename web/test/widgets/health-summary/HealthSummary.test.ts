@@ -64,6 +64,16 @@ describe('HealthSummary', () => {
       'Service: Soon',
       'Warnings: Washer fluid',
     ])
+    // Fine otherwise, but a tyre unknown: no pill at all.
+    mocks.fetchHealth.mockResolvedValue({
+      ...health,
+      tyres: {
+        ...health.tyres,
+        wheels: health.tyres.wheels.map((x, i) => ({ ...x, warning: i === 3 ? null : 'ok' })),
+      },
+      checks: health.checks.map((c) => ({ ...c, warning: false })),
+    })
+    expect((await mounted()).find('.status-pill').exists()).toBe(false)
   })
 
   it('is hidden before the vehicle told anything, and when the health cannot be read', async () => {
