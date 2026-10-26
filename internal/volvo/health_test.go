@@ -33,6 +33,8 @@ func TestNormalizeHealth(t *testing.T) {
 			Service:             core.Some(core.ServiceDue, diagAt),
 			DistanceToServiceKm: core.Some(30.0, diagAt),
 			MonthsToService:     core.Some(1.0, diagAt),
+			// UNSPECIFIED: reported, unknown.
+			Checks: map[core.Check]core.Value[bool]{core.CheckWasherFluid: {}},
 		}},
 		{Brakes, "cv-brakes.json", core.Health{
 			Checks: map[core.Check]core.Value[bool]{core.CheckBrakeFluid: core.Some(false, brakesAt)},
@@ -61,12 +63,12 @@ func TestNormalizeHealth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if h.Covers != 0 || len(h.Checks) != len(lights)-1 || h.Checks[core.CheckLightBrakeRight] != core.Some(true, lightsAt) ||
+	if h.Covers != 0 || len(h.Checks) != len(lights) || h.Checks[core.CheckLightBrakeRight] != core.Some(true, lightsAt) ||
 		h.Checks[core.CheckLightHazard] != core.Some(false, lightsAt) {
 		t.Errorf("warnings: %+v", h)
 	}
-	if _, ok := h.Checks[core.CheckLightBrakeLeft]; ok {
-		t.Error("an unspecified light is reported")
+	if v, ok := h.Checks[core.CheckLightBrakeLeft]; !ok || v.OK {
+		t.Errorf("an unspecified light: %+v, %t; want reported, unknown", v, ok)
 	}
 
 	for _, ep := range HealthEndpoints() {

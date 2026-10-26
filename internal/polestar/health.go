@@ -82,9 +82,11 @@ func NormalizeHealth(d Domain, raw []byte) (core.Health, error) {
 	h.Service = serviceState(x.ServiceWarning, "SERVICE_WARNING_", at)
 
 	h.Checks = map[core.Check]core.Value[bool]{}
+	// A check the response holds stays, unknown when its value is: it replaces the one
+	// before, and an aggregate of them is unknown rather than fine.
 	check := func(c core.Check, value, prefix string) {
-		if w := warning(value, prefix, at); w.OK {
-			h.Checks[c] = w
+		if value != "" {
+			h.Checks[c] = warning(value, prefix, at)
 		}
 	}
 	check(core.CheckBrakeFluid, x.BrakeFluid, "BRAKE_FLUID_LEVEL_WARNING_")

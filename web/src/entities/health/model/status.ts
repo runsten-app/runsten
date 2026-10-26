@@ -31,6 +31,13 @@ export function tyreTrouble(h: Health): Tyre[] {
     .sort((a, b) => severity[b.warning ?? 'ok'] - severity[a.warning ?? 'ok'])
 }
 
+// tyresFine tells whether the four tyres are known and none warns: fewer known are
+// never fine, whatever they say.
+export function tyresFine(h: Health): boolean {
+  const ws = h.tyres?.wheels ?? []
+  return wheels.every((w) => ws.find((x) => x.wheel === w)?.warning === 'ok')
+}
+
 // activeWarnings are the checks that warn, in the API's order: the fluids and the
 // battery first, then the lights.
 export function activeWarnings(h: Health) {

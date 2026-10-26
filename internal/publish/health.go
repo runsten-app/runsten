@@ -57,33 +57,39 @@ var tyreSeverity = map[core.TyreWarning]int{
 	core.TyreOK: 0, core.TyreHigh: 1, core.TyreFault: 2, core.TyreLow: 3, core.TyreVeryLow: 4,
 }
 
-// tyreWarning is the worst warning of the tyres; empty when none is known.
+// tyreWarning is the worst warning of the tyres: a known one whatever the others, ok
+// only when the four are known, else empty (unknown), never fine for want of a reading.
 func tyreWarning(h core.CurrentHealth) string {
-	worst, known := core.TyreOK, false
-	for _, t := range h.Tyres {
-		if t.Warning.OK {
-			known = true
-			if tyreSeverity[t.Warning.V] > tyreSeverity[worst] {
-				worst = t.Warning.V
+	worst, known := core.TyreOK, 0
+	for _, w := range core.Wheels() {
+		if t := h.Tyres[w].Warning; t.OK {
+			known++
+			if tyreSeverity[t.V] > tyreSeverity[worst] {
+				worst = t.V
 			}
 		}
 	}
-	if !known {
+	if worst == core.TyreOK && known < len(core.Wheels()) {
 		return ""
 	}
 	return string(worst)
 }
 
-// lightsWarning tells whether a light fails; empty when none is known.
+// lightsWarning tells whether a light fails: ok only when every light the vehicle
+// reports is known, else empty (unknown). Which lights a model has, the vehicle tells.
 func lightsWarning(h core.CurrentHealth) string {
-	out := ""
+	reported, unknown := false, false
 	for c, v := range h.Checks {
-		if c.Light() && v.OK {
-			if v.V {
-				return warningOn
-			}
-			out = warningOff
+		if !c.Light() {
+			continue
 		}
+		if v.OK && v.V {
+			return warningOn
+		}
+		reported, unknown = true, unknown || !v.OK
 	}
-	return out
+	if !reported || unknown {
+		return ""
+	}
+	return warningOff
 }

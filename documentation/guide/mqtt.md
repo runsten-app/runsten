@@ -52,12 +52,12 @@ Under `<prefix>/vehicles/<vehicle id>/`, where the prefix is `runsten` by defaul
 | `location` | `{"latitude": 45.764, "longitude": 4.8357}`, when the position is published |
 | `read_at` | the latest reading of the vehicle, in RFC 3339, UTC (`2026-10-04T10:00:00Z`) |
 | `tyre_pressure_front_left_kpa`, `…_front_right_kpa`, `…_rear_left_kpa`, `…_rear_right_kpa` | each tyre's pressure, in kPa (100 kPa = 1 bar); unknown for a car that gives a warning per tyre only, as a Volvo |
-| `tyre_warning` | the worst warning of the tyres: `ok`, `high`, `fault`, `low` or `very_low` |
+| `tyre_warning` | the worst warning of the tyres: `high`, `fault`, `low` or `very_low` as soon as one tyre says so; `ok` only when the four are known |
 | `service` | `ok`, `soon`, `due` or `overdue` |
 | `service_days`, `service_months` | the time left until the service, in days or in months, as the car counts it |
 | `service_distance_km` | the distance left until the service, in km |
 | `warning_brake_fluid`, `warning_coolant`, `warning_oil`, `warning_washer_fluid`, `warning_low_voltage_battery` | `warning` or `ok` |
-| `warning_lights` | `warning` when an exterior light fails, else `ok`; the web interface names which |
+| `warning_lights` | `warning` when an exterior light fails; `ok` only when every light the car reports is known; the web interface names which |
 | `credential_status` | a Polestar's only: `valid`, `expiring` (two weeks before its expiry), `expired`, `refused` (Polestar refused it) or `missing` (none given) |
 | `credential_expires_at` | a Polestar's only: when its credential expires at the latest, in RFC 3339, UTC; empty without one |
 

@@ -64,6 +64,8 @@ func TestNormalizeHealth(t *testing.T) {
 		Checks: map[core.Check]core.Value[bool]{
 			core.CheckWasherFluid:    core.Some(true, at),
 			core.CheckLightBrakeLeft: core.Some(true, at),
+			// Reported, its state unknown.
+			core.CheckOil: {},
 		},
 	}
 	if !reflect.DeepEqual(h, want) {

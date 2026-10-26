@@ -41,12 +41,14 @@ func NormalizeHealth(ep Endpoint, raw []byte) (core.Health, error) {
 		return core.Health{}, fmt.Errorf("normalize health %s: %w", ep, err)
 	}
 	d := v.Data
+	// A check the response holds stays, unknown when its value is (UNSPECIFIED): it
+	// replaces the one before, and an aggregate of them is unknown rather than fine.
 	check := func(c core.Check, key string) {
-		if w := warning(d[key]); w.OK {
+		if _, ok := d[key]; ok {
 			if h.Checks == nil {
 				h.Checks = map[core.Check]core.Value[bool]{}
 			}
-			h.Checks[c] = w
+			h.Checks[c] = warning(d[key])
 		}
 	}
 	switch ep {

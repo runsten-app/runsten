@@ -51,6 +51,7 @@ describe('HealthTiles', () => {
       checks: h.checks.map((c) => ({ ...c, warning: false })),
     })
     expect(w.find('[data-test="tyres"]').text()).toContain('a warning per tyre, not its pressure')
+    expect(w.find('[data-test="tyres"] .status-pill').text()).toBe('Nothing to report')
     expect(w.find('[data-test="tyres"] .figure').exists()).toBe(false)
     const service = plain(w.find('[data-test="service"]').text())
     expect(service).toContain('3 months')

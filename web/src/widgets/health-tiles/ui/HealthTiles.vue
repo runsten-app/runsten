@@ -6,6 +6,7 @@ import {
   bar,
   hasPressures,
   recommendedFor,
+  tyresFine,
   tyreTrouble,
   type Health,
   type ServiceState,
@@ -26,7 +27,10 @@ const text = useHealthText()
 
 const pressure = (kPa: number | null) => (kPa === null ? null : f.quantity(bar(kPa), 'bar'))
 const pressures = computed(() => hasPressures(props.health))
-const tyresTone = computed(() => (tyreTrouble(props.health).length ? 'warning' : 'success'))
+// Fine only when the four tyres are known: a tyre unknown gives no pill.
+const tyresTone = computed(() =>
+  tyreTrouble(props.health).length ? 'warning' : tyresFine(props.health) ? 'success' : null,
+)
 const warningTones: Record<TyreWarning, 'success' | 'warning' | 'error'> = {
   ok: 'success',
   high: 'warning',
@@ -55,7 +59,7 @@ const checksAt = computed(() => props.health.checks.find((c) => c.reported_at)?.
       <v-card class="tile h-100" data-test="tyres">
         <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
           {{ t('health.tyres.title') }}
-          <StatusPill v-if="health.tyres" :tone="tyresTone">
+          <StatusPill v-if="tyresTone" :tone="tyresTone">
             {{ tyresTone === 'success' ? t('health.fine') : t('health.attention') }}
           </StatusPill>
         </v-card-title>

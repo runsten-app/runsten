@@ -20,6 +20,7 @@ export {
   hasPressures,
   needsAttention,
   recommendedFor,
+  tyresFine,
   tyreTrouble,
   wheels,
 } from './model/status'

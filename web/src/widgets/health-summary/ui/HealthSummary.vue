@@ -2,7 +2,7 @@
 import { mdiArrowRight } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { activeWarnings, needsAttention, tyreTrouble } from '@/entities/health'
+import { activeWarnings, needsAttention, tyresFine, tyreTrouble } from '@/entities/health'
 import { useHealth, useHealthText } from '@/features/view-health'
 import { StatusPill } from '@/shared/ui'
 
@@ -19,17 +19,16 @@ const lines = computed(() => {
   const h = shown.value
   if (!h) return []
   const out: string[] = []
-  if (h.tyres) {
-    const [worst] = tyreTrouble(h)
+  // A tyre that warns, else OK only when the four are known: never fine for want of one.
+  const [worst] = tyreTrouble(h)
+  if (worst?.warning)
     out.push(
-      worst?.warning
-        ? t('health.tyres.summary.trouble', {
-            wheel: text.wheels.value[worst.wheel],
-            warning: text.tyreWarnings.value[worst.warning],
-          })
-        : t('health.tyres.summary.ok'),
+      t('health.tyres.summary.trouble', {
+        wheel: text.wheels.value[worst.wheel],
+        warning: text.tyreWarnings.value[worst.warning],
+      }),
     )
-  }
+  else if (tyresFine(h)) out.push(t('health.tyres.summary.ok'))
   if (h.service?.state)
     out.push(t('health.service.summary', { state: text.serviceStates.value[h.service.state] }))
   if (h.checks.length) {
