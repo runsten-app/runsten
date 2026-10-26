@@ -4,7 +4,7 @@ description: "Install Runsten with Docker Compose on a NAS, a VPS or a Raspberry
 
 # Installation
 
-Runsten runs with Docker Compose on any Linux server with Docker Engine 25 or later: a NAS, a VPS, a Raspberry Pi 4 or 5 on a 64-bit system. The images are built for `linux/amd64` and `linux/arm64`.
+Runsten runs with Docker Compose on any Linux server with Docker Engine 25 or later: a NAS, a VPS, a Raspberry Pi 4 or 5 on a 64-bit system. The images are built for `linux/amd64` and `linux/arm64`. It is also reported running in an unprivileged Debian 13 LXC container on Proxmox, with nesting and keyctl enabled, Docker 29, 2 cores and 2 GB of RAM.
 
 The stack has four services:
 
@@ -19,7 +19,7 @@ Its data lives in the `runsten_postgres` volume, which survives restarts and upd
 
 ## Before you start
 
-Settle the address you will open Runsten at: `https://runsten.example.org` behind a [reverse proxy](./reverse-proxy.md), or `http://127.0.0.1:8082` on the server itself. It goes into `RUNSTEN_APP_URL`.
+Settle the address you will open Runsten at: `https://runsten.example.org` behind a [reverse proxy](./reverse-proxy.md), `https://192.168.1.20` [on the local network only](./reverse-proxy.md#on-the-local-network-only), or `http://127.0.0.1:8082` on the server itself. It goes into `RUNSTEN_APP_URL`.
 
 To read a Volvo, create your application on the Volvo developer portal first: its redirect URI, on that address, cannot be changed afterwards ([Your Volvo application](./volvo.md)). A Polestar needs no application: leave the Volvo variables empty.
 

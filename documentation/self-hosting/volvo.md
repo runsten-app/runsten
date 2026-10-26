@@ -18,6 +18,7 @@ Choose the **redirect URI** first: the settings of the application cannot be cha
 
 - behind a [reverse proxy](./reverse-proxy.md): `https://runsten.example.org/auth/volvo/callback`;
 - under a path: `https://example.org/runsten/auth/volvo/callback`;
+- [on the local network only](./reverse-proxy.md#on-the-local-network-only): `https://192.168.1.20/auth/volvo/callback`, reported to work with a private address;
 - without a proxy, on the server itself or through an SSH tunnel: `http://127.0.0.1:8082/auth/volvo/callback`, if Volvo accepts it (not verified yet).
 
 Then, on the [developer portal](https://developer.volvocars.com/):
