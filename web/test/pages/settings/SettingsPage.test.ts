@@ -57,13 +57,17 @@ vi.mock('@/entities/place', async (original) => ({
 }))
 
 // The extensions' sections and account's actions: none in the public build, some in a test.
-const { sections, actions } = vi.hoisted(() => ({
+const { sections, actions, build } = vi.hoisted(() => ({
   sections: [] as unknown[],
   actions: [] as unknown[],
+  build: { releaseSection: true },
 }))
 vi.mock('@/pages/settings/extensions', () => ({
   extensionSections: sections,
   extensionAccountActions: actions,
+  get releaseSection() {
+    return build.releaseSection
+  },
 }))
 // The page that lifts the limits: none in the public build.
 vi.mock('@/entities/session/extensions', () => ({ limitsPage: null }))
@@ -71,6 +75,7 @@ vi.mock('@/entities/session/extensions', () => ({ limitsPage: null }))
 beforeEach(() => {
   sections.length = 0
   actions.length = 0
+  build.releaseSection = true
   Object.values(mocks).forEach((m) => m.mockReset())
   mocks.fetchPlaces.mockResolvedValue(places.items)
   mocks.fetchOrphanCosts.mockResolvedValue([])
@@ -191,6 +196,14 @@ describe('SettingsPage', () => {
     const w = await page()
     const section = w.find('[aria-labelledby="settings-release-title"]')
     expect(section.find('.version').text()).toBe('Version 0.11.0')
+  })
+
+  it('leaves the release out where the build does', async () => {
+    mocks.fetchSettings.mockResolvedValue(settings)
+    build.releaseSection = false
+    const w = await page()
+    expect(w.findAll('h2').map((h) => h.text())).not.toContain('About Runsten')
+    expect(mocks.fetchInstance).not.toHaveBeenCalled()
   })
 
   it('says costs need a currency, and explains a refused change', async () => {
