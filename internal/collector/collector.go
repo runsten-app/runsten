@@ -1014,7 +1014,10 @@ func (c *Collector) observe(t Target, vs *vehicleState, src *source, ep Endpoint
 			}
 		}
 	}
-	if old != parked && c.reads[t.AccountID].Every == 0 { // end of trip or charge: immediate readings
+	// End of a trip or a charge, or start of a charge: immediate readings. At a charge's
+	// start, the position may be another than the previous charge's even though no trip
+	// was seen (a short one between two pollings).
+	if (old != parked || m == charging) && c.reads[t.AccountID].Every == 0 {
 		for _, e := range src.Settled {
 			vs.next[e] = now
 		}

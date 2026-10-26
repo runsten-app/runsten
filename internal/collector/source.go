@@ -53,7 +53,7 @@ type SourceSpec struct {
 	// Endpoints are read in this order in a pass: those that tell the mode first, so that
 	// a transition triggers the readings of its end within the same pass.
 	Endpoints []EndpointSpec
-	// Settled are read at once when a trip or a charge ends.
+	// Settled are read at once when a trip or a charge ends, and when a charge starts.
 	Settled []Endpoint
 	// Daily is the number of calls a day granted per API and credential, which the
 	// budget spreads as it spreads Quota.Daily.

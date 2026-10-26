@@ -292,6 +292,21 @@ func TestDayScenario(t *testing.T) {
 		}
 	})
 
+	t.Run("position read as the charge starts", func(t *testing.T) {
+		// The charge starts at 18:25, seen within a parked interval; the rare reading of
+		// the position falls at 18:25 and 19:25, an hour after the arrival's.
+		var reads []time.Time
+		for _, ts := range api.calls[volvo.Location] {
+			if ts.After(at(18, 25)) && ts.Before(at(18, 36)) {
+				reads = append(reads, ts)
+			}
+		}
+		t.Logf("position read at %v", reads)
+		if len(reads) == 0 {
+			t.Errorf("no position read as the charge starts")
+		}
+	})
+
 	t.Run("charging tracked at the active interval", func(t *testing.T) {
 		var during int
 		for _, ts := range api.calls[volvo.EnergyState] {
