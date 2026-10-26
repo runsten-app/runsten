@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"runsten/internal/api"
+	"runsten/internal/publish"
 )
 
 // A Polestar connection is the owner's credential of the Polestar Data Portal
@@ -93,6 +94,35 @@ func (s *Store) PolestarConnection(ctx context.Context, accountID string) (api.P
 		return nil
 	})
 	return c, err
+}
+
+// PublishCredentials implements the publisher's Store: the credential of each vehicle of
+// the account's Polestar connection, by vehicle ID; a zero one when the connection has
+// none.
+func (s *Store) PublishCredentials(ctx context.Context, accountID string) (map[string]publish.Credential, error) {
+	creds := map[string]publish.Credential{}
+	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		rows, err := tx.Query(ctx, `
+			SELECT v.id, c.credential_set_at, c.credential_refused_at
+			FROM vehicles v JOIN connections c ON c.account_id = v.account_id AND c.id = v.connection_id
+			WHERE c.provider = 'polestar'`)
+		if err != nil {
+			return err //nolint:wrapcheck // wrapped by inAccount
+		}
+		var id string
+		var setAt, refusedAt *time.Time
+		_, err = pgx.ForEachRow(rows, []any{&id, &setAt, &refusedAt}, func() error {
+			var c publish.Credential
+			if setAt != nil {
+				c.ExpiresAt = setAt.UTC().Add(api.PolestarLifetime)
+				c.RefusedAt = utcOrZero(refusedAt)
+			}
+			creds[id] = c
+			return nil
+		})
+		return err //nolint:wrapcheck // wrapped by inAccount
+	})
+	return creds, err
 }
 
 // DeletePolestarCredential implements api.PolestarCredentials: the credential is erased,

@@ -51,9 +51,12 @@ Under `<prefix>/vehicles/<vehicle id>/`, where the prefix is `runsten` by defaul
 | `engine` | `running` or `stopped` |
 | `location` | `{"latitude": 45.764, "longitude": 4.8357}`, when the position is published |
 | `read_at` | the latest reading of the vehicle, in RFC 3339, UTC (`2026-10-04T10:00:00Z`) |
+| `credential_status` | a Polestar's only: `valid`, `expiring` (two weeks before its expiry), `expired`, `refused` (Polestar refused it) or `missing` (none given) |
+| `credential_expires_at` | a Polestar's only: when its credential expires at the latest, in RFC 3339, UTC; empty without one |
 
 - Numbers are written with a point, as short as they read: `80`, `312.5`, `11.04`.
 - **An unknown value is an empty message**, which removes the previous one: unknown is never zero.
+- The credential's topics are published at every pass of the collector, even while Polestar refuses the credential and nothing is read: the state follows the date by itself ([Every 90 days](./polestar.md#every-90-days)).
 - `<prefix>/status` is `online` while Runsten is connected, and `offline` once it stops or loses the connection (its last will).
 
 These topics are a contract, like the API: a change to them is announced in the update notes.
@@ -82,6 +85,28 @@ With discovery on, each vehicle is a device named as the web interface names it 
 | Charging | binary sensor, battery charging | `charging_status` |
 | Engine | binary sensor, running | `engine` |
 | Location | device tracker | `location` |
+| Credential | binary sensor, problem: on unless `valid` (a Polestar's only) | `credential_status` |
+| Credential expiry | sensor, timestamp, diagnostic (a Polestar's only) | `credential_expires_at` |
+
+The **Credential** entity turns on two weeks before the Polestar credential expires, and stays on until another is given: an automation can notify your phone, without opening Runsten. For instance:
+
+```yaml
+automation:
+  - alias: Renew the Polestar credential
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.polestar_3_2025_credential
+        to: "on"
+    actions:
+      - action: notify.mobile_app_my_phone
+        data:
+          title: Polestar credential
+          message: >-
+            Create a new credential on Polestar's Data Portal and give it to Runsten
+            before {{ states('sensor.polestar_3_2025_credential_expiry') | as_datetime | as_local }}.
+```
+
+The entity IDs follow the device's name: check them in Home Assistant.
 
 Their configurations are published under `<discovery prefix>/<component>/runsten_<vehicle id>/<object>/config`. An unknown value shows as *Unknown*; while Runsten is stopped or cut off from the broker, the entities are *Unavailable*, and come back as they were.
 

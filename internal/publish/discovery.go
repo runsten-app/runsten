@@ -3,6 +3,7 @@ package publish
 import (
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"runsten/internal/core"
 )
@@ -77,6 +78,9 @@ type entity struct {
 	name      string
 	topic     string // the State topic it reads
 	config    config
+	// credential: an entity of the credential the vehicle is read with, configured only
+	// for a vehicle read with one.
+	credential bool
 }
 
 // unknown is a value template that takes an empty payload for unknown.
@@ -88,26 +92,36 @@ func onOff(on, off string) string {
 	return "{{ 'ON' if value == '" + on + "' else ('OFF' if value == '" + off + "' else 'None') }}"
 }
 
+// problemTemplate is a problem while the credential is not valid: unknown only when its
+// state is.
+const problemTemplate = "{{ 'OFF' if value == '" + CredentialValid + "' else ('ON' if value != '' else 'None') }}"
+
 // chargingTemplate tells whether the vehicle charges, from its charging status: unknown
 // only when the status is.
 const chargingTemplate = "{{ 'ON' if value == 'charging' else ('OFF' if value != '' else 'None') }}"
 
 func entities() []entity {
 	sensor := func(object, name, topic, deviceClass, unit, stateClass string) entity {
-		return entity{"sensor", object, name, topic, config{
+		return entity{component: "sensor", object: object, name: name, topic: topic, config: config{
 			DeviceClass: deviceClass, Unit: unit, StateClass: stateClass, ValueTemplate: unknown,
 		}}
 	}
 	enum := func(object, name, topic string, options ...string) entity {
-		return entity{"sensor", object, name, topic, config{DeviceClass: "enum", Options: options, ValueTemplate: unknown}}
+		return entity{component: "sensor", object: object, name: name, topic: topic, config: config{
+			DeviceClass: "enum", Options: options, ValueTemplate: unknown,
+		}}
 	}
 	binary := func(object, name, topic, deviceClass, template string) entity {
-		return entity{"binary_sensor", object, name, topic, config{
+		return entity{component: "binary_sensor", object: object, name: name, topic: topic, config: config{
 			DeviceClass: deviceClass, ValueTemplate: template, PayloadOn: "ON", PayloadOff: "OFF",
 		}}
 	}
 	readAt := sensor("read_at", "Last read", "read_at", "timestamp", "", "")
 	readAt.config.EntityCategory = "diagnostic"
+	credential := binary("credential", "Credential", "credential_status", "problem", problemTemplate)
+	credential.credential = true
+	expiresAt := sensor("credential_expires_at", "Credential expiry", "credential_expires_at", "timestamp", "", "")
+	expiresAt.config.EntityCategory, expiresAt.credential = "diagnostic", true
 	return []entity{
 		sensor("battery_level", "Battery", "battery_level", "battery", "%", "measurement"),
 		sensor("range", "Range", "range_km", "distance", "km", "measurement"),
@@ -122,9 +136,11 @@ func entities() []entity {
 		binary("plug", "Plug", "plug", "plug", onOff(string(core.Connected), string(core.Disconnected))),
 		binary("charging", "Charging", "charging_status", "battery_charging", chargingTemplate),
 		binary("engine", "Engine", "engine", "running", onOff(string(core.EngineRunning), string(core.EngineStopped))),
+		credential,
+		expiresAt,
 		// Its position from the attributes of the location's JSON; an empty location
 		// makes it unknown.
-		{"device_tracker", "location", "Location", "location", config{
+		{component: "device_tracker", object: "location", name: "Location", topic: "location", config: config{
 			SourceType: "gps", JSONAttributesTemplate: `{{ value if value != '' else '{"latitude": null, "longitude": null}' }}`,
 		}},
 	}
@@ -181,15 +197,16 @@ func discoveryTopic(b Broker, vehicleID string, e entity) string {
 
 // Discovery is the configuration of each entity of the vehicle, retained, named label
 // (Labels). Without the location published, the device tracker's is empty: it removes
-// the one published before.
-func Discovery(b Broker, vehicleID, label string, m Model) []Message {
+// the one published before; so are the credential's, for a vehicle read without one
+// (credential false).
+func Discovery(b Broker, vehicleID, label string, m Model, credential bool) []Message {
 	base := b.TopicPrefix + "/vehicles/" + vehicleID + "/"
 	dev := device{Identifiers: []string{"runsten_" + vehicleID}, Name: label, Manufacturer: m.Brand, Model: m.name()}
 	es := entities()
 	msgs := make([]Message, 0, len(es))
 	for _, e := range es {
 		msg := Message{Topic: discoveryTopic(b, vehicleID, e), Retained: true}
-		if e.component != "device_tracker" || b.PublishLocation {
+		if (e.component != "device_tracker" || b.PublishLocation) && (!e.credential || credential) {
 			c := e.config
 			c.Name, c.UniqueID = e.name, "runsten_"+vehicleID+"_"+e.object
 			if e.component == "device_tracker" {
@@ -225,11 +242,12 @@ func RemoveDiscovery(b Broker, vehicleID string) []Message {
 	return msgs
 }
 
-// RemoveState empties the vehicle's state topics: the broker keeps none of its values.
+// RemoveState empties the vehicle's state topics, its credential's included: the broker
+// keeps none of its values.
 func RemoveState(b Broker, vehicleID string) []Message {
 	msgs := State(b, vehicleID, core.Current{})
 	for i := range msgs {
 		msgs[i].Payload = ""
 	}
-	return msgs
+	return append(msgs, CredentialState(b, vehicleID, nil, time.Time{})...)
 }

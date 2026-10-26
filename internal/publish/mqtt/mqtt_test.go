@@ -135,6 +135,9 @@ type memStore struct {
 	readErr  error
 	reads    int
 	writeErr error
+	// creds are the credentials of the vehicles read with one, by ID.
+	creds    map[string]publish.Credential
+	credsErr error
 }
 
 func newStore(brokers ...publish.Broker) *memStore {
@@ -185,6 +188,25 @@ func (s *memStore) SaveMQTTStatus(_ context.Context, accountID string, updatedAt
 	}
 	s.status[accountID] = st
 	return nil
+}
+
+func (s *memStore) PublishCredentials(context.Context, string) (map[string]publish.Credential, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	creds := make(map[string]publish.Credential, len(s.creds))
+	for id, c := range s.creds {
+		creds[id] = c
+	}
+	return creds, s.credsErr
+}
+
+func (s *memStore) setCredential(vehicleID string, c publish.Credential) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.creds == nil {
+		s.creds = map[string]publish.Credential{}
+	}
+	s.creds[vehicleID] = c
 }
 
 func (s *memStore) statusOf() publish.Status {
@@ -403,6 +425,67 @@ func TestPublishDiscovery(t *testing.T) {
 	if len(p.conns[account].removed) != 0 {
 		t.Errorf("removals left: %v", p.conns[account].removed)
 	}
+}
+
+// TestPublishCredential: a vehicle read with a credential has its state and its expiry
+// published, and its entities configured, at each pass, even one that reads nothing (a
+// credential refused); a vehicle read without one has neither.
+func TestPublishCredential(t *testing.T) {
+	b := startBroker(t, nil, nil)
+	st := newStore(brokerAt("mqtt://" + b.addr))
+	expires := t0.Add(20 * 24 * time.Hour)
+	st.setCredential(vehicle, publish.Credential{ExpiresAt: expires})
+	sts := &states{current: map[string]core.Current{vehicle: currentWith(80), second: currentWith(55)}}
+	clk := clock.NewManual(t0)
+	p := New(st, sts, models{vehicle: ex30, second: ex30}, clk, false, quiet)
+	defer p.Close()
+
+	// Before any pass reads the vehicle, its credential goes out.
+	connected(t, p, st)
+	eventually(t, "credential published", func() bool {
+		r := b.retained()
+		return r[state+"credential_status"] == "valid" && r[state+"credential_expires_at"] == "2026-10-24T08:00:00Z"
+	})
+	for _, id := range []string{vehicle, second} {
+		if err := p.Publish(context.Background(), account, id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	credentialConfig := "homeassistant/binary_sensor/runsten_" + vehicle + "/credential/config"
+	eventually(t, "configured", func() bool { return len(b.retainedUnder("homeassistant/#")) == 26 })
+	if b.retainedUnder("homeassistant/#")[credentialConfig] == "" {
+		t.Error("the credential's entity is not configured")
+	}
+	for topic := range b.retainedUnder("#") {
+		if strings.Contains(topic, second) && strings.Contains(topic, "credential") {
+			t.Errorf("%s published for a vehicle read without a credential", topic)
+		}
+	}
+
+	// Its state follows time and the provider, without a pass that reads the vehicle.
+	clk.Advance(7 * 24 * time.Hour)
+	synced(t, p, nil)
+	eventually(t, "expiring", func() bool { return b.retained()[state+"credential_status"] == "expiring" })
+	st.setCredential(vehicle, publish.Credential{ExpiresAt: expires, RefusedAt: clk.Now()})
+	synced(t, p, nil)
+	eventually(t, "refused", func() bool { return b.retained()[state+"credential_status"] == "refused" })
+
+	// A failure to read the credentials keeps what was published.
+	st.mu.Lock()
+	st.credsErr = errors.New("database down")
+	st.mu.Unlock()
+	synced(t, p, nil)
+	if got := b.retained()[state+"credential_status"]; got != "refused" {
+		t.Errorf("after a failed read: %q", got)
+	}
+
+	// Gone from the account, its credential goes with it.
+	syncedWith(t, p, map[string][]string{account: {second}}, nil)
+	eventually(t, "removed", func() bool {
+		_, status := b.retained()[state+"credential_status"]
+		_, config := b.retainedUnder("homeassistant/#")[credentialConfig]
+		return !status && !config
+	})
 }
 
 // TestPublishConfiguration: as a connection closes, it removes from its broker what
