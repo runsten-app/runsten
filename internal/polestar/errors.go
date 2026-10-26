@@ -3,6 +3,7 @@ package polestar
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"regexp"
 	"slices"
@@ -177,8 +178,9 @@ func errorBody(body []byte) (code, message string) {
 // so that no clock is needed). A 429 has been seen without its headers being published.
 func rateRetry(h http.Header) time.Duration {
 	ra := h.Get("Retry-After")
-	if n, err := strconv.Atoi(ra); err == nil && n > 0 {
-		return time.Duration(n) * time.Second
+	if n, err := strconv.ParseInt(ra, 10, 64); err == nil && n > 0 {
+		// Beyond what a Duration holds, the longest wait rather than a negative one.
+		return time.Duration(min(n, math.MaxInt64/int64(time.Second))) * time.Second
 	}
 	at, err := http.ParseTime(ra)
 	if err != nil {

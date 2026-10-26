@@ -3,6 +3,7 @@ package volvo
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -113,14 +114,20 @@ func errorMessage(body []byte) string {
 }
 
 func rateRetry(header, msg string) time.Duration {
-	if n, err := strconv.Atoi(header); err == nil && n > 0 {
-		return time.Duration(n) * time.Second
+	if n, err := strconv.ParseInt(header, 10, 64); err == nil && n > 0 {
+		return seconds(n)
 	}
 	if m := rateRetryRe.FindStringSubmatch(msg); m != nil {
-		n, _ := strconv.Atoi(m[1])
-		return time.Duration(n) * time.Second
+		n, _ := strconv.ParseInt(m[1], 10, 64) // out of range: the largest int64
+		return seconds(n)
 	}
 	return defaultRateRetry
+}
+
+// seconds converts a wait the API gives in seconds: beyond what a Duration holds, the
+// longest wait rather than a negative one.
+func seconds(n int64) time.Duration {
+	return time.Duration(min(n, math.MaxInt64/int64(time.Second))) * time.Second
 }
 
 func quotaRetry(msg string) time.Duration {
