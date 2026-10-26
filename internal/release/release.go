@@ -16,6 +16,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"runsten/internal/platform/clock"
 )
 
 // DefaultURL is the latest release of Runsten, on GitHub's API.
@@ -39,16 +41,19 @@ type Checker struct {
 	url     string
 	running string
 	hc      *http.Client
+	clk     clock.Clock
 	log     *slog.Logger
 
-	mu     sync.Mutex
-	latest Release
+	mu        sync.Mutex
+	latest    Release
+	checkedAt time.Time
 }
 
-// NewChecker creates a checker for the release running, as X.Y.Z (another value, as a
-// development build's "dev", is never older than a release). hc must have a timeout.
-func NewChecker(url, running string, hc *http.Client, log *slog.Logger) *Checker {
-	return &Checker{url: url, running: running, hc: hc, log: log}
+// NewChecker creates a checker for the release running, as X.Y.Z or a pre-release of it
+// (another value, as a development build's "dev", is never older than a release). hc
+// must have a timeout.
+func NewChecker(url, running string, hc *http.Client, clk clock.Clock, log *slog.Logger) *Checker {
+	return &Checker{url: url, running: running, hc: hc, clk: clk, log: log}
 }
 
 // Run reads the latest release now, then every Every, until ctx ends. A failure is
@@ -97,7 +102,15 @@ func (c *Checker) Check(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.latest = Release{Version: version, URL: body.HTMLURL}
+	c.checkedAt = c.clk.Now()
 	return nil
+}
+
+// CheckedAt is when the latest release was last read; zero: never yet.
+func (c *Checker) CheckedAt() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.checkedAt
 }
 
 // Update is the latest release when it is newer than the one running.
@@ -110,15 +123,17 @@ func (c *Checker) Update() (Release, bool) {
 	return c.latest, true
 }
 
-// Newer tells whether the version a, X.Y.Z, comes after b. A b that is no X.Y.Z (a
-// development build) is never older.
+// Newer tells whether the release a, X.Y.Z, comes after b, a release or a pre-release
+// (X.Y.Z-rc.1, which X.Y.Z comes after). A b that is neither (a development build) is
+// never older.
 func Newer(a, b string) bool {
 	va, ok := parse(a)
 	if !ok {
 		return false
 	}
-	vb, ok := parse(b)
-	if !ok {
+	core, pre, _ := strings.Cut(b, "-")
+	vb, ok := parse(core)
+	if !ok || strings.HasSuffix(b, "-") {
 		return false
 	}
 	for i := range va {
@@ -126,7 +141,7 @@ func Newer(a, b string) bool {
 			return va[i] > vb[i]
 		}
 	}
-	return false
+	return pre != ""
 }
 
 // parse reads X.Y.Z, without a pre-release.

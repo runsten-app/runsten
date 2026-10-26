@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { mdiOpenInNew } from '@mdi/js'
 import { useI18n } from 'vue-i18n'
+import { useFormat, useNow } from '@/shared/lib'
 import { useInstance } from '../composables/useInstance'
 
 // ReleaseInfo tells the release the instance runs and, when the instance checks for
-// them, a newer one with its notes and how to update. Without the check, the releases'
-// page: nothing is asked of GitHub but by whoever opens it.
+// them, a newer one with its notes and how to update; that none is out only once a read
+// succeeded, with its age. Without the check, or before a read, the releases' page:
+// nothing is asked of GitHub but by whoever opens it.
 const { t } = useI18n()
+const f = useFormat()
+const now = useNow()
 const { instance, isPending, error } = useInstance()
 const releases = 'https://github.com/runsten-app/runsten/releases'
 const updating = 'https://runsten.app/docs/self-hosting/updating'
@@ -51,10 +55,11 @@ const updating = 'https://runsten.app/docs/self-hosting/updating'
           </v-btn>
         </div>
       </v-alert>
-      <p v-else-if="instance.update_check" class="text-body-medium text-medium-emphasis latest">
-        {{ t('release.latest') }}
+      <p v-else-if="instance.checked_at" class="text-body-medium text-medium-emphasis latest">
+        {{ t('release.latest', { age: f.age(instance.checked_at, now) }) }}
       </p>
       <p v-else class="text-body-medium">
+        <span v-if="instance.update_check" class="unread me-1">{{ t('release.unread') }}</span>
         <a :href="releases" target="_blank" rel="noreferrer" class="releases">
           {{ t('release.releases') }}<v-icon :icon="mdiOpenInNew" size="x-small" class="ms-1" />
           <span class="d-sr-only">{{ t('release.newTab') }}</span>

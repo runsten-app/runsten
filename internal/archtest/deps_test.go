@@ -69,7 +69,7 @@ var allowed = map[string][]string{
 	"internal/geocode/nominatim": {"net/http", "encoding/json", "internal/core"},
 	"internal/aximote":           {"net/http", "encoding/json"},
 	// The latest release on GitHub, compared with the one running.
-	"internal/release":     {"net/http", "encoding/json"},
+	"internal/release":     {"net/http", "encoding/json", "internal/platform/clock"},
 	"internal/volvoportal": nil,
 	// The only package that knows paho.
 	"internal/publish/mqtt": {

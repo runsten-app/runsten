@@ -1399,7 +1399,8 @@
     "update": "Runsten {version} is out.",
     "notes": "Release notes",
     "howTo": "How to update",
-    "latest": "No newer release.",
+    "latest": "No newer release, checked {age}.",
+    "unread": "The latest release could not be read yet.",
     "releases": "All the releases",
     "newTab": "(opens in a new tab)"
   }

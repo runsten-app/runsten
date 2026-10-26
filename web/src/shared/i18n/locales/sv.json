@@ -1399,7 +1399,8 @@
     "update": "Runsten {version} har släppts.",
     "notes": "Versionsinformation",
     "howTo": "Så uppdaterar du",
-    "latest": "Ingen nyare version.",
+    "latest": "Ingen nyare version, kontrollerat {age}.",
+    "unread": "Den senaste versionen har inte kunnat läsas in än.",
     "releases": "Alla versioner",
     "newTab": "(öppnas i en ny flik)"
   }

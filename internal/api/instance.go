@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 )
@@ -13,15 +14,17 @@ type Release struct {
 	URL     string // its page, with its notes
 }
 
-// Releases tells whether a release newer than the one running is out, as last read.
+// Releases tells what the last read of the latest release found: when it succeeded
+// (zero: not yet), and a release newer than the one running, if any.
 type Releases interface {
-	Update() (Release, bool)
+	Latest() (checkedAt time.Time, update Release, newer bool)
 }
 
 type instanceJSON struct {
 	Version     string            `json:"version" doc:"The release the instance runs, as 0.11.0; dev for a build from the sources."`
 	UpdateCheck bool              `json:"update_check" doc:"Whether the instance checks for a newer release (RUNSTEN_UPDATE_CHECK): it reads the latest one on GitHub once a day."`
-	Update      null[releaseJSON] `json:"update" doc:"A newer release than the one running, when the instance checks and one is out; null otherwise."`
+	CheckedAt   *time.Time        `json:"checked_at" pattern:"Z$" doc:"When the latest release was last read; null: the instance does not check, or no read succeeded yet."`
+	Update      null[releaseJSON] `json:"update" doc:"A newer release than the one running, as last read; null: none, or not known."`
 }
 
 type releaseJSON struct {
@@ -32,7 +35,12 @@ type releaseJSON struct {
 func (s *Server) getInstance(context.Context, *struct{}) (*body[instanceJSON], error) {
 	out := instanceJSON{Version: s.Version, UpdateCheck: s.Releases != nil}
 	if s.Releases != nil {
-		if r, ok := s.Releases.Update(); ok {
+		at, r, newer := s.Releases.Latest()
+		if !at.IsZero() {
+			at = at.UTC()
+			out.CheckedAt = &at
+		}
+		if newer {
 			out.Update = known(releaseJSON(r))
 		}
 	}

@@ -43,15 +43,25 @@ describe('ReleaseInfo', () => {
     api.fetchInstance.mockResolvedValue(instance)
     const w = await info()
     expect(w.find('.update').exists()).toBe(false)
-    expect(w.find('.latest').text()).toBe('No newer release.')
+    expect(w.find('.latest').text()).toMatch(/^No newer release, checked .+\.$/)
     expect(w.find('a.releases').exists()).toBe(false)
+  })
+
+  // A check that has not succeeded yet claims nothing: the releases' page.
+  it('claims nothing before a read succeeded', async () => {
+    api.fetchInstance.mockResolvedValue({ ...instance, checked_at: null })
+    const w = await info()
+    expect(w.find('.latest').exists()).toBe(false)
+    expect(w.find('.unread').text()).toBe('The latest release could not be read yet.')
+    expect(w.find('a.releases').exists()).toBe(true)
   })
 
   // Without the check, nothing is asked of GitHub: the releases' page, for whoever opens it.
   it('leads to the releases, when the instance does not check', async () => {
-    api.fetchInstance.mockResolvedValue({ ...instance, update_check: false })
+    api.fetchInstance.mockResolvedValue({ ...instance, update_check: false, checked_at: null })
     const w = await info()
     expect(w.find('.latest').exists()).toBe(false)
+    expect(w.find('.unread').exists()).toBe(false)
     expect(w.find('a.releases .d-sr-only').text()).toBe('(opens in a new tab)')
     expect(w.find('a.releases').attributes('href')).toBe(
       'https://github.com/runsten-app/runsten/releases',

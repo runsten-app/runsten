@@ -232,7 +232,7 @@ func run(args []string) error {
 	// Only when asked is GitHub read: nothing leaves for it otherwise.
 	var releases api.Releases
 	if cfg.updateCheck {
-		checker := release.NewChecker(release.DefaultURL, version, hc, log)
+		checker := release.NewChecker(release.DefaultURL, version, hc, clock.Real{}, log)
 		go checker.Run(ctx)
 		releases = latestRelease{checker}
 	}

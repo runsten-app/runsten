@@ -7,7 +7,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"runsten/internal/platform/clock"
 )
+
+var t0 = time.Date(2026, 10, 26, 9, 0, 0, 0, time.UTC)
 
 var quiet = slog.New(slog.NewTextHandler(io.Discard, nil))
 
@@ -21,6 +26,10 @@ func TestNewer(t *testing.T) {
 		{"1.0.0", "0.99.99", true},
 		{"0.10.1", "0.10.1", false},
 		{"0.10.0", "0.10.1", false},
+		{"0.11.0", "0.11.0-rc.1", true},
+		{"0.11.0", "0.12.0-rc.1", false},
+		{"0.12.0", "0.11.0-rc.1", true},
+		{"0.11.0", "0.11.0-", false},
 		{"0.11.0", "dev", false},
 		{"0.11.0", "", false},
 		{"0.11.0-rc.1", "0.10.0", false},
@@ -53,12 +62,16 @@ const latest = `{"tag_name":"v0.11.0","html_url":"https://github.com/runsten-app
 
 func TestCheck(t *testing.T) {
 	ctx := context.Background()
-	c := NewChecker(github(t, http.StatusOK, latest), "0.10.1", http.DefaultClient, quiet)
-	if _, ok := c.Update(); ok {
-		t.Error("an update before any check")
+	clk := clock.NewManual(t0)
+	c := NewChecker(github(t, http.StatusOK, latest), "0.10.1", http.DefaultClient, clk, quiet)
+	if _, ok := c.Update(); ok || !c.CheckedAt().IsZero() {
+		t.Error("an update, or a read, before any check")
 	}
 	if err := c.Check(ctx); err != nil {
 		t.Fatal(err)
+	}
+	if !c.CheckedAt().Equal(t0) {
+		t.Errorf("CheckedAt() = %v", c.CheckedAt())
 	}
 	got, ok := c.Update()
 	want := Release{Version: "0.11.0", URL: "https://github.com/runsten-app/runsten/releases/tag/v0.11.0"}
@@ -66,8 +79,8 @@ func TestCheck(t *testing.T) {
 		t.Errorf("Update() = %+v, %v", got, ok)
 	}
 
-	for _, running := range []string{"0.11.0", "0.12.0", "dev"} {
-		c := NewChecker(github(t, http.StatusOK, latest), running, http.DefaultClient, quiet)
+	for _, running := range []string{"0.11.0", "0.12.0", "0.12.0-rc.1", "dev"} {
+		c := NewChecker(github(t, http.StatusOK, latest), running, http.DefaultClient, clk, quiet)
 		if err := c.Check(ctx); err != nil {
 			t.Fatal(err)
 		}
@@ -87,16 +100,18 @@ func TestCheckFails(t *testing.T) {
 		"bad tag":   github(t, http.StatusOK, `{"tag_name":"latest","html_url":"https://github.com/x"}`),
 		"elsewhere": github(t, http.StatusOK, `{"tag_name":"v0.11.0","html_url":"https://example.com/x"}`),
 	} {
-		c := NewChecker(github(t, http.StatusOK, latest), "0.10.1", http.DefaultClient, quiet)
+		clk := clock.NewManual(t0)
+		c := NewChecker(github(t, http.StatusOK, latest), "0.10.1", http.DefaultClient, clk, quiet)
 		if err := c.Check(ctx); err != nil {
 			t.Fatal(err)
 		}
+		clk.Advance(time.Hour)
 		c.url = srv
 		if err := c.Check(ctx); err == nil {
 			t.Errorf("%s: no error", name)
 		}
-		if r, ok := c.Update(); !ok || r.Version != "0.11.0" {
-			t.Errorf("%s: the release read before is lost: %+v, %v", name, r, ok)
+		if r, ok := c.Update(); !ok || r.Version != "0.11.0" || !c.CheckedAt().Equal(t0) {
+			t.Errorf("%s: the release read before is lost: %+v, %v, %v", name, r, ok, c.CheckedAt())
 		}
 	}
 }
