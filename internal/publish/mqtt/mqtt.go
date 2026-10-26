@@ -52,6 +52,10 @@ type Store interface {
 	// SaveMQTTStatus writes the status of the connection to the broker configured at
 	// updatedAt; nothing if its configuration changed since.
 	SaveMQTTStatus(ctx context.Context, accountID string, updatedAt time.Time, s publish.Status) error
+	// PublishCredentials returns the credential each vehicle of the account read with
+	// one (the Polestar Data Portal's) is read with, by vehicle ID; a zero Credential: its
+	// connection has none. The vehicles read otherwise are not in it.
+	PublishCredentials(ctx context.Context, accountID string) (map[string]publish.Credential, error)
 }
 
 // States reads a vehicle's current state, as GET /vehicles/{id}/state does, and its
@@ -135,6 +139,10 @@ type conn struct {
 	models    map[string]publish.Model
 	values    map[string][]publish.Message
 	discovery map[string][]publish.Message
+	// credentials are the messages of the credential of each vehicle read with one, by
+	// ID, built at each Sync: its state changes with time, and while it is refused no
+	// pass reads the vehicle, which would publish it.
+	credentials map[string][]publish.Message
 	// sent is what the broker acknowledged on this connection, by vehicle and topic.
 	sent map[string]map[string]string
 	// removed are the messages that remove the vehicles gone from the account, until the
@@ -209,6 +217,7 @@ func (p *Publisher) Sync(ctx context.Context, vehicles map[string][]string, with
 	for _, account := range sortedKeys(p.conns) {
 		c := p.conns[account]
 		c.forget(vehicles[account])
+		p.credentials(ctx, c, vehicles[account], now)
 		c.connect(now)
 		if err := p.flush(c); err != nil {
 			p.log.Warn("MQTT state not published", "account", account, "err", err)
@@ -277,8 +286,8 @@ func (p *Publisher) read(ctx context.Context, account string, updatedAt time.Tim
 func (p *Publisher) open(b publish.Broker) {
 	c := &conn{
 		b: b, models: map[string]publish.Model{}, values: map[string][]publish.Message{},
-		discovery: map[string][]publish.Message{}, sent: map[string]map[string]string{},
-		removed: map[string][]publish.Message{},
+		discovery: map[string][]publish.Message{}, credentials: map[string][]publish.Message{},
+		sent: map[string]map[string]string{}, removed: map[string][]publish.Message{},
 	}
 	opts := paho.NewClientOptions().
 		AddBroker(b.URL).
@@ -330,7 +339,7 @@ func (p *Publisher) close(c *conn, cl cleanup) {
 		for _, vehicle := range sortedKeys(c.removed) {
 			msgs = append(msgs, c.removed[vehicle]...)
 		}
-		for _, vehicle := range sortedKeys(c.models) {
+		for _, vehicle := range c.vehicles() {
 			if cl.discovery {
 				msgs = append(msgs, publish.RemoveDiscovery(c.b, vehicle)...)
 			}
@@ -360,7 +369,7 @@ func (p *Publisher) close(c *conn, cl cleanup) {
 // entities, if discovered, and their values, sent at the next flush.
 func (c *conn) forget(current []string) {
 	gone := false
-	for vehicle := range c.models {
+	for _, vehicle := range c.vehicles() {
 		if slices.Contains(current, vehicle) {
 			continue
 		}
@@ -372,11 +381,58 @@ func (c *conn) forget(current []string) {
 		delete(c.models, vehicle)
 		delete(c.values, vehicle)
 		delete(c.discovery, vehicle)
+		delete(c.credentials, vehicle)
 		delete(c.sent, vehicle)
 		gone = true
 	}
 	if gone {
 		c.describe() // the labels of those left may change
+	}
+}
+
+// vehicles are the vehicles the connection publishes, by ID: those whose state it
+// knows, and those read with a credential.
+func (c *conn) vehicles() []string {
+	ids := sortedKeys(c.models)
+	for _, vehicle := range sortedKeys(c.credentials) {
+		if _, ok := c.models[vehicle]; !ok {
+			ids = append(ids, vehicle)
+		}
+	}
+	slices.Sort(ids)
+	return ids
+}
+
+// credentials builds the messages of the credential of each vehicle of current read with
+// one, as it stands at now. A failure to read them keeps the previous ones.
+func (p *Publisher) credentials(ctx context.Context, c *conn, current []string, now time.Time) {
+	creds, err := p.st.PublishCredentials(ctx, c.b.AccountID)
+	if err != nil {
+		if ctx.Err() == nil {
+			p.log.Warn("MQTT credentials not read", "account", c.b.AccountID, "err", err)
+		}
+		return
+	}
+	changed := false
+	for vehicle, msgs := range c.credentials {
+		// Moved to a connection without a credential (the same VIN given by another
+		// provider): its credential's topics and entities are emptied, once.
+		if _, ok := creds[vehicle]; !ok && slices.Contains(current, vehicle) && msgs[0].Payload != "" {
+			c.credentials[vehicle] = publish.CredentialState(c.b, vehicle, nil, now)
+			changed = true
+		}
+	}
+	for vehicle, cred := range creds {
+		if !slices.Contains(current, vehicle) {
+			continue // gone, or not listed yet: forget removes it
+		}
+		if msgs, ok := c.credentials[vehicle]; !ok || msgs[0].Payload == "" {
+			changed = true
+		}
+		c.credentials[vehicle] = publish.CredentialState(c.b, vehicle, &cred, now)
+	}
+	if changed {
+		c.describe()
 	}
 }
 
@@ -388,7 +444,8 @@ func (c *conn) describe() {
 	}
 	labels := publish.Labels(c.models)
 	for vehicle, m := range c.models {
-		c.discovery[vehicle] = publish.Discovery(c.b, vehicle, labels[vehicle], m)
+		credential := len(c.credentials[vehicle]) > 0 && c.credentials[vehicle][0].Payload != ""
+		c.discovery[vehicle] = publish.Discovery(c.b, vehicle, labels[vehicle], m, credential)
 	}
 }
 
@@ -464,17 +521,19 @@ func (p *Publisher) flush(c *conn) error {
 		clear(c.sent)
 		out = append(out, pending{msg: publish.Availability(c.b.TopicPrefix, true)})
 	}
-	for _, vehicle := range sortedKeys(c.values) {
-		// The configurations first: an entity created then reads the retained value.
-		for _, m := range slices.Concat(c.discovery[vehicle], c.values[vehicle]) {
-			if sent, ok := c.sent[vehicle][m.Topic]; !ok || sent != m.Payload {
-				out = append(out, pending{vehicle: vehicle, msg: m})
-			}
-		}
-	}
+	// The removals first: a vehicle back in the account before its removal was
+	// acknowledged (its credential, read at each Sync) ends with its live values.
 	for _, vehicle := range sortedKeys(c.removed) {
 		for _, m := range c.removed[vehicle] {
 			out = append(out, pending{vehicle: vehicle, msg: m, removal: true})
+		}
+	}
+	for _, vehicle := range c.vehicles() {
+		// The configurations first: an entity created then reads the retained value.
+		for _, m := range slices.Concat(c.discovery[vehicle], c.values[vehicle], c.credentials[vehicle]) {
+			if sent, ok := c.sent[vehicle][m.Topic]; !ok || sent != m.Payload {
+				out = append(out, pending{vehicle: vehicle, msg: m})
+			}
 		}
 	}
 	tokens := make([]paho.Token, len(out))

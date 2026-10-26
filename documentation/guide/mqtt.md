@@ -58,9 +58,12 @@ Under `<prefix>/vehicles/<vehicle id>/`, where the prefix is `runsten` by defaul
 | `service_distance_km` | the distance left until the service, in km |
 | `warning_brake_fluid`, `warning_coolant`, `warning_oil`, `warning_washer_fluid`, `warning_low_voltage_battery` | `warning` or `ok` |
 | `warning_lights` | `warning` when an exterior light fails, else `ok`; the web interface names which |
+| `credential_status` | a Polestar's only: `valid`, `expiring` (two weeks before its expiry), `expired`, `refused` (Polestar refused it) or `missing` (none given) |
+| `credential_expires_at` | a Polestar's only: when its credential expires at the latest, in RFC 3339, UTC; empty without one |
 
 - Numbers are written with a point, as short as they read: `80`, `312.5`, `11.04`.
 - **An unknown value is an empty message**, which removes the previous one: unknown is never zero.
+- The credential's topics are checked at every pass of the collector, even while Polestar refuses the credential and nothing is read, and published when they change: the state follows the date by itself ([Every 90 days](./polestar.md#every-90-days)).
 - `<prefix>/status` is `online` while Runsten is connected, and `offline` once it stops or loses the connection (its last will).
 
 These topics are a contract, like the API: a change to them is announced in the update notes.
@@ -95,6 +98,29 @@ With discovery on, each vehicle is a device named as the web interface names it 
 | Days to service, Months to service | sensor | `service_days`, `service_months` |
 | Distance to service | sensor, distance, km | `service_distance_km` |
 | Brake fluid, Coolant, Oil, Washer fluid, 12 V battery, Lights | binary sensor, problem | `warning_…` |
+| Credential | binary sensor, problem: on unless `valid` (a Polestar's only) | `credential_status` |
+| Credential expiry | sensor, timestamp, diagnostic (a Polestar's only) | `credential_expires_at` |
+
+The **Credential** entity turns on two weeks before the Polestar credential expires, and stays on until another is given: an automation can notify your phone, without opening Runsten. For instance:
+
+```yaml
+automation:
+  - alias: Renew the Polestar credential
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.polestar_3_2025_credential
+        to: "on"
+    actions:
+      - action: notify.mobile_app_my_phone
+        data:
+          title: Polestar credential
+          message: >-
+            {% set expiry = states('sensor.polestar_3_2025_credential_expiry') | as_datetime(none) %}
+            Create a new credential on Polestar's Data Portal and give it to Runsten{{
+            ' before ' ~ (expiry | as_local).strftime('%d %B') if expiry else '' }}.
+```
+
+The entity IDs follow the device's name: check them in Home Assistant.
 
 Their configurations are published under `<discovery prefix>/<component>/runsten_<vehicle id>/<object>/config`. An unknown value shows as *Unknown*: what a car does not report (a Volvo's tyre pressures, a model's oil) stays so; while Runsten is stopped or cut off from the broker, the entities are *Unavailable*, and come back as they were.
 

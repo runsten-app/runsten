@@ -54,7 +54,7 @@ func TestLabels(t *testing.T) {
 func TestDiscovery(t *testing.T) {
 	b := Broker{TopicPrefix: "runsten", DiscoveryPrefix: "homeassistant", PublishLocation: true}
 	m := Model{Variant: "EX30 Single Motor Extended Range", Family: "EX30", Brand: "Volvo", Year: 2025}
-	msgs := Discovery(b, vehicle, "EX30 Single Motor Extended Range · 2025", m)
+	msgs := Discovery(b, vehicle, "EX30 Single Motor Extended Range · 2025", m, true)
 	var out bytes.Buffer
 	out.WriteString("{\n")
 	for i, msg := range msgs {
@@ -93,13 +93,14 @@ func TestDiscovery(t *testing.T) {
 		t.Errorf("the configurations differ from %s (go test -update to write them):\n%s", golden, out.String())
 	}
 
-	// Without the location, the device tracker's configuration is emptied; and every
-	// configuration is emptied to remove the vehicle.
+	// Without the location, the device tracker's configuration is emptied, and so are the
+	// credential's for a vehicle read without one; every configuration is emptied to
+	// remove the vehicle.
 	b.PublishLocation = false
 	removed := RemoveDiscovery(b, vehicle)
-	for i, msg := range Discovery(b, vehicle, "x", m) {
-		tracker := strings.Contains(msg.Topic, "/device_tracker/")
-		if tracker != (msg.Payload == "") {
+	for i, msg := range Discovery(b, vehicle, "x", m, false) {
+		emptied := strings.Contains(msg.Topic, "/device_tracker/") || strings.Contains(msg.Topic, "/credential")
+		if emptied != (msg.Payload == "") {
 			t.Errorf("%s: payload %q without the location", msg.Topic, msg.Payload)
 		}
 		if removed[i].Topic != msg.Topic || removed[i].Payload != "" || !removed[i].Retained {
@@ -113,7 +114,7 @@ func TestDiscovery(t *testing.T) {
 
 func TestRemoveState(t *testing.T) {
 	msgs := RemoveState(broker(true), vehicle)
-	if len(msgs) != 11+15 {
+	if len(msgs) != 13+15 {
 		t.Fatalf("%d messages", len(msgs))
 	}
 	for _, m := range msgs {

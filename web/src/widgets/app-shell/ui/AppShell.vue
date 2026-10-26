@@ -17,6 +17,8 @@ import { collectionState, needsAttention } from '@/entities/vehicle'
 import { UserMenu } from '@/features/auth'
 import { ShortcutsHelp, shortcutsEnabled, useShortcuts } from '@/features/keyboard-shortcuts'
 import { periodQuery } from '@/features/filter-period'
+import { useConnectionSettings } from '@/features/manage-api-key'
+import { renewalDue } from '@/features/manage-polestar'
 import { VehicleSelect } from '@/features/select-vehicle'
 import { useLimits } from '@/features/view-limits'
 import { CollectionNotice, useCollections } from '@/features/watch-collection'
@@ -33,8 +35,8 @@ import { extensionMenuItems, extensionNotices } from '../extensions'
 // any; every page of a vehicle then warns when nothing new is read of it. The digits lead
 // to the tabs, in their order, "," to the settings; Shift held alone shows them, "?" lists
 // them. The settings, the connection and the user's own pages share one menu: the bar
-// keeps the vehicle. The connection is looked at when the reading fails: a dot on the
-// menu and on it says so, from every page.
+// keeps the vehicle. The connection is looked at when the reading fails, or the Polestar
+// credential is to be renewed: a dot on the menu and on it says so, from every page.
 const props = defineProps<{ vehicle?: string }>()
 const { t } = useI18n()
 const { unread } = useLimits()
@@ -63,13 +65,14 @@ const from = computed(() => {
 const settings = { name: 'settings' }
 const connection = computed(() => ({ name: 'connection', query: from.value }))
 const { vehicles } = useCollections()
+const { connection: connectionSettings } = useConnectionSettings()
 // A vehicle the offer leaves unread is no failure: its notice tells it, on its pages.
 const now = useNow()
 const attention = computed(() =>
   vehicles.value?.some((v) => {
     const s = collectionState(v, now.value, unread(v.id))
     return s.kind !== 'unread' && needsAttention(s)
-  })
+  }) || renewalDue(connectionSettings.value?.polestar, now.value)
     ? t('connection.attention')
     : undefined,
 )
