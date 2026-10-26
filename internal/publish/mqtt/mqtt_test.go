@@ -494,6 +494,15 @@ func TestPublishCredential(t *testing.T) {
 	}
 	eventually(t, "read again", func() bool { return b.retainedUnder("homeassistant/#")[batteryConfig] != "" })
 
+	// The credential removed: missing, without an expiry, its entities kept.
+	st.setCredential(vehicle, publish.Credential{})
+	synced(t, p, nil)
+	eventually(t, "missing", func() bool {
+		_, expiry := b.retained()[state+"credential_expires_at"]
+		return b.retained()[state+"credential_status"] == "missing" && !expiry &&
+			b.retainedUnder("homeassistant/#")[credentialConfig] != ""
+	})
+
 	// Moved to a connection without a credential, it keeps its values, not its credential.
 	st.mu.Lock()
 	delete(st.creds, vehicle)
