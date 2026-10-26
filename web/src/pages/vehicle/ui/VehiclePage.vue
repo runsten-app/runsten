@@ -7,6 +7,7 @@ import { vehicleLabel } from '@/entities/vehicle'
 import { useVehicle } from '@/features/select-vehicle'
 import { isApiError } from '@/shared/api'
 import { AppShell } from '@/widgets/app-shell'
+import { HealthSummary } from '@/widgets/health-summary'
 import { VehicleState } from '@/widgets/vehicle-state'
 
 // The charts come on demand, with Chart.js: the page itself, the first one opened,
@@ -50,6 +51,7 @@ const label = computed(() => (current.value ? vehicleLabel(current.value) : null
         <!-- The label names the model; the VIN still tells which car it is. -->
         <span v-if="current && label !== current.vin" class="vin">{{ current.vin }}</span>
       </VehicleState>
+      <HealthSummary :vehicle="vehicle" class="mt-4" />
       <SocTimeline :vehicle="vehicle" class="mt-4" />
       <RecentSummary :vehicle="vehicle" class="mt-6" />
     </template>

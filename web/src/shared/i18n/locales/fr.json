@@ -581,6 +581,113 @@
       "open": "Voir la page Batterie"
     }
   },
+  "health": {
+    "title": "Santé",
+    "intro": "Ce que le véhicule dit de ses pneus, de son prochain entretien et de ses alertes, lu toutes les heures. Ce qu'il dit dépend de son modèle et de sa source : une Volvo donne une alerte par pneu, pas sa pression.",
+    "loading": "Chargement de la santé",
+    "error": "La santé n’a pas pu être chargée. Réessayez dans un instant.",
+    "none": "Le véhicule n’a encore rien dit de sa santé.",
+    "reported": "Mesuré {time}",
+    "attention": "À surveiller",
+    "fine": "Rien à signaler",
+    "open": "Voir sa santé",
+    "tyres": {
+      "title": "Pneus",
+      "notReported": "Le véhicule ne donne pas ses pneus.",
+      "noPressure": "Le véhicule donne une alerte par pneu, pas sa pression.",
+      "recommendedFront": "Recommandée à l’avant",
+      "recommendedRear": "Recommandée à l’arrière",
+      "wheel": {
+        "front_left": "Avant gauche",
+        "front_right": "Avant droit",
+        "rear_left": "Arrière gauche",
+        "rear_right": "Arrière droit"
+      },
+      "warning": {
+        "ok": "OK",
+        "low": "Basse",
+        "very_low": "Très basse",
+        "high": "Haute",
+        "fault": "Défaut"
+      },
+      "summary": {
+        "ok": "Pneus : OK",
+        "trouble": "Pneus : {wheel} · {warning}"
+      }
+    },
+    "service": {
+      "title": "Entretien",
+      "notReported": "Le véhicule ne dit pas quand vient son prochain entretien.",
+      "time": "Temps restant",
+      "distance": "Distance restante",
+      "days": "{n} jour | {n} jours",
+      "months": "{n} mois | {n} mois",
+      "state": {
+        "ok": "Pas encore",
+        "soon": "Bientôt",
+        "due": "À faire",
+        "overdue": "En retard"
+      },
+      "summary": "Entretien : {state}"
+    },
+    "warnings": {
+      "title": "Alertes",
+      "notReported": "Le véhicule ne donne aucun contrôle.",
+      "none": "Aucune alerte sur {n} contrôle remonté. | Aucune alerte sur {n} contrôles remontés.",
+      "summary": "Alertes : {list}",
+      "summaryNone": "Alertes : aucune"
+    },
+    "check": {
+      "brake_fluid": "Liquide de frein",
+      "coolant": "Liquide de refroidissement",
+      "oil": "Huile",
+      "washer_fluid": "Lave-glace",
+      "low_voltage_battery": "Batterie 12 V",
+      "light_brake_center": "Feu stop central",
+      "light_brake_left": "Feu stop gauche",
+      "light_brake_right": "Feu stop droit",
+      "light_daytime_left": "Feu de jour gauche",
+      "light_daytime_right": "Feu de jour droit",
+      "light_fog_front": "Antibrouillard avant",
+      "light_fog_rear": "Antibrouillard arrière",
+      "light_hazard": "Feux de détresse",
+      "light_high_beam_left": "Feu de route gauche",
+      "light_high_beam_right": "Feu de route droit",
+      "light_low_beam_left": "Feu de croisement gauche",
+      "light_low_beam_right": "Feu de croisement droit",
+      "light_position_front_left": "Feu de position avant gauche",
+      "light_position_front_right": "Feu de position avant droit",
+      "light_position_rear": "Feu de position arrière",
+      "light_position_rear_left": "Feu de position arrière gauche",
+      "light_position_rear_right": "Feu de position arrière droit",
+      "light_registration_plate": "Éclairage de plaque",
+      "light_reverse": "Feux de recul",
+      "light_side_mark": "Feux latéraux",
+      "light_turn_front_left": "Clignotant avant gauche",
+      "light_turn_front_right": "Clignotant avant droit",
+      "light_turn_rear_left": "Clignotant arrière gauche",
+      "light_turn_rear_right": "Clignotant arrière droit"
+    },
+    "chart": {
+      "front": "Pneus avant",
+      "rear": "Pneus arrière",
+      "left": "Gauche",
+      "right": "Droit",
+      "recommended": "Recommandée",
+      "leftLow": "Gauche, la plus basse",
+      "rightLow": "Droit, la plus basse",
+      "leftHigh": "Gauche, la plus haute",
+      "rightHigh": "Droit, la plus haute",
+      "interval": "Intervalle",
+      "hint": "La pression monte quand les pneus chauffent en roulant, et baisse au froid. La ligne pointillée est la pression que recommande le véhicule ; la ligne s’interrompt là où rien n’a été lu.",
+      "summary": "De {first} à {last} à gauche, de {firstRight} à {lastRight} à droite.",
+      "none": "Aucune pression n’a été lue sur cette période.",
+      "window": "Période",
+      "week": "7 jours",
+      "month": "30 jours",
+      "year": "12 mois"
+    }
+  },
   "timeline": {
     "title": "Niveau de charge, 7 derniers jours",
     "soc": "Niveau de charge",

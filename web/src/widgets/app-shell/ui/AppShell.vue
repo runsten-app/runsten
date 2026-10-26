@@ -44,6 +44,8 @@ const { xs } = useDisplay()
 type Section = 'state' | 'battery' | 'trips' | 'charges' | 'stats'
 const sections: Record<string, Section> = {
   vehicle: 'state',
+  // The health is reached from the vehicle's page.
+  health: 'state',
   battery: 'battery',
   trips: 'trips',
   trip: 'trips',

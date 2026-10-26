@@ -21,6 +21,8 @@ describe('formatQuantity', () => {
     [0, 'kW', 'en-GB', '0 kW'],
     [18.1, 'kWhPer100km', 'en-GB', '18.1 kWh/100 km'],
     [18.1, 'kWhPer100km', 'fr-FR', '18,1 kWh/100 km'],
+    [2.48, 'bar', 'en-GB', '2.48 bar'],
+    [2.8, 'bar', 'fr-FR', '2,8 bar'],
     [null, 'km', 'en-GB', null],
     [null, 'percent', 'fr-FR', null],
   ])('%s %s in %s → %s', (value, unit, locale, want) => {

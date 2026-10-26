@@ -581,6 +581,113 @@
       "open": "Se batterisidan"
     }
   },
+  "health": {
+    "title": "Hälsa",
+    "intro": "Vad bilen berättar om sina däck, nästa service och sina varningar, läst varje timme. Vad den berättar beror på modell och källa: en Volvo ger en varning per däck, inte dess tryck.",
+    "loading": "Hälsan läses in",
+    "error": "Hälsan kunde inte läsas in. Försök igen om en stund.",
+    "none": "Bilen har ännu inte berättat något om sin hälsa.",
+    "reported": "Uppmätt {time}",
+    "attention": "Behöver åtgärdas",
+    "fine": "Inget att rapportera",
+    "open": "Se dess hälsa",
+    "tyres": {
+      "title": "Däck",
+      "notReported": "Bilen rapporterar inte sina däck.",
+      "noPressure": "Bilen ger en varning per däck, inte dess tryck.",
+      "recommendedFront": "Rekommenderat fram",
+      "recommendedRear": "Rekommenderat bak",
+      "wheel": {
+        "front_left": "Vänster fram",
+        "front_right": "Höger fram",
+        "rear_left": "Vänster bak",
+        "rear_right": "Höger bak"
+      },
+      "warning": {
+        "ok": "OK",
+        "low": "Lågt",
+        "very_low": "Mycket lågt",
+        "high": "Högt",
+        "fault": "Fel"
+      },
+      "summary": {
+        "ok": "Däck: OK",
+        "trouble": "Däck: {wheel} · {warning}"
+      }
+    },
+    "service": {
+      "title": "Service",
+      "notReported": "Bilen berättar inte när nästa service är.",
+      "time": "Tid kvar",
+      "distance": "Sträcka kvar",
+      "days": "{n} dag | {n} dagar",
+      "months": "{n} månad | {n} månader",
+      "state": {
+        "ok": "Inte dags",
+        "soon": "Snart",
+        "due": "Dags",
+        "overdue": "Försenad"
+      },
+      "summary": "Service: {state}"
+    },
+    "warnings": {
+      "title": "Varningar",
+      "notReported": "Bilen rapporterar inga kontroller.",
+      "none": "Ingen varning av {n} rapporterad kontroll. | Ingen varning av {n} rapporterade kontroller.",
+      "summary": "Varningar: {list}",
+      "summaryNone": "Varningar: inga"
+    },
+    "check": {
+      "brake_fluid": "Bromsvätska",
+      "coolant": "Kylvätska",
+      "oil": "Olja",
+      "washer_fluid": "Spolarvätska",
+      "low_voltage_battery": "12 V-batteri",
+      "light_brake_center": "Mittre bromsljus",
+      "light_brake_left": "Vänster bromsljus",
+      "light_brake_right": "Höger bromsljus",
+      "light_daytime_left": "Vänster varselljus",
+      "light_daytime_right": "Höger varselljus",
+      "light_fog_front": "Dimljus fram",
+      "light_fog_rear": "Dimljus bak",
+      "light_hazard": "Varningsblinkers",
+      "light_high_beam_left": "Vänster helljus",
+      "light_high_beam_right": "Höger helljus",
+      "light_low_beam_left": "Vänster halvljus",
+      "light_low_beam_right": "Höger halvljus",
+      "light_position_front_left": "Positionsljus vänster fram",
+      "light_position_front_right": "Positionsljus höger fram",
+      "light_position_rear": "Positionsljus bak",
+      "light_position_rear_left": "Positionsljus vänster bak",
+      "light_position_rear_right": "Positionsljus höger bak",
+      "light_registration_plate": "Nummerskyltsbelysning",
+      "light_reverse": "Backljus",
+      "light_side_mark": "Sidomarkeringsljus",
+      "light_turn_front_left": "Blinker vänster fram",
+      "light_turn_front_right": "Blinker höger fram",
+      "light_turn_rear_left": "Blinker vänster bak",
+      "light_turn_rear_right": "Blinker höger bak"
+    },
+    "chart": {
+      "front": "Däck fram",
+      "rear": "Däck bak",
+      "left": "Vänster",
+      "right": "Höger",
+      "recommended": "Rekommenderat",
+      "leftLow": "Vänster, lägst",
+      "rightLow": "Höger, lägst",
+      "leftHigh": "Vänster, högst",
+      "rightHigh": "Höger, högst",
+      "interval": "Intervall",
+      "hint": "Trycket stiger när däcken blir varma under körning och sjunker i kyla. Den streckade linjen är trycket bilen rekommenderar; linjen bryts där inget lästes.",
+      "summary": "Från {first} till {last} till vänster, från {firstRight} till {lastRight} till höger.",
+      "none": "Inget tryck lästes under perioden.",
+      "window": "Period",
+      "week": "7 dagar",
+      "month": "30 dagar",
+      "year": "12 månader"
+    }
+  },
   "timeline": {
     "title": "Laddningsnivå, senaste 7 dagarna",
     "soc": "Laddningsnivå",
