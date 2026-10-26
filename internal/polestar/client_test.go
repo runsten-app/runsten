@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -230,6 +231,7 @@ func TestRateRetry(t *testing.T) {
 		{"Tue, 20 Oct 2026 09:59:00 GMT", date, defaultRateRetry}, // in the past
 		{"Tue, 20 Oct 2026 10:00:30 GMT", "", defaultRateRetry},   // no date to count from
 		{"0", "", defaultRateRetry},
+		{"10000000000", "", math.MaxInt64 / time.Second * time.Second}, // beyond a Duration: the longest wait
 		{"soon", "", defaultRateRetry},
 		{"", "", defaultRateRetry},
 	} {

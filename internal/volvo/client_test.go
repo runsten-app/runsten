@@ -3,6 +3,7 @@ package volvo
 import (
 	"context"
 	"errors"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -179,8 +180,21 @@ func TestRetryParsing(t *testing.T) {
 	if got := rateRetry("", "Rate limit is exceeded. Try again in 7 seconds."); got != 7*time.Second {
 		t.Errorf("message: %v", got)
 	}
+	// Beyond what a Duration holds, the longest wait rather than a negative one.
+	if got := rateRetry("10000000000", ""); got != math.MaxInt64/time.Second*time.Second {
+		t.Errorf("Retry-After beyond a Duration: %v", got)
+	}
+	if got := rateRetry("", "Try again in 99999999999999999999 seconds."); got != math.MaxInt64/time.Second*time.Second {
+		t.Errorf("message beyond an int64: %v", got)
+	}
 	if got := rateRetry("", "?"); got != defaultRateRetry {
 		t.Errorf("default: %v", got)
+	}
+	if got := quotaRetry("Quota will be replenished in 01:02:03."); got != time.Hour+2*time.Minute+3*time.Second {
+		t.Errorf("quota: %v", got)
+	}
+	if got := quotaRetry("Quota will be replenished in 3000000:00:00."); got != math.MaxInt64/time.Second/3600*time.Hour { // the longest whole hours
+		t.Errorf("quota beyond a Duration: %v", got)
 	}
 	if got := quotaRetry("?"); got != defaultQuotaRetry {
 		t.Errorf("default quota: %v", got)

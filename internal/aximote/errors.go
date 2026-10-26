@@ -2,6 +2,7 @@ package aximote
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -48,8 +49,9 @@ func newAPIError(call string, resp *http.Response) *APIError {
 // retryAfter reads Retry-After in seconds. Assumption: the API gives seconds, if
 // anything; a date is taken as missing.
 func retryAfter(h string) time.Duration {
-	if n, err := strconv.Atoi(h); err == nil && n > 0 {
-		return time.Duration(n) * time.Second
+	if n, err := strconv.ParseInt(h, 10, 64); err == nil && n > 0 {
+		// Beyond what a Duration holds, the longest wait rather than a negative one.
+		return time.Duration(min(n, math.MaxInt64/int64(time.Second))) * time.Second
 	}
 	return defaultRetry
 }

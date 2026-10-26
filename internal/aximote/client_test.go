@@ -3,6 +3,7 @@ package aximote
 import (
 	"context"
 	"errors"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -188,7 +189,10 @@ func TestErrors(t *testing.T) {
 		t.Errorf("revoked: %v", err)
 	}
 
-	for header, want := range map[string]time.Duration{"": time.Minute, "x": time.Minute, "0": time.Minute, "120": 2 * time.Minute} {
+	for header, want := range map[string]time.Duration{
+		"": time.Minute, "x": time.Minute, "0": time.Minute, "120": 2 * time.Minute,
+		"10000000000": math.MaxInt64 / time.Second * time.Second, // beyond a Duration: the longest wait
+	} {
 		if got := retryAfter(header); got != want {
 			t.Errorf("Retry-After %q: %v", header, got)
 		}
