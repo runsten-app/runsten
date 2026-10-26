@@ -478,8 +478,40 @@ func TestPublishCredential(t *testing.T) {
 	if got := b.retained()[state+"credential_status"]; got != "refused" {
 		t.Errorf("after a failed read: %q", got)
 	}
+	st.mu.Lock()
+	st.credsErr = nil
+	st.mu.Unlock()
+
+	// Back in the account before its removal was sent: it ends with its credential.
+	p.conns[account].forget([]string{second})
+	synced(t, p, nil)
+	eventually(t, "back", func() bool { return b.retained()[state+"credential_status"] == "refused" })
+	if got := b.retained()[state+"credential_expires_at"]; got != "2026-10-24T08:00:00Z" {
+		t.Errorf("expiry after coming back: %q", got)
+	}
+	if err := p.Publish(context.Background(), account, vehicle); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "read again", func() bool { return b.retainedUnder("homeassistant/#")[batteryConfig] != "" })
+
+	// Moved to a connection without a credential, it keeps its values, not its credential.
+	st.mu.Lock()
+	delete(st.creds, vehicle)
+	st.mu.Unlock()
+	synced(t, p, nil)
+	eventually(t, "credential removed", func() bool {
+		_, status := b.retained()[state+"credential_status"]
+		_, config := b.retainedUnder("homeassistant/#")[credentialConfig]
+		return !status && !config
+	})
+	if b.retainedUnder("homeassistant/#")[batteryConfig] == "" {
+		t.Error("the vehicle's entities removed with its credential")
+	}
 
 	// Gone from the account, its credential goes with it.
+	st.setCredential(vehicle, publish.Credential{ExpiresAt: expires})
+	synced(t, p, nil)
+	eventually(t, "credential again", func() bool { return b.retained()[state+"credential_status"] == "expiring" })
 	syncedWith(t, p, map[string][]string{account: {second}}, nil)
 	eventually(t, "removed", func() bool {
 		_, status := b.retained()[state+"credential_status"]

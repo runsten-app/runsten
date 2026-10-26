@@ -56,7 +56,7 @@ Under `<prefix>/vehicles/<vehicle id>/`, where the prefix is `runsten` by defaul
 
 - Numbers are written with a point, as short as they read: `80`, `312.5`, `11.04`.
 - **An unknown value is an empty message**, which removes the previous one: unknown is never zero.
-- The credential's topics are published at every pass of the collector, even while Polestar refuses the credential and nothing is read: the state follows the date by itself ([Every 90 days](./polestar.md#every-90-days)).
+- The credential's topics are checked at every pass of the collector, even while Polestar refuses the credential and nothing is read, and published when they change: the state follows the date by itself ([Every 90 days](./polestar.md#every-90-days)).
 - `<prefix>/status` is `online` while Runsten is connected, and `offline` once it stops or loses the connection (its last will).
 
 These topics are a contract, like the API: a change to them is announced in the update notes.
@@ -102,8 +102,9 @@ automation:
         data:
           title: Polestar credential
           message: >-
-            Create a new credential on Polestar's Data Portal and give it to Runsten
-            before {{ states('sensor.polestar_3_2025_credential_expiry') | as_datetime | as_local }}.
+            {% set expiry = states('sensor.polestar_3_2025_credential_expiry') | as_datetime(none) %}
+            Create a new credential on Polestar's Data Portal and give it to Runsten{{
+            ' before ' ~ (expiry | as_local).strftime('%d %B') if expiry else '' }}.
 ```
 
 The entity IDs follow the device's name: check them in Home Assistant.

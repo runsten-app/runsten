@@ -408,11 +408,19 @@ func (p *Publisher) credentials(ctx context.Context, c *conn, current []string, 
 		return
 	}
 	changed := false
+	for vehicle, msgs := range c.credentials {
+		// Moved to a connection without a credential (the same VIN given by another
+		// provider): its credential's topics and entities are emptied, once.
+		if _, ok := creds[vehicle]; !ok && slices.Contains(current, vehicle) && msgs[0].Payload != "" {
+			c.credentials[vehicle] = publish.CredentialState(c.b, vehicle, nil, now)
+			changed = true
+		}
+	}
 	for vehicle, cred := range creds {
 		if !slices.Contains(current, vehicle) {
 			continue // gone, or not listed yet: forget removes it
 		}
-		if _, ok := c.credentials[vehicle]; !ok {
+		if msgs, ok := c.credentials[vehicle]; !ok || msgs[0].Payload == "" {
 			changed = true
 		}
 		c.credentials[vehicle] = publish.CredentialState(c.b, vehicle, &cred, now)
@@ -430,7 +438,7 @@ func (c *conn) describe() {
 	}
 	labels := publish.Labels(c.models)
 	for vehicle, m := range c.models {
-		_, credential := c.credentials[vehicle]
+		credential := len(c.credentials[vehicle]) > 0 && c.credentials[vehicle][0].Payload != ""
 		c.discovery[vehicle] = publish.Discovery(c.b, vehicle, labels[vehicle], m, credential)
 	}
 }
@@ -507,17 +515,19 @@ func (p *Publisher) flush(c *conn) error {
 		clear(c.sent)
 		out = append(out, pending{msg: publish.Availability(c.b.TopicPrefix, true)})
 	}
+	// The removals first: a vehicle back in the account before its removal was
+	// acknowledged (its credential, read at each Sync) ends with its live values.
+	for _, vehicle := range sortedKeys(c.removed) {
+		for _, m := range c.removed[vehicle] {
+			out = append(out, pending{vehicle: vehicle, msg: m, removal: true})
+		}
+	}
 	for _, vehicle := range c.vehicles() {
 		// The configurations first: an entity created then reads the retained value.
 		for _, m := range slices.Concat(c.discovery[vehicle], c.values[vehicle], c.credentials[vehicle]) {
 			if sent, ok := c.sent[vehicle][m.Topic]; !ok || sent != m.Payload {
 				out = append(out, pending{vehicle: vehicle, msg: m})
 			}
-		}
-	}
-	for _, vehicle := range sortedKeys(c.removed) {
-		for _, m := range c.removed[vehicle] {
-			out = append(out, pending{vehicle: vehicle, msg: m, removal: true})
 		}
 	}
 	tokens := make([]paho.Token, len(out))
