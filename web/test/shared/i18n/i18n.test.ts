@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { i18n, initialLocale, intlLocale, setLocale } from '@/shared/i18n'
+import { i18n, initialLocale, intlLocale, localeChosen, setLocale } from '@/shared/i18n'
 import en from '@/shared/i18n/locales/en.json'
 import fr from '@/shared/i18n/locales/fr.json'
 import sv from '@/shared/i18n/locales/sv.json'
@@ -30,8 +30,24 @@ describe('intlLocale', () => {
     { locale: 'fr', languages: ['en-GB'], want: 'fr' },
     { locale: 'sv', languages: ['SV-fi'], want: 'SV-fi' },
     { locale: 'sv', languages: [], want: 'sv' },
+    { locale: 'en', languages: [], want: 'en' },
+    // English as a fallback: the region of the browser's first language.
+    { locale: 'en', languages: ['nl-NL'], want: 'en-NL' },
+    { locale: 'en', languages: ['nl-BE', 'de-DE'], want: 'en-BE' },
+    { locale: 'en', languages: ['nl'], want: 'en-NL' },
+    { locale: 'en', languages: ['x-invalid!'], want: 'en' },
+    // A language spoken among the browser's: today's rule.
+    { locale: 'en', languages: ['nl-NL', 'en-US'], want: 'en-US' },
   ] as const)('$locale $languages → $want', ({ locale, languages, want }) => {
-    expect(intlLocale(locale, languages)).toBe(want)
+    expect(intlLocale(locale, languages, false)).toBe(want)
+  })
+
+  it.each([
+    { locale: 'en', languages: ['nl-NL'], want: 'en' },
+    { locale: 'fr', languages: ['nl-NL'], want: 'fr' },
+    { locale: 'en', languages: ['nl-NL', 'en-GB'], want: 'en-GB' },
+  ] as const)('chosen $locale $languages → $want', ({ locale, languages, want }) => {
+    expect(intlLocale(locale, languages, true)).toBe(want)
   })
 })
 
@@ -48,6 +64,7 @@ describe('setLocale', () => {
     expect(i18n.global.locale.value).toBe('sv')
     expect(localStorage.getItem('runsten.locale')).toBe('sv')
     expect(document.documentElement.lang).toBe('sv')
+    expect(localeChosen.value).toBe(true)
     setLocale('en')
   })
 })
