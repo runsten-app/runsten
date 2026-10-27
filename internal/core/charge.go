@@ -1,6 +1,9 @@
 package core
 
-import "time"
+import (
+	"slices"
+	"time"
+)
 
 type chargeBuilder struct {
 	c Charge
@@ -82,16 +85,27 @@ func (cb *chargeBuilder) closeSpan() {
 // or idle, the cable is disconnected, or a trip starts. Other statuses (scheduled,
 // error…) pause the charge without ending it: assumption, their meaning during a
 // charge is not documented.
+//
+// A charge ended by done or idle with the cable connected may resume: charging again
+// before the cable is disconnected, a trip, a reconstructed charge or MaxChargePause
+// goes on with it rather than starting another. A solar charge stops and starts again
+// with the sun, the cable connected all along.
 func (d *detector) stepCharge(p point, prev state) {
 	if p.snap.Covers&(FieldSoC|FieldCharging|FieldConnection) == 0 {
 		return
 	}
 	s := d.st.snap
 	active := s.Charging.OK && s.Charging.V == ChargingActive
+	if r := d.resumable; r != nil && (s.Connection.OK && s.Connection.V == Disconnected ||
+		!p.at.Before(r.endLimit.Add(d.p.MaxChargePause))) {
+		d.resumable = nil
+	}
 	cb := d.charge
 	switch {
 	case cb == nil:
-		if active {
+		if active && d.resumable != nil {
+			d.resumeCharge(p)
+		} else if active {
 			d.startCharge(p, prev)
 		} else if rise := diff(s.SoC, prev.snap.SoC); d.trip == nil && !p.confirm && rise.OK && rise.V >= d.p.MinChargeSoC {
 			d.reconstructCharge(p, prev)
@@ -108,6 +122,9 @@ func (d *detector) stepCharge(p point, prev state) {
 		d.finishCharge()
 	case s.Charging.OK && (s.Charging.V == ChargingDone || s.Charging.V == ChargingIdle):
 		d.endCharge(cb, p, prev, s.Charging.At)
+		if s.Connection.OK && s.Connection.V == Connected && d.p.MaxChargePause > 0 {
+			d.resumable = cb
+		}
 	case s.Connection.OK && s.Connection.V == Disconnected:
 		d.endCharge(cb, p, prev, s.Connection.At)
 	default:
@@ -117,6 +134,7 @@ func (d *detector) stepCharge(p point, prev state) {
 
 func (d *detector) startCharge(p point, prev state) {
 	d.releaseCharge()
+	d.resumable = nil
 	s := d.st.snap
 	after := d.lastNotCharging
 	if after.IsZero() {
@@ -138,6 +156,7 @@ func (d *detector) startCharge(p point, prev state) {
 // reading.
 func (d *detector) reconstructCharge(p point, prev state) {
 	d.releaseCharge()
+	d.resumable = nil
 	s := d.st.snap
 	after := prev.seenAt(FieldSoC)
 	d.charge = &chargeBuilder{
@@ -155,6 +174,23 @@ func (d *detector) reconstructCharge(p point, prev state) {
 		endLimit: p.at,
 		hints:    []time.Time{s.SoC.At},
 	}
+}
+
+// resumeCharge goes on with the resumable charge, charging again. The charge it was
+// reported as is withdrawn, waiting for its position or already in the result: the
+// cursor never settles while a charge may resume, so a derivation that resumes it
+// also detected it.
+func (d *detector) resumeCharge(p point) {
+	cb := d.resumable
+	d.resumable = nil
+	if e := d.ended; e != nil && e.c.DetectedAt.Equal(cb.c.DetectedAt) {
+		d.ended = nil
+	} else {
+		d.res.Charges = slices.DeleteFunc(d.res.Charges, func(c Charge) bool { return c.DetectedAt.Equal(cb.c.DetectedAt) })
+	}
+	cb.endLimit, cb.hints, cb.power = time.Time{}, nil, Value[float64]{}
+	d.charge = cb
+	d.charging(cb, p)
 }
 
 // charging records a reading of an active charge. A reconstructed charge seen charging

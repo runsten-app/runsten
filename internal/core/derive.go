@@ -27,6 +27,11 @@ type Params struct {
 	// over waits for a position read after its end. The collector takes them right after
 	// the transition.
 	SettleWindow time.Duration
+	// MaxChargePause is how long a charge ended by done or idle, the cable connected, may
+	// resume: charging again within it goes on with the same charge. Assumption: a solar
+	// charge stops at dusk and starts again in the morning, 16 hours later in a Belgian
+	// December; after a longer pause, a day without sun, a new charge starts. 0: never.
+	MaxChargePause time.Duration
 	// ResumeBeforeArrival: the engine running again after a stop, before any new position
 	// was read, continues the same trip (a short stop) instead of starting another.
 	ResumeBeforeArrival bool
@@ -45,6 +50,7 @@ func DefaultParams() Params {
 		MinChargeSoC:        2,
 		MaxSpanSoC:          95,
 		SettleWindow:        15 * time.Minute,
+		MaxChargePause:      24 * time.Hour,
 		ResumeBeforeArrival: true,
 		VehicleTimestamps:   true,
 		Capacity:            CapacityCatalogNet,
@@ -113,6 +119,9 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		if live {
 			d.settleCharge(pt)
 			d.stepTrip(pt, prev)
+			if d.trip != nil {
+				d.resumable = nil // driven away: the cable was disconnected unseen
+			}
 			d.stepCharge(pt, prev)
 		}
 		d.track(pt)
@@ -122,7 +131,7 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		}
 		// Never settle on the last readings: a reading stored later may bear their time.
 		groupEnd := lastOfTime && i < len(ps)-1
-		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil {
+		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil && d.resumable == nil {
 			d.res.Cursor = Cursor{Settled: pt.at, From: d.st.rowAt(FieldOdometer)}
 		}
 	}
@@ -256,6 +265,8 @@ type detector struct {
 	trip   *tripBuilder
 	charge *chargeBuilder
 	ended  *endedCharge
+	// resumable is the latest charge, ended with the cable connected, while it may resume.
+	resumable *chargeBuilder
 }
 
 func (d *detector) track(p point) {
