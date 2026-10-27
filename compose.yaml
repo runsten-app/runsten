@@ -62,6 +62,8 @@ x-runsten-env: &runsten-env
   RUNSTEN_LOG_LEVEL: ${RUNSTEN_LOG_LEVEL:-}
   # false: the MQTT brokers set in the settings must be on the Internet, over TLS.
   RUNSTEN_MQTT_PRIVATE_BROKERS: ${RUNSTEN_MQTT_PRIVATE_BROKERS:-}
+  # Feature flags, name=true|false separated by commas; empty: each its default.
+  RUNSTEN_FLAGS: ${RUNSTEN_FLAGS:-}
   # The containers listen on all their interfaces, but their ports are only published
   # on the host's loopback (below): only the host, an SSH tunnel or a reverse proxy on
   # the host reach them. Keep it true as long as the ports stay on 127.0.0.1.

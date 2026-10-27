@@ -77,6 +77,9 @@
 //	                             once a day, and tell a newer one in the settings
 //	                             (default false: nothing is asked of GitHub)
 //	RUNSTEN_LOG_LEVEL            debug, info, warn, error (default info)
+//	RUNSTEN_FLAGS                feature flags, name=true|false separated by commas,
+//	                             e.g. source.tesla=false (default: each its own; the
+//	                             flags are listed in internal/flags). As the collector's.
 package main
 
 import (
@@ -105,6 +108,8 @@ import (
 	"runsten/internal/catalog"
 	"runsten/internal/core"
 	"runsten/internal/derive"
+	"runsten/internal/flags"
+	"runsten/internal/flags/eval"
 	"runsten/internal/geocode"
 	"runsten/internal/geocode/nominatim"
 	"runsten/internal/importer"
@@ -141,6 +146,10 @@ const probeTimeout = 5 * time.Second
 
 const defaultAddr = "127.0.0.1:8081"
 
+// flagsShutdown bounds the flags provider's stop, so that a provider stuck never holds
+// the exit.
+const flagsShutdown = 5 * time.Second
+
 type config struct {
 	databaseURL string
 	tokenKey    string
@@ -165,6 +174,10 @@ type config struct {
 	// privateBrokers: an account's MQTT broker may be on a local network, or over
 	// plain mqtt://. False on an instance open to the Internet's users.
 	privateBrokers bool
+	// flags are those RUNSTEN_FLAGS sets, and unknownFlags the names it gives that this
+	// release does not declare.
+	flags        map[flags.Name]bool
+	unknownFlags []string
 }
 
 func main() {
@@ -219,6 +232,20 @@ func run(args []string) error {
 	}
 	defer st.Close()
 
+	// The flags of RUNSTEN_FLAGS, unless an extension brings its own provider.
+	features := eval.New(log)
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), flagsShutdown)
+		defer cancel()
+		_ = features.Shutdown(ctx)
+	}()
+	if err := features.Use(ctx, eval.Env(cfg.flags), ""); err != nil {
+		return fmt.Errorf("flags: %w", err)
+	}
+	for _, name := range cfg.unknownFlags {
+		log.Warn("RUNSTEN_FLAGS names a flag this release does not have: ignored", "flag", name)
+	}
+
 	hc := &http.Client{Timeout: 15 * time.Second}
 	sessions := auth.New(st, clock.Real{}, auth.DefaultParams(), rand.Reader)
 	authorizer := volvo.NewAuthClient(cfg.app, hc)
@@ -249,6 +276,7 @@ func run(args []string) error {
 		Aximote:     aximoteVehicles{ax},
 		FileImports: fileImports{importer.NewFiles(st, clock.Real{})},
 		Accounts:    st,
+		Flags:       features,
 		// It only reads the current state, the readings and the health: it derives nothing, and
 		// needs no capacity.
 		States:     deriver,
@@ -309,7 +337,7 @@ func run(args []string) error {
 	mux.Handle("/", httpserver.LogRequests(log, handler))
 	if err := registerExtensions(ctx, extensions{
 		mux: mux, getenv: os.Getenv, databaseURL: cfg.databaseURL, box: box,
-		sessions: sessions, api: handler, client: hc, log: log,
+		sessions: sessions, api: handler, flags: features, client: hc, log: log,
 	}); err != nil {
 		return fmt.Errorf("extensions: %w", err)
 	}
@@ -320,7 +348,9 @@ func run(args []string) error {
 }
 
 // extensions is what registerExtensions gets: the premium build's modules add their
-// routes to mux, beside the API's, and read their own configuration with getenv.
+// routes to mux, beside the API's, and read their own configuration with getenv. They
+// may give flags a provider of their own (eval.Evaluator.Use), in place of
+// RUNSTEN_FLAGS's.
 type extensions struct {
 	mux         *http.ServeMux
 	getenv      func(string) string
@@ -328,6 +358,7 @@ type extensions struct {
 	box         *secretbox.Box
 	sessions    *auth.Service
 	api         *api.Server
+	flags       *eval.Evaluator
 	client      *http.Client
 	log         *slog.Logger
 }
@@ -530,6 +561,10 @@ func loadConfig(getenv func(string) string) (config, error) {
 		if err := cfg.logLevel.UnmarshalText([]byte(v)); err != nil {
 			errs = append(errs, fmt.Errorf("RUNSTEN_LOG_LEVEL %q: %w", v, err))
 		}
+	}
+	var err error
+	if cfg.flags, cfg.unknownFlags, err = flags.Parse(getenv("RUNSTEN_FLAGS")); err != nil {
+		errs = append(errs, fmt.Errorf("RUNSTEN_FLAGS: %w", err))
 	}
 	return cfg, errors.Join(errs...)
 }

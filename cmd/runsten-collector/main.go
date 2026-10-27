@@ -78,6 +78,8 @@
 //	                            over TLS: an address of a private network is refused
 //	                            when connecting (default true: a self-hosted instance
 //	                            publishes to its local broker). As runsten-api's.
+//	RUNSTEN_FLAGS               feature flags, name=true|false separated by commas
+//	                            (default: each its own). As runsten-api's.
 package main
 
 import (
@@ -101,6 +103,8 @@ import (
 	"runsten/internal/core"
 	"runsten/internal/debugui"
 	"runsten/internal/derive"
+	"runsten/internal/flags"
+	"runsten/internal/flags/eval"
 	"runsten/internal/oauth"
 	"runsten/internal/platform/clock"
 	"runsten/internal/platform/health"
@@ -136,6 +140,10 @@ type config struct {
 	// privateBrokers lets the accounts publish to a broker of a private network, or
 	// without TLS.
 	privateBrokers bool
+	// flags are those RUNSTEN_FLAGS sets, and unknownFlags the names it gives that this
+	// release does not declare.
+	flags        map[flags.Name]bool
+	unknownFlags []string
 }
 
 // version is the release built, set by the build (-ldflags "-X main.version=0.11.0":
@@ -145,6 +153,9 @@ var version = "dev"
 const (
 	// debugCalls is the number of calls kept in memory by the debug page.
 	debugCalls = 500
+	// flagsShutdown bounds the flags provider's stop, so that a provider stuck never
+	// holds the exit.
+	flagsShutdown = 5 * time.Second
 	// healthMaxAge is how long the collector stays healthy without a pass that could
 	// list the vehicles. A pass calls the due endpoints of each vehicle one after the
 	// other, each call bounded by the 30 s client timeout: 15 minutes leaves room for a
@@ -289,6 +300,20 @@ func run(args []string) error {
 	healthMux.Handle("GET "+health.Path, beat)
 	healthDone := serve(cfg.healthAddr, healthMux)
 
+	// The flags of RUNSTEN_FLAGS, unless an extension brings its own provider.
+	features := eval.New(log)
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), flagsShutdown)
+		defer cancel()
+		_ = features.Shutdown(ctx)
+	}()
+	if err := features.Use(ctx, eval.Env(cfg.flags), ""); err != nil {
+		return fmt.Errorf("flags: %w", err)
+	}
+	for _, name := range cfg.unknownFlags {
+		log.Warn("RUNSTEN_FLAGS names a flag this release does not have: ignored", "flag", name)
+	}
+
 	cfg.quota.NoInstanceKey = cfg.apiKey == ""
 	log.Info("collector started", "version", version, "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
 		"polestar_base_url", cfg.polestarURL, "tesla_api_url", cfg.tesla.API, "tesla_auth_url", cfg.tesla.Auth,
@@ -308,7 +333,9 @@ func run(args []string) error {
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
 	c.SetPublisher(pub)
-	if err := registerExtensions(ctx, extensions{getenv: os.Getenv, databaseURL: cfg.databaseURL, collector: c, log: log}); err != nil {
+	if err := registerExtensions(ctx, extensions{
+		getenv: os.Getenv, databaseURL: cfg.databaseURL, collector: c, flags: features, log: log,
+	}); err != nil {
 		return fmt.Errorf("extensions: %w", err)
 	}
 	if err := c.Run(ctx, cfg.tick, beat.Beat); err != nil {
@@ -336,11 +363,13 @@ func polestarCredential(st *store.Store) func(ctx context.Context, accountID, co
 }
 
 // extensions is what registerExtensions gets: the premium build's modules set the
-// collector's read policy, and read their own configuration with getenv.
+// collector's read policy, and read their own configuration with getenv. They may give
+// flags a provider of their own (eval.Evaluator.Use), in place of RUNSTEN_FLAGS's.
 type extensions struct {
 	getenv      func(string) string
 	databaseURL string
 	collector   *collector.Collector
+	flags       *eval.Evaluator
 	log         *slog.Logger
 }
 
@@ -476,6 +505,10 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		if err := cfg.logLevel.UnmarshalText([]byte(v)); err != nil {
 			errs = append(errs, fmt.Errorf("RUNSTEN_LOG_LEVEL %q: %w", v, err))
 		}
+	}
+	var err error
+	if cfg.flags, cfg.unknownFlags, err = flags.Parse(getenv("RUNSTEN_FLAGS")); err != nil {
+		errs = append(errs, fmt.Errorf("RUNSTEN_FLAGS: %w", err))
 	}
 	return cfg, errors.Join(errs...)
 }
