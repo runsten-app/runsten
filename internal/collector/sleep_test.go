@@ -247,3 +247,29 @@ func TestAPIClosed(t *testing.T) {
 		t.Errorf("failure %+v", f)
 	}
 }
+
+// TestGate: a closed gate leaves the provider's vehicles out, asked once per pass and
+// account; opened again, they are read again.
+func TestGate(t *testing.T) {
+	c, car, _, clk := newSleepy(t)
+	open, asked := false, 0
+	c.SetGate("sleepy", func(_ context.Context, account string) bool {
+		if account != "a" {
+			t.Errorf("gate asked for %q", account)
+		}
+		asked++
+		return open
+	})
+	run(t, c, clk, 5*time.Minute)
+	if n := len(car.calls[carState]) + len(car.calls[carData]); n != 0 {
+		t.Errorf("%d calls with the gate closed", n)
+	}
+	if asked != 30 {
+		t.Errorf("gate asked %d times in 30 passes", asked)
+	}
+	open = true
+	run(t, c, clk, time.Minute)
+	if len(car.calls[carState]) == 0 {
+		t.Error("not read once the gate opened")
+	}
+}

@@ -411,6 +411,9 @@ type Collector struct {
 	connectionPause   map[string]time.Time   // a Source's rate limit or access rejected, per connection
 	recentCalls       map[string][]time.Time // a Source's calls of the last minute, per connection, for the logs
 	sourceLogged      map[string]bool        // connections whose refused credential or unknown provider was logged
+	// gates tell, by provider, the accounts that read its vehicles (a feature flag); a
+	// provider without one: every account.
+	gates map[string]Gate
 
 	vehicles     map[string]*vehicleState          // by VehicleID
 	restored     bool                              // the budget replayed the saved calls
@@ -455,6 +458,7 @@ func New(api API, store Store, tokens TokenSource, clk clock.Clock, iv Intervals
 		connectionPause:   map[string]time.Time{},
 		recentCalls:       map[string][]time.Time{},
 		sourceLogged:      map[string]bool{},
+		gates:             map[string]Gate{},
 		vehicles:          map[string]*vehicleState{},
 		apiBlocked:        map[unit]time.Time{},
 		keyRefused:        map[keyID]time.Time{},
@@ -470,6 +474,33 @@ func New(api API, store Store, tokens TokenSource, clk clock.Clock, iv Intervals
 // SetPolicy limits how the accounts' vehicles are read, from the next pass on.
 // Call it before Run.
 func (c *Collector) SetPolicy(p Policy) { c.policy = p }
+
+// Gate tells whether an account reads a provider's vehicles, asked once per pass and
+// account.
+type Gate func(ctx context.Context, accountID string) bool
+
+// SetGate has only the accounts g opens read provider's vehicles, from the next pass on:
+// the others are left out as a policy leaves them, what was read of them kept, until g
+// opens them again. Call it before Run.
+func (c *Collector) SetGate(provider string, g Gate) { c.gates[provider] = g }
+
+// gated reports whether a closed gate leaves t out, open asking each gate once per
+// account in a pass.
+func (c *Collector) gated(ctx context.Context, t Target, open map[string]map[string]bool) bool {
+	g, ok := c.gates[t.provider()]
+	if !ok {
+		return false
+	}
+	if open[t.provider()] == nil {
+		open[t.provider()] = map[string]bool{}
+	}
+	o, asked := open[t.provider()][t.AccountID]
+	if !asked {
+		o = g(ctx, t.AccountID)
+		open[t.provider()][t.AccountID] = o
+	}
+	return !o
+}
 
 // WithoutVolvo has the collector call nothing of Volvo, on an instance without a Volvo
 // application: the Volvo IDs' vehicles are not polled, and their tokens not refreshed
@@ -543,10 +574,11 @@ func (c *Collector) PollOnce(ctx context.Context) error {
 		c.budget.restore(saved, targets, c.clk.Now())
 		c.restored = true
 	}
-	// The vehicles the policy leaves out are not polled: they are forgotten, as a
-	// vehicle removed, until it lets them be read again.
+	// The vehicles the policy, or a gate, leaves out are not polled: they are forgotten,
+	// as a vehicle removed, until they may be read again.
 	c.syncPublisher(ctx, targets)
-	targets = slices.DeleteFunc(targets, func(t Target) bool { return !c.reads[t.AccountID].reads(t) })
+	open := map[string]map[string]bool{}
+	targets = slices.DeleteFunc(targets, func(t Target) bool { return !c.reads[t.AccountID].reads(t) || c.gated(ctx, t, open) })
 	c.budget.order(targets, c.clk.Now())
 	seen := make(map[string]bool, len(targets))
 	connections := map[string]bool{}
