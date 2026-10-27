@@ -686,6 +686,15 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 	if tr := res.Trips[1]; tr.From != Some(work, m(73)) || tr.To != Some(far, m(115)) {
 		t.Errorf("trip further from %+v to %+v", tr.From, tr.To)
 	}
+
+	// A position read after the odometer but recorded before the one it had is no newer.
+	stale := slices.Clone(records[:10])
+	stale = append(stale, rec(97, 97, loc(work, m(73))), rec(98, 120, loc(far, m(50))),
+		rec(121, 121, odoAt(1008, m(115))))
+	res = Derive(stale, Cursor{}, DefaultParams(), nil)
+	if len(res.Trips) != 2 || res.Trips[1].From != Some(work, m(73)) {
+		t.Errorf("trips after a stale position %+v", res.Trips)
+	}
 }
 
 // A trip starting while charging ends the charge; the trip's SoC ends before the next
