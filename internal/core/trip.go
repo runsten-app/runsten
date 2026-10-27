@@ -95,9 +95,13 @@ func (d *detector) startTrip(p point, prev state) {
 // reconstructTrip opens a trip that was not seen: the odometer rose since its last
 // reading. It started after that reading; its start values are those of that time.
 func (d *detector) reconstructTrip(p point, prev state) {
-	d.releaseCharge()
 	m := d.odoMark
 	after := prev.seenAt(FieldOdometer)
+	// A trip that ended before the ended charge did was the drive to it, not away from
+	// it: the charge still waits for its position.
+	if e := d.ended; e == nil || d.narrow(p.at, after, d.st.snap.OdometerKm.At).After(e.c.End.After) {
+		d.releaseCharge()
+	}
 	d.trip = &tripBuilder{
 		t: Trip{
 			DetectedAt:      p.at,

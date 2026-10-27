@@ -648,6 +648,46 @@ func TestChargePosition(t *testing.T) {
 	}
 }
 
+// The report's day: unplugged at A, driven unseen to B, charged there. The readings the
+// end of the charge at B triggers come in order, the odometer first: it reveals the
+// drive to B, which ended before that charge (its vehicle timestamp tells), so the
+// charge still takes the position read just after; and so does the trip home, revealed
+// by the next odometer reading, as its start.
+func TestChargeAfterUnseenTrip(t *testing.T) {
+	odoAt := func(km float64, at time.Time) Snapshot {
+		return Snapshot{Covers: FieldOdometer, OdometerKm: Some(km, at)}
+	}
+	far := Position{Lat: 45.8, Lon: 4.9}
+	records := []Record{
+		rec(0, 0, capacity(80)),
+		rec(0, 200, engine(EngineStopped)),
+		rec(0, 61, odoAt(1000, m(0))),
+		rec(0, 61, loc(home, m(0))),
+		rec(0, 10, nrg(50, ChargingIdle)),
+		rec(20, 59, charging(51, 7000, AC)),
+		rec(60, 74, nrg(60, ChargingIdle)), // unplugged at home, then driven to work
+		rec(75, 94, charging(55, 50000, DC)),
+		rec(95, 95, nrg(80, ChargingDone)),
+		rec(96, 96, odoAt(1006, m(73))),    // the drive to work, recorded before the charge
+		rec(97, 120, loc(work, m(73))),     // read just after, as uploaded on arrival
+		rec(121, 121, odoAt(1008, m(115))), // the drive further, unseen too
+		rec(122, 122, loc(far, m(115))),
+	}
+	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	if len(res.Charges) != 2 || len(res.Trips) != 2 {
+		t.Fatalf("charges %+v\ntrips %+v", res.Charges, res.Trips)
+	}
+	if got := res.Charges[1].Position; got != Some(work, m(73)) {
+		t.Errorf("second charge at %+v", got)
+	}
+	if tr := res.Trips[0]; tr.From != Some(home, m(0)) || tr.To != Some(work, m(73)) {
+		t.Errorf("trip to work from %+v to %+v", tr.From, tr.To)
+	}
+	if tr := res.Trips[1]; tr.From != Some(work, m(73)) || tr.To != Some(far, m(115)) {
+		t.Errorf("trip further from %+v to %+v", tr.From, tr.To)
+	}
+}
+
 // A trip starting while charging ends the charge; the trip's SoC ends before the next
 // charge starts.
 func TestTripAndCharge(t *testing.T) {
