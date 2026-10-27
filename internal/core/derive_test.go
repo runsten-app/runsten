@@ -669,9 +669,10 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 			rec(60, 74, nrg(60, ChargingIdle)), // unplugged at home, then driven to work
 			rec(75, 94, charging(55, 50000, DC)),
 			rec(95, 95, nrg(80, ChargingDone)),
-			rec(96, 96, odoAt(1006, m(96))), // the drive to work, stamped when uploaded
 		}, more...)
 	}
+	// The drive to work, revealed as the charge ends, stamped when uploaded.
+	toWork := rec(96, 96, odoAt(1006, m(96)))
 	type ends struct{ from, to Value[Position] } // an arrival unset is not checked
 	tests := []struct {
 		name   string
@@ -682,6 +683,7 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 		{
 			name: "the report's",
 			more: []Record{
+				toWork,
 				rec(97, 120, loc(work, m(73))), // recorded during the charge, read just after
 				rec(121, 121, odoAt(1008, m(115))),
 				rec(122, 122, loc(far, m(115))),
@@ -692,14 +694,27 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 		{
 			// The position recorded after the charge's end is not its own.
 			name:   "driven away after the charge",
-			more:   []Record{rec(100, 100, odoAt(1012, m(99))), rec(101, 120, loc(far, m(99)))},
+			more:   []Record{toWork, rec(100, 100, odoAt(1012, m(99))), rec(101, 120, loc(far, m(99)))},
 			charge: Some(home, m(0)),
 			trips:  []ends{{Some(home, m(0)), Some(far, m(99))}},
+		},
+		{
+			// The same, the position and the odometer in one reading.
+			name: "driven away, one reading",
+			more: []Record{rec(100, 120, func() Snapshot {
+				s := odoAt(1012, m(99))
+				s.Covers |= FieldPosition
+				s.Position = Some(far, m(99))
+				return s
+			}())},
+			charge: Some(home, m(0)),
+			trips:  []ends{{from: Some(home, m(0))}},
 		},
 		{
 			// Read after the odometer, recorded before the position it had: no newer.
 			name: "stale position",
 			more: []Record{
+				toWork,
 				rec(97, 97, loc(work, m(73))),
 				rec(98, 120, loc(far, m(50))),
 				rec(121, 121, odoAt(1008, m(115))),

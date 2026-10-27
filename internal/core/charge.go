@@ -265,10 +265,18 @@ func (d *detector) settleCharge(p point) {
 // reading of that time is in: a trip or a charge starting at the same time releases it
 // first, with the position it had, since the vehicle may have read that one elsewhere.
 func (d *detector) placeCharge() {
-	if e := d.ended; e != nil && e.read.OK {
+	e := d.ended
+	if e == nil || !e.read.OK {
+		return
+	}
+	// Checked again: a trip of the same time may have bounded it after the position was
+	// noted (one reading that tells both).
+	if e.until.IsZero() || !e.read.At.IsZero() && !e.read.At.After(e.until) {
 		e.c.Position = e.read
 		d.releaseCharge()
+		return
 	}
+	e.read = Value[Position]{}
 }
 
 // releaseCharge adds the ended charge to the result as it stands: a trip or a charge
