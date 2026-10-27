@@ -32,15 +32,15 @@
     "error": "Fordonen kunde inte laddas. Försök igen om en stund.",
     "empty": {
       "title": "Inga fordon ännu",
-      "keyText": "Vilken bil har du? Runsten läser en Volvo med nyckeln till en Volvo-applikation som du skapar och sedan ditt Volvo ID; en Polestar med uppgifter från Polestars Data Portal.",
-      "text": "Vilken bil har du? Runsten läser en Volvo via ditt Volvo ID, en Polestar via uppgifter från Polestars Data Portal.",
-      "polestarText": "Runsten läser en Polestar med inloggningsuppgifter från Polestars Data Portal. Den här instansen är inte inställd för att läsa en Volvo."
+      "keyText": "Vilken bil har du? Runsten läser en Volvo med nyckeln till en Volvo-applikation du skapar och sedan ditt Volvo ID; en Polestar med inloggningsuppgifter från Polestars Data Portal; en Tesla med en uppdateringstoken från ditt Tesla-konto.",
+      "text": "Vilken bil har du? Runsten läser en Volvo via ditt Volvo ID, en Polestar via inloggningsuppgifter från Polestars Data Portal, en Tesla via en uppdateringstoken från ditt Tesla-konto.",
+      "noVolvoText": "Runsten läser en Polestar med inloggningsuppgifter från Polestars Data Portal, en Tesla med en uppdateringstoken från ditt Tesla-konto. Den här instansen är inte inställd för att läsa en Volvo."
     },
     "choose": {
       "volvo": "Jag har en Volvo",
-      "polestar": "Jag har en Polestar (beta)"
-    },
-    "connectPolestar": "Anslut en Polestar (beta)"
+      "polestar": "Jag har en Polestar (beta)",
+      "tesla": "Jag har en Tesla (beta)"
+    }
   },
   "vehicle": {
     "title": "Fordon",
@@ -1001,7 +1001,8 @@
     "brands": "Bilmärken",
     "brand": {
       "volvo": "Volvo",
-      "polestar": "Polestar"
+      "polestar": "Polestar",
+      "tesla": "Tesla"
     },
     "brandAttention": "behöver din uppmärksamhet",
     "outcome": {
@@ -1049,7 +1050,12 @@
       "notGranted": "Läses delvis: uppgifterna har inte fått alla domäner",
       "pausedPolestar": "Pausad av Polestar till {time}",
       "quotaPolestar": "Polestars kvot nådd till {time}",
-      "notConfigured": "Läses inte: Volvo är inte konfigurerat på den här instansen"
+      "notConfigured": "Läses inte: Volvo är inte konfigurerat på den här instansen",
+      "credentialRefusedTesla": "Läses inte: Tesla avvisade uppdateringstoken",
+      "credentialMissingTesla": "Läses inte: ingen Tesla-token angiven",
+      "unsharedTesla": "Läses inte: fordonet finns inte längre i Tesla-kontot",
+      "pausedTesla": "Pausad av Tesla till {time}",
+      "quotaTesla": "Dagens anrop till Tesla förbrukade till {time}"
     },
     "notice": {
       "reauth": {
@@ -1073,7 +1079,12 @@
       "notGranted": "Dina uppgifter har inte fått en av domänerna som Runsten läser ({endpoint}): det den ger läses inte. Skapa uppgifter med alla fem domäner och ange dem på anslutningssidan.",
       "quotaPolestar": "Dina Polestar-uppgifters dagliga kvot av anrop är förbrukad. Läsningen återupptas av sig själv.",
       "pausedPolestar": "Polestar har begränsat antalet anrop. Läsningen återupptas av sig själv.",
-      "notConfigured": "Den här instansen har ingen Volvo-applikation: inget nytt läses från fordonet förrän administratören anger en. Dess historik finns kvar."
+      "notConfigured": "Den här instansen har ingen Volvo-applikation: inget nytt läses från fordonet förrän administratören anger en. Dess historik finns kvar.",
+      "credentialRefusedTesla": "Tesla avvisade uppdateringstoken som fordonet läses med: utloggad från Tesla-kontot, lösenordet ändrat, eller Owner API stängt för kontot. Hämta en ny token och ange den på anslutningssidan: det som redan lästs finns kvar.",
+      "credentialMissingTesla": "Runsten läser den här Teslan med en uppdateringstoken från ditt Tesla-konto, som har tagits bort: ange en ny på anslutningssidan.",
+      "unsharedTesla": "Ditt Tesla-konto listar inte längre fordonet: sålt, eller borttaget från kontot. Kommer det tillbaka, ange token igen på anslutningssidan: fordonet läses igen.",
+      "pausedTesla": "Tesla begränsade antalet anrop. Läsningen återupptas av sig själv.",
+      "quotaTesla": "Runsten gör högst 3 000 anrop om dagen till Tesla per token, för att hålla sig från dess opublicerade gränser: de är förbrukade. Läsningen återupptas av sig själv."
     },
     "facts": {
       "mode": "Läsläge",
@@ -1091,13 +1102,15 @@
       "noneDueMarket": "Ingen: Volvo betjänar inte fordonets marknad",
       "noneDueCredential": "Ingen förrän Polestar-uppgifter anges",
       "noneDueUnshared": "Ingen: fordonet delas inte längre med uppgifterna",
-      "noneDueNotConfigured": "Ingen förrän Volvo är konfigurerat"
+      "noneDueNotConfigured": "Ingen förrän Volvo är konfigurerat",
+      "noneDueToken": "Ingen förrän en Tesla-token anges"
     },
     "api": {
       "connectedVehicle": "fordonsdata",
       "energy": "batteri och laddning",
       "location": "position",
-      "polestar": "Polestars Data Portal"
+      "polestar": "Polestars Data Portal",
+      "tesla": "Teslas Owner API"
     },
     "failure": {
       "quota": "Kvot nådd",
@@ -1115,7 +1128,11 @@
       "apiClosed": "API:et stängt för kontot",
       "notFoundPolestar": "Fordonet okänt för Polestar",
       "unavailablePolestar": "Polestar går inte att nå",
-      "tokenPolestar": "Ingen token från Polestar"
+      "tokenPolestar": "Ingen token från Polestar",
+      "notFoundTesla": "Fordonet okänt för Tesla",
+      "unavailableTesla": "Tesla nås inte",
+      "tokenTesla": "Ingen token från Tesla",
+      "credentialRefusedTesla": "Tesla-token avvisad"
     },
     "key": {
       "title": "Volvo-nyckel"
@@ -1133,6 +1150,9 @@
     "noVolvo": {
       "title": "Volvo inte konfigurerat",
       "text": "Den här instansen har ingen Volvo-applikation, så dess Volvobilar läses inte. Administratören kan skapa en på Volvos utvecklarportal och ange den i konfigurationen (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_CLIENT_SECRET): Volvo ID läses då igen."
+    },
+    "tesla": {
+      "title": "Tesla-konto"
     }
   },
   "apiKey": {
@@ -1488,6 +1508,58 @@
       "portalUnavailable": "Polestars Data Portal svarade inte: uppgifterna sparades inte. Försök igen om en stund.",
       "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
       "internal": "Uppgifterna kunde inte sparas. Försök igen om en stund."
+    }
+  },
+  "tesla": {
+    "intro": "Runsten läser din Tesla med en uppdateringstoken från ditt Tesla-konto, som TeslaMate gör: via Owner API, Tesla-appens API. Det frågar aldrig efter ditt Tesla-lösenord och väcker aldrig bilen: det låter den sova.",
+    "beta": "Stödet för Tesla är i beta. Owner API är inte officiellt: Tesla kan stänga det utan förvarning.",
+    "guide": "Läs guiden",
+    "refused": {
+      "title": "Din Tesla-token avvisades",
+      "body": "Tesla avvisade den {time}: utloggad från Tesla-kontot, lösenordet ändrat, eller Owner API stängt för kontot. Dina Tesla-fordon läses inte förrän du anger en ny; det som redan lästs finns kvar."
+    },
+    "current": "Din uppdateringstoken",
+    "last4": "Slutar på {last4}",
+    "setAt": "Angiven",
+    "replace": "Byt token",
+    "delete": {
+      "button": "Ta bort token",
+      "title": "Ta bort din Tesla-token?",
+      "text": "Dina Tesla-fordon finns kvar med sin historik, men läses inte förrän du anger en annan token.",
+      "error": "Token kunde inte tas bort. Försök igen om en stund.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    },
+    "steps": {
+      "title": "Hämta din uppdateringstoken",
+      "tool": "På en dator, kör",
+      "phone": "(eller appen Auth app for Tesla på en telefon).",
+      "newTab": "(öppnas i en ny flik)",
+      "signIn": "Logga in där med ditt Tesla-konto: det är Teslas egen sida, ditt lösenord stannar mellan dig och Tesla.",
+      "copy": "Kopiera uppdateringstoken den visar (inte åtkomsttoken) och klistra in den nedan: den visas aldrig igen, bara dess fyra sista tecken."
+    },
+    "label": "Uppdateringstoken",
+    "help": "Runsten sparar, förseglad, den token Tesla ger i utbyte mot den här. Loggar du ut från ditt Tesla-konto överallt återkallas den.",
+    "save": "Spara token",
+    "cancel": "Avbryt",
+    "saved": "Token sparad: Runsten läser dess fordon från nästa varv.",
+    "deleted": "Token borttagen.",
+    "error": {
+      "summary": "Token sparades inte",
+      "required": "Klistra in uppdateringstoken.",
+      "spaces": "Uppdateringstoken har inga mellanslag: kopiera den igen.",
+      "characters": "Uppdateringstoken har bara bokstäver, siffror och tecken: kopiera den igen.",
+      "tooShort": "Uppdateringstoken har minst {min} tecken: kopiera hela.",
+      "tooLong": "Uppdateringstoken har högst {max} tecken: kopiera bara den.",
+      "refused": "Tesla avvisade den här token: hämta en ny, den kan redan ha använts eller återkallats.",
+      "invalidBody": "Den här token avvisades: kopiera den igen.",
+      "apiClosed": "Teslas Owner API är stängt för det här kontot: Runsten kan inte läsa det. Token sparades inte.",
+      "noVehicle": "Det här Tesla-kontot har inget fordon: token sparades inte.",
+      "tooManyVehicles": "Med det här kontots fordon skulle ditt konto ha fler fordon än det får: token sparades inte.",
+      "notAdmitted": "Ditt konto måste först ta ett steg, som att godkänna villkor: ladda om sidan. Token sparades inte.",
+      "teslaUnavailable": "Tesla svarade inte: token sparades inte. Försök igen om en stund, kanske med en ny token.",
+      "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
+      "internal": "Token kunde inte sparas. Försök igen om en stund."
     }
   },
   "release": {

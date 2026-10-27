@@ -7,6 +7,8 @@ import { limitsPage } from '@/entities/session'
 import { collectionState, needsAttention, vehicleLabels, type Vehicle } from '@/entities/vehicle'
 import { ApiKeyForm, useConnectionSettings } from '@/features/manage-api-key'
 import { PolestarForm, renewalDue } from '@/features/manage-polestar'
+import { TeslaForm } from '@/features/manage-tesla'
+import { useFlag } from '@/features/view-flags'
 import { useLimits } from '@/features/view-limits'
 import { useCollections } from '@/features/watch-collection'
 import { useFormat, useNow } from '@/shared/lib'
@@ -15,8 +17,8 @@ import { AppShell } from '@/widgets/app-shell'
 import VehicleCollection from './VehicleCollection.vue'
 
 // ConnectionPage is the hidden part: the Volvo ID that lets Runsten read, the application
-// key the vehicles are read with, the credential of Polestar's Data Portal, and how the
-// collector reads each vehicle. The other
+// key the vehicles are read with, the credential of Polestar's Data Portal, the refresh
+// token of Tesla's Owner API, and how the collector reads each vehicle. The other
 // pages only warn when nothing new is read; this one says why, and how to connect again.
 // The vehicle it was opened from, if any, is kept for the way back. The Volvo ID flow
 // comes back to it with its outcome (volvo=connected, key_refused, no_vehicle, which
@@ -29,12 +31,13 @@ import VehicleCollection from './VehicleCollection.vue'
 // vehicle: there is no key to give.
 //
 // One tab per brand, each with its connection and its vehicles: a brand added later is a
-// tab more. The tab is the URL's hash (#volvo, #polestar: the home's choice of a Polestar
-// opens its tab); without one, that of the vehicle the page was opened from, else the
+// tab more. The tab is the URL's hash (#volvo, #polestar, #tesla: the home's choice of a
+// brand opens its tab); without one, that of the vehicle the page was opened from, else the
 // first brand the account has a vehicle of, else Volvo's. A dot marks a tab whose vehicles need the user,
 // or whose credential is to be renewed (Polestar's).
 // On an instance without a Volvo application, Volvo's tab is left out, unless the account
-// has Volvos from before: it then says why they are not read.
+// has Volvos from before: it then says why they are not read. Tesla's is there only while
+// the flag source.tesla is on for the account.
 const props = defineProps<{ vehicle?: string; outcome?: string }>()
 const { t } = useI18n()
 const { unread } = useLimits()
@@ -83,15 +86,21 @@ const connection = computed(
 )
 const lost = computed(() => connection.value?.status === 'reauth_required')
 
-const brands = ['volvo', 'polestar'] as const
+const brands = ['volvo', 'polestar', 'tesla'] as const
 type Brand = (typeof brands)[number]
 const brandLabels = computed<Record<Brand, string>>(() => ({
   volvo: t('connection.brand.volvo'),
   polestar: t('connection.brand.polestar'),
+  tesla: t('connection.brand.tesla'),
 }))
 const ofBrand = (b: Brand) => (vehicles.value ?? []).filter((v) => v.connection.provider === b)
+const teslaOn = useFlag('source.tesla')
 const shown = computed(() =>
-  brands.filter((b) => b !== 'volvo' || settings.value?.volvo !== false || ofBrand(b).length),
+  brands.filter((b) =>
+    b === 'volvo'
+      ? settings.value?.volvo !== false || ofBrand(b).length
+      : b !== 'tesla' || teslaOn.value,
+  ),
 )
 const asBrand = (s?: string) => shown.value.find((b) => b === s)
 const tab = computed<Brand>({
@@ -194,7 +203,7 @@ const alerted = computed(
         >
           {{ brandLabels[b] }}
           <v-chip
-            v-if="b === 'polestar'"
+            v-if="b !== 'volvo'"
             size="x-small"
             variant="tonal"
             color="primary"
@@ -321,11 +330,21 @@ const alerted = computed(
               </dl>
             </section>
           </template>
-          <section v-else class="mb-8" aria-labelledby="connection-polestar-title">
+          <section
+            v-else-if="b === 'polestar'"
+            class="mb-8"
+            aria-labelledby="connection-polestar-title"
+          >
             <h2 id="connection-polestar-title" class="text-title-large mb-3">
               {{ t('connection.polestar.title') }}
             </h2>
             <PolestarForm :connection="settings" />
+          </section>
+          <section v-else class="mb-8" aria-labelledby="connection-tesla-title">
+            <h2 id="connection-tesla-title" class="text-title-large mb-3">
+              {{ t('connection.tesla.title') }}
+            </h2>
+            <TeslaForm :connection="settings" />
           </section>
 
           <section v-if="ofBrand(b).length" :aria-labelledby="`connection-vehicles-${b}`">

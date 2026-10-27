@@ -32,15 +32,15 @@
     "error": "Les véhicules n'ont pas pu être chargés. Réessayez dans un instant.",
     "empty": {
       "title": "Aucun véhicule pour l'instant",
-      "keyText": "Quelle est votre voiture ? Runsten lit une Volvo avec la clé d'une application Volvo que vous créez, puis votre Volvo ID ; une Polestar avec un identifiant du Data Portal de Polestar.",
-      "text": "Quelle est votre voiture ? Runsten lit une Volvo par votre Volvo ID, une Polestar par un identifiant du Data Portal de Polestar.",
-      "polestarText": "Runsten lit une Polestar avec un identifiant du Data Portal de Polestar. Cette instance n'est pas configurée pour lire une Volvo."
+      "keyText": "Quelle est votre voiture ? Runsten lit une Volvo avec la clé d'une application Volvo que vous créez, puis votre Volvo ID ; une Polestar avec un identifiant du Data Portal de Polestar ; une Tesla avec un jeton de rafraîchissement de votre compte Tesla.",
+      "text": "Quelle est votre voiture ? Runsten lit une Volvo par votre Volvo ID, une Polestar par un identifiant du Data Portal de Polestar, une Tesla par un jeton de rafraîchissement de votre compte Tesla.",
+      "noVolvoText": "Runsten lit une Polestar avec un identifiant du Data Portal de Polestar, une Tesla avec un jeton de rafraîchissement de votre compte Tesla. Cette instance n'est pas configurée pour lire une Volvo."
     },
     "choose": {
       "volvo": "J'ai une Volvo",
-      "polestar": "J'ai une Polestar (bêta)"
-    },
-    "connectPolestar": "Connecter une Polestar (bêta)"
+      "polestar": "J'ai une Polestar (bêta)",
+      "tesla": "J'ai une Tesla (bêta)"
+    }
   },
   "vehicle": {
     "title": "Véhicule",
@@ -1001,7 +1001,8 @@
     "brands": "Marques de véhicules",
     "brand": {
       "volvo": "Volvo",
-      "polestar": "Polestar"
+      "polestar": "Polestar",
+      "tesla": "Tesla"
     },
     "brandAttention": "demande votre attention",
     "outcome": {
@@ -1049,7 +1050,12 @@
       "notGranted": "Lu en partie : l'identifiant n'a pas reçu tous les domaines",
       "pausedPolestar": "Mis en pause par Polestar jusqu'à {time}",
       "quotaPolestar": "Quota Polestar atteint jusqu'à {time}",
-      "notConfigured": "Non lu : Volvo n'est pas configuré sur cette instance"
+      "notConfigured": "Non lu : Volvo n'est pas configuré sur cette instance",
+      "credentialRefusedTesla": "Non lu : Tesla a refusé le jeton de rafraîchissement",
+      "credentialMissingTesla": "Non lu : aucun jeton Tesla donné",
+      "unsharedTesla": "Non lu : le véhicule n'est plus dans le compte Tesla",
+      "pausedTesla": "En pause par Tesla jusqu'à {time}",
+      "quotaTesla": "Appels du jour à Tesla atteints jusqu'à {time}"
     },
     "notice": {
       "reauth": {
@@ -1073,7 +1079,12 @@
       "notGranted": "Votre identifiant n'a pas reçu l'un des domaines que Runsten lit ({endpoint}) : ce qu'il donne n'est pas lu. Créez un identifiant avec les cinq domaines, et donnez-le sur la page Connexion.",
       "quotaPolestar": "Le quota quotidien d'appels de votre identifiant Polestar est épuisé. La lecture reprend d'elle-même.",
       "pausedPolestar": "Polestar a limité le nombre d'appels. La lecture reprend d'elle-même.",
-      "notConfigured": "Cette instance n'a pas d'application Volvo : rien de nouveau n'est lu de ce véhicule tant que son administrateur n'en a pas renseigné une. Son historique reste."
+      "notConfigured": "Cette instance n'a pas d'application Volvo : rien de nouveau n'est lu de ce véhicule tant que son administrateur n'en a pas renseigné une. Son historique reste.",
+      "credentialRefusedTesla": "Tesla a refusé le jeton de rafraîchissement avec lequel ce véhicule est lu : déconnexion du compte Tesla, mot de passe changé, ou Owner API fermée au compte. Obtenez un nouveau jeton et donnez-le sur la page Connexion : ce qui a été lu reste.",
+      "credentialMissingTesla": "Runsten lit cette Tesla avec un jeton de rafraîchissement de votre compte Tesla, qui a été retiré : donnez-en un nouveau sur la page Connexion.",
+      "unsharedTesla": "Votre compte Tesla ne liste plus ce véhicule : vendu, ou retiré du compte. S'il revient, donnez à nouveau le jeton sur la page Connexion : le véhicule est lu à nouveau.",
+      "pausedTesla": "Tesla a limité le nombre d'appels. La lecture reprend d'elle-même.",
+      "quotaTesla": "Runsten fait au plus 3 000 appels par jour à Tesla par jeton, pour rester loin de ses limites non publiées : ils sont épuisés. La lecture reprend d'elle-même."
     },
     "facts": {
       "mode": "Mode de lecture",
@@ -1091,13 +1102,15 @@
       "noneDueMarket": "Aucune : Volvo ne dessert pas le marché du véhicule",
       "noneDueCredential": "Aucune tant qu'aucun identifiant Polestar n'est donné",
       "noneDueUnshared": "Aucune : le véhicule n'est plus partagé avec l'identifiant",
-      "noneDueNotConfigured": "Aucune tant que Volvo n'est pas configuré"
+      "noneDueNotConfigured": "Aucune tant que Volvo n'est pas configuré",
+      "noneDueToken": "Aucune tant qu'aucun jeton Tesla n'est donné"
     },
     "api": {
       "connectedVehicle": "données du véhicule",
       "energy": "batterie et charge",
       "location": "position",
-      "polestar": "Data Portal de Polestar"
+      "polestar": "Data Portal de Polestar",
+      "tesla": "Owner API de Tesla"
     },
     "failure": {
       "quota": "Quota atteint",
@@ -1115,7 +1128,11 @@
       "apiClosed": "API fermée au compte",
       "notFoundPolestar": "Véhicule inconnu de Polestar",
       "unavailablePolestar": "Polestar injoignable",
-      "tokenPolestar": "Aucun jeton de Polestar"
+      "tokenPolestar": "Aucun jeton de Polestar",
+      "notFoundTesla": "Véhicule inconnu de Tesla",
+      "unavailableTesla": "Tesla injoignable",
+      "tokenTesla": "Aucun jeton de Tesla",
+      "credentialRefusedTesla": "Jeton Tesla refusé"
     },
     "key": {
       "title": "Clé Volvo"
@@ -1133,6 +1150,9 @@
     "noVolvo": {
       "title": "Volvo non configuré",
       "text": "Cette instance n'a pas d'application Volvo : ses Volvo ne sont pas lues. Son administrateur peut en créer une sur le portail développeur de Volvo et la renseigner dans la configuration (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_CLIENT_SECRET) : le Volvo ID est alors lu de nouveau."
+    },
+    "tesla": {
+      "title": "Compte Tesla"
     }
   },
   "apiKey": {
@@ -1488,6 +1508,58 @@
       "portalUnavailable": "Le Data Portal de Polestar n'a pas répondu : l'identifiant n'a pas été enregistré. Réessayez dans un instant.",
       "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
       "internal": "L'identifiant n'a pas pu être enregistré. Réessayez dans un instant."
+    }
+  },
+  "tesla": {
+    "intro": "Runsten lit votre Tesla avec un jeton de rafraîchissement de votre compte Tesla, comme TeslaMate : par l'Owner API, l'API de l'app Tesla. Il ne demande jamais votre mot de passe Tesla, et ne réveille jamais votre voiture : il la laisse dormir.",
+    "beta": "La prise en charge de Tesla est en bêta. L'Owner API n'est pas officielle : Tesla peut la fermer sans préavis.",
+    "guide": "Lire le guide",
+    "refused": {
+      "title": "Votre jeton Tesla a été refusé",
+      "body": "Tesla l'a refusé le {time} : déconnexion du compte Tesla, mot de passe changé, ou Owner API fermée au compte. Vos Tesla ne sont plus lues tant que vous n'en donnez pas un nouveau ; ce qui a été lu reste."
+    },
+    "current": "Votre jeton",
+    "last4": "Se terminant par {last4}",
+    "setAt": "Donné",
+    "replace": "Remplacer le jeton",
+    "delete": {
+      "button": "Retirer le jeton",
+      "title": "Retirer votre jeton Tesla ?",
+      "text": "Vos Tesla restent, avec leur historique, mais ne sont plus lues tant que vous ne donnez pas un autre jeton.",
+      "error": "Le jeton n'a pas pu être retiré. Réessayez dans un instant.",
+      "cancel": "Annuler",
+      "confirm": "Retirer"
+    },
+    "steps": {
+      "title": "Obtenir votre jeton de rafraîchissement",
+      "tool": "Sur un ordinateur, lancez",
+      "phone": "(ou l'app Auth app for Tesla sur un téléphone).",
+      "newTab": "(s'ouvre dans un nouvel onglet)",
+      "signIn": "Connectez-vous avec votre compte Tesla : c'est la page de Tesla, votre mot de passe reste entre vous et Tesla.",
+      "copy": "Copiez le jeton de rafraîchissement qu'il affiche (pas le jeton d'accès) et collez-le ci-dessous : il n'est plus jamais affiché, seuls ses quatre derniers caractères."
+    },
+    "label": "Jeton de rafraîchissement",
+    "help": "Runsten garde, scellé, le jeton que Tesla rend en échange de celui-ci. Vous déconnecter de votre compte Tesla partout le révoque.",
+    "save": "Enregistrer le jeton",
+    "cancel": "Annuler",
+    "saved": "Jeton enregistré : Runsten lit ses véhicules dès son prochain passage.",
+    "deleted": "Jeton retiré.",
+    "error": {
+      "summary": "Le jeton n'a pas été enregistré",
+      "required": "Collez le jeton de rafraîchissement.",
+      "spaces": "Le jeton de rafraîchissement n'a pas d'espace : copiez-le à nouveau.",
+      "characters": "Le jeton de rafraîchissement n'a que des lettres, des chiffres et des signes : copiez-le à nouveau.",
+      "tooShort": "Le jeton de rafraîchissement a au moins {min} caractères : copiez-le en entier.",
+      "tooLong": "Le jeton de rafraîchissement a au plus {max} caractères : copiez-le seul.",
+      "refused": "Tesla a refusé ce jeton : obtenez-en un nouveau, il a peut-être déjà servi ou été révoqué.",
+      "invalidBody": "Ce jeton a été refusé : copiez-le à nouveau.",
+      "apiClosed": "L'Owner API de Tesla est fermée à ce compte : Runsten ne peut pas le lire. Le jeton n'a pas été enregistré.",
+      "noVehicle": "Ce compte Tesla n'a aucun véhicule : le jeton n'a pas été enregistré.",
+      "tooManyVehicles": "Avec les véhicules de ce compte, votre compte aurait plus de véhicules qu'il ne peut : le jeton n'a pas été enregistré.",
+      "notAdmitted": "Votre compte doit d'abord franchir une étape, comme accepter des conditions : rechargez la page. Le jeton n'a pas été enregistré.",
+      "teslaUnavailable": "Tesla n'a pas répondu : le jeton n'a pas été enregistré. Réessayez dans un instant, peut-être avec un nouveau jeton.",
+      "unavailable": "Runsten n'a pas pu être joint. Réessayez dans un instant.",
+      "internal": "Le jeton n'a pas pu être enregistré. Réessayez dans un instant."
     }
   },
   "release": {

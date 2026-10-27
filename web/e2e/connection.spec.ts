@@ -69,3 +69,29 @@ test('Connection: a Polestar credential is checked before it is stored', async (
   await checkView(page, testInfo, 'connection-polestar')
   await expect(polestar.getByText('App client ID ending in')).toHaveCount(0)
 })
+
+// The Tesla refresh token is checked against the simulator's Owner API before it is
+// stored. A token Tesla does not know is refused, and nothing is stored, whichever project
+// runs first.
+test('Connection: a Tesla refresh token is checked before it is stored', async ({
+  page,
+}, testInfo) => {
+  await signIn(page)
+  await page.goto('/connection')
+  await page.getByRole('tab', { name: /Tesla/ }).click()
+  await expect(page).toHaveURL(/#tesla$/)
+  const tesla = page.getByRole('region', { name: 'Tesla account' })
+  await expect(tesla.getByRole('link', { name: /Tesla Auth/ })).toHaveAttribute(
+    'href',
+    'https://github.com/adriankumpf/tesla_auth',
+  )
+  await tesla
+    .getByLabel('Refresh token', { exact: true })
+    .fill('eyJhbGciOiJSUzI1NiJ9.not-a-token-of-the-simulator')
+  await tesla.getByRole('button', { name: 'Save the token' }).click()
+  const summary = tesla.locator('.error-summary')
+  await expect(summary).toBeFocused()
+  await expect(summary).toContainText('Tesla refused this refresh token')
+  await checkView(page, testInfo, 'connection-tesla')
+  await expect(tesla.getByText('Ending in')).toHaveCount(0)
+})

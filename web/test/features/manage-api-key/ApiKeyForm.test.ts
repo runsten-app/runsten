@@ -22,6 +22,7 @@ const hosted: ConnectionSettings = {
   instance_key: null,
   api_key: null,
   polestar: null,
+  tesla: null,
 }
 const withKey = connection as ConnectionSettings
 let wrapper: VueWrapper | undefined
