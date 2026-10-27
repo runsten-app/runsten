@@ -238,6 +238,7 @@ type endedCharge struct {
 	c     Charge
 	since time.Time       // the reading that ended it
 	read  Value[Position] // a position read after it, taken once its readings are all in
+	until time.Time       // if set, the latest a position it takes may have been recorded
 }
 
 // settleCharge notes the first position read after the ended charge's end, or releases
@@ -251,19 +252,43 @@ func (d *detector) settleCharge(p point) {
 		d.releaseCharge()
 		return
 	}
-	if pos := d.st.snap.Position; p.snap.Covers&FieldPosition != 0 && pos.OK && !e.read.OK {
+	// A position noted earlier that the charge's bound now refuses (a trip revealed since,
+	// at the same time) gives way to the next it takes.
+	if pos := d.st.snap.Position; p.snap.Covers&FieldPosition != 0 && pos.OK &&
+		(!e.read.OK || !e.takes(e.read)) && e.takes(pos) {
 		e.read = pos
 	}
+}
+
+// takes reports whether the ended charge may take a position: any, unless a trip that
+// may have followed it bounds it to those recorded before it ended, and no older than
+// the one it has (a stale one would only stand in for the position it already has).
+func (e *endedCharge) takes(pos Value[Position]) bool {
+	if e.until.IsZero() {
+		return true
+	}
+	// The one it has bounds it from below only when it is itself within the bound.
+	had := e.c.Position
+	fresh := !had.OK || had.At.IsZero() || had.At.After(e.until) || !pos.At.Before(had.At)
+	return !pos.At.IsZero() && !pos.At.After(e.until) && fresh
 }
 
 // placeCharge gives the ended charge the position read after its end, once every
 // reading of that time is in: a trip or a charge starting at the same time releases it
 // first, with the position it had, since the vehicle may have read that one elsewhere.
 func (d *detector) placeCharge() {
-	if e := d.ended; e != nil && e.read.OK {
+	e := d.ended
+	if e == nil || !e.read.OK {
+		return
+	}
+	// Checked again: a trip of the same time may have bounded it after the position was
+	// noted (one reading that tells both).
+	if e.takes(e.read) {
 		e.c.Position = e.read
 		d.releaseCharge()
+		return
 	}
+	e.read = Value[Position]{}
 }
 
 // releaseCharge adds the ended charge to the result as it stands: a trip or a charge

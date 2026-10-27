@@ -65,7 +65,7 @@ func (d *detector) stepTrip(p point, prev state) {
 		d.resumeTrip(tb, p)
 	}
 	if tb := d.trip; tb != nil && tb.phase == tripEnding {
-		tb.checkArrival(&d.st)
+		tb.checkArrival(&d.st, d.p.VehicleTimestamps, d.narrow(tb.endLimit, tb.t.End.After, tb.hints...))
 	}
 }
 
@@ -98,9 +98,16 @@ func (d *detector) reconstructTrip(p point, prev state) {
 	m := d.odoMark
 	after := prev.seenAt(FieldOdometer)
 	// A trip that ended before the ended charge did was the drive to it, not away from
-	// it: the charge still waits for its position.
-	if e := d.ended; e == nil || d.narrow(p.at, after, d.st.snap.OdometerKm.At).After(e.c.End.After) {
-		d.releaseCharge()
+	// it: the charge still waits for its position. One that may have ended after it
+	// leaves it waiting only for a position the vehicle recorded before it ended, which
+	// cannot be another place's (some vehicles stamp the odometer when they upload it).
+	// Without the vehicle's timestamps, nothing tells: the charge takes the position it has.
+	if e := d.ended; e != nil && d.narrow(p.at, after, d.st.snap.OdometerKm.At).After(e.c.End.After) {
+		if d.p.VehicleTimestamps {
+			e.until = e.c.End.Before
+		} else {
+			d.releaseCharge()
+		}
 	}
 	d.trip = &tripBuilder{
 		t: Trip{
@@ -136,10 +143,17 @@ func (d *detector) resumeTrip(tb *tripBuilder, p point) {
 	tb.t.End, tb.t.Capacity = Bounds{}, Value[Capacity]{}
 }
 
-// checkArrival takes a position read after the departure one as the arrival.
+// checkArrival takes a position read after the departure one as the arrival, unless
+// the vehicle recorded it before the arrival it has (when its timestamps are trusted
+// and both have one), that arrival being within end, the trip's end bound.
 // Assumption: the vehicle uploads its position at the end of a trip only.
-func (tb *tripBuilder) checkArrival(st *state) {
-	if pos := st.snap.Position; pos.OK && st.rowAt(FieldPosition).After(tb.departureRow) {
+func (tb *tripBuilder) checkArrival(st *state, stamps bool, end time.Time) {
+	pos := st.snap.Position
+	// An arrival recorded after the trip had surely ended (a drive further) is no
+	// arrival to keep against an older position.
+	older := stamps && tb.arrived && !pos.At.IsZero() && !tb.t.To.At.IsZero() &&
+		!tb.t.To.At.After(end) && pos.At.Before(tb.t.To.At)
+	if pos.OK && st.rowAt(FieldPosition).After(tb.departureRow) && !older {
 		tb.t.To, tb.arrived = pos, true
 	}
 }
