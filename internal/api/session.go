@@ -200,9 +200,10 @@ type sessionJSON struct {
 	User      userJSON                `json:"user"`
 	ExpiresAt time.Time               `json:"expires_at" pattern:"Z$" doc:"The absolute end of the session. It ends sooner after 7 days without a request, or when the password changes."`
 	Limits    null[accountLimitsJSON] `json:"limits" doc:"What the account's offer hides, as of now; null: nothing, the whole history is shown. Only an instance that limits its accounts sets it."`
+	Flags     flagsJSON               `json:"flags"`
 }
 
-// sessionOf is the session, with its account's limits.
+// sessionOf is the session, with its account's limits and flags.
 func (s *Server) sessionOf(ctx context.Context, sess auth.Session) (sessionJSON, error) {
 	l, err := s.limitsOf(ctx, sess.AccountID)
 	if err != nil {
@@ -210,6 +211,7 @@ func (s *Server) sessionOf(ctx context.Context, sess auth.Session) (sessionJSON,
 	}
 	return sessionJSON{
 		User: userJSON{ID: sess.UserID, Username: sess.Username}, ExpiresAt: sess.ExpiresAt, Limits: limitsOfAccount(l),
+		Flags: s.flagsOf(ctx, sess.AccountID),
 	}, nil
 }
 

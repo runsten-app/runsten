@@ -2,6 +2,7 @@ package main
 
 import (
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"runsten/internal/collector"
+	"runsten/internal/flags"
 	"runsten/internal/oauth"
 	"runsten/internal/platform/clock"
 	"runsten/internal/platform/health"
@@ -36,7 +38,7 @@ func TestLoadConfigDefaults(t *testing.T) {
 		cfg.tick != 10*time.Second ||
 		cfg.intervals != collector.DefaultIntervals() || cfg.quota != collector.DefaultQuota() || cfg.logLevel != slog.LevelInfo ||
 		cfg.tokens != oauth.DefaultParams() || cfg.clientID != "id" || cfg.clientSecret != "secret" || cfg.clockSpeed != 1 ||
-		!cfg.privateBrokers {
+		!cfg.privateBrokers || len(cfg.flags) != 0 {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -53,6 +55,7 @@ func TestLoadConfigOverrides(t *testing.T) {
 		"RUNSTEN_DEV_CLOCK_SPEED": "60", "RUNSTEN_VOLVO_DAILY_QUOTA": "50000",
 		"RUNSTEN_VOLVO_QUOTA_PER_USER": "true", "RUNSTEN_MQTT_PRIVATE_BROKERS": "false",
 		"RUNSTEN_POLESTAR_BASE_URL": "http://localhost:8080/eu-north-1/data-portal/m2m",
+		"RUNSTEN_FLAGS":             "source.tesla=false",
 	} {
 		m[k] = v
 	}
@@ -65,7 +68,8 @@ func TestLoadConfigOverrides(t *testing.T) {
 		cfg.accessToken != "t" || cfg.logLevel != slog.LevelDebug || cfg.debugAddr != "127.0.0.1:8090" ||
 		cfg.authURL != "http://localhost:8080" || cfg.tokens.Margin != 30*time.Second || cfg.tokens.KeepAlive != 6*time.Hour ||
 		cfg.healthAddr != "127.0.0.1:8091" || !cfg.restricted || cfg.clockSpeed != 60 || cfg.quota != (collector.Quota{Daily: 50000, PerUser: true}) ||
-		cfg.privateBrokers || cfg.polestarURL != "http://localhost:8080/eu-north-1/data-portal/m2m" {
+		cfg.privateBrokers || cfg.polestarURL != "http://localhost:8080/eu-north-1/data-portal/m2m" ||
+		!maps.Equal(cfg.flags, map[flags.Name]bool{flags.SourceTesla: false}) {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -77,7 +81,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_HEALTH_ADDR": "8091", "RUNSTEN_ACCESS_RESTRICTED": "yes please",
 		"RUNSTEN_DEV_CLOCK_SPEED": "0", "RUNSTEN_VOLVO_DAILY_QUOTA": "10k",
 		"RUNSTEN_VOLVO_QUOTA_PER_USER": "maybe", "RUNSTEN_MQTT_PRIVATE_BROKERS": "sometimes",
-		"RUNSTEN_POLESTAR_BASE_URL": "polestar",
+		"RUNSTEN_POLESTAR_BASE_URL": "polestar", "RUNSTEN_FLAGS": "source.tesla=sometimes",
 	}), connect)
 	if err == nil {
 		t.Fatal("error expected")
@@ -87,7 +91,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_POLL_TICK", "RUNSTEN_POLL_ACTIVE", "RUNSTEN_LOG_LEVEL", "RUNSTEN_DEBUG_ADDR",
 		"RUNSTEN_VOLVO_AUTH_URL", "RUNSTEN_TOKEN_KEEPALIVE", "RUNSTEN_HEALTH_ADDR", "RUNSTEN_ACCESS_RESTRICTED",
 		"RUNSTEN_DEV_CLOCK_SPEED", "RUNSTEN_VOLVO_DAILY_QUOTA", "RUNSTEN_VOLVO_QUOTA_PER_USER",
-		"RUNSTEN_MQTT_PRIVATE_BROKERS", "RUNSTEN_POLESTAR_BASE_URL",
+		"RUNSTEN_MQTT_PRIVATE_BROKERS", "RUNSTEN_POLESTAR_BASE_URL", "RUNSTEN_FLAGS",
 	} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("the error should mention %s: %v", want, err)
