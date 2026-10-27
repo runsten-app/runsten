@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"runsten/internal/simulator/scenario"
+	"runsten/internal/simulator/teslaapi"
 	"runsten/internal/simulator/vehicle"
 	"runsten/internal/simulator/volvoapi"
 )
@@ -24,7 +25,7 @@ func TestLoadConfigDefaults(t *testing.T) {
 	limits, faults, auth := cfg.apiBehavior(&scenario.Scenario{})
 	if cfg.addr != ":8080" || cfg.speed != 1 || cfg.driveUpload != time.Minute || cfg.logLevel != slog.LevelInfo ||
 		!reflect.DeepEqual(limits, volvoapi.DefaultLimits()) || faults.ErrorRate != 0 || faults.Latency != 0 || faults.Outages != nil ||
-		!reflect.DeepEqual(auth, volvoapi.DefaultOAuth()) || cfg.databaseURL != "" {
+		!reflect.DeepEqual(auth, volvoapi.DefaultOAuth()) || cfg.databaseURL != "" || cfg.tesla != teslaapi.DefaultBehavior() {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -36,7 +37,7 @@ func TestLoadConfigOverrides(t *testing.T) {
 		"SIM_TOKEN_TTL": "30m", "SIM_ERROR_RATE": "0.2", "SIM_LATENCY": "100ms",
 		"SIM_CLIENT_ID": "id", "SIM_CLIENT_SECRET": "secret", "SIM_REDIRECT_URI": "https://example.test/cb",
 		"SIM_ACCESS_TOKEN_TTL": "299s", "SIM_GRANT_TTL": "48h", "SIM_API_KEYS": "key-a, key-b",
-		"SIM_DATABASE_URL": "postgres://sim@db/sim",
+		"SIM_DATABASE_URL": "postgres://sim@db/sim", "SIM_TESLA_SLEEP_AFTER": "0s", "SIM_TESLA_TOKEN_TTL": "1h",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -50,7 +51,7 @@ func TestLoadConfigOverrides(t *testing.T) {
 		AccessTokenTTL: time.Hour, RefreshTokenTTL: 3 * time.Hour, GrantTTL: 24 * time.Hour,
 	}})
 	if cfg.addr != ":9000" || cfg.speed != 60 || cfg.driveUpload != 30*time.Second || cfg.logLevel != slog.LevelDebug ||
-		cfg.databaseURL != "postgres://sim@db/sim" {
+		cfg.databaseURL != "postgres://sim@db/sim" || cfg.tesla != (teslaapi.Behavior{SleepAfter: 0, TokenTTL: time.Hour}) {
 		t.Errorf("config = %+v", cfg)
 	}
 	if !reflect.DeepEqual(limits, volvoapi.Limits{DailyQuota: 0, PerMinute: 5, TokenTTL: 30 * time.Minute, Keys: []string{"key-a", "key-b"}}) {
@@ -125,6 +126,12 @@ func TestLoadFleet(t *testing.T) {
 			[]string{"YV1SMLT0000DT0001", "LPSVSEDE5RL000001"},
 			time.Date(2026, 9, 28, 5, 0, 0, 0, time.UTC), "",
 		},
+		{
+			"a Volvo, a Polestar and a Tesla",
+			[]string{"commute.yaml", "polestar2.yaml", "model3.yaml"},
+			[]string{"YV1SMLT0000DT0001", "LPSVSEDE5RL000001", "LRW3E7EK1RC000001"},
+			time.Date(2026, 9, 28, 5, 0, 0, 0, time.UTC), "",
+		},
 		{"the same VIN twice", []string{"commute.yaml", "commute.yaml"}, nil, time.Time{}, "same vin"},
 		{"api section not first", []string{"ex30.yaml", "errand.yaml"}, nil, time.Time{}, "only the first scenario may have an api section"},
 		{"missing file", []string{"commute.yaml", "nothing.yaml"}, nil, time.Time{}, "reading scenario"},
@@ -161,6 +168,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"SIM_SPEED": "-1", "SIM_DRIVE_UPLOAD": "fast", "SIM_DAILY_QUOTA": "lots", "SIM_LOG_LEVEL": "loud",
 		"SIM_TOKEN_TTL": "-1s", "SIM_ERROR_RATE": "2", "SIM_LATENCY": "slow", "SIM_GRANT_TTL": "0s",
 		"SIM_POLESTAR_CREDENTIAL_TTL": "-1h", "SIM_POLESTAR_PARKED_UPLOAD": "often",
+		"SIM_TESLA_SLEEP_AFTER": "-1m", "SIM_TESLA_TOKEN_TTL": "0s",
 	}))
 	if err == nil {
 		t.Fatal("expected error")
@@ -169,6 +177,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"SIM_SCENARIO", "SIM_SPEED", "SIM_DRIVE_UPLOAD", "SIM_DAILY_QUOTA", "SIM_LOG_LEVEL",
 		"SIM_TOKEN_TTL", "SIM_ERROR_RATE", "SIM_LATENCY", "SIM_GRANT_TTL",
 		"SIM_POLESTAR_CREDENTIAL_TTL", "SIM_POLESTAR_PARKED_UPLOAD",
+		"SIM_TESLA_SLEEP_AFTER", "SIM_TESLA_TOKEN_TTL",
 	} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error should mention %s: %v", want, err)

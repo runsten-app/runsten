@@ -102,6 +102,7 @@ var allowed = map[string][]string{
 	},
 	// The fake Polestar Data Portal exposes the same vehicle model; it never imports the client.
 	"internal/simulator/polestarapi": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
+	"internal/simulator/teslaapi":    {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
 	"internal/simulator/control":     {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
 	// The fake Aximote writes its API's JSON on its own: it never imports the client.
 	"internal/simulator/aximoteapi": {"net/http", "encoding/json"},
