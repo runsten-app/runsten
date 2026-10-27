@@ -267,7 +267,10 @@ func (e *endedCharge) takes(pos Value[Position]) bool {
 	if e.until.IsZero() {
 		return true
 	}
-	return !pos.At.IsZero() && !pos.At.After(e.until) && !pos.At.Before(e.c.Position.At)
+	// The one it has bounds it from below only when it is itself within the bound.
+	had := e.c.Position
+	fresh := !had.OK || had.At.IsZero() || had.At.After(e.until) || !pos.At.Before(had.At)
+	return !pos.At.IsZero() && !pos.At.After(e.until) && fresh
 }
 
 // placeCharge gives the ended charge the position read after its end, once every

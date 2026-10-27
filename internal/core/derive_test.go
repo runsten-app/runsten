@@ -720,6 +720,30 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 			trips:  []ends{{from: Some(home, m(0))}},
 		},
 		{
+			// Read before the arrival, recorded after the trip had ended: a drive further
+			// does not keep the trip from its arrival, nor the charge from its position.
+			name: "drive further read first",
+			more: []Record{
+				toWork,
+				rec(97, 97, loc(far, m(99))),
+				rec(98, 120, loc(work, m(73))),
+			},
+			charge: Some(work, m(73)),
+			trips:  []ends{{Some(home, m(0)), Some(work, m(73))}},
+		},
+		{
+			// The position the charge ended with was recorded after its end bound (the
+			// vehicle's clock ahead): it does not bound the next one from below.
+			name: "position at the end past its bound",
+			more: []Record{
+				{FetchedAt: m(94).Add(30 * time.Second), CheckedAt: m(94).Add(30 * time.Second), Snapshot: loc(far, m(95).Add(30*time.Second))},
+				toWork,
+				rec(97, 120, loc(work, m(73))),
+			},
+			charge: Some(work, m(73)),
+			trips:  []ends{{from: Some(home, m(0))}},
+		},
+		{
 			// Older than the position the charge has: it would only stand in for it.
 			name: "stale position under the bound",
 			more: []Record{
