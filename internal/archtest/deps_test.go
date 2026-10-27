@@ -28,12 +28,12 @@ var allowed = map[string][]string{
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/catalog", "internal/core",
 		"internal/derive", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/platform",
-		"internal/polestar", "internal/release", "internal/store", "internal/volvo", "internal/volvoportal",
+		"internal/polestar", "internal/release", "internal/store", "internal/tesla", "internal/volvo", "internal/volvoportal",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
 		"internal/flags", "internal/oauth", "internal/platform", "internal/polestar", "internal/publish", "internal/store",
-		"internal/volvo",
+		"internal/tesla", "internal/volvo",
 	},
 	"cmd/runsten-simulator": {"net/http", "internal/platform", "internal/simulator"},
 	"cmd/runsten-web":       {"net/http", "internal/platform", "internal/web"},
@@ -51,8 +51,10 @@ var allowed = map[string][]string{
 	"internal/collector": {"internal/platform/clock", "internal/volvo"},
 	// The collector's Source of the Polestar Data Portal: the client, adapted.
 	"internal/collector/polestarsource": {"internal/collector", "internal/core", "internal/polestar"},
-	"internal/derive":                   {"internal/core"},
-	"internal/oauth":                    {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
+	// The collector's Source of Tesla's Owner API: the client, adapted.
+	"internal/collector/teslasource": {"internal/collector", "internal/core", "internal/tesla"},
+	"internal/derive":                {"internal/core"},
+	"internal/oauth":                 {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
 	// It reads the catalog, pure data like core, to recognize the vehicles' variants, and
 	// the flags' declarations (never flags/eval: depguard).
 	"internal/api": {

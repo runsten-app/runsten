@@ -217,7 +217,7 @@ func TestPolestarCredentialChecks(t *testing.T) {
 		"a credential without its time": "UPDATE connections SET credential_set_at = NULL WHERE id = $1",
 		"a refusal without a credential": `UPDATE connections SET credential = NULL, credential_set_at = NULL, credential_last4 = NULL,
 			credential_refused_at = now() WHERE id = $1`,
-		"another provider": "UPDATE connections SET provider = 'tesla' WHERE id = $1",
+		"another provider": "UPDATE connections SET provider = 'smartcar' WHERE id = $1",
 	} {
 		if _, err := db.Exec(ctx, update, conn); err == nil {
 			t.Errorf("%s accepted", name)

@@ -153,7 +153,7 @@ func (collectionModeJSON) Schema(huma.Registry) *huma.Schema {
 // Schema lists the kinds of a failed call.
 func (failureKindJSON) Schema(huma.Registry) *huma.Schema {
 	return enumSchema("quota", "rate_limited", "unauthorized", "not_found", "unavailable", "token", "key_refused", "market",
-		"credential_refused", "unshared", "not_granted", "other")
+		"credential_refused", "unshared", "not_granted", "api_closed", "other")
 }
 
 type collectionJSON struct {
@@ -175,7 +175,7 @@ type failureJSON struct {
 	At       time.Time       `json:"at" pattern:"Z$"`
 	Endpoint *string         `json:"endpoint" doc:"The vendor's endpoint called; null when no call could be made, without an access token."`
 	Status   *int            `json:"status" doc:"The HTTP status; null when the API did not respond."`
-	Kind     failureKindJSON `json:"kind" doc:"quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). credential_refused: Polestar's Data Portal refused the connection's credential. unshared: the vehicle is no longer shared with the credential (unshared_at). not_granted: the credential was not granted the endpoint's domain, left out for a day. other: another refusal."`
+	Kind     failureKindJSON `json:"kind" doc:"quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). credential_refused: Polestar's Data Portal refused the connection's credential. unshared: the vehicle is no longer shared with the credential (unshared_at). not_granted: the credential was not granted the endpoint's domain, left out for a day. api_closed: the vendor's API is closed to the connection's credential (Tesla's Owner API, which sends to its Fleet API). other: another refusal."`
 }
 
 func collectionOf(v Vehicle) null[collectionJSON] {

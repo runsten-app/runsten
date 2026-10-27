@@ -1112,6 +1112,7 @@
       "credentialRefused": "Polestar credential refused",
       "unshared": "Vehicle no longer shared",
       "notGranted": "Domain not granted",
+      "apiClosed": "API closed to the account",
       "notFoundPolestar": "Vehicle unknown to Polestar",
       "unavailablePolestar": "Polestar unreachable",
       "tokenPolestar": "No token from Polestar"

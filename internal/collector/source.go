@@ -33,6 +33,9 @@ type EndpointSpec struct {
 	// Optional: the credential may not be granted it, which is then no failure told to
 	// the user (the vehicle's health, which the trips and charges do without).
 	Optional bool
+	// Awake: reading it keeps the vehicle awake. It is read only while the vehicle is seen
+	// awake, and out of its sleep window (SourceSpec.Sleep).
+	Awake bool
 }
 
 func (s EndpointSpec) pace(m mode) Pace {
@@ -58,14 +61,26 @@ type SourceSpec struct {
 	// Daily is the number of calls a day granted per API and credential, which the
 	// budget spreads as it spreads Quota.Daily.
 	Daily int
+	// Intervals are the paces' durations for this source; zero: the collector's.
+	Intervals Intervals
+	// Sleep lets the vehicle fall asleep; zero: it never sleeps.
+	Sleep Sleep
+}
+
+// Sleep is how the collector lets a vehicle fall asleep that each read of an Awake
+// endpoint keeps awake (a Tesla): parked and awake for IdleBefore, its Awake endpoints
+// are left alone for Window. Asleep, they wait until it is seen awake again.
+type Sleep struct {
+	IdleBefore, Window time.Duration
 }
 
 // Activity is what the responses tell of a vehicle's mode: the states of its engine
 // and of its charge as the provider names them, which the debug page shows, and whether
-// it drives or charges.
+// it drives or charges, or sleeps (asleep, or out of reach: it then neither drives nor
+// charges).
 type Activity struct {
-	Engine, Charging string
-	Driving, Charges bool
+	Engine, Charging         string
+	Driving, Charges, Asleep bool
 }
 
 // Source is a provider whose vehicles a connection reads with a credential of its own
@@ -137,6 +152,12 @@ const (
 	KindNotAvailable
 	// KindRateLimited: the connection waits RetryIn.
 	KindRateLimited
+	// KindAPIClosed: the provider's API is closed to the credential (the account, or the
+	// kind of token); the connection is marked, as for KindCredentialRefused.
+	KindAPIClosed
+	// KindAsleep: the vehicle sleeps, or is out of reach, and was not woken. Not a
+	// failure: its Awake endpoints wait until it is seen awake.
+	KindAsleep
 )
 
 // SourceError is a refusal of a Source's provider. It holds neither the access nor the
@@ -171,13 +192,15 @@ func (s *source) optional(ep Endpoint) bool {
 	return false
 }
 
-// volvoSource is the Volvo Cars API: its calls count on the key's quota (Quota).
-func volvoSource() *source {
+// volvoSource is the Volvo Cars API, read at iv: its calls count on the key's quota
+// (Quota).
+func volvoSource(iv Intervals) *source {
 	return &source{
 		SourceSpec: SourceSpec{
 			Name:      volvo.Source,
 			Endpoints: endpoints(),
 			Settled:   []Endpoint{Endpoint(volvo.Location), Endpoint(volvo.Statistics), Endpoint(volvo.Odometer)},
+			Intervals: iv,
 		},
 		observe:     observeVolvo,
 		fingerprint: volvo.Fingerprint,
@@ -226,6 +249,9 @@ func observeVolvo(ep Endpoint, raw []byte, a *Activity) error {
 func (c *Collector) AddSource(src Source, st SourceStore) {
 	spec := src.Spec()
 	spec.Endpoints = append([]EndpointSpec(nil), spec.Endpoints...)
+	if spec.Intervals == (Intervals{}) {
+		spec.Intervals = c.iv
+	}
 	c.sources[spec.Name] = &source{SourceSpec: spec, observe: src.Observe, fingerprint: src.Fingerprint, ext: src, store: st}
 	for _, ep := range spec.Endpoints {
 		c.budget.addSource(spec.Name, ep.API, spec.Daily)
