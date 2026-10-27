@@ -134,6 +134,27 @@ func TestDeriveTrips(t *testing.T) {
 			}},
 		},
 		{
+			// Read at the stop, the odometer and the position the vehicle sent on the way;
+			// read again 3 minutes later, those it sent at the arrival: they end the trip.
+			name: "end readings sent on the way, then at the arrival",
+			records: func() []Record {
+				mid := Position{Lat: 45.77, Lon: 4.88}
+				rs := trip()[:10]
+				return append(rs,
+					rec(61, 61, Snapshot{Covers: FieldOdometer, OdometerKm: Some(12416.0, m(45))}),
+					rec(61, 61, loc(mid, m(45))),
+					rec(64, 64, Snapshot{Covers: FieldOdometer, OdometerKm: Some(12432.0, m(63))}),
+					rec(64, 64, loc(work, m(63))),
+				)
+			}(),
+			want: []Trip{{
+				DetectedAt: m(30), Start: Bounds{m(20), m(30)}, End: Bounds{m(59), m(61)},
+				StartOdometerKm: val(12400), EndOdometerKm: val(12432), DistanceKm: val(32),
+				StartSoC: val(62), EndSoC: val(55), StartRangeKm: val(248), EndRangeKm: val(220),
+				EnergyKWh: val(5.6), From: Some(home, m(0)), To: Some(work, m(63)),
+			}},
+		},
+		{
 			name: "absent values are absent, never zero",
 			records: []Record{
 				rec(0, 20, engine(EngineStopped)),
