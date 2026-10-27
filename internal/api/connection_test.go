@@ -29,7 +29,7 @@ func TestAPIKey(t *testing.T) {
 	u := e.api.URL + apiPrefix + "/connection"
 
 	resp, body := get(t, noFollow(), u, c)
-	if resp.status != http.StatusOK || body != `{"volvo":true,"connected":false,"client_id":"runsten-dev","instance_key":null,"api_key":null,"polestar":null}`+"\n" {
+	if resp.status != http.StatusOK || body != `{"volvo":true,"connected":false,"client_id":"runsten-dev","instance_key":null,"api_key":null,"polestar":null,"tesla":null}`+"\n" {
 		t.Errorf("no connection: %d %s", resp.status, body)
 	}
 	resp, body = do(t, noFollow(), http.MethodPut, u+"/api-key", jsonType, keyBody(goodKey), c)
@@ -49,7 +49,7 @@ func TestAPIKey(t *testing.T) {
 	if resp, body := do(t, noFollow(), http.MethodDelete, u+"/api-key", "", "", c); resp.status != http.StatusNoContent || body != "" {
 		t.Errorf("DELETE: %d %q", resp.status, body)
 	}
-	if _, body := get(t, noFollow(), u, c); !strings.HasSuffix(body, `"api_key":null,"polestar":null}`+"\n") || e.store.key.Value != "" {
+	if _, body := get(t, noFollow(), u, c); !strings.HasSuffix(body, `"api_key":null,"polestar":null,"tesla":null}`+"\n") || e.store.key.Value != "" {
 		t.Errorf("after DELETE: %s", body)
 	}
 	if strings.Contains(logs.String(), goodKey) {

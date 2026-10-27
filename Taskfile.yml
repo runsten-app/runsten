@@ -350,9 +350,11 @@ tasks:
   # the web interface, which may not run. In the Compose stack, runsten-api sends the
   # browser to http://simulator:8080: curl reaches it through its published port. Then
   # gives the simulator's Polestar credential, which reads the scenarios of brand
-  # polestar. A scenario without a Volvo, or without a Polestar, connects the other only.
+  # polestar, and a new refresh token of its Tesla account (one is used up by each
+  # check), which reads those of brand tesla. A scenario without one of the brands
+  # connects the others only.
   connect-sim:
-    desc: Sign in as the development user, connect the simulated Volvo ID as a browser would (curl), and give the simulated Polestar credential
+    desc: Sign in as the development user, connect the simulated Volvo ID as a browser would (curl), and give the simulated Polestar credential and Tesla refresh token
     silent: true
     cmds:
       - |
@@ -374,6 +376,14 @@ tasks:
           200) echo "Polestar credential set"; connected=1 ;;
           409) echo "Polestar credential: no Polestar in the scenario" ;;
           *) echo "Polestar credential refused: HTTP $status" >&2; exit 1 ;;
+        esac
+        token=$(curl -fsS -X POST http://127.0.0.1:8080/sim/tesla/refresh-token | sed -n 's/.*"refresh_token":"\([^"]*\)".*/\1/p') || exit 1
+        status=$(curl -sS -b "$jar" -X PUT -H 'Content-Type: application/json' -o /dev/null -w '%{http_code}' \
+          -d "{\"refresh_token\":\"$token\"}" http://127.0.0.1:8081/api/v1/connection/tesla) || exit 1
+        case "$status" in
+          200) echo "Tesla refresh token set"; connected=1 ;;
+          409) echo "Tesla refresh token: no Tesla in the scenario" ;;
+          *) echo "Tesla refresh token refused: HTTP $status" >&2; exit 1 ;;
         esac
         [ "$connected" = 1 ] || { echo "no vehicle connected" >&2; exit 1; }
 

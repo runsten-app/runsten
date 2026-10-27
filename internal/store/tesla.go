@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+
+	"runsten/internal/api"
 )
 
 // A Tesla connection is the owner's refresh token of Tesla's Owner API, kept as a
@@ -13,9 +15,11 @@ import (
 // account and to its column. A refresh may give another in exchange, which replaces it
 // (RotateTeslaToken); its access tokens are never stored.
 
-// SetTeslaToken sets the account's Tesla refresh token, at at, in its Tesla connection,
-// created if it has none. A new token is not known refused.
-func (s *Store) SetTeslaToken(ctx context.Context, accountID, token string, at time.Time) (string, error) {
+// SetTeslaToken implements api.TeslaTokens: it sets the account's Tesla refresh token, at
+// at, in its Tesla connection, created if it has none. given is the token the owner gave,
+// whose last four characters are kept to tell it apart: token may be the one a refresh
+// gave for it. A new token is not known refused.
+func (s *Store) SetTeslaToken(ctx context.Context, accountID, token, given string, at time.Time) (string, error) {
 	var id string
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		return tx.QueryRow(ctx, `
@@ -25,7 +29,7 @@ func (s *Store) SetTeslaToken(ctx context.Context, accountID, token string, at t
 				credential = EXCLUDED.credential, credential_set_at = EXCLUDED.credential_set_at,
 				credential_last4 = EXCLUDED.credential_last4, credential_refused_at = NULL, updated_at = now()
 			RETURNING id`, accountID, s.box.Seal([]byte(token), credentialData(accountID)), at.Truncate(time.Microsecond),
-			token[max(0, len(token)-last4):]).Scan(&id)
+			given[max(0, len(given)-last4):]).Scan(&id)
 	})
 	return id, err
 }
@@ -64,4 +68,16 @@ func (s *Store) RotateTeslaToken(ctx context.Context, accountID, connectionID st
 			connectionID, setAt, s.box.Seal([]byte(token), credentialData(accountID)))
 		return err //nolint:wrapcheck // wrapped by inAccount
 	})
+}
+
+// TeslaConnection implements api.TeslaTokens: what the user is shown again of the
+// account's refresh token, never the token itself; a zero SetAt: none.
+func (s *Store) TeslaConnection(ctx context.Context, accountID string) (api.TeslaConnection, error) {
+	return s.credentialConnection(ctx, accountID, "tesla")
+}
+
+// DeleteTeslaToken implements api.TeslaTokens: the refresh token is erased, the
+// connection kept with its vehicles and their history, no longer read until another.
+func (s *Store) DeleteTeslaToken(ctx context.Context, accountID string) error {
+	return s.deleteCredential(ctx, accountID, "tesla")
 }

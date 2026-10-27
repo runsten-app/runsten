@@ -94,15 +94,16 @@ type providerJSON string
 
 // Schema lists the providers.
 func (providerJSON) Schema(huma.Registry) *huma.Schema {
-	return enumSchema(providerVolvo, providerPolestar)
+	return enumSchema(providerVolvo, providerPolestar, providerTesla)
 }
 
 const (
 	providerVolvo    providerJSON = "volvo"
 	providerPolestar providerJSON = "polestar"
+	providerTesla    providerJSON = "tesla"
 )
 
-// credentialStatus is the state of a Polestar connection's credential.
+// credentialStatus is the state of a Polestar or Tesla connection's credential.
 type credentialStatus string
 
 // Schema lists the statuses.
@@ -117,12 +118,12 @@ const (
 )
 
 type connectionJSON struct {
-	Provider     providerJSON           `json:"provider" doc:"volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal."`
-	Status       connectionStatus       `json:"status" doc:"reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. not_configured: the instance has no Volvo application, the vehicle is not read until its administrator sets one. Always active for a Polestar connection: credential tells its state."`
-	APIKey       null[apiKeyStatus]     `json:"api_key" doc:"The application key the vehicle is read with: instance, the instance's, which reads every vehicle when the instance has one; own, the account's. refused: the account's, refused by Volvo; missing: none, the instance has none either. Neither refused nor missing is read, until the user gives a key (PUT /connection/api-key). null for a Polestar connection, read with its own credential."`
-	Credential   null[credentialStatus] `json:"credential" doc:"The Polestar connection's credential: set; refused by the Data Portal (expired after its 90 days, or deleted there); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar). null for a Volvo connection."`
-	AuthorizedAt *time.Time             `json:"authorized_at" pattern:"Z$" doc:"When the user authorized the connection; null for a token pasted by hand, or a Polestar connection."`
-	RefreshedAt  *time.Time             `json:"refreshed_at" pattern:"Z$" doc:"When the current refresh token was issued: the collector renews an idle one daily, before it lapses. null without one (a token pasted by hand, or a Polestar connection)."`
+	Provider     providerJSON           `json:"provider" doc:"volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API."`
+	Status       connectionStatus       `json:"status" doc:"reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. not_configured: the instance has no Volvo application, the vehicle is not read until its administrator sets one. Always active for a Polestar or Tesla connection: credential tells its state."`
+	APIKey       null[apiKeyStatus]     `json:"api_key" doc:"The application key the vehicle is read with: instance, the instance's, which reads every vehicle when the instance has one; own, the account's. refused: the account's, refused by Volvo; missing: none, the instance has none either. Neither refused nor missing is read, until the user gives a key (PUT /connection/api-key). null for a Polestar or Tesla connection, read with its own credential."`
+	Credential   null[credentialStatus] `json:"credential" doc:"The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla). null for a Volvo connection."`
+	AuthorizedAt *time.Time             `json:"authorized_at" pattern:"Z$" doc:"When the user authorized the connection; null for a token pasted by hand, or a Polestar or Tesla connection."`
+	RefreshedAt  *time.Time             `json:"refreshed_at" pattern:"Z$" doc:"When the current refresh token was issued: the collector renews an idle one daily, before it lapses. null without one (a token pasted by hand, or a Polestar or Tesla connection)."`
 	ReauthAt     *time.Time             `json:"reauth_at" pattern:"Z$" doc:"When the grant was found lost; null while active."`
 	ReauthReason *string                `json:"reauth_reason" doc:"Why the grant was lost; null while active."`
 }
@@ -208,8 +209,8 @@ type vehicleListJSON struct {
 }
 
 func (s *Server) connectionOf(v Vehicle) connectionJSON {
-	if v.Provider == string(providerPolestar) {
-		c := connectionJSON{Provider: providerPolestar, Status: connectionActive, Credential: known(credentialSet)}
+	if p := providerJSON(v.Provider); p == providerPolestar || p == providerTesla {
+		c := connectionJSON{Provider: p, Status: connectionActive, Credential: known(credentialSet)}
 		switch {
 		case v.CredentialMissing:
 			c.Credential = known(credentialMissing)

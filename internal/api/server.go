@@ -110,7 +110,8 @@ type Vehicle struct {
 	ID  string
 	VIN string
 	// Provider is the connection's: volvo (a Volvo ID, the fields below up to
-	// KeyRefused), or polestar (a credential of the Data Portal).
+	// KeyRefused), polestar (a credential of the Data Portal), or tesla (a refresh
+	// token of the Owner API).
 	Provider     string
 	AuthorizedAt time.Time // zero: unknown (a token pasted by hand)
 	RefreshedAt  time.Time // issue of the current refresh token; zero: none
@@ -123,8 +124,8 @@ type Vehicle struct {
 	// MarketRefusedAt is when the collector found that the vendor's API does not serve
 	// the vehicle's market: it is no longer read. Zero: served.
 	MarketRefusedAt time.Time
-	// CredentialMissing: the Polestar connection's credential was removed;
-	// CredentialRefused: the Data Portal refused it. Neither is read until another.
+	// CredentialMissing: the Polestar or Tesla connection's credential was removed;
+	// CredentialRefused: the provider refused it. Neither is read until another.
 	CredentialMissing, CredentialRefused bool
 	// UnsharedAt is when the collector found that the owner no longer shares the
 	// vehicle with the credential: it is no longer read. Zero: shared.
@@ -251,6 +252,10 @@ type Config struct {
 	// PolestarVehicles checks a new one by listing its vehicles.
 	Polestar         PolestarCredentials
 	PolestarVehicles PolestarVehicles
+	// Tesla keeps the account's refresh token of Tesla's Owner API, and TeslaVehicles
+	// checks a new one by listing its vehicles.
+	Tesla         TeslaTokens
+	TeslaVehicles TeslaVehicles
 	// MaxVehicles caps the vehicles of an account, set by an extension; 0: no cap. A
 	// Volvo ID, a key or a Polestar credential that gives access to more is refused,
 	// nothing recorded.
@@ -329,6 +334,7 @@ func New(cfg Config) *Server {
 	s.registerCosts(s.api)
 	s.registerConnection(s.api)
 	s.registerPolestar(s.api)
+	s.registerTesla(s.api)
 	s.registerAccount(s.api)
 	s.registerTokens(s.api)
 	s.registerMQTT(s.api)

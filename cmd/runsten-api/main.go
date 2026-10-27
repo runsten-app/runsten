@@ -68,6 +68,10 @@
 //	RUNSTEN_POLESTAR_BASE_URL    Polestar Data Portal's M2M API, which checks a credential
 //	                             before it is stored (default
 //	                             https://pc-api.polestar.com/eu-north-1/data-portal/m2m)
+//	RUNSTEN_TESLA_API_URL        Tesla's Owner API, which checks a refresh token before
+//	                             it is stored (default https://owner-api.teslamotors.com)
+//	RUNSTEN_TESLA_AUTH_URL       Tesla's authentication, whose /token refreshes it
+//	                             (default https://auth.tesla.com/oauth2/v3)
 //	RUNSTEN_AXIMOTE_BASE_URL     Aximote's public API, which the imports of a vehicle's
 //	                             history read with the user's token (default
 //	                             https://api.aximote.com)
@@ -157,6 +161,7 @@ type config struct {
 	baseURL     string
 	aximoteURL  string
 	polestarURL string
+	tesla       tesla.Hosts
 	app         volvo.AuthConfig
 	appURL      string
 	// secureCookies: the address users open is https.
@@ -295,6 +300,8 @@ func run(args []string) error {
 		Tokens:           oauth.NewManager(st, authorizer, clock.Real{}, oauth.DefaultParams(), log),
 		Polestar:         st,
 		PolestarVehicles: polestarVehicles{polestar.NewClient(cfg.polestarURL, hc)},
+		Tesla:            st,
+		TeslaVehicles:    teslaVehicles{tesla.NewClient(cfg.tesla, hc)},
 		InstanceKey:      cfg.apiKey != "",
 		InstanceKeyLast4: cfg.apiKey[max(0, len(cfg.apiKey)-4):],
 		ClientID:         cfg.app.ClientID,
@@ -468,6 +475,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		baseURL:     volvo.DefaultBaseURL,
 		aximoteURL:  aximote.DefaultBaseURL,
 		polestarURL: polestar.DefaultBaseURL,
+		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		app:         volvo.AuthConfig{BaseURL: volvo.DefaultAuthURL, Scopes: volvo.DefaultScopes()},
 		addr:        defaultAddr,
 		logLevel:    slog.LevelInfo,
@@ -497,7 +505,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 	errs = append(errs, loadVolvoApp(&cfg, getenv)...)
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.app.BaseURL, "RUNSTEN_AXIMOTE_BASE_URL": &cfg.aximoteURL,
-		"RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL,
+		"RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL, "RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 	} {
 		if v := getenv(name); v != "" {
 			if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
@@ -657,6 +665,28 @@ func (p polestarVehicles) PolestarVehicles(ctx context.Context, cred api.Polesta
 		return nil, err //nolint:wrapcheck // the client's, with its context
 	}
 	return p.c.Vehicles(ctx, tok.Value, cred.AccountID) //nolint:wrapcheck // the client's, with its context
+}
+
+// teslaVehicles lists the vehicles of a Tesla refresh token for the API: a refresh, then
+// the VINs, with the refresh token to keep.
+type teslaVehicles struct{ c *tesla.Client }
+
+func (t teslaVehicles) TeslaVehicles(ctx context.Context, refreshToken string) ([]string, string, error) {
+	tok, err := t.c.Refresh(ctx, refreshToken)
+	if err != nil {
+		return nil, "", err //nolint:wrapcheck // the client's, with its context
+	}
+	products, err := t.c.Products(ctx, tok.Access)
+	if err != nil {
+		// Refreshed already: the token given may no longer refresh, but nothing is stored
+		// without the vehicles. The user gives another.
+		return nil, "", err //nolint:wrapcheck // the client's, with its context
+	}
+	vins := make([]string, len(products))
+	for i, p := range products {
+		vins[i] = p.VIN
+	}
+	return vins, tok.Refresh, nil
 }
 
 // aximoteVehicles lists an Aximote account's vehicles for the API.

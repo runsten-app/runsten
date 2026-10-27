@@ -913,7 +913,7 @@ components:
       additionalProperties: false
       properties:
         api_key:
-          description: "The application key the vehicle is read with: instance, the instance's, which reads every vehicle when the instance has one; own, the account's. refused: the account's, refused by Volvo; missing: none, the instance has none either. Neither refused nor missing is read, until the user gives a key (PUT /connection/api-key). null for a Polestar connection, read with its own credential."
+          description: "The application key the vehicle is read with: instance, the instance's, which reads every vehicle when the instance has one; own, the account's. refused: the account's, refused by Volvo; missing: none, the instance has none either. Neither refused nor missing is read, until the user gives a key (PUT /connection/api-key). null for a Polestar or Tesla connection, read with its own credential."
           oneOf:
             - enum:
                 - instance
@@ -923,14 +923,14 @@ components:
               type: string
             - type: "null"
         authorized_at:
-          description: When the user authorized the connection; null for a token pasted by hand, or a Polestar connection.
+          description: When the user authorized the connection; null for a token pasted by hand, or a Polestar or Tesla connection.
           format: date-time
           pattern: Z$
           type:
             - string
             - "null"
         credential:
-          description: "The Polestar connection's credential: set; refused by the Data Portal (expired after its 90 days, or deleted there); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar). null for a Volvo connection."
+          description: "The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla). null for a Volvo connection."
           oneOf:
             - enum:
                 - set
@@ -939,10 +939,11 @@ components:
               type: string
             - type: "null"
         provider:
-          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal."
+          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API."
           enum:
             - volvo
             - polestar
+            - tesla
           type: string
         reauth_at:
           description: When the grant was found lost; null while active.
@@ -957,14 +958,14 @@ components:
             - string
             - "null"
         refreshed_at:
-          description: "When the current refresh token was issued: the collector renews an idle one daily, before it lapses. null without one (a token pasted by hand, or a Polestar connection)."
+          description: "When the current refresh token was issued: the collector renews an idle one daily, before it lapses. null without one (a token pasted by hand, or a Polestar or Tesla connection)."
           format: date-time
           pattern: Z$
           type:
             - string
             - "null"
         status:
-          description: "reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. not_configured: the instance has no Volvo application, the vehicle is not read until its administrator sets one. Always active for a Polestar connection: credential tells its state."
+          description: "reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. not_configured: the instance has no Volvo application, the vehicle is not read until its administrator sets one. Always active for a Polestar or Tesla connection: credential tells its state."
           enum:
             - active
             - reauth_required
@@ -1004,6 +1005,11 @@ components:
           oneOf:
             - $ref: "#/components/schemas/PolestarCredential"
             - type: "null"
+        tesla:
+          description: "The account's refresh token of Tesla's Owner API, which reads its Tesla vehicles; null: none."
+          oneOf:
+            - $ref: "#/components/schemas/TeslaToken"
+            - type: "null"
         volvo:
           description: "The instance has a Volvo application: a Volvo ID may be connected and an application key given. false: Volvo is not configured on this instance, only the other providers read vehicles."
           type: boolean
@@ -1014,6 +1020,7 @@ components:
         - instance_key
         - api_key
         - polestar
+        - tesla
       type: object
     Cost:
       additionalProperties: false
@@ -1292,6 +1299,7 @@ components:
             - imported_charge
             - api_key_refused
             - credential_refused
+            - api_closed
             - no_vehicle
             - not_volvo
             - instance_key
@@ -3187,6 +3195,41 @@ components:
         - price_per_kwh
         - windows
       type: object
+    TeslaToken:
+      additionalProperties: false
+      properties:
+        last4:
+          description: "The last four characters of the refresh token given, to tell it apart: the token itself is never returned."
+          type: string
+        refused_at:
+          description: "When Tesla refused it (signed out of the Tesla account, or the password changed), or closed its Owner API to the account: its vehicles are not read until another. null: not refused."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        set_at:
+          description: When it was given.
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - last4
+        - set_at
+        - refused_at
+      type: object
+    TeslaTokenUpdate:
+      additionalProperties: false
+      properties:
+        refresh_token:
+          description: A refresh token of the owner's Tesla account, from Tesla Auth or Auth app for Tesla. It is never returned.
+          maxLength: 8192
+          minLength: 16
+          pattern: ^[!-~]+$
+          type: string
+      required:
+        - refresh_token
+      type: object
     Track:
       additionalProperties: false
       properties:
@@ -4081,7 +4124,7 @@ paths:
         - costs
   /connection:
     get:
-      description: Whether a Volvo ID is connected, the application key its vehicles are read with, and the credential of Polestar's Data Portal.
+      description: Whether a Volvo ID is connected, the application key its vehicles are read with, the credential of Polestar's Data Portal, and the refresh token of Tesla's Owner API.
       operationId: getConnection
       responses:
         "200":
@@ -4119,7 +4162,7 @@ paths:
         - session: []
         - sessionSecure: []
         - accessToken: []
-      summary: The account's connections to Volvo and Polestar
+      summary: The account's connections to Volvo, Polestar and Tesla
       tags:
         - connection
   /connection/api-key:
@@ -4304,6 +4347,101 @@ paths:
         - session: []
         - sessionSecure: []
       summary: Give the account's Polestar credential
+      tags:
+        - connection
+  /connection/tesla:
+    delete:
+      description: The refresh token is erased. The Tesla vehicles stay, with their history, and are no longer read until another token is given.
+      operationId: deleteTeslaToken
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Remove the account's Tesla refresh token
+      tags:
+        - connection
+    put:
+      description: "A refresh token of the owner's Tesla account reads their Tesla vehicles through Tesla's Owner API, the unofficial API of the Tesla app. It is checked first: it is refreshed and the account's vehicles are listed. A token Tesla refuses, or whose account has no vehicle, is not stored; one it accepts replaces the previous one (the refresh token Tesla gives in exchange, if it does), and its vehicles are added to the account, unless they would be more than the instance lets an account have. The token travels in the body only, and is never returned."
+      operationId: putTeslaToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeslaTokenUpdate"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionSettings"
+          description: The connection.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `credential_refused`: Tesla refused the refresh token."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: Tesla is not offered to the account (the flag `source.tesla`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`api_closed`: Tesla's Owner API is closed to the account. `no_vehicle`: the Tesla account has no vehicle. `too_many_vehicles`: the account would have more vehicles than the instance lets it have. The token is not stored."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: Tesla did not answer; the token is not stored."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Give the account's Tesla refresh token
       tags:
         - connection
   /instance:
@@ -6213,7 +6351,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`not_volvo`: the vehicle is a Polestar, read through Polestar's Data Portal; nothing is imported."
+          description: "`not_volvo`: the vehicle is not a Volvo (a Polestar, a Tesla); nothing is imported."
         "415":
           content:
             application/json:
