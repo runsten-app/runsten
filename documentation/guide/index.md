@@ -52,7 +52,7 @@ The key's quota is yours alone: 10,000 calls a day for each Volvo API, about sev
 
 ## Privacy
 
-No map is loaded unless the instance names a tile server ([Maps](../self-hosting/maps.md)): positions are then coordinates with a link to OpenStreetMap, opened only on a click, so no map service learns where the car is. With maps, the tile server sees your IP address and the areas shown; you can hide them in your preferences. The browser keeps only the session cookie, the chosen language, the chosen appearance and whether the maps are shown.
+No map is loaded unless the instance names a tile server ([Maps](../self-hosting/maps.md)): positions are then coordinates with a link to OpenStreetMap, and no map service learns where the car is unless you click it. With maps, the tile server sees your IP address and the areas shown; you can hide them in your preferences. The browser keeps only the session cookie, the chosen language, the chosen appearance and whether the maps are shown.
 
 ## Accessibility
 
