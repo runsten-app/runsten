@@ -116,7 +116,8 @@ type vehicleState struct {
 }
 
 type vehicleConfig struct {
-	CarType *string `json:"car_type"`
+	CarType     *string `json:"car_type"`
+	TrimBadging *string `json:"trim_badging"`
 }
 
 func parseVehicleData(raw []byte) (vehicleData, error) {
@@ -285,6 +286,9 @@ func model(vin string, c *vehicleConfig, s *core.Snapshot) {
 		if f, ok := families[strings.ToLower(*c.CarType)]; ok {
 			s.Family = core.Some(f, time.Time{})
 		}
+	}
+	if c.TrimBadging != nil && *c.TrimBadging != "" {
+		s.Trim = core.Some(strings.ToLower(*c.TrimBadging), time.Time{})
 	}
 	if y, ok := modelYear(vin); ok {
 		s.ModelYear = core.Some(y, time.Time{})

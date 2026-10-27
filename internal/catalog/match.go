@@ -38,17 +38,26 @@ type Result struct {
 // skips step 2: an absent field or 0.0 tells nothing of the battery (0.0 is what a
 // combustion car returns, and the caller keeps those out by their fuel type).
 func (c *Catalog) Match(family string, modelYear int, capacityKWh float64, vin string) Result {
-	return c.match(func(v Variant) bool { return v.Family == family }, modelYear, capacityKWh, vin)
+	return c.match(func(v Variant) bool { return v.Family == family }, modelYear, capacityKWh, vin, "")
 }
 
 // MatchBrand is Match among the variants of a brand, every family, for a vehicle whose
 // source tells its maker but not its family (a Polestar of the Data Portal): when none
 // fits, the candidates are the whole brand.
 func (c *Catalog) MatchBrand(brand Brand, modelYear int, capacityKWh float64, vin string) Result {
-	return c.match(func(v Variant) bool { return v.Brand == brand }, modelYear, capacityKWh, vin)
+	return c.match(func(v Variant) bool { return v.Brand == brand }, modelYear, capacityKWh, vin, "")
 }
 
-func (c *Catalog) match(of func(Variant) bool, modelYear int, capacityKWh float64, vin string) Result {
+// MatchReading is Match, or MatchBrand for a reading without a family, with the
+// reading's trim too (byTrim): what Recognize rests on.
+func (c *Catalog) MatchReading(r Reading) Result {
+	if r.Family != "" {
+		return c.match(func(v Variant) bool { return v.Family == r.Family }, r.ModelYear, r.CapacityKWh, r.VIN, r.Trim)
+	}
+	return c.match(func(v Variant) bool { return v.Brand == r.Brand }, r.ModelYear, r.CapacityKWh, r.VIN, r.Trim)
+}
+
+func (c *Catalog) match(of func(Variant) bool, modelYear int, capacityKWh float64, vin, trim string) Result {
 	var all, fits []Variant
 	for _, v := range c.variants {
 		if !of(v) {
@@ -59,7 +68,7 @@ func (c *Catalog) match(of func(Variant) bool, modelYear int, capacityKWh float6
 			fits = append(fits, v)
 		}
 	}
-	fits = byMotorCode(byCapacity(fits, capacityKWh), vin)
+	fits = byTrim(byMotorCode(byCapacity(fits, capacityKWh), vin), trim)
 	if len(fits) == 0 {
 		return Result{Candidates: all}
 	}
@@ -76,6 +85,7 @@ type Reading struct {
 	ModelYear   int     // ≤ 0: unknown
 	CapacityKWh float64 // batteryCapacityKWH; ≤ 0: unknown
 	VIN         string
+	Trim        string // the vendor's badge (Tesla's trim_badging); empty: unknown
 	// BatteryElectric is true when the vehicle is known to run on its battery alone:
 	// false for a hybrid, a combustion car, and an unknown fuel type.
 	BatteryElectric bool
@@ -89,13 +99,10 @@ func (c *Catalog) Recognize(r Reading) (Variant, bool) {
 	if !r.BatteryElectric {
 		return Variant{}, false
 	}
-	var m Result
-	switch {
-	case r.Family != "":
-		m = c.Match(r.Family, r.ModelYear, r.CapacityKWh, r.VIN)
-	case r.Brand != "":
-		m = c.MatchBrand(r.Brand, r.ModelYear, r.CapacityKWh, r.VIN)
+	if r.Family == "" && r.Brand == "" {
+		return Variant{}, false
 	}
+	m := c.MatchReading(r)
 	if !m.Recognized {
 		return Variant{}, false
 	}
@@ -171,6 +178,20 @@ func byMotorCode(vs []Variant, vin string) []Variant {
 		return vs
 	}
 	return slices.DeleteFunc(vs, func(v Variant) bool { return len(v.MotorCodes) > 0 && !lists(v) })
+}
+
+// byTrim breaks ties with the vendor's badge, as byMotorCode with the VIN: a badge no
+// candidate lists rules nothing out, and a variant that lists none is kept.
+func byTrim(vs []Variant, trim string) []Variant {
+	trim = strings.ToLower(strings.TrimSpace(trim))
+	if trim == "" {
+		return vs
+	}
+	lists := func(v Variant) bool { return slices.Contains(v.Trims, trim) }
+	if !slices.ContainsFunc(vs, lists) {
+		return vs
+	}
+	return slices.DeleteFunc(vs, func(v Variant) bool { return len(v.Trims) > 0 && !lists(v) })
 }
 
 // seen reports whether batteryCapacityKWH has already been seen at kwh for the variant.
