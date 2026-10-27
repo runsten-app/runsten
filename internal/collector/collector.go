@@ -269,6 +269,7 @@ const (
 	FailCredentialRefused = "credential_refused" //nolint:gosec // a kind of failure, no credential
 	FailUnshared          = "unshared"           // the vehicle is no longer shared with the credential
 	FailNotGranted        = "not_granted"        // the endpoint is not granted to the credential
+	FailAPIClosed         = "api_closed"         // the provider's API is closed to the credential
 	FailOther             = "other"
 )
 
@@ -354,6 +355,9 @@ type vehicleState struct {
 	failure                 Failure
 	// uploads is the latest upload of each endpoint of a Source, for the logs.
 	uploads map[Endpoint]uploadSeen
+	// idleSince is since when the vehicle is seen parked and awake, zero otherwise;
+	// sleepUntil, the end of its sleep window (SourceSpec.Sleep).
+	idleSince, sleepUntil time.Time
 }
 
 // uploadSeen is an upload of a vehicle, as the logs compare the next with it.
@@ -432,7 +436,7 @@ func New(api API, store Store, tokens TokenSource, clk clock.Clock, iv Intervals
 		api: api, store: store, tokens: tokens, clk: clk, iv: iv, log: log, obs: obs, der: der,
 		budget:            newBudget(q, clk.Now()),
 		noInstanceKey:     q.NoInstanceKey,
-		volvo:             volvoSource(),
+		volvo:             volvoSource(iv),
 		sources:           map[string]*source{},
 		sessions:          map[string]*session{},
 		credentialRefused: map[keyID]bool{},
@@ -626,7 +630,7 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 		if now.Before(c.accountPause[t.AccountID]) || c.keyBlocked(t, now) || vs.marketRefused {
 			return saved
 		}
-		c.bringForward(t, vs, spec, now)
+		c.bringForward(t, vs, c.volvo, spec, now)
 		if now.Before(c.apiBlocked[c.budget.unitOf(t, spec.API)]) || !c.due(t, vs, spec, now) {
 			continue
 		}
@@ -643,7 +647,7 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 				}
 			}
 		}
-		vs.next[spec.Endpoint] = now.Add(c.interval(t, vs.mode, spec))
+		vs.next[spec.Endpoint] = now.Add(c.interval(t, c.volvo, vs.mode, spec))
 		raw, err := c.fetch(ctx, t, key, token, ep)
 		if isUnauthorized(err) && !renewed {
 			renewed = true
@@ -665,8 +669,8 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 
 // bringForward brings the next call of spec forward to its interval: a policy lifted,
 // or shortened, applies at once.
-func (c *Collector) bringForward(t Target, vs *vehicleState, spec EndpointSpec, now time.Time) {
-	if soonest := now.Add(c.interval(t, vs.mode, spec)); vs.next[spec.Endpoint].After(soonest) {
+func (c *Collector) bringForward(t Target, vs *vehicleState, src *source, spec EndpointSpec, now time.Time) {
+	if soonest := now.Add(c.interval(t, src, vs.mode, spec)); vs.next[spec.Endpoint].After(soonest) {
 		vs.next[spec.Endpoint] = soonest
 	}
 }
@@ -692,19 +696,19 @@ func (c *Collector) read(ctx context.Context, t Target, vs *vehicleState, src *s
 	return err == nil
 }
 
-// interval is how long after a call of spec t's next is due, in mode m: at the policy's
-// pace, whatever the mode, when it limits t's account.
-func (c *Collector) interval(t Target, m mode, spec EndpointSpec) time.Duration {
+// interval is how long after a call of spec of src t's next is due, in mode m: at the
+// policy's pace, whatever the mode, when it limits t's account.
+func (c *Collector) interval(t Target, src *source, m mode, spec EndpointSpec) time.Duration {
 	if every := c.reads[t.AccountID].Every; every > 0 {
-		return max(every, c.iv.of(spec.Parked))
+		return max(every, src.Intervals.of(spec.Parked))
 	}
-	return c.iv.of(spec.pace(m))
+	return src.Intervals.of(spec.pace(m))
 }
 
-// detailsInterval is how long an endpoint refused is left out: a details interval, or
-// the policy's pace when longer.
-func (c *Collector) detailsInterval(t Target) time.Duration {
-	return c.interval(t, parked, EndpointSpec{Parked: PaceDetails})
+// detailsInterval is how long an endpoint of src refused is left out: a details
+// interval, or the policy's pace when longer.
+func (c *Collector) detailsInterval(t Target, src *source) time.Duration {
+	return c.interval(t, src, parked, EndpointSpec{Parked: PaceDetails})
 }
 
 // allowed reports whether the budget lets t call api now; a call it defers stays due,
@@ -919,19 +923,26 @@ func (c *Collector) status(t Target, vs *vehicleState) Status {
 	if pause := c.keyRefused[keyOf(t)]; t.readsVolvo() && pause.After(now) && pause.After(s.PausedUntil) {
 		s.PausedUntil = pause // a refusal that may not be the key's: tried again then
 	}
-	for i, spec := range src.Endpoints {
+	first := true
+	for _, spec := range src.Endpoints {
+		if spec.Awake && vs.activity.Asleep {
+			continue // due once the vehicle is seen awake
+		}
 		due := vs.next[spec.Endpoint]
 		blocks := []time.Time{vs.missing[spec.Endpoint], c.apiBlocked[c.budget.unitOf(t, spec.API)], c.pausedUntil(t)}
 		if t.readsVolvo() {
 			blocks = append(blocks, c.keyRefused[keyOf(t)])
+		}
+		if spec.Awake {
+			blocks = append(blocks, vs.sleepUntil)
 		}
 		for _, block := range blocks {
 			if block.After(due) {
 				due = block
 			}
 		}
-		if i == 0 || due.Before(s.NextAt) {
-			s.NextAt = due
+		if first || due.Before(s.NextAt) {
+			s.NextAt, first = due, false
 		}
 	}
 	if s.NextAt.Before(now) {
@@ -992,6 +1003,23 @@ func (c *Collector) observe(t Target, vs *vehicleState, src *source, ep Endpoint
 		c.log.Warn("read state", "vehicle", t.VehicleID, "endpoint", ep, "err", err)
 		return
 	}
+	c.setActivity(t, vs, src, a, now)
+}
+
+// setActivity sets what is known of the vehicle's activity, and reschedules on a
+// transition.
+func (c *Collector) setActivity(t Target, vs *vehicleState, src *source, a Activity, now time.Time) {
+	if a.Asleep {
+		a.Driving, a.Charges = false, false
+	}
+	switch {
+	case a.Asleep && !vs.activity.Asleep:
+		c.log.Info("vehicle asleep or out of reach: left alone", "vehicle", t.VehicleID)
+	case !a.Asleep && vs.activity.Asleep:
+		// Woken: by someone about to drive, maybe. Its window, if any, is over.
+		c.log.Info("vehicle awake", "vehicle", t.VehicleID)
+		vs.sleepUntil = time.Time{}
+	}
 	vs.activity = a
 
 	m := parked
@@ -1001,6 +1029,12 @@ func (c *Collector) observe(t Target, vs *vehicleState, src *source, ep Endpoint
 	case a.Charges:
 		m = charging
 	}
+	switch {
+	case m != parked || a.Asleep:
+		vs.idleSince = time.Time{}
+	case vs.idleSince.IsZero():
+		vs.idleSince = now
+	}
 	if m == vs.mode {
 		return
 	}
@@ -1009,7 +1043,7 @@ func (c *Collector) observe(t Target, vs *vehicleState, src *source, ep Endpoint
 	vs.mode = m
 	for _, spec := range src.Endpoints {
 		if at, ok := vs.next[spec.Endpoint]; ok {
-			if sooner := now.Add(c.interval(t, m, spec)); sooner.Before(at) {
+			if sooner := now.Add(c.interval(t, src, m, spec)); sooner.Before(at) {
 				vs.next[spec.Endpoint] = sooner
 			}
 		}
@@ -1033,7 +1067,7 @@ func (c *Collector) fetchFailed(ctx context.Context, t Target, vs *vehicleState,
 			c.log.Info("endpoint unavailable: tried again later", "vehicle", t.VehicleID, "endpoint", ep,
 				"status", apiErr.Status)
 		}
-		vs.missing[Endpoint(ep)] = now.Add(c.detailsInterval(t))
+		vs.missing[Endpoint(ep)] = now.Add(c.detailsInterval(t, c.volvo))
 		return
 	}
 	vs.failure = Failure{At: now, Endpoint: Endpoint(ep), Kind: FailUnavailable}

@@ -56,8 +56,8 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 		if now.Before(c.connectionPause[t.ConnectionID]) || vs.unshared || c.credentialBlocked(t) {
 			return saved
 		}
-		c.bringForward(t, vs, spec, now)
-		if !c.due(t, vs, spec, now) {
+		c.bringForward(t, vs, src, spec, now)
+		if c.resting(t, vs, src, spec, now) || !c.due(t, vs, spec, now) {
 			continue
 		}
 		if sess == nil {
@@ -67,7 +67,7 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 				return saved
 			}
 		}
-		vs.next[spec.Endpoint] = now.Add(c.interval(t, vs.mode, spec))
+		vs.next[spec.Endpoint] = now.Add(c.interval(t, src, vs.mode, spec))
 		raw, err := c.fetchSource(ctx, t, src, sess, spec, now)
 		var se *SourceError
 		if errors.As(err, &se) && se.Kind == KindUnauthorized && !renewed {
@@ -93,6 +93,25 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 		saved = c.read(ctx, t, vs, src, spec.Endpoint, now, raw) || saved
 	}
 	return saved
+}
+
+// resting reports whether the vehicle is left to sleep, so that spec, which would keep
+// it awake, is not read: the vehicle is asleep, or in its sleep window. The window opens
+// once the vehicle was parked and awake for src's Sleep.IdleBefore; should it stay
+// awake, the reads resume at the window's end, and the next opens as long after.
+func (c *Collector) resting(t Target, vs *vehicleState, src *source, spec EndpointSpec, now time.Time) bool {
+	switch {
+	case !spec.Awake:
+		return false
+	case vs.activity.Asleep, now.Before(vs.sleepUntil):
+		return true
+	case src.Sleep.Window <= 0 || vs.idleSince.IsZero() || now.Sub(vs.idleSince) < src.Sleep.IdleBefore:
+		return false
+	}
+	vs.sleepUntil = now.Add(src.Sleep.Window)
+	vs.idleSince = vs.sleepUntil
+	c.log.Info("sleep window: the vehicle is left alone", "vehicle", t.VehicleID, "until", vs.sleepUntil)
+	return true
 }
 
 // session returns the access of t's connection, asked for with its credential unless
@@ -151,24 +170,36 @@ func (c *Collector) sourceFailed(ctx context.Context, t Target, vs *vehicleState
 			c.log.Info("endpoint not given: tried again later", append(args, "err", err)...)
 		}
 		if se.Kind == KindNotAvailable {
-			vs.missing[ep] = now.Add(c.interval(t, parked, EndpointSpec{Parked: PaceRare}))
+			vs.missing[ep] = now.Add(c.interval(t, src, parked, EndpointSpec{Parked: PaceRare}))
 			return
 		}
-		vs.missing[ep] = now.Add(c.detailsInterval(t))
+		vs.missing[ep] = now.Add(c.detailsInterval(t, src))
 		if !src.optional(ep) {
 			vs.failure = Failure{At: now, Endpoint: ep, Status: se.Status, Kind: FailNotGranted}
 		}
 		return
-	case KindCredentialRefused:
-		// Not a passing state: refused, expired, or an account ID not the credential's.
+	case KindCredentialRefused, KindAPIClosed:
+		// Not a passing state: refused, expired, or an account ID not the credential's;
+		// or the API closed to it.
 		cred := credentialOf(t)
 		c.credentialRefused[cred] = true
 		delete(c.sessions, t.ConnectionID)
 		if err := src.store.SetCredentialRefused(ctx, t.AccountID, t.ConnectionID, t.CredentialSetAt); err != nil {
 			c.log.Warn("save refused credential", "connection", t.ConnectionID, "err", err)
 		}
-		c.log.Error("credential refused: its vehicles are no longer polled", args...)
-		vs.failure = Failure{At: now, Endpoint: ep, Status: se.Status, Kind: FailCredentialRefused}
+		kind, msg := FailCredentialRefused, "credential refused: its vehicles are no longer polled"
+		if se.Kind == KindAPIClosed {
+			kind, msg = FailAPIClosed, "API closed to the credential: its vehicles are no longer polled"
+		}
+		c.log.Error(msg, append(args, "err", err)...)
+		vs.failure = Failure{At: now, Endpoint: ep, Status: se.Status, Kind: kind}
+		return
+	case KindAsleep:
+		// Not a failure: the vehicle fell asleep, or went out of reach, since it was seen
+		// awake.
+		a := vs.activity
+		a.Asleep = true
+		c.setActivity(t, vs, src, a, now)
 		return
 	case KindUnshared:
 		vs.unshared = true
