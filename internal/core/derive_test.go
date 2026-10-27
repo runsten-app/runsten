@@ -1002,6 +1002,24 @@ func TestChargeResumes(t *testing.T) {
 	night := 16 * 60
 	noResume := DefaultParams()
 	noResume.MaxChargePause = 0
+	noStamps := DefaultParams()
+	noStamps.VehicleTimestamps = false
+	// stamped gives the charge's last reading the vehicle's timestamp of its status, and
+	// the reading that paused it another: a timestamp before its floor narrows nothing.
+	stamped := func(rs []Record, pause, end time.Time) []Record {
+		rs = slices.Clone(rs)
+		for i := range rs {
+			if s := &rs[i].Snapshot; s.Covers&FieldCharging != 0 && s.Charging.V != ChargingActive && rs[i].FetchedAt.After(m(30)) {
+				s.Charging.At = end
+				if rs[i].FetchedAt.Equal(m(31)) {
+					s.Charging.At = pause
+				}
+			}
+		}
+		return rs
+	}
+	narrowed := func(c Charge, before time.Time) Charge { c.End.Before = before; return c }
+	late := m(night + 29).Add(30 * time.Second)
 	tests := []struct {
 		name    string
 		records []Record
@@ -1029,6 +1047,24 @@ func TestChargeResumes(t *testing.T) {
 			name:    "longer than MaxChargePause",
 			records: solar(ChargingIdle, 31+24*60),
 			want:    two(31, 31+24*60, 12400),
+		},
+		{
+			// The end narrowed by the reading that ended it, never by the one that paused it.
+			name:    "vehicle timestamps",
+			records: stamped(solar(ChargingIdle, night), m(30).Add(30*time.Second), late),
+			want:    []Charge{narrowed(one(night), late)},
+		},
+		{
+			// The pause stamped before the charge's last reading: out of order, ignored.
+			name:    "vehicle timestamps out of order",
+			records: stamped(solar(ChargingIdle, night), m(25), late),
+			want:    []Charge{narrowed(one(night), late)},
+		},
+		{
+			name:    "vehicle timestamps off",
+			records: stamped(solar(ChargingIdle, night), m(30).Add(30*time.Second), late),
+			params:  noStamps,
+			want:    []Charge{one(night)},
 		},
 		{name: "MaxChargePause 0", records: solar(ChargingDone, 60), params: noResume, want: two(31, 60, 12400)},
 		{
