@@ -17,7 +17,8 @@ import (
 // Scenario describes a day (or more) in the life of a vehicle.
 type Scenario struct {
 	// Brand is the vehicle's maker, which says the API that serves it: volvo (the
-	// default, the Volvo Cars API) or polestar (the Polestar Data Portal's).
+	// default, the Volvo Cars API), polestar (the Polestar Data Portal's) or tesla (the
+	// Owner API).
 	Brand   string           `yaml:"brand"`
 	VIN     string           `yaml:"vin"`
 	Start   time.Time        `yaml:"start"`
@@ -57,6 +58,7 @@ type Outage struct {
 type VehicleConfig struct {
 	Profile                string  `yaml:"profile"`
 	Model                  string  `yaml:"model"`
+	Trim                   string  `yaml:"trim"`
 	ModelYear              int     `yaml:"modelYear"`
 	BatteryKWh             float64 `yaml:"batteryKWh"`
 	UsableKWh              float64 `yaml:"usableKWh"`
@@ -105,6 +107,7 @@ type Charge struct {
 const (
 	BrandVolvo    = "volvo"
 	BrandPolestar = "polestar"
+	BrandTesla    = "tesla"
 )
 
 var vinPattern = regexp.MustCompile(`^[A-HJ-NPR-Z0-9]{17}$`)
@@ -126,11 +129,11 @@ func Parse(data []byte) (*Scenario, error) {
 // Validate checks that the scenario is consistent.
 func (s *Scenario) Validate() error {
 	var errs []error
-	if s.Brand != "" && s.Brand != BrandVolvo && s.Brand != BrandPolestar {
-		errs = append(errs, fmt.Errorf("brand %q: volvo or polestar expected", s.Brand))
+	if s.Brand != "" && s.Brand != BrandVolvo && s.Brand != BrandPolestar && s.Brand != BrandTesla {
+		errs = append(errs, fmt.Errorf("brand %q: volvo, polestar or tesla expected", s.Brand))
 	}
-	if s.Brand == BrandPolestar && s.MarketRefused {
-		errs = append(errs, errors.New("marketRefused: a Volvo API refusal, not for a polestar"))
+	if s.Brand != "" && s.Brand != BrandVolvo && s.MarketRefused {
+		errs = append(errs, fmt.Errorf("marketRefused: a Volvo API refusal, not for a %s", s.Brand))
 	}
 	if !vinPattern.MatchString(s.VIN) {
 		errs = append(errs, fmt.Errorf("vin %q: 17 characters, no I, O or Q", s.VIN))

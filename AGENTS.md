@@ -34,7 +34,8 @@ cmd/
   runsten-collector/   collector binary (poll loop, `connect`, `rebuild` and `healthcheck` subcommands,
                        debug page, health endpoint, the MQTT publisher); capacity.go: derive.Capacities
                        from the catalog; model.go: what a vehicle is for Home Assistant, from the catalog
-  runsten-simulator/   fake Volvo API and Volvo ID backend driven by a scenario
+  runsten-simulator/   fake Volvo API and Volvo ID backend, Polestar Data Portal and Tesla Owner API,
+                       driven by a scenario
   runsten-web/         serves the front end's build and relays /api/, /auth/ and the OAuth metadata
                        (/.well-known/oauth-*) to runsten-api;
                        `healthcheck` subcommand
@@ -106,6 +107,9 @@ internal/
     vehicle/           pure vehicle model
     scenario/          YAML scenario engine (drives the vehicle); fleet.go: several scenarios on one clock
     volvoapi/          HTTP handler mimicking the Volvo API and Volvo ID, limits and faults; declares its Ledger
+    teslaapi/          HTTP handler mimicking Tesla's Owner API (/api/1/) and its token (/oauth2/v3/token):
+                       rotated refresh tokens, the car's sleep, a 429, a closed Owner API and a revocation
+                       on demand (/sim/tesla/)
     aximoteapi/        HTTP handler mimicking Aximote's public API (/api/public/v1/): fixed data (Default),
                        pages, a 429 and a revoked token on demand
     control/           GET /sim/status endpoint
@@ -301,6 +305,7 @@ The import graph is also checked by `internal/archtest` (`TestDependencies`, aft
 - Faults are applied before quota accounting: a failed call is not counted.
 - Several vehicles: `SIM_SCENARIO` takes a comma-separated list, one vehicle per scenario, under one Volvo ID (`scenario.NewFleet`, the handler's sources keyed by VIN). VINs must be distinct. Only the first scenario may have an `api:` section: one API serves them all, and its outages count from that scenario's `start`. The clock starts at the earliest `start`; a vehicle whose scenario starts later stays parked, in its initial state, until then. The quota is counted over every vehicle (assumption: per application and API, not per vehicle). `/sim/status` lists each vehicle's progress.
 - Time scale: a reading is stamped by the collector's clock, so a charge's energy from its power is integrated over the collector's time. `task run-collector` (and `tilt up`) sets `RUNSTEN_DEV_CLOCK_SPEED=60`, the simulator's speed: the collector's time runs at ×60 from the latest time a previous run reached (`devClock`), never backwards. Compose keeps real time (the e2e tests depend on it), so its battery page has no estimate.
+- Tesla (`teslaapi`, on the same server under `/api/1/`, its token under `/oauth2/v3/token`; a scenario's `brand: tesla`, `scenarios/model3.yaml`): the owner's refresh token, `teslaapi.DevRefreshToken` (development only), is rotated on each refresh and the one given then refused (`invalid_grant`), the strictest of what Tesla may do; tokens are signed, so they survive a restart of the simulator, which accepts them all again. Access tokens live `SIM_TESLA_TOKEN_TTL` (8 h). `vehicle_data` answers the live state, but only while the car is awake: neither driving nor charging, it falls asleep `SIM_TESLA_SLEEP_AFTER` (10 min, unknown on the real car) after its last activity or its last `vehicle_data` (a read of `/vehicles/{id}` does not count), reports itself `offline` as the real one, and answers `vehicle_data` with a 408. Faults on demand: `POST /sim/tesla/rate-limit?for=10m` (429 with `Retry-After`), `owner-api?closed=true` (the 403 that sends to the Fleet API), `revoke` (every refresh token issued so far refused) and `refresh-token` (a new one, as Tesla Auth gives it). Distances in miles, pressures in bar, the shapes those of the Model Y's real responses (`teslaapi/vehicle_data.json`).
 - Aximote (`aximoteapi`, on the same server under `/api/public/v1/`): one token, `aximoteapi.DevToken` (development only); `aximoteapi.Default` is an electric car with the first scenario's VIN, whose history ends a month before the simulator's start in real time (it must stay before the collector's first reading, stamped with its own clock), and a petrol car without a VIN. `LimitAfter` answers a 429, `Revoke` refuses the token: the tests' only.
 - To test the collector end to end, share one `clock.Manual` between the simulator handler and the collector. See `simulatorFor`, `startFleet` (several vehicles) and `playDay` in `internal/collector/collector_test.go`, and `playFleet` in `internal/derive/polestar_test.go` (Volvos and Polestars of one account, the Data Portal under `polestarapi.Prefix`, derived as they are read).
 

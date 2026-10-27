@@ -37,6 +37,8 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/polestarapi
               desc: outward dependency forbidden
+            - pkg: runsten/internal/simulator/teslaapi
+              desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/scenario
               desc: outward dependency forbidden
         # The scenario engine drives the vehicle, without knowing HTTP or the API.
@@ -48,6 +50,8 @@ linters:
             - pkg: runsten/internal/simulator/volvoapi
               desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/polestarapi
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/simulator/teslaapi
               desc: outward dependency forbidden
         # The simulated API declares its Ledger: pgledger keeps the grants in PostgreSQL.
         volvoapi-without-database:

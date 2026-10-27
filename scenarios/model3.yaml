@@ -1,0 +1,37 @@
+# The Tesla of demonstration: a Model 3 Long Range AWD of 2024, served on the Owner API
+# (brand tesla), read with the simulator's refresh token (teslaapi.DevRefreshToken). Home
+# to work and back, then an AC charge at home.
+#
+# What the API gives differs from Volvo's and Polestar's: the live state, but only while
+# the car is awake. Parked, neither charging nor read, it falls asleep after
+# SIM_TESLA_SLEEP_AFTER (10 min by default), and answers vehicle_data with a 408 until it
+# drives or charges again. Distances in miles, as the real API whatever the car displays.
+#
+# The VIN is fictitious: LRW, the WMI of Tesla Shanghai, 3 the model, and R, model year
+# 2024, at the tenth position. Fictitious coordinates (Brussels).
+brand: tesla
+vin: LRW3E7EK1RC000001
+start: 2026-09-28T05:00:00Z
+vehicle:
+  profile: bev-generic
+  model: Model 3
+  trim: 74d
+  modelYear: 2024
+  batteryKWh: 78
+  usableKWh: 75
+  consumptionKWhPer100km: 15
+  chargingCurrentLimitA: 16
+  soc: 58
+  targetSoc: 80
+  odometerKm: 18200
+  place: home
+places:
+  home: { lat: 50.8270, lon: 4.3720 }
+  work: { lat: 50.8930, lon: 4.4180 }
+steps:
+  - park: { duration: 2h }
+  - drive: { to: work, distanceKm: 14, duration: 30m }
+  - park: { duration: 9h }
+  - drive: { to: home, distanceKm: 15, duration: 35m }
+  - park: { duration: 1h }
+  - charge: { type: AC, powerKW: 11, untilSoc: 80 }

@@ -48,6 +48,7 @@ func newSimulation(sc *Scenario, policy vehicle.UploadPolicy, origin time.Time) 
 	vc := sc.Vehicle
 	spec := vehicle.Spec{
 		Model:                  vc.Model,
+		Trim:                   vc.Trim,
 		ModelYear:              vc.ModelYear,
 		BatteryKWh:             vc.BatteryKWh,
 		UsableKWh:              vc.UsableKWh,
@@ -74,7 +75,7 @@ func newSimulation(sc *Scenario, policy vehicle.UploadPolicy, origin time.Time) 
 // VIN returns the simulated vehicle's VIN.
 func (s *Simulation) VIN() string { return s.sc.VIN }
 
-// Brand returns the vehicle's maker: BrandVolvo or BrandPolestar.
+// Brand returns the vehicle's maker: BrandVolvo, BrandPolestar or BrandTesla.
 func (s *Simulation) Brand() string {
 	if s.sc.Brand == "" {
 		return BrandVolvo
@@ -100,6 +101,15 @@ func (s *Simulation) StatusAt(at time.Time) Status {
 	defer s.mu.Unlock()
 	s.advance(at.UTC())
 	return Status{VIN: s.sc.VIN, Now: s.now, Step: s.step, Steps: len(s.sc.Steps), Finished: s.step >= len(s.sc.Steps)}
+}
+
+// StateAt advances the simulation up to at and returns the vehicle's actual state, not
+// only what it uploaded: what an awake Tesla answers.
+func (s *Simulation) StateAt(at time.Time) vehicle.State {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.advance(at.UTC())
+	return s.veh.State()
 }
 
 // State returns the vehicle's actual state, without advancing the simulation.
