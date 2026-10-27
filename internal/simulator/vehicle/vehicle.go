@@ -62,6 +62,9 @@ func Profile(name string) (Capabilities, bool) {
 type Spec struct {
 	Model     string
 	ModelYear int
+	// Trim is the maker's code of the variant, as Tesla's trim_badging (74d); empty when
+	// the API does not tell it.
+	Trim string
 	// BatteryKWh is the nominal capacity, what the API's batteryCapacityKWH reports:
 	// fixed, like the real one.
 	BatteryKWh float64
@@ -158,6 +161,11 @@ type State struct {
 	ChargeType     ChargeType
 	ChargingPowerW float64
 	TargetSoC      float64
+	// SpeedKmh is the speed of the last stretch driven; zero when parked.
+	SpeedKmh float64
+	// ChargeAddedKWh is the energy the current or last charge put into the battery,
+	// kept until the next plug-in, as Tesla's charge_energy_added.
+	ChargeAddedKWh float64
 
 	LastTrip              Trip
 	TotalDistanceKm       float64 // since the start of the simulation
@@ -205,6 +213,7 @@ type Vehicle struct {
 	report Report
 
 	tripStart     time.Time
+	lastDriveAt   time.Time
 	tripStartOdo  float64
 	tripStartKWh  float64
 	tripOrigin    Position
@@ -247,7 +256,7 @@ func (v *Vehicle) StartDrive(at time.Time) {
 	}
 	v.state.Driving = true
 	v.state.Locked = false
-	v.tripStart = at
+	v.tripStart, v.lastDriveAt = at, at
 	v.tripStartOdo = v.state.OdometerKm
 	v.tripStartKWh = v.state.TotalEnergyKWh
 	v.tripOrigin = v.state.Position
@@ -260,6 +269,10 @@ func (v *Vehicle) Drive(at time.Time, distanceKm float64) {
 		return
 	}
 	kwh := distanceKm * v.spec.ConsumptionKWhPer100km / 100
+	if dt := at.Sub(v.lastDriveAt); dt > 0 {
+		v.state.SpeedKmh = distanceKm / dt.Hours()
+	}
+	v.lastDriveAt = at
 	v.state.OdometerKm += distanceKm
 	v.state.TotalDistanceKm += distanceKm
 	v.state.DistanceSinceChargeKm += distanceKm
@@ -278,6 +291,7 @@ func (v *Vehicle) EndDrive(at time.Time, dest Position) {
 	}
 	dest.Heading = bearing(v.tripOrigin, dest)
 	v.state.Driving = false
+	v.state.SpeedKmh = 0
 	v.state.Locked = true
 	v.state.Position = dest
 	v.state.LastTrip = Trip{
@@ -295,6 +309,7 @@ func (v *Vehicle) PlugIn(at time.Time, typ ChargeType, powerW, targetSoC float64
 	v.state.PluggedIn = true
 	v.state.ChargeType = typ
 	v.state.TargetSoC = targetSoC
+	v.state.ChargeAddedKWh = 0
 	if v.state.SoC >= targetSoC {
 		v.state.Charging = Done
 		v.state.ChargingPowerW = 0
@@ -316,9 +331,11 @@ func (v *Vehicle) Charge(at time.Time, dt time.Duration) bool {
 	kwh := v.state.ChargingPowerW / 1000 * dt.Hours()
 	soc := v.state.SoC + kwh/v.spec.UsableKWhAt(at)*100
 	if soc < v.state.TargetSoC {
+		v.state.ChargeAddedKWh += kwh
 		v.setSoC(at, soc)
 		return false
 	}
+	v.state.ChargeAddedKWh += (v.state.TargetSoC - v.state.SoC) / 100 * v.spec.UsableKWhAt(at)
 	v.state.SoC = v.state.TargetSoC
 	v.state.Charging = Done
 	v.state.ChargingPowerW = 0

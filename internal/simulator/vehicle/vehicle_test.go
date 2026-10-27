@@ -322,3 +322,38 @@ func TestAvailabilityWhile(t *testing.T) {
 		}
 	}
 }
+
+func TestSpeedWhileDriving(t *testing.T) {
+	v := newVehicle(t, 50)
+	v.StartDrive(t0)
+	v.Drive(t0.Add(6*time.Second), 0.1)
+	if s := v.State(); !near(s.SpeedKmh, 60) {
+		t.Errorf("SpeedKmh = %v, want 60 (100 m in 6 s)", s.SpeedKmh)
+	}
+	v.EndDrive(t0.Add(time.Minute), work)
+	if s := v.State(); s.SpeedKmh != 0 {
+		t.Errorf("SpeedKmh after the trip = %v, want 0", s.SpeedKmh)
+	}
+}
+
+func TestChargeAddedKWh(t *testing.T) {
+	v := newVehicle(t, 50)
+	v.PlugIn(t0, AC, 8000, 80)
+	// 8 kW for 3 h = 24 kWh, the last second's share capped at the target.
+	at := t0
+	for done := false; !done; {
+		at = at.Add(time.Second)
+		done = v.Charge(at, time.Second)
+	}
+	if s := v.State(); !near(s.ChargeAddedKWh, 24) {
+		t.Errorf("ChargeAddedKWh = %v, want 24", s.ChargeAddedKWh)
+	}
+	v.Unplug(at)
+	if s := v.State(); !near(s.ChargeAddedKWh, 24) {
+		t.Errorf("ChargeAddedKWh after unplugging = %v, want 24 kept", s.ChargeAddedKWh)
+	}
+	v.PlugIn(at, AC, 8000, 90)
+	if s := v.State(); s.ChargeAddedKWh != 0 {
+		t.Errorf("ChargeAddedKWh at the next plug-in = %v, want 0", s.ChargeAddedKWh)
+	}
+}
