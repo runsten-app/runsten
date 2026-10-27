@@ -101,8 +101,13 @@ func (d *detector) reconstructTrip(p point, prev state) {
 	// it: the charge still waits for its position. One that may have ended after it
 	// leaves it waiting only for a position the vehicle recorded before it ended, which
 	// cannot be another place's (some vehicles stamp the odometer when they upload it).
+	// Without the vehicle's timestamps, nothing tells: the charge takes the position it has.
 	if e := d.ended; e != nil && d.narrow(p.at, after, d.st.snap.OdometerKm.At).After(e.c.End.After) {
-		e.until = e.c.End.Before
+		if d.p.VehicleTimestamps {
+			e.until = e.c.End.Before
+		} else {
+			d.releaseCharge()
+		}
 	}
 	d.trip = &tripBuilder{
 		t: Trip{

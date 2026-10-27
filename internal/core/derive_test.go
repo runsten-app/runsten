@@ -760,6 +760,14 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 			}
 		})
 	}
+
+	// Without the vehicle's timestamps, the drive revealed may have followed the charge.
+	p := DefaultParams()
+	p.VehicleTimestamps = false
+	res := Derive(day(tests[0].more...), Cursor{}, p, nil)
+	if len(res.Charges) != 2 || res.Charges[1].Position != Some(home, m(0)) {
+		t.Errorf("without vehicle timestamps %+v", res.Charges)
+	}
 }
 
 // A trip starting while charging ends the charge; the trip's SoC ends before the next
