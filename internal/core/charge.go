@@ -252,13 +252,18 @@ func (d *detector) settleCharge(p point) {
 		d.releaseCharge()
 		return
 	}
-	pos := d.st.snap.Position
-	if p.snap.Covers&FieldPosition == 0 || !pos.OK || e.read.OK {
-		return
-	}
-	if e.until.IsZero() || !pos.At.IsZero() && !pos.At.After(e.until) {
+	// A position noted earlier that the charge's bound now refuses (a trip revealed since,
+	// at the same time) gives way to the next it takes.
+	if pos := d.st.snap.Position; p.snap.Covers&FieldPosition != 0 && pos.OK &&
+		(!e.read.OK || !e.takes(e.read)) && e.takes(pos) {
 		e.read = pos
 	}
+}
+
+// takes reports whether the ended charge may take a position: any, unless a trip that
+// may have followed it bounds it to those recorded before it ended.
+func (e *endedCharge) takes(pos Value[Position]) bool {
+	return e.until.IsZero() || !pos.At.IsZero() && !pos.At.After(e.until)
 }
 
 // placeCharge gives the ended charge the position read after its end, once every
@@ -271,7 +276,7 @@ func (d *detector) placeCharge() {
 	}
 	// Checked again: a trip of the same time may have bounded it after the position was
 	// noted (one reading that tells both).
-	if e.until.IsZero() || !e.read.At.IsZero() && !e.read.At.After(e.until) {
+	if e.takes(e.read) {
 		e.c.Position = e.read
 		d.releaseCharge()
 		return

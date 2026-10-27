@@ -711,6 +711,21 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 			trips:  []ends{{from: Some(home, m(0))}},
 		},
 		{
+			// The same, then at that very time the position recorded during the charge.
+			name: "one reading, then the charge's position",
+			more: []Record{
+				rec(100, 120, func() Snapshot {
+					s := odoAt(1012, m(99))
+					s.Covers |= FieldPosition
+					s.Position = Some(far, m(99))
+					return s
+				}()),
+				rec(100, 120, loc(work, m(73))),
+			},
+			charge: Some(work, m(73)),
+			trips:  []ends{{from: Some(home, m(0))}},
+		},
+		{
 			// Read after the odometer, recorded before the position it had: no newer.
 			name: "stale position",
 			more: []Record{
