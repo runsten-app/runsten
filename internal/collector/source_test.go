@@ -216,6 +216,53 @@ func TestSourcePaces(t *testing.T) {
 	}
 }
 
+// TestSourceSettles: after a trip, an odometer and a position that the vehicle uploaded
+// while driving are read again every active interval, until it uploads new ones or for
+// settleFor at most; an upload whose time is not told is taken as new.
+func TestSourceSettles(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		uploaded time.Duration // after the trip's end, when the vehicle uploads; 0: never, -1: not told
+		reads    int           // of each settled endpoint, from the end to an hour later
+	}{
+		{"uploaded later", 3 * time.Minute, 4},
+		{"never uploaded", 0, 11},
+		{"time not told", -1, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, src, _, clk := newSourced(t, sourceTarget())
+			t0 := clk.Now()
+			driveFrom, driveTo := t0.Add(time.Hour), t0.Add(time.Hour+30*time.Minute)
+			src.answer = func(ep Endpoint, _ int, at time.Time) ([]byte, error) {
+				if ep == psAvailability && !at.Before(driveFrom) && at.Before(driveTo) {
+					return []byte("driving"), nil
+				}
+				return []byte("parked"), nil
+			}
+			src.upload = func(ep Endpoint, _ []byte) (Upload, error) {
+				switch {
+				case ep != psOdometer && ep != psLocation:
+					return Upload{}, nil
+				case tc.uploaded < 0:
+					return Upload{}, nil
+				case tc.uploaded > 0 && !clk.Now().Before(driveTo.Add(tc.uploaded)):
+					return Upload{At: driveTo.Add(tc.uploaded)}, nil
+				}
+				return Upload{At: driveFrom.Add(5 * time.Minute)}, nil // sent on the way
+			}
+			for clk.Now().Before(driveTo.Add(time.Hour)) {
+				poll(t, c)
+				clk.Advance(15 * time.Second)
+			}
+			for _, ep := range []Endpoint{psOdometer, psLocation} {
+				if n := countIn(src.calls[ep], driveTo, driveTo.Add(time.Hour)); n != tc.reads {
+					t.Errorf("%s read %d times in the hour after the trip, want %d: %v", ep, n, tc.reads, src.calls[ep])
+				}
+			}
+		})
+	}
+}
+
 // TestSourceAccess: the access is asked for at the first call and kept until it expires;
 // rejected, it is asked for again once, and rejected again, the connection waits a
 // parked interval, while the account's Volvo vehicle is read.
