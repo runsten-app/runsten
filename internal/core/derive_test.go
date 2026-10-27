@@ -668,7 +668,7 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 		rec(60, 74, nrg(60, ChargingIdle)), // unplugged at home, then driven to work
 		rec(75, 94, charging(55, 50000, DC)),
 		rec(95, 95, nrg(80, ChargingDone)),
-		rec(96, 96, odoAt(1006, m(73))),    // the drive to work, recorded before the charge
+		rec(96, 96, odoAt(1006, m(96))),    // the drive to work, stamped when uploaded
 		rec(97, 120, loc(work, m(73))),     // read just after, as uploaded on arrival
 		rec(121, 121, odoAt(1008, m(115))), // the drive further, unseen too
 		rec(122, 122, loc(far, m(115))),
@@ -685,6 +685,13 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 	}
 	if tr := res.Trips[1]; tr.From != Some(work, m(73)) || tr.To != Some(far, m(115)) {
 		t.Errorf("trip further from %+v to %+v", tr.From, tr.To)
+	}
+
+	// Driven away after the charge: the position recorded after its end is not its own.
+	away := append(slices.Clone(records[:10]), rec(100, 100, odoAt(1012, m(99))), rec(101, 120, loc(far, m(99))))
+	res = Derive(away, Cursor{}, DefaultParams(), nil)
+	if len(res.Charges) != 2 || res.Charges[1].Position != Some(home, m(0)) {
+		t.Errorf("charge before a drive away %+v", res.Charges)
 	}
 
 	// A position read after the odometer but recorded before the one it had is no newer.

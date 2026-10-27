@@ -98,9 +98,11 @@ func (d *detector) reconstructTrip(p point, prev state) {
 	m := d.odoMark
 	after := prev.seenAt(FieldOdometer)
 	// A trip that ended before the ended charge did was the drive to it, not away from
-	// it: the charge still waits for its position.
-	if e := d.ended; e == nil || d.narrow(p.at, after, d.st.snap.OdometerKm.At).After(e.c.End.After) {
-		d.releaseCharge()
+	// it: the charge still waits for its position. One that may have ended after it
+	// leaves it waiting only for a position the vehicle recorded before it ended, which
+	// cannot be another place's (some vehicles stamp the odometer when they upload it).
+	if e := d.ended; e != nil && d.narrow(p.at, after, d.st.snap.OdometerKm.At).After(e.c.End.After) {
+		e.until = e.c.End.Before
 	}
 	d.trip = &tripBuilder{
 		t: Trip{

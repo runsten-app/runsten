@@ -238,6 +238,7 @@ type endedCharge struct {
 	c     Charge
 	since time.Time       // the reading that ended it
 	read  Value[Position] // a position read after it, taken once its readings are all in
+	until time.Time       // if set, the latest a position it takes may have been recorded
 }
 
 // settleCharge notes the first position read after the ended charge's end, or releases
@@ -251,7 +252,11 @@ func (d *detector) settleCharge(p point) {
 		d.releaseCharge()
 		return
 	}
-	if pos := d.st.snap.Position; p.snap.Covers&FieldPosition != 0 && pos.OK && !e.read.OK {
+	pos := d.st.snap.Position
+	if p.snap.Covers&FieldPosition == 0 || !pos.OK || e.read.OK {
+		return
+	}
+	if e.until.IsZero() || !pos.At.IsZero() && !pos.At.After(e.until) {
 		e.read = pos
 	}
 }
