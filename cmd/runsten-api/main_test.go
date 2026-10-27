@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"log/slog"
+	"maps"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -13,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"runsten/internal/flags"
 	"runsten/internal/platform/health"
 	"runsten/internal/polestar"
 	"runsten/internal/volvo"
@@ -39,7 +41,7 @@ func TestLoadConfigDefaults(t *testing.T) {
 		cfg.aximoteURL != "https://api.aximote.com" || cfg.polestarURL != polestar.DefaultBaseURL ||
 		!slices.Equal(cfg.app.Scopes, volvo.DefaultScopes()) || cfg.app.ClientID != "id" || cfg.app.ClientSecret != "secret" ||
 		cfg.logLevel != slog.LevelInfo || cfg.geocoder != nil || cfg.geocode.Interval != time.Second || !cfg.privateBrokers ||
-		cfg.appURL != "" || !cfg.secureCookies || cfg.updateCheck {
+		cfg.appURL != "" || !cfg.secureCookies || cfg.updateCheck || len(cfg.flags) != 0 || cfg.unknownFlags != nil {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -54,6 +56,7 @@ func TestLoadConfigOverrides(t *testing.T) {
 		"RUNSTEN_GEOCODER_INTERVAL": "2s", "RUNSTEN_HEALTH_TOKEN": strings.Repeat("h", minHealthToken),
 		"RUNSTEN_MQTT_PRIVATE_BROKERS": "false", "RUNSTEN_AXIMOTE_BASE_URL": "http://localhost:8080",
 		"RUNSTEN_POLESTAR_BASE_URL": "http://localhost:8080/eu-north-1/data-portal/m2m", "RUNSTEN_UPDATE_CHECK": "true",
+		"RUNSTEN_FLAGS": "source.tesla=false, removed.flag=true",
 	} {
 		m[k] = v
 	}
@@ -66,7 +69,8 @@ func TestLoadConfigOverrides(t *testing.T) {
 		cfg.appURL != "http://127.0.0.1:5173/" || cfg.geocoder == nil || cfg.geocode.Interval != 2*time.Second ||
 		cfg.healthToken != strings.Repeat("h", minHealthToken) || cfg.privateBrokers || cfg.aximoteURL != "http://localhost:8080" ||
 		cfg.polestarURL != "http://localhost:8080/eu-north-1/data-portal/m2m" || cfg.secureCookies ||
-		cfg.app.RedirectURI != "http://127.0.0.1:8081/auth/volvo/callback" || !cfg.updateCheck {
+		cfg.app.RedirectURI != "http://127.0.0.1:8081/auth/volvo/callback" || !cfg.updateCheck ||
+		!maps.Equal(cfg.flags, map[flags.Name]bool{flags.SourceTesla: false}) || !slices.Equal(cfg.unknownFlags, []string{"removed.flag"}) {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -154,7 +158,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_ACCESS_RESTRICTED": "maybe", "RUNSTEN_APP_URL": "/connection",
 		"RUNSTEN_GEOCODER_URL": "nominatim", "RUNSTEN_GEOCODER_INTERVAL": "10ms", "RUNSTEN_HEALTH_TOKEN": "short",
 		"RUNSTEN_MQTT_PRIVATE_BROKERS": "sometimes", "RUNSTEN_AXIMOTE_BASE_URL": "aximote", "RUNSTEN_POLESTAR_BASE_URL": "polestar",
-		"RUNSTEN_UPDATE_CHECK": "daily",
+		"RUNSTEN_UPDATE_CHECK": "daily", "RUNSTEN_FLAGS": "source.tesla",
 	}))
 	if err == nil {
 		t.Fatal("error expected")
@@ -163,7 +167,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_DATABASE_URL", "RUNSTEN_TOKEN_KEY", "RUNSTEN_VOLVO_AUTH_URL", "conve:unlock", "RUNSTEN_LOG_LEVEL",
 		"RUNSTEN_ACCESS_RESTRICTED", "RUNSTEN_APP_URL", "RUNSTEN_GEOCODER_URL", "RUNSTEN_GEOCODER_INTERVAL",
 		"RUNSTEN_HEALTH_TOKEN", "RUNSTEN_MQTT_PRIVATE_BROKERS", "RUNSTEN_AXIMOTE_BASE_URL", "RUNSTEN_POLESTAR_BASE_URL",
-		"RUNSTEN_UPDATE_CHECK",
+		"RUNSTEN_UPDATE_CHECK", "RUNSTEN_FLAGS",
 	} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("the error should mention %s: %v", want, err)

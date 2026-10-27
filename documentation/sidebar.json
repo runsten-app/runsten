@@ -11,6 +11,7 @@
       { "text": "Reverse proxy (https)", "link": "/docs/self-hosting/reverse-proxy" },
       { "text": "Backup and restore", "link": "/docs/self-hosting/backup" },
       { "text": "Updating", "link": "/docs/self-hosting/updating" },
+      { "text": "Feature flags", "link": "/docs/self-hosting/flags" },
       { "text": "Troubleshooting", "link": "/docs/self-hosting/troubleshooting" }
     ]
   },
