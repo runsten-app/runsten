@@ -935,6 +935,11 @@ func TestDeriveInProgress(t *testing.T) {
 	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(10)) {
 		t.Errorf("charge resumable: %+v", res)
 	}
+	// Past MaxChargePause, it no longer may, though no energy reading tells.
+	later := append(slices.Clone(charge), rec(31+24*60, 41+24*60, odo(12400)))
+	if res := Derive(later, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(31+24*60)) {
+		t.Errorf("charge past its pause: %+v", res)
+	}
 	// Unplugged, it no longer may.
 	charge = append(charge, rec(70, 80, nrg(61, ChargingIdle)))
 	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(70)) {

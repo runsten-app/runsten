@@ -119,9 +119,7 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		if live {
 			d.settleCharge(pt)
 			d.stepTrip(pt, prev)
-			if d.trip != nil {
-				d.resumable = nil // driven away: the cable was disconnected unseen
-			}
+			d.expireResumable(pt)
 			d.stepCharge(pt, prev)
 		}
 		d.track(pt)
@@ -151,6 +149,18 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		c.Sources = sourcesIn(ps, c.Start.Before, later(c.End.Before, c.DetectedAt))
 	}
 	return d.res
+}
+
+// expireResumable lets the resumable charge go once it may no longer resume: the cable
+// read disconnected, a trip (driven away, the cable disconnected unseen), or
+// MaxChargePause over. Checked at every reading, so that the cursor settles even when
+// no energy reading comes.
+func (d *detector) expireResumable(p point) {
+	r, s := d.resumable, d.st.snap
+	if r != nil && (d.trip != nil || s.Connection.OK && s.Connection.V == Disconnected ||
+		!p.at.Before(r.endLimit.Add(d.p.MaxChargePause))) {
+		d.resumable = nil
+	}
 }
 
 // sourcesIn returns the sources of the readings within [from, to], sorted: those of an

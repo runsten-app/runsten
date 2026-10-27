@@ -96,10 +96,6 @@ func (d *detector) stepCharge(p point, prev state) {
 	}
 	s := d.st.snap
 	active := s.Charging.OK && s.Charging.V == ChargingActive
-	if r := d.resumable; r != nil && (s.Connection.OK && s.Connection.V == Disconnected ||
-		!p.at.Before(r.endLimit.Add(d.p.MaxChargePause))) {
-		d.resumable = nil
-	}
 	cb := d.charge
 	switch {
 	case cb == nil:
