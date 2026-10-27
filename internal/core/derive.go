@@ -269,6 +269,12 @@ func (d *detector) track(p point) {
 	if c&FieldOdometer != 0 {
 		d.odoMark = d.st
 		d.idleRun.reset(s)
+	} else if c&FieldPosition != 0 && d.p.VehicleTimestamps && s.Position.OK && !s.Position.At.IsZero() &&
+		!s.Position.At.After(d.odoMark.seenAt(FieldOdometer)) && !s.Position.At.Before(d.odoMark.snap.Position.At) {
+		// Recorded by the vehicle before the odometer reading, though read after it: the
+		// position it had then, where a trip the next odometer reading reveals started.
+		i := FieldPosition.index()
+		d.odoMark.snap.Position, d.odoMark.seen[i], d.odoMark.row[i] = s.Position, p.at, p.row
 	}
 	if c&FieldSoC != 0 {
 		d.idleRun.observe(s, d.p.MinChargeSoC)
