@@ -261,9 +261,13 @@ func (d *detector) settleCharge(p point) {
 }
 
 // takes reports whether the ended charge may take a position: any, unless a trip that
-// may have followed it bounds it to those recorded before it ended.
+// may have followed it bounds it to those recorded before it ended, and no older than
+// the one it has (a stale one would only stand in for the position it already has).
 func (e *endedCharge) takes(pos Value[Position]) bool {
-	return e.until.IsZero() || !pos.At.IsZero() && !pos.At.After(e.until)
+	if e.until.IsZero() {
+		return true
+	}
+	return !pos.At.IsZero() && !pos.At.After(e.until) && !pos.At.Before(e.c.Position.At)
 }
 
 // placeCharge gives the ended charge the position read after its end, once every

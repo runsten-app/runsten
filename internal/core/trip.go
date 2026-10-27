@@ -65,7 +65,7 @@ func (d *detector) stepTrip(p point, prev state) {
 		d.resumeTrip(tb, p)
 	}
 	if tb := d.trip; tb != nil && tb.phase == tripEnding {
-		tb.checkArrival(&d.st)
+		tb.checkArrival(&d.st, d.p.VehicleTimestamps)
 	}
 }
 
@@ -144,11 +144,13 @@ func (d *detector) resumeTrip(tb *tripBuilder, p point) {
 }
 
 // checkArrival takes a position read after the departure one as the arrival, unless
-// the vehicle recorded it before the arrival it has.
+// the vehicle recorded it before the arrival it has (when its timestamps are trusted
+// and both have one).
 // Assumption: the vehicle uploads its position at the end of a trip only.
-func (tb *tripBuilder) checkArrival(st *state) {
-	if pos := st.snap.Position; pos.OK && st.rowAt(FieldPosition).After(tb.departureRow) &&
-		(!tb.arrived || !pos.At.Before(tb.t.To.At)) {
+func (tb *tripBuilder) checkArrival(st *state, stamps bool) {
+	pos := st.snap.Position
+	older := stamps && tb.arrived && !pos.At.IsZero() && !tb.t.To.At.IsZero() && pos.At.Before(tb.t.To.At)
+	if pos.OK && st.rowAt(FieldPosition).After(tb.departureRow) && !older {
 		tb.t.To, tb.arrived = pos, true
 	}
 }

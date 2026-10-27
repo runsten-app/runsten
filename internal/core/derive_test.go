@@ -673,6 +673,10 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 	}
 	// The drive to work, revealed as the charge ends, stamped when uploaded.
 	toWork := rec(96, 96, odoAt(1006, m(96)))
+	// A drive away after the charge, the position and the odometer in one reading.
+	farAway := odoAt(1012, m(99))
+	farAway.Covers |= FieldPosition
+	farAway.Position = Some(far, m(99))
 	type ends struct{ from, to Value[Position] } // an arrival unset is not checked
 	tests := []struct {
 		name   string
@@ -700,13 +704,8 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 		},
 		{
 			// The same, the position and the odometer in one reading.
-			name: "driven away, one reading",
-			more: []Record{rec(100, 120, func() Snapshot {
-				s := odoAt(1012, m(99))
-				s.Covers |= FieldPosition
-				s.Position = Some(far, m(99))
-				return s
-			}())},
+			name:   "driven away, one reading",
+			more:   []Record{rec(100, 120, farAway)},
 			charge: Some(home, m(0)),
 			trips:  []ends{{from: Some(home, m(0))}},
 		},
@@ -714,16 +713,22 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 			// The same, then at that very time the position recorded during the charge.
 			name: "one reading, then the charge's position",
 			more: []Record{
-				rec(100, 120, func() Snapshot {
-					s := odoAt(1012, m(99))
-					s.Covers |= FieldPosition
-					s.Position = Some(far, m(99))
-					return s
-				}()),
+				rec(100, 120, farAway),
 				rec(100, 120, loc(work, m(73))),
 			},
 			charge: Some(work, m(73)),
 			trips:  []ends{{from: Some(home, m(0))}},
+		},
+		{
+			// Older than the position the charge has: it would only stand in for it.
+			name: "stale position under the bound",
+			more: []Record{
+				toWork,
+				rec(97, 97, loc(far, m(-10))),
+				rec(98, 120, loc(work, m(73))),
+			},
+			charge: Some(work, m(73)),
+			trips:  []ends{{Some(home, m(0)), Some(work, m(73))}},
 		},
 		{
 			// Read after the odometer, recorded before the position it had: no newer.
@@ -758,6 +763,10 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 					t.Errorf("trip %d from %+v to %+v, want %+v", i, tr.From, tr.To, w)
 				}
 			}
+			trips, charges := deriveIncrementally(day(tt.more...), DefaultParams())
+			if !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+				t.Errorf("incremental:\n%+v\n%+v\nrebuild:\n%+v\n%+v", trips, charges, res.Trips, res.Charges)
+			}
 		})
 	}
 
@@ -768,6 +777,51 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 	if len(res.Charges) != 2 || res.Charges[1].Position != Some(home, m(0)) {
 		t.Errorf("without vehicle timestamps %+v", res.Charges)
 	}
+	// Nor does a trip's arrival tell an older position: the latest read is.
+	res = Derive(day(tests[len(tests)-1].more...), Cursor{}, p, nil)
+	if len(res.Trips) == 0 || res.Trips[0].To != Some(far, m(50)) {
+		t.Errorf("arrival without vehicle timestamps %+v", res.Trips)
+	}
+}
+
+// deriveIncrementally derives records as the collector would have them stored over
+// time, from the cursor each derivation returns, as TestIncrementalMatchesRebuild does
+// from readings.
+func deriveIncrementally(records []Record, p Params) ([]Trip, []Charge) {
+	var times []time.Time
+	for _, r := range records {
+		times = append(times, r.FetchedAt, r.CheckedAt)
+	}
+	slices.SortFunc(times, func(a, b time.Time) int { return a.Compare(b) })
+	times = slices.Compact(times)
+	var trips []Trip
+	var charges []Charge
+	var cursor Cursor
+	for _, now := range times {
+		var since []Record
+		latest := map[Field]Record{}
+		for _, r := range records {
+			if r.FetchedAt.After(now) {
+				continue
+			}
+			if r.CheckedAt.After(now) {
+				r.CheckedAt = now
+			}
+			if r.FetchedAt.After(cursor.From) {
+				since = append(since, r)
+			} else if l, ok := latest[r.Snapshot.Covers]; !ok || r.FetchedAt.After(l.FetchedAt) {
+				latest[r.Snapshot.Covers] = r
+			}
+		}
+		for _, r := range latest {
+			since = append(since, r)
+		}
+		res := Derive(since, cursor, p, nil)
+		trips = append(keepTrips(trips, cursor.Settled), res.Trips...)
+		charges = append(keepCharges(charges, cursor.Settled), res.Charges...)
+		cursor = res.Cursor
+	}
+	return trips, charges
 }
 
 // A trip starting while charging ends the charge; the trip's SoC ends before the next
