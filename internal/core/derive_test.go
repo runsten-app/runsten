@@ -705,7 +705,7 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 				rec(121, 121, odoAt(1008, m(115))),
 			},
 			charge: Some(work, m(73)),
-			trips:  []ends{{from: Some(home, m(0))}, {from: Some(work, m(73))}},
+			trips:  []ends{{Some(home, m(0)), Some(work, m(73))}, {from: Some(work, m(73))}},
 		},
 	}
 	for _, tt := range tests {

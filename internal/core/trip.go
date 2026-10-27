@@ -138,10 +138,12 @@ func (d *detector) resumeTrip(tb *tripBuilder, p point) {
 	tb.t.End, tb.t.Capacity = Bounds{}, Value[Capacity]{}
 }
 
-// checkArrival takes a position read after the departure one as the arrival.
+// checkArrival takes a position read after the departure one as the arrival, unless
+// the vehicle recorded it before the arrival it has.
 // Assumption: the vehicle uploads its position at the end of a trip only.
 func (tb *tripBuilder) checkArrival(st *state) {
-	if pos := st.snap.Position; pos.OK && st.rowAt(FieldPosition).After(tb.departureRow) {
+	if pos := st.snap.Position; pos.OK && st.rowAt(FieldPosition).After(tb.departureRow) &&
+		(!tb.arrived || !pos.At.Before(tb.t.To.At)) {
 		tb.t.To, tb.arrived = pos, true
 	}
 }
