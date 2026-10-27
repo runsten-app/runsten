@@ -63,8 +63,9 @@ func TestParseRejectsInvalidScenarios(t *testing.T) {
 		{"target out of bounds", [2]string{"untilSoc: 80", "untilSoc: 120"}, "charge.untilSoc"},
 		{"double step", [2]string{"- park: { duration: 1h }\n  - drive", "- park: { duration: 1h }\n    charge: { type: AC, powerKW: 1, untilSoc: 50 }\n  - drive"}, "exactly one"},
 		{"unknown field", [2]string{"soc: 60", "soc: 60\n  color: red"}, "color"},
-		{"unknown brand", [2]string{"vin: ", "brand: tesla\nvin: "}, "brand"},
+		{"unknown brand", [2]string{"vin: ", "brand: rivian\nvin: "}, "brand"},
 		{"refused polestar", [2]string{"vin: ", "brand: polestar\nmarketRefused: true\nvin: "}, "marketRefused"},
+		{"refused tesla", [2]string{"vin: ", "brand: tesla\nmarketRefused: true\nvin: "}, "marketRefused"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -114,7 +115,7 @@ func TestParseAPI(t *testing.T) {
 }
 
 func TestBrand(t *testing.T) {
-	for brand, want := range map[string]string{"": BrandVolvo, "brand: volvo\n": BrandVolvo, "brand: polestar\n": BrandPolestar} {
+	for brand, want := range map[string]string{"": BrandVolvo, "brand: volvo\n": BrandVolvo, "brand: polestar\n": BrandPolestar, "brand: tesla\n": BrandTesla} {
 		sc, err := Parse([]byte(brand + commute))
 		if err != nil {
 			t.Fatal(err)
@@ -265,5 +266,17 @@ func TestShippedScenariosAreValid(t *testing.T) {
 				t.Error("empty VIN")
 			}
 		})
+	}
+}
+
+func TestStateAt(t *testing.T) {
+	sim := mustSimulation(t, strings.Replace(commute, "batteryKWh: 80", "trim: 74d\n  batteryKWh: 80", 1))
+	// Mid-trip, 20 km driven: the actual odometer, not the one last uploaded.
+	st := sim.StateAt(start.Add(time.Hour + 20*time.Minute))
+	if !st.Driving || math.Abs(st.OdometerKm-1020) > 1e-6 || math.Abs(st.SpeedKmh-60) > 1e-6 {
+		t.Errorf("mid-trip: driving %v, odometer %v, speed %v; want true, 1020, 60", st.Driving, st.OdometerKm, st.SpeedKmh)
+	}
+	if trim := sim.ReportAt(start.Add(time.Hour + 20*time.Minute)).Spec.Trim; trim != "74d" {
+		t.Errorf("trim %q, want 74d", trim)
 	}
 }
