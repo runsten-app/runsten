@@ -20,6 +20,11 @@ func homePlace() Place {
 	}
 }
 
+// flatPlace is the home place at one price all day.
+func flatPlace() Place {
+	return with(homePlace(), func(p *Place) { p.Tariff = []TariffVersion{{ValidFrom: date("2026-01-01"), PricePerKWh: 0.2289}} })
+}
+
 // fixture is the charge of internal/api/testdata/charge.json: 26.4 kWh by the SoC, AC,
 // from 20:20 to 23:56 in Paris at the widest.
 func fixture() Charge {
@@ -158,6 +163,42 @@ func TestChargeCost(t *testing.T) {
 			want: known(Cost{
 				Currency: eur.V, Min: 250, Max: 250, Source: CostTariff, EnergyKWh: val(8.8 / 0.88), Efficiency: val(0.88),
 				Place: known(with(homePlace(), func(p *Place) { p.Tariff = []TariffVersion{{ValidFrom: date("2026-01-01"), PricePerKWh: 0.25}} })),
+			}),
+		},
+		{
+			// A solar charge at 0.2289 €/kWh: 0.7 kWh into a 107 kWh battery leaves the
+			// SoC at 66 %. Billed on the integrated power, 0.7 / 0.88 kWh: 0.18 €, not free.
+			name:    "a SoC rise below MinSoCRise: the integrated power",
+			pricing: with(pricing, func(p *Pricing) { p.Places = []Place{flatPlace()} }),
+			charge: with(fixture(), func(c *Charge) {
+				c.StartSoC, c.EndSoC, c.EnergySoCKWh, c.EnergyPowerKWh = val(66), val(66), val(0), val(0.7)
+			}),
+			want: known(Cost{
+				Currency: eur.V, Min: 18, Max: 18, Source: CostTariff, EnergyKWh: val(0.7 / 0.88), Efficiency: val(0.88),
+				Place: known(flatPlace()),
+			}),
+		},
+		{
+			name:    "a SoC rise of MinSoCRise: the SoC change",
+			pricing: with(pricing, func(p *Pricing) { p.Places = []Place{flatPlace()} }),
+			charge: with(fixture(), func(c *Charge) {
+				c.StartSoC, c.EndSoC, c.EnergySoCKWh, c.EnergyPowerKWh = val(66), val(68), val(2.14), val(1.5)
+			}),
+			want: known(Cost{
+				Currency: eur.V, Min: 56, Max: 56, Source: CostTariff, EnergyKWh: val(2.14 / 0.88), Efficiency: val(0.88),
+				Place: known(flatPlace()),
+			}),
+		},
+		{
+			// Nothing better than the SoC change: a reconstructed charge integrates no power.
+			name:    "a SoC rise below MinSoCRise, no power: the SoC change",
+			pricing: with(pricing, func(p *Pricing) { p.Places = []Place{flatPlace()} }),
+			charge: with(fixture(), func(c *Charge) {
+				c.StartSoC, c.EndSoC, c.EnergySoCKWh = val(66), val(67), val(1.07)
+			}),
+			want: known(Cost{
+				Currency: eur.V, Min: 28, Max: 28, Source: CostTariff, EnergyKWh: val(1.07 / 0.88), Efficiency: val(0.88),
+				Place: known(flatPlace()),
 			}),
 		},
 		{

@@ -930,9 +930,188 @@ func TestDeriveInProgress(t *testing.T) {
 	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(10)) {
 		t.Errorf("charge over: %+v", res)
 	}
+	// Done with the cable connected, it may still resume: the cursor stays before it.
 	charge = append(charge, rec(50, 60, nrg(61, ChargingDone)))
-	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(50)) {
+	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(10)) {
+		t.Errorf("charge resumable: %+v", res)
+	}
+	// Past MaxChargePause, it no longer may, though no energy reading tells.
+	later := append(slices.Clone(charge), rec(31+24*60, 41+24*60, odo(12400)))
+	if res := Derive(later, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(31+24*60)) {
+		t.Errorf("charge past its pause: %+v", res)
+	}
+	// Unplugged, it no longer may.
+	charge = append(charge, rec(70, 80, nrg(61, ChargingIdle)))
+	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(70)) {
 		t.Errorf("charge settled: %+v", res)
+	}
+}
+
+// pausedAt is an energy reading of a charge stopped, the cable still connected: done,
+// or idle as a Polestar says between two runs of a solar charge.
+func pausedAt(soc float64, st ChargingStatus) Snapshot {
+	s := nrg(soc, st)
+	s.Connection = Some(Connected, time.Time{})
+	return s
+}
+
+// A charge stopped with the cable connected goes on when the vehicle charges again
+// (a solar charge), until the cable is disconnected, a trip, a reconstructed
+// charge or MaxChargePause.
+func TestChargeResumes(t *testing.T) {
+	// solar charges at 1.5 kW from minute 20 to 30, stops (st), and again from resume
+	// to resume + 29; between, more readings.
+	solar := func(st ChargingStatus, resume int, between ...Record) []Record {
+		rs := []Record{
+			rec(0, 0, capacity(80)),
+			rec(0, 0, odo(12400)),
+			rec(0, 0, loc(home, m(0))),
+			rec(0, 10, nrg(50, ChargingIdle)),
+			rec(20, 30, charging(51, 1500, AC)),
+			rec(31, 31, pausedAt(52, st)),
+		}
+		rs = append(rs, between...)
+		return append(rs,
+			rec(resume, resume+29, charging(53, 1500, AC)),
+			rec(resume+30, resume+30, pausedAt(54, ChargingDone)),
+		)
+	}
+	first := 1500 * 10 / 60.0 / 1000
+	second := 1500 * 29 / 60.0 / 1000
+	one := func(resume int) Charge {
+		return Charge{
+			DetectedAt: m(20), Start: Bounds{m(10), m(20)}, End: Bounds{m(resume + 29), m(resume + 30)},
+			Type: Some(AC, time.Time{}), StartSoC: val(50), EndSoC: val(54), TargetSoC: val(80),
+			EnergySoCKWh: val(3.2), EnergyPowerKWh: val(first + second), OdometerKm: val(12400),
+			Position: Some(home, m(0)),
+			// The runs on either side of the pause, the same SoC change: the first.
+			Span: keptSpan(51, 51, first, 10*time.Minute, 10*time.Minute),
+		}
+	}
+	two := func(after, resume int, odometer float64) []Charge {
+		return []Charge{
+			{
+				DetectedAt: m(20), Start: Bounds{m(10), m(20)}, End: Bounds{m(30), m(31)},
+				Type: Some(AC, time.Time{}), StartSoC: val(50), EndSoC: val(52), TargetSoC: val(80),
+				EnergySoCKWh: val(1.6), EnergyPowerKWh: val(first), OdometerKm: val(12400),
+				Position: Some(home, m(0)), Span: keptSpan(51, 51, first, 10*time.Minute, 10*time.Minute),
+			},
+			{
+				DetectedAt: m(resume), Start: Bounds{m(after), m(resume)}, End: Bounds{m(resume + 29), m(resume + 30)},
+				Type: Some(AC, time.Time{}), StartSoC: val(52), EndSoC: val(54), TargetSoC: val(80),
+				EnergySoCKWh: val(1.6), EnergyPowerKWh: val(second), OdometerKm: val(odometer),
+				Position: Some(home, m(0)), Span: keptSpan(53, 53, second, 29*time.Minute, 29*time.Minute),
+			},
+		}
+	}
+	night := 16 * 60
+	noResume := DefaultParams()
+	noResume.MaxChargePause = 0
+	noStamps := DefaultParams()
+	noStamps.VehicleTimestamps = false
+	// stamped gives the charge's last reading the vehicle's timestamp of its status, and
+	// the reading that paused it another: a timestamp before its floor narrows nothing.
+	stamped := func(rs []Record, pause, end time.Time) []Record {
+		rs = slices.Clone(rs)
+		for i := range rs {
+			if s := &rs[i].Snapshot; s.Covers&FieldCharging != 0 && s.Charging.V != ChargingActive && rs[i].FetchedAt.After(m(30)) {
+				s.Charging.At = end
+				if rs[i].FetchedAt.Equal(m(31)) {
+					s.Charging.At = pause
+				}
+			}
+		}
+		return rs
+	}
+	narrowed := func(c Charge, before time.Time) Charge { c.End.Before = before; return c }
+	late := m(night + 29).Add(30 * time.Second)
+	tests := []struct {
+		name    string
+		records []Record
+		params  Params
+		want    []Charge
+	}{
+		{name: "idle overnight, connected", records: solar(ChargingIdle, night), want: []Charge{one(night)}},
+		{name: "done, connected", records: solar(ChargingDone, 60), want: []Charge{one(60)}},
+		{
+			name:    "the pause read again",
+			records: solar(ChargingIdle, night, rec(300, 600, pausedAt(52, ChargingIdle))),
+			want:    []Charge{one(night)},
+		},
+		{
+			name:    "unplugged in between",
+			records: solar(ChargingIdle, night, rec(300, 300, nrg(52, ChargingIdle))),
+			want:    two(300, night, 12400),
+		},
+		{
+			name:    "the odometer read with the resume",
+			records: solar(ChargingIdle, night, rec(night, night, odo(12400))),
+			want:    []Charge{one(night)},
+		},
+		{
+			name:    "longer than MaxChargePause",
+			records: solar(ChargingIdle, 31+24*60),
+			want:    two(31, 31+24*60, 12400),
+		},
+		{
+			// The end narrowed by the reading that ended it, never by the one that paused it.
+			name:    "vehicle timestamps",
+			records: stamped(solar(ChargingIdle, night), m(30).Add(30*time.Second), late),
+			want:    []Charge{narrowed(one(night), late)},
+		},
+		{
+			// The pause stamped before the charge's last reading: out of order, ignored.
+			name:    "vehicle timestamps out of order",
+			records: stamped(solar(ChargingIdle, night), m(25), late),
+			want:    []Charge{narrowed(one(night), late)},
+		},
+		{
+			name:    "vehicle timestamps off",
+			records: stamped(solar(ChargingIdle, night), m(30).Add(30*time.Second), late),
+			params:  noStamps,
+			want:    []Charge{one(night)},
+		},
+		{name: "MaxChargePause 0", records: solar(ChargingDone, 60), params: noResume, want: two(31, 60, 12400)},
+		{
+			// Unplugged and driven unseen: the odometer reveals the trip.
+			name:    "a trip in between",
+			records: solar(ChargingIdle, night, rec(300, 300, odo(12405))),
+			want:    two(31, night, 12405),
+		},
+		{
+			name: "a trip seen in between",
+			records: solar(ChargingIdle, night,
+				rec(0, 0, engine(EngineStopped)),
+				rec(300, 300, engine(EngineRunning)),
+				rec(310, 310, engine(EngineStopped)),
+			),
+			want: two(31, night, 12400),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := tt.params
+			if p == (Params{}) {
+				p = DefaultParams()
+			}
+			res := Derive(tt.records, Cursor{}, p, nil)
+			checkCharges(t, res.Charges, tt.want)
+			trips, charges := deriveIncrementally(tt.records, p)
+			if !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+				t.Errorf("incremental:\n%+v\n%+v\nrebuild:\n%+v\n%+v", trips, charges, res.Trips, res.Charges)
+			}
+		})
+	}
+
+	// The SoC rising unseen while it may resume is a reconstructed charge, as without
+	// the pause: it ends the first, which no longer resumes.
+	records := solar(ChargingIdle, night, rec(300, 300, pausedAt(55, ChargingIdle)))
+	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	if len(res.Charges) != 2 || res.Charges[0].End != (Bounds{m(30), m(31)}) || res.Charges[1].DetectedAt != m(300) {
+		t.Errorf("reconstructed in the pause: %+v", res.Charges)
+	}
+	if trips, charges := deriveIncrementally(records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+		t.Errorf("reconstructed in the pause, incremental:\n%+v\nrebuild:\n%+v", charges, res.Charges)
 	}
 }
 

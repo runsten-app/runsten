@@ -35,3 +35,5 @@ The energy of a trip or a charge is an estimate: the change of the state of char
 <Screen view="charge" alt="A charge at home: its energy, its place and its cost." />
 
 A charge shows its type (AC or DC), its energy, its place (or "Outside any place") and, once a currency is chosen, its cost. See [Places, tariffs and costs](./costs.md).
+
+A charge that stops with the cable still connected, and starts again before it is unplugged, is one charge: a solar charge, which stops and starts again with the sun, or a charge the car tops up later. Until it starts again, it shows as ended where it stopped. Unplugged, driven, or stopped for 24 hours or more, the next charge is a new one.

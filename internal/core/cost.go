@@ -20,11 +20,17 @@ type CostParams struct {
 	// battery. Assumption: 0.95, from ADAC's 2025 measurements (1 to 4 % lost with a warm
 	// battery, 6 to 10 % with a cold one).
 	EfficiencyDC float64
+	// MinSoCRise is the SoC rise, in points, below which the energy billed rests on the
+	// integrated power rather than on the SoC change, when the power was integrated: a
+	// small charge (solar, a top-up) barely moves the SoC, which the vehicle reports in
+	// whole points or close to it. 0.7 kWh into a 107 kWh battery reads 66 % → 66 %.
+	// The derivation's MinChargeSoC: a smaller rise is noise.
+	MinSoCRise float64
 }
 
 // DefaultCostParams returns the assumptions used without explicit configuration.
 func DefaultCostParams() CostParams {
-	return CostParams{EfficiencyAC: 0.88, EfficiencyDC: 0.95}
+	return CostParams{EfficiencyAC: 0.88, EfficiencyDC: 0.95, MinSoCRise: DefaultParams().MinChargeSoC}
 }
 
 // Currency is an ISO 4217 currency, with its number of minor digits.
@@ -212,9 +218,10 @@ const minorEpsilon = 1e-6
 
 // ChargeCost is the cost of a charge. An entered cost replaces the tariff's, and so does
 // the cost an imported charge's source gives, in the account's currency. Otherwise
-// the billed energy is EnergySoCKWh over the efficiency, somewhere in [Start.After,
-// End.Before]: the minimum fills the cheapest price segments first, the maximum the
-// dearest, each segment holding at most the maximum power times its duration. Without a
+// the billed energy is the charge's (chargeEnergy) over the efficiency, somewhere in
+// [Start.After, End.Before]: the minimum fills the cheapest price segments first, the
+// maximum the dearest, each segment holding at most the maximum power times its
+// duration. Without a
 // maximum power, or if the segments cannot hold the energy at that power (the power was
 // underestimated), there is no such limit.
 //
@@ -222,7 +229,7 @@ const minorEpsilon = 1e-6
 // time may have, takes the price at that instant.
 //
 // The cost is unknown without a currency, without a place (and no entered cost),
-// without EnergySoCKWh, or when a part of the window has no price.
+// without the charge's energy, or when a part of the window has no price.
 func (pr Pricing) ChargeCost(c Charge, entered Value[EnteredCost]) Value[Cost] {
 	if !pr.Currency.OK {
 		return Value[Cost]{}
@@ -242,11 +249,12 @@ func (pr Pricing) ChargeCost(c Charge, entered Value[EnteredCost]) Value[Cost] {
 		cost.Min, cost.Max, cost.Source = p.V.Minor, p.V.Minor, CostImported
 		return known(cost)
 	}
-	if !atPlace || !c.EnergySoCKWh.OK {
+	charged := pr.chargeEnergy(c)
+	if !atPlace || !charged.OK {
 		return Value[Cost]{}
 	}
 	eta := pr.efficiency(c, place)
-	energy := c.EnergySoCKWh.V / eta
+	energy := charged.V / eta
 
 	from, to := span(c)
 	segs := place.Prices().Segments(from, to)
@@ -265,7 +273,7 @@ func (pr Pricing) ChargeCost(c Charge, entered Value[EnteredCost]) Value[Cost] {
 // place, whose tariff from an earlier day would give the charge a cost.
 func (pr Pricing) Unpriced(c Charge, entered Value[EnteredCost]) (Place, bool) {
 	paid := c.PaidCost.OK && c.PaidCost.V.Currency == pr.Currency.V.Code
-	if !pr.Currency.OK || entered.OK || paid || !c.EnergySoCKWh.OK {
+	if !pr.Currency.OK || entered.OK || paid || !pr.chargeEnergy(c).OK {
 		return Place{}, false
 	}
 	place, ok := PlaceOf(c, pr.Places)
@@ -274,6 +282,17 @@ func (pr Pricing) Unpriced(c Charge, entered Value[EnteredCost]) (Place, bool) {
 	}
 	from, to := span(c)
 	return place, !covers(place.Prices().Segments(from, to), from, to)
+}
+
+// chargeEnergy is the energy that reached the battery, which the cost bills:
+// EnergySoCKWh, unless the SoC rose by less than MinSoCRise and the power was integrated
+// (EnergyPowerKWh). Assumption: the charging power the vehicle reports is what went into
+// the battery, as the SoC change.
+func (pr Pricing) chargeEnergy(c Charge) Value[float64] {
+	if rise := diff(c.EndSoC, c.StartSoC); rise.OK && rise.V < pr.Params.MinSoCRise && c.EnergyPowerKWh.OK {
+		return c.EnergyPowerKWh
+	}
+	return c.EnergySoCKWh
 }
 
 // span is the time a charge's energy went through: [Start.After, End.Before], or an

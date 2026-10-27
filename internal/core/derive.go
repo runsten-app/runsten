@@ -27,6 +27,11 @@ type Params struct {
 	// over waits for a position read after its end. The collector takes them right after
 	// the transition.
 	SettleWindow time.Duration
+	// MaxChargePause is how long a charge ended by done or idle, the cable connected, may
+	// resume: charging again within it goes on with the same charge. Assumption: a solar
+	// charge stops at dusk and starts again in the morning, 16 hours later in a Belgian
+	// December; after a longer pause, a day without sun, a new charge starts. 0: never.
+	MaxChargePause time.Duration
 	// ResumeBeforeArrival: the engine running again after a stop, before any new position
 	// was read, continues the same trip (a short stop) instead of starting another.
 	ResumeBeforeArrival bool
@@ -45,6 +50,7 @@ func DefaultParams() Params {
 		MinChargeSoC:        2,
 		MaxSpanSoC:          95,
 		SettleWindow:        15 * time.Minute,
+		MaxChargePause:      24 * time.Hour,
 		ResumeBeforeArrival: true,
 		VehicleTimestamps:   true,
 		Capacity:            CapacityCatalogNet,
@@ -113,6 +119,7 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		if live {
 			d.settleCharge(pt)
 			d.stepTrip(pt, prev)
+			d.expireResumable(pt)
 			d.stepCharge(pt, prev)
 		}
 		d.track(pt)
@@ -122,7 +129,7 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		}
 		// Never settle on the last readings: a reading stored later may bear their time.
 		groupEnd := lastOfTime && i < len(ps)-1
-		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil {
+		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil && d.resumable == nil {
 			d.res.Cursor = Cursor{Settled: pt.at, From: d.st.rowAt(FieldOdometer)}
 		}
 	}
@@ -142,6 +149,18 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		c.Sources = sourcesIn(ps, c.Start.Before, later(c.End.Before, c.DetectedAt))
 	}
 	return d.res
+}
+
+// expireResumable lets the resumable charge go once it may no longer resume: the cable
+// read disconnected, a trip (driven away, the cable disconnected unseen), or
+// MaxChargePause over. Checked at every reading, so that the cursor settles even when
+// no energy reading comes.
+func (d *detector) expireResumable(p point) {
+	r, s := d.resumable, d.st.snap
+	if r != nil && (d.trip != nil || s.Connection.OK && s.Connection.V == Disconnected ||
+		!p.at.Before(r.endLimit.Add(d.p.MaxChargePause))) {
+		d.resumable = nil
+	}
 }
 
 // sourcesIn returns the sources of the readings within [from, to], sorted: those of an
@@ -256,6 +275,8 @@ type detector struct {
 	trip   *tripBuilder
 	charge *chargeBuilder
 	ended  *endedCharge
+	// resumable is the latest charge, ended with the cable connected, while it may resume.
+	resumable *chargeBuilder
 }
 
 func (d *detector) track(p point) {
