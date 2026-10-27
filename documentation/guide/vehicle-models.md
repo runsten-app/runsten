@@ -16,7 +16,7 @@ When several variants fit, or none, the vehicle has no variant until you choose 
 
 A Polestar read through the Data Portal tells its model year (from its VIN), but neither its model nor its battery's capacity: several Polestar variants fit, and none is recognized. Choose yours: without a variant, its energies are unknown ([Your Polestar](./polestar.md#choose-its-variant)).
 
-A Tesla tells its model, its model year (from its VIN) and its trim badge, but not its battery's capacity: it is recognized when one variant alone has that badge in its year, and you choose among those that fit otherwise ([Your Tesla](./tesla.md#its-variant)).
+A Tesla tells its model, its model year (from its VIN) and its trim badge, but not its battery's capacity: it is recognized when exactly one variant fits its model, year and badge, a variant that lists no badge always fitting. Otherwise, choose yours among those that fit: until you do, its trips and charges have no energy ([Your Tesla](./tesla.md#its-variant)).
 
 ## Choosing
 
