@@ -34,7 +34,10 @@
       "title": "Inga fordon ännu",
       "keyText": "Vilken bil har du? Runsten läser en Volvo med nyckeln till en Volvo-applikation du skapar och sedan ditt Volvo ID; en Polestar med inloggningsuppgifter från Polestars Data Portal; en Tesla med en uppdateringstoken från ditt Tesla-konto.",
       "text": "Vilken bil har du? Runsten läser en Volvo via ditt Volvo ID, en Polestar via inloggningsuppgifter från Polestars Data Portal, en Tesla via en uppdateringstoken från ditt Tesla-konto.",
-      "noVolvoText": "Runsten läser en Polestar med inloggningsuppgifter från Polestars Data Portal, en Tesla med en uppdateringstoken från ditt Tesla-konto. Den här instansen är inte inställd för att läsa en Volvo."
+      "noVolvoText": "Runsten läser en Polestar med inloggningsuppgifter från Polestars Data Portal, en Tesla med en uppdateringstoken från ditt Tesla-konto. Den här instansen är inte inställd för att läsa en Volvo.",
+      "keyTextNoTesla": "Vilken bil har du? Runsten läser en Volvo med nyckeln till en Volvo-applikation du skapar och sedan ditt Volvo ID; en Polestar med inloggningsuppgifter från Polestars Data Portal.",
+      "textNoTesla": "Vilken bil har du? Runsten läser en Volvo via ditt Volvo ID, en Polestar via inloggningsuppgifter från Polestars Data Portal.",
+      "polestarText": "Runsten läser en Polestar med inloggningsuppgifter från Polestars Data Portal. Den här instansen är inte inställd för att läsa en Volvo."
     },
     "choose": {
       "volvo": "Jag har en Volvo",
@@ -1152,7 +1155,8 @@
       "text": "Den här instansen har ingen Volvo-applikation, så dess Volvobilar läses inte. Administratören kan skapa en på Volvos utvecklarportal och ange den i konfigurationen (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_CLIENT_SECRET): Volvo ID läses då igen."
     },
     "tesla": {
-      "title": "Tesla-konto"
+      "title": "Tesla-konto",
+      "off": "Tesla erbjuds inte på den här instansen: dina Tesla-fordon läses inte längre. Det som lästs finns kvar och din token sparas: de läses igen när Tesla erbjuds."
     }
   },
   "apiKey": {

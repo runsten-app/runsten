@@ -95,10 +95,17 @@ func TestTeslaToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	kept := false
 	for _, v := range vs {
-		if v.ID == vt && (v.Provider != "tesla" || !v.CredentialMissing) {
-			t.Errorf("vehicle %+v", v)
+		if v.ID == vt {
+			kept = true
+			if v.Provider != "tesla" || !v.CredentialMissing {
+				t.Errorf("vehicle %+v", v)
+			}
 		}
+	}
+	if !kept {
+		t.Error("the vehicle went with its token")
 	}
 
 	// Another account reads none of it.

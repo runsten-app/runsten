@@ -168,6 +168,24 @@ describe('ConnectionPage', () => {
     expect(w.find('#connection-panel-tesla').exists()).toBe(false)
   })
 
+  it('tells why Teslas from before are not read while its flag is off', async () => {
+    flag.tesla = false
+    const [car] = items
+    if (!car) throw new Error('fixture')
+    mocks.fetchVehicles.mockResolvedValue([
+      {
+        ...car,
+        id: 'tesla-1',
+        connection: { ...car.connection, provider: 'tesla', credential: 'set' },
+      },
+    ])
+    const w = await page()
+    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Tesla')
+    const panel = w.find('#connection-panel-tesla')
+    expect(panel.find('.tesla-off').text()).toContain('Tesla is not offered on this instance')
+    expect(panel.find('#tesla-refresh-token').exists()).toBe(false)
+  })
+
   it('puts no dot on a tab whose vehicles are read', async () => {
     const [car] = items
     if (!car) throw new Error('fixture')

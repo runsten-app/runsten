@@ -34,7 +34,10 @@
       "title": "No vehicle yet",
       "keyText": "Which car is yours? Runsten reads a Volvo with the key of a Volvo application you create, then your Volvo ID; a Polestar with a credential of Polestar's Data Portal; a Tesla with a refresh token of your Tesla account.",
       "text": "Which car is yours? Runsten reads a Volvo through your Volvo ID, a Polestar through a credential of Polestar's Data Portal, a Tesla through a refresh token of your Tesla account.",
-      "noVolvoText": "Runsten reads a Polestar with a credential of Polestar's Data Portal, a Tesla with a refresh token of your Tesla account. This instance is not set up to read a Volvo."
+      "noVolvoText": "Runsten reads a Polestar with a credential of Polestar's Data Portal, a Tesla with a refresh token of your Tesla account. This instance is not set up to read a Volvo.",
+      "keyTextNoTesla": "Which car is yours? Runsten reads a Volvo with the key of a Volvo application you create, then your Volvo ID; a Polestar with a credential of Polestar's Data Portal.",
+      "textNoTesla": "Which car is yours? Runsten reads a Volvo through your Volvo ID, a Polestar through a credential of Polestar's Data Portal.",
+      "polestarText": "Runsten reads a Polestar with a credential of Polestar's Data Portal. This instance is not set up to read a Volvo."
     },
     "choose": {
       "volvo": "I have a Volvo",
@@ -1152,7 +1155,8 @@
       "text": "This instance has no Volvo application, so its Volvos are not read. Its administrator can create one on Volvo's developer portal and set it in the configuration (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_CLIENT_SECRET): the Volvo ID is then read again."
     },
     "tesla": {
-      "title": "Tesla account"
+      "title": "Tesla account",
+      "off": "Tesla is not offered on this instance: your Teslas are no longer read. What was read stays, and your token is kept: they are read again once it is offered."
     }
   },
   "apiKey": {

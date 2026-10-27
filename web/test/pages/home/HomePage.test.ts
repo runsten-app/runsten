@@ -124,6 +124,7 @@ describe('HomePage', () => {
     const { wrapper } = await home()
     expect(wrapper.find('a.polestar').exists()).toBe(true)
     expect(wrapper.find('a.tesla').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Tesla')
   })
 
   it('says when the vehicles cannot be loaded', async () => {

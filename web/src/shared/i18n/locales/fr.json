@@ -34,7 +34,10 @@
       "title": "Aucun véhicule pour l'instant",
       "keyText": "Quelle est votre voiture ? Runsten lit une Volvo avec la clé d'une application Volvo que vous créez, puis votre Volvo ID ; une Polestar avec un identifiant du Data Portal de Polestar ; une Tesla avec un jeton de rafraîchissement de votre compte Tesla.",
       "text": "Quelle est votre voiture ? Runsten lit une Volvo par votre Volvo ID, une Polestar par un identifiant du Data Portal de Polestar, une Tesla par un jeton de rafraîchissement de votre compte Tesla.",
-      "noVolvoText": "Runsten lit une Polestar avec un identifiant du Data Portal de Polestar, une Tesla avec un jeton de rafraîchissement de votre compte Tesla. Cette instance n'est pas configurée pour lire une Volvo."
+      "noVolvoText": "Runsten lit une Polestar avec un identifiant du Data Portal de Polestar, une Tesla avec un jeton de rafraîchissement de votre compte Tesla. Cette instance n'est pas configurée pour lire une Volvo.",
+      "keyTextNoTesla": "Quelle est votre voiture ? Runsten lit une Volvo avec la clé d'une application Volvo que vous créez, puis votre Volvo ID ; une Polestar avec un identifiant du Data Portal de Polestar.",
+      "textNoTesla": "Quelle est votre voiture ? Runsten lit une Volvo par votre Volvo ID, une Polestar par un identifiant du Data Portal de Polestar.",
+      "polestarText": "Runsten lit une Polestar avec un identifiant du Data Portal de Polestar. Cette instance n'est pas configurée pour lire une Volvo."
     },
     "choose": {
       "volvo": "J'ai une Volvo",
@@ -1152,7 +1155,8 @@
       "text": "Cette instance n'a pas d'application Volvo : ses Volvo ne sont pas lues. Son administrateur peut en créer une sur le portail développeur de Volvo et la renseigner dans la configuration (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_CLIENT_SECRET) : le Volvo ID est alors lu de nouveau."
     },
     "tesla": {
-      "title": "Compte Tesla"
+      "title": "Compte Tesla",
+      "off": "Tesla n'est pas proposée sur cette instance : vos Tesla ne sont plus lues. Ce qui a été lu reste, et votre jeton est gardé : elles sont lues à nouveau dès qu'elle l'est."
     }
   },
   "apiKey": {

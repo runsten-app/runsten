@@ -279,7 +279,7 @@ const guide = new URL('https://runsten.app/docs/guide/tesla')
         >
           {{ t('tesla.save') }}
         </v-btn>
-        <v-btn v-if="opened" variant="text" class="cancel" @click="close()">
+        <v-btn v-if="opened && token" variant="text" class="cancel" @click="close()">
           {{ t('tesla.cancel') }}
         </v-btn>
       </div>

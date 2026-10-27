@@ -41,10 +41,16 @@ watchEffect(() => {
       :headline="t('home.empty.title')"
       :text="
         noVolvo
-          ? t('home.empty.noVolvoText')
+          ? teslaOn
+            ? t('home.empty.noVolvoText')
+            : t('home.empty.polestarText')
           : keyMissing
-            ? t('home.empty.keyText')
-            : t('home.empty.text')
+            ? teslaOn
+              ? t('home.empty.keyText')
+              : t('home.empty.keyTextNoTesla')
+            : teslaOn
+              ? t('home.empty.text')
+              : t('home.empty.textNoTesla')
       "
     >
       <template #actions>

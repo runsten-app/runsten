@@ -37,7 +37,8 @@ import VehicleCollection from './VehicleCollection.vue'
 // or whose credential is to be renewed (Polestar's).
 // On an instance without a Volvo application, Volvo's tab is left out, unless the account
 // has Volvos from before: it then says why they are not read. Tesla's is there only while
-// the flag source.tesla is on for the account.
+// the flag source.tesla is on for the account, unless it has Teslas from before: it then
+// says why they are not read.
 const props = defineProps<{ vehicle?: string; outcome?: string }>()
 const { t } = useI18n()
 const { unread } = useLimits()
@@ -99,7 +100,7 @@ const shown = computed(() =>
   brands.filter((b) =>
     b === 'volvo'
       ? settings.value?.volvo !== false || ofBrand(b).length
-      : b !== 'tesla' || teslaOn.value,
+      : b !== 'tesla' || teslaOn.value || ofBrand(b).length,
   ),
 )
 const asBrand = (s?: string) => shown.value.find((b) => b === s)
@@ -344,7 +345,8 @@ const alerted = computed(
             <h2 id="connection-tesla-title" class="text-title-large mb-3">
               {{ t('connection.tesla.title') }}
             </h2>
-            <TeslaForm :connection="settings" />
+            <TeslaForm v-if="teslaOn" :connection="settings" />
+            <p v-else class="text-body-medium tesla-off">{{ t('connection.tesla.off') }}</p>
           </section>
 
           <section v-if="ofBrand(b).length" :aria-labelledby="`connection-vehicles-${b}`">
