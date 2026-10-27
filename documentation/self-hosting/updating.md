@@ -86,6 +86,7 @@ An update that changes how trips and charges are worked out says so below: the n
 - **The place of a charge**: a charge takes the first position the car reports after it ends, rather than the one it had before. Unplugged at one charger and driven straight to another, a car may report its new position late: the second charge took the first one's place, its tariff and its cost. Rebuild after updating: the past charges whose car reported its position within 15 minutes of their end, before driving off or charging again, then take that position.
 - **The place of a charge, again**: a charge after a drive Runsten did not see, revealed by the odometer read as the charge ended, now takes the position read just after it, and the next trip starts there. Rebuild after updating: until then, these charges and trips keep the previous place.
 - **The place of a charge, for cars that stamp the odometer late**: a charge whose car recorded its position during the charge, read only after it ended, takes that position even when the odometer read in between reveals the drive to it; and a trip keeps its arrival when a position read later was recorded earlier. Rebuild after updating: until then, these charges and trips keep the previous place.
+- **One charge while the cable stays connected**: a charge that stops with the cable connected (a solar charge, a car topping up later) and starts again within 24 hours, before it is unplugged or driven, is one charge rather than several. Rebuild after updating: until then, the past charges stay split.
 
 ## PostgreSQL
 
