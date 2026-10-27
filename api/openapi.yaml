@@ -2963,6 +2963,16 @@ components:
           format: date-time
           pattern: Z$
           type: string
+        flags:
+          additionalProperties: false
+          description: "The feature flags the web interface reads, evaluated for the session's account: a function shipped off or on, which the instance, or the account, turns over. Made to go: a flag is removed once on everywhere."
+          properties:
+            source.tesla:
+              description: "Tesla as a source: its connection, its page and its reads. On by default; an instance may turn it off, Tesla's Owner API being unofficial."
+              type: boolean
+          required:
+            - source.tesla
+          type: object
         limits:
           description: "What the account's offer hides, as of now; null: nothing, the whole history is shown. Only an instance that limits its accounts sets it."
           oneOf:
@@ -2974,6 +2984,7 @@ components:
         - user
         - expires_at
         - limits
+        - flags
       type: object
     Settings:
       additionalProperties: false

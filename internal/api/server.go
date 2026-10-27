@@ -32,6 +32,7 @@ import (
 	"runsten/internal/auth"
 	"runsten/internal/catalog"
 	"runsten/internal/core"
+	"runsten/internal/flags"
 	"runsten/internal/oauth"
 	"runsten/internal/platform/clock"
 )
@@ -74,6 +75,13 @@ type States interface {
 type Limits interface {
 	// Limits returns the account's limits as of at.
 	Limits(ctx context.Context, accountID string, at time.Time) (AccountLimits, error)
+}
+
+// Flags tell the feature flags (ADR 0039): flags.All declares them, with their
+// defaults. Without them, each flag has its default.
+type Flags interface {
+	// Enabled is the flag's value for the account.
+	Enabled(ctx context.Context, name flags.Name, accountID string) bool
 }
 
 // AccountLimits are the limits of an account's reads; zero: none. They never delete
@@ -214,6 +222,8 @@ type Config struct {
 	CostParams core.CostParams
 	// Limits are the accounts' limits; nil: none.
 	Limits Limits
+	// Flags are the feature flags; nil: each its default.
+	Flags Flags
 	// Admission may hold an account back from connecting a vehicle; nil: none does.
 	Admission Admission
 	// Accounts exports the accounts' data, and ExportTables are the tables an extension
