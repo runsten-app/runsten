@@ -1105,6 +1105,7 @@
       "noneDueMarket": "None: Volvo does not serve the vehicle's market",
       "noneDueCredential": "None until a Polestar credential is given",
       "noneDueUnshared": "None: the vehicle is no longer shared with the credential",
+      "noneDueUnsharedTesla": "None: the vehicle is no longer in the Tesla account",
       "noneDueNotConfigured": "None until Volvo is configured",
       "noneDueToken": "None until a Tesla refresh token is given"
     },

@@ -24,8 +24,8 @@ Status: **early development**. Expect changes between versions.
 
 ## Self-hosting
 
-Runsten runs with Docker Compose on any Linux server: a NAS, a small VPS, a Raspberry Pi 4 or 5. It needs an application of your own on the [Volvo Cars developer portal](https://developer.volvocars.com/).
-The [documentation](https://runsten.app/docs/) covers [installing](https://runsten.app/docs/self-hosting/), [connecting a Volvo](https://runsten.app/docs/self-hosting/volvo) or [a Polestar](https://runsten.app/docs/guide/polestar), [updating](https://runsten.app/docs/self-hosting/updating), [backups](https://runsten.app/docs/self-hosting/backup) and [the API](https://runsten.app/docs/reference/api); its sources are in [`documentation/`](documentation/).
+Runsten runs with Docker Compose on any Linux server: a NAS, a small VPS, a Raspberry Pi 4 or 5. To read a Volvo, it needs an application of your own on the [Volvo Cars developer portal](https://developer.volvocars.com/); a Polestar or a Tesla needs none.
+The [documentation](https://runsten.app/docs/) covers [installing](https://runsten.app/docs/self-hosting/), [connecting a Volvo](https://runsten.app/docs/self-hosting/volvo), [a Polestar](https://runsten.app/docs/guide/polestar) or [a Tesla](https://runsten.app/docs/guide/tesla), [updating](https://runsten.app/docs/self-hosting/updating), [backups](https://runsten.app/docs/self-hosting/backup) and [the API](https://runsten.app/docs/reference/api); its sources are in [`documentation/`](documentation/).
 
 ## Development
 

@@ -1105,6 +1105,7 @@
       "noneDueMarket": "Ingen: Volvo betjänar inte fordonets marknad",
       "noneDueCredential": "Ingen förrän Polestar-uppgifter anges",
       "noneDueUnshared": "Ingen: fordonet delas inte längre med uppgifterna",
+      "noneDueUnsharedTesla": "Ingen: fordonet finns inte längre i Tesla-kontot",
       "noneDueNotConfigured": "Ingen förrän Volvo är konfigurerat",
       "noneDueToken": "Ingen förrän en Tesla-token anges"
     },

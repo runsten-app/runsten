@@ -55,7 +55,8 @@ The Owner API gives the car's model (Model 3, Model Y, Model S, Model X) and Run
 
 The vehicle's pages warn when nothing new is read of it; the Connection page says why:
 
-- **Tesla refused the refresh token**: you signed out of the Tesla account, changed its password, or Tesla closed its Owner API to your account. Get a new token and give it.
+- **Tesla refused the refresh token**: you signed out of the Tesla account, or changed its password. Get a new token and give it.
+- **Tesla refused the refresh token**, the latest failure being **API closed to the account**: Tesla closed its Owner API to your account. A new token does not change that: Runsten cannot read the car until Tesla opens it again.
 - **No Tesla refresh token given**: it was removed. Give a new one.
 - **The vehicle is no longer in the Tesla account**: sold, or removed from it. Should it come back, give the token again.
 - **Paused by Tesla** or **Daily calls to Tesla reached**: reading resumes by itself.

@@ -1105,6 +1105,7 @@
       "noneDueMarket": "Aucune : Volvo ne dessert pas le marché du véhicule",
       "noneDueCredential": "Aucune tant qu'aucun identifiant Polestar n'est donné",
       "noneDueUnshared": "Aucune : le véhicule n'est plus partagé avec l'identifiant",
+      "noneDueUnsharedTesla": "Aucune : le véhicule n'est plus dans le compte Tesla",
       "noneDueNotConfigured": "Aucune tant que Volvo n'est pas configuré",
       "noneDueToken": "Aucune tant qu'aucun jeton Tesla n'est donné"
     },

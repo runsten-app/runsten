@@ -186,6 +186,20 @@ describe('ConnectionPage', () => {
     expect(panel.find('#tesla-refresh-token').exists()).toBe(false)
   })
 
+  it('tells a Tesla no longer in its account as such', async () => {
+    const polestar = items.find((v) => v.connection.provider === 'polestar')
+    if (!polestar) throw new Error('fixture')
+    mocks.fetchVehicles.mockResolvedValue([
+      { ...polestar, connection: { ...polestar.connection, provider: 'tesla' } },
+    ])
+    const w = await page()
+    const v = w.find('#connection-panel-tesla .vehicle-collection')
+    expect(v.find('.state').text()).toBe('Not read: the vehicle is no longer in the Tesla account')
+    expect(facts(v.find('dl'))).toMatchObject({
+      'Next reading': 'None: the vehicle is no longer in the Tesla account',
+    })
+  })
+
   it('puts no dot on a tab whose vehicles are read', async () => {
     const [car] = items
     if (!car) throw new Error('fixture')
