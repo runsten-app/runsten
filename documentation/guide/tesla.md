@@ -49,7 +49,11 @@ Runsten makes at most 3,000 calls a day per token, to stay clear of limits Tesla
 
 ## Its variant
 
-The Owner API gives the car's model (Model 3, Model Y, Model S, Model X) and Runsten reads its model year from the VIN. The variants of Tesla are not in Runsten's catalogue yet: until they are, choose none, and the trips and charges have no energy.
+The Owner API gives the car's model (Model 3, Model Y, Model S, Model X), its trim badge (`74d` for a Long Range Dual Motor, `p74d` for a Performance, `50` for a Standard Range or Rear-Wheel Drive), and Runsten reads its model year from the VIN; it gives no battery capacity. Runsten's catalogue has the European Model 3 and Model Y ([Vehicle models](./vehicle-models.md)):
+
+- When one variant alone fits the model, the year and the badge, it is recognized: a Model Y Long Range Dual Motor of 2021, for one.
+- Often several fit: Tesla changed packs within a year (LG or Panasonic cells, CATL or BYD), and the 2024 Model 3 and 2025 Model Y report badges not known yet. In the vehicle's settings (the button by its name), choose yours: without a variant, the trips and charges have no energy.
+- The Model S and Model X, and the North American variants, are not in the catalogue yet.
 
 ## When it is not read
 

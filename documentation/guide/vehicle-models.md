@@ -4,7 +4,7 @@ description: "How Runsten recognizes the variant of your car, choosing it, the o
 
 # Vehicle models
 
-Runsten carries a catalog of the electric Volvo and Polestar variants: for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power, and the sources of every figure. It comes with Runsten: an update brings its corrections.
+Runsten carries a catalog of the electric Volvo, Polestar and Tesla variants (the European Model 3 and Model Y): for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power, and the sources of every figure. It comes with Runsten: an update brings its corrections.
 
 The model matters for two things: the net capacity, on which energies rest, and the onboard charger, which bounds the cost of an AC charge.
 
@@ -15,6 +15,8 @@ The variant is worked out from the details the Volvo API reports and the VIN; no
 When several variants fit, or none, the vehicle has no variant until you choose one: its energies rest on the capacity Volvo reports.
 
 A Polestar read through the Data Portal tells its model year (from its VIN), but neither its model nor its battery's capacity: several Polestar variants fit, and none is recognized. Choose yours: without a variant, its energies are unknown ([Your Polestar](./polestar.md#choose-its-variant)).
+
+A Tesla tells its model, its model year (from its VIN) and its trim badge, but not its battery's capacity: it is recognized when one variant alone has that badge in its year, and you choose among those that fit otherwise ([Your Tesla](./tesla.md#its-variant)).
 
 ## Choosing
 
