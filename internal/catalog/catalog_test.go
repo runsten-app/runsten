@@ -29,8 +29,8 @@ func TestEmbeddedCatalog(t *testing.T) {
 	for _, v := range vs {
 		brands[v.Brand]++
 	}
-	if brands[Volvo] == 0 || brands[Polestar] == 0 {
-		t.Errorf("brands = %v, want both", brands)
+	if brands[Volvo] == 0 || brands[Polestar] == 0 || brands[Tesla] == 0 {
+		t.Errorf("brands = %v, want the three", brands)
 	}
 
 	vs[0].ID = "changed"
@@ -43,14 +43,17 @@ func TestEmbeddedCatalog(t *testing.T) {
 	}) {
 		t.Errorf("Family(XC40) = %v", got)
 	}
-	if got := c.Family("Model 3"); len(got) != 0 {
-		t.Errorf("Family(Model 3) = %v, want none", ids(got))
+	if got := c.Family("Cybertruck"); len(got) != 0 {
+		t.Errorf("Family(Cybertruck) = %v, want none", ids(got))
 	}
 	if got := c.Brand(Polestar); len(got) != brands[Polestar] || got[0].ID != "ps2-sr-2021" {
 		t.Errorf("Brand(polestar) = %v", ids(got))
 	}
-	if got := c.Brand("tesla"); len(got) != 0 {
-		t.Errorf("Brand(tesla) = %v, want none", ids(got))
+	if got := c.Brand(Tesla); len(got) != brands[Tesla] || got[0].Family != "Model 3" {
+		t.Errorf("Brand(tesla) = %v", ids(got))
+	}
+	if got := c.Brand("rivian"); len(got) != 0 {
+		t.Errorf("Brand(rivian) = %v, want none", ids(got))
 	}
 }
 
