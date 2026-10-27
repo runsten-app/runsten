@@ -10,6 +10,7 @@ Runsten reads your car from its manufacturer:
 
 - **Volvo**, through the Volvo Cars API: a Volvo ID, and on some instances a key of your own ([Your Volvo key](#your-volvo-key)).
 - **Polestar** (beta), through Polestar's Data Portal: a credential of your own ([Your Polestar](./polestar.md)).
+- **Tesla** (beta), through the Owner API of the Tesla app: a refresh token of your Tesla account ([Your Tesla](./tesla.md)).
 
 <Screen view="state" alt="The State tab: charge level, range, odometer and last position." />
 
@@ -21,7 +22,7 @@ A warning shows on every page of the vehicle when nothing new is read of it, wit
 
 ## Connection
 
-The **Connection** page (in the menu under your name) tells whether Runsten reads your vehicles, and if not, why: the Volvo ID and when it was authorized, your Polestar credential ([Your Polestar](./polestar.md)), and for each vehicle its latest reading and the next one due. When nothing new is read of a vehicle, its pages say why:
+The **Connection** page (in the menu under your name) tells whether Runsten reads your vehicles, and if not, why: the Volvo ID and when it was authorized, your Polestar credential ([Your Polestar](./polestar.md)), your Tesla refresh token ([Your Tesla](./tesla.md)), and for each vehicle its latest reading and the next one due. When nothing new is read of a vehicle, its pages say why:
 
 - **Re-authentication required**: a Volvo authorization lasts 6 months at most. Select **Reconnect the Volvo ID**: nothing already read is lost.
 - **No Volvo key given**, or **Volvo refused the key**: on an instance without a Volvo key of its own, each account gives its own ([Your Volvo key](#your-volvo-key)). A key regenerated, or whose application was deleted on the developer portal, is refused: give the new one, the Volvo ID stays connected.
@@ -29,6 +30,7 @@ The **Connection** page (in the menu under your name) tells whether Runsten read
 - **Paused by Volvo**: Volvo limited the number of calls. Reading resumes by itself.
 - **The market of the vehicle is not served**: the Volvo Cars API does not serve the market the car was sold in, and refuses every call about it. Runsten marks the car as not supported and no longer reads it; neither you nor the instance can change that. Should Volvo serve its market one day, connect the Volvo ID again: Runsten tries the car again.
 - **Polestar refused the credential**, **no Polestar credential given**, **the vehicle is no longer shared with the credential**, or **read in part**: a Polestar's credential expired, was removed, no longer reads the car, or lacks one of the five domains ([When it is not read](./polestar.md#when-it-is-not-read)).
+- **Tesla refused the refresh token**, **no Tesla refresh token given**, or **the vehicle is no longer in the Tesla account**: a Tesla's token was revoked, removed, or the car left the account ([When it is not read](./tesla.md#when-it-is-not-read)).
 - **The collector seems stopped**: nothing is read on the instance's side. Whoever runs the instance looks into it ([Troubleshooting](../self-hosting/troubleshooting.md#nothing-new-is-read)).
 
 ### Your Volvo key

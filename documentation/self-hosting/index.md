@@ -23,7 +23,7 @@ Its data lives in the `runsten_postgres` volume, which survives restarts and upd
 
 Settle the address you will open Runsten at: `https://runsten.example.org` behind a [reverse proxy](./reverse-proxy.md), `https://192.168.1.20` [on the local network only](./reverse-proxy.md#on-the-local-network-only), or `http://127.0.0.1:8082` on the server itself. It goes into `RUNSTEN_APP_URL`.
 
-To read a Volvo, create your application on the Volvo developer portal first: its redirect URI, on that address, cannot be changed afterwards ([Your Volvo application](./volvo.md)). A Polestar needs no application: leave the Volvo variables empty.
+To read a Volvo, create your application on the Volvo developer portal first: its redirect URI, on that address, cannot be changed afterwards ([Your Volvo application](./volvo.md)). A Polestar or a Tesla needs no application: leave the Volvo variables empty.
 
 ## Install
 
@@ -51,12 +51,12 @@ openssl rand -base64 32   # RUNSTEN_TOKEN_KEY
 ```
 
 ::: danger Keep a copy of RUNSTEN_TOKEN_KEY
-Put it in a password manager, apart from the backups. It encrypts the Volvo tokens and the Polestar credentials stored in the database and is stored nowhere else: without it, the tokens cannot be decrypted, the Volvo ID must be connected again and the Polestar credentials given again. The collected data does not depend on it.
+Put it in a password manager, apart from the backups. It encrypts the Volvo tokens, the Polestar credentials and the Tesla refresh tokens stored in the database and is stored nowhere else: without it, the tokens cannot be decrypted, the Volvo ID must be connected again and the Polestar credentials and Tesla tokens given again. The collected data does not depend on it.
 :::
 
 A configuration error stops `api`, `collector` or `web` at startup, with the reason in `docker compose logs`. Compose itself refuses to start without the required variables.
 
-Then connect your car: [your Volvo ID](./volvo.md#connecting-your-volvo-id), or [your Polestar credential](../guide/polestar.md#give-it-to-runsten).
+Then connect your car: [your Volvo ID](./volvo.md#connecting-your-volvo-id), [your Polestar credential](../guide/polestar.md#give-it-to-runsten), or [your Tesla refresh token](../guide/tesla.md#give-it-to-runsten).
 
 ## What the stack exposes
 

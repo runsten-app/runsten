@@ -13,7 +13,7 @@
   <img alt="The state of a vehicle in Runsten: state of charge, range, charging, odometer and last position" src="https://runsten.app/screens/state-light-desktop.png">
 </picture>
 
-Runsten records the trips, charges and costs of your electric car, and shows them as a history and as statistics. It reads the car from its manufacturer (the Volvo Cars API, Polestar's Data Portal in beta), on a server of your own.
+Runsten records the trips, charges and costs of your electric car, and shows them as a history and as statistics. It reads the car from its manufacturer (the Volvo Cars API; Polestar's Data Portal and Tesla's Owner API, in beta), on a server of your own.
 The name comes from runestones (*runsten* in Swedish), which often commemorated journeys: Runsten carves your car's trips in stone.
 
 - **A collector** polls the manufacturer's API and keeps every response as it came; trips and charges are worked out from them, including those that happened while nothing could be read, marked as reconstructed.
