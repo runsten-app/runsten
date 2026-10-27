@@ -648,59 +648,87 @@ func TestChargePosition(t *testing.T) {
 	}
 }
 
-// The report's day: unplugged at A, driven unseen to B, charged there. The readings the
-// end of the charge at B triggers come in order, the odometer first: it reveals the
-// drive to B, which ended before that charge (its vehicle timestamp tells), so the
-// charge still takes the position read just after; and so does the trip home, revealed
-// by the next odometer reading, as its start.
+// The report's day: unplugged at home, driven unseen to work, charged there. The
+// readings the end of that charge triggers come in order, the odometer first, stamped
+// when uploaded: it reveals the drive to work, which may as well have followed the
+// charge, so the charge waits only for a position recorded before it ended. The trip a
+// later odometer reading reveals starts at the position recorded before that reading.
 func TestChargeAfterUnseenTrip(t *testing.T) {
 	odoAt := func(km float64, at time.Time) Snapshot {
 		return Snapshot{Covers: FieldOdometer, OdometerKm: Some(km, at)}
 	}
 	far := Position{Lat: 45.8, Lon: 4.9}
-	records := []Record{
-		rec(0, 0, capacity(80)),
-		rec(0, 200, engine(EngineStopped)),
-		rec(0, 61, odoAt(1000, m(0))),
-		rec(0, 61, loc(home, m(0))),
-		rec(0, 10, nrg(50, ChargingIdle)),
-		rec(20, 59, charging(51, 7000, AC)),
-		rec(60, 74, nrg(60, ChargingIdle)), // unplugged at home, then driven to work
-		rec(75, 94, charging(55, 50000, DC)),
-		rec(95, 95, nrg(80, ChargingDone)),
-		rec(96, 96, odoAt(1006, m(96))),    // the drive to work, stamped when uploaded
-		rec(97, 120, loc(work, m(73))),     // read just after, as uploaded on arrival
-		rec(121, 121, odoAt(1008, m(115))), // the drive further, unseen too
-		rec(122, 122, loc(far, m(115))),
+	day := func(more ...Record) []Record {
+		return append([]Record{
+			rec(0, 0, capacity(80)),
+			rec(0, 200, engine(EngineStopped)),
+			rec(0, 61, odoAt(1000, m(0))),
+			rec(0, 61, loc(home, m(0))),
+			rec(0, 10, nrg(50, ChargingIdle)),
+			rec(20, 59, charging(51, 7000, AC)),
+			rec(60, 74, nrg(60, ChargingIdle)), // unplugged at home, then driven to work
+			rec(75, 94, charging(55, 50000, DC)),
+			rec(95, 95, nrg(80, ChargingDone)),
+			rec(96, 96, odoAt(1006, m(96))), // the drive to work, stamped when uploaded
+		}, more...)
 	}
-	res := Derive(records, Cursor{}, DefaultParams(), nil)
-	if len(res.Charges) != 2 || len(res.Trips) != 2 {
-		t.Fatalf("charges %+v\ntrips %+v", res.Charges, res.Trips)
+	type ends struct{ from, to Value[Position] } // an arrival unset is not checked
+	tests := []struct {
+		name   string
+		more   []Record
+		charge Value[Position] // the second charge's
+		trips  []ends
+	}{
+		{
+			name: "the report's",
+			more: []Record{
+				rec(97, 120, loc(work, m(73))), // recorded during the charge, read just after
+				rec(121, 121, odoAt(1008, m(115))),
+				rec(122, 122, loc(far, m(115))),
+			},
+			charge: Some(work, m(73)),
+			trips:  []ends{{Some(home, m(0)), Some(work, m(73))}, {Some(work, m(73)), Some(far, m(115))}},
+		},
+		{
+			// The position recorded after the charge's end is not its own.
+			name:   "driven away after the charge",
+			more:   []Record{rec(100, 100, odoAt(1012, m(99))), rec(101, 120, loc(far, m(99)))},
+			charge: Some(home, m(0)),
+			trips:  []ends{{Some(home, m(0)), Some(far, m(99))}},
+		},
+		{
+			// Read after the odometer, recorded before the position it had: no newer.
+			name: "stale position",
+			more: []Record{
+				rec(97, 97, loc(work, m(73))),
+				rec(98, 120, loc(far, m(50))),
+				rec(121, 121, odoAt(1008, m(115))),
+			},
+			charge: Some(work, m(73)),
+			trips:  []ends{{from: Some(home, m(0))}, {from: Some(work, m(73))}},
+		},
 	}
-	if got := res.Charges[1].Position; got != Some(work, m(73)) {
-		t.Errorf("second charge at %+v", got)
-	}
-	if tr := res.Trips[0]; tr.From != Some(home, m(0)) || tr.To != Some(work, m(73)) {
-		t.Errorf("trip to work from %+v to %+v", tr.From, tr.To)
-	}
-	if tr := res.Trips[1]; tr.From != Some(work, m(73)) || tr.To != Some(far, m(115)) {
-		t.Errorf("trip further from %+v to %+v", tr.From, tr.To)
-	}
-
-	// Driven away after the charge: the position recorded after its end is not its own.
-	away := append(slices.Clone(records[:10]), rec(100, 100, odoAt(1012, m(99))), rec(101, 120, loc(far, m(99))))
-	res = Derive(away, Cursor{}, DefaultParams(), nil)
-	if len(res.Charges) != 2 || res.Charges[1].Position != Some(home, m(0)) {
-		t.Errorf("charge before a drive away %+v", res.Charges)
-	}
-
-	// A position read after the odometer but recorded before the one it had is no newer.
-	stale := slices.Clone(records[:10])
-	stale = append(stale, rec(97, 97, loc(work, m(73))), rec(98, 120, loc(far, m(50))),
-		rec(121, 121, odoAt(1008, m(115))))
-	res = Derive(stale, Cursor{}, DefaultParams(), nil)
-	if len(res.Trips) != 2 || res.Trips[1].From != Some(work, m(73)) {
-		t.Errorf("trips after a stale position %+v", res.Trips)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := Derive(day(tt.more...), Cursor{}, DefaultParams(), nil)
+			if len(res.Charges) != 2 {
+				t.Fatalf("charges %+v", res.Charges)
+			}
+			if got := res.Charges[0].Position; got != Some(home, m(0)) {
+				t.Errorf("first charge at %+v", got)
+			}
+			if got := res.Charges[1].Position; got != tt.charge {
+				t.Errorf("second charge at %+v, want %+v", got, tt.charge)
+			}
+			if len(res.Trips) != len(tt.trips) {
+				t.Fatalf("trips %+v", res.Trips)
+			}
+			for i, w := range tt.trips {
+				if tr := res.Trips[i]; tr.From != w.from || w.to.OK && tr.To != w.to {
+					t.Errorf("trip %d from %+v to %+v, want %+v", i, tr.From, tr.To, w)
+				}
+			}
+		})
 	}
 }
 
