@@ -48,11 +48,11 @@ The key's quota is yours alone: 10,000 calls a day for each Volvo API, about sev
 
 - **Settings** (the cog in the bar) are the account's: the currency, the places and their tariffs, and the costs left without a charge ([Places, tariffs and costs](./costs.md)). At the bottom, **About Runsten** shows the release the instance runs, and a newer one when the instance checks ([Updating](../self-hosting/updating.md#knowing-a-release-is-out)).
 - **A vehicle's settings** (the button by its name): its model and onboard charger ([Vehicle models](./vehicle-models.md)).
-- **Preferences** (the menu under your name, which also signs out): the language and the appearance, automatic, light or dark, kept in the browser.
+- **Preferences** (the menu under your name, which also signs out): the language, the appearance, automatic, light or dark, and, where the instance shows maps, whether to show them, kept in the browser.
 
 ## Privacy
 
-Positions are coordinates with a link to OpenStreetMap, opened only on a click: no map is loaded, so no map service learns where the car is. The browser keeps only the session cookie, the chosen language and the chosen appearance.
+No map is loaded unless the instance names a tile server ([Maps](../self-hosting/maps.md)): positions are then coordinates with a link to OpenStreetMap, opened only on a click, so no map service learns where the car is. With maps, the tile server sees your IP address and the areas shown; you can hide them in your preferences. The browser keeps only the session cookie, the chosen language, the chosen appearance and whether the maps are shown.
 
 ## Accessibility
 
