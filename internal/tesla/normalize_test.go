@@ -3,6 +3,8 @@ package tesla
 import (
 	"bytes"
 	"reflect"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -213,6 +215,34 @@ func TestFingerprint(t *testing.T) {
 		t.Error("online and offline alike")
 	}
 	if _, err := Fingerprint([]byte(`{`)); err == nil {
+		t.Error("invalid JSON: no error")
+	}
+}
+
+func TestUploadOf(t *testing.T) {
+	u, err := UploadOf(fixture(t, "vehicle_data.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := time.UnixMilli(1793032171549).UTC(); !u.At.Equal(want) {
+		t.Errorf("at %v, want %v", u.At, want)
+	}
+	if u.ModelYear == 0 {
+		t.Error("no model year")
+	}
+	if !slices.Contains(u.Fields, "charge_state.battery_level") || !slices.IsSorted(u.Fields) {
+		t.Errorf("fields %v", u.Fields)
+	}
+	for _, f := range u.Fields {
+		if f == "vin" || strings.HasSuffix(f, "timestamp") {
+			t.Errorf("field %s", f)
+		}
+	}
+	// The vehicle's state: no block, so no time.
+	if u, err := UploadOf(fixture(t, "vehicle.json")); err != nil || !u.At.IsZero() || !slices.Contains(u.Fields, "state") {
+		t.Errorf("vehicle: %+v, %v", u, err)
+	}
+	if _, err := UploadOf([]byte(`{`)); err == nil {
 		t.Error("invalid JSON: no error")
 	}
 }
