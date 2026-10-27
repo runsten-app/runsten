@@ -26,7 +26,7 @@ A tariff is a list of prices, each from a day on, in the place's time zone. **Ne
 
 ## The cost of a charge
 
-A charge's cost is estimated from its place's tariff: the energy drawn from the grid is the energy the battery took over the efficiency, as the charge says: "30 kWh billed (estimated), assuming an efficiency of 88%". The energy the battery took is the change of the state of charge, or, when it rose by less than 2 points and the car reported its charging power during the charge, that power added up: a small charge barely moves a state of charge counted in whole percent, and 0.7 kWh into a large battery may read 66 % → 66 %.
+A charge's cost is estimated from its place's tariff: the energy drawn from the grid is the energy the battery took over the efficiency, as the charge says: "30 kWh billed (estimated), assuming an efficiency of 88%". The energy the battery took is the change of the state of charge, or, when it rose by less than 2 points and the car reported its charging power during the charge, that power added up (for an imported charge, the energy the app gave): a small charge barely moves a state of charge counted in whole percent, and 0.7 kWh into a large battery may read 66 % → 66 %.
 
 The cost is a range when the charge's times allow several prices ("€5.24 – €5.79"), one amount otherwise. An unknown cost says so, and a cost of exactly 0 is "Free".
 
