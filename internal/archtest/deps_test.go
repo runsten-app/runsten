@@ -27,12 +27,13 @@ var allowed = map[string][]string{
 	// The binaries wire the adapters together. Only runsten-simulator knows the simulator.
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/catalog", "internal/core",
-		"internal/derive", "internal/geocode", "internal/importer", "internal/oauth", "internal/platform", "internal/polestar",
-		"internal/release", "internal/store", "internal/volvo", "internal/volvoportal",
+		"internal/derive", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/platform",
+		"internal/polestar", "internal/release", "internal/store", "internal/volvo", "internal/volvoportal",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
-		"internal/oauth", "internal/platform", "internal/polestar", "internal/publish", "internal/store", "internal/volvo",
+		"internal/flags", "internal/oauth", "internal/platform", "internal/polestar", "internal/publish", "internal/store",
+		"internal/volvo",
 	},
 	"cmd/runsten-simulator": {"net/http", "internal/platform", "internal/simulator"},
 	"cmd/runsten-web":       {"net/http", "internal/platform", "internal/web"},
@@ -41,6 +42,10 @@ var allowed = map[string][]string{
 	"internal/core": nil,
 	// The variants' data sheet is pure data: its embedded file and the YAML decoder.
 	"internal/catalog": {"go.yaml.in/yaml/v3"},
+	// The feature flags' declarations are pure data too; eval, which the binaries wire, is
+	// the only package that knows OpenFeature.
+	"internal/flags":      nil,
+	"internal/flags/eval": {"github.com/open-feature/go-sdk", "internal/flags"},
 
 	// Orchestration: each declares the interfaces it needs, the binaries wire them.
 	"internal/collector": {"internal/platform/clock", "internal/volvo"},
@@ -48,10 +53,11 @@ var allowed = map[string][]string{
 	"internal/collector/polestarsource": {"internal/collector", "internal/core", "internal/polestar"},
 	"internal/derive":                   {"internal/core"},
 	"internal/oauth":                    {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
-	// It reads the catalog, pure data like core, to recognize the vehicles' variants.
+	// It reads the catalog, pure data like core, to recognize the vehicles' variants, and
+	// the flags' declarations (never flags/eval: depguard).
 	"internal/api": {
 		"net/http", "encoding/json", "github.com/danielgtaylor/huma/v2", "internal/auth", "internal/catalog", "internal/core",
-		"internal/oauth", "internal/platform/clock", "internal/platform/netguard",
+		"internal/flags", "internal/oauth", "internal/platform/clock", "internal/platform/netguard",
 	},
 	"internal/auth": {"golang.org/x/crypto", "internal/platform/clock"}, // argon2id
 	// The addresses' worker declares its Store and its Geocoder.

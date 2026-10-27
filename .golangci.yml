@@ -287,6 +287,27 @@ linters:
               desc: the catalog is embedded, never stored
             - pkg: github.com/jackc/pgx
               desc: the catalog is embedded, never stored
+        # The feature flags' declarations are pure data, which the API and the collector
+        # read: no package of the module, no provider.
+        flags-are-data:
+          files: ["**/internal/flags/**", "!**/internal/flags/eval/**"]
+          deny:
+            - pkg: runsten/
+              desc: the flags' declarations import no package of the module
+            - pkg: github.com/open-feature/go-sdk
+              desc: OpenFeature belongs to internal/flags/eval
+        # OpenFeature is eval's alone: a package declares the Flags it needs, the binaries
+        # wire the evaluator and its provider (a downstream build's through its extensions).
+        openfeature-only-in-eval:
+          files: ["$all", "!**/internal/flags/eval/**", "!**/cmd/**/premium*.go", "!**/premium/**"]
+          deny:
+            - pkg: github.com/open-feature/go-sdk
+              desc: OpenFeature belongs to internal/flags/eval
+        flags-eval-wired-by-binaries:
+          files: ["**/internal/**", "!**/internal/flags/eval/**"]
+          deny:
+            - pkg: runsten/internal/flags/eval
+              desc: declare a Flags interface; the binary wires the evaluator
         # Derivation orchestrates: it knows neither the transport nor the database.
         derive-without-adapters:
           files: ["**/internal/derive/**", "!$test"]
