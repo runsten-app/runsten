@@ -18,7 +18,15 @@ vi.mock('@/entities/connection', async (original) => ({
   fetchConnection,
 }))
 
+// The flag source.tesla, as the session gives it: on unless a test turns it off.
+const flag = vi.hoisted(() => ({ tesla: true }))
+vi.mock('@/features/view-flags', async () => {
+  const { computed } = await import('vue')
+  return { useFlag: () => computed(() => flag.tesla) }
+})
+
 beforeEach(() => {
+  flag.tesla = true
   fetchVehicles.mockReset()
   fetchConnection.mockReset()
   // Self-hosting: the instance's key reads the vehicles.
@@ -51,7 +59,7 @@ describe('HomePage', () => {
     expect(window.history.length).toBe(1)
   })
 
-  it('asks which car without a vehicle, Volvo or Polestar', async () => {
+  it('asks which car without a vehicle, Volvo, Polestar or Tesla', async () => {
     fetchVehicles.mockResolvedValue([])
     const { wrapper, router } = await home()
     expect(wrapper.text()).toContain('No vehicle yet')
@@ -64,9 +72,12 @@ describe('HomePage', () => {
     const polestar = wrapper.find('a.polestar')
     expect(polestar.attributes('href')).toBe('/connection#polestar')
     expect(polestar.text()).toBe('I have a Polestar (beta)')
-    // Two choices of equal weight.
-    expect(volvo.classes()).toContain('v-btn--variant-flat')
-    expect(polestar.classes()).toContain('v-btn--variant-flat')
+    // A Tesla's refresh token, in its own tab.
+    const tesla = wrapper.find('a.tesla')
+    expect(tesla.attributes('href')).toBe('/connection#tesla')
+    expect(tesla.text()).toBe('I have a Tesla (beta)')
+    // Choices of equal weight.
+    for (const b of [volvo, polestar, tesla]) expect(b.classes()).toContain('v-btn--variant-flat')
     expect(router.currentRoute.value.name).toBe('home')
   })
 
@@ -88,7 +99,7 @@ describe('HomePage', () => {
     expect(wrapper.find('a.polestar').attributes('href')).toBe('/connection#polestar')
   })
 
-  it('leads to the Polestar alone on an instance without a Volvo application', async () => {
+  it('leaves the Volvo out on an instance without a Volvo application', async () => {
     fetchVehicles.mockResolvedValue([])
     fetchConnection.mockResolvedValue({
       volvo: false,
@@ -103,7 +114,17 @@ describe('HomePage', () => {
     expect(wrapper.find('.volvo').exists()).toBe(false)
     const polestar = wrapper.find('a.polestar')
     expect(polestar.attributes('href')).toBe('/connection#polestar')
-    expect(polestar.text()).toBe('Connect a Polestar (beta)')
+    expect(polestar.text()).toBe('I have a Polestar (beta)')
+    expect(wrapper.find('a.tesla').attributes('href')).toBe('/connection#tesla')
+  })
+
+  it('leaves the Tesla out while its flag is off', async () => {
+    flag.tesla = false
+    fetchVehicles.mockResolvedValue([])
+    const { wrapper } = await home()
+    expect(wrapper.find('a.polestar').exists()).toBe(true)
+    expect(wrapper.find('a.tesla').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Tesla')
   })
 
   it('says when the vehicles cannot be loaded', async () => {

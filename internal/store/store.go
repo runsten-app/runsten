@@ -210,7 +210,7 @@ func (s *Store) queryVehicles(ctx context.Context, accountID, clause string, arg
 		rows, err := tx.Query(ctx, `
 			SELECT v.id, v.vin, c.authorized_at, c.refreshed_at, c.reauth_at, coalesce(c.reauth_reason, ''),
 				c.api_key IS NOT NULL, c.api_key_refused_at IS NOT NULL, coalesce(v.variant_id, ''), v.ac_max_kw,
-				v.market_refused_at, c.provider, c.provider = 'polestar' AND c.credential IS NULL,
+				v.market_refused_at, c.provider, c.provider <> 'volvo' AND c.credential IS NULL,
 				c.credential_refused_at IS NOT NULL, v.unshared_at, `+statusColumns+`
 			FROM vehicles v JOIN connections c ON c.account_id = v.account_id AND c.id = v.connection_id
 			LEFT JOIN collector_status s ON s.vehicle_id = v.id `+clause, args...)

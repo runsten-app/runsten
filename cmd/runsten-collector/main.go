@@ -330,6 +330,11 @@ func run(args []string) error {
 	}
 	c.AddSource(polestarsource.New(polestar.NewClient(cfg.polestarURL, hc), polestarCredential(st)), st)
 	c.AddSource(teslasource.New(tesla.NewClient(cfg.tesla, hc), st), st)
+	// An account whose flag is off no longer reads its Teslas (ADR 0039 F4): its token
+	// and their history stay, read again once it is on.
+	c.SetGate(tesla.Source, func(ctx context.Context, account string) bool {
+		return features.Enabled(ctx, flags.SourceTesla, account)
+	})
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
 	c.SetPublisher(pub)

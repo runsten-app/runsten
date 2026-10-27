@@ -74,13 +74,19 @@ func (s *Store) PolestarCredential(ctx context.Context, accountID, connectionID 
 // PolestarConnection implements api.PolestarCredentials: what the user is shown again of
 // the account's credential, never the credential itself; a zero SetAt: none.
 func (s *Store) PolestarConnection(ctx context.Context, accountID string) (api.PolestarConnection, error) {
-	var c api.PolestarConnection
+	return s.credentialConnection(ctx, accountID, "polestar")
+}
+
+// credentialConnection is what the user is shown again of the credential of the
+// account's connection of provider; a zero SetAt: none.
+func (s *Store) credentialConnection(ctx context.Context, accountID, provider string) (api.CredentialConnection, error) {
+	var c api.CredentialConnection
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		var last4 *string
 		var setAt, refusedAt *time.Time
 		err := tx.QueryRow(ctx, `
 			SELECT id, credential_last4, credential_set_at, credential_refused_at FROM connections
-			WHERE provider = 'polestar'`).Scan(&c.ID, &last4, &setAt, &refusedAt)
+			WHERE provider = $1`, provider).Scan(&c.ID, &last4, &setAt, &refusedAt)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
@@ -128,11 +134,17 @@ func (s *Store) PublishCredentials(ctx context.Context, accountID string) (map[s
 // DeletePolestarCredential implements api.PolestarCredentials: the credential is erased,
 // the connection kept with its vehicles and their history, no longer read until another.
 func (s *Store) DeletePolestarCredential(ctx context.Context, accountID string) error {
+	return s.deleteCredential(ctx, accountID, "polestar")
+}
+
+// deleteCredential erases the credential of the account's connection of provider; the
+// connection stays, with its vehicles and their history.
+func (s *Store) deleteCredential(ctx context.Context, accountID, provider string) error {
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		_, err := tx.Exec(ctx, `
 			UPDATE connections SET credential = NULL, credential_set_at = NULL, credential_last4 = NULL,
 				credential_refused_at = NULL, updated_at = now()
-			WHERE provider = 'polestar' AND credential IS NOT NULL`)
+			WHERE provider = $1 AND credential IS NOT NULL`, provider)
 		return err //nolint:wrapcheck // wrapped by inAccount
 	})
 }

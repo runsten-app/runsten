@@ -16,6 +16,13 @@ vi.mock('@/entities/session/extensions', () => ({
   },
 }))
 
+// The flag source.tesla, as the session gives it: on unless a test turns it off.
+const flag = vi.hoisted(() => ({ tesla: true }))
+vi.mock('@/features/view-flags', async () => {
+  const { computed } = await import('vue')
+  return { useFlag: () => computed(() => flag.tesla) }
+})
+
 const mocks = vi.hoisted(() => ({ fetchVehicles: vi.fn(), fetchConnection: vi.fn() }))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
@@ -34,6 +41,7 @@ const selfHosted: ConnectionSettings = {
   instance_key: { last4: 'e123' },
   api_key: null,
   polestar: null,
+  tesla: null,
 }
 // The hosted offer: no instance key, the account gives its own.
 const hosted: ConnectionSettings = {
@@ -43,12 +51,14 @@ const hosted: ConnectionSettings = {
   instance_key: null,
   api_key: null,
   polestar: null,
+  tesla: null,
 }
 
 const items = vehicles.items as Vehicle[]
 const plain = (s: string) => s.replace(/\s+/g, ' ').trim()
 
 beforeEach(() => {
+  flag.tesla = true
   mocks.fetchVehicles.mockReset()
   mocks.fetchVehicles.mockResolvedValue(items)
   mocks.fetchConnection.mockReset()
@@ -81,6 +91,7 @@ describe('ConnectionPage', () => {
     expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
       'Volvo needs your attention',
       'Polestar Beta needs your attention',
+      'Tesla Beta',
     ])
     expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Volvo')
     // Self-hosting: the instance's key reads every vehicle, there is none to give.
@@ -105,6 +116,13 @@ describe('ConnectionPage', () => {
     expect(panel.findAll('.vehicle-collection h3').map((h) => h.text())).toEqual([
       'Polestar 2 Long Range Dual Motor / Performance · 2024',
     ])
+
+    // Tesla's, without a vehicle yet: the form to give a refresh token.
+    await w.findAll('[role="tab"]')[2]?.trigger('click')
+    await flushPromises()
+    const tesla = w.find('#connection-panel-tesla')
+    expect(tesla.findAll('h2').map((h) => h.text())).toEqual(['Tesla account'])
+    expect(tesla.find('#tesla-refresh-token').exists()).toBe(true)
   })
 
   it('leaves Volvo out on an instance without its application', async () => {
@@ -118,6 +136,7 @@ describe('ConnectionPage', () => {
     const w = await page()
     expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
       'Polestar Beta needs your attention',
+      'Tesla Beta',
     ])
     expect(w.find('#connection-panel-polestar').exists()).toBe(true)
     expect(w.find('a[href="auth/volvo/start"]').exists()).toBe(false)
@@ -131,12 +150,54 @@ describe('ConnectionPage', () => {
       instance_key: null,
     })
     const w = await page()
-    expect(w.findAll('[role="tab"]')).toHaveLength(2)
+    expect(w.findAll('[role="tab"]')).toHaveLength(3)
     const panel = w.find('#connection-panel-volvo')
     expect(panel.findAll('h2').map((h) => h.text())).toEqual(['Volvo not configured', 'Vehicles'])
     expect(panel.text()).toContain('This instance has no Volvo application')
     expect(w.find('a[href="auth/volvo/start"]').exists()).toBe(false)
     expect(w.find('.api-key-form').exists()).toBe(false)
+  })
+
+  it('leaves the Tesla tab out while its flag is off', async () => {
+    flag.tesla = false
+    const w = await page()
+    expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
+      'Volvo needs your attention',
+      'Polestar Beta needs your attention',
+    ])
+    expect(w.find('#connection-panel-tesla').exists()).toBe(false)
+  })
+
+  it('tells why Teslas from before are not read while its flag is off', async () => {
+    flag.tesla = false
+    const [car] = items
+    if (!car) throw new Error('fixture')
+    mocks.fetchVehicles.mockResolvedValue([
+      {
+        ...car,
+        id: 'tesla-1',
+        connection: { ...car.connection, provider: 'tesla', credential: 'set' },
+      },
+    ])
+    const w = await page()
+    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Tesla')
+    const panel = w.find('#connection-panel-tesla')
+    expect(panel.find('.tesla-off').text()).toContain('Tesla is not offered on this instance')
+    expect(panel.find('#tesla-refresh-token').exists()).toBe(false)
+  })
+
+  it('tells a Tesla no longer in its account as such', async () => {
+    const polestar = items.find((v) => v.connection.provider === 'polestar')
+    if (!polestar) throw new Error('fixture')
+    mocks.fetchVehicles.mockResolvedValue([
+      { ...polestar, connection: { ...polestar.connection, provider: 'tesla' } },
+    ])
+    const w = await page()
+    const v = w.find('#connection-panel-tesla .vehicle-collection')
+    expect(v.find('.state').text()).toBe('Not read: the vehicle is no longer in the Tesla account')
+    expect(facts(v.find('dl'))).toMatchObject({
+      'Next reading': 'None: the vehicle is no longer in the Tesla account',
+    })
   })
 
   it('puts no dot on a tab whose vehicles are read', async () => {
@@ -169,6 +230,7 @@ describe('ConnectionPage', () => {
     expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
       'Volvo',
       'Polestar Beta needs your attention',
+      'Tesla Beta',
     ])
   })
 

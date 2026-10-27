@@ -18,7 +18,7 @@ func TestTeslaToken(t *testing.T) {
 	ctx := context.Background()
 	t0 := time.Date(2026, 10, 27, 8, 0, 0, 0, time.UTC)
 	a, va := newVehicle(t, s, "token-a", "YV1AAAAAAAAAAAAA1")
-	conn, err := s.SetTeslaToken(ctx, a, "refresh-token-a-1234", t0)
+	conn, err := s.SetTeslaToken(ctx, a, "refresh-token-a-1234", "refresh-token-a-1234", t0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func TestTeslaToken(t *testing.T) {
 		t.Error("not refused")
 	}
 	t1 := t0.Add(time.Hour)
-	if again, err := s.SetTeslaToken(ctx, a, "refresh-token-b-9abc", t1); err != nil || again != conn {
+	if again, err := s.SetTeslaToken(ctx, a, "refresh-token-b-9abc", "given-token-b-7777", t1); err != nil || again != conn {
 		t.Fatalf("set again: %s, %v", again, err)
 	}
 	if err := s.RotateTeslaToken(ctx, a, conn, t0, "refresh-token-a-def0"); err != nil {
@@ -78,6 +78,34 @@ func TestTeslaToken(t *testing.T) {
 	}
 	if tg := targetsOf(t, s, a)[vt]; tg.CredentialRefused || !tg.CredentialSetAt.Equal(t1) {
 		t.Errorf("replaced: %+v", tg)
+	}
+
+	// Shown again by the last four of the token given, never the token.
+	if c, err := s.TeslaConnection(ctx, a); err != nil || c.ID != conn || c.Last4 != "7777" || !c.SetAt.Equal(t1) || !c.RefusedAt.IsZero() {
+		t.Errorf("connection %+v, %v", c, err)
+	}
+	// Removed: the vehicle stays, its token missing.
+	if err := s.DeleteTeslaToken(ctx, a); err != nil {
+		t.Fatal(err)
+	}
+	if c, err := s.TeslaConnection(ctx, a); err != nil || c.ID != conn || !c.SetAt.IsZero() {
+		t.Errorf("deleted: %+v, %v", c, err)
+	}
+	vs, err := s.Vehicles(ctx, a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	kept := false
+	for _, v := range vs {
+		if v.ID == vt {
+			kept = true
+			if v.Provider != "tesla" || !v.CredentialMissing {
+				t.Errorf("vehicle %+v", v)
+			}
+		}
+	}
+	if !kept {
+		t.Error("the vehicle went with its token")
 	}
 
 	// Another account reads none of it.
@@ -94,7 +122,7 @@ func TestTeslaStatus(t *testing.T) {
 	ctx := context.Background()
 	t0 := time.Date(2026, 10, 27, 8, 0, 0, 0, time.UTC)
 	a, _ := newVehicle(t, s, "token-a", "YV1AAAAAAAAAAAAA1")
-	conn, err := s.SetTeslaToken(ctx, a, "refresh-token-a-1234", t0)
+	conn, err := s.SetTeslaToken(ctx, a, "refresh-token-a-1234", "refresh-token-a-1234", t0)
 	if err != nil {
 		t.Fatal(err)
 	}

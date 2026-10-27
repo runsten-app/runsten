@@ -20,3 +20,11 @@ export function setPolestarCredential(body: PolestarCredentialUpdate): Promise<C
 export async function deletePolestarCredential(): Promise<void> {
   await unwrap(api.DELETE('/connection/polestar'))
 }
+
+export function setTeslaToken(refreshToken: string): Promise<ConnectionSettings> {
+  return unwrap(api.PUT('/connection/tesla', { body: { refresh_token: refreshToken } }))
+}
+
+export async function deleteTeslaToken(): Promise<void> {
+  await unwrap(api.DELETE('/connection/tesla'))
+}

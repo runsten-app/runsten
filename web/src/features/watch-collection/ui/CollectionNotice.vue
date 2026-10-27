@@ -5,14 +5,14 @@ import { limitsPage } from '@/entities/session'
 import { collectionState, needsAttention, type CollectionState } from '@/entities/vehicle'
 import { useFormat, useNow } from '@/shared/lib'
 import { useCollection } from '../composables/useCollection'
-import { useCollectionText } from '../composables/useCollectionText'
+import { byProvider, useCollectionText } from '../composables/useCollectionText'
 
 // CollectionNotice warns, on every page of a vehicle, that nothing new is read of it,
 // and why: the instance without a Volvo application, which its administrator sets; the
 // grant lost, with the way to connect again; no application key it may be
-// read with, which the connection page takes; the Polestar credential refused or removed,
-// or the vehicle no longer shared with it, or a domain it was not granted, which the
-// connection page takes too; the vehicle's market not served by Volvo's API, which no one
+// read with, which the connection page takes; the Polestar credential or the Tesla refresh
+// token refused or removed, or the vehicle no longer shared with it, or a domain it was not
+// granted, which the connection page takes too; the vehicle's market not served by Volvo's API, which no one
 // here can change; the collector stopped; a pause or a quota,
 // which end by themselves; the account's offer leaving it unread (unread: the session's
 // limits), with the page that lifts it, when the instance has one. The connection page
@@ -26,6 +26,7 @@ const { vehicle: v } = useCollection(() => props.vehicle)
 const state = computed(() => (v.value ? collectionState(v.value, now.value, props.unread) : null))
 const shown = computed(() => (state.value && needsAttention(state.value) ? state.value : null))
 const connection = computed(() => v.value?.connection)
+const provider = computed(() => connection.value?.provider ?? 'volvo')
 
 function body(s: CollectionState): string {
   switch (s.kind) {
@@ -36,23 +37,38 @@ function body(s: CollectionState): string {
     case 'stopped':
       return t('connection.notice.stopped')
     case 'paused':
-      return connection.value?.provider === 'polestar'
-        ? t('connection.notice.pausedPolestar')
-        : t('connection.notice.paused')
+      return byProvider(provider.value, {
+        volvo: t('connection.notice.paused'),
+        polestar: t('connection.notice.pausedPolestar'),
+        tesla: t('connection.notice.pausedTesla'),
+      })
     case 'market':
       return t('connection.notice.market')
     case 'credential':
       return s.refused
-        ? t('connection.notice.credentialRefused')
-        : t('connection.notice.credentialMissing')
+        ? byProvider(provider.value, {
+            volvo: t('connection.notice.credentialRefused'),
+            polestar: t('connection.notice.credentialRefused'),
+            tesla: t('connection.notice.credentialRefusedTesla'),
+          })
+        : byProvider(provider.value, {
+            volvo: t('connection.notice.credentialMissing'),
+            polestar: t('connection.notice.credentialMissing'),
+            tesla: t('connection.notice.credentialMissingTesla'),
+          })
     case 'unshared':
-      return t('connection.notice.unshared')
+      return byProvider(provider.value, {
+        volvo: t('connection.notice.unshared'),
+        polestar: t('connection.notice.unshared'),
+        tesla: t('connection.notice.unsharedTesla'),
+      })
     case 'notGranted':
       return t('connection.notice.notGranted', { endpoint: s.endpoint ?? f.unknown() })
     default:
       // The quota is the key's: the account's own, or the instance's, shared; or the
-      // Polestar credential's.
-      if (connection.value?.provider === 'polestar') return t('connection.notice.quotaPolestar')
+      // Polestar credential's, the Tesla refresh token's.
+      if (provider.value === 'polestar') return t('connection.notice.quotaPolestar')
+      if (provider.value === 'tesla') return t('connection.notice.quotaTesla')
       return connection.value?.api_key === 'own'
         ? t('connection.notice.quotaOwnKey')
         : t('connection.notice.quota')

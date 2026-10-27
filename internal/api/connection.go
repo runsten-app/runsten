@@ -72,6 +72,7 @@ type connectionSettingsJSON struct {
 	InstanceKey null[instanceKeyJSON]        `json:"instance_key" doc:"The instance's own application key, which reads every vehicle: an account may not give one. null: none, the account's key is required, before connecting a Volvo ID."`
 	APIKey      null[apiKeyJSON]             `json:"api_key" doc:"The account's own application key; null: none. Not used while instance_key is true."`
 	Polestar    null[polestarCredentialJSON] `json:"polestar" doc:"The account's credential of Polestar's Data Portal, which reads its Polestar vehicles; null: none."`
+	Tesla       null[teslaTokenJSON]         `json:"tesla" doc:"The account's refresh token of Tesla's Owner API, which reads its Tesla vehicles; null: none."`
 }
 
 type apiKeyUpdateJSON struct {
@@ -105,6 +106,11 @@ func (s *Server) connectionSettings(ctx context.Context, account string) (connec
 		return connectionSettingsJSON{}, s.internal("Polestar connection not read", err)
 	}
 	out.Polestar = polestarOf(p)
+	tc, err := s.Tesla.TeslaConnection(ctx, account)
+	if err != nil {
+		return connectionSettingsJSON{}, s.internal("Tesla connection not read", err)
+	}
+	out.Tesla = teslaOf(tc)
 	return out, nil
 }
 
@@ -174,7 +180,7 @@ func (s *Server) putAPIKey(ctx context.Context, in *apiKeyInput) (*body[connecti
 }
 
 // vehicleCap is the account's cap on vehicles, with those it has already, of any
-// provider: a Volvo ID and a Polestar credential share it.
+// provider: a Volvo ID, a Polestar credential and a Tesla token share it.
 func (s *Server) vehicleCap(ctx context.Context, account string) (oauth.Cap, error) {
 	limit := oauth.Cap{Max: s.MaxVehicles}
 	if limit.Max <= 0 {
@@ -207,8 +213,8 @@ func (s *Server) deleteAPIKey(ctx context.Context, _ *struct{}) (*struct{}, erro
 func (s *Server) registerConnection(api huma.API) {
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "getConnection", Method: http.MethodGet, Path: "/connection", Tags: []string{"connection"},
-		Summary:     "The account's connections to Volvo and Polestar",
-		Description: "Whether a Volvo ID is connected, the application key its vehicles are read with, and the credential of Polestar's Data Portal.",
+		Summary:     "The account's connections to Volvo, Polestar and Tesla",
+		Description: "Whether a Volvo ID is connected, the application key its vehicles are read with, the credential of Polestar's Data Portal, and the refresh token of Tesla's Owner API.",
 	}, "The connection.", map[int]string{http.StatusUnauthorized: errUnauthorized, http.StatusInternalServerError: errInternal}),
 		s.getConnection)
 	huma.Register(api, s.operation(huma.Operation{

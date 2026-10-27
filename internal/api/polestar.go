@@ -22,13 +22,17 @@ type PolestarCredential struct {
 	ClientID, ClientSecret, AccountID string
 }
 
-// PolestarConnection is what the user is shown again of the account's credential.
-type PolestarConnection struct {
-	ID        string    // empty: no Polestar connection
-	Last4     string    // of the client ID
+// CredentialConnection is what the user is shown again of the credential of a
+// connection read with one (Polestar's, Tesla's).
+type CredentialConnection struct {
+	ID        string    // empty: no such connection
+	Last4     string    // of the client ID, of the token given
 	SetAt     time.Time // zero: no credential (none set, or removed)
 	RefusedAt time.Time // zero: not refused
 }
+
+// PolestarConnection is what the user is shown again of the account's credential.
+type PolestarConnection = CredentialConnection
 
 // PolestarCredentials keeps the account's credential. Every method is restricted to the
 // account.

@@ -231,6 +231,53 @@ describe('CollectionNotice', () => {
     expect(alert.text()).toContain('Polestar limited the number of calls.')
   })
 
+  // tesla is the Polestar of the fixtures as a Tesla, its collection patched.
+  function tesla(
+    patch: Partial<Vehicle> = {},
+    collection = {},
+    credential: Vehicle['connection']['credential'] = 'set',
+  ): Vehicle | undefined {
+    const v = shared(collection)
+    return v && { ...v, connection: { ...v.connection, provider: 'tesla', credential }, ...patch }
+  }
+
+  it.each<[string, Vehicle | undefined, string, string]>([
+    [
+      'its token refused',
+      tesla({}, {}, 'refused'),
+      'Not read: Tesla refused the refresh token',
+      'signed out of the Tesla account',
+    ],
+    [
+      'its token removed',
+      tesla({}, {}, 'missing'),
+      'Not read: no Tesla refresh token given',
+      'which was removed',
+    ],
+    [
+      'no longer in the account',
+      tesla({ unshared_at: '2026-09-28T07:00:00Z' }),
+      'Not read: the vehicle is no longer in the Tesla account',
+      'Your Tesla account no longer lists this vehicle',
+    ],
+    [
+      'its calls of the day used up',
+      tesla({}, { quota: [{ api: 'tesla', until: '2026-09-28T09:00:00Z' }] }),
+      'Daily calls to Tesla reached until 09:00',
+      'at most 3,000 calls a day to Tesla',
+    ],
+    [
+      'a pause',
+      tesla({}, { paused_until: '2026-09-28T07:30:00Z' }),
+      'Paused by Tesla until 07:30',
+      'Tesla limited the number of calls.',
+    ],
+  ])('tells a Tesla %s', async (_, v, title, body) => {
+    const alert = await notice(v)
+    expect(plain(alert.find('.v-alert-title').text())).toBe(title)
+    expect(alert.text()).toContain(body)
+  })
+
   it('says nothing before the vehicle is read', async () => {
     fetchVehicle.mockReturnValue(new Promise(() => {}))
     const { wrapper } = mountWith(CollectionNotice, { props: { vehicle: 'v' } })

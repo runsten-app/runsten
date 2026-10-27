@@ -84,6 +84,9 @@ func (e *APIError) Error() string {
 // reads.
 func (e *APIError) TokenRefused() bool { return e.Kind == KindTokenRefused }
 
+// APIClosed reports whether the Owner API is closed to the account.
+func (e *APIError) APIClosed() bool { return e.Kind == KindOwnerAPIClosed }
+
 // toldHeaders reports whether a header tells about a limit: Retry-After and the rate
 // limit headers of any convention.
 func toldHeaders(name string) bool {

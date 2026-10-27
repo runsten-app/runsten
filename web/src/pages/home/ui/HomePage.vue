@@ -4,20 +4,23 @@ import { computed, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useConnectionSettings } from '@/features/manage-api-key'
+import { useFlag } from '@/features/view-flags'
 import { useVehicles } from '@/features/select-vehicle'
 import { AppShell } from '@/widgets/app-shell'
 
-// Home leads to the first vehicle of the account; without one, it asks which car, Volvo or
-// Polestar, two choices of equal weight. A Volvo leads to the Volvo ID connection, or first
-// to the Connection page while the account's key is missing: without it, runsten-api
-// refuses to start the flow (an instance without a key of its own). A Polestar leads to the
-// Connection page's Polestar section, which takes its credential. On an instance without a
-// Volvo application, there is no choice: the Polestar alone.
+// Home leads to the first vehicle of the account; without one, it asks which car, Volvo,
+// Polestar or Tesla, choices of equal weight. A Volvo leads to the Volvo ID connection, or
+// first to the Connection page while the account's key is missing: without it, runsten-api
+// refuses to start the flow (an instance without a key of its own). A Polestar or a Tesla
+// leads to the Connection page's tab of its brand, which takes its credential or its
+// refresh token. On an instance without a Volvo application, the Volvo is left out; the
+// Tesla, while the flag source.tesla is off for the account.
 const { t } = useI18n()
 const router = useRouter()
 const { vehicles, isPending, error } = useVehicles()
 const { connection } = useConnectionSettings()
 const noVolvo = computed(() => connection.value?.volvo === false)
+const teslaOn = useFlag('source.tesla')
 const keyMissing = computed(
   () => !!connection.value && !connection.value.instance_key && !connection.value.api_key,
 )
@@ -38,10 +41,16 @@ watchEffect(() => {
       :headline="t('home.empty.title')"
       :text="
         noVolvo
-          ? t('home.empty.polestarText')
+          ? teslaOn
+            ? t('home.empty.noVolvoText')
+            : t('home.empty.polestarText')
           : keyMissing
-            ? t('home.empty.keyText')
-            : t('home.empty.text')
+            ? teslaOn
+              ? t('home.empty.keyText')
+              : t('home.empty.keyTextNoTesla')
+            : teslaOn
+              ? t('home.empty.text')
+              : t('home.empty.textNoTesla')
       "
     >
       <template #actions>
@@ -67,7 +76,15 @@ watchEffect(() => {
           color="primary"
           variant="flat"
           class="polestar"
-          >{{ noVolvo ? t('home.connectPolestar') : t('home.choose.polestar') }}</v-btn
+          >{{ t('home.choose.polestar') }}</v-btn
+        >
+        <v-btn
+          v-if="teslaOn"
+          :to="{ name: 'connection', hash: '#tesla' }"
+          color="primary"
+          variant="flat"
+          class="tesla"
+          >{{ t('home.choose.tesla') }}</v-btn
         >
       </template>
     </v-empty-state>

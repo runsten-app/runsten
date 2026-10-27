@@ -32,15 +32,18 @@
     "error": "The vehicles could not be loaded. Try again in a moment.",
     "empty": {
       "title": "No vehicle yet",
-      "keyText": "Which car is yours? Runsten reads a Volvo with the key of a Volvo application you create, then your Volvo ID; a Polestar with a credential of Polestar's Data Portal.",
-      "text": "Which car is yours? Runsten reads a Volvo through your Volvo ID, a Polestar through a credential of Polestar's Data Portal.",
+      "keyText": "Which car is yours? Runsten reads a Volvo with the key of a Volvo application you create, then your Volvo ID; a Polestar with a credential of Polestar's Data Portal; a Tesla with a refresh token of your Tesla account.",
+      "text": "Which car is yours? Runsten reads a Volvo through your Volvo ID, a Polestar through a credential of Polestar's Data Portal, a Tesla through a refresh token of your Tesla account.",
+      "noVolvoText": "Runsten reads a Polestar with a credential of Polestar's Data Portal, a Tesla with a refresh token of your Tesla account. This instance is not set up to read a Volvo.",
+      "keyTextNoTesla": "Which car is yours? Runsten reads a Volvo with the key of a Volvo application you create, then your Volvo ID; a Polestar with a credential of Polestar's Data Portal.",
+      "textNoTesla": "Which car is yours? Runsten reads a Volvo through your Volvo ID, a Polestar through a credential of Polestar's Data Portal.",
       "polestarText": "Runsten reads a Polestar with a credential of Polestar's Data Portal. This instance is not set up to read a Volvo."
     },
     "choose": {
       "volvo": "I have a Volvo",
-      "polestar": "I have a Polestar (beta)"
-    },
-    "connectPolestar": "Connect a Polestar (beta)"
+      "polestar": "I have a Polestar (beta)",
+      "tesla": "I have a Tesla (beta)"
+    }
   },
   "vehicle": {
     "title": "Vehicle",
@@ -1001,7 +1004,8 @@
     "brands": "Vehicle brands",
     "brand": {
       "volvo": "Volvo",
-      "polestar": "Polestar"
+      "polestar": "Polestar",
+      "tesla": "Tesla"
     },
     "brandAttention": "needs your attention",
     "outcome": {
@@ -1049,7 +1053,12 @@
       "notGranted": "Read in part: the credential was not granted every domain",
       "pausedPolestar": "Paused by Polestar until {time}",
       "quotaPolestar": "Polestar quota reached until {time}",
-      "notConfigured": "Not read: Volvo is not configured on this instance"
+      "notConfigured": "Not read: Volvo is not configured on this instance",
+      "credentialRefusedTesla": "Not read: Tesla refused the refresh token",
+      "credentialMissingTesla": "Not read: no Tesla refresh token given",
+      "unsharedTesla": "Not read: the vehicle is no longer in the Tesla account",
+      "pausedTesla": "Paused by Tesla until {time}",
+      "quotaTesla": "Daily calls to Tesla reached until {time}"
     },
     "notice": {
       "reauth": {
@@ -1073,7 +1082,12 @@
       "notGranted": "Your credential was not granted one of the domains Runsten reads ({endpoint}): what it gives is not read. Create a credential with the five domains, and give it on the connection page.",
       "quotaPolestar": "The daily quota of calls of your Polestar credential is used up. Reading resumes by itself.",
       "pausedPolestar": "Polestar limited the number of calls. Reading resumes by itself.",
-      "notConfigured": "This instance has no Volvo application: nothing new is read of this vehicle until its administrator sets one. Its history stays."
+      "notConfigured": "This instance has no Volvo application: nothing new is read of this vehicle until its administrator sets one. Its history stays.",
+      "credentialRefusedTesla": "Tesla refused the refresh token this vehicle is read with: signed out of the Tesla account, its password changed, or Tesla closed its Owner API to the account. Get a new token and give it on the connection page: what was read stays.",
+      "credentialMissingTesla": "Runsten reads this Tesla with a refresh token of your Tesla account, which was removed: give a new one on the connection page.",
+      "unsharedTesla": "Your Tesla account no longer lists this vehicle: sold, or removed from the account. Should it come back, give the refresh token again on the connection page: the vehicle is read again.",
+      "pausedTesla": "Tesla limited the number of calls. Reading resumes by itself.",
+      "quotaTesla": "Runsten makes at most 3,000 calls a day to Tesla per refresh token, to stay clear of its unpublished limits: they are used up. Reading resumes by itself."
     },
     "facts": {
       "mode": "Polling mode",
@@ -1091,13 +1105,16 @@
       "noneDueMarket": "None: Volvo does not serve the vehicle's market",
       "noneDueCredential": "None until a Polestar credential is given",
       "noneDueUnshared": "None: the vehicle is no longer shared with the credential",
-      "noneDueNotConfigured": "None until Volvo is configured"
+      "noneDueUnsharedTesla": "None: the vehicle is no longer in the Tesla account",
+      "noneDueNotConfigured": "None until Volvo is configured",
+      "noneDueToken": "None until a Tesla refresh token is given"
     },
     "api": {
       "connectedVehicle": "vehicle data",
       "energy": "battery and charging",
       "location": "position",
-      "polestar": "Polestar Data Portal"
+      "polestar": "Polestar Data Portal",
+      "tesla": "Tesla Owner API"
     },
     "failure": {
       "quota": "Quota reached",
@@ -1115,7 +1132,11 @@
       "apiClosed": "API closed to the account",
       "notFoundPolestar": "Vehicle unknown to Polestar",
       "unavailablePolestar": "Polestar unreachable",
-      "tokenPolestar": "No token from Polestar"
+      "tokenPolestar": "No token from Polestar",
+      "notFoundTesla": "Vehicle unknown to Tesla",
+      "unavailableTesla": "Tesla unreachable",
+      "tokenTesla": "No token from Tesla",
+      "credentialRefusedTesla": "Tesla refresh token refused"
     },
     "key": {
       "title": "Volvo key"
@@ -1133,6 +1154,10 @@
     "noVolvo": {
       "title": "Volvo not configured",
       "text": "This instance has no Volvo application, so its Volvos are not read. Its administrator can create one on Volvo's developer portal and set it in the configuration (RUNSTEN_VOLVO_CLIENT_ID, RUNSTEN_VOLVO_CLIENT_SECRET): the Volvo ID is then read again."
+    },
+    "tesla": {
+      "title": "Tesla account",
+      "off": "Tesla is not offered on this instance: your Teslas are no longer read. What was read stays, and your token is kept: they are read again once it is offered."
     }
   },
   "apiKey": {
@@ -1488,6 +1513,58 @@
       "portalUnavailable": "Polestar's Data Portal did not answer: the credential was not saved. Try again in a moment.",
       "unavailable": "Runsten could not be reached. Try again in a moment.",
       "internal": "The credential could not be saved. Try again in a moment."
+    }
+  },
+  "tesla": {
+    "intro": "Runsten reads your Tesla with a refresh token of your Tesla account, as TeslaMate does: through the Owner API, the API of the Tesla app. It never asks for your Tesla password, and never wakes your car: it lets it sleep.",
+    "beta": "Tesla support is in beta. The Owner API is not official: Tesla may close it without notice.",
+    "guide": "Read the guide",
+    "refused": {
+      "title": "Your Tesla refresh token was refused",
+      "body": "Tesla refused it on {time}: signed out of the Tesla account, its password changed, or the Owner API closed to the account. Your Tesla vehicles are not read until you give a new one; what was read stays."
+    },
+    "current": "Your refresh token",
+    "last4": "Ending in {last4}",
+    "setAt": "Given",
+    "replace": "Replace the token",
+    "delete": {
+      "button": "Remove the token",
+      "title": "Remove your Tesla refresh token?",
+      "text": "Your Tesla vehicles stay, with their history, but are no longer read until you give another token.",
+      "error": "The token could not be removed. Try again in a moment.",
+      "cancel": "Cancel",
+      "confirm": "Remove"
+    },
+    "steps": {
+      "title": "Get your refresh token",
+      "tool": "On a computer, run",
+      "phone": "(or the Auth app for Tesla app on a phone).",
+      "newTab": "(opens in a new tab)",
+      "signIn": "Sign in there with your Tesla account: Tesla's own page, your password stays between you and Tesla.",
+      "copy": "Copy the refresh token it shows (not the access token) and paste it below: it is never shown again, only its last four characters."
+    },
+    "label": "Refresh token",
+    "help": "Runsten keeps the refresh token Tesla gives in exchange of it, sealed. Signing out of your Tesla account everywhere revokes it.",
+    "save": "Save the token",
+    "cancel": "Cancel",
+    "saved": "Token saved: Runsten reads its vehicles from its next pass.",
+    "deleted": "Token removed.",
+    "error": {
+      "summary": "The token was not saved",
+      "required": "Paste the refresh token.",
+      "spaces": "The refresh token has no space: copy it again.",
+      "characters": "The refresh token has only letters, digits and signs: copy it again.",
+      "tooShort": "The refresh token has at least {min} characters: copy it whole.",
+      "tooLong": "The refresh token has at most {max} characters: copy it alone.",
+      "refused": "Tesla refused this refresh token: get a new one, it may have been used or revoked.",
+      "invalidBody": "This token was refused: copy it again.",
+      "apiClosed": "Tesla's Owner API is closed to this account: Runsten cannot read it. The token was not saved.",
+      "noVehicle": "This Tesla account has no vehicle: the token was not saved.",
+      "tooManyVehicles": "With this account's vehicles, your account would have more vehicles than it may: the token was not saved.",
+      "notAdmitted": "Your account must take a step first, such as accepting terms: reload the page. The token was not saved.",
+      "teslaUnavailable": "Tesla did not answer: the token was not saved. Try again in a moment, perhaps with a new token.",
+      "unavailable": "Runsten could not be reached. Try again in a moment.",
+      "internal": "The token could not be saved. Try again in a moment."
     }
   },
   "release": {

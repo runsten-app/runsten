@@ -57,8 +57,14 @@ const nextRead = computed(() => {
     if (state.value.kind === 'notConfigured') return t('connection.facts.noneDueNotConfigured')
     if (state.value.kind === 'key') return t('connection.facts.noneDueKey')
     if (state.value.kind === 'market') return t('connection.facts.noneDueMarket')
-    if (state.value.kind === 'credential') return t('connection.facts.noneDueCredential')
-    if (state.value.kind === 'unshared') return t('connection.facts.noneDueUnshared')
+    if (state.value.kind === 'credential')
+      return props.vehicle.connection.provider === 'tesla'
+        ? t('connection.facts.noneDueToken')
+        : t('connection.facts.noneDueCredential')
+    if (state.value.kind === 'unshared')
+      return props.vehicle.connection.provider === 'tesla'
+        ? t('connection.facts.noneDueUnsharedTesla')
+        : t('connection.facts.noneDueUnshared')
     return t('connection.facts.noneDue')
   }
   return Date.parse(next) <= props.now ? t('connection.facts.due') : f.dateTime(next, props.now)
