@@ -9,6 +9,7 @@
       { "text": "Installation", "link": "/docs/self-hosting/" },
       { "text": "Users", "link": "/docs/self-hosting/users" },
       { "text": "Reverse proxy (https)", "link": "/docs/self-hosting/reverse-proxy" },
+      { "text": "Maps", "link": "/docs/self-hosting/maps" },
       { "text": "Backup and restore", "link": "/docs/self-hosting/backup" },
       { "text": "Updating", "link": "/docs/self-hosting/updating" },
       { "text": "Feature flags", "link": "/docs/self-hosting/flags" },

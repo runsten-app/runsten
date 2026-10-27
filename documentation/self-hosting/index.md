@@ -56,6 +56,8 @@ Put it in a password manager, apart from the backups. It encrypts the Volvo toke
 
 A configuration error stops `api`, `collector` or `web` at startup, with the reason in `docker compose logs`. Compose itself refuses to start without the required variables.
 
+Maps are off by default: to show them, name a tile server ([Maps](./maps.md)).
+
 Then connect your car: [your Volvo ID](./volvo.md#connecting-your-volvo-id), [your Polestar credential](../guide/polestar.md#give-it-to-runsten), or [your Tesla refresh token](../guide/tesla.md#give-it-to-runsten).
 
 ## What the stack exposes
