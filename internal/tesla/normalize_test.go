@@ -42,6 +42,7 @@ func TestNormalizeFixture(t *testing.T) {
 		Brand:           core.Some(Brand, none),
 		Family:          core.Some("Model Y", none),
 		ModelYear:       core.Some(2021, none), // the VIN's M; efficiency_package says MY2020
+		Trim:            core.Some("74d", none),
 		BatteryElectric: core.Some(true, none),
 	}
 	n := Normalizer{}

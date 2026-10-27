@@ -90,8 +90,8 @@ const (
 	FieldTripMeter
 	FieldConsumption
 	FieldCapacity
-	// FieldModel covers Brand, Family, ModelYear and BatteryElectric: what identifies the
-	// model, always reported together, by the same response as the capacity.
+	// FieldModel covers Brand, Family, ModelYear, Trim and BatteryElectric: what identifies
+	// the model, always reported together, by the same response as the capacity.
 	FieldModel
 
 	fieldCount = iota
@@ -127,6 +127,9 @@ type Snapshot struct {
 	Brand     Value[string]
 	Family    Value[string]
 	ModelYear Value[int]
+	// Trim is the vendor's badge of the powertrain and battery, when it tells one (Tesla's
+	// trim_badging: 74d, p74d, 50).
+	Trim Value[string]
 	// BatteryElectric tells whether the vehicle runs on its battery alone: false for a
 	// hybrid or a combustion car.
 	BatteryElectric Value[bool]
@@ -177,7 +180,7 @@ func (s *Snapshot) merge(o Snapshot) {
 		s.CapacityKWh = o.CapacityKWh
 	}
 	if set(FieldModel) {
-		s.Brand, s.Family, s.ModelYear, s.BatteryElectric = o.Brand, o.Family, o.ModelYear, o.BatteryElectric
+		s.Brand, s.Family, s.ModelYear, s.Trim, s.BatteryElectric = o.Brand, o.Family, o.ModelYear, o.Trim, o.BatteryElectric
 	}
 }
 

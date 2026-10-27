@@ -105,12 +105,8 @@ func effectiveModel(c *catalog.Catalog, n core.Snapshot, v Vehicle) vehicleModel
 	if !offered(n) {
 		return m
 	}
-	// Unknown year or capacity: zero, which Match does not filter on.
-	if n.Family.OK {
-		m.Match = c.Match(n.Family.V, n.ModelYear.V, n.CapacityKWh.V, v.VIN)
-	} else {
-		m.Match = c.MatchBrand(catalog.Brand(n.Brand.V), n.ModelYear.V, n.CapacityKWh.V, v.VIN)
-	}
+	// Unknown year, capacity or trim: zero, which the match does not filter on.
+	m.Match = c.MatchReading(catalogReading(n, v.VIN))
 	// The rule of catalog.Effective, which the derivation's capacities follow, told apart
 	// for the source.
 	if chosen, ok := c.Chosen(v.VariantID, catalogReading(n, v.VIN)); ok {
@@ -138,7 +134,7 @@ func effectiveModel(c *catalog.Catalog, n core.Snapshot, v Vehicle) vehicleModel
 func catalogReading(n core.Snapshot, vin string) catalog.Reading {
 	return catalog.Reading{
 		Brand: catalog.Brand(n.Brand.V), Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
-		BatteryElectric: n.BatteryElectric.OK && n.BatteryElectric.V,
+		Trim: n.Trim.V, BatteryElectric: n.BatteryElectric.OK && n.BatteryElectric.V,
 	}
 }
 

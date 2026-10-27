@@ -93,7 +93,7 @@ func TestParseRejectsInvalidCatalogs(t *testing.T) {
 		{"malformed id", []string{"id: aa-one-2024", "id: AA_one"}, []string{"variant AA_one: id"}},
 		{"missing id", []string{"- id: aa-two-2024\n  brand", "- brand"}, []string{"variant #2: id"}},
 		{"unknown field", []string{"gross_kwh: 90", "grosskwh: 90"}, []string{"field grosskwh not found"}},
-		{"unknown brand", []string{"brand: polestar", "brand: tesla"}, []string{"variant aa-two-2024: brand"}},
+		{"unknown brand", []string{"brand: polestar", "brand: rivian"}, []string{"variant aa-two-2024: brand"}},
 		{"no family", []string{"family: AA\n  name: AA Two", "family: ''\n  name: AA Two"}, []string{"aa-two-2024: family"}},
 		{"no name", []string{"name: AA Two", "name: ''"}, []string{"aa-two-2024: family and name"}},
 		{"no years", []string{"  years: [2024]\n", ""}, []string{"aa-two-2024: years"}},

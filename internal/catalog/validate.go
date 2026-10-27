@@ -13,6 +13,8 @@ var (
 	idPattern = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 	// VIN characters: no I, O or Q.
 	motorCodePattern = regexp.MustCompile(`^[A-HJ-NPR-Z0-9]{2}$`)
+	// A trim as the normalizer writes it: lower case, letters and digits.
+	trimPattern = regexp.MustCompile(`^[a-z0-9]+$`)
 )
 
 // validate checks every variant, then that each pair can be told apart.
@@ -44,8 +46,8 @@ func (v Variant) validate() error {
 	if !idPattern.MatchString(v.ID) {
 		errs = append(errs, fmt.Errorf("id %q: lowercase words joined by hyphens expected", v.ID))
 	}
-	if v.Brand != Volvo && v.Brand != Polestar {
-		errs = append(errs, fmt.Errorf("brand %q: volvo or polestar expected", v.Brand))
+	if v.Brand != Volvo && v.Brand != Polestar && v.Brand != Tesla {
+		errs = append(errs, fmt.Errorf("brand %q: volvo, polestar or tesla expected", v.Brand))
 	}
 	if v.Family == "" || v.Name == "" {
 		errs = append(errs, errors.New("family and name are required"))
@@ -73,6 +75,11 @@ func (v Variant) validate() error {
 	for _, c := range v.MotorCodes {
 		if !motorCodePattern.MatchString(c) {
 			errs = append(errs, fmt.Errorf("motor code %q: two uppercase VIN characters expected", c))
+		}
+	}
+	for _, c := range v.Trims {
+		if !trimPattern.MatchString(c) {
+			errs = append(errs, fmt.Errorf("trim %q: lower case letters and digits expected", c))
 		}
 	}
 	errs = append(errs, v.validateSources())
@@ -143,20 +150,26 @@ func validateAmbiguity(variants []Variant, byID map[string]Variant) error {
 }
 
 // indiscernible reports whether some reading would leave both variants candidates of
-// Match: same family, overlapping years, no motor codes apart, and a capacity both
-// accept (a shared api_kwh value, or gross capacities whose tolerance windows meet).
+// Match: same family, overlapping years, no motor codes nor trims apart, and a capacity
+// both accept (a shared api_kwh value, or gross capacities whose tolerance windows
+// meet). A brand whose source reads no capacity (Tesla's) is left out: its packs are
+// told apart by their trim at best, ambiguity is the rule, and the user chooses.
 func indiscernible(a, b Variant) bool {
-	if a.ID == b.ID || a.Family != b.Family || !a.Years.overlap(b.Years) {
+	if a.ID == b.ID || a.Family != b.Family || !a.Years.overlap(b.Years) || !a.Brand.readsCapacity() {
 		return false
 	}
-	if len(a.MotorCodes) > 0 && len(b.MotorCodes) > 0 &&
-		!slices.ContainsFunc(a.MotorCodes, func(c string) bool { return slices.Contains(b.MotorCodes, c) }) {
+	if apart(a.MotorCodes, b.MotorCodes) || apart(a.Trims, b.Trims) {
 		return false
 	}
 	if math.Abs(a.GrossKWh-b.GrossKWh) <= 2*grossTolerance {
 		return true
 	}
 	return slices.ContainsFunc(a.APIKWh, func(x APIValue) bool { return b.seen(x.KWh) })
+}
+
+// apart reports whether two lists of codes, both given, share none.
+func apart(a, b []string) bool {
+	return len(a) > 0 && len(b) > 0 && !slices.ContainsFunc(a, func(c string) bool { return slices.Contains(b, c) })
 }
 
 func isHTTPS(s string) bool {

@@ -201,3 +201,41 @@ func TestMatchRules(t *testing.T) {
 		})
 	}
 }
+
+// TestRecognizeTesla: a Tesla tells no capacity; its trim rules out the variants that
+// list another, and recognizes a pack alone in its family, years and trim.
+func TestRecognizeTesla(t *testing.T) {
+	c := mustLoad(t)
+	tests := []struct {
+		name string
+		r    Reading
+		want []string
+	}{
+		{"Model Y 2021 74d: the Shanghai pack alone", Reading{Family: "Model Y", ModelYear: 2021, Trim: "74d"}, []string{"my-lr-awd-2021"}},
+		{"Model Y 2023 74d: the Berlin pack alone", Reading{Family: "Model Y", ModelYear: 2023, Trim: "74d"}, []string{"my-lr-awd-2022"}},
+		{"Model Y 2022 74d: both packs", Reading{Family: "Model Y", ModelYear: 2022, Trim: "74d"}, []string{"my-lr-awd-2021", "my-lr-awd-2022"}},
+		{"Model Y 2023 p74d", Reading{Family: "Model Y", ModelYear: 2023, Trim: "P74D"}, []string{"my-perf-2022"}},
+		{"Model Y 2023 50: CATL or BYD", Reading{Family: "Model Y", ModelYear: 2023, Trim: "50"}, []string{"my-rwd-2022", "my-rwd-byd-2022"}},
+		{"Model 3 2019 74", Reading{Family: "Model 3", ModelYear: 2019, Trim: "74"}, []string{"m3-lr-rwd-2019"}},
+		// A trim no variant lists rules nothing out.
+		{"Model 3 2019, unknown trim", Reading{Family: "Model 3", ModelYear: 2019, Trim: "62"}, []string{"m3-sr-plus-2019", "m3-lr-rwd-2019"}},
+		// The 2025 refresh lists no trim: kept beside the pack its trim names.
+		{"Model Y 2025 74d", Reading{Family: "Model Y", ModelYear: 2025, Trim: "74d"}, []string{
+			"my-lr-awd-2022", "my-rwd-2025", "my-lr-awd-2025", "my-lr-rwd-2025", "my-premium-rwd-2025",
+			"my-premium-rwd-5m-2025", "my-premium-rwd-4680-2025", "my-premium-awd-2025",
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.r.BatteryElectric = true
+			m := c.MatchReading(tt.r)
+			if got := ids(m.Candidates); !slices.Equal(got, tt.want) {
+				t.Errorf("candidates %v, want %v", got, tt.want)
+			}
+			v, ok := c.Recognize(tt.r)
+			if ok != (len(tt.want) == 1) || (ok && v.ID != tt.want[0]) {
+				t.Errorf("recognized %s, %v", v.ID, ok)
+			}
+		})
+	}
+}

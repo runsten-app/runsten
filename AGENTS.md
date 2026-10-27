@@ -79,8 +79,9 @@ internal/
                        its tyres' pressures over a window (VehicleHealth);
                        testdata/ holds the golden responses, openapi_test.go generates api/openapi.yaml and
                        validates the responses against it
-  catalog/             data sheet of the electric Volvo and Polestar variants (variants.yaml, embedded and
-                       validated) and the variant of a vehicle (Match, Recognize, Chosen, Effective); pure data
+  catalog/             data sheet of the electric Volvo, Polestar and Tesla variants (variants.yaml, embedded
+                       and validated) and the variant of a vehicle (Match, MatchReading, Recognize, Chosen,
+                       Effective; a Tesla's by its trim_badging, core.Snapshot.Trim); pure data
   flags/               the feature flags' declarations (name, default, whether the front end reads them, purpose,
                        when to remove), and RUNSTEN_FLAGS's parsing; pure data. eval/: their evaluation
                        through OpenFeature's SDK (Evaluator, on an API of its own; Env, the core's

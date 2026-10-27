@@ -13,7 +13,7 @@ import (
 type models capacities
 
 // brands writes the catalog's brands as their makers do.
-var brands = map[catalog.Brand]string{catalog.Volvo: "Volvo", catalog.Polestar: "Polestar"}
+var brands = map[catalog.Brand]string{catalog.Volvo: "Volvo", catalog.Polestar: "Polestar", catalog.Tesla: "Tesla"}
 
 // Model implements mqtt.Models.
 func (m models) Model(ctx context.Context, accountID, vehicleID string, c core.Current) (publish.Model, error) {

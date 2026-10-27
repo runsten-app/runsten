@@ -1,4 +1,4 @@
-// Package catalog is the data sheet of the electric Volvo and Polestar variants: battery
+// Package catalog is the data sheet of the electric Volvo, Polestar and Tesla variants: battery
 // capacities and charging powers, read from a sourced YAML file embedded in the binary,
 // and the recognition of a vehicle's variant from what the vendor API says of it.
 //
@@ -25,7 +25,12 @@ type Brand string
 const (
 	Volvo    Brand = "volvo"
 	Polestar Brand = "polestar"
+	Tesla    Brand = "tesla"
 )
+
+// readsCapacity reports whether the brand's sources tell the battery's capacity, which
+// Match compares: Tesla's Owner API tells none.
+func (b Brand) readsCapacity() bool { return b != Tesla }
 
 // Chemistry is the cell chemistry of a battery; empty when unknown.
 type Chemistry string
@@ -57,10 +62,12 @@ const (
 	FigureACOptionKW Figure = "ac_option_kw"
 	FigureDCMaxKW    Figure = "dc_max_kw"
 	FigureMotorCodes Figure = "motor_codes"
+	FigureTrims      Figure = "trims"
 )
 
 var allFigures = []Figure{
 	FigureGrossKWh, FigureNetKWh, FigureChemistry, FigureACMaxKW, FigureACOptionKW, FigureDCMaxKW, FigureMotorCodes,
+	FigureTrims,
 }
 
 // Variant is a powertrain and battery of a family, over a range of model years.
@@ -84,6 +91,9 @@ type Variant struct {
 	APIKWh []APIValue `yaml:"api_kwh"`
 	// MotorCodes are VIN positions 6-7, from unofficial and incomplete tables.
 	MotorCodes []string `yaml:"motor_codes"`
+	// Trims are the vendor's badges the variant reports (Tesla's trim_badging), lower
+	// case: like the motor codes, they only rule out the variants that list others.
+	Trims []string `yaml:"trims"`
 	// AmbiguousWith names the variants no reading can tell from this one.
 	AmbiguousWith []string `yaml:"ambiguous_with"`
 	Sources       []Source `yaml:"sources"`
@@ -171,6 +181,9 @@ func (v Variant) figures() []Figure {
 	}
 	if len(v.MotorCodes) > 0 {
 		fs = append(fs, FigureMotorCodes)
+	}
+	if len(v.Trims) > 0 {
+		fs = append(fs, FigureTrims)
 	}
 	return fs
 }
