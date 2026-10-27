@@ -354,7 +354,19 @@ type vehicleState struct {
 	failure                 Failure
 	// uploads is the latest upload of each endpoint of a Source, for the logs.
 	uploads map[Endpoint]uploadSeen
+	// drivingAt is the last reading that saw the vehicle drive. Until settleUntil, after
+	// a trip, a Source's settled endpoint whose upload is not newer than settleAfter is
+	// read again at the active pace: the provider may still hold what the vehicle sent
+	// while driving.
+	drivingAt, settleAfter, settleUntil time.Time
 }
+
+// settleFor is how long after a trip ends a Source's settled endpoints are read again
+// until the vehicle uploads them anew: less than core's SettleWindow (15 minutes), so
+// that the derivation attaches their readings to the trip. Seen on a Polestar 3: the
+// odometer and the position read at the stop were those it sent on the way, the new
+// ones uploaded minutes later.
+const settleFor = 10 * time.Minute
 
 // uploadSeen is an upload of a vehicle, as the logs compare the next with it.
 type uploadSeen struct {
@@ -688,8 +700,25 @@ func (c *Collector) read(ctx context.Context, t Target, vs *vehicleState, src *s
 	c.observe(t, vs, src, ep, raw, now)
 	if src.ext != nil {
 		c.logUpload(t, vs, src, ep, now, raw)
+		c.awaitSettled(vs, src, ep, now, raw)
 	}
 	return err == nil
+}
+
+// awaitSettled reads ep again at the active pace when it is a settled endpoint of src
+// whose upload, read while a trip settles, is not newer than the vehicle's last reading
+// driving. An upload whose time is not told is taken as new.
+func (c *Collector) awaitSettled(vs *vehicleState, src *source, ep Endpoint, now time.Time, raw []byte) {
+	if !now.Before(vs.settleUntil) || !slices.Contains(src.Settled, ep) {
+		return
+	}
+	u, err := src.ext.Upload(ep, raw)
+	if err != nil || u.At.IsZero() || u.At.After(vs.settleAfter) {
+		return
+	}
+	if again := now.Add(c.iv.Active); again.Before(vs.next[ep]) {
+		vs.next[ep] = again
+	}
 }
 
 // interval is how long after a call of spec t's next is due, in mode m: at the policy's
@@ -993,6 +1022,9 @@ func (c *Collector) observe(t Target, vs *vehicleState, src *source, ep Endpoint
 		return
 	}
 	vs.activity = a
+	if a.Driving {
+		vs.drivingAt = now
+	}
 
 	m := parked
 	switch {
@@ -1020,6 +1052,9 @@ func (c *Collector) observe(t Target, vs *vehicleState, src *source, ep Endpoint
 	if (old != parked || m == charging) && c.reads[t.AccountID].Every == 0 {
 		for _, e := range src.Settled {
 			vs.next[e] = now
+		}
+		if old == driving {
+			vs.settleAfter, vs.settleUntil = vs.drivingAt, now.Add(settleFor)
 		}
 	}
 }
