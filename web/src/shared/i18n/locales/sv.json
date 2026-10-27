@@ -1112,6 +1112,7 @@
       "credentialRefused": "Polestar-uppgifter avvisade",
       "unshared": "Fordonet delas inte längre",
       "notGranted": "Domän inte beviljad",
+      "apiClosed": "API:et stängt för kontot",
       "notFoundPolestar": "Fordonet okänt för Polestar",
       "unavailablePolestar": "Polestar går inte att nå",
       "tokenPolestar": "Ingen token från Polestar"

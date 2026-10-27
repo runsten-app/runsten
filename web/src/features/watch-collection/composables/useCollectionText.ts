@@ -46,6 +46,7 @@ export function useCollectionText() {
       credential_refused: t('connection.failure.credentialRefused'),
       unshared: t('connection.failure.unshared'),
       not_granted: t('connection.failure.notGranted'),
+      api_closed: t('connection.failure.apiClosed'),
       other: t('connection.failure.other'),
     }
     return labels[kind]
