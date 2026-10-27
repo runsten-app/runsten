@@ -1,5 +1,5 @@
-// Command runsten-collector polls the Volvo API and the Polestar Data Portal for the
-// vehicles of every account, stores the raw responses in PostgreSQL and derives trips
+// Command runsten-collector polls the Volvo API, the Polestar Data Portal and Tesla's
+// Owner API for the vehicles of every account, stores the raw responses in PostgreSQL and derives trips
 // and charges from them.
 //
 // Usage:
@@ -35,12 +35,20 @@
 //	                            https://pc-api.polestar.com/eu-north-1/data-portal/m2m):
 //	                            the connections with a Polestar credential are read
 //	                            through it
+//	RUNSTEN_TESLA_API_URL       Tesla's Owner API address (default
+//	                            https://owner-api.teslamotors.com): the connections with
+//	                            a Tesla refresh token are read through it; another host
+//	                            serving its paths (the simulator, a proxy) may stand in
+//	RUNSTEN_TESLA_AUTH_URL      Tesla's authentication address, whose /token refreshes
+//	                            the tokens (default https://auth.tesla.com/oauth2/v3)
 //	RUNSTEN_TOKEN_MARGIN        refresh an access token this long before it expires
 //	                            (default 2m)
 //	RUNSTEN_TOKEN_KEEPALIVE     refresh an idle connection whose refresh token is older
 //	                            (default 24h, below the 7 days a refresh token lasts)
 //	RUNSTEN_POLL_TICK           pass frequency (default 10s)
-//	RUNSTEN_POLL_PARKED         parked vehicle interval (default 10m)
+//	RUNSTEN_POLL_PARKED         parked vehicle interval (default 10m). The intervals
+//	                            below are Volvo's and Polestar's: a Tesla is read at its
+//	                            own, and left to sleep (teslasource)
 //	RUNSTEN_POLL_ACTIVE         driving or charging interval (default 1m)
 //	RUNSTEN_POLL_RARE           location, odometer, diagnostics… (default 1h)
 //	RUNSTEN_POLL_DETAILS        vehicle details (default 24h)
@@ -89,6 +97,7 @@ import (
 	"runsten/internal/catalog"
 	"runsten/internal/collector"
 	"runsten/internal/collector/polestarsource"
+	"runsten/internal/collector/teslasource"
 	"runsten/internal/core"
 	"runsten/internal/debugui"
 	"runsten/internal/derive"
@@ -100,6 +109,7 @@ import (
 	"runsten/internal/polestar"
 	"runsten/internal/publish/mqtt"
 	"runsten/internal/store"
+	"runsten/internal/tesla"
 	"runsten/internal/volvo"
 )
 
@@ -110,6 +120,7 @@ type config struct {
 	baseURL      string
 	authURL      string
 	polestarURL  string
+	tesla        tesla.Hosts
 	clientID     string
 	clientSecret string
 	accessToken  string
@@ -213,7 +224,7 @@ func run(args []string) error {
 	if err != nil {
 		return fmt.Errorf("catalog: %w", err)
 	}
-	norm := derive.Sources(volvo.Normalizer{}, polestar.Normalizer{})
+	norm := derive.Sources(volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{})
 	deriver := derive.New(st, norm, core.DefaultParams(), capacities{catalog: cat, vehicle: vehicleOf(st)}, log)
 	if cmd == rebuild {
 		return rebuildAll(ctx, st, deriver, log)
@@ -280,7 +291,7 @@ func run(args []string) error {
 
 	cfg.quota.NoInstanceKey = cfg.apiKey == ""
 	log.Info("collector started", "version", version, "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
-		"polestar_base_url", cfg.polestarURL,
+		"polestar_base_url", cfg.polestarURL, "tesla_api_url", cfg.tesla.API, "tesla_auth_url", cfg.tesla.Auth,
 		"daily_quota", cfg.quota.Daily, "quota_per_user", cfg.quota.PerUser, "instance_key", cfg.apiKey != "",
 		"mqtt_private_brokers", cfg.privateBrokers)
 	der := variants{
@@ -293,6 +304,7 @@ func run(args []string) error {
 		log.Warn("no Volvo application (RUNSTEN_VOLVO_CLIENT_ID): the Volvo IDs' vehicles are not read")
 	}
 	c.AddSource(polestarsource.New(polestar.NewClient(cfg.polestarURL, hc), polestarCredential(st)), st)
+	c.AddSource(teslasource.New(tesla.NewClient(cfg.tesla, hc), st), st)
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
 	c.SetPublisher(pub)
@@ -354,6 +366,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		baseURL:     volvo.DefaultBaseURL,
 		authURL:     volvo.DefaultAuthURL,
 		polestarURL: polestar.DefaultBaseURL,
+		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		tokens:      oauth.DefaultParams(),
 		tick:        10 * time.Second,
 		intervals:   collector.DefaultIntervals(),
@@ -414,6 +427,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 	}
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.authURL, "RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL,
+		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 	} {
 		if v := getenv(name); v != "" {
 			if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {

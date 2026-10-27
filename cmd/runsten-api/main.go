@@ -116,6 +116,7 @@ import (
 	"runsten/internal/polestar"
 	"runsten/internal/release"
 	"runsten/internal/store"
+	"runsten/internal/tesla"
 	"runsten/internal/volvo"
 	"runsten/internal/volvoportal"
 )
@@ -227,7 +228,7 @@ func run(args []string) error {
 	if cfg.geocoder != nil {
 		addresses = st
 	}
-	deriver := derive.New(st, derive.Sources(volvo.Normalizer{}, polestar.Normalizer{}), core.DefaultParams(), nil, log)
+	deriver := derive.New(st, derive.Sources(volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}), core.DefaultParams(), nil, log)
 	ax := aximote.NewClient(cfg.aximoteURL, hc)
 	// Only when asked is GitHub read: nothing leaves for it otherwise.
 	var releases api.Releases

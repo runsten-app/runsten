@@ -98,7 +98,7 @@ linters:
             - pkg: runsten/internal/polestar
               desc: the collector declares its own Source, which collector/polestarsource adapts the Polestar client to
             - pkg: runsten/internal/tesla
-              desc: the collector declares its own Source, which a Tesla source will adapt the client to
+              desc: the collector declares its own Source, which collector/teslasource adapts the Tesla client to
         # The collector's Polestar source adapts the client: no transport, no storage.
         polestarsource-adapts:
           files: ["**/internal/collector/polestarsource/**", "!$test"]
@@ -109,6 +109,16 @@ linters:
               desc: storage belongs to store
             - pkg: runsten/internal/store
               desc: the binary reads the credential from the store
+        # The collector's Tesla source adapts the client: no transport, no storage.
+        teslasource-adapts:
+          files: ["**/internal/collector/teslasource/**", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the transport belongs to the tesla client
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: teslasource declares its own Store, which the store implements
         # The addresses' worker orchestrates: it knows neither the transport nor the database.
         geocode-without-adapters:
           files: ["**/internal/geocode/*.go", "!$test"]

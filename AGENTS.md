@@ -52,7 +52,9 @@ internal/
                        method, no retry
   collector/           adaptive polling, each vehicle through its connection's provider; declares its own
                        API, Store, TokenSource, Observer, Deriver, Publisher and Source interfaces;
-                       polestarsource/: the Source of the Polestar Data Portal, its client adapted
+                       polestarsource/: the Source of the Polestar Data Portal, its client adapted;
+                       teslasource/: the Source of Tesla's Owner API, its client adapted, the
+                       refresh token's rotation kept (declares its Store)
   oauth/               token lifecycle (Manager), pending flows (state, PKCE), enrollment; declares its Store
                        and Refresher
   aximote/             Aximote's public API client (vehicles, trips, refuels, the tracks' GeoJSON export),
@@ -149,7 +151,7 @@ The import graph is also checked by `internal/archtest` (`TestDependencies`, aft
 
 - **Dependencies point inward.**
   - `core` imports no adapter: no `net/http`, `database/sql`, pgx, `encoding/json`, `volvo`, `platform` or simulator.
-  - `collector` knows neither HTTP, pgx, `store`, `derive`, `publish` nor `polestar`: it declares the interfaces it needs. It reads the Volvo API itself (`volvo`'s errors drive its reactions); another provider is a `Source` (`AddSource`), which `collector/polestarsource` adapts the Polestar client to, and whose errors it classifies (`SourceError`).
+  - `collector` knows neither HTTP, pgx, `store`, `derive`, `publish`, `polestar` nor `tesla`: it declares the interfaces it needs. It reads the Volvo API itself (`volvo`'s errors drive its reactions); another provider is a `Source` (`AddSource`), which `collector/polestarsource` and `collector/teslasource` adapt the Polestar and Tesla clients to, and whose errors they classify (`SourceError`).
   - `publish` knows neither the network nor the database: it builds the messages from `core` (and the discovery's JSON). The catalog stays out of it: `runsten-collector` implements its adapter's `Models`. `publish/mqtt` is the only package that imports paho (`github.com/eclipse/paho.mqtt.golang`); the embedded broker of its tests (`github.com/mochi-mqtt/server/v2`) never ships.
   - `derive` knows neither HTTP, pgx, `store`, `collector` nor `catalog`: it declares `Capacities`, which `runsten-collector` implements from the catalog.
   - `oauth` knows neither HTTP, pgx, `store`, `volvo` nor `collector`: the Volvo client implements its `Refresher`, the store its `Store`, and its `Manager` satisfies the collector's `TokenSource`.
@@ -291,6 +293,11 @@ The import graph is also checked by `internal/archtest` (`TestDependencies`, aft
   - Refusals: the credential refused (401 on `/token`, or `AUTHZ_CLIENT_ID_MISMATCH`) marks the connection (`credential_refused_at`) until the user sets another, failure kind `credential_refused`; a VIN no longer shared (`AUTHZ_VIN_UNAUTHORIZED`) marks the vehicle (`vehicles.unshared_at`) until it is listed again (`AddVehicle`), `unshared`; a domain not granted is left out for a details interval, `not_granted` (an optional one, `EndpointSpec.Optional`, the health, is told to no one); `DATA_NOT_AVAILABLE` for a rare interval, told to no one; a 429 pauses the connection until `Retry-After` (else a minute).
   - Quota: 10,000 calls a day per credential, over every domain (API `polestar` in `api_calls`), budgeted as an own key's: a unit of its own, in no one's usage.
   - Logs that measure the Data Portal on real cars, its behavior being assumed (`Source.Upload`), never with the VIN nor any value: each new upload of the car per domain (`vehicle upload`: `sent_at`, its `age` when read, `received_after`, `since_previous`, the `mode`), the paths of a domain's fields when they change (`upload fields`, with the model year), a 401 on `/v1` with the access's age (`access rejected: asked for again`), a 429 with the connection's calls of the last minute and its budget left. The API's errors carry their limit headers (`Retry-After`, `*ratelimit*`, `x-amzn-ErrorType`), and the VINs of its messages are masked.
+- Tesla's Owner API (`teslasource`, migration `0025`, ADR 0040 §4): the connection is the owner's refresh token, kept as a Polestar credential is (`connections.credential`, sealed, its last four and its time in plaintext).
+  - Access: at the first call due, a refresh, the refresh token given in exchange stored before the access is used (`RotateTeslaToken`, only over the token set at the same time: one the owner set since is left alone); not stored, it is kept in memory and refreshed with until it is, the one stored perhaps no longer refreshing. Then `/products`: the vehicles are read by Tesla's identifier, not their VIN, looked for again once when a VIN is missing, then marked `unshared`. The access lasts its `expires_in` (8 h).
+  - Paces of its own (`SourceSpec.Intervals`, `teslasource.Intervals`, not `RUNSTEN_POLL_*`): the car's state (`vehicle`, which does not wake it) every minute but driving; `vehicle_data` every minute parked or charging, every 15 s driving, and at once when a trip or a charge ends. Quota: 3,000 calls a day per refresh token (API `tesla`), a prudent cap, the real limit unknown.
+  - Sleep (`EndpointSpec.Awake`, `SourceSpec.Sleep`, `Activity.Asleep`): `vehicle_data` keeps the car awake, so it is read only while the car is seen awake (`online`; `asleep` and `offline` alike, a 408 too, kind `KindAsleep`, which is no failure and puts the car parked), and once parked and awake for 3 minutes it is left alone for 15 (the sleep window), the state still read; a car seen waking up closes the window. Starting a trip in the window is seen at its end, derived from the odometer. Volvo and Polestar have neither.
+  - Refusals: `invalid_grant` or `login_required` marks the connection (`credential_refused`); the 403 that sends to the Fleet API too, failure kind `api_closed` (`KindAPIClosed`); a 401 asks for a new access once; a 429 pauses the connection until `Retry-After` (else 5 minutes).
 - Do not invent Volvo API behavior. When something is unknown or assumed, say so in a comment ("assumption"), and make it a named parameter if it drives logic.
 
 ## Simulator
