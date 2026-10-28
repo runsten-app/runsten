@@ -106,7 +106,7 @@ describe('ChargeDetails', () => {
     })
     expect(Object.keys(facts(w, 'energies'))[0]).toBe('Energy (measured by the vehicle)')
     expect(w.find('.energies .note').text()).toBe(
-      'The vehicle measured the energy into its battery: the cost rests on it. The two others are estimates, for comparison.',
+      'The vehicle measured the energy into its battery: a cost estimated from a tariff rests on it. The two others are estimates, for comparison.',
     )
   })
 
