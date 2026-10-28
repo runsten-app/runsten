@@ -26,7 +26,7 @@ func TestNormalizeFixture(t *testing.T) {
 	var none time.Time
 	at := time.UnixMilli(1793032171549).UTC()
 	want := core.Snapshot{
-		Covers:     chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel | core.FieldSleep,
+		Covers:     chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel,
 		Engine:     core.Some(core.EngineStopped, at), // shift_state null
 		SoC:        core.Some(69.0, at),
 		RangeKm:    core.Some(miles(194.9), at),
@@ -44,7 +44,6 @@ func TestNormalizeFixture(t *testing.T) {
 		ModelYear:       core.Some(2021, none), // the VIN's M; efficiency_package says MY2020
 		Trim:            core.Some("74d", none),
 		BatteryElectric: core.Some(true, none),
-		Sleep:           core.Some(core.Awake, none),
 	}
 	n := Normalizer{}
 	got, err := n.Normalize(core.Kind{Source: Source, Endpoint: string(VehicleData)}, fixture(t, "vehicle_data.json"))

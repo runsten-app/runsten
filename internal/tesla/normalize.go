@@ -138,8 +138,9 @@ var sleepStates = map[State]core.SleepState{
 
 // Normalize converts a raw response of endpoint e into a vendor-neutral snapshot, each
 // value dated by its block's timestamp (the car's, in milliseconds). The vehicle's state
-// gives whether the car sleeps, and nothing else; vehicle_data, which only an awake car
-// answers, gives it too.
+// gives whether the car sleeps, and nothing else. vehicle_data tells it too, but changes
+// at each read (its temperatures): the state read from it would seem first read at the
+// latest change, so the vehicle's state alone gives it.
 func Normalize(e Endpoint, raw []byte) (core.Snapshot, error) {
 	var s core.Snapshot
 	if e != VehicleData && e != VehicleState {
@@ -154,14 +155,14 @@ func Normalize(e Endpoint, raw []byte) (core.Snapshot, error) {
 	if r == nil {
 		return s, nil
 	}
-	// Undated: the API tells no time of the state. Without one, the previous holds.
-	if r.State != nil {
-		s.Covers |= core.FieldSleep
-		if st, ok := sleepStates[State(*r.State)]; ok {
-			s.Sleep = core.Some(st, time.Time{})
+	if e == VehicleState {
+		// Undated: the API tells no time of the state. Without one, the previous holds.
+		if r.State != nil {
+			s.Covers |= core.FieldSleep
+			if st, ok := sleepStates[State(*r.State)]; ok {
+				s.Sleep = core.Some(st, time.Time{})
+			}
 		}
-	}
-	if e != VehicleData {
 		return s, nil
 	}
 	if c := r.ChargeState; c != nil {
