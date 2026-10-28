@@ -308,7 +308,23 @@ func browser(t *testing.T) *http.Client {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &http.Client{Jar: jar, Timeout: 10 * time.Second}
+	return &http.Client{Jar: simulatedJar{jar}, Timeout: 10 * time.Second}
+}
+
+// simulatedJar keeps a cookie whatever its Expires: the server sets it on the test's
+// clock, which the jar does not know (it reads the wall clock), so a session's cookie
+// would be dropped once the real date passes the simulated one by its lifetime. The
+// server still ends sessions on its own clock; a cookie with MaxAge < 0 is still removed.
+type simulatedJar struct{ http.CookieJar }
+
+func (j simulatedJar) SetCookies(u *url.URL, cookies []*http.Cookie) {
+	kept := make([]*http.Cookie, len(cookies))
+	for i, c := range cookies {
+		c := *c //nolint:gosec // a copy of the server's cookie, its attributes kept
+		c.Expires = time.Time{}
+		kept[i] = &c
+	}
+	j.CookieJar.SetCookies(u, kept)
 }
 
 // signedIn is a browser in which admin signed in through the login form.
