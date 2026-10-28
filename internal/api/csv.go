@@ -121,7 +121,7 @@ func (s *Server) tripsCSV(ctx context.Context, in *csvInput) (*csvOutput, error)
 var chargesHeader = []string{
 	"id", "reconstructed", "start_after", "start_before", "end_after", "end_before",
 	"type", "start_soc_pct", "end_soc_pct", "target_soc_pct", "energy_soc_kwh", "energy_power_kwh",
-	"capacity_kwh", "capacity_source", "lat", "lon", "place", "address",
+	"energy_measured_kwh", "capacity_kwh", "capacity_source", "lat", "lon", "place", "address",
 	"cost_currency", "cost_min", "cost_max", "cost_source", "cost_energy_kwh", "cost_efficiency", "cost_note",
 	"average_power_kw", "imported", "sources",
 }
@@ -148,6 +148,7 @@ func (s *Server) chargesCSV(ctx context.Context, in *csvInput) (*csvOutput, erro
 		}
 		rows[i] = slices.Concat(eventCells(j.EventFields), []string{
 			typ, num(j.StartSoCPct), num(j.EndSoCPct), num(j.TargetSoCPct), num(j.EnergySoCKWh), num(j.EnergyPowerKWh),
+			num(j.EnergyMeasuredKWh),
 		}, capacityCells(j.CapacityFields), positionCells(j.Position, j.Place, j.Address),
 			costCells(j.Cost, priced.Currency.V.MinorDigits),
 			[]string{num(j.AveragePowerKW)}, provenanceCells(j.EventFields))

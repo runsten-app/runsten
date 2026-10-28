@@ -20,6 +20,7 @@
   "target_soc_pct": 80,
   "energy_soc_kwh": 26.4,
   "energy_power_kwh": 25.3,
+  "energy_measured_kwh": null,
   "average_power_kw": null,
   "capacity_kwh": 80,
   "capacity_source": "api",

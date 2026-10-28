@@ -49,7 +49,7 @@ func sampleResult(at time.Time) core.Result {
 			Start:    core.Bounds{After: at.Add(50 * time.Minute), Before: at.Add(70 * time.Minute)},
 			End:      core.Bounds{After: at.Add(50 * time.Minute), Before: at.Add(70 * time.Minute)},
 			Type:     core.Value[core.ChargeType]{V: core.DC, OK: true},
-			StartSoC: some(54), EndSoC: some(80), EnergySoCKWh: some(20.8),
+			StartSoC: some(54), EndSoC: some(80), EnergySoCKWh: some(20.8), EnergyMeasuredKWh: some(21.3),
 			Capacity: core.Value[core.Capacity]{V: core.Capacity{KWh: 80, Source: core.CapacityAPI}, OK: true},
 			Position: core.Value[core.Position]{V: core.Position{Lat: 45.7797, Lon: 4.927}, OK: true},
 		}},

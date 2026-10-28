@@ -506,18 +506,19 @@ func tripOf(t core.Trip, places []core.Place, book addressBook) tripJSON {
 
 type chargeJSON struct {
 	EventFields
-	Type           null[chargeTypeJSON] `json:"type"`
-	StartSoCPct    *float64             `json:"start_soc_pct"`
-	EndSoCPct      *float64             `json:"end_soc_pct"`
-	TargetSoCPct   *float64             `json:"target_soc_pct"`
-	EnergySoCKWh   *float64             `json:"energy_soc_kwh" doc:"One of two separate estimates, neither a measurement (the vehicle exposes no energy meter): ΔSoC × capacity_kwh."`
-	EnergyPowerKWh *float64             `json:"energy_power_kwh" doc:"The other estimate: the charging power integrated over the observed readings. null without observed power readings, as for a reconstructed charge. For an imported charge, the energy the application gives, a measured flow rather than a change of the state of charge."`
-	AveragePowerKW *float64             `json:"average_power_kw" minimum:"0" doc:"An imported charge's average power, as the application gives it; null for a derived charge, which tells its power in its readings (GET /vehicles/{vehicle}/series)."`
+	Type              null[chargeTypeJSON] `json:"type"`
+	StartSoCPct       *float64             `json:"start_soc_pct"`
+	EndSoCPct         *float64             `json:"end_soc_pct"`
+	TargetSoCPct      *float64             `json:"target_soc_pct"`
+	EnergySoCKWh      *float64             `json:"energy_soc_kwh" doc:"One of two separate estimates, neither a measurement: ΔSoC × capacity_kwh."`
+	EnergyPowerKWh    *float64             `json:"energy_power_kwh" doc:"The other estimate: the charging power integrated over the observed readings. null without observed power readings, as for a reconstructed charge. For an imported charge, the energy the application gives, a measured flow rather than a change of the state of charge."`
+	EnergyMeasuredKWh *float64             `json:"energy_measured_kwh" doc:"The energy the vehicle measured into its battery over the charge, from its own counter (a Tesla's): a measurement, which the cost rests on when there is one. null for a vehicle without a counter (Volvo, Polestar), an imported or reconstructed charge, and a charge derived before Runsten kept it: a rebuild of the derived data gives it."`
+	AveragePowerKW    *float64             `json:"average_power_kw" minimum:"0" doc:"An imported charge's average power, as the application gives it; null for a derived charge, which tells its power in its readings (GET /vehicles/{vehicle}/series)."`
 	CapacityFields
 	Position null[positionJSON] `json:"position"`
 	Place    null[placeRefJSON] `json:"place" doc:"The place of the charge: the nearest one whose circle holds its position; without a position, the place that takes such charges, unless the charge is DC. null elsewhere."`
 	Address  *string            `json:"address" doc:"The street and town of position, from the instance's reverse geocoder, outside every place; for an imported charge, else the name the application gave. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one."`
-	Cost     null[costJSON]     `json:"cost" doc:"What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without energy_soc_kwh, or when the tariff has no version for a part of the charge's window."`
+	Cost     null[costJSON]     `json:"cost" doc:"What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without energy_measured_kwh nor energy_soc_kwh, or when the tariff has no version for a part of the charge's window."`
 }
 
 func chargeOf(c core.Charge, places []core.Place, cost core.Value[core.Cost], book addressBook) chargeJSON {
@@ -528,12 +529,13 @@ func chargeOf(c core.Charge, places []core.Place, cost core.Value[core.Cost], bo
 		Type:        nullOf(c.Type, text[core.ChargeType, chargeTypeJSON]),
 		StartSoCPct: opt(c.StartSoC, same), EndSoCPct: opt(c.EndSoC, same), TargetSoCPct: opt(c.TargetSoC, same),
 		EnergySoCKWh: opt(c.EnergySoCKWh, same), EnergyPowerKWh: opt(c.EnergyPowerKWh, same),
-		AveragePowerKW: opt(c.AveragePowerKW, same),
-		CapacityFields: capacityOf(c.Capacity),
-		Position:       nullOf(c.Position, positionOf),
-		Address:        addressOr(book.of(c.Position), ref, c.Import.V.StartAddress),
-		Place:          ref,
-		Cost:           nullOf(cost, costOf),
+		EnergyMeasuredKWh: opt(c.EnergyMeasuredKWh, same),
+		AveragePowerKW:    opt(c.AveragePowerKW, same),
+		CapacityFields:    capacityOf(c.Capacity),
+		Position:          nullOf(c.Position, positionOf),
+		Address:           addressOr(book.of(c.Position), ref, c.Import.V.StartAddress),
+		Place:             ref,
+		Cost:              nullOf(cost, costOf),
 	}
 }
 
