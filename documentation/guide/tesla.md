@@ -51,7 +51,7 @@ Runsten makes at most 3,000 calls a day per token, to stay clear of limits Tesla
 
 ## The energy of its charges
 
-A Tesla counts the energy that goes into its battery during a charge. Runsten reads that count: a charge shows the energy measured by the car beside its two estimates, and its cost rests on it rather than on the change of the state of charge.
+A Tesla counts the energy that goes into its battery during a charge. Runsten reads that count: a charge shows the energy measured by the car beside its two estimates, and its cost rests on it rather than on the change of the state of charge. The charges recorded before Runsten kept it have none until the instance rebuilds its trips and charges ([Updating](../self-hosting/updating.md#update-notes)).
 
 ## Its variant
 
