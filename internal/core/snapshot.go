@@ -71,6 +71,19 @@ const (
 	NoCharge ChargeType = "none"
 )
 
+// SleepState is whether the vehicle is awake, for a source that lets it fall asleep and
+// tells it without waking it (Tesla).
+type SleepState string
+
+// Sleep states.
+const (
+	Awake  SleepState = "awake"
+	Asleep SleepState = "asleep"
+	// Offline is a vehicle out of reach: asleep, or without a network, the source cannot
+	// tell.
+	Offline SleepState = "offline"
+)
+
 // Field identifies a value of Snapshot.
 type Field uint16
 
@@ -93,6 +106,8 @@ const (
 	// FieldModel covers Brand, Family, ModelYear, Trim and BatteryElectric: what identifies
 	// the model, always reported together, by the same response as the capacity.
 	FieldModel
+	// FieldSleep covers Sleep: no other value depends on it.
+	FieldSleep
 
 	fieldCount = iota
 )
@@ -133,6 +148,9 @@ type Snapshot struct {
 	// BatteryElectric tells whether the vehicle runs on its battery alone: false for a
 	// hybrid or a combustion car.
 	BatteryElectric Value[bool]
+
+	// Sleep is whether the vehicle is awake, asleep or out of reach.
+	Sleep Value[SleepState]
 }
 
 // merge copies the fields covered by o.
@@ -181,6 +199,9 @@ func (s *Snapshot) merge(o Snapshot) {
 	}
 	if set(FieldModel) {
 		s.Brand, s.Family, s.ModelYear, s.Trim, s.BatteryElectric = o.Brand, o.Family, o.ModelYear, o.Trim, o.BatteryElectric
+	}
+	if set(FieldSleep) {
+		s.Sleep = o.Sleep
 	}
 }
 

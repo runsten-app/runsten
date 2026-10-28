@@ -23,5 +23,6 @@
     "type": null,
     "power_w": null,
     "target_soc_pct": null
-  }
+  },
+  "sleep": null
 }

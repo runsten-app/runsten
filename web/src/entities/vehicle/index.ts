@@ -34,6 +34,7 @@ export type {
   Model,
   ModelChoice,
   Reading,
+  Sleep,
   SourceLevel,
   State,
   VariantOption,

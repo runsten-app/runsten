@@ -125,6 +125,12 @@ func TestSimulatorDay(t *testing.T) {
 	if st := state(); st != Offline {
 		t.Errorf("15 min later: %s, want offline", st)
 	}
+	// The vehicle's state, stored, tells it the snapshot's way.
+	if raw, err := s.Vehicle(ctx, tok.Access, id); err != nil {
+		t.Fatal(err)
+	} else if snap, err := Normalize(VehicleState, raw); err != nil || snap.Sleep != core.Some(core.Offline, time.Time{}) {
+		t.Errorf("15 min later: sleep %+v, %v", snap.Sleep, err)
+	}
 	if _, err := s.VehicleData(ctx, tok.Access, id); kindOf(err) != KindUnavailable {
 		t.Errorf("asleep: %v, want KindUnavailable", err)
 	}

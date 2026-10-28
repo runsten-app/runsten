@@ -235,6 +235,36 @@ describe('VehicleState', () => {
     expect(w.find('[role="meter"]').attributes('aria-valuenow')).toBe('64')
   })
 
+  it('says a car asleep or out of reach is left alone, since when, nothing when awake', async () => {
+    const at = {
+      reported_at: null,
+      fetched_at: '2026-09-28T18:40:00Z',
+      checked_at: '2026-09-28T19:06:00Z',
+    }
+    let w = await mounted({ ...state, sleep: { ...at, value: 'awake' } })
+    expect(w.find('.sleep').exists()).toBe(false)
+    w.unmount()
+    w = await mounted({ ...state, sleep: { ...at, value: 'asleep' } })
+    expect(w.findAll('.sleep > *').map((e) => plain(e.text()))).toEqual([
+      'Asleep',
+      'since 18:40',
+      'Runsten lets it sleep: what it measures is read when it wakes up.',
+    ])
+    expect(w.find('.sleep time').attributes('datetime')).toBe(at.fetched_at)
+    w.unmount()
+    w = await mounted({ ...state, sleep: { ...at, value: 'offline' } })
+    // Out of reach may be awake without a network: not said to sleep.
+    expect(w.findAll('.sleep > *').map((e) => plain(e.text()))).toEqual([
+      'Out of reach',
+      'since 18:40',
+      'Runsten reads it again as soon as Tesla can reach it.',
+    ])
+    // A car that tells nothing of its sleep (a Volvo): nothing either.
+    w.unmount()
+    w = await mounted(state)
+    expect(w.find('.sleep').exists()).toBe(false)
+  })
+
   it("tells the car's latest measure once it is older than half an hour", async () => {
     let w = await mounted(state)
     expect(w.find('.reported').exists()).toBe(false)

@@ -18,7 +18,7 @@ Runsten is not affiliated with Tesla. It only reads: it never sends a command to
 
 ## Get your refresh token
 
-1. On a computer, run [Tesla Auth](https://github.com/adriankumpf/tesla_auth), from the author of TeslaMate (macOS, Windows, Linux). On a phone, the **Auth app for Tesla** app (iOS, Android) does the same.
+1. Run [Tesla Auth](https://github.com/adriankumpf/tesla_auth/releases/latest), from the author of TeslaMate, version 0.13.0 or newer (macOS, Windows, Linux), or [Auth app for Tesla](https://apps.apple.com/app/auth-app-for-tesla/id1552058613) (iOS, macOS): TeslaMate points to the same two.
 2. Sign in with your Tesla account. The page is Tesla's own: your password, and your second factor if you have one, stay between you and Tesla.
 3. The tool shows two tokens: copy the **refresh token**, not the access token.
 
@@ -42,6 +42,8 @@ A Tesla stays awake while it is read, and an awake car loses a few kWh a day. Ru
 - While the car is awake, Runsten reads its data every minute, every 15 seconds while it drives.
 - Once the car has been parked, not charging, for 3 minutes, Runsten stops reading its data for 15 minutes. If it falls asleep, it is left alone until it wakes up; if not, the reading resumes, and stops again 3 minutes later.
 - An asleep car is never woken: what it measured while asleep is read when it wakes up.
+
+The vehicle's page says when the car is asleep, or out of reach (asleep or without a network: Tesla does not always tell which), and since when: its values are then those it had before.
 
 A trip that starts while Runsten leaves the car alone is seen when it ends, or when the 15 minutes are over: it is then found from the odometer, as a reconstructed trip.
 

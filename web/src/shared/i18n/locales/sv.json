@@ -87,7 +87,13 @@
     "map": "Karta över positionen",
     "position": "Senaste position",
     "coordinates": "Koordinater",
-    "lastReported": "Bilens senaste mätning {time}"
+    "lastReported": "Bilens senaste mätning {time}",
+    "sleep": {
+      "asleep": "Sover",
+      "offline": "Utom räckhåll",
+      "leftAlone": "Runsten låter den sova: det den mäter läses när den vaknar.",
+      "unreachable": "Runsten läser den igen så snart Tesla når den."
+    }
   },
   "charging": {
     "status": {
@@ -1539,7 +1545,7 @@
     "steps": {
       "title": "Hämta din uppdateringstoken",
       "tool": "På en dator, kör",
-      "phone": "(eller appen Auth app for Tesla på en telefon).",
+      "phone": "(eller appen Auth app for Tesla på en iPhone eller en Mac).",
       "newTab": "(öppnas i en ny flik)",
       "signIn": "Logga in där med ditt Tesla-konto: det är Teslas egen sida, ditt lösenord stannar mellan dig och Tesla.",
       "copy": "Kopiera uppdateringstoken den visar (inte åtkomsttoken) och klistra in den nedan: den visas aldrig igen, bara dess fyra sista tecken."

@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { mdiBatteryCharging, mdiCar, mdiHelpCircleOutline, mdiOpenInNew, mdiParking } from '@mdi/js'
+import {
+  mdiAccessPointNetworkOff,
+  mdiBatteryCharging,
+  mdiCar,
+  mdiHelpCircleOutline,
+  mdiOpenInNew,
+  mdiParking,
+  mdiSleep,
+} from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
@@ -17,6 +25,7 @@ import {
   type Engine,
   type Mode,
   type Reading,
+  type Sleep,
 } from '@/entities/vehicle'
 import { useVehicle } from '@/features/select-vehicle'
 import { useVehicleState } from '@/features/watch-vehicle-state'
@@ -69,6 +78,18 @@ const checkedStale = computed(() => {
   const c = state.value?.checked_at
   return !!c && isStale(c, now.value, connection.value)
 })
+
+// A car that sleeps (a Tesla) is left alone: its values are those it had when it fell
+// asleep, which the line says rather than let them look late. Awake, nothing to say.
+const sleep = computed(() => {
+  const s = state.value?.sleep
+  return s && s.value !== 'awake' ? (s as Reading<Exclude<Sleep, 'awake'>>) : null
+})
+const sleepIcons = { asleep: mdiSleep, offline: mdiAccessPointNetworkOff }
+const sleepLabels = computed(() => ({
+  asleep: t('state.sleep.asleep'),
+  offline: t('state.sleep.offline'),
+}))
 
 const modeIcons = {
   parked: mdiParking,
@@ -165,6 +186,15 @@ const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_
         <template v-else>{{ t('state.neverChecked') }}</template>
       </span>
       <v-chip v-if="checkedStale" size="small" variant="outlined">{{ t('reading.stale') }}</v-chip>
+      <span v-if="sleep" class="sleep d-inline-flex flex-wrap align-center ga-2">
+        <StatusPill :icon="sleepIcons[sleep.value]">{{ sleepLabels[sleep.value] }}</StatusPill>
+        <time :datetime="sleep.fetched_at">{{
+          t('reading.since', { time: f.dateTime(sleep.fetched_at, now) })
+        }}</time>
+        <span>{{
+          sleep.value === 'asleep' ? t('state.sleep.leftAlone') : t('state.sleep.unreachable')
+        }}</span>
+      </span>
       <time v-if="reportedLate" :datetime="reportedLate" class="reported">{{
         t('state.lastReported', { time: f.dateTime(reportedLate, now) })
       }}</time>
