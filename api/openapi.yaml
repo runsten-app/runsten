@@ -2839,6 +2839,38 @@ components:
         - fetched_at
         - checked_at
       type: object
+    ReadingSleep:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The last reading of the same value, unchanged.
+          format: date-time
+          pattern: Z$
+          type: string
+        fetched_at:
+          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
+          format: date-time
+          pattern: Z$
+          type: string
+        reported_at:
+          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        value:
+          enum:
+            - awake
+            - asleep
+            - offline
+          type: string
+      required:
+        - value
+        - reported_at
+        - fetched_at
+        - checked_at
+      type: object
     Release:
       additionalProperties: false
       properties:
@@ -3091,6 +3123,11 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ReadingFloat64"
             - type: "null"
+        sleep:
+          description: "Whether the vehicle is awake, asleep, or offline (out of reach: asleep or without a network), for a source that lets it fall asleep and tells it (Tesla); null for the others. While it is not awake, Runsten leaves it alone: the other values are those it had when it fell asleep, read again when it wakes up. fetched_at is the first reading of the state, after the vehicle changed to it."
+          oneOf:
+            - $ref: "#/components/schemas/ReadingSleep"
+            - type: "null"
         soc_pct:
           description: State of charge, in %.
           oneOf:
@@ -3110,6 +3147,7 @@ components:
         - position
         - battery_capacity_kwh
         - charging
+        - sleep
       type: object
     Stats:
       additionalProperties: false

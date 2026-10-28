@@ -685,6 +685,25 @@ func TestStateJSON(t *testing.T) {
 	golden(t, "state-unknown.json", body)
 }
 
+// TestStateSleep: a vehicle that tells whether it sleeps (Tesla), asleep since its
+// first reading so.
+func TestStateSleep(t *testing.T) {
+	e, c := readerEnv(t)
+	asleep := core.Snapshot{Covers: core.FieldSleep, Sleep: core.Some(core.Asleep, time.Time{})}
+	e.reader.current[car] = []core.Record{{FetchedAt: h(5, 0), CheckedAt: h(5, 30), Snapshot: asleep}}
+	_, body := get(t, noFollow(), e.api.URL+"/api/v1/vehicles/"+car+"/state", c)
+	var st struct {
+		Sleep json.RawMessage `json:"sleep"`
+	}
+	if err := json.Unmarshal([]byte(body), &st); err != nil {
+		t.Fatal(err)
+	}
+	want := `{"value":"asleep","reported_at":null,"fetched_at":"2026-09-28T05:00:00Z","checked_at":"2026-09-28T05:30:00Z"}`
+	if string(st.Sleep) != want {
+		t.Errorf("sleep = %s\nwant    %s", st.Sleep, want)
+	}
+}
+
 func TestTripsJSON(t *testing.T) {
 	e, c := readerEnv(t)
 	base := e.api.URL + "/api/v1/vehicles/" + car + "/trips"

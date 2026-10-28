@@ -26,7 +26,7 @@ func TestNormalizeFixture(t *testing.T) {
 	var none time.Time
 	at := time.UnixMilli(1793032171549).UTC()
 	want := core.Snapshot{
-		Covers:     chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel,
+		Covers:     chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel | core.FieldSleep,
 		Engine:     core.Some(core.EngineStopped, at), // shift_state null
 		SoC:        core.Some(69.0, at),
 		RangeKm:    core.Some(miles(194.9), at),
@@ -44,6 +44,7 @@ func TestNormalizeFixture(t *testing.T) {
 		ModelYear:       core.Some(2021, none), // the VIN's M; efficiency_package says MY2020
 		Trim:            core.Some("74d", none),
 		BatteryElectric: core.Some(true, none),
+		Sleep:           core.Some(core.Awake, none),
 	}
 	n := Normalizer{}
 	got, err := n.Normalize(core.Kind{Source: Source, Endpoint: string(VehicleData)}, fixture(t, "vehicle_data.json"))
@@ -54,9 +55,9 @@ func TestNormalizeFixture(t *testing.T) {
 		t.Errorf("got  %+v\nwant %+v", got, want)
 	}
 
-	// The vehicle's state is no snapshot's value.
+	// The vehicle's state tells whether it sleeps, and nothing else.
 	got, err = n.Normalize(core.Kind{Source: Source, Endpoint: string(VehicleState)}, fixture(t, "vehicle.json"))
-	if err != nil || got.Covers != 0 {
+	if want := (core.Snapshot{Covers: core.FieldSleep, Sleep: core.Some(core.Awake, none)}); err != nil || !reflect.DeepEqual(got, want) {
 		t.Errorf("vehicle: %+v, %v", got, err)
 	}
 	// Nor is the 408's body, were it stored.
@@ -71,10 +72,29 @@ func TestNormalizeFixture(t *testing.T) {
 	}
 }
 
+// TestNormalizeSleep: the vehicle's state, each word Tesla gives; an unknown one covers
+// the state, absent.
+func TestNormalizeSleep(t *testing.T) {
+	for state, want := range map[string]core.Value[core.SleepState]{
+		"online":  core.Some(core.Awake, time.Time{}),
+		"asleep":  core.Some(core.Asleep, time.Time{}),
+		"offline": core.Some(core.Offline, time.Time{}),
+		"waking":  {},
+	} {
+		got, err := Normalize(VehicleState, []byte(`{"response":{"vin":"LRWYGCEK9MC000000","state":"`+state+`"}}`))
+		if err != nil || got.Covers != core.FieldSleep || got.Sleep != want {
+			t.Errorf("%s: %+v, %v", state, got, err)
+		}
+	}
+}
+
 func TestNormalizerKinds(t *testing.T) {
 	n := Normalizer{}
+	if got, want := n.Kinds(), []core.Kind{{Source: Source, Endpoint: "vehicle"}, {Source: Source, Endpoint: "vehicle_data"}}; !reflect.DeepEqual(got, want) {
+		t.Errorf("kinds: %v", got)
+	}
 	want := []core.Kind{{Source: Source, Endpoint: "vehicle_data"}}
-	for name, got := range map[string][]core.Kind{"kinds": n.Kinds(), "energy": n.EnergyKinds(), "health": n.HealthKinds()} {
+	for name, got := range map[string][]core.Kind{"energy": n.EnergyKinds(), "health": n.HealthKinds()} {
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("%s: %v", name, got)
 		}

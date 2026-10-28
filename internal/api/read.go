@@ -300,6 +300,7 @@ type (
 	cableJSON             string
 	chargeTypeJSON        string
 	currentChargeTypeJSON string
+	sleepJSON             string
 )
 
 // Schema lists the engine states.
@@ -328,6 +329,11 @@ func (currentChargeTypeJSON) Schema(huma.Registry) *huma.Schema {
 	return enumSchema(core.AC, core.DC, core.NoCharge)
 }
 
+// Schema lists the sleep states.
+func (sleepJSON) Schema(huma.Registry) *huma.Schema {
+	return enumSchema(core.Awake, core.Asleep, core.Offline)
+}
+
 type chargingJSON struct {
 	Status       null[reading[chargingStatusJSON]]    `json:"status" doc:"A charge is in progress when it is charging."`
 	Cable        null[reading[cableJSON]]             `json:"cable"`
@@ -347,6 +353,7 @@ type stateJSON struct {
 	Position           null[reading[positionJSON]] `json:"position"`
 	BatteryCapacityKWh null[reading[float64]]      `json:"battery_capacity_kwh" doc:"The battery capacity the vendor reports. The energy estimates rest on it when Runsten's catalog does not know the vehicle's variant or its net capacity (capacity_source api), and on the variant's net capacity otherwise."`
 	Charging           chargingJSON                `json:"charging"`
+	Sleep              null[reading[sleepJSON]]    `json:"sleep" doc:"Whether the vehicle is awake, asleep, or offline (out of reach: asleep or without a network), for a source that lets it fall asleep and tells it (Tesla); null for the others. While it is not awake, Runsten leaves it alone: the other values are those it had when it fell asleep, read again when it wakes up. fetched_at is the first reading of the state, after the vehicle changed to it."`
 }
 
 // getState is Verdandi: the vehicle now.
@@ -377,6 +384,7 @@ func (s *Server) getState(ctx context.Context, in *vehicleInput) (*body[stateJSO
 			PowerW:       readingOf(c, core.FieldPower, n.PowerW, same),
 			TargetSoCPct: readingOf(c, core.FieldTargetSoC, n.TargetSoC, same),
 		},
+		Sleep: readingOf(c, core.FieldSleep, n.Sleep, text[core.SleepState, sleepJSON]),
 	}), nil
 }
 

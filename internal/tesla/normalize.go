@@ -23,9 +23,9 @@ const kmPerMile = 1.609344
 // derivation. Each Endpoint is an endpoint of the source.
 type Normalizer struct{}
 
-// Kinds returns the kinds of response Normalize reads: vehicle_data holds every value;
-// the vehicle's state tells none a snapshot has.
-func (Normalizer) Kinds() []core.Kind { return kinds(VehicleData) }
+// Kinds returns the kinds of response Normalize reads: vehicle_data holds every value,
+// the vehicle's state whether it sleeps.
+func (Normalizer) Kinds() []core.Kind { return kinds(VehicleState, VehicleData) }
 
 // EnergyKinds returns the kinds holding the energy state: the state of charge, the range
 // and the charging power.
@@ -63,6 +63,7 @@ func kinds(es ...Endpoint) []core.Kind {
 type vehicleData struct {
 	Response *struct {
 		VIN           string         `json:"vin"`
+		State         *string        `json:"state"`
 		ChargeState   *chargeState   `json:"charge_state"`
 		DriveState    *driveState    `json:"drive_state"`
 		VehicleState  *vehicleState  `json:"vehicle_state"`
@@ -128,20 +129,39 @@ func parseVehicleData(raw []byte) (vehicleData, error) {
 	return v, nil
 }
 
+// sleepStates maps the vehicle's State; an unknown word is absent.
+var sleepStates = map[State]core.SleepState{
+	Online:  core.Awake,
+	Asleep:  core.Asleep,
+	Offline: core.Offline,
+}
+
 // Normalize converts a raw response of endpoint e into a vendor-neutral snapshot, each
 // value dated by its block's timestamp (the car's, in milliseconds). The vehicle's state
-// gives an empty snapshot: online or asleep is no value of one.
+// gives whether the car sleeps, and nothing else; vehicle_data, which only an awake car
+// answers, gives it too.
 func Normalize(e Endpoint, raw []byte) (core.Snapshot, error) {
 	var s core.Snapshot
-	if e != VehicleData {
+	if e != VehicleData && e != VehicleState {
 		return s, nil
 	}
+	// Both responses have the vehicle's fields under response; the state's has no block.
 	v, err := parseVehicleData(raw)
 	if err != nil {
 		return s, fmt.Errorf("normalize %s: %w", e, err)
 	}
 	r := v.Response
 	if r == nil {
+		return s, nil
+	}
+	// Undated: the API tells no time of the state. Without one, the previous holds.
+	if r.State != nil {
+		s.Covers |= core.FieldSleep
+		if st, ok := sleepStates[State(*r.State)]; ok {
+			s.Sleep = core.Some(st, time.Time{})
+		}
+	}
+	if e != VehicleData {
 		return s, nil
 	}
 	if c := r.ChargeState; c != nil {
