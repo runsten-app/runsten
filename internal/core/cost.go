@@ -284,11 +284,15 @@ func (pr Pricing) Unpriced(c Charge, entered Value[EnteredCost]) (Place, bool) {
 	return place, !covers(place.Prices().Segments(from, to), from, to)
 }
 
-// chargeEnergy is the energy that reached the battery, which the cost bills:
-// EnergySoCKWh, unless the SoC rose by less than MinSoCRise and the power was integrated
+// chargeEnergy is the energy that reached the battery, which the cost bills: the one
+// the vehicle measured (EnergyMeasuredKWh) when it has a counter; else EnergySoCKWh,
+// unless the SoC rose by less than MinSoCRise and the power was integrated
 // (EnergyPowerKWh). Assumption: the charging power the vehicle reports is what went into
 // the battery, as the SoC change.
 func (pr Pricing) chargeEnergy(c Charge) Value[float64] {
+	if c.EnergyMeasuredKWh.OK {
+		return c.EnergyMeasuredKWh
+	}
 	if rise := diff(c.EndSoC, c.StartSoC); rise.OK && rise.V < pr.Params.MinSoCRise && c.EnergyPowerKWh.OK {
 		return c.EnergyPowerKWh
 	}

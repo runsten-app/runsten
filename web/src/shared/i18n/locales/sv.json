@@ -248,6 +248,8 @@
     "energySoc": "Energi (från laddningsnivån)",
     "energyPower": "Energi (från laddningseffekten)",
     "energyNote": "Två separata uppskattningar, ingen av dem en mätning: fordonet har ingen energimätare att läsa av.",
+    "energyMeasured": "Energi (uppmätt av fordonet)",
+    "energyMeasuredNote": "Fordonet mätte energin in i batteriet: en kostnad uppskattad från en taxa bygger på den. De två andra är uppskattningar, för jämförelse.",
     "position": "Position",
     "address": "Adress",
     "map": "Karta över laddningen",

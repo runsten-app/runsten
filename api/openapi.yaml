@@ -504,7 +504,7 @@ components:
               type: string
             - type: "null"
         cost:
-          description: "What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without energy_soc_kwh, or when the tariff has no version for a part of the charge's window."
+          description: "What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without an energy to rest on (energy_measured_kwh, else energy_soc_kwh, or energy_power_kwh for a rise of the state of charge below 2 points), or when the tariff has no version for a part of the charge's window."
           oneOf:
             - $ref: "#/components/schemas/Cost"
             - type: "null"
@@ -521,6 +521,12 @@ components:
           type:
             - number
             - "null"
+        energy_measured_kwh:
+          description: "The energy the vehicle measured into its battery over the charge, from its own counter (a Tesla's): a measurement, which the cost rests on when there is one. null for a vehicle without a counter (Volvo, Polestar), an imported or reconstructed charge, and a charge derived before Runsten kept it: a rebuild of the derived data gives it."
+          format: double
+          type:
+            - number
+            - "null"
         energy_power_kwh:
           description: "The other estimate: the charging power integrated over the observed readings. null without observed power readings, as for a reconstructed charge. For an imported charge, the energy the application gives, a measured flow rather than a change of the state of charge."
           format: double
@@ -528,7 +534,7 @@ components:
             - number
             - "null"
         energy_soc_kwh:
-          description: "One of two separate estimates, neither a measurement (the vehicle exposes no energy meter): ΔSoC × capacity_kwh."
+          description: "One of two separate estimates, neither a measurement: ΔSoC × capacity_kwh."
           format: double
           type:
             - number
@@ -588,6 +594,7 @@ components:
         - target_soc_pct
         - energy_soc_kwh
         - energy_power_kwh
+        - energy_measured_kwh
         - average_power_kw
         - position
         - place

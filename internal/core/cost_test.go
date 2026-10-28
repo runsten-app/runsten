@@ -190,6 +190,19 @@ func TestChargeCost(t *testing.T) {
 			}),
 		},
 		{
+			// A vehicle that counts what goes into its battery (a Tesla): its measure, over
+			// both estimates.
+			name:    "the energy the vehicle measured",
+			pricing: with(pricing, func(p *Pricing) { p.Places = []Place{flatPlace()} }),
+			charge: with(fixture(), func(c *Charge) {
+				c.EnergySoCKWh, c.EnergyPowerKWh, c.EnergyMeasuredKWh = val(26.4), val(9.5), val(8.8)
+			}),
+			want: known(Cost{
+				Currency: eur.V, Min: 229, Max: 229, Source: CostTariff, EnergyKWh: val(8.8 / 0.88), Efficiency: val(0.88),
+				Place: known(flatPlace()),
+			}),
+		},
+		{
 			// Nothing better than the SoC change: a reconstructed charge integrates no power.
 			name:    "a SoC rise below MinSoCRise, no power: the SoC change",
 			pricing: with(pricing, func(p *Pricing) { p.Places = []Place{flatPlace()} }),

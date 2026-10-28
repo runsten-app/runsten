@@ -23,14 +23,14 @@ const (
 		"2026-09-28T17:25:00Z,33,12440,12473,,,,,,75,catalog_net,45.7797,4.927,,,45.764,4.8357,Maison de Tante Agathe,,,,false,volvo"
 
 	chargesCSVHeader = "id,reconstructed,start_after,start_before,end_after,end_before,type,start_soc_pct,end_soc_pct," +
-		"target_soc_pct,energy_soc_kwh,energy_power_kwh,capacity_kwh,capacity_source,lat,lon,place,address,cost_currency," +
+		"target_soc_pct,energy_soc_kwh,energy_power_kwh,energy_measured_kwh,capacity_kwh,capacity_source,lat,lon,place,address,cost_currency," +
 		"cost_min,cost_max,cost_source,cost_energy_kwh,cost_efficiency,cost_note,average_power_kw,imported,sources"
 	chargeNight = "2026-09-28T04:00:00.000000Z,true,2026-09-28T01:00:00Z,2026-09-28T04:00:00Z,2026-09-28T01:00:00Z," +
-		"2026-09-28T04:00:00Z,,40,62,,17.6,,80,api,,,,,,,,,,,,,false,volvo"
+		"2026-09-28T04:00:00Z,,40,62,,17.6,,,80,api,,,,,,,,,,,,,false,volvo"
 	chargeEvening = "2026-09-28T18:30:00.000000Z,false,2026-09-28T18:20:00Z,2026-09-28T18:30:00Z,2026-09-28T21:55:00Z," +
-		"2026-09-28T21:56:00Z,AC,47,80,80,26.4,25.3,80,api,45.764,4.8357,Maison de Tante Agathe,,EUR,5.24,5.79,tariff,30,0.88,,,false,volvo"
+		"2026-09-28T21:56:00Z,AC,47,80,80,26.4,25.3,,80,api,45.764,4.8357,Maison de Tante Agathe,,EUR,5.24,5.79,tariff,30,0.88,,,false,volvo"
 	chargeEveningNoCost = "2026-09-28T18:30:00.000000Z,false,2026-09-28T18:20:00Z,2026-09-28T18:30:00Z,2026-09-28T21:55:00Z," +
-		"2026-09-28T21:56:00Z,AC,47,80,80,26.4,25.3,80,api,45.764,4.8357,Maison de Tante Agathe,,,,,,,,,,false,volvo"
+		"2026-09-28T21:56:00Z,AC,47,80,80,26.4,25.3,,80,api,45.764,4.8357,Maison de Tante Agathe,,,,,,,,,,false,volvo"
 )
 
 // TestCSV: the CSV files hold the items of the lists, every one of the period, oldest

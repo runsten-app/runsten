@@ -248,6 +248,8 @@
     "energySoc": "Energy (from state of charge)",
     "energyPower": "Energy (from charging power)",
     "energyNote": "Two separate estimates, neither a measurement: the vehicle has no energy meter to read.",
+    "energyMeasured": "Energy (measured by the vehicle)",
+    "energyMeasuredNote": "The vehicle measured the energy into its battery: a cost estimated from a tariff rests on it. The two others are estimates, for comparison.",
     "position": "Position",
     "address": "Address",
     "map": "Map of the charge",

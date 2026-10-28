@@ -54,8 +54,9 @@ const costNotes = computed(() => {
     if (!currency.value) return [t('charge.cost.noCurrency')]
     // At a place, with its energy and no entered cost: only a price is missing, before
     // the first of the tariff.
-    const place = charge.value?.place
-    if (place && charge.value?.energy_soc_kwh !== null)
+    const ch = charge.value
+    const place = ch?.place
+    if (place && (ch?.energy_measured_kwh !== null || ch?.energy_soc_kwh !== null))
       return [t('charge.cost.unpriced', { place: place.name })]
     return [t('charge.cost.unknown')]
   }
@@ -160,6 +161,11 @@ const costNotes = computed(() => {
           <v-card-text>
             <dl class="facts">
               <FactItem
+                v-if="charge.energy_measured_kwh !== null"
+                :label="t('charge.energyMeasured')"
+                :value="f.quantity(charge.energy_measured_kwh, 'kWh')"
+              />
+              <FactItem
                 :label="t('charge.energySoc')"
                 :value="f.quantity(charge.energy_soc_kwh, 'kWh')"
               />
@@ -174,7 +180,13 @@ const costNotes = computed(() => {
               />
             </dl>
             <p class="note text-body-small text-medium-emphasis mt-3">
-              {{ charge.imported ? t('charge.energyImportedNote') : t('charge.energyNote') }}
+              {{
+                charge.imported
+                  ? t('charge.energyImportedNote')
+                  : charge.energy_measured_kwh !== null
+                    ? t('charge.energyMeasuredNote')
+                    : t('charge.energyNote')
+              }}
             </p>
           </v-card-text>
         </v-card>

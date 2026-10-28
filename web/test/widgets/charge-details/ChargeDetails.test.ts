@@ -97,6 +97,19 @@ describe('ChargeDetails', () => {
     )
   })
 
+  it('puts the energy the vehicle measured first, and says the cost rests on it', async () => {
+    const w = await mounted({ ...charge, energy_measured_kwh: 24.8 })
+    expect(facts(w, 'energies')).toEqual({
+      'Energy (measured by the vehicle)': '24.8 kWh',
+      'Energy (from state of charge)': '26.4 kWh',
+      'Energy (from charging power)': '25.3 kWh',
+    })
+    expect(Object.keys(facts(w, 'energies'))[0]).toBe('Energy (measured by the vehicle)')
+    expect(w.find('.energies .note').text()).toBe(
+      'The vehicle measured the energy into its battery: a cost estimated from a tariff rests on it. The two others are estimates, for comparison.',
+    )
+  })
+
   it('tells a reconstructed charge, both energies still shown', async () => {
     const w = await mounted(charges.items[1])
     expect(w.find('.reconstructed-note .event-when').text()).toBe(
@@ -218,6 +231,16 @@ describe('ChargeDetails', () => {
   it('does not blame the tariff of a charge whose energy is unknown', async () => {
     const w = await mounted({ ...charge, energy_soc_kwh: null, cost: null })
     expect(costNotes(w)).toEqual(['Neither a tariff nor an entered cost gives it.'])
+  })
+
+  it('blames the tariff of a charge whose energy the vehicle measured alone', async () => {
+    const w = await mounted({
+      ...charge,
+      energy_soc_kwh: null,
+      energy_measured_kwh: 24.8,
+      cost: null,
+    })
+    expect(costNotes(w)[0]).toMatch(/^The tariff of .+ gives no price/)
   })
 
   it('tells an unknown cost without a place nor a position', async () => {
