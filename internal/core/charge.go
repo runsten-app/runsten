@@ -22,6 +22,33 @@ type chargeBuilder struct {
 	// readings with the largest SoC change so far, and the run in progress.
 	span Value[PowerSpan]
 	run  spanRun
+
+	// The vehicle's energy counter (EnergyAddedKWh): its latest value, and what it counted
+	// since the charge started.
+	counter  Value[float64]
+	measured float64
+	counted  bool
+}
+
+// count follows the vehicle's energy counter to a reading of the charge. A counter
+// lower than the previous one started a new session from zero: all of it was counted
+// since. Assumption: the counter starts again when the cable is plugged in, and the
+// collector reads the charge within a minute of its start, before the new count has
+// overtaken the previous session's. Without a value before the charge, its first is the
+// base: the energy counted before it is lost, not guessed.
+func (cb *chargeBuilder) count(e Value[float64]) {
+	if !e.OK {
+		return
+	}
+	if cb.counter.OK {
+		if e.V >= cb.counter.V {
+			cb.measured += e.V - cb.counter.V
+		} else {
+			cb.measured += e.V
+		}
+		cb.counted = true
+	}
+	cb.counter = e
 }
 
 // spanRun follows one run of the power integration: consecutive readings that all
@@ -140,7 +167,7 @@ func (d *detector) startCharge(p point, prev state) {
 		DetectedAt: p.at,
 		Start:      Bounds{After: after, Before: d.narrow(p.at, after, s.Charging.At)},
 		StartSoC:   prev.snap.SoC,
-	}}
+	}, counter: prev.snap.EnergyAddedKWh}
 	if !cb.c.StartSoC.OK {
 		cb.c.StartSoC = s.SoC
 	}
@@ -199,6 +226,7 @@ func (d *detector) charging(cb *chargeBuilder, p point) {
 		cb.endLimit, cb.hints = time.Time{}, nil
 	}
 	cb.lastCharging = p.at
+	cb.count(s.EnergyAddedKWh)
 	if !cb.c.Type.OK && s.ChargeType.OK && s.ChargeType.V != NoCharge {
 		cb.c.Type = s.ChargeType
 	}
@@ -225,6 +253,8 @@ func (d *detector) charging(cb *chargeBuilder, p point) {
 func (d *detector) endCharge(cb *chargeBuilder, p point, prev state, hint time.Time) {
 	s := d.st.snap
 	cb.c.End.After, cb.endLimit, cb.hints = cb.lastCharging, p.at, []time.Time{hint}
+	// The reading that ends the charge has the counter's last count.
+	cb.count(s.EnergyAddedKWh)
 	cb.c.Capacity = d.capacity()
 	cb.c.OdometerKm = s.OdometerKm
 	cb.c.EndSoC = s.SoC
@@ -343,6 +373,9 @@ func (d *detector) buildCharge(cb *chargeBuilder) Charge {
 	c.EnergySoCKWh = energy(c.EndSoC, c.StartSoC, c.Capacity)
 	if cb.intervals > 0 {
 		c.EnergyPowerKWh = Value[float64]{V: cb.wh / 1000, OK: true}
+	}
+	if cb.counted {
+		c.EnergyMeasuredKWh = Value[float64]{V: cb.measured, OK: true}
 	}
 	c.Position = s.Position
 	return c

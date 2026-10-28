@@ -1,6 +1,7 @@
 package core
 
 import (
+	"math"
 	"reflect"
 	"slices"
 	"sort"
@@ -1366,5 +1367,86 @@ func TestPointsOrder(t *testing.T) {
 	}
 	if !sort.SliceIsSorted(ps, func(i, j int) bool { return ps[i].at.Before(ps[j].at) }) {
 		t.Error("not sorted by time")
+	}
+}
+
+// TestDeriveMeasuredEnergy: the energy the vehicle's counter measured over a charge, a
+// new session's counted from zero, a session resumed from where it stood.
+func TestDeriveMeasuredEnergy(t *testing.T) {
+	// counted is a reading with the vehicle's counter.
+	counted := func(s Snapshot, kwh float64) Snapshot {
+		s.Covers |= FieldEnergyAdded
+		s.EnergyAddedKWh = Some(kwh, time.Time{})
+		return s
+	}
+	tests := []struct {
+		name    string
+		records []Record
+		want    Value[float64]
+	}{
+		{
+			// The previous session's count holds until the cable is plugged in again.
+			name: "a new session",
+			records: []Record{
+				rec(0, 10, counted(nrg(50, ChargingIdle), 30)),
+				rec(20, 20, counted(charging(51, 11000, AC), 0.2)),
+				rec(40, 40, counted(charging(60, 11000, AC), 3.9)),
+				rec(60, 60, counted(nrg(65, ChargingDone), 5.7)),
+			},
+			want: val(5.7),
+		},
+		{
+			// Charging again in the same session: the count goes on from where it stood.
+			name: "a session resumed",
+			records: []Record{
+				rec(0, 10, counted(nrg(50, ChargingScheduled), 4)),
+				rec(20, 20, counted(charging(51, 11000, AC), 4.2)),
+				rec(40, 40, counted(nrg(60, ChargingDone), 7.5)),
+			},
+			want: val(3.5),
+		},
+		{
+			// Nothing known before the charge: its first reading is the base.
+			name: "no count before the charge",
+			records: []Record{
+				rec(0, 10, nrg(50, ChargingIdle)),
+				rec(20, 20, counted(charging(51, 11000, AC), 0.5)),
+				rec(40, 40, counted(nrg(60, ChargingDone), 4)),
+			},
+			want: val(3.5),
+		},
+		{
+			// Done, then charging again with the cable connected: the same charge, its
+			// count going on.
+			name: "a charge resumed",
+			records: []Record{
+				rec(0, 10, counted(nrg(50, ChargingIdle), 12)),
+				rec(20, 20, counted(charging(51, 7000, AC), 0.1)),
+				rec(40, 40, counted(nrg(55, ChargingDone), 2)),
+				rec(100, 100, counted(charging(55, 7000, AC), 2)),
+				rec(120, 120, counted(nrg(60, ChargingDone), 4.5)),
+			},
+			want: val(4.5),
+		},
+		{
+			name: "a vehicle without a counter",
+			records: []Record{
+				rec(0, 10, nrg(50, ChargingIdle)),
+				rec(20, 20, charging(51, 11000, AC)),
+				rec(40, 40, nrg(60, ChargingDone)),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := Derive(tt.records, Cursor{}, DefaultParams(), nil)
+			if len(res.Charges) != 1 {
+				t.Fatalf("%d charges: %+v", len(res.Charges), res.Charges)
+			}
+			got := res.Charges[0].EnergyMeasuredKWh
+			if got.OK != tt.want.OK || math.Abs(got.V-tt.want.V) > 1e-9 {
+				t.Errorf("measured %+v, want %+v", got, tt.want)
+			}
+		})
 	}
 }

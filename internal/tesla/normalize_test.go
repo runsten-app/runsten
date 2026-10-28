@@ -18,7 +18,7 @@ func miles(v float64) float64 { return v * kmPerMile }
 func bar(v float64) float64 { return v * kPaPerBar }
 
 const chargeFields = core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
-	core.FieldChargeType | core.FieldPower | core.FieldTargetSoC
+	core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldEnergyAdded
 
 // TestNormalizeFixture: the real response of a Model Y, parked asleep a moment before,
 // plugged to an AC station, its charge complete.
@@ -36,7 +36,9 @@ func TestNormalizeFixture(t *testing.T) {
 		ChargeType: core.Some(core.NoCharge, at),
 		PowerW:     core.Some(0.0, at),
 		TargetSoC:  core.Some(69.0, at),
-		OdometerKm: core.Some(miles(39620.727469), at),
+		// The session's: it holds after the charge.
+		EnergyAddedKWh: core.Some(5.9, at),
+		OdometerKm:     core.Some(miles(39620.727469), at),
 		// The latest fix, before the response.
 		Position:        core.Some(core.Position{Lat: 50.8467, Lon: 4.3525}, time.Unix(1793032115, 0)),
 		Brand:           core.Some(Brand, none),
@@ -108,10 +110,10 @@ func TestNormalizeCharge(t *testing.T) {
 		want core.Snapshot
 	}{
 		{"DC", `{"charging_state": "Charging", "fast_charger_present": true, "fast_charger_type": "Supercharger",
-			"charger_power": 120, "battery_level": 30, "charge_limit_soc": 80}`, core.Snapshot{
+			"charger_power": 120, "battery_level": 30, "charge_limit_soc": 80, "charge_energy_added": 12.34}`, core.Snapshot{
 			Charging: core.Some(core.ChargingActive, at), Connection: core.Some(core.Connected, at),
 			ChargeType: core.Some(core.DC, at), PowerW: core.Some(120000.0, at),
-			SoC: core.Some(30.0, at), TargetSoC: core.Some(80.0, at),
+			SoC: core.Some(30.0, at), TargetSoC: core.Some(80.0, at), EnergyAddedKWh: core.Some(12.34, at),
 		}},
 		{
 			"AC starting", `{"charging_state": "Starting", "fast_charger_present": false, "fast_charger_type": "MCSingleWireCAN"}`,

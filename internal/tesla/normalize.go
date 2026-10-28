@@ -79,6 +79,7 @@ type chargeState struct {
 	FastChargerPresent *bool    `json:"fast_charger_present"`
 	ChargerPower       *float64 `json:"charger_power"` // kW, whole
 	ChargeLimitSoC     *float64 `json:"charge_limit_soc"`
+	EnergyAdded        *float64 `json:"charge_energy_added"` // kWh, this session's
 }
 
 type driveState struct {
@@ -229,8 +230,9 @@ var chargingStates = map[string]core.ChargingStatus{
 func normalizeCharge(c *chargeState, s *core.Snapshot) {
 	at := millis(c.Timestamp)
 	s.Covers |= core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
-		core.FieldChargeType | core.FieldPower | core.FieldTargetSoC
+		core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldEnergyAdded
 	s.SoC = number(c.BatteryLevel, at)
+	s.EnergyAddedKWh = number(c.EnergyAdded, at)
 	s.RangeKm = scaled(c.BatteryRange, kmPerMile, at)
 	s.PowerW = scaled(c.ChargerPower, 1000, at)
 	s.TargetSoC = number(c.ChargeLimitSoC, at)

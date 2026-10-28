@@ -80,9 +80,12 @@ type Charge struct {
 
 	Type                        Value[ChargeType]
 	StartSoC, EndSoC, TargetSoC Value[float64]
-	// Two estimates, kept apart: neither is a measurement (no energy meter is exposed).
+	// Two estimates, kept apart: neither is a measurement.
 	EnergySoCKWh   Value[float64] // ΔSoC × Capacity
 	EnergyPowerKWh Value[float64] // integral of the charging power over the observed readings
+	// EnergyMeasuredKWh is the energy the vehicle measured into its battery over the
+	// charge, from its own counter (EnergyAddedKWh), when it has one.
+	EnergyMeasuredKWh Value[float64]
 	// Span is the stretch of that integral a battery capacity estimate rests on. Absent
 	// when no two of the charge's power readings follow each other below MaxSpanSoC: a
 	// reconstructed charge, or a vehicle that reports no charging power.

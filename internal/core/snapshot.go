@@ -108,6 +108,7 @@ const (
 	FieldModel
 	// FieldSleep covers Sleep: no other value depends on it.
 	FieldSleep
+	FieldEnergyAdded
 
 	fieldCount = iota
 )
@@ -136,6 +137,10 @@ type Snapshot struct {
 	// stored for comparison only.
 	ConsumptionKWhPer100km Value[float64]
 	CapacityKWh            Value[float64] // battery capacity
+	// EnergyAddedKWh is the energy the vehicle counts into its battery since its charging
+	// session began (Tesla's charge_energy_added): it holds after the charge, and starts
+	// again from zero with the next session.
+	EnergyAddedKWh Value[float64]
 
 	// Brand is the maker (volvo, polestar), when the source tells it; Family the model as
 	// the vendor names it (XC40, EX30), without its powertrain or battery.
@@ -202,6 +207,9 @@ func (s *Snapshot) merge(o Snapshot) {
 	}
 	if set(FieldSleep) {
 		s.Sleep = o.Sleep
+	}
+	if set(FieldEnergyAdded) {
+		s.EnergyAddedKWh = o.EnergyAddedKWh
 	}
 }
 
