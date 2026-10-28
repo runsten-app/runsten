@@ -74,10 +74,12 @@ const parts = computed(() =>
 .figure--small .figure-unit {
   font-size: 14px;
 }
-/* A word, unknown included, wraps rather than overflow its tile. */
+/* A word, unknown included, wraps rather than overflow its tile; one longer than the
+   tile (a VIN on a phone) breaks where it must. */
 .figure--unknown,
 .figure:not(:has(.figure-unit)) {
   white-space: normal;
+  overflow-wrap: anywhere;
 }
 @media (max-width: 599.98px) {
   .figure--hero {

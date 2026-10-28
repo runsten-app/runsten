@@ -165,7 +165,7 @@ function chargerLabel(c: number): string {
   <section class="vehicle-model mb-6" :aria-labelledby="ids.title">
     <h2 :id="ids.title" class="text-title-large mb-2">{{ label }}</h2>
     <dl class="facts mb-4">
-      <FactItem :label="t('vehicleModel.vin')" :value="vehicle.vin" />
+      <FactItem :label="t('vehicleModel.vin')" :value="vehicle.vin" class="vin" />
       <FactItem :label="t('vehicleModel.family')" :value="vehicle.model.family ?? f.unknown()" />
       <FactItem
         :label="t('vehicleModel.modelYear')"
@@ -330,6 +330,10 @@ fieldset {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
   gap: 1rem;
+}
+/* Seventeen characters at the figures' size are wider than a column: a row of its own. */
+.vin {
+  grid-column: 1 / -1;
 }
 .option {
   align-items: flex-start;
