@@ -504,7 +504,7 @@ components:
               type: string
             - type: "null"
         cost:
-          description: "What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without energy_measured_kwh nor energy_soc_kwh, or when the tariff has no version for a part of the charge's window."
+          description: "What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without an energy to rest on (energy_measured_kwh, else energy_soc_kwh, or energy_power_kwh for a rise of the state of charge below 2 points), or when the tariff has no version for a part of the charge's window."
           oneOf:
             - $ref: "#/components/schemas/Cost"
             - type: "null"

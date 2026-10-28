@@ -518,7 +518,7 @@ type chargeJSON struct {
 	Position null[positionJSON] `json:"position"`
 	Place    null[placeRefJSON] `json:"place" doc:"The place of the charge: the nearest one whose circle holds its position; without a position, the place that takes such charges, unless the charge is DC. null elsewhere."`
 	Address  *string            `json:"address" doc:"The street and town of position, from the instance's reverse geocoder, outside every place; for an imported charge, else the name the application gave. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one."`
-	Cost     null[costJSON]     `json:"cost" doc:"What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without energy_measured_kwh nor energy_soc_kwh, or when the tariff has no version for a part of the charge's window."`
+	Cost     null[costJSON]     `json:"cost" doc:"What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without an energy to rest on (energy_measured_kwh, else energy_soc_kwh, or energy_power_kwh for a rise of the state of charge below 2 points), or when the tariff has no version for a part of the charge's window."`
 }
 
 func chargeOf(c core.Charge, places []core.Place, cost core.Value[core.Cost], book addressBook) chargeJSON {
