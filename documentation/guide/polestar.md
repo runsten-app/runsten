@@ -42,7 +42,7 @@ The credential is stored encrypted and is only ever sent to Polestar. It is neve
 
 ## Choose its variant
 
-The Data Portal gives the car's VIN, not its model: Runsten reads the model year from the VIN, but not whether it is a Polestar 2, 3 or 4. Several variants fit almost every model year: in the vehicle's settings (the button by its name), choose yours among the Polestar ones, those of its model year first ([Vehicle models](./vehicle-models.md)). The variant sets its model, and the net battery capacity its energies rest on: without it, the trips and charges have no energy, since the Data Portal does not report the battery's capacity.
+The Data Portal gives the car's VIN, not its model: Runsten reads the model year from the VIN, but not whether it is a Polestar 2, 3 or 4. Several variants fit almost every model year: in the vehicle's settings (the button by its name), choose yours among the Polestar ones, those of its model year first ([Vehicle models](./vehicle-models.md)). The variant sets its model, and the net battery capacity its energies rest on: the vehicle's page shows it as the battery's capacity, usable, from the variant. Without it, the trips and charges have no energy, since the Data Portal does not report the battery's capacity.
 
 ## Every 90 days
 

@@ -72,6 +72,7 @@
     "soc": "État de charge",
     "range": "Autonomie",
     "capacity": "Capacité de la batterie",
+    "capacityFromVariant": "Utile, selon la variante",
     "charging": {
       "title": "Charge",
       "status": "Statut",
