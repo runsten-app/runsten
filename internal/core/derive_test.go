@@ -1406,10 +1406,32 @@ func TestDeriveMeasuredEnergy(t *testing.T) {
 			want: val(3.5),
 		},
 		{
-			// Nothing known before the charge: its first reading is the base.
-			name: "no count before the charge",
+			// Unplugged before: the charge starts a new session, counted whole, though the
+			// first reading has already passed the previous session's count.
+			name: "plugged in after a small session",
+			records: []Record{
+				rec(0, 10, counted(nrg(50, ChargingIdle), 0.2)),
+				rec(20, 20, counted(charging(51, 11000, AC), 2)),
+				rec(40, 40, counted(nrg(60, ChargingDone), 5)),
+			},
+			want: val(5),
+		},
+		{
+			// Unplugged before, no count known: counted from zero.
+			name: "plugged in, no count before",
 			records: []Record{
 				rec(0, 10, nrg(50, ChargingIdle)),
+				rec(20, 20, counted(charging(51, 11000, AC), 0.5)),
+				rec(40, 40, counted(nrg(60, ChargingDone), 4)),
+			},
+			want: val(4),
+		},
+		{
+			// Plugged in all along, nothing known before the charge: its first reading is
+			// the base.
+			name: "no count before the charge",
+			records: []Record{
+				rec(0, 10, nrg(50, ChargingScheduled)),
 				rec(20, 20, counted(charging(51, 11000, AC), 0.5)),
 				rec(40, 40, counted(nrg(60, ChargingDone), 4)),
 			},

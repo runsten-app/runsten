@@ -30,12 +30,22 @@ type chargeBuilder struct {
 	counted  bool
 }
 
+// sessionBase is the vehicle's energy counter as a charge starts: zero after a reading
+// of the cable disconnected, plugging in starting a new session; else the latest count,
+// a session that may go on.
+func sessionBase(s Snapshot) Value[float64] {
+	if s.Connection.OK && s.Connection.V == Disconnected {
+		return Value[float64]{V: 0, OK: true}
+	}
+	return s.EnergyAddedKWh
+}
+
 // count follows the vehicle's energy counter to a reading of the charge. A counter
 // lower than the previous one started a new session from zero: all of it was counted
-// since. Assumption: the counter starts again when the cable is plugged in, and the
-// collector reads the charge within a minute of its start, before the new count has
-// overtaken the previous session's. Without a value before the charge, its first is the
-// base: the energy counted before it is lost, not guessed.
+// since. Assumption: the counter starts again when the cable is plugged in; where the
+// plug-in was not seen, the collector reads the charge within a minute of its start,
+// before the new count has overtaken the previous session's. Without a value before the
+// charge, its first is the base: the energy counted before it is lost, not guessed.
 func (cb *chargeBuilder) count(e Value[float64]) {
 	if !e.OK {
 		return
@@ -167,7 +177,7 @@ func (d *detector) startCharge(p point, prev state) {
 		DetectedAt: p.at,
 		Start:      Bounds{After: after, Before: d.narrow(p.at, after, s.Charging.At)},
 		StartSoC:   prev.snap.SoC,
-	}, counter: prev.snap.EnergyAddedKWh}
+	}, counter: sessionBase(prev.snap)}
 	if !cb.c.StartSoC.OK {
 		cb.c.StartSoC = s.SoC
 	}
