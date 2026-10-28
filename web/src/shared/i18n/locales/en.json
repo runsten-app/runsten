@@ -1539,7 +1539,7 @@
     "steps": {
       "title": "Get your refresh token",
       "tool": "On a computer, run",
-      "phone": "(or the Auth app for Tesla app on a phone).",
+      "phone": "(or the Auth app for Tesla app on an iPhone or a Mac).",
       "newTab": "(opens in a new tab)",
       "signIn": "Sign in there with your Tesla account: Tesla's own page, your password stays between you and Tesla.",
       "copy": "Copy the refresh token it shows (not the access token) and paste it below: it is never shown again, only its last four characters."

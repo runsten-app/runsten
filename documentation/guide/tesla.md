@@ -18,7 +18,7 @@ Runsten is not affiliated with Tesla. It only reads: it never sends a command to
 
 ## Get your refresh token
 
-1. On a computer, run [Tesla Auth](https://github.com/adriankumpf/tesla_auth), from the author of TeslaMate (macOS, Windows, Linux). On a phone, the **Auth app for Tesla** app (iOS, Android) does the same.
+1. Run [Tesla Auth](https://github.com/adriankumpf/tesla_auth/releases/latest), from the author of TeslaMate, version 0.13.0 or newer (macOS, Windows, Linux), or [Auth app for Tesla](https://apps.apple.com/app/auth-app-for-tesla/id1552058613) (iOS, macOS): TeslaMate points to the same two.
 2. Sign in with your Tesla account. The page is Tesla's own: your password, and your second factor if you have one, stay between you and Tesla.
 3. The tool shows two tokens: copy the **refresh token**, not the access token.
 

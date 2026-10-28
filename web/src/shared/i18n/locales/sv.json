@@ -1539,7 +1539,7 @@
     "steps": {
       "title": "Hämta din uppdateringstoken",
       "tool": "På en dator, kör",
-      "phone": "(eller appen Auth app for Tesla på en telefon).",
+      "phone": "(eller appen Auth app for Tesla på en iPhone eller en Mac).",
       "newTab": "(öppnas i en ny flik)",
       "signIn": "Logga in där med ditt Tesla-konto: det är Teslas egen sida, ditt lösenord stannar mellan dig och Tesla.",
       "copy": "Kopiera uppdateringstoken den visar (inte åtkomsttoken) och klistra in den nedan: den visas aldrig igen, bara dess fyra sista tecken."

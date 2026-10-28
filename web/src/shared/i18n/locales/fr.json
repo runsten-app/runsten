@@ -1539,7 +1539,7 @@
     "steps": {
       "title": "Obtenir votre jeton de rafraîchissement",
       "tool": "Sur un ordinateur, lancez",
-      "phone": "(ou l'app Auth app for Tesla sur un téléphone).",
+      "phone": "(ou l'app Auth app for Tesla sur un iPhone ou un Mac).",
       "newTab": "(s'ouvre dans un nouvel onglet)",
       "signIn": "Connectez-vous avec votre compte Tesla : c'est la page de Tesla, votre mot de passe reste entre vous et Tesla.",
       "copy": "Copiez le jeton de rafraîchissement qu'il affiche (pas le jeton d'accès) et collez-le ci-dessous : il n'est plus jamais affiché, seuls ses quatre derniers caractères."
