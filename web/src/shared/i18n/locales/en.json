@@ -91,7 +91,8 @@
     "sleep": {
       "asleep": "Asleep",
       "offline": "Out of reach",
-      "leftAlone": "Runsten lets it sleep: what it measures is read when it wakes up."
+      "leftAlone": "Runsten lets it sleep: what it measures is read when it wakes up.",
+      "unreachable": "Runsten reads it again as soon as Tesla can reach it."
     }
   },
   "charging": {

@@ -191,7 +191,9 @@ const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_
         <time :datetime="sleep.fetched_at">{{
           t('reading.since', { time: f.dateTime(sleep.fetched_at, now) })
         }}</time>
-        <span>{{ t('state.sleep.leftAlone') }}</span>
+        <span>{{
+          sleep.value === 'asleep' ? t('state.sleep.leftAlone') : t('state.sleep.unreachable')
+        }}</span>
       </span>
       <time v-if="reportedLate" :datetime="reportedLate" class="reported">{{
         t('state.lastReported', { time: f.dateTime(reportedLate, now) })

@@ -91,7 +91,8 @@
     "sleep": {
       "asleep": "Endormie",
       "offline": "Injoignable",
-      "leftAlone": "Runsten la laisse dormir : ce qu'elle mesure est lu à son réveil."
+      "leftAlone": "Runsten la laisse dormir : ce qu'elle mesure est lu à son réveil.",
+      "unreachable": "Runsten la relit dès que Tesla peut la joindre."
     }
   },
   "charging": {

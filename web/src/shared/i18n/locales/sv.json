@@ -91,7 +91,8 @@
     "sleep": {
       "asleep": "Sover",
       "offline": "Utom räckhåll",
-      "leftAlone": "Runsten låter den sova: det den mäter läses när den vaknar."
+      "leftAlone": "Runsten låter den sova: det den mäter läses när den vaknar.",
+      "unreachable": "Runsten läser den igen så snart Tesla når den."
     }
   },
   "charging": {

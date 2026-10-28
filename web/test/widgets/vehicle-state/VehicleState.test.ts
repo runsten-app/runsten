@@ -253,7 +253,12 @@ describe('VehicleState', () => {
     expect(w.find('.sleep time').attributes('datetime')).toBe(at.fetched_at)
     w.unmount()
     w = await mounted({ ...state, sleep: { ...at, value: 'offline' } })
-    expect(w.findAll('.sleep > *').map((e) => plain(e.text()))[0]).toBe('Out of reach')
+    // Out of reach may be awake without a network: not said to sleep.
+    expect(w.findAll('.sleep > *').map((e) => plain(e.text()))).toEqual([
+      'Out of reach',
+      'since 18:40',
+      'Runsten reads it again as soon as Tesla can reach it.',
+    ])
     // A car that tells nothing of its sleep (a Volvo): nothing either.
     w.unmount()
     w = await mounted(state)
