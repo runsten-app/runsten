@@ -30,6 +30,8 @@ They count in the lists and the statistics like the others. The vehicle's settin
 
 The energy of a trip or a charge is an estimate: the change of the state of charge times the battery's capacity. Runsten uses the net (usable) capacity of the vehicle's model when it knows it, else the capacity Volvo reports ([Vehicle models](./vehicle-models.md)). Each trip and charge tells which.
 
+A Tesla also measures the energy that goes into its battery during a charge: the charge shows it first, measured by the vehicle, beside the two estimates.
+
 ## A charge
 
 <Screen view="charge" alt="A charge at home: its energy, its place and its cost." />

@@ -248,6 +248,8 @@
     "energySoc": "Énergie (d'après l'état de charge)",
     "energyPower": "Énergie (d'après la puissance de charge)",
     "energyNote": "Deux estimations distinctes, aucune n'est une mesure : le véhicule n'a pas de compteur d'énergie à lire.",
+    "energyMeasured": "Énergie (mesurée par le véhicule)",
+    "energyMeasuredNote": "Le véhicule a mesuré l'énergie entrée dans sa batterie : le coût repose sur elle. Les deux autres sont des estimations, pour comparaison.",
     "position": "Position",
     "address": "Adresse",
     "map": "Carte de la charge",
