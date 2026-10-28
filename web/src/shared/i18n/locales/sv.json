@@ -87,7 +87,12 @@
     "map": "Karta över positionen",
     "position": "Senaste position",
     "coordinates": "Koordinater",
-    "lastReported": "Bilens senaste mätning {time}"
+    "lastReported": "Bilens senaste mätning {time}",
+    "sleep": {
+      "asleep": "Sover",
+      "offline": "Utom räckhåll",
+      "leftAlone": "Runsten låter den sova: det den mäter läses när den vaknar."
+    }
   },
   "charging": {
     "status": {

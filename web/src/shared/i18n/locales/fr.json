@@ -87,7 +87,12 @@
     "map": "Carte de la position",
     "position": "Dernière position",
     "coordinates": "Coordonnées",
-    "lastReported": "Dernière mesure de la voiture : {time}"
+    "lastReported": "Dernière mesure de la voiture : {time}",
+    "sleep": {
+      "asleep": "Endormie",
+      "offline": "Injoignable",
+      "leftAlone": "Runsten la laisse dormir : ce qu'elle mesure est lu à son réveil."
+    }
   },
   "charging": {
     "status": {

@@ -43,6 +43,8 @@ A Tesla stays awake while it is read, and an awake car loses a few kWh a day. Ru
 - Once the car has been parked, not charging, for 3 minutes, Runsten stops reading its data for 15 minutes. If it falls asleep, it is left alone until it wakes up; if not, the reading resumes, and stops again 3 minutes later.
 - An asleep car is never woken: what it measured while asleep is read when it wakes up.
 
+The vehicle's page says when the car is asleep, or out of reach (asleep or without a network: Tesla does not always tell which), and since when: its values are then those it had before.
+
 A trip that starts while Runsten leaves the car alone is seen when it ends, or when the 15 minutes are over: it is then found from the odometer, as a reconstructed trip.
 
 Runsten makes at most 3,000 calls a day per token, to stay clear of limits Tesla does not publish.

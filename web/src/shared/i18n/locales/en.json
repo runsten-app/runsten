@@ -87,7 +87,12 @@
     "map": "Map of the position",
     "position": "Last position",
     "coordinates": "Coordinates",
-    "lastReported": "The car last measured {time}"
+    "lastReported": "The car last measured {time}",
+    "sleep": {
+      "asleep": "Asleep",
+      "offline": "Out of reach",
+      "leftAlone": "Runsten lets it sleep: what it measures is read when it wakes up."
+    }
   },
   "charging": {
     "status": {

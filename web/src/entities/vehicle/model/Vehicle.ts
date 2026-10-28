@@ -20,3 +20,4 @@ export type ChargingStatus = components['schemas']['ReadingChargingStatus']['val
 export type Cable = components['schemas']['ReadingCable']['value']
 export type CurrentChargeType = components['schemas']['ReadingCurrentChargeType']['value']
 export type Engine = components['schemas']['ReadingEngine']['value']
+export type Sleep = components['schemas']['ReadingSleep']['value']
