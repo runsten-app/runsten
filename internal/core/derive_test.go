@@ -1429,6 +1429,15 @@ func TestDeriveMeasuredEnergy(t *testing.T) {
 			want: val(4.5),
 		},
 		{
+			// A counter that never rose is no measure of 0 kWh: the estimates stand.
+			name: "a counter that never rose",
+			records: []Record{
+				rec(0, 10, counted(nrg(50, ChargingIdle), 0)),
+				rec(20, 20, counted(charging(51, 11000, AC), 0)),
+				rec(40, 40, counted(nrg(60, ChargingDone), 0)),
+			},
+		},
+		{
 			name: "a vehicle without a counter",
 			records: []Record{
 				rec(0, 10, nrg(50, ChargingIdle)),

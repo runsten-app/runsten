@@ -374,7 +374,8 @@ func (d *detector) buildCharge(cb *chargeBuilder) Charge {
 	if cb.intervals > 0 {
 		c.EnergyPowerKWh = Value[float64]{V: cb.wh / 1000, OK: true}
 	}
-	if cb.counted {
+	// A counter that never rose measured nothing: stuck, or not counting this charge.
+	if cb.counted && cb.measured > 0 {
 		c.EnergyMeasuredKWh = Value[float64]{V: cb.measured, OK: true}
 	}
 	c.Position = s.Position
