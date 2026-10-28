@@ -18,10 +18,11 @@ import {
   type Mode,
   type Reading,
 } from '@/entities/vehicle'
+import { useVehicle } from '@/features/select-vehicle'
 import { useVehicleState } from '@/features/watch-vehicle-state'
 import { isApiError } from '@/shared/api'
 import { kilowatts, openStreetMapUrl, useFormat, useMapsOn, useNow, type Unit } from '@/shared/lib'
-import { LevelBar, MapView, StatusPill } from '@/shared/ui'
+import { LevelBar, MapView, StatusPill, TileFigure } from '@/shared/ui'
 
 // Verdandi: the current state of a vehicle, each value with how fresh it is. Each tile says
 // once when its values were checked and since when they hold, those of its first value;
@@ -34,6 +35,13 @@ const f = useFormat()
 const mapsOn = useMapsOn()
 const now = useNow()
 const { state, isPending, error } = useVehicleState(() => props.vehicle)
+const { vehicle: current } = useVehicle(() => props.vehicle)
+// Where the car reports no capacity (a Polestar of the Data Portal never does), the net
+// capacity of its variant, which the energies rest on: Unknown would read as a setup
+// gone wrong.
+const variantCapacity = computed(() =>
+  state.value?.battery_capacity_kwh ? null : (current.value?.model.variant?.net_kwh ?? null),
+)
 
 const connection = computed(() => state.value?.connection ?? { status: 'active' as const })
 const mode = computed(() => (state.value ? vehicleMode(state.value) : null))
@@ -186,7 +194,19 @@ const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_
                 :connection="connection"
                 :tile="state.soc_pct"
               />
+              <div v-if="variantCapacity !== null" class="reading variant-capacity">
+                <dt class="label">{{ t('state.capacity') }}</dt>
+                <dd>
+                  <TileFigure
+                    class="value"
+                    :text="f.quantity(variantCapacity, 'kWh')"
+                    size="large"
+                  />
+                  <span class="details d-block mt-1">{{ t('state.capacityFromVariant') }}</span>
+                </dd>
+              </div>
               <ReadingItem
+                v-else
                 :label="t('state.capacity')"
                 :reading="state.battery_capacity_kwh"
                 :value="quantity(state.battery_capacity_kwh, 'kWh')"
@@ -389,6 +409,19 @@ const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_
 .target strong {
   font-weight: 500;
   color: rgb(var(--v-theme-on-surface));
+}
+.variant-capacity .label {
+  font-size: 0.8125rem;
+  color: rgb(var(--v-theme-text-secondary));
+  margin-bottom: 4px;
+}
+.variant-capacity dd {
+  margin: 0;
+}
+.variant-capacity .details {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: rgb(var(--v-theme-text-secondary));
 }
 .osm {
   color: rgb(var(--v-theme-primary)) !important;

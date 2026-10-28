@@ -72,6 +72,7 @@
     "soc": "Laddningsnivå",
     "range": "Räckvidd",
     "capacity": "Batterikapacitet",
+    "capacityFromVariant": "Användbar, enligt varianten",
     "charging": {
       "title": "Laddning",
       "status": "Status",

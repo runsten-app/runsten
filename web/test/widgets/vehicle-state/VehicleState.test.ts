@@ -5,19 +5,28 @@ import { i18n, type Locale } from '@/shared/i18n'
 import { VehicleState } from '@/widgets/vehicle-state'
 import state from '@fixtures/state.json'
 import unknown from '@fixtures/state-unknown.json'
+import vehicle from '@fixtures/vehicle-model.json'
 import { mountWith } from '@test/utils'
 
-const { fetchVehicleState } = vi.hoisted(() => ({ fetchVehicleState: vi.fn() }))
+const { fetchVehicle, fetchVehicleState } = vi.hoisted(() => ({
+  fetchVehicle: vi.fn(),
+  fetchVehicleState: vi.fn(),
+}))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
+  fetchVehicle,
   fetchVehicleState,
 }))
+
+const noVariant = { ...vehicle, model: { ...vehicle.model, variant: null } }
 
 // Three and a half minutes after the latest reading of the fixture.
 const now = Date.parse('2026-09-28T19:06:30Z')
 
 beforeEach(() => {
   fetchVehicleState.mockReset()
+  fetchVehicle.mockReset()
+  fetchVehicle.mockResolvedValue(noVariant)
   vi.useFakeTimers({ now, toFake: ['Date'] })
 })
 afterEach(() => {
@@ -154,6 +163,27 @@ describe('VehicleState', () => {
     expect(w.text()).toContain(never)
     expect(w.findAll('time')).toHaveLength(0)
     expect(w.find('a[target="_blank"]').exists()).toBe(false)
+  })
+
+  it.each<[Locale, string, string]>([
+    ['en', 'Battery capacity', 'Usable, from the variant'],
+    ['fr', 'Capacité de la batterie', 'Utile, selon la variante'],
+    ['sv', 'Batterikapacitet', 'Användbar, enligt varianten'],
+  ])(
+    'falls back on the variant where the car reports no capacity, in %s',
+    async (locale, label, note) => {
+      i18n.global.locale.value = locale
+      fetchVehicle.mockResolvedValue(vehicle)
+      const w = await mounted({ ...state, battery_capacity_kwh: null })
+      expect(reading(w, label)).toEqual({ value: '64 kWh', details: note, stale: false })
+    },
+  )
+
+  it('keeps the capacity the car reports over the variant', async () => {
+    fetchVehicle.mockResolvedValue(vehicle)
+    const w = await mounted(state)
+    expect(reading(w, 'Battery capacity').value).toBe('78 kWh')
+    expect(w.find('.variant-capacity').exists()).toBe(false)
   })
 
   // The way to connect again is the shell's, on every page of the vehicle.
