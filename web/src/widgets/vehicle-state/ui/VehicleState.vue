@@ -410,6 +410,11 @@ const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_
   font-weight: 500;
   color: rgb(var(--v-theme-on-surface));
 }
+/* Its note wraps rather than pushing the capacity under the range on a phone. */
+.variant-capacity {
+  flex: 1 1 0;
+  min-width: 5.5rem;
+}
 .variant-capacity .label {
   font-size: 0.8125rem;
   color: rgb(var(--v-theme-text-secondary));
