@@ -69,9 +69,12 @@ describe('VehiclePage', () => {
     const w = await page(state.vehicle_id)
     expect(w.findComponent({ name: 'VSelect' }).exists()).toBe(false)
     expect(w.find('h1').text()).toBe('XC40 Recharge Twin · 2021')
-    expect(w.find('span.vin').text()).toBe(vehicles.items[0]?.vin)
+    // The VIN beside the heading, which the bar's picker already names.
+    expect(w.find('.heading span.vin').text()).toBe(vehicles.items[0]?.vin)
     expect(w.text()).toContain('64%')
     expect(w.findComponent({ name: 'SocTimeline' }).props('vehicle')).toBe(state.vehicle_id)
+    // The last days beside the vehicle's tile, in the state's grid.
+    expect(w.find('.verdandi').findComponent({ name: 'SocTimeline' }).exists()).toBe(true)
     expect(w.findComponent(RecentSummary).props('vehicle')).toBe(state.vehicle_id)
   })
 

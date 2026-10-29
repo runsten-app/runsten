@@ -172,3 +172,21 @@ const formatPoint = (v: number) => f.time(iso(v))
     :empty="known.length ? undefined : summary"
   />
 </template>
+
+<style scoped>
+/* Beside the vehicle's tile, the chart takes the row's height: its canvas grows rather
+   than leave a blank band under the hint. */
+.soc-timeline {
+  display: flex;
+  flex-direction: column;
+}
+.soc-timeline :deep(.v-card-text) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+.soc-timeline :deep(.canvas) {
+  flex: 1 1 auto;
+  min-height: 15rem;
+}
+</style>

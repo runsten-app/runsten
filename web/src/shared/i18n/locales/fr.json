@@ -73,6 +73,7 @@
     "range": "Autonomie",
     "capacity": "Capacité de la batterie",
     "capacityFromVariant": "Utile, selon la variante",
+    "chooseVariant": "Choisir sa variante",
     "charging": {
       "title": "Charge",
       "status": "Statut",
@@ -82,7 +83,6 @@
       "target": "Cible"
     },
     "vehicle": "Véhicule",
-    "engine": "Moteur",
     "odometer": "Odomètre",
     "map": "Carte de la position",
     "position": "Dernière position",
@@ -123,14 +123,7 @@
     },
     "type": {
       "none": "Aucun"
-    },
-    "power": {
-      "none": "Aucune"
     }
-  },
-  "engine": {
-    "running": "En marche",
-    "stopped": "Arrêté"
   },
   "nav": {
     "label": "Véhicule",
@@ -715,7 +708,7 @@
     "soc": "Niveau de charge",
     "driving": "Conduite",
     "charging": "Recharge",
-    "hint": "Les bandes sont les trajets et les recharges : pâles là où ils ont pu avoir lieu, plus marquées là où ils ont eu lieu à coup sûr. Entre elles, le véhicule était stationné. La ligne s'interrompt là où rien n'a été lu.",
+    "hint": "Bandes : trajets et recharges, plus marquées là où ils ont eu lieu à coup sûr. La ligne s'interrompt là où rien n'a été lu.",
     "summary": "Sur les 7 derniers jours, de {first} à {last}, entre {min} et {max} ; {trips} et {charges}.",
     "none": "Rien n'a été lu ces 7 derniers jours.",
     "tripCount": "aucun trajet | {n} trajet | {n} trajets",

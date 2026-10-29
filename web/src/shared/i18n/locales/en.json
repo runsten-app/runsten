@@ -73,6 +73,7 @@
     "range": "Range",
     "capacity": "Battery capacity",
     "capacityFromVariant": "Usable, from the variant",
+    "chooseVariant": "Choose its variant",
     "charging": {
       "title": "Charging",
       "status": "Status",
@@ -82,7 +83,6 @@
       "target": "Target"
     },
     "vehicle": "Vehicle",
-    "engine": "Engine",
     "odometer": "Odometer",
     "map": "Map of the position",
     "position": "Last position",
@@ -123,14 +123,7 @@
     },
     "type": {
       "none": "None"
-    },
-    "power": {
-      "none": "None"
     }
-  },
-  "engine": {
-    "running": "Running",
-    "stopped": "Stopped"
   },
   "nav": {
     "label": "Vehicle",
@@ -715,7 +708,7 @@
     "soc": "State of charge",
     "driving": "Driving",
     "charging": "Charging",
-    "hint": "The bands are the trips and the charges: faint where they may have been, stronger where they surely were. Between them, the vehicle was parked. The line breaks where nothing was read.",
+    "hint": "Bands: trips and charges, stronger where they surely were. The line breaks where nothing was read.",
     "summary": "Over the last 7 days, from {first} to {last}, between {min} and {max}; {trips} and {charges}.",
     "none": "Nothing was read in the last 7 days.",
     "tripCount": "no trip | {n} trip | {n} trips",
