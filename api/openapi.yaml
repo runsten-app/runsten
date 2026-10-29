@@ -3345,7 +3345,7 @@ components:
             - $ref: "#/components/schemas/ReadingFloat64"
             - type: "null"
         software:
-          description: "The version of the vehicle's software, for a source that tells it (Tesla); null for the others. fetched_at is its first reading: when it was installed at the latest. Its history: GET /vehicles/{vehicle}/software-versions."
+          description: "The version of the vehicle's software, for a source that tells it (Tesla); null for the others. fetched_at is the response it was read in, as any value's, not its installation: that is in its history, GET /vehicles/{vehicle}/software-versions."
           oneOf:
             - $ref: "#/components/schemas/ReadingString"
             - type: "null"

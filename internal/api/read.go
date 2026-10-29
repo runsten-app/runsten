@@ -353,7 +353,7 @@ type stateJSON struct {
 	Position           null[reading[positionJSON]]       `json:"position"`
 	BatteryCapacityKWh null[reading[float64]]            `json:"battery_capacity_kwh" doc:"The battery capacity the vendor reports. The energy estimates rest on it when Runsten's catalog does not know the vehicle's variant or its net capacity (capacity_source api), and on the variant's net capacity otherwise."`
 	Charging           chargingJSON                      `json:"charging"`
-	Software           null[reading[string]]             `json:"software" doc:"The version of the vehicle's software, for a source that tells it (Tesla); null for the others. fetched_at is its first reading: when it was installed at the latest. Its history: GET /vehicles/{vehicle}/software-versions."`
+	Software           null[reading[string]]             `json:"software" doc:"The version of the vehicle's software, for a source that tells it (Tesla); null for the others. fetched_at is the response it was read in, as any value's, not its installation: that is in its history, GET /vehicles/{vehicle}/software-versions."`
 	SoftwareUpdate     null[reading[softwareUpdateJSON]] `json:"software_update" doc:"The update waiting for the vehicle's software; null when none waits, or the source does not tell it."`
 	Sleep              null[reading[sleepJSON]]          `json:"sleep" doc:"Whether the vehicle is awake, asleep, or offline (out of reach: asleep or without a network), for a source that lets it fall asleep and tells it (Tesla); null for the others. While it is not awake, Runsten leaves it alone: the other values are those it had when it fell asleep, read again when it wakes up. fetched_at is the first reading of the state, after the vehicle changed to it."`
 }
