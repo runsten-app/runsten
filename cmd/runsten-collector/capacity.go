@@ -58,6 +58,6 @@ func (c capacities) NetCapacity(ctx context.Context, accountID, vehicleID string
 func (c capacities) effective(chosen, vin string, n core.Snapshot) (catalog.Variant, bool) {
 	return c.catalog.Effective(chosen, catalog.Reading{
 		Brand: catalog.Brand(n.Brand.V), Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
-		Trim: n.Trim.V, BatteryElectric: n.BatteryElectric(),
+		Trim: n.Trim.V, Powertrain: catalog.Powertrain(n.Powertrain.V),
 	})
 }

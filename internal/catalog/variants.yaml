@@ -1,5 +1,4 @@
-# Electric variants of Volvo, Polestar and Tesla vehicles. Plug-in hybrids are left out: Runsten
-# does not derive their charges correctly, so recognizing them would only mislead.
+# Electric and plug-in hybrid variants of Volvo, Polestar and Tesla vehicles.
 #
 # One entry per variant: a powertrain and battery over a range of model years. Its id is
 # stored by users once they choose it, so it never changes: correcting a figure keeps the
@@ -11,8 +10,11 @@
 # - trims: values of a vendor's trim badge (Tesla's trim_badging), lower case, sourced as
 #   a figure: like the motor codes, they only rule out the variants that list others.
 # - years: [from, to] model years, or [from] while the variant is on sale.
+# - powertrain: plugin_hybrid for a plug-in hybrid, recognized only for a vehicle read as
+#   one; electric when left out.
 # - gross_kwh, net_kwh: battery capacity; net_kwh is left out when no source settles it.
 # - ac_max_kw: standard onboard charger; ac_option_kw: the optional one (22 kW), if any.
+# - dc_max_kw: maximum DC power; left out of a plug-in hybrid without DC charging.
 # - api_kwh: values of batteryCapacityKWH seen for the variant, each with where it was seen.
 # - motor_codes: VIN positions 6-7, from unofficial tables: they only break ties.
 # - sources: every figure is backed by at least one source, listed in its "for"; its level
@@ -1371,3 +1373,452 @@
     - url: https://ev-database.org/car/3843/Tesla-Model-Y-Premium-AWD
       level: secondary
       for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# --- Plug-in hybrids: Volvo SPA and CMA, Polestar 1 -------------------------------------
+#
+# Recognized only for a vehicle read as a plug-in hybrid (Volvo's fuelType PETROL/ELECTRIC),
+# never confused with an electric variant. The gross capacities are those of Volvo's
+# manuals, model year by model year ("Total amount of energy"; a manual of week 46 of a
+# year is the next model year's, one of week 17 or 22 often already too). The 11.6 kWh
+# pack gave way to the 18.8 kWh one during model year 2022, at a date of each family's
+# (an XC60 of MY2022 reports 11.832): the two overlap, told apart by the capacity. T6, T8
+# and T8 Polestar Engineered share their pack. No DC charging. Up to MY2022 the manuals
+# charge at 230 V and 16 A at most, single phase: 3.7 kW; the 18.8 kWh pack's give 3.6
+# kW at most in MY2022, today's 6.4 kW (16 A, two or three phases) for every model year:
+# the highest is kept. No source settles the net capacity of the 9.2 and 11.6 kWh packs.
+# No motor code is known.
+
+# 230 V at up to 16 A, single phase, in the manual: 3.7 kW.
+- id: xc90-t8-2016
+  brand: volvo
+  family: XC90
+  name: XC90 T8 Twin Engine (9.2 kWh)
+  powertrain: plugin_hybrid
+  years: [2016, 2017]
+  gross_kwh: 9.2
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/xc90-twin-engine/15w46/article/d24bb7d1e21ec6e4c0a801e801cf6114/cf9f3dab897d215ec0a80151385a1f1b/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc90-twin-engine/15w46/article/47723be463574819c0a801e80189926e/793bc2c02058068fc0a801e800f8d4a7/6dca59d789783a6fc0a801511bb9bbd0/
+      level: manufacturer
+      for: [ac_max_kw]
+
+- id: xc90-t8-2018
+  brand: volvo
+  family: XC90
+  name: XC90 T8 Twin Engine (10.4 kWh)
+  powertrain: plugin_hybrid
+  years: [2018, 2019]
+  gross_kwh: 10.4
+  net_kwh: 8
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/xc90-twin-engine/17w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc90-twin-engine/17w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.greencarreports.com/news/1113976_2018-volvo-xc90-plug-in-hybrid-suv-bigger-battery-slight-range-boost
+      level: secondary
+      for: [net_kwh]
+
+# The net capacity is the XC90's, the same pack.
+- id: xc60-t8-2018
+  brand: volvo
+  family: XC60
+  name: XC60 T8 Twin Engine (10.4 kWh)
+  powertrain: plugin_hybrid
+  years: [2018, 2019]
+  gross_kwh: 10.4
+  net_kwh: 8
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/xc60-twin-engine/17w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc60-twin-engine/17w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.greencarreports.com/news/1113976_2018-volvo-xc90-plug-in-hybrid-suv-bigger-battery-slight-range-boost
+      level: secondary
+      for: [net_kwh]
+
+# The net capacity is the XC90's, the same pack.
+- id: s90-t8-2018
+  brand: volvo
+  family: S90
+  name: S90 T8 Twin Engine (10.4 kWh)
+  powertrain: plugin_hybrid
+  years: [2018, 2019]
+  gross_kwh: 10.4
+  net_kwh: 8
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/s90-twin-engine/17w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/s90-twin-engine/17w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.greencarreports.com/news/1113976_2018-volvo-xc90-plug-in-hybrid-suv-bigger-battery-slight-range-boost
+      level: secondary
+      for: [net_kwh]
+
+# The net capacity is the XC90's, the same pack.
+- id: v90-t8-2018
+  brand: volvo
+  family: V90
+  name: V90 T8 Twin Engine (10.4 kWh)
+  powertrain: plugin_hybrid
+  years: [2018, 2019]
+  gross_kwh: 10.4
+  net_kwh: 8
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/v90-twin-engine/17w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/v90-twin-engine/17w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.greencarreports.com/news/1113976_2018-volvo-xc90-plug-in-hybrid-suv-bigger-battery-slight-range-boost
+      level: secondary
+      for: [net_kwh]
+
+# The net capacity is the XC90's, the same pack.
+- id: v60-t8-2019
+  brand: volvo
+  family: V60
+  name: V60 T8 Twin Engine (10.4 kWh)
+  powertrain: plugin_hybrid
+  years: [2019, 2019]
+  gross_kwh: 10.4
+  net_kwh: 8
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/v60-twin-engine/18w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc90-twin-engine/17w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.greencarreports.com/news/1113976_2018-volvo-xc90-plug-in-hybrid-suv-bigger-battery-slight-range-boost
+      level: secondary
+      for: [net_kwh]
+
+- id: xc90-phev-2020
+  brand: volvo
+  family: XC90
+  name: XC90 Recharge T6 / T8 (11.6 kWh)
+  powertrain: plugin_hybrid
+  years: [2020, 2022]
+  gross_kwh: 11.6
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/xc90-twin-engine/19w17/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc90-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc90-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+
+- id: xc60-phev-2020
+  brand: volvo
+  family: XC60
+  name: XC60 Recharge T6 / T8 (11.6 kWh)
+  powertrain: plugin_hybrid
+  years: [2020, 2022]
+  gross_kwh: 11.6
+  ac_max_kw: 3.7
+  api_kwh:
+    - kwh: 11.832 # model year 2020
+      source: https://github.com/home-assistant/core/blob/dev/tests/components/volvo/fixtures/xc60_phev_2020/vehicle.json
+    - kwh: 11.832 # model year 2022
+      source: https://github.com/thomasddn/ha-volvo-cars/issues/34#issuecomment-2585234773
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/xc60-twin-engine/19w17/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc60-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc60-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+
+- id: s90-phev-2020
+  brand: volvo
+  family: S90
+  name: S90 Recharge T6 / T8 (11.6 kWh)
+  powertrain: plugin_hybrid
+  years: [2020, 2022]
+  gross_kwh: 11.6
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/s90-twin-engine/19w17/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/s90-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/s90-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+
+- id: v90-phev-2020
+  brand: volvo
+  family: V90
+  name: V90 Recharge T6 / T8 (11.6 kWh)
+  powertrain: plugin_hybrid
+  years: [2020, 2022]
+  gross_kwh: 11.6
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/v90-twin-engine/19w17/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/v90-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/v90-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+
+- id: v60-phev-2020
+  brand: volvo
+  family: V60
+  name: V60 Recharge T6 / T8 (11.6 kWh)
+  powertrain: plugin_hybrid
+  years: [2020, 2022]
+  gross_kwh: 11.6
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/v60-twin-engine/19w17/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/v60-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/v60-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+
+- id: s60-phev-2020
+  brand: volvo
+  family: S60
+  name: S60 Recharge T6 / T8 (11.6 kWh)
+  powertrain: plugin_hybrid
+  years: [2020, 2022]
+  gross_kwh: 11.6
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/s60-twin-engine/19w17/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/s60-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/s60-recharge-plug-in-hybrid/20w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+
+- id: xc90-phev-2022
+  brand: volvo
+  family: XC90
+  name: XC90 T6 / T8 Plug-in Hybrid (18.8 kWh)
+  powertrain: plugin_hybrid
+  years: [2022]
+  gross_kwh: 18.8
+  net_kwh: 14.9
+  ac_max_kw: 6.4
+  api_kwh:
+    - kwh: 18.819 # model year 2024
+      source: https://github.com/home-assistant/core/blob/dev/tests/components/volvo/fixtures/xc90_phev_2024/vehicle.json
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/xc90-plug-in-hybrid/26w17/article/47d2c97fd33effd3c0a8cc3718c999b7-e1fce96acdfd4ac1c0a8b04a2efd5bbc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-0026761ece0f9fbdc0a8b04a61e1bcdc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-90df3c42d4248f0bc0a8cc37603d319c-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc90-plug-in-hybrid/26w17/article/47d2c97fd33effd3c0a8cc3718c999b7-a27aa276ce5ec813c0a8b04a2b2eb5e5-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-1b7fb6d0ce5f8953c0a8b04a77d5ba32-8664b2fa77a7e089c0a8296870d1a409/0ed816eed33d98cac0a8cc377bc12bc7-83c0c849d91ad5fac0a8cc3751bbe62b-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.evpulse.com/news/volvo-t8-models-get-significant-all-electric-range-bump-in-mid-year-update
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://www.elektrischeauto.nl/database/volvo/xc90-t8-recharge-1644/
+      level: secondary
+      for: [gross_kwh, net_kwh]
+
+- id: xc60-phev-2022
+  brand: volvo
+  family: XC60
+  name: XC60 T6 / T8 Plug-in Hybrid (18.8 kWh)
+  powertrain: plugin_hybrid
+  years: [2022]
+  gross_kwh: 18.8
+  net_kwh: 14.9
+  ac_max_kw: 6.4
+  api_kwh:
+    - kwh: 18.819 # model year 2024
+      source: https://github.com/akamming/Domoticz_VolvoRecharge_Plugin/issues/7
+    - kwh: 18.819
+      source: https://github.com/thomasddn/ha-volvo-cars/issues/93
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/xc60-plug-in-hybrid/26w17/article/47d2c97fd33effd3c0a8cc3718c999b7-e1fce96acdfd4ac1c0a8b04a2efd5bbc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-0026761ece0f9fbdc0a8b04a61e1bcdc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-90df3c42d4248f0bc0a8cc37603d319c-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc60-plug-in-hybrid/26w17/article/47d2c97fd33effd3c0a8cc3718c999b7-a27aa276ce5ec813c0a8b04a2b2eb5e5-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-1b7fb6d0ce5f8953c0a8b04a77d5ba32-8664b2fa77a7e089c0a8296870d1a409/0ed816eed33d98cac0a8cc377bc12bc7-83c0c849d91ad5fac0a8cc3751bbe62b-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.evpulse.com/news/volvo-t8-models-get-significant-all-electric-range-bump-in-mid-year-update
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://www.elektrischeauto.nl/database/volvo/xc60-t8-recharge-1642/
+      level: secondary
+      for: [gross_kwh, net_kwh]
+
+- id: s90-phev-2022
+  brand: volvo
+  family: S90
+  name: S90 T6 / T8 Plug-in Hybrid (18.8 kWh)
+  powertrain: plugin_hybrid
+  years: [2022]
+  gross_kwh: 18.8
+  net_kwh: 14.9
+  ac_max_kw: 6.4
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/s90-recharge-plug-in-hybrid/23w46/article/47d2c97fd33effd3c0a8cc3718c999b7-e1fce96acdfd4ac1c0a8b04a2efd5bbc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-0026761ece0f9fbdc0a8b04a61e1bcdc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-90df3c42d4248f0bc0a8cc37603d319c-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/s90-recharge-plug-in-hybrid/23w46/article/47d2c97fd33effd3c0a8cc3718c999b7-a27aa276ce5ec813c0a8b04a2b2eb5e5-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-1b7fb6d0ce5f8953c0a8b04a77d5ba32-8664b2fa77a7e089c0a8296870d1a409/0ed816eed33d98cac0a8cc377bc12bc7-83c0c849d91ad5fac0a8cc3751bbe62b-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.evpulse.com/news/volvo-t8-models-get-significant-all-electric-range-bump-in-mid-year-update
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://www.elektrischeauto.nl/database/volvo/s90-t8-recharge-1639/
+      level: secondary
+      for: [gross_kwh, net_kwh]
+
+- id: v90-phev-2022
+  brand: volvo
+  family: V90
+  name: V90 T6 / T8 Plug-in Hybrid (18.8 kWh)
+  powertrain: plugin_hybrid
+  years: [2022]
+  gross_kwh: 18.8
+  net_kwh: 14.9
+  ac_max_kw: 6.4
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/v90-plug-in-hybrid/25w17/article/47d2c97fd33effd3c0a8cc3718c999b7-e1fce96acdfd4ac1c0a8b04a2efd5bbc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-0026761ece0f9fbdc0a8b04a61e1bcdc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-90df3c42d4248f0bc0a8cc37603d319c-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/v90-plug-in-hybrid/25w17/article/47d2c97fd33effd3c0a8cc3718c999b7-a27aa276ce5ec813c0a8b04a2b2eb5e5-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-1b7fb6d0ce5f8953c0a8b04a77d5ba32-8664b2fa77a7e089c0a8296870d1a409/0ed816eed33d98cac0a8cc377bc12bc7-83c0c849d91ad5fac0a8cc3751bbe62b-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.evpulse.com/news/volvo-t8-models-get-significant-all-electric-range-bump-in-mid-year-update
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://www.elektrischeauto.nl/database/volvo/v90-t8-recharge-1640/
+      level: secondary
+      for: [gross_kwh, net_kwh]
+
+- id: v60-phev-2022
+  brand: volvo
+  family: V60
+  name: V60 T6 / T8 Plug-in Hybrid (18.8 kWh)
+  powertrain: plugin_hybrid
+  years: [2022]
+  gross_kwh: 18.8
+  net_kwh: 14.9
+  ac_max_kw: 6.4
+  api_kwh:
+    - kwh: 18.819
+      source: https://github.com/thomasddn/ha-volvo-cars/issues/25
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/v60-plug-in-hybrid/26w17/article/47d2c97fd33effd3c0a8cc3718c999b7-e1fce96acdfd4ac1c0a8b04a2efd5bbc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-0026761ece0f9fbdc0a8b04a61e1bcdc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-90df3c42d4248f0bc0a8cc37603d319c-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/v60-plug-in-hybrid/26w17/article/47d2c97fd33effd3c0a8cc3718c999b7-a27aa276ce5ec813c0a8b04a2b2eb5e5-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-1b7fb6d0ce5f8953c0a8b04a77d5ba32-8664b2fa77a7e089c0a8296870d1a409/0ed816eed33d98cac0a8cc377bc12bc7-83c0c849d91ad5fac0a8cc3751bbe62b-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.evpulse.com/news/volvo-t8-models-get-significant-all-electric-range-bump-in-mid-year-update
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://www.elektrischeauto.nl/database/volvo/v60-t8-recharge-1637/
+      level: secondary
+      for: [gross_kwh, net_kwh]
+
+- id: s60-phev-2022
+  brand: volvo
+  family: S60
+  name: S60 T6 / T8 Plug-in Hybrid (18.8 kWh)
+  powertrain: plugin_hybrid
+  years: [2022]
+  gross_kwh: 18.8
+  net_kwh: 14.9
+  ac_max_kw: 6.4
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/s60-recharge-plug-in-hybrid/23w46/article/47d2c97fd33effd3c0a8cc3718c999b7-e1fce96acdfd4ac1c0a8b04a2efd5bbc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-0026761ece0f9fbdc0a8b04a61e1bcdc-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-90df3c42d4248f0bc0a8cc37603d319c-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/s60-recharge-plug-in-hybrid/23w46/article/47d2c97fd33effd3c0a8cc3718c999b7-a27aa276ce5ec813c0a8b04a2b2eb5e5-8664b2fa77a7e089c0a8296870d1a409/47d2c97fd33effd3c0a8cc3718c999b7-1b7fb6d0ce5f8953c0a8b04a77d5ba32-8664b2fa77a7e089c0a8296870d1a409/0ed816eed33d98cac0a8cc377bc12bc7-83c0c849d91ad5fac0a8cc3751bbe62b-8664b2fa77a7e089c0a8296870d1a409/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.evpulse.com/news/volvo-t8-models-get-significant-all-electric-range-bump-in-mid-year-update
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://www.elektrischeauto.nl/database/volvo/s60-t8-recharge-1634/
+      level: secondary
+      for: [gross_kwh, net_kwh]
+
+# The manual gives 3.6 kW at most, electrive 3.7: the highest is kept.
+- id: xc40-phev-2020
+  brand: volvo
+  family: XC40
+  name: XC40 Recharge T4 / T5 Plug-in Hybrid
+  powertrain: plugin_hybrid
+  years: [2020, 2024]
+  gross_kwh: 10.7
+  net_kwh: 8.5
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.volvocars.com/uk/support/car/xc40-twin-engine/19w46/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc40-recharge-plug-in-hybrid/23w17/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/86d3b2d4705cdd18c0a8015100e24dd0/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.volvocars.com/uk/support/car/xc40-recharge-plug-in-hybrid/23w17/article/f1df148bc7f01a62c0a81f6f0b6b960e/00721e19c7ef7137c0a81f6f3ea716a4/665e8463c7f19eb9c0a81f6f0d94cd03/63cb8ccb7f4bcf5bc0a801511eaaafb5/
+      level: manufacturer
+      for: [ac_max_kw]
+    - url: https://www.electrive.net/2020/05/15/volvo-bringt-zweite-phev-version-im-xc40/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+# Polestar's technical data sheet (Europe), in a copy a newspaper hosts. No source settles the net capacity.
+- id: ps1-2020
+  brand: polestar
+  family: Polestar 1
+  name: Polestar 1
+  powertrain: plugin_hybrid
+  years: [2020, 2021]
+  gross_kwh: 34
+  ac_max_kw: 11
+  dc_max_kw: 50
+  sources:
+    - url: https://www.polestar.com/us/manual/polestar-1/2020/article/b4ec305b8a550a09c0a8015173ba6fee/
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://s3.observador.pt/wp-content/uploads/2021/06/19104031/polestar-1.pdf
+      level: manufacturer
+      for: [gross_kwh, ac_max_kw, dc_max_kw]
+    - url: https://insideevs.com/news/429437/polestar-1-epa-52-miles-ev-range/
+      level: secondary
+      for: [dc_max_kw]
+

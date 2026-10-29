@@ -850,6 +850,7 @@
     "ac": "AC {kw}",
     "acOption": "AC {kw}, {option} as an option",
     "dc": "DC {kw}",
+    "noDC": "no DC charging",
     "fromManufacturer": "According to the manufacturer",
     "fromPublic": "According to public sources",
     "fromBoth": "According to the manufacturer; {figures}: according to public sources",

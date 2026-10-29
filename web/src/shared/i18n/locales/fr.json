@@ -850,6 +850,7 @@
     "ac": "AC {kw}",
     "acOption": "AC {kw}, {option} en option",
     "dc": "DC {kw}",
+    "noDC": "pas de recharge DC",
     "fromManufacturer": "D'après le constructeur",
     "fromPublic": "D'après des sources publiques",
     "fromBoth": "D'après le constructeur ; {figures} : d'après des sources publiques",

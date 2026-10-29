@@ -27,7 +27,10 @@ function figures(): string {
     o.ac_option_kw === null
       ? t('vehicleModel.ac', { kw: kw(o.ac_max_kw) })
       : t('vehicleModel.acOption', { kw: kw(o.ac_max_kw), option: kw(o.ac_option_kw) })
-  return [capacity, ac, t('vehicleModel.dc', { kw: kw(o.dc_max_kw) })].join(' · ')
+  // Most plug-in hybrids do not charge on DC.
+  const dc =
+    o.dc_max_kw === null ? t('vehicleModel.noDC') : t('vehicleModel.dc', { kw: kw(o.dc_max_kw) })
+  return [capacity, ac, dc].join(' · ')
 }
 // sources tells where the figures come from: the manufacturer, public sources, or both,
 // naming the figures public sources give.

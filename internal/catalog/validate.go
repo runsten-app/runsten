@@ -55,8 +55,15 @@ func (v Variant) validate() error {
 	if y := v.Years; y.bounds < 1 || y.bounds > 2 || y.From <= 0 || (y.bounds == 2 && y.To < y.From) {
 		errs = append(errs, errors.New("years: [from, to] with 0 < from ≤ to, or [from] while on sale, expected"))
 	}
-	if v.GrossKWh <= 0 || v.ACMaxKW <= 0 || v.DCMaxKW <= 0 {
+	if v.Powertrain != Electric && v.Powertrain != PlugInHybrid {
+		errs = append(errs, fmt.Errorf("powertrain %q: electric or plugin_hybrid expected, or left out", v.Powertrain))
+	}
+	if v.GrossKWh <= 0 || v.ACMaxKW <= 0 || (v.DCMaxKW != nil && *v.DCMaxKW <= 0) {
 		errs = append(errs, errors.New("gross_kwh, ac_max_kw and dc_max_kw must be > 0"))
+	}
+	// Every electric car of the catalog charges on DC; most plug-in hybrids do not.
+	if v.DCMaxKW == nil && v.Powertrain == Electric {
+		errs = append(errs, errors.New("dc_max_kw is required for an electric variant"))
 	}
 	if n := v.NetKWh; n != nil && (*n <= 0 || *n > v.GrossKWh) {
 		errs = append(errs, errors.New("net_kwh must be in ]0, gross_kwh]"))
@@ -150,12 +157,13 @@ func validateAmbiguity(variants []Variant, byID map[string]Variant) error {
 }
 
 // indiscernible reports whether some reading would leave both variants candidates of
-// Match: same family, overlapping years, no motor codes nor trims apart, and a capacity
+// Match: same family and powertrain, overlapping years, no motor codes nor trims apart, and a capacity
 // both accept (a shared api_kwh value, or gross capacities whose tolerance windows
 // meet). A brand whose source reads no capacity (Tesla's) is left out: its packs are
 // told apart by their trim at best, ambiguity is the rule, and the user chooses.
 func indiscernible(a, b Variant) bool {
-	if a.ID == b.ID || a.Family != b.Family || !a.Years.overlap(b.Years) || !a.Brand.readsCapacity() {
+	if a.ID == b.ID || a.Family != b.Family || a.Powertrain != b.Powertrain || !a.Years.overlap(b.Years) ||
+		!a.Brand.readsCapacity() {
 		return false
 	}
 	if apart(a.MotorCodes, b.MotorCodes) || apart(a.Trims, b.Trims) {
