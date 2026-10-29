@@ -630,3 +630,153 @@ func TestPricingEfficiency(t *testing.T) {
 		})
 	}
 }
+
+// rated is a Tesla's observed charge, as charged: its rated range rose from range0 to
+// range1 km, its usable level ended at usable, and the vehicle measured kwh into its
+// battery.
+func rated(at time.Time, from, to, usable, range0, range1, kwh float64) Charge {
+	c := charged(at, AC, from, to, kwh)
+	c.StartRangeKm, c.EndRangeKm, c.EndUsableSoC, c.EnergyMeasuredKWh = val(range0), val(range1), val(usable), val(kwh)
+	return c
+}
+
+func TestRatedEfficiency(t *testing.T) {
+	at := time.Date(2026, 9, 28, 20, 0, 0, 0, time.UTC)
+	ok := rated(at, 40, 80, 80, 200, 400, 30) // 0.15 kWh per km
+	short := ok
+	short.Start.Before = short.End.After.Add(-9 * time.Minute)
+	high := rated(at, 40, 96, 96, 200, 480, 40)
+	unmeasured := ok
+	unmeasured.EnergyMeasuredKWh = Value[float64]{}
+	reconstructed := ok
+	reconstructed.Reconstructed = true
+	flat := rated(at, 40, 80, 80, 400, 400, 30)
+	noStart := ok
+	noStart.StartRangeKm = Value[float64]{}
+	cp := DefaultCapacityParams()
+	for _, tt := range []struct {
+		name    string
+		charges []Charge
+		want    Value[RatedEfficiency]
+	}{
+		{"none", nil, Value[RatedEfficiency]{}},
+		{"the median", []Charge{
+			ok, rated(at, 40, 80, 80, 200, 400, 32), rated(at, 40, 80, 80, 200, 400, 28),
+		}, known(RatedEfficiency{KWhPerKm: 0.15, Charges: 3})},
+		{"at RatedMinDuration", []Charge{func() Charge {
+			c := ok
+			c.Start.Before = c.End.After.Add(-cp.RatedMinDuration)
+			return c
+		}()}, known(RatedEfficiency{KWhPerKm: 0.15, Charges: 1})},
+		// Each charge the efficiency is not measured on: shorter than RatedMinDuration,
+		// ended above MaxSpanSoC, without a measured energy, never seen, a range that did
+		// not rise or is unknown.
+		{"set aside", []Charge{short, high, unmeasured, reconstructed, flat, noStart}, Value[RatedEfficiency]{}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := cp.ratedEfficiency(tt.charges, DefaultParams())
+			if got.OK != tt.want.OK || got.V.Charges != tt.want.V.Charges || math.Abs(got.V.KWhPerKm-tt.want.V.KWhPerKm) > 1e-9 {
+				t.Errorf("got %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
+
+// net75 is the reference of a Tesla whose variant's net capacity is 75 kWh.
+var net75 = known(Capacity{KWh: 75, Source: CapacityCatalogNet})
+
+func TestRatedEstimates(t *testing.T) {
+	at := time.Date(2026, 9, 28, 20, 0, 0, 0, time.UTC)
+	// 0.15 kWh per km; 400 km at 80 % of the usable level: 500 km at 100 %, 75 kWh.
+	a := rated(at, 40, 80, 80, 200, 400, 30)
+	low := rated(at.Add(time.Hour), 10, 49, 49, 50, 245, 29.25)
+	// Above MaxSpanSoC: no efficiency measured on it, but a rated estimate, the range
+	// read rather than integrated.
+	full := rated(at.Add(2*time.Hour), 20, 100, 100, 100, 500, 60)
+	cold := rated(at.Add(3*time.Hour), 40, 80, 76, 200, 380, 27) // the cold locks 4 points away
+	reconstructed := rated(at.Add(4*time.Hour), 40, 80, 80, 200, 400, 30)
+	reconstructed.Reconstructed = true
+	// A range read wrong; its power estimate, a slow charge.
+	implausible := rated(at.Add(5*time.Hour), 40, 80, 80, 200, 200.1, 0.015)
+	implausible.EndRangeKm = val(150)
+	for _, tt := range []struct {
+		name     string
+		charges  []Charge
+		want     []CapacityEstimate
+		excluded CapacityExcluded
+	}{
+		{"one", []Charge{a}, []CapacityEstimate{est(a, EstimatePower, 40, 75), est(a, EstimateRated, 80, 75)}, CapacityExcluded{}},
+		{
+			"the filters",
+			[]Charge{a, low, full, cold, reconstructed, implausible},
+			[]CapacityEstimate{
+				est(a, EstimatePower, 40, 75), est(a, EstimateRated, 80, 75),
+				est(low, EstimatePower, 39, 75), // the power estimate does not look at the usable level
+				est(full, EstimatePower, 80, 75), est(full, EstimateRated, 100, 75),
+				est(cold, EstimatePower, 40, 67.5), est(cold, EstimateRated, 76, 75),
+			},
+			CapacityExcluded{Reconstructed: 2, LowPower: 1, LowSoC: 1, Implausible: 1},
+		},
+		{"no efficiency yet", []Charge{func() Charge {
+			c := a
+			c.EnergyMeasuredKWh = Value[float64]{}
+			return c
+		}()}, []CapacityEstimate{est(a, EstimatePower, 40, 75)}, CapacityExcluded{NoEfficiency: 1}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			tr, err := CapacityTrend(tt.charges, nil, nil, net75, DefaultParams(), DefaultCapacityParams(), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			checkEstimates(t, tr.Estimates, tt.want)
+			if tr.Excluded != tt.excluded {
+				t.Errorf("excluded %+v, want %+v", tr.Excluded, tt.excluded)
+			}
+		})
+	}
+}
+
+// TestRatedBasis: from MinEstimates rated estimates on, the current capacity, its change
+// and the months rest on them alone; the other estimates stay in the series.
+func TestRatedBasis(t *testing.T) {
+	at := time.Date(2026, 9, 2, 20, 0, 0, 0, time.UTC)
+	// Each charge: a power estimate of 70 kWh, a rated one of 75.
+	charges := func(n int) []Charge {
+		out := make([]Charge, n)
+		for i := range out {
+			c := rated(at.Add(time.Duration(i)*24*time.Hour), 40, 80, 80, 200, 400, 28)
+			c.EnergyMeasuredKWh = val(30)
+			out[i] = c
+		}
+		return out
+	}
+	for _, tt := range []struct {
+		name   string
+		n      int
+		rated  bool
+		median float64
+		count  int
+	}{
+		{"five rated estimates", 5, true, 75, 5},
+		{"four: every source", 4, false, 72.5, 8},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			tr, err := CapacityTrend(charges(tt.n), nil, nil, net75, DefaultParams(), DefaultCapacityParams(), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tr.Rated != tt.rated || len(tr.Estimates) != 2*tt.n {
+				t.Errorf("rated %v, %d estimates", tr.Rated, len(tr.Estimates))
+			}
+			if !tr.Current.OK || tr.Current.V.Median != tt.median || tr.Current.V.Count != tt.count {
+				t.Errorf("current %+v", tr.Current)
+			}
+			if len(tr.Months) != 1 || tr.Months[0].Capacity.V.Count != tt.count {
+				t.Errorf("months %+v", tr.Months)
+			}
+			if !tr.Efficiency.OK || math.Abs(tr.Efficiency.V.KWhPerKm-0.15) > 1e-9 || tr.Efficiency.V.Charges != tt.n {
+				t.Errorf("efficiency %+v", tr.Efficiency)
+			}
+		})
+	}
+}

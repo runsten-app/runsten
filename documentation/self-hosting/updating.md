@@ -88,6 +88,7 @@ An update that changes how trips and charges are worked out says so below: the n
 - **The place of a charge, for cars that stamp the odometer late**: a charge whose car recorded its position during the charge, read only after it ended, takes that position even when the odometer read in between reveals the drive to it; and a trip keeps its arrival when a position read later was recorded earlier. Rebuild after updating: until then, these charges and trips keep the previous place.
 - **One charge while the cable stays connected**: a charge that stops with the cable connected (a solar charge, a car topping up later) and starts again within 24 hours, before it is unplugged or driven, is one charge rather than several. Rebuild after updating: until then, the past charges stay split.
 - **The energy a Tesla measured** (migration `0026`): a Tesla's charge keeps the energy the car measured into its battery, and its cost rests on it rather than on the change of the state of charge. Rebuild after updating: until then, the past charges have none, and keep their cost.
+- **A Tesla's capacity from its rated range** (migration `0027`): a Tesla's charge keeps its rated range at its start and end, and its usable charge at the end, from which the battery page estimates the capacity as TeslaMate does. Rebuild after updating: until then, the past charges give no such estimate.
 
 ## PostgreSQL
 

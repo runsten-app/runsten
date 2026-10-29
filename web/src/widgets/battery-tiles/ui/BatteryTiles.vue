@@ -42,17 +42,31 @@ const tiles = computed<Tile[]>(() => {
         : b.current
           ? f.quantity(b.current.capacity_kwh, 'kWh')
           : t('battery.tile.notEnough'),
-      notes: b.current
-        ? [
-            ...(remaining.value
-              ? [t('battery.tile.estimated', { kwh: f.quantity(b.current.capacity_kwh, 'kWh') })]
-              : []),
-            t('battery.tile.between', {
-              q1: f.quantity(b.current.q1_kwh, 'kWh'),
-              q3: f.quantity(b.current.q3_kwh, 'kWh'),
-            }),
-          ]
-        : [t('battery.tile.need', Math.max(1, minEstimates - b.estimates.length))],
+      notes: [
+        ...(b.current
+          ? [
+              ...(remaining.value
+                ? [t('battery.tile.estimated', { kwh: f.quantity(b.current.capacity_kwh, 'kWh') })]
+                : []),
+              t('battery.tile.between', {
+                q1: f.quantity(b.current.q1_kwh, 'kWh'),
+                q3: f.quantity(b.current.q3_kwh, 'kWh'),
+              }),
+              // The rated estimates alone, once they are enough: the reader sees why the
+              // other points do not move it.
+              ...(b.basis === 'rated' ? [t('battery.tile.ratedBasis')] : []),
+            ]
+          : [t('battery.tile.need', Math.max(1, minEstimates - b.estimates.length))]),
+        // A vehicle that tells a rated range: what a km of it holds, its estimates rest on.
+        ...(b.rated_efficiency
+          ? [
+              t('battery.tile.efficiency', {
+                value: f.quantity(b.rated_efficiency.kwh_per_km * 100, 'kWhPer100km'),
+                n: b.rated_efficiency.charges,
+              }),
+            ]
+          : []),
+      ],
     },
     {
       key: 'reference',
@@ -100,15 +114,20 @@ function excludedTotal(e: Battery['excluded']): number {
     e.span_soc +
     e.power_gap +
     e.low_power +
-    e.implausible
+    e.implausible +
+    e.no_efficiency +
+    e.low_soc
   )
 }
 
 // Each reason is written out, so that the i18n lint sees every key in use; the counts are
 // the API's, in the order its filters apply them.
 const reasons = computed(() => {
-  const e = battery.value?.excluded
-  if (!e) return []
+  const b = battery.value
+  if (!b) return []
+  const e = b.excluded
+  // The rated reasons only for a vehicle that tells a rated range: a Volvo has none.
+  const rated = b.rated_efficiency !== null || e.no_efficiency + e.low_soc > 0
   return [
     { key: 'reconstructed', count: e.reconstructed, text: t('battery.why.reconstructed') },
     { key: 'noPower', count: e.no_power, text: t('battery.why.noPower') },
@@ -117,6 +136,12 @@ const reasons = computed(() => {
     { key: 'powerGap', count: e.power_gap, text: t('battery.why.powerGap') },
     { key: 'lowPower', count: e.low_power, text: t('battery.why.lowPower') },
     { key: 'implausible', count: e.implausible, text: t('battery.why.implausible') },
+    ...(rated
+      ? [
+          { key: 'noEfficiency', count: e.no_efficiency, text: t('battery.why.noEfficiency') },
+          { key: 'lowSoc', count: e.low_soc, text: t('battery.why.lowSoc') },
+        ]
+      : []),
   ]
 })
 const why = ref(false)

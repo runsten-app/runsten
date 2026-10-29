@@ -5,6 +5,8 @@ import { checkView, expect, signIn, test, vehicleId } from './support'
 // runs with web/ alone mounted: the answer is written here, not read from a file.
 const full = {
   time_zone: 'UTC',
+  basis: 'all',
+  rated_efficiency: null,
   reference: { capacity_kwh: 75, source: 'catalog_net' },
   current: { capacity_kwh: 73.5, q1_kwh: 73, q3_kwh: 73.75, estimates: 20 },
   deviation_pct: -2,
@@ -74,6 +76,8 @@ const full = {
     power_gap: 0,
     low_power: 0,
     implausible: 0,
+    no_efficiency: 0,
+    low_soc: 0,
   },
   months: [
     {

@@ -540,7 +540,9 @@
       "cyclesNote": "Full charges' worth of energy",
       "kept": "Charges used",
       "setAside": "{n} charge not used | {n} charges not used",
-      "why": "Why?"
+      "why": "Why?",
+      "ratedBasis": "From the rated range alone",
+      "efficiency": "Rated efficiency {value}, measured on {n} charge | Rated efficiency {value}, measured on {n} charges"
     },
     "why": {
       "title": "Why some charges give no estimate",
@@ -552,7 +554,9 @@
       "powerGap": "Readings too far apart",
       "lowPower": "Charging too slowly",
       "implausible": "Result too far off",
-      "close": "Close"
+      "close": "Close",
+      "noEfficiency": "No charge has measured the rated efficiency yet",
+      "lowSoc": "Usable charge under 50 % at the end"
     },
     "chart": {
       "capacity": {
@@ -569,7 +573,8 @@
         "hidden": "{n} estimate without an odometer is not shown. | {n} estimates without an odometer are not shown.",
         "noOdometer": "No estimate has an odometer.",
         "none": "No estimate yet: it takes a charge of at least 20 %.",
-        "hint": "Select a point to see its charge."
+        "hint": "Select a point to see its charge.",
+        "rated": "Rated range"
       },
       "range": {
         "title": "Range at 100 % (car's estimate)",
@@ -577,7 +582,8 @@
         "summary": "Range at 100 % from {first} in {firstAt} to {last} in {lastAt}.",
         "one": "Range at 100 % of {value} in {at}.",
         "none": "No range at 100 % yet.",
-        "hint": "The car's own estimate, based on your recent driving: it drops in winter, whatever the battery."
+        "hint": "The car's own estimate, based on your recent driving: it drops in winter, whatever the battery.",
+        "hintRated": "The car's rated range, a fixed conversion of its usable charge: it follows the battery, not the season."
       },
       "header": {
         "month": "Month",

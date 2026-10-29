@@ -61,6 +61,13 @@ type CapacityParams struct {
 	// estimate before the evolution is shown: a shorter span says more about the noise
 	// than about the battery.
 	MinTrendSpan int
+	// RatedMinDuration is the shortest charge the rated efficiency is measured on: a
+	// short one adds too little range for the counters' rounding. TeslaMate's.
+	RatedMinDuration time.Duration
+	// RatedMinSoC is the lowest usable level, in %, a rated estimate brings the range at
+	// the end of a charge back to 100 % from: the level is an integer, rounded by half a
+	// point, 1 % of the estimate at 50 %.
+	RatedMinSoC float64
 }
 
 // DefaultCapacityParams returns the assumptions used without explicit configuration.
@@ -77,6 +84,9 @@ func DefaultCapacityParams() CapacityParams {
 		RecentCount:    20,
 		MinEstimates:   5,
 		MinTrendSpan:   12,
+
+		RatedMinDuration: 10 * time.Minute,
+		RatedMinSoC:      50,
 	}
 }
 
@@ -103,14 +113,52 @@ const (
 	// EstimateBilled is the energy billed for the charge, entered from its receipt,
 	// over the SoC change of the whole charge: the receipt covers it entirely.
 	EstimateBilled EstimateSource = "billed"
+	// EstimateRated is the rated range at the end of the charge brought back to 100 % of
+	// the usable level, times the vehicle's rated efficiency (a Tesla's, as TeslaMate
+	// reads it): the rated range is a fixed conversion of the energy the vehicle counts
+	// in its battery, so the estimate follows the battery, not the season.
+	EstimateRated EstimateSource = "rated"
 )
 
-// rank orders the sources within one charge: power before billed.
+// rank orders the sources within one charge: power, billed, then rated.
 func (s EstimateSource) rank() int {
-	if s == EstimateBilled {
+	switch s {
+	case EstimateBilled:
 		return 1
+	case EstimateRated:
+		return 2
+	default:
+		return 0
 	}
-	return 0
+}
+
+// RatedEfficiency is the energy a vehicle counts per km of its rated range: the median,
+// over the charges it is measured on, of the energy the vehicle measured into its
+// battery over the rated range the charge added.
+type RatedEfficiency struct {
+	KWhPerKm float64
+	Charges  int
+}
+
+// ratedEfficiency measures the rated efficiency on the observed charges of at least
+// RatedMinDuration that ended at MaxSpanSoC at most (above, the energy goes into
+// balancing the cells), with a measured energy and a rated range that rose. None
+// without such a charge.
+func (cp CapacityParams) ratedEfficiency(charges []Charge, p Params) Value[RatedEfficiency] {
+	var per []float64
+	for _, c := range charges {
+		added := diff(c.EndRangeKm, c.StartRangeKm)
+		if c.Reconstructed || !c.EnergyMeasuredKWh.OK || !added.OK || added.V <= 0 ||
+			!c.EndSoC.OK || c.EndSoC.V > p.MaxSpanSoC || c.End.After.Sub(c.Start.Before) < cp.RatedMinDuration {
+			continue
+		}
+		per = append(per, c.EnergyMeasuredKWh.V/added.V)
+	}
+	if len(per) == 0 {
+		return Value[RatedEfficiency]{}
+	}
+	slices.Sort(per)
+	return known(RatedEfficiency{KWhPerKm: quantile(per, 0.5), Charges: len(per)})
 }
 
 // BilledEnergy is what the billed estimate of a charge rests on: the energy billed for
@@ -136,8 +184,9 @@ type CapacityEstimate struct {
 	OdometerKm Value[float64]
 	Source     EstimateSource
 	Type       Value[ChargeType]
-	// SpanSoC is the SoC change the estimate divides by, in points: the span's for the
-	// power source, the whole charge's for the billed one.
+	// SpanSoC is the SoC the estimate divides by, in points: the change over the span
+	// for the power source, over the whole charge for the billed one; the usable level
+	// at the end of the charge for the rated one.
 	SpanSoC float64
 	// CapacityKWh is the estimate itself.
 	CapacityKWh float64
@@ -184,10 +233,14 @@ type CapacityExcluded struct {
 	PowerGap      int // two of the span's readings are too far apart
 	LowPower      int // a slow charge: its heating and 12 V system weigh in the energy
 	Implausible   int // far from the reference capacity: a false reading or a recalibration
+	// A rated candidate, a charge whose end tells the rated range and the usable level,
+	// set aside before any of the above but Reconstructed:
+	NoEfficiency int // no charge measures the rated efficiency yet
+	LowSoC       int // the usable level is below RatedMinSoC: its rounding weighs too much
 }
 
 // CapacityMonth is one calendar month of the trend: the capacity estimates that ended
-// in it, and the displayed range at a full charge of the trips that started in it. A
+// in it, the rated ones alone when the trend is Rated, and the displayed range at a full charge of the trips that started in it. A
 // month without a value is present with none — a series shows a gap, never a zero —
 // and an absent Capacity reads as a count of 0.
 type CapacityMonth struct {
@@ -200,12 +253,20 @@ type CapacityMonth struct {
 // on each read: nothing of it is stored, and no parameter of CapacityParams takes a
 // rebuild to change what it shows.
 type Trend struct {
+	// Rated tells that Current, Change and the months' capacities rest on the rated
+	// estimates alone: once there are MinEstimates of them, the vehicle's own count is
+	// more precise than the others, which stay in Estimates. Else every source together.
+	Rated bool
+	// Efficiency is the vehicle's rated efficiency, the rated estimates rest on. Absent
+	// for a vehicle without a rated range or a measured energy, and until a charge
+	// measures it.
+	Efficiency Value[RatedEfficiency]
 	// Reference is the capacity the estimates are compared with and bounded by: the
 	// net capacity of the vehicle's variant, else the one the vendor API reports.
 	// Absent when neither is known.
 	Reference Value[Capacity]
-	// Current is the median of the latest RecentCount estimates, all sources together,
-	// with their quartiles. Absent under MinEstimates estimates: not enough points to
+	// Current is the median of the latest RecentCount estimates, all sources together or
+	// the rated ones (Rated), with their quartiles. Absent under MinEstimates estimates: not enough points to
 	// say anything yet, the series still shows them.
 	Current Value[CapacityQuartiles]
 	// DeviationPct is the current capacity over the reference, minus one, in whole
@@ -234,8 +295,9 @@ type Trend struct {
 // current capacity and its change, the monthly medians, the displayed range at a full
 // charge, and the equivalent full cycles.
 //
-// Every charge is a power candidate, and a billed one on top when billed holds the
-// energy entered for it, in the same order as charges. trips feeds the displayed range
+// Every charge is a power candidate, a billed one on top when billed holds the energy
+// entered for it, in the same order as charges, and a rated one when its end tells the
+// rated range and the usable level. trips feeds the displayed range
 // at a full charge. reference bounds the estimates and anchors the deviation and the
 // cycles, as the capacity of the derivation is handed to core.Derive: without it there
 // is no bound, no deviation and no cycles. loc splits the months; UTC when nil.
@@ -254,6 +316,7 @@ func CapacityTrend(charges []Charge, billed []Value[BilledEnergy], trips []Trip,
 			excluded.Implausible++
 		}
 	}
+	efficiency := cp.ratedEfficiency(charges, p)
 	for i, c := range charges {
 		head := CapacityEstimate{Charge: c.DetectedAt, At: c.End.Before, OdometerKm: c.OdometerKm, Type: c.Type}
 		e := head
@@ -284,6 +347,21 @@ func CapacityTrend(charges []Charge, billed []Value[BilledEnergy], trips []Trip,
 			}
 			e.SpanSoC = c.Span.V.EndSoC - c.Span.V.StartSoC
 			keep(e, c.Span.V.EnergyKWh*k/e.SpanSoC*100)
+		}
+		if c.EndRangeKm.OK && c.EndUsableSoC.OK {
+			e = head
+			e.Source = EstimateRated
+			switch u := c.EndUsableSoC.V; {
+			case c.Reconstructed:
+				excluded.Reconstructed++
+			case !efficiency.OK:
+				excluded.NoEfficiency++
+			case u < cp.RatedMinSoC || u <= 0:
+				excluded.LowSoC++
+			default:
+				e.SpanSoC = u
+				keep(e, c.EndRangeKm.V/u*100*efficiency.V.KWhPerKm)
+			}
 		}
 		var b Value[BilledEnergy]
 		if i < len(billed) {
@@ -319,9 +397,14 @@ func CapacityTrend(charges []Charge, billed []Value[BilledEnergy], trips []Trip,
 		)
 	})
 
-	t := Trend{Reference: reference, Estimates: est, Excluded: excluded}
-	if cp.RecentCount > 0 && len(est) >= cp.MinEstimates {
-		t.Current = quartiles(capacities(est[max(0, len(est)-cp.RecentCount):]))
+	t := Trend{Efficiency: efficiency, Reference: reference, Estimates: est, Excluded: excluded}
+	// basis is what the current capacity, its change and the months rest on.
+	basis := est
+	if rated := slices.DeleteFunc(slices.Clone(est), func(e CapacityEstimate) bool { return e.Source != EstimateRated }); len(rated) >= max(cp.MinEstimates, 1) {
+		t.Rated, basis = true, rated
+	}
+	if cp.RecentCount > 0 && len(basis) >= cp.MinEstimates {
+		t.Current = quartiles(capacities(basis[max(0, len(basis)-cp.RecentCount):]))
 	}
 	if t.Current.OK && reference.OK {
 		t.DeviationPct = known(percentChange(t.Current.V.Median, reference.V.KWh))
@@ -331,11 +414,11 @@ func CapacityTrend(charges []Charge, billed []Value[BilledEnergy], trips []Trip,
 	// without overlapping, hence twice RecentCount estimates, and the battery must have
 	// had the time to change, hence MinTrendSpan months of it, counted as calendars do
 	// (a February or a change of time never shortens the span).
-	if t.Current.OK && len(est) >= 2*cp.RecentCount &&
-		!est[len(est)-1].At.Before(est[0].At.AddDate(0, cp.MinTrendSpan, 0)) {
-		initial := quartiles(capacities(est[:cp.RecentCount]))
+	if t.Current.OK && len(basis) >= 2*cp.RecentCount &&
+		!basis[len(basis)-1].At.Before(basis[0].At.AddDate(0, cp.MinTrendSpan, 0)) {
+		initial := quartiles(capacities(basis[:cp.RecentCount]))
 		t.Change = known(CapacityChange{
-			Since: est[0].At, InitialKWh: initial.V.Median,
+			Since: basis[0].At, InitialKWh: initial.V.Median,
 			ChangePct: percentChange(t.Current.V.Median, initial.V.Median),
 		})
 	}
@@ -386,7 +469,7 @@ func CapacityTrend(charges []Charge, billed []Value[BilledEnergy], trips []Trip,
 		monthOf := func(at time.Time) int {
 			return sort.Search(len(bounds), func(i int) bool { return bounds[i].End.After(at) })
 		}
-		for _, e := range est {
+		for _, e := range basis {
 			i := monthOf(e.At)
 			caps[i] = append(caps[i], e.CapacityKWh)
 		}

@@ -66,7 +66,7 @@ describe.each(schemes)('$name', ({ p }) => {
 
   // WCAG 1.4.11: a series of a chart at 3:1 against what it is drawn on.
   it('draws its series at 3:1', () => {
-    const series = ['chart-1', 'chart-2', 'chart-3', 'chart-4'] as const
+    const series = ['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5'] as const
     check(
       p,
       series.flatMap((s) =>

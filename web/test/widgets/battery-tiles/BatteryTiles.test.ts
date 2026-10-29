@@ -6,6 +6,7 @@ import { BatteryTiles } from '@/widgets/battery-tiles'
 import apiCapacity from '@fixtures/battery-api-capacity.json'
 import battery from '@fixtures/battery.json'
 import empty from '@fixtures/battery-empty.json'
+import rated from '@fixtures/battery-rated.json'
 import { mountWith } from '@test/utils'
 
 const { getBattery } = vi.hoisted(() => ({ getBattery: vi.fn() }))
@@ -190,9 +191,30 @@ describe('BatteryTiles', () => {
       power_gap: 0,
       low_power: 0,
       implausible: 0,
+      no_efficiency: 0,
+      low_soc: 0,
     }
     const w = await tiles(b)
     expect(tile(w, 'kept').notes).toEqual(['1 charge not used'])
+  })
+
+  it('says a Tesla rests on its rated range, with its efficiency and reasons', async () => {
+    const w = await tiles(rated)
+    expect(tile(w, 'capacity').notes).toEqual([
+      '75 kWh estimated',
+      'between 75 kWh and 75 kWh',
+      'From the rated range alone',
+      'Rated efficiency 15 kWh/100 km, measured on 7 charges',
+    ])
+    await w.find('.why').trigger('click')
+    await flushPromises()
+    const reasons = [...document.querySelectorAll('[role="dialog"] li')].map((li) =>
+      plain(li.textContent ?? ''),
+    )
+    expect(reasons.slice(-2)).toEqual([
+      '0 No charge has measured the rated efficiency yet',
+      '1 Usable charge under 50 % at the end',
+    ])
   })
 
   it.each([

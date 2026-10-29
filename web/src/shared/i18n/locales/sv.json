@@ -540,7 +540,9 @@
       "cyclesNote": "Energi motsvarande lika många fulla laddningar",
       "kept": "Använda laddningar",
       "setAside": "{n} laddning inte använd | {n} laddningar inte använda",
-      "why": "Varför?"
+      "why": "Varför?",
+      "ratedBasis": "Enbart från den nominella räckvidden",
+      "efficiency": "Nominell förbrukning {value}, mätt på {n} laddning | Nominell förbrukning {value}, mätt på {n} laddningar"
     },
     "why": {
       "title": "Varför vissa laddningar inte ger någon uppskattning",
@@ -552,7 +554,9 @@
       "powerGap": "Avläsningar för långt ifrån varandra",
       "lowPower": "Laddade för långsamt",
       "implausible": "Resultat för långt ifrån",
-      "close": "Stäng"
+      "close": "Stäng",
+      "noEfficiency": "Ingen laddning har mätt den nominella förbrukningen än",
+      "lowSoc": "Användbar laddning under 50 % vid slutet"
     },
     "chart": {
       "capacity": {
@@ -569,7 +573,8 @@
         "hidden": "{n} uppskattning utan mätarställning visas inte. | {n} uppskattningar utan mätarställning visas inte.",
         "noOdometer": "Ingen uppskattning har en mätarställning.",
         "none": "Ingen uppskattning ännu: det krävs en laddning på minst 20 %.",
-        "hint": "Välj en punkt för att se dess laddning."
+        "hint": "Välj en punkt för att se dess laddning.",
+        "rated": "Nominell räckvidd"
       },
       "range": {
         "title": "Räckvidd vid 100 % (bilens uppskattning)",
@@ -577,7 +582,8 @@
         "summary": "Räckvidd vid 100 % från {first} i {firstAt} till {last} i {lastAt}.",
         "one": "Räckvidd vid 100 % {value} i {at}.",
         "none": "Ingen räckvidd vid 100 % ännu.",
-        "hint": "Bilens egna uppskattning, baserad på din senaste körning: den sjunker på vintern, oavsett batteriet."
+        "hint": "Bilens egna uppskattning, baserad på din senaste körning: den sjunker på vintern, oavsett batteriet.",
+        "hintRated": "Bilens nominella räckvidd, en fast omräkning av dess användbara laddning: den följer batteriet, inte årstiden."
       },
       "header": {
         "month": "Månad",

@@ -185,13 +185,19 @@ components:
     Battery:
       additionalProperties: false
       properties:
+        basis:
+          description: "What current, change and the months' capacities rest on. all: every estimate, all sources together. rated: the rated estimates alone, once there are 5 of them: the vehicle's own count is more precise than the other sources, whose estimates stay in the series."
+          enum:
+            - all
+            - rated
+          type: string
         change:
-          description: The evolution of the estimate, from the median of the first 20 estimates. null while the history holds less than 12 months of it or fewer than 40 estimates.
+          description: The evolution of the estimate, from the median of the first 20 estimates of the basis. null while the history holds less than 12 months of it or fewer than 40 estimates.
           oneOf:
             - $ref: "#/components/schemas/CapacityChange"
             - type: "null"
         current:
-          description: "The median of the latest 20 estimates, all sources together, with their quartiles. null under 5 estimates: not enough points to say anything yet, the series still shows them."
+          description: "The median of the latest 20 estimates of the basis, with their quartiles. null under 5 estimates: not enough points to say anything yet, the series still shows them."
           oneOf:
             - $ref: "#/components/schemas/CapacityQuartiles"
             - type: "null"
@@ -208,7 +214,7 @@ components:
             - integer
             - "null"
         estimates:
-          description: "The retained estimates, oldest first: one per source and charge."
+          description: "The retained estimates, oldest first: one per source and charge, whatever the basis."
           items:
             $ref: "#/components/schemas/CapacityEstimate"
           type: array
@@ -220,6 +226,11 @@ components:
           items:
             $ref: "#/components/schemas/CapacityMonth"
           type: array
+        rated_efficiency:
+          description: The vehicle's rated efficiency, the rated estimates rest on. null for a vehicle that tells no rated range or measures no energy (a Volvo, a Polestar), and until a charge measures it.
+          oneOf:
+            - $ref: "#/components/schemas/RatedEfficiency"
+            - type: "null"
         reference:
           description: The capacity the estimates are compared with and bounded by. null when neither the variant's net capacity nor the vendor's is known, and then no estimate is set aside as implausible, no deviation is shown and no cycles either.
           oneOf:
@@ -229,6 +240,8 @@ components:
           type: string
       required:
         - time_zone
+        - basis
+        - rated_efficiency
         - reference
         - current
         - deviation_pct
@@ -327,13 +340,14 @@ components:
             - number
             - "null"
         source:
-          description: "power: the integral of the charging power over the charge's retained span, over the SoC change of the same readings. billed: the energy billed for the charge, entered from its receipt, over the SoC change of the whole charge. The two estimates of one charge are two points, never averaged."
+          description: "power: the integral of the charging power over the charge's retained span, over the SoC change of the same readings. billed: the energy billed for the charge, entered from its receipt, over the SoC change of the whole charge. rated: the rated range at the end of the charge brought back to 100 % of the usable level, times the vehicle's rated efficiency (a Tesla's). The estimates of one charge are separate points, never averaged."
           enum:
             - power
             - billed
+            - rated
           type: string
         span_soc:
-          description: "The SoC change the estimate divides by, in points: the span's for the power source, the whole charge's for the billed one."
+          description: "The SoC the estimate divides by, in points: the change over the span for the power source, over the whole charge for the billed one; the usable level at the end of the charge for the rated one."
           format: double
           type: number
         type:
@@ -371,6 +385,16 @@ components:
           format: int64
           minimum: 0
           type: integer
+        low_soc:
+          description: "A rated candidate whose usable level at the end of the charge is below 50 %: the integer level rounds the estimate too much."
+          format: int64
+          minimum: 0
+          type: integer
+        no_efficiency:
+          description: A rated candidate, while no charge measures the vehicle's rated efficiency yet.
+          format: int64
+          minimum: 0
+          type: integer
         no_power:
           description: The vehicle reports no charging power.
           format: int64
@@ -399,6 +423,8 @@ components:
         - power_gap
         - low_power
         - implausible
+        - no_efficiency
+        - low_soc
       type: object
     CapacityMonth:
       additionalProperties: false
@@ -2658,6 +2684,23 @@ components:
       required:
         - median_km
         - readings
+      type: object
+    RatedEfficiency:
+      additionalProperties: false
+      properties:
+        charges:
+          description: "How many charges it is measured on: observed, of 10 minutes or more, ended at 95 % at most, with a measured energy and a rated range that rose."
+          format: int64
+          minimum: 1
+          type: integer
+        kwh_per_km:
+          description: The median, over the charges it is measured on, of the energy the vehicle measured into its battery over the rated range the charge added, in kWh per km.
+          exclusiveMinimum: 0
+          format: double
+          type: number
+      required:
+        - kwh_per_km
+        - charges
       type: object
     ReadingCable:
       additionalProperties: false
@@ -5526,7 +5569,7 @@ paths:
         - events
   /vehicles/{vehicle}/battery:
     get:
-      description: "Over the whole history of the vehicle, one capacity estimate per source and charge and their aggregates: no period is chosen. A power estimate is the integral of the charging power over the charge's retained span, over the SoC change of the same readings; a billed one is the energy entered from the charge's receipt, over the SoC change of the whole charge. Neither is a measurement: the vehicle exposes no energy meter, and the integer SoC rounds a 20-point span by ±5 %. `current` is the median of the latest 20 estimates, all sources together; `deviation_pct` compares it with the reference capacity, signed and never clamped, so that a bias of the method shows as one instead of passing for a new battery. `change` waits for 12 months of history and twice 20 estimates: a ratio of two medians of the same method, in which a constant bias cancels, and the trend says more than the level. `cycles` is an estimate too, and `excluded` counts the candidates the filters set aside, by reason, so that the reader sees why there are few points. `range_at_full` is the vehicle's own forecast of its consumption, which follows the season and the driving: shown apart, and never a measure of the battery. The months are split in the requested time zone, empty ones included; at most 400 of them."
+      description: "Over the whole history of the vehicle, one capacity estimate per source and charge and their aggregates: no period is chosen. A power estimate is the integral of the charging power over the charge's retained span, over the SoC change of the same readings; a billed one is the energy entered from the charge's receipt, over the SoC change of the whole charge. Neither is a measurement: the vehicle exposes no energy meter, and the integer SoC rounds a 20-point span by ±5 %. A rated one, for a vehicle that tells a rated range and measures the energy it charges (a Tesla), is the rated range at the end of the charge brought back to 100 % of the usable level, times the vehicle's rated efficiency (`rated_efficiency`), as TeslaMate reads it: the battery management system's own count. `current` is the median of the latest 20 estimates of the `basis`, every source together, or the rated estimates alone once there are 5; `deviation_pct` compares it with the reference capacity, signed and never clamped, so that a bias of the method shows as one instead of passing for a new battery. `change` waits for 12 months of history and twice 20 estimates: a ratio of two medians of the same method, in which a constant bias cancels, and the trend says more than the level. `cycles` is an estimate too, and `excluded` counts the candidates the filters set aside, by reason, so that the reader sees why there are few points. `range_at_full` is the vehicle's own forecast of its consumption, which follows the season and the driving: shown apart, and never a measure of the battery. The months are split in the requested time zone, empty ones included; at most 400 of them."
       operationId: getVehicleBattery
       parameters:
         - description: The vehicle ID.

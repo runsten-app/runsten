@@ -313,6 +313,54 @@ func TestBatteryJSON(t *testing.T) {
 		}
 	})
 
+	t.Run("a vehicle that tells a rated range", func(t *testing.T) {
+		e, c := readerEnv(t)
+		at := time.Date(2026, 9, 5, 12, 0, 0, 0, time.UTC)
+		// Six charges from 40 to 80 %: a power estimate of 72 kWh each, and the rated range
+		// 400 km at the end at 80 % of the usable level; the vehicle measured 30 kWh for
+		// the 200 km it added: 0.15 kWh per km, 75 kWh at 100 %.
+		var charges []core.Charge
+		for i := range 6 {
+			ch := batteryCharge(at.AddDate(0, 0, 4*i), core.AC, 40, 28.8, 24000+float64(i)*100)
+			ch.Sources = []string{"tesla"}
+			ch.StartRangeKm, ch.EndRangeKm, ch.EndUsableSoC, ch.EnergyMeasuredKWh = some(200.0), some(400.0), some(80.0), some(30.0)
+			charges = append(charges, ch)
+		}
+		// One whose usable level ends too low for a rated estimate.
+		low := batteryCharge(at.AddDate(0, 0, -3), core.AC, 40, 28.8, 23900)
+		low.StartSoC, low.EndSoC, low.Span.V.StartSoC, low.Span.V.EndSoC = some(5.0), some(45.0), 5, 45
+		low.StartRangeKm, low.EndRangeKm, low.EndUsableSoC, low.EnergyMeasuredKWh = some(25.0), some(225.0), some(45.0), some(30.0)
+		e.reader.charges[car] = append(charges, low)
+		base := e.api.URL + "/api/v1/vehicles/" + car + "/battery"
+		_, body := get(t, noFollow(), base, c)
+		golden(t, "battery-rated.json", body)
+		var b struct {
+			batteryView
+			Basis           string `json:"basis"`
+			RatedEfficiency *struct {
+				KWhPerKm float64 `json:"kwh_per_km"`
+				Charges  int     `json:"charges"`
+			} `json:"rated_efficiency"`
+			Excluded struct {
+				LowSoC int `json:"low_soc"`
+			} `json:"excluded"`
+		}
+		if err := json.Unmarshal([]byte(body), &b); err != nil {
+			t.Fatal(err)
+		}
+		// The current capacity rests on the six rated estimates alone; the series
+		// holds the power ones too.
+		if b.Basis != "rated" || b.Current == nil || !near(b.Current.CapacityKWh, 75) || b.Current.Estimates != 6 {
+			t.Errorf("basis %q, current %+v", b.Basis, b.Current)
+		}
+		if b.RatedEfficiency == nil || !near(b.RatedEfficiency.KWhPerKm, 0.15) || b.RatedEfficiency.Charges != 7 {
+			t.Errorf("rated efficiency %+v", b.RatedEfficiency)
+		}
+		if len(b.Estimates) != 13 || b.Excluded.LowSoC != 1 {
+			t.Errorf("%d estimates, %d set aside for a low level", len(b.Estimates), b.Excluded.LowSoC)
+		}
+	})
+
 	t.Run("the reference follows the variant in effect", func(t *testing.T) {
 		at := time.Date(2026, 9, 5, 12, 0, 0, 0, time.UTC)
 		one := func() []core.Charge {

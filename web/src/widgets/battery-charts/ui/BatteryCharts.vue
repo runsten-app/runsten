@@ -16,7 +16,8 @@ import { ChartFrame, type Point, type Series } from '@/shared/ui/chart'
 // BatteryCharts draws the estimated capacity of each charge against the date or the
 // mileage, with the monthly median, its interquartile range and the reference capacity;
 // then the displayed range at a full charge, which the vehicle forecasts from its recent
-// consumption. Pressing a point of the capacity leads to its charge: the raw data behind
+// consumption, or, for a vehicle that tells a rated range (a Tesla), converts from its
+// usable charge. Pressing a point of the capacity leads to its charge: the raw data behind
 // the estimate.
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
@@ -103,11 +104,15 @@ const capacity = computed(() => {
   const byDate = axis.value === 'date'
   const power = plotted('power')
   const billed = plotted('billed')
+  const rated = plotted('rated')
+  // The points the median rests on take its color: the rated ones once they are the
+  // basis, the power ones otherwise.
+  const ratedBasis = b.basis === 'rated'
   const series: Series[] = [
     {
       label: t('battery.chart.capacity.power'),
       data: power.points,
-      color: color('chart-1'),
+      color: color(ratedBasis ? 'chart-5' : 'chart-1'),
       scatter: true,
     },
     {
@@ -117,6 +122,15 @@ const capacity = computed(() => {
       scatter: true,
     },
   ]
+  // Only a vehicle that tells a rated range has the series: no empty legend elsewhere.
+  if (rated.points.length) {
+    series.push({
+      label: t('battery.chart.capacity.rated'),
+      data: rated.points,
+      color: color(ratedBasis ? 'chart-1' : 'chart-5'),
+      scatter: true,
+    })
+  }
   // The monthly median and its band exist by date only: the mileage axis has no months.
   if (byDate) {
     series.push(
@@ -144,7 +158,8 @@ const capacity = computed(() => {
   }
   // The reference spans what is drawn, on either axis: what the estimates are compared
   // with, dashed because it is not data of its own.
-  const xs = [...power.points, ...billed.points].map((p) => p.x)
+  const points = [...power.points, ...billed.points, ...rated.points]
+  const xs = points.map((p) => p.x)
   if (b.reference && xs.length) {
     series.push({
       label: t('battery.chart.capacity.reference'),
@@ -180,11 +195,11 @@ const capacity = computed(() => {
       format: (v) => (v === null ? f.unknown() : f.number(v)),
     },
   ]
-  const summary = byDate ? capacitySummary(b.months) : odometerSummary(b, power, billed)
+  const summary = byDate ? capacitySummary(b.months) : odometerSummary(b, [power, billed, rated])
   // The y axis follows the estimates, the reference and the band: never zero, which
   // would flatten the very fall the page exists to show.
-  const drawn = power.points.length + billed.points.length > 0
-  const values = [...power.points, ...billed.points].map((p) => p.y)
+  const drawn = points.length > 0
+  const values = points.map((p) => p.y)
   if (byDate) {
     for (const m of b.months) {
       if (m.capacity) values.push(m.capacity.capacity_kwh, m.capacity.q1_kwh, m.capacity.q3_kwh)
@@ -197,6 +212,7 @@ const capacity = computed(() => {
     summary,
     power: power.estimates,
     billed: billed.estimates,
+    rated: rated.estimates,
     drawn,
     y: yBounds(values, 1),
   }
@@ -227,14 +243,13 @@ function capacitySummary(ms: CapacityMonth[]): string {
 
 function odometerSummary(
   b: NonNullable<typeof battery.value>,
-  power: { estimates: CapacityEstimate[] },
-  billed: { estimates: CapacityEstimate[] },
+  sources: { estimates: CapacityEstimate[] }[],
 ): string {
   // Left to right on the axis: the billed estimate of one charge may sit before the
   // later power ones, whatever the order the API lists them in.
-  const drawn = [...power.estimates, ...billed.estimates].sort(
-    (a, e) => (a.odometer_km ?? 0) - (e.odometer_km ?? 0),
-  )
+  const drawn = sources
+    .flatMap((s) => s.estimates)
+    .sort((a, e) => (a.odometer_km ?? 0) - (e.odometer_km ?? 0))
   const first = drawn[0]
   const last = drawn.at(-1)
   if (!first) return t('battery.chart.capacity.noOdometer')
@@ -253,10 +268,22 @@ function odometerSummary(
           lastKm: at(last ?? first).km,
         })
   // The estimates the axis cannot place are left out, never guessed at zero.
-  const hidden = b.estimates.length - (power.estimates.length + billed.estimates.length)
+  const hidden = b.estimates.length - drawn.length
   if (hidden > 0) summary = `${summary} ${t('battery.chart.capacity.hidden', hidden)}`
   return summary
 }
+
+// tellsRated is whether the vehicle tells a rated range: its range at a full charge is
+// then a conversion of its usable charge, which follows the battery, not the season.
+const tellsRated = computed(() => {
+  const b = battery.value
+  if (!b) return false
+  return (
+    b.rated_efficiency !== null ||
+    b.excluded.no_efficiency + b.excluded.low_soc > 0 ||
+    b.estimates.some((e) => e.source === 'rated')
+  )
+})
 
 const rangeAtFull = computed(() => {
   const b = battery.value
@@ -322,7 +349,8 @@ const formatX = computed(() =>
 function openCharge(dataset: number, index: number) {
   const c = capacity.value
   if (!c) return
-  const drawn = dataset === 0 ? c.power : dataset === 1 ? c.billed : []
+  // The rated series is the third when there is one; the lines follow.
+  const drawn = [c.power, c.billed, c.rated.length ? c.rated : []][dataset] ?? []
   const estimate = drawn[index]
   if (!estimate) return
   return router.push({ name: 'charge', params: { vehicle: props.vehicle, id: estimate.charge } })
@@ -360,12 +388,13 @@ function openCharge(dataset: number, index: number) {
       @select="(index: number, dataset: number) => openCharge(dataset, index)"
     />
     <!-- The vehicle's own forecast, which follows the season and the driving: shown
-         apart, never a measure of the battery. -->
+         apart, never a measure of the battery. A rated range is a conversion of the
+         usable charge, which the hint says. -->
     <ChartFrame
       v-if="rangeAtFull"
       class="range"
       kind="line"
-      :hint="t('battery.chart.range.hint')"
+      :hint="tellsRated ? t('battery.chart.range.hintRated') : t('battery.chart.range.hint')"
       :title="t('battery.chart.range.title')"
       :summary="rangeAtFull.summary"
       :labels
