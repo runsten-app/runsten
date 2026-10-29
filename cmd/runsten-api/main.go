@@ -275,6 +275,7 @@ func run(args []string) error {
 		Reader:      st,
 		Settings:    st,
 		Models:      st,
+		Deletion:    st,
 		Costs:       st,
 		Imports:     st,
 		ImportJobs:  st,

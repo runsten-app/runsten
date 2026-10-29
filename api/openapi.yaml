@@ -5612,6 +5612,50 @@ paths:
       tags:
         - vehicles
   /vehicles/{vehicle}:
+    delete:
+      description: "The vehicle and its whole history: its readings, trips and charges, derived or imported, the costs entered for them, and what the collector reported of it. Nothing of it is kept: the account's export (`GET /account/export`) is the way to keep a copy first. Its connection stays, and reads the account's other vehicles; a new authorization or credential that lists it again adds it as a new vehicle, without its history."
+      operationId: deleteVehicle
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Delete a vehicle
+      tags:
+        - vehicles
     get:
       operationId: getVehicle
       parameters:

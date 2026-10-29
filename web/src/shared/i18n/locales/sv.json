@@ -880,6 +880,17 @@
     "loading": "Läser in fordonet",
     "error": "Fordonet kunde inte läsas in. Försök igen om en stund."
   },
+  "deleteVehicle": {
+    "title": "Ta bort det här fordonet",
+    "help": "För ett sålt fordon, eller ett du inte längre följer. Dess anslutning finns kvar och fortsätter att läsa dina andra fordon.",
+    "button": "Ta bort {vehicle}",
+    "confirmTitle": "Ta bort {vehicle}?",
+    "text": "Dess avläsningar, resor, laddningar, importerade historik och de kostnader som angetts för dem tas bort för gott. Ladda först ned dina data i inställningarna för att behålla en kopia.",
+    "again": "En ny anslutning som listar det igen lägger till det som ett nytt fordon, utan den här historiken.",
+    "confirm": "Ta bort",
+    "cancel": "Avbryt",
+    "error": "Fordonet kunde inte tas bort. Försök igen om en stund."
+  },
   "orphans": {
     "title": "Kostnader utan laddning",
     "help": "En angiven kostnad finns kvar även när dess laddning identifieras på nytt, efter en ändring av reglerna. När ingen laddning, eller fler än en, längre motsvarar den väntar den här: koppla den till rätt laddning, eller ta bort den. Den läggs aldrig till summorna, som då skulle räkna laddningen två gånger.",

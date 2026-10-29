@@ -880,6 +880,17 @@
     "loading": "Chargement du véhicule",
     "error": "Le véhicule n'a pas pu être chargé. Réessayez dans un instant."
   },
+  "deleteVehicle": {
+    "title": "Supprimer ce véhicule",
+    "help": "Pour un véhicule vendu, ou que vous ne suivez plus. Sa connexion reste, et continue de lire vos autres véhicules.",
+    "button": "Supprimer {vehicle}",
+    "confirmTitle": "Supprimer {vehicle} ?",
+    "text": "Ses relevés, ses trajets, ses charges, son historique importé et les coûts saisis sont supprimés définitivement. Pour en garder une copie, téléchargez d'abord vos données dans les réglages.",
+    "again": "Une nouvelle connexion qui le liste de nouveau l'ajoute comme un nouveau véhicule, sans cet historique.",
+    "confirm": "Supprimer",
+    "cancel": "Annuler",
+    "error": "Le véhicule n'a pas pu être supprimé. Réessayez dans un instant."
+  },
   "orphans": {
     "title": "Coûts sans charge",
     "help": "Un coût saisi reste même quand sa charge est redétectée, après un changement des règles de détection. Quand aucune charge, ou plus d'une, ne lui correspond plus, il attend ici : rattachez-le à la bonne charge, ou supprimez-le. Il n'est jamais ajouté aux totaux, qui compteraient la charge deux fois.",
