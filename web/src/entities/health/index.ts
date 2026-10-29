@@ -1,10 +1,12 @@
-export { fetchHealth, fetchTyres, type TyresQuery } from './api/healthApi'
+export { fetchHealth, fetchSoftwareVersions, fetchTyres, type TyresQuery } from './api/healthApi'
 export type {
   Check,
   CheckName,
   Health,
   Service,
   ServiceState,
+  SoftwareVersion,
+  SoftwareVersionPage,
   Tyre,
   TyreReading,
   TyreRun,

@@ -265,6 +265,40 @@ describe('VehicleState', () => {
     expect(w.find('.sleep').exists()).toBe(false)
   })
 
+  it('tells the software and the update waiting for it, nothing for a car without', async () => {
+    const at = {
+      reported_at: null,
+      fetched_at: '2026-09-28T18:40:00Z',
+      checked_at: '2026-09-28T19:06:00Z',
+    }
+    const update = {
+      status: 'downloading' as const,
+      version: '2026.38.3.2',
+      download_pct: 40,
+      install_pct: null,
+      duration_s: 2700,
+    }
+    let w = await mounted({
+      ...state,
+      software: { ...at, value: '2026.38.3.1' },
+      software_update: { ...at, value: update },
+    })
+    expect(reading(w, 'Software').value).toBe('2026.38.3.1')
+    expect(reading(w, 'Software update').value).toBe('2026.38.3.2: Downloading, 40%')
+    // Waiting for Wi-Fi: no progress to tell; without its version, the status alone.
+    w.unmount()
+    w = await mounted({
+      ...state,
+      software: { ...at, value: '2026.38.3.1' },
+      software_update: { ...at, value: { ...update, status: 'waiting_wifi', version: null } },
+    })
+    expect(reading(w, 'Software update').value).toBe('Waiting for Wi-Fi')
+    w.unmount()
+    w = await mounted(state)
+    expect(() => reading(w, 'Software')).toThrow()
+    expect(() => reading(w, 'Software update')).toThrow()
+  })
+
   it("tells the car's latest measure once it is older than half an hour", async () => {
     let w = await mounted(state)
     expect(w.find('.reported').exists()).toBe(false)
