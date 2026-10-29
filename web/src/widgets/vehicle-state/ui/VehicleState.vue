@@ -201,10 +201,18 @@ const chargeFacts = computed(() => {
     stale: !!x.reading && isStale(x.reading.checked_at, now.value, connection.value),
   }))
 })
+// The reading whose times the line shows: its first value shown, the status first (the
+// line shows no power).
+const chargeLineTile = computed(() => {
+  const s = state.value
+  if (!s) return null
+  const c = s.charging
+  return c.status ?? c.cable ?? c.type ?? (s.soc_pct ? null : c.target_soc_pct)
+})
 // The line says when its values were checked only where the battery's line does not
 // already say it, as a value does in its tile.
 const chargeOwn = computed(() => {
-  const r = chargingTile.value
+  const r = chargeLineTile.value
   const soc = state.value?.soc_pct
   if (!r) return false
   if (!soc) return true
@@ -245,7 +253,11 @@ const update = computed(() => {
 </script>
 
 <template>
-  <v-alert v-if="error && !state" type="error" variant="tonal">{{ errorMessage }}</v-alert>
+  <!-- No state: the aside (the last days) still shows, its data read apart. -->
+  <div v-if="error && !state">
+    <v-alert type="error" variant="tonal">{{ errorMessage }}</v-alert>
+    <div v-if="$slots.aside" class="mt-4"><slot name="aside" /></div>
+  </div>
   <v-progress-linear v-else-if="isPending" indeterminate :aria-label="t('state.loading')" />
   <div v-else-if="state" class="verdandi">
     <v-alert v-if="error" type="warning" variant="tonal" density="compact" class="mb-4">
@@ -387,8 +399,8 @@ const update = computed(() => {
                 </dl>
               </div>
               <ReadingProvenance
-                v-if="chargeOwn && chargingTile"
-                :reading="chargingTile"
+                v-if="chargeOwn && chargeLineTile"
+                :reading="chargeLineTile"
                 :now="now"
                 :connection="connection"
                 class="mt-2"

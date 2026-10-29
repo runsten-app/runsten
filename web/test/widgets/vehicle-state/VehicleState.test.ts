@@ -1,5 +1,6 @@
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 import { ApiError } from '@/shared/api'
 import { i18n, type Locale } from '@/shared/i18n'
 import { VehicleState } from '@/widgets/vehicle-state'
@@ -133,6 +134,20 @@ describe('VehicleState', () => {
     expect(w.find('.charge-line .details').exists()).toBe(true)
   })
 
+  it('dates the line by the values it shows, not by a power it does not', async () => {
+    const at = (t: string) => ({ reported_at: null, fetched_at: t, checked_at: t })
+    const w = await mounted({
+      ...state,
+      charging: {
+        ...state.charging,
+        status: { ...at('2026-09-28T18:00:00Z'), value: 'done' },
+        power_w: { ...at('2026-09-28T12:00:00Z'), value: 0 },
+      },
+    })
+    const times = w.findAll('.charge-line .details time').map((t) => t.attributes('datetime'))
+    expect(times).toEqual(['2026-09-28T18:00:00Z', '2026-09-28T18:00:00Z'])
+  })
+
   it.each(['discharging', 'error'])('gives a charge %s its tile', async (value) => {
     const w = await mounted({
       ...state,
@@ -238,6 +253,22 @@ describe('VehicleState', () => {
     await flushPromises()
     expect(reading(w, 'State of charge').value).toBe('64%')
     expect(w.find('.v-alert').text()).toContain('The state could not be refreshed')
+  })
+
+  it('keeps its aside when the state cannot be loaded', async () => {
+    fetchVehicleState.mockRejectedValue(new ApiError(502, 'unavailable', ''))
+    const host = {
+      render: () =>
+        h(
+          VehicleState,
+          { vehicle: 'v1' },
+          { aside: () => h('p', { class: 'aside' }, 'Last days') },
+        ),
+    }
+    const { wrapper } = mountWith(host)
+    await flushPromises()
+    expect(wrapper.find('.v-alert').text()).toContain('The state could not be loaded.')
+    expect(wrapper.find('.aside').text()).toBe('Last days')
   })
 
   it.each([
