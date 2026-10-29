@@ -4,15 +4,20 @@ import { VehicleMenu } from '@/features/select-vehicle'
 import vehicles from '@fixtures/vehicles.json'
 import { mountWith, testRouter } from '@test/utils'
 
-const { fetchVehicles } = vi.hoisted(() => ({ fetchVehicles: vi.fn() }))
+const { fetchVehicle, fetchVehicles } = vi.hoisted(() => ({
+  fetchVehicle: vi.fn(),
+  fetchVehicles: vi.fn(),
+}))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
+  fetchVehicle,
   fetchVehicles,
 }))
 
 enableAutoUnmount(afterEach)
 
 beforeEach(() => {
+  fetchVehicle.mockReset()
   fetchVehicles.mockReset()
   fetchVehicles.mockResolvedValue(vehicles.items)
 })
@@ -104,6 +109,22 @@ describe('VehicleMenu', () => {
     expect(button.text()).toBe('XC40 Recharge Twin · 2021')
     expect(rows).toHaveLength(1)
     expect(settings?.getAttribute('href')).toBe(`/vehicles/${first.id}/settings`)
+  })
+
+  // The bar is the way to a vehicle's settings: a list that fails leaves it there.
+  it('names the vehicle from its own read when the list fails, and leads to its settings', async () => {
+    fetchVehicles.mockRejectedValue(new Error('down'))
+    fetchVehicle.mockResolvedValue(first)
+    const { button, rows, settings } = await opened(`/vehicles/${first.id}`)
+    expect(fetchVehicle).toHaveBeenCalledWith(first.id)
+    expect(button.text()).toBe('XC40 Recharge Twin · 2021')
+    expect(rows).toHaveLength(0)
+    expect(settings?.getAttribute('href')).toBe(`/vehicles/${first.id}/settings`)
+  })
+
+  it('reads no vehicle of its own while the list names it', async () => {
+    await opened(`/vehicles/${first.id}`)
+    expect(fetchVehicle).not.toHaveBeenCalled()
   })
 
   it('shows nothing before the vehicles are known', async () => {

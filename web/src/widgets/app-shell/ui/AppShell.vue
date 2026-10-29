@@ -74,12 +74,16 @@ const { vehicles } = useCollections()
 watchEffect(() => {
   if (props.vehicle) rememberVehicle(props.vehicle)
 })
-// The vehicle of the bar and of the digits: the page's, the one the connection was opened
-// from, the one seen last while the account still has it, else the first.
+// The vehicle of the bar and of the digits: the page's, else, among the account's, the one
+// the connection was opened from, the one seen last, the first.
 const shown = computed(() => {
-  const remembered = rememberedVehicle.value
-  const kept = vehicles.value?.some((v) => v.id === remembered) ? remembered : undefined
-  return props.vehicle ?? from.value.vehicle ?? kept ?? vehicles.value?.[0]?.id
+  const listed = (id?: string) => (vehicles.value?.some((v) => v.id === id) ? id : undefined)
+  return (
+    props.vehicle ??
+    listed(from.value.vehicle) ??
+    listed(rememberedVehicle.value) ??
+    vehicles.value?.[0]?.id
+  )
 })
 const { connection: connectionSettings } = useConnectionSettings()
 // A vehicle the offer leaves unread is no failure: its notice tells it, on its pages.

@@ -318,11 +318,27 @@ describe('AppShell shortcuts beyond a vehicle', () => {
   })
 
   it('lead to the vehicle the connection was opened from', async () => {
+    const second = vehicles.items[1]?.id
     const router = testRouter()
-    await router.push('/connection?vehicle=v2')
+    await router.push(`/connection?vehicle=${second}`)
     mountWith(AppShell, { router })
     await flushPromises()
     press('3', 'Digit3')
-    await vi.waitFor(() => expect(router.currentRoute.value.fullPath).toBe('/vehicles/v2/trips'))
+    await vi.waitFor(() =>
+      expect(router.currentRoute.value.fullPath).toBe(`/vehicles/${second}/trips`),
+    )
+  })
+
+  // A vehicle the account does not have (deleted, a link from elsewhere) is not taken.
+  it('lead to a vehicle of the account when the connection names another', async () => {
+    const router = testRouter()
+    await router.push('/connection?vehicle=gone')
+    const { wrapper } = mountWith(AppShell, { router })
+    await flushPromises()
+    expect(wrapper.find('button.vehicle-menu').exists()).toBe(true)
+    press('1', 'Digit1')
+    await vi.waitFor(() =>
+      expect(router.currentRoute.value.path).toMatch(/^\/vehicles\/(?!gone)[^/]+$/),
+    )
   })
 })

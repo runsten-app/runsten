@@ -3,7 +3,8 @@ import { mdiCarCog, mdiCheck, mdiChevronDown } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, type RouteLocationRaw } from 'vue-router'
-import { vehicleLabels } from '@/entities/vehicle'
+import { vehicleLabel, vehicleLabels } from '@/entities/vehicle'
+import { useVehicle } from '../composables/useVehicle'
 import { useVehicles } from '../composables/useVehicles'
 
 // VehicleMenu names the vehicle in the bar, on every page once the account has one: the
@@ -13,7 +14,7 @@ import { useVehicles } from '../composables/useVehicles'
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const route = useRoute()
-const { vehicles } = useVehicles()
+const { vehicles, error } = useVehicles()
 
 const sections: Record<string, string> = {
   vehicle: 'vehicle',
@@ -40,7 +41,14 @@ function target(vehicle: string): RouteLocationRaw {
 const items = computed(() =>
   [...vehicleLabels(vehicles.value ?? [])].map(([id, title]) => ({ id, title, to: target(id) })),
 )
-const label = computed(() => items.value.find((i) => i.id === props.vehicle)?.title ?? '')
+const listed = computed(() => items.value.find((i) => i.id === props.vehicle)?.title)
+// The list failed, or lacks it: the vehicle's own read (cached on its pages) still names
+// it, so that the way to its settings stays.
+const { vehicle: own } = useVehicle(
+  () => props.vehicle,
+  () => (!!vehicles.value || !!error.value) && !listed.value,
+)
+const label = computed(() => listed.value ?? (own.value ? vehicleLabel(own.value) : ''))
 const name = computed(() => t('vehicle.menu', { label: label.value }))
 </script>
 
