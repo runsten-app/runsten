@@ -21,7 +21,7 @@ Runsten installs on a phone like an app: its own icon, full screen, without the 
 - **iPhone**: open your instance in Safari, select **Share**, then **Add to Home Screen**.
 - **Android**: open it in Chrome, open the menu, then **Add to home screen** (or **Install app**).
 
-The app installed asks you to sign in once: on an iPhone it keeps its own session, apart from Safari's. Android installs it only from an `https` address ([Reverse proxy](../self-hosting/reverse-proxy.md)).
+On an iPhone, the app takes Safari's session as it is added, then keeps its own: signing out of one leaves the other signed in. Android installs it only from an `https` address ([Reverse proxy](../self-hosting/reverse-proxy.md)).
 
 ## State
 
