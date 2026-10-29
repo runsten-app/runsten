@@ -66,15 +66,15 @@ async function done(said: string) {
 </script>
 
 <template>
-  <section v-if="shown" class="orphan-costs mt-8" aria-labelledby="settings-orphans-title">
-    <h2 id="settings-orphans-title" ref="heading" tabindex="-1" class="text-title-large mb-2">
+  <section v-if="shown" class="orphan-costs" aria-labelledby="settings-orphans-title">
+    <h3 id="settings-orphans-title" ref="heading" tabindex="-1" class="text-title-medium mb-1">
       {{ t('orphans.title') }}
-    </h2>
-    <p class="text-body-medium mb-4">{{ t('orphans.help') }}</p>
+    </h3>
+    <p class="text-body-medium text-medium-emphasis mb-3">{{ t('orphans.help') }}</p>
     <v-alert v-if="error" type="error" variant="tonal">{{ t('orphans.error') }}</v-alert>
     <p v-else-if="!orphans?.length" class="none text-body-medium">{{ t('orphans.none') }}</p>
     <v-card v-for="o in orphans" :key="o.id" class="orphan mb-3">
-      <v-card-title tag="h3" class="text-title-medium text-wrap">
+      <v-card-title tag="h4" class="text-title-medium text-wrap">
         {{ t('orphans.window', { window: f.bounds(o.window) }) }}
       </v-card-title>
       <v-card-text>

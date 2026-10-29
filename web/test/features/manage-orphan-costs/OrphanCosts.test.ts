@@ -60,11 +60,11 @@ const button = (text: string) =>
 describe('OrphanCosts', () => {
   it('lists each cost without a charge, and says where they come from', async () => {
     await section()
-    expect(w().find('h2').text()).toBe('Costs without a charge')
+    expect(w().find('h3').text()).toBe('Costs without a charge')
     expect(w().find('p').text()).toMatch(
       /^A cost you entered stays even when its charge is detected again/,
     )
-    expect(w().find('.orphan h3').text()).toBe('Charge of 29 Sept 2026, 12:00–12:40')
+    expect(w().find('.orphan h4').text()).toBe('Charge of 29 Sept 2026, 12:00–12:40')
     const facts = w()
       .findAll('.orphan .fact')
       .map((f) => [f.find('dt').text(), plain(f.find('dd').text())])
@@ -131,7 +131,7 @@ describe('OrphanCosts', () => {
       charges.items[0]?.id,
     )
     expect(w().find('[role="status"]').text()).toBe('Cost attached to the charge.')
-    expect(document.activeElement).toBe(w().find('h2').element)
+    expect(document.activeElement).toBe(w().find('h3').element)
   })
 
   it('explains a charge that already has an entered cost', async () => {
@@ -199,7 +199,7 @@ describe('OrphanCosts', () => {
     expect(w().find('.orphan').exists()).toBe(false)
     expect(w().find('.none').text()).toBe('No cost without a charge any more.')
     expect(w().find('[role="status"]').text()).toBe('Cost deleted.')
-    expect(document.activeElement).toBe(w().find('h2').element)
+    expect(document.activeElement).toBe(w().find('h3').element)
   })
 
   it('tells a failed deletion in the dialog, and a cancel keeps the cost', async () => {
@@ -232,7 +232,7 @@ describe('OrphanCosts', () => {
   it('speaks French', async () => {
     i18n.global.locale.value = 'fr'
     await section()
-    expect(w().find('h2').text()).toBe('Coûts sans charge')
-    expect(plain(w().find('.orphan h3').text())).toBe('Charge du 29 sept. 2026, 12:00 – 12:40')
+    expect(w().find('h3').text()).toBe('Coûts sans charge')
+    expect(plain(w().find('.orphan h4').text())).toBe('Charge du 29 sept. 2026, 12:00 – 12:40')
   })
 })

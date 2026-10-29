@@ -748,6 +748,19 @@
     "title": "Settings",
     "loading": "Loading the settings",
     "error": "The settings could not be loaded. Try again in a moment.",
+    "areas": "Settings areas",
+    "costs": {
+      "title": "Costs",
+      "help": "What your charges cost: the currency of every price, and the tariff of each place."
+    },
+    "integrations": {
+      "title": "Integrations",
+      "help": "Let other programs read your vehicles: a script or an assistant through the API, Home Assistant through your MQTT broker."
+    },
+    "account": {
+      "title": "Account",
+      "help": "Your account's data, and the Runsten it runs on."
+    },
     "currency": {
       "title": "Currency",
       "label": "Currency",

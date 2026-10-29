@@ -435,7 +435,7 @@ watch(confirming, async (v) => {
 .facts {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
 }
 /* A URL has no space to wrap at: its own row, cut anywhere. */
 .facts .url {
