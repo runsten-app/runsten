@@ -72,6 +72,23 @@ describe('DeleteVehicle', () => {
     expect(w.find('.delete-vehicle').attributes('inert')).toBeUndefined()
   })
 
+  it('stays open while the deletion runs', async () => {
+    const { w } = await mounted()
+    await w.find('.delete').trigger('click')
+    await flushPromises()
+    let settle: (v?: unknown) => void = () => undefined
+    api.deleteVehicle.mockReturnValue(new Promise((resolve) => (settle = resolve)))
+    button('Delete')?.click()
+    await flushPromises()
+    expect(button('Cancel')?.disabled).toBe(true)
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await flushPromises()
+    expect(document.querySelector('.confirm-delete')).not.toBeNull()
+    expect(w.find('.delete-vehicle').attributes('inert')).toBeDefined()
+    settle()
+    await flushPromises()
+  })
+
   it('tells a failure, then deletes, goes home and forgets the vehicle', async () => {
     const { w, queryClient, router } = await mounted()
     await w.find('.delete').trigger('click')

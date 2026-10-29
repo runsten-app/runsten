@@ -36,7 +36,13 @@ async function confirm() {
       {{ t('deleteVehicle.button', { vehicle: label }) }}
     </v-btn>
 
-    <v-dialog v-model="confirming" max-width="28rem" aria-labelledby="delete-vehicle-dialog-title">
+    <!-- Held open while the deletion runs: its failure is told in it. -->
+    <v-dialog
+      v-model="confirming"
+      :persistent="isPending"
+      max-width="28rem"
+      aria-labelledby="delete-vehicle-dialog-title"
+    >
       <v-card>
         <v-card-title id="delete-vehicle-dialog-title" tag="h2" class="text-title-large text-wrap">
           {{ t('deleteVehicle.confirmTitle', { vehicle: label }) }}
@@ -50,7 +56,9 @@ async function confirm() {
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="confirming = false">{{ t('deleteVehicle.cancel') }}</v-btn>
+          <v-btn variant="text" :disabled="isPending" @click="confirming = false">
+            {{ t('deleteVehicle.cancel') }}
+          </v-btn>
           <v-btn
             color="error"
             variant="flat"
