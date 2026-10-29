@@ -59,7 +59,11 @@ func TestEffectiveModel(t *testing.T) {
 		{"chosen, of another family: recognized", xc40, other, "ex30-er-2024", some(22.0), "xc40-twin-2021", variantDetected, core.Value[float64]{}, some(11.0)},
 		{"chosen, gone, none recognized", ex30, other, "ex30-gone", some(11.0), "", "", core.Value[float64]{}, core.Value[float64]{}},
 		{"none chosen, none recognized", ex30, other, "", some(11.0), "", "", core.Value[float64]{}, core.Value[float64]{}},
-		{"a hybrid: neither", details("EX30", 2024, 69.0, false), single, "ex30-er-2024", some(11.0), "", "", core.Value[float64]{}, core.Value[float64]{}},
+		{"a hybrid at an electric's capacity: neither", details("EX30", 2024, 69.0, false), single, "ex30-er-2024", some(11.0), "", "", core.Value[float64]{}, core.Value[float64]{}},
+		// No option: the one charger bounds the costs.
+		{"a hybrid recognized", details("V60", 2027, 18.819, false), other, "", core.Value[float64]{}, "v60-phev-2022", variantDetected, core.Value[float64]{}, some(6.4)},
+		{"a hybrid, an electric chosen: recognized", details("XC40", 2021, 10.7, false), other, "xc40-twin-2021", core.Value[float64]{}, "xc40-phev-2020", variantDetected, core.Value[float64]{}, some(3.7)},
+		{"a hybrid chosen", details("V60", 2022, 0, false), other, "v60-phev-2020", some(3.7), "v60-phev-2020", variantChosen, some(3.7), some(3.7)},
 		{"details never read", core.Snapshot{}, single, "ex30-er-2024", some(11.0), "", "", core.Value[float64]{}, core.Value[float64]{}},
 		{"unknown family", details("EX-SIM", 2026, 80, true), single, "ex30-er-2024", core.Value[float64]{}, "", "", core.Value[float64]{}, core.Value[float64]{}},
 	}
@@ -158,7 +162,16 @@ func TestVariantsJSON(t *testing.T) {
 				"ps2-sr-2021 ps2-sr-2022 ps2-sr-2025 ps2-lr-single-2021 ps2-lr-dual-2025 ps3-rear-2026 ps3-dual-2026 ps5-2025",
 		},
 		{"unknown family", "", details("EX-SIM", 2026, 80, true), ""},
-		{"a hybrid", "", details("XC40", 2021, 78.012, false), ""},
+		{
+			"a plug-in hybrid: the family's plug-in hybrids", "", details("V60", 2021, 11.832, false),
+			"v60-phev-2020* v60-t8-2019 v60-phev-2022",
+		},
+		{"a plug-in hybrid at an electric's capacity", "", details("XC40", 2021, 78.012, false), "xc40-phev-2020"},
+		{
+			"a combustion car", "",
+			core.Snapshot{Covers: core.FieldModel, Family: some("XC40"), Powertrain: some(core.OtherPowertrain)},
+			"",
+		},
 		{"details never read", "", core.Snapshot{}, ""},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

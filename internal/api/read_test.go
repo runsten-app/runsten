@@ -648,6 +648,11 @@ func TestVehicleModel(t *testing.T) {
 			`{"family":"EX30","model_year":2024,"variant":null,"variant_source":null,"ac_max_kw":null}`,
 		},
 		{
+			"a plug-in hybrid recognized: no DC", "", details("V60", 2027, 18.819, false),
+			`{"family":"V60","model_year":2027,"variant":{"id":"v60-phev-2022","name":"V60 T6 / T8 Plug-in Hybrid (18.8 kWh)",` +
+				`"gross_kwh":18.8,"net_kwh":14.9,"ac_max_kw":6.4,"ac_option_kw":null,"dc_max_kw":null},"variant_source":"detected","ac_max_kw":null}`,
+		},
+		{
 			"fuel type unknown", vin,
 			core.Snapshot{Covers: core.FieldCapacity | core.FieldModel, CapacityKWh: some(69.0), Family: some("EX30")},
 			`{"family":"EX30","model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null}`,

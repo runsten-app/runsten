@@ -844,6 +844,7 @@
     "ac": "AC {kw}",
     "acOption": "AC {kw}, {option} som tillval",
     "dc": "DC {kw}",
+    "noDC": "ingen DC-laddning",
     "fromManufacturer": "Enligt tillverkaren",
     "fromPublic": "Enligt offentliga källor",
     "fromBoth": "Enligt tillverkaren; {figures}: enligt offentliga källor",

@@ -39,7 +39,7 @@ func TestEmbeddedCatalog(t *testing.T) {
 	}
 
 	if got := ids(c.Family("XC40")); !slices.Equal(got, []string{
-		"xc40-twin-2021", "xc40-single-2022", "xc40-single-2024", "xc40-er-2024", "xc40-twin-2024",
+		"xc40-twin-2021", "xc40-single-2022", "xc40-single-2024", "xc40-er-2024", "xc40-twin-2024", "xc40-phev-2020",
 	}) {
 		t.Errorf("Family(XC40) = %v", got)
 	}
@@ -64,9 +64,17 @@ func TestVariant(t *testing.T) {
 		t.Fatal("ex30-er-2024 not found")
 	}
 	if v.Family != "EX30" || v.GrossKWh != 69 || v.NetKWh == nil || *v.NetKWh != 64 || v.Chemistry != NMC ||
-		v.ACMaxKW != 11 || v.ACOptionKW == nil || *v.ACOptionKW != 22 || v.DCMaxKW != 153 ||
+		v.ACMaxKW != 11 || v.ACOptionKW == nil || *v.ACOptionKW != 22 || v.DCMaxKW == nil || *v.DCMaxKW != 153 ||
 		v.Years != (Years{From: 2024, To: 2026, bounds: 2}) {
 		t.Errorf("ex30-er-2024 = %+v", v)
+	}
+	if v.Powertrain != Electric {
+		t.Errorf("ex30-er-2024: powertrain %q, want electric when the file leaves it out", v.Powertrain)
+	}
+	h, _ := c.Variant("v60-phev-2022")
+	if h.Powertrain != PlugInHybrid || h.GrossKWh != 18.8 || h.NetKWh == nil || *h.NetKWh != 14.9 || h.ACMaxKW != 6.4 ||
+		h.DCMaxKW != nil || h.Years != (Years{From: 2022, bounds: 1}) {
+		t.Errorf("v60-phev-2022 = %+v", h)
 	}
 	if _, ok := c.Variant("ex30-er-2023"); ok {
 		t.Error("found an unknown id")

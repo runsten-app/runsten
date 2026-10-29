@@ -73,6 +73,12 @@ func TestParseAcceptsTheTestCatalog(t *testing.T) {
 			"for: [gross_kwh, ac_max_kw, dc_max_kw]", "for: [gross_kwh, ac_max_kw, dc_max_kw, motor_codes]",
 		}},
 		{"years apart", []string{"gross_kwh: 90", "gross_kwh: 70", "years: [2024]", "years: [2026]"}},
+		// A hybrid's capacity near an electric's: Recognize never compares them.
+		{"powertrains apart", []string{"gross_kwh: 90", "gross_kwh: 70", "years: [2024]", "years: [2024]\n  powertrain: plugin_hybrid"}},
+		{"a hybrid without DC", []string{
+			"years: [2024]", "years: [2024]\n  powertrain: plugin_hybrid",
+			"  dc_max_kw: 200\n", "", "for: [gross_kwh, ac_max_kw, dc_max_kw]", "for: [gross_kwh, ac_max_kw]",
+		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -103,7 +109,13 @@ func TestParseRejectsInvalidCatalogs(t *testing.T) {
 		{"years not a list", []string{"years: [2024]", "years: 2024"}, []string{"years:"}},
 		{"zero gross", []string{"gross_kwh: 90", "gross_kwh: 0"}, []string{"aa-two-2024: gross_kwh"}},
 		{"negative ac", []string{"ac_max_kw: 7.4", "ac_max_kw: -1"}, []string{"aa-two-2024: gross_kwh, ac_max_kw"}},
-		{"no dc", []string{"  dc_max_kw: 200\n", ""}, []string{"aa-two-2024: gross_kwh, ac_max_kw and dc_max_kw"}},
+		{"no dc", []string{"  dc_max_kw: 200\n", "", "for: [gross_kwh, ac_max_kw, dc_max_kw]", "for: [gross_kwh, ac_max_kw]"}, []string{
+			"aa-two-2024: dc_max_kw is required for an electric variant",
+		}},
+		{"zero dc", []string{"dc_max_kw: 200", "dc_max_kw: 0"}, []string{"aa-two-2024: gross_kwh, ac_max_kw and dc_max_kw"}},
+		{"unknown powertrain", []string{"years: [2024]", "years: [2024]\n  powertrain: diesel"}, []string{
+			`aa-two-2024: powertrain "diesel"`,
+		}},
 		{"net above gross", []string{"net_kwh: 66", "net_kwh: 71"}, []string{"aa-one-2024: net_kwh"}},
 		{"zero net", []string{"net_kwh: 66", "net_kwh: 0"}, []string{"aa-one-2024: net_kwh"}},
 		{"option not above", []string{"ac_option_kw: 22", "ac_option_kw: 11"}, []string{"aa-one-2024: ac_option_kw"}},
@@ -186,6 +198,7 @@ func TestIndiscernible(t *testing.T) {
 		{"windows meet", Variant{ID: "b", Family: "AA", Years: Years{From: 2025}, GrossKWh: 73}, true},
 		{"windows apart", Variant{ID: "b", Family: "AA", Years: Years{From: 2025}, GrossKWh: 73.1}, false},
 		{"other family", Variant{ID: "b", Family: "BB", Years: Years{From: 2025}, GrossKWh: 70}, false},
+		{"other powertrain", Variant{ID: "b", Family: "AA", Years: Years{From: 2025}, GrossKWh: 70, Powertrain: PlugInHybrid}, false},
 		{"years apart", Variant{ID: "b", Family: "AA", Years: Years{From: 2026}, GrossKWh: 70}, false},
 		{"same variant", Variant{ID: "a", Family: "AA", Years: Years{From: 2025}, GrossKWh: 70}, false},
 	}
