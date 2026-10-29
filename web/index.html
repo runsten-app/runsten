@@ -13,10 +13,11 @@
     <!-- The ICO for the browsers that take no SVG; the SVG follows the browser's scheme. -->
     <link rel="icon" href="favicon.ico" sizes="32x32" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <!-- Added to a home screen: manifest.json for every browser; iOS reads its own meta and
-         takes no SVG for the icon. The default status bar keeps the page below it. -->
+    <!-- Added to a home screen: manifest.json for every browser; iOS reads its own meta (the
+         older ones without the manifest) and takes no SVG for the icon. The default status bar keeps the page below it. -->
     <link rel="manifest" href="manifest.json" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Runsten" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="theme-color" content="#EEF0F2" media="(prefers-color-scheme: light)" />
