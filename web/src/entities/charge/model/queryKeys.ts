@@ -7,6 +7,8 @@ export const chargeKeys = {
   list: (vehicle: string, from?: string, to?: string) =>
     ['charges', vehicle, from ?? null, to ?? null] as const,
   detail: (vehicle: string, id: string) => ['charge', vehicle, id] as const,
+  // The charge in progress, apart from the lists: it is no event of theirs.
+  inProgress: (vehicle: string) => ['charge-in-progress', vehicle] as const,
   // The entered costs no charge takes.
   orphans: () => ['charge-costs', 'orphans'] as const,
   // The charges an orphaned cost may be attached to: one page, apart from the lists,

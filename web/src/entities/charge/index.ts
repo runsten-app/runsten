@@ -1,4 +1,10 @@
-export { chargesCsvPath, fetchCharge, fetchCharges, type PageQuery } from './api/chargeApi'
+export {
+  chargesCsvPath,
+  fetchCharge,
+  fetchChargeInProgress,
+  fetchCharges,
+  type PageQuery,
+} from './api/chargeApi'
 export {
   attachOrphanCost,
   deleteChargeCost,
@@ -6,6 +12,15 @@ export {
   fetchOrphanCosts,
   setChargeCost,
 } from './api/costApi'
-export type { Charge, ChargePage, ChargeType, Cost, EnteredCost, OrphanCost } from './model/Charge'
+export type {
+  Charge,
+  ChargeInProgress,
+  ChargePage,
+  ChargeType,
+  Cost,
+  EnteredCost,
+  OrphanCost,
+} from './model/Charge'
 export { chargeKeys } from './model/queryKeys'
+export { default as ChargeInProgressSummary } from './ui/ChargeInProgressSummary.vue'
 export { default as ChargeSummary } from './ui/ChargeSummary.vue'

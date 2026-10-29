@@ -162,6 +162,21 @@ func (d *Deriver) Current(ctx context.Context, accountID, vehicleID string, at t
 	return core.Latest(records), nil
 }
 
+// InProgress returns the charge still open at the vehicle's latest reading, if any: the
+// derivation replayed from the vehicle's cursor, as Update would, nothing saved. net is
+// the vehicle's net capacity, as Capacities would give it; nil when it is unknown.
+func (d *Deriver) InProgress(ctx context.Context, accountID, vehicleID string, net core.NetCapacity) (core.Value[core.ChargeInProgress], error) {
+	c, err := d.st.DerivationCursor(ctx, accountID, vehicleID)
+	if err != nil {
+		return core.Value[core.ChargeInProgress]{}, fmt.Errorf("derivation cursor: %w", err)
+	}
+	records, err := d.records(ctx, accountID, vehicleID, c.From)
+	if err != nil {
+		return core.Value[core.ChargeInProgress]{}, err
+	}
+	return core.Derive(records, c, d.p, net).InProgress, nil
+}
+
 // Readings returns, oldest first and at most limit of them, the vehicle's energy states
 // (its state of charge, range and charging power) read within [from, to]: the records
 // of each kind follow each other, each valid from its FetchedAt to its CheckedAt.

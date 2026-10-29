@@ -12,7 +12,9 @@ import { EventWhen, FactItem, ImportedBadge, MapView, ReconstructedBadge } from 
 
 // ChargeDetails is everything Runsten knows of a charge, and says what it does not. Its
 // cost, where the account's offer leaves the costs out, is said to be part of another.
-const props = defineProps<{ vehicle: string; id: string }>()
+// inProgressFailed: the charge in progress could not be read, so an ID not found may be
+// that of a charge still open, which is no charge yet: not said not to exist.
+const props = defineProps<{ vehicle: string; id: string; inProgressFailed?: boolean }>()
 const { t } = useI18n()
 const mapsOn = useMapsOn()
 const f = useFormat()
@@ -82,7 +84,12 @@ const costNotes = computed(() => {
 </script>
 
 <template>
-  <v-alert v-if="isApiError(error, 'not_found')" type="error" variant="tonal" class="not-found">
+  <v-alert
+    v-if="isApiError(error, 'not_found') && !inProgressFailed"
+    type="error"
+    variant="tonal"
+    class="not-found"
+  >
     {{ t('charge.notFound') }}
   </v-alert>
   <v-alert v-else-if="error" type="error" variant="tonal">{{ t('charge.error') }}</v-alert>

@@ -868,6 +868,7 @@ func incremental(records []Record, p Params) Result {
 	var charges []Charge
 	var versions []SoftwareVersion
 	var cursor Cursor
+	var open Value[ChargeInProgress]
 	for _, now := range times {
 		var since []Record
 		latest := map[Field]Record{}
@@ -891,9 +892,9 @@ func incremental(records []Record, p Params) Result {
 		trips = append(keepTrips(trips, cursor.Settled), res.Trips...)
 		charges = append(keepCharges(charges, cursor.Settled), res.Charges...)
 		versions = append(slices.DeleteFunc(versions, func(v SoftwareVersion) bool { return v.DetectedAt.After(cursor.Settled) }), res.Versions...)
-		cursor = res.Cursor
+		cursor, open = res.Cursor, res.InProgress
 	}
-	return Result{Trips: trips, Charges: charges, Versions: versions, Cursor: cursor}
+	return Result{Trips: trips, Charges: charges, Versions: versions, Cursor: cursor, InProgress: open}
 }
 
 // A trip starting while charging ends the charge; the trip's SoC ends before the next
@@ -971,6 +972,69 @@ func TestDeriveInProgress(t *testing.T) {
 	charge = append(charge, rec(70, 80, nrg(61, ChargingIdle)))
 	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(70)) {
 		t.Errorf("charge settled: %+v", res)
+	}
+}
+
+// The charge open at the latest reading is given apart, as it stands, under the
+// DetectedAt of the charge it becomes once over; an incremental derivation gives the
+// same as a rebuild.
+func TestChargeInProgress(t *testing.T) {
+	start := []Record{
+		rec(0, 0, capacity(80)),
+		rec(0, 0, loc(home, m(0))),
+		rec(0, 10, nrg(50, ChargingIdle)),
+		rec(20, 30, charging(51, 7000, AC)),
+		rec(31, 40, charging(55, 7000, AC)),
+	}
+	with := func(rs ...Record) []Record { return append(slices.Clone(start), rs...) }
+	open := func(endAfter, endBefore int, endSoC float64, power Value[float64]) Value[ChargeInProgress] {
+		return Value[ChargeInProgress]{V: ChargeInProgress{Charge: Charge{
+			DetectedAt: m(20), Start: Bounds{m(10), m(20)}, End: Bounds{m(endAfter), m(endBefore)},
+			Type: Some(AC, time.Time{}), StartSoC: val(50), EndSoC: val(endSoC), TargetSoC: val(80),
+			EnergySoCKWh: val((endSoC - 50) / 100 * 80), EnergyPowerKWh: val(7000 * 20 / 60.0 / 1000),
+			Position: Some(home, m(0)),
+		}, PowerW: power}, OK: true}
+	}
+	tests := []struct {
+		name    string
+		records []Record
+		want    Value[ChargeInProgress]
+	}{
+		{"charging", start, open(40, 40, 55, val(7000))},
+		// Paused (scheduled): still open, its latest reading later than its latest charging.
+		{"paused", with(rec(41, 50, pausedAt(56, ChargingScheduled))), open(40, 50, 56, Value[float64]{})},
+		{"over", with(rec(41, 41, nrg(60, ChargingDone))), Value[ChargeInProgress]{}},
+		{"unplugged", with(rec(41, 41, nrg(60, ChargingIdle))), Value[ChargeInProgress]{}},
+		// A rise of the SoC never seen charging is a reconstructed charge, an event.
+		{"reconstructed", []Record{rec(0, 10, nrg(50, ChargingIdle)), rec(20, 20, nrg(60, ChargingIdle))}, Value[ChargeInProgress]{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, res := range []Result{Derive(tt.records, Cursor{}, DefaultParams(), nil), incremental(tt.records, DefaultParams())} {
+				got := res.InProgress
+				if got.OK != tt.want.OK {
+					t.Fatalf("in progress %+v, want %+v", got, tt.want)
+				}
+				if !got.OK {
+					continue
+				}
+				got.V.PowerW.At = time.Time{}
+				if got.V.PowerW != tt.want.V.PowerW {
+					t.Errorf("power %+v, want %+v", got.V.PowerW, tt.want.V.PowerW)
+				}
+				checkCharges(t, []Charge{got.V.Charge}, []Charge{tt.want.V.Charge})
+			}
+		})
+	}
+	// Over, it is the derived charge of the same DetectedAt.
+	res := Derive(with(rec(41, 41, nrg(60, ChargingDone))), Cursor{}, DefaultParams(), nil)
+	if len(res.Charges) != 1 || !res.Charges[0].DetectedAt.Equal(m(20)) {
+		t.Errorf("charge over: %+v", res.Charges)
+	}
+	// Charging again after done, the cable connected, it resumes under the same.
+	res = Derive(with(rec(41, 41, pausedAt(60, ChargingDone)), rec(60, 60, charging(61, 7000, AC))), Cursor{}, DefaultParams(), nil)
+	if !res.InProgress.OK || !res.InProgress.V.DetectedAt.Equal(m(20)) || len(res.Charges) != 0 {
+		t.Errorf("resumed: in progress %+v, charges %+v", res.InProgress, res.Charges)
 	}
 }
 

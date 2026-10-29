@@ -54,6 +54,8 @@ type memReader struct {
 	current  map[string][]core.Record
 	health   map[string][]core.HealthRecord
 	versions map[string][]core.SoftwareVersion
+	open     map[string]core.ChargeInProgress // the charges in progress, by vehicle
+	net      core.NetCapacity                 // the one of the last InProgress
 	entered  []EnteredCost
 	settings *memSettings
 	next     int // of the entered costs' IDs

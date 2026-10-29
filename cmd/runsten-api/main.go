@@ -283,11 +283,13 @@ func run(args []string) error {
 		FileImports: fileImports{importer.NewFiles(st, clock.Real{})},
 		Accounts:    st,
 		Flags:       features,
-		// It only reads the current state, the readings and the health: it derives nothing, and
-		// needs no capacity.
+		// It reads the current state, the readings and the health, and replays the derivation
+		// for the charge in progress, with the net capacity the API gives it: it saves nothing,
+		// and needs no capacity of its own.
 		States:     deriver,
 		Readings:   deriver,
 		Health:     deriver,
+		Charging:   deriver,
 		Params:     core.DefaultParams(),
 		CostParams: core.DefaultCostParams(), CapacityParams: core.DefaultCapacityParams(),
 		Catalog:    cat,

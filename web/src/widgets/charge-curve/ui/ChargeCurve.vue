@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from 'vuetify'
+import type { ChargeInProgress } from '@/entities/charge'
 import { useCharge } from '@/features/browse-charges'
 import { readingsOf, seriesLine, useSeries } from '@/features/view-series'
 import { kilowatts, timeTicks, useFormat } from '@/shared/lib'
@@ -11,8 +12,9 @@ import { ChartFrame, type Series } from '@/shared/ui/chart'
 // gave them between its bounds. A curve needs readings close together, as a charge read
 // every minute gives: with fewer than minReadings of the power, the chart says how many
 // there are rather than draw a line between a few far apart. A reconstructed charge was
-// never seen, and has none.
-const props = defineProps<{ vehicle: string; id: string }>()
+// never seen, and has none. A charge in progress (live) is drawn up to its latest
+// reading, and grows as it is read again.
+const props = defineProps<{ vehicle: string; id: string; live?: ChargeInProgress | null }>()
 const { t } = useI18n()
 const f = useFormat()
 const theme = useTheme()
@@ -20,16 +22,24 @@ const minReadings = 5
 // The API's window, 7 days at most: a longer charge is drawn over its first week.
 const maxWindow = 7 * 24 * 3600_000
 
-const { charge } = useCharge(
+const { charge: derived } = useCharge(
   () => props.vehicle,
   () => props.id,
+  () => !props.live,
 )
+// The bounds of the window: a charge's, or one in progress up to its latest reading.
+const span = computed(() => {
+  const l = props.live
+  if (l) return { start: l.start.after, end: l.read_at }
+  const c = derived.value
+  return c && !c.reconstructed ? { start: c.start.after, end: c.end.before } : undefined
+})
 const window = computed(() => {
-  const c = charge.value
-  if (!c || c.reconstructed) return undefined
-  const from = Date.parse(c.start.after)
-  const to = Math.min(Date.parse(c.end.before), from + maxWindow)
-  return { from: c.start.after, to: new Date(to).toISOString() }
+  const s = span.value
+  if (!s) return undefined
+  const from = Date.parse(s.start)
+  const to = Math.min(Date.parse(s.end), from + maxWindow)
+  return { from: s.start, to: new Date(to).toISOString() }
 })
 const { series } = useSeries(() => props.vehicle, window)
 
@@ -63,7 +73,7 @@ const lines = computed<Series[]>(() => [
 
 // The table gives every reading: the raw data behind the curve.
 const iso = (v: number) => new Date(v).toISOString()
-const day = computed(() => (charge.value ? f.dayKey(charge.value.start.after) : undefined))
+const day = computed(() => (span.value ? f.dayKey(span.value.start) : undefined))
 const table = computed(() => ({
   labels: readings.value.map((r) => f.time(r.at, day.value)),
   series: [

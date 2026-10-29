@@ -4,14 +4,20 @@ import { h } from 'vue'
 import { ApiError } from '@/shared/api'
 import { i18n, type Locale } from '@/shared/i18n'
 import { VehicleState } from '@/widgets/vehicle-state'
+import charging from '@fixtures/charging.json'
 import state from '@fixtures/state.json'
 import unknown from '@fixtures/state-unknown.json'
 import vehicle from '@fixtures/vehicle-model.json'
 import { mountWith } from '@test/utils'
 
-const { fetchVehicle, fetchVehicleState } = vi.hoisted(() => ({
+const { fetchVehicle, fetchVehicleState, fetchChargeInProgress } = vi.hoisted(() => ({
   fetchVehicle: vi.fn(),
   fetchVehicleState: vi.fn(),
+  fetchChargeInProgress: vi.fn(),
+}))
+vi.mock('@/entities/charge', async (original) => ({
+  ...(await original<typeof import('@/entities/charge')>()),
+  fetchChargeInProgress,
 }))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
@@ -28,6 +34,8 @@ beforeEach(() => {
   fetchVehicleState.mockReset()
   fetchVehicle.mockReset()
   fetchVehicle.mockResolvedValue(noVariant)
+  fetchChargeInProgress.mockReset()
+  fetchChargeInProgress.mockResolvedValue(null)
   vi.useFakeTimers({ now, toFake: ['Date'] })
 })
 afterEach(() => {
@@ -64,6 +72,22 @@ function provenance(w: Awaited<ReturnType<typeof mounted>>, title: string) {
 }
 
 describe('VehicleState', () => {
+  it('leads to the charge in progress, live', async () => {
+    fetchChargeInProgress.mockResolvedValue(charging.charge)
+    const w = await mounted(state)
+    expect(fetchChargeInProgress).toHaveBeenCalledWith(state.vehicle_id)
+    expect(w.find('a.charge-link').attributes('href')).toBe(
+      `/vehicles/${state.vehicle_id}/charges/${charging.charge?.id}`,
+    )
+  })
+
+  // Unplugged, there can be none: nothing is asked.
+  it('asks for no charge in progress of a vehicle unplugged', async () => {
+    const w = await mounted(unknown)
+    expect(fetchChargeInProgress).not.toHaveBeenCalled()
+    expect(w.find('a.charge-link').exists()).toBe(false)
+  })
+
   it('shows each value with its freshness', async () => {
     const w = await mounted(state)
     expect(plain(w.text())).toContain('Last checked 3 min ago')

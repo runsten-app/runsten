@@ -26,6 +26,7 @@ import {
   type Sleep,
   type UpdateStatus,
 } from '@/entities/vehicle'
+import { useChargeInProgress } from '@/features/browse-charges'
 import { useVehicle } from '@/features/select-vehicle'
 import { useVehicleState } from '@/features/watch-vehicle-state'
 import { isApiError } from '@/shared/api'
@@ -153,6 +154,19 @@ const statusTones: Record<ChargingStatus, 'success' | 'error' | 'neutral'> = {
 function label<T extends string>(r: Reading<T> | null, labels: Record<T, string>) {
   return r ? labels[r.value] : null
 }
+
+// The charge in progress, followed live on its page: read only while the cable is
+// connected or the car charges, when there may be one.
+const pluggedIn = computed(() => {
+  const c = state.value?.charging
+  return c?.cable?.value === 'connected' || c?.status?.value === 'charging'
+})
+const { charge: open } = useChargeInProgress(() => props.vehicle, pluggedIn)
+const openCharge = computed(() =>
+  pluggedIn.value && open.value
+    ? { name: 'charge', params: { vehicle: props.vehicle, id: open.value.id } }
+    : null,
+)
 
 // The reading whose times a tile shows once: its first known value.
 const chargingTile = computed(() => {
@@ -462,6 +476,13 @@ const update = computed(() => {
                 :tile="chargingTile"
               />
             </dl>
+            <router-link
+              v-if="openCharge"
+              :to="openCharge"
+              class="charge-link d-block text-body-medium text-primary mt-3"
+            >
+              {{ t('state.charging.follow') }}
+            </router-link>
             <ReadingProvenance
               v-if="chargingTile"
               :reading="chargingTile"

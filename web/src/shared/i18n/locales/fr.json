@@ -80,7 +80,8 @@
       "power": "Puissance",
       "type": "Type",
       "cable": "Câble",
-      "target": "Cible"
+      "target": "Cible",
+      "follow": "Suivre la charge en cours"
     },
     "vehicle": "Véhicule",
     "odometer": "Odomètre",
@@ -280,6 +281,24 @@
     },
     "averagePower": "Puissance moyenne",
     "energyImportedNote": "L'énergie d'après la puissance de charge est celle que l'app a donnée ; celle d'après l'état de charge est l'estimation de Runsten."
+  },
+  "chargeInProgress": {
+    "label": "En cours",
+    "stopped": "Lectures arrêtées",
+    "paused": "En pause",
+    "heading": "Maintenant",
+    "title": "Charge en cours",
+    "since": "Depuis {time}",
+    "added": "{energy} jusqu'ici",
+    "readAgo": "lue {age}",
+    "stoppedHelp": "Rien n'a été lu après {time} : la charge a pu finir depuis, sans être vue. Elle est montrée telle qu'à sa dernière lecture.",
+    "charging": "En charge depuis",
+    "readAt": "Dernière lecture",
+    "note": "Relue chaque minute, comme le collecteur lit le véhicule pendant qu'il charge. Une fois finie, la charge est dans la liste, avec sa fin.",
+    "power": "Puissance",
+    "energy": "Énergie jusqu'ici",
+    "cost": "Coût jusqu'ici",
+    "costSoFar": "Estimé d'après le tarif de {place}, jusqu'à la dernière lecture"
   },
   "chargeCost": {
     "enter": "Saisir le coût",

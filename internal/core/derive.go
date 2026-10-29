@@ -96,10 +96,15 @@ type Cursor struct {
 //
 // A trip that has ended but may still be completed by upcoming readings is included:
 // the next derivation, which starts before it, replaces it; so is a charge that has
-// ended but may still get its position. Trips and charges still in progress are not.
+// ended but may still get its position. Trips and charges still in progress are not:
+// the charge in progress is InProgress, apart.
 type Result struct {
 	Trips   []Trip
 	Charges []Charge
+	// InProgress is the charge still open at the latest reading, as it stands: not an
+	// event, never saved, and gone from the next derivation once the charge ends, when
+	// Charges holds it under the same DetectedAt.
+	InProgress Value[ChargeInProgress]
 	// Versions are the versions of the vehicle's software first read after the cursor.
 	Versions []SoftwareVersion
 	Cursor   Cursor
@@ -142,6 +147,8 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 	d.releaseCharge()
 	if d.charge != nil && d.charge.c.Reconstructed {
 		d.res.Charges = append(d.res.Charges, d.buildCharge(d.charge))
+	} else if d.charge != nil {
+		d.res.InProgress = Value[ChargeInProgress]{V: d.inProgress(ps), OK: true}
 	}
 	for i := range d.res.Trips {
 		t := &d.res.Trips[i]
