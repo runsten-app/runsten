@@ -26,7 +26,7 @@ const list = computed(() => ({
 
 // A charge in progress has the ID it will have once over: the same page follows it live,
 // then shows it derived, without leaving.
-const { charge: open, isPending } = useChargeInProgress(() => props.vehicle)
+const { charge: open, isPending, error: openError } = useChargeInProgress(() => props.vehicle)
 const live = computed(() => (open.value?.id === props.id ? open.value : null))
 </script>
 
@@ -43,7 +43,7 @@ const live = computed(() => (open.value?.id === props.id ? open.value : null))
     </v-btn>
     <v-progress-linear v-if="isPending" indeterminate :aria-label="t('charge.loading')" />
     <ChargeInProgressDetails v-else-if="live" :charge="live" />
-    <ChargeDetails v-else :id="id" :vehicle="vehicle" />
+    <ChargeDetails v-else :id="id" :vehicle="vehicle" :in-progress-failed="!!openError" />
     <ChargeCurve v-if="!isPending" :id="id" :vehicle="vehicle" :live class="mt-4" />
   </AppShell>
 </template>

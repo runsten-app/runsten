@@ -63,6 +63,18 @@ describe('ChargePage', () => {
     })
   })
 
+  // Without the charge in progress, an ID not found may be that of a charge still open:
+  // never said not to exist.
+  it('tells an error, not an unknown charge, when the charge in progress fails', async () => {
+    fetchChargeInProgress.mockRejectedValue(new ApiError(500, 'internal', ''))
+    fetchCharge.mockRejectedValue(new ApiError(404, 'not_found', ''))
+    const wrapper = await mounted('2026-09-28T22:40:00.000000Z')
+    expect(wrapper.find('.not-found').exists()).toBe(false)
+    expect(wrapper.find('.v-alert').text()).toBe(
+      'The charge could not be loaded. Try again in a moment.',
+    )
+  })
+
   // The charge in progress has the ID it will have once over: the same page follows it.
   it('follows the charge in progress of its ID, live', async () => {
     fetchChargeInProgress.mockResolvedValue(charging.charge)
