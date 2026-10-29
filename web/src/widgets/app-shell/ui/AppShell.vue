@@ -240,11 +240,15 @@ const keys = (key: string) => (shortcutsEnabled.value ? key : undefined)
   max-inline-size: 1280px;
   margin-inline: auto;
 }
+/* Installed on a phone (viewport-fit=cover, index.html), the page runs under the home
+   indicator, and in landscape beside the notch: the env() insets, 0 elsewhere, keep the
+   content clear of them. */
 .bar {
-  padding-inline: 24px;
+  padding-inline: max(24px, env(safe-area-inset-left)) max(24px, env(safe-area-inset-right));
 }
 .shell {
-  padding: 16px 24px 28px;
+  padding: 16px max(24px, env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
 }
 .brand {
   display: inline-flex;
@@ -288,9 +292,13 @@ const keys = (key: string) => (shortcutsEnabled.value ? key : undefined)
 }
 .section-bar.bottom {
   border-block-start: 1px solid rgb(var(--v-theme-line));
+  /* Above the home indicator: Vuetify sets the height inline, and lays v-main out by the
+     prop's, which the shell's own inset completes. */
+  block-size: calc(64px + env(safe-area-inset-bottom)) !important;
+  padding-block-end: env(safe-area-inset-bottom);
 }
 .sections {
-  padding-inline: 24px;
+  padding-inline: max(24px, env(safe-area-inset-left)) max(24px, env(safe-area-inset-right));
 }
 .sections :deep(.v-tab) {
   min-inline-size: 116px;
@@ -303,7 +311,7 @@ const keys = (key: string) => (shortcutsEnabled.value ? key : undefined)
   font-weight: 500;
 }
 .sections.narrow {
-  padding-inline: 0;
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
 }
 .sections.narrow :deep(.v-tab) {
   min-inline-size: 0;
@@ -347,10 +355,11 @@ const keys = (key: string) => (shortcutsEnabled.value ? key : undefined)
 }
 @media (max-width: 599.98px) {
   .bar {
-    padding-inline: 10px;
+    padding-inline: max(10px, env(safe-area-inset-left)) max(10px, env(safe-area-inset-right));
   }
   .shell {
-    padding: 10px 10px 16px;
+    padding: 10px max(10px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
   }
 }
 </style>

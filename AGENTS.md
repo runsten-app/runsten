@@ -132,6 +132,8 @@ web/                   the front end (see "Front end" below)
   src/                 app, pages, widgets, features, entities, shared: Feature-Sliced Design layers
   test/                Vitest tests, mirroring src/; architecture/ checks the slices' public API
   e2e/                 Playwright and axe tests, run against a Compose stack (scripts/e2e.sh)
+  public/              files served as they are: the favicons, the manifest and the icons of the app
+                       added to a home screen (made from icons/app-icon.svg by scripts/app-icons.sh)
   playwright.config.ts the four projects: desktop and Pixel 7, light and dark
 Dockerfile             one image per binary (CMD build arg); target runsten-web adds the front end's build
 compose.yaml           self-hosted stack: PostgreSQL, runsten-api, runsten-collector, runsten-web; `sim` profile:

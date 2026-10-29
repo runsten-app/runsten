@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 40 40">
+  <!-- The installed app's icon: favicon.svg's mark on the Tiles theme's light ground, opaque
+       (iOS fills transparency with black) and within the middle 80 % that a maskable icon's
+       circle keeps. The PNGs of public/ are made from it with macOS sips
+       (scripts/app-icons.sh). -->
+  <rect width="40" height="40" fill="#EEF0F2"/>
+  <g transform="translate(10 10)">
+    <rect x="0" y="0" width="9" height="9" rx="2" fill="#16171A"/>
+    <rect x="11" y="0" width="9" height="9" rx="2" fill="#B34E0B"/>
+    <rect x="0" y="11" width="9" height="9" rx="2" fill="#16171A"/>
+    <rect x="11" y="11" width="9" height="9" rx="2" fill="#16171A"/>
+  </g>
+</svg>
