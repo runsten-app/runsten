@@ -876,7 +876,15 @@
   "vehicleSettings": {
     "open": "Fordonsinställningar",
     "title": "Fordonsinställningar",
-    "help": "Runsten känner igen fordonets variant utifrån det fordonet rapporterar, när bara en passar. Ditt val går före igenkänningen och syns överallt där fordonet visas.",
+    "areas": "Delar av fordonsinställningarna",
+    "model": {
+      "title": "Modell och laddare",
+      "help": "Runsten känner igen fordonets variant utifrån det fordonet rapporterar, när bara en passar. Ditt val går före igenkänningen och syns överallt där fordonet visas."
+    },
+    "history": {
+      "title": "Importerad historik",
+      "help": "Resor och laddningar från innan Runsten läste fordonet, importerade från andra appar. Att ta bort en import lämnar det Runsten läst."
+    },
     "loading": "Läser in fordonet",
     "error": "Fordonet kunde inte läsas in. Försök igen om en stund."
   },
@@ -1388,9 +1396,8 @@
     }
   },
   "imports": {
-    "title": "Importerad historik",
-    "help": "Resor och laddningar från innan Runsten läste fordonet, importerade från andra appar. Att ta bort en import lämnar det Runsten läst.",
-    "listTitle": "Importer",
+    "listTitle": "Per app",
+    "addTitle": "Lägg till historik",
     "aximote": {
       "title": "Importera från Aximote",
       "beta": "Beta",
@@ -1445,6 +1452,7 @@
       "title": "Importera från Volvo Data Portal",
       "beta": "Beta",
       "intro": "I EU ger Data Act dig rätt att begära bilens data från Volvo Cars på deras Data Portal: begär resorna och vägpunkterna. Volvo skickar två CSV-filer, ibland efter flera timmar; välj dem här. Bara resor från före fordonets första avläsning importeras, med spår från vägpunkterna. En ny import ersätter dem.",
+      "open": "Välj filerna",
       "link": "Volvo Data Portal",
       "newTab": "(öppnas i en ny flik)",
       "trips": {
@@ -1457,6 +1465,7 @@
       },
       "clear": "Ta bort: {file}",
       "start": "Importera",
+      "cancel": "Avbryt",
       "done": "Importen är klar",
       "report": {
         "imported": "Ingen resa importerad. | En resa importerad. | {n} resor importerade.",

@@ -122,14 +122,28 @@ test('Vehicle settings: a family the catalog lacks, from the vehicle page', asyn
   await page.goto(`/vehicles/${vehicle}`)
   await page.getByRole('link', { name: 'Vehicle settings' }).click()
   await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/settings$`))
-  const section = page.getByRole('region', { name: 'EX-SIM · 2026' })
-  await expect(section.getByRole('heading', { level: 2 })).toHaveText('EX-SIM · 2026')
+  // Two areas, each a link of the sub-navigation: the model first.
+  const areas = page.getByRole('navigation', { name: 'Vehicle settings areas' })
+  await expect(areas.getByRole('link')).toHaveText(['Model and charger', 'Imported history'])
+  await expect(areas.getByRole('link', { name: 'Model and charger' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  const section = page.getByRole('region', { name: 'Model and charger' })
   await expect(section.locator('dd')).toHaveText([/^[A-HJ-NPR-Z0-9]{17}$/, 'EX-SIM', '2026'])
   await expect(section.locator('.none')).toHaveText(
     "Runsten's catalog has no variant of the EX-SIM: it lists the battery-electric Volvo and Polestar models only.",
   )
   await expect(section.getByRole('radio')).toHaveCount(0)
   await checkView(page, testInfo, 'vehicle-settings')
+
+  await areas.getByRole('link', { name: 'Imported history' }).click()
+  await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/settings/history$`))
+  await expect(page.getByRole('region', { name: 'Imported history' })).toBeVisible()
+  await expect(areas.getByRole('link', { name: 'Imported history' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
 })
 
 // A variant as GET /variants gives it (the catalog's EX30 figures, public sources).

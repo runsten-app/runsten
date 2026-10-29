@@ -190,13 +190,13 @@ const waiting = computed(() => {
 </script>
 
 <template>
-  <div class="aximote-import mb-6">
-    <h3 class="text-title-medium mb-2">
+  <div class="aximote-import">
+    <h4 class="text-title-medium mb-2">
       {{ t('imports.aximote.title') }}
       <v-chip size="small" variant="tonal" color="primary" class="ms-2 beta">
         {{ t('imports.aximote.beta') }}
       </v-chip>
-    </h3>
+    </h4>
     <p class="text-body-medium mb-4">{{ t('imports.aximote.intro') }}</p>
 
     <div v-if="job && active" class="import-progress mb-4">
@@ -209,7 +209,7 @@ const waiting = computed(() => {
         }}
         {{ imported(job) }}
       </p>
-      <p v-if="waiting" class="text-body-medium text-secondary waiting">
+      <p v-if="waiting" class="text-body-medium text-medium-emphasis waiting">
         {{ t('imports.aximote.progress.waiting', { time: f.dateTime(job.not_before, now) }) }}
       </p>
     </div>
@@ -226,7 +226,7 @@ const waiting = computed(() => {
     >
       <p v-if="failure" class="text-body-medium failure">{{ failure }}</p>
       <p v-for="line in report" :key="line" class="text-body-medium">{{ line }}</p>
-      <p class="text-body-medium text-secondary">
+      <p class="text-body-medium text-medium-emphasis">
         {{
           t('imports.aximote.report.when', {
             time: f.dateTime(job.ended_at ?? job.created_at, now),

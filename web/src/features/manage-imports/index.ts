@@ -1,2 +1,3 @@
 export { useDeleteImport, useImports } from './composables/useImports'
-export { default as VehicleImports } from './ui/VehicleImports.vue'
+export { default as ImportList } from './ui/ImportList.vue'
+export { default as ImportSources } from './ui/ImportSources.vue'

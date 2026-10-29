@@ -50,7 +50,7 @@ test("Imports: a vehicle's settings tell the last import, list Aximote's vehicle
   page,
 }, testInfo) => {
   await signIn(page)
-  await page.goto(`/vehicles/${await vehicleId(page)}/settings`)
+  await page.goto(`/vehicles/${await vehicleId(page)}/settings/history`)
 
   const section = page.getByRole('region', { name: 'Imported history' })
   const report = section.locator('.import-report')
