@@ -164,9 +164,13 @@ const vehicleTile = computed(() => state.value?.odometer_km ?? state.value?.soft
 // A charge that needs looking at gets its own tile, its figures large; otherwise (idle,
 // done, scheduled, unknown) one line under the battery's bar says it. The engine is not
 // shown: the mode's pill above says it, read from it.
+// Without a status (status and power are read apart), a power above zero says a charge
+// runs; a zero one says nothing.
 const chargeActive = computed(() => {
-  const s = state.value?.charging.status?.value
-  return s === 'charging' || s === 'discharging' || s === 'error'
+  const c = state.value?.charging
+  const s = c?.status?.value
+  if (s === 'charging' || s === 'discharging' || s === 'error') return true
+  return !c?.status && (c?.power_w?.value ?? 0) > 0
 })
 const chargeTitle = useId()
 // The line's facts. The target is the bar's, unless no state of charge draws one.
