@@ -140,7 +140,7 @@ func (d *detector) stepCharge(p point, prev state) {
 			d.resumeCharge(p)
 		} else if active {
 			d.startCharge(p, prev)
-		} else if rise := diff(s.SoC, prev.snap.SoC); d.trip == nil && !p.confirm && rise.OK && rise.V >= d.p.MinChargeSoC {
+		} else if rise := diff(s.SoC, prev.snap.SoC); d.trip == nil && !p.confirm && rise.OK && rise.V >= d.p.MinChargeSoC && d.onPlug(p) {
 			d.reconstructCharge(p, prev)
 		}
 	case active:
@@ -184,6 +184,20 @@ func (d *detector) startCharge(p point, prev state) {
 	}
 	d.charge = cb
 	d.charging(cb, p)
+}
+
+// onPlug is whether a rise of the SoC read at p may be a charge. A plug-in hybrid's
+// engine raises it too, while driving (a charge mode, or charge sustain), on a trip
+// perhaps never seen between two readings: its rise is a charge only when the reading
+// that shows it says the cable is connected. The odometer would tell whether it drove,
+// but parked it is read once an hour. A charge made while the vehicle was out of reach
+// and unplugged before it came back is lost: better than a charge made up, which costs.
+func (d *detector) onPlug(p point) bool {
+	if !d.st.snap.PlugInHybrid() {
+		return true
+	}
+	c := p.snap.Connection
+	return p.snap.Covers&FieldConnection != 0 && c.OK && c.V == Connected
 }
 
 // reconstructCharge opens a charge that was not seen: the SoC rose since its previous
