@@ -11,7 +11,7 @@ Runsten reads your car from the day you connect it. What came before may be in a
 The import from Aximote is in **beta**: it follows Aximote's documentation, and has not yet been tried on many real accounts. If a trip or a charge looks wrong, tell us; importing again after a fix replaces what was imported.
 
 1. In the Aximote app, create a personal access token (it starts with `axm_pat_`).
-2. In Runsten, open the vehicle's settings (the button by its name) and, under **Imported history**, paste it in **Aximote token**, then **Find my vehicles**.
+2. In Runsten, open the vehicle's settings (the button by its name), then **Imported history**, and under **Add history** paste it in **Aximote token**, then **Find my vehicles**.
 3. Runsten lists the vehicles of your Aximote account. The one with this vehicle's VIN is chosen; when none has it, choose the one whose history this is: Runsten never guesses.
 4. **Import**. The import goes on in the background: you can leave the page. Its progress, then its report, show in the same place.
 
@@ -38,7 +38,7 @@ In the EU, the Data Act lets the user of a connected car ask its maker for the d
 
 1. On the Data Portal, sign in with your Volvo ID, choose the car, and ask for the **trips** and the **waypoints**, over the period you want. The portal takes several hours to prepare them.
 2. Download the two CSV files it gives.
-3. In Runsten, open the vehicle's settings and, under **Imported history**, choose them in **Import from the Volvo Data Portal**: the trips file, required, and the waypoints file, optional. Then **Import**.
+3. In Runsten, open the vehicle's settings, then **Imported history**, and under **Import from the Volvo Data Portal** press **Choose the files**: the trips file, required, and the waypoints file, optional. Then **Import**.
 
 The import runs at once, and its report shows in the same place. Files of 32 MB at most together: a year of waypoints is a few.
 

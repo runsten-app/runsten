@@ -29,12 +29,22 @@ async function confirm() {
 
 <template>
   <!-- Inert behind the dialog, which is teleported out of it. -->
-  <section class="delete-vehicle mb-6" :aria-labelledby="titleId" :inert="confirming || undefined">
-    <h2 :id="titleId" class="text-title-large mb-2">{{ t('deleteVehicle.title') }}</h2>
-    <p class="text-body-medium mb-4">{{ t('deleteVehicle.help') }}</p>
-    <v-btn :prepend-icon="mdiDelete" variant="tonal" color="error" class="delete" @click="ask">
-      {{ t('deleteVehicle.button', { vehicle: label }) }}
-    </v-btn>
+  <!-- A tile of the vehicle's settings, under its area's heading. -->
+  <v-card
+    tag="section"
+    class="delete-vehicle"
+    :aria-labelledby="titleId"
+    :inert="confirming || undefined"
+  >
+    <v-card-title :id="titleId" tag="h3" class="text-title-large">
+      {{ t('deleteVehicle.title') }}
+    </v-card-title>
+    <v-card-text class="pt-0">
+      <p class="text-body-medium mb-4">{{ t('deleteVehicle.help') }}</p>
+      <v-btn :prepend-icon="mdiDelete" variant="tonal" color="error" class="delete" @click="ask">
+        {{ t('deleteVehicle.button', { vehicle: label }) }}
+      </v-btn>
+    </v-card-text>
 
     <!-- Held open while the deletion runs: its failure is told in it. -->
     <v-dialog
@@ -71,5 +81,5 @@ async function confirm() {
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </section>
+  </v-card>
 </template>

@@ -79,7 +79,14 @@ export function createAppRouter(history: RouterHistory, queryClient: QueryClient
         path: '/vehicles/:vehicle/settings',
         name: 'vehicleSettings',
         component: () => import('@/pages/vehicle-settings').then((m) => m.VehicleSettingsPage),
-        props: true,
+        props: (to) => ({ vehicle: String(to.params.vehicle), area: 'model' }),
+      },
+      // Its imported history, an area of its own beside the model: the same page.
+      {
+        path: '/vehicles/:vehicle/settings/history',
+        name: 'vehicleHistory',
+        component: () => import('@/pages/vehicle-settings').then((m) => m.VehicleSettingsPage),
+        props: (to) => ({ vehicle: String(to.params.vehicle), area: 'history' }),
       },
       // The account's settings, loaded on demand like the statistics: most visits never
       // open them. They belong to no vehicle: none is kept in the query. Four areas of one

@@ -29,7 +29,7 @@ test('Imports: from Aximote on the screen, deleted once confirmed, then imported
   test.setTimeout(120_000)
   await signIn(page)
   const vehicle = await vehicleId(page)
-  await page.goto(`/vehicles/${vehicle}/settings`)
+  await page.goto(`/vehicles/${vehicle}/settings/history`)
   const section = page.getByRole('region', { name: 'Imported history' })
   const aximote = section.getByRole('listitem').filter({ hasText: 'Imported from Aximote' })
 
@@ -42,10 +42,10 @@ test('Imports: from Aximote on the screen, deleted once confirmed, then imported
   await aximote.getByRole('button', { name: 'Imported from Aximote: delete' }).click()
   const dialog = page.getByRole('dialog', { name: 'Delete this import?' })
   await dialog.getByRole('button', { name: 'Delete' }).click()
-  await expect(section.locator(':scope > [role="status"]')).toHaveText(
+  await expect(section.locator('.import-list > [role="status"]')).toHaveText(
     'Imported from Aximote: deleted.',
   )
-  await expect(section.getByRole('heading', { name: 'Imported history' })).toBeFocused()
+  await expect(section.getByRole('heading', { name: 'By application' })).toBeFocused()
   await expect(aximote).toHaveCount(0)
   // Gone from the lists too.
   const res = await page.request.get(`/api/v1/vehicles/${vehicle}/trips/aximote:trip-1001`)

@@ -889,7 +889,15 @@
   "vehicleSettings": {
     "open": "Réglages du véhicule",
     "title": "Réglages du véhicule",
-    "help": "Runsten reconnaît la variante du véhicule d'après ce qu'il transmet, quand une seule correspond. Votre choix prime sur la reconnaissance, et se voit partout où le véhicule apparaît.",
+    "areas": "Rubriques des réglages du véhicule",
+    "model": {
+      "title": "Véhicule",
+      "help": "Runsten reconnaît la variante du véhicule d'après ce qu'il transmet, quand une seule correspond. Votre choix prime sur la reconnaissance, et se voit partout où le véhicule apparaît."
+    },
+    "history": {
+      "title": "Historique importé",
+      "help": "Trajets et charges d'avant que Runsten ne lise le véhicule, importés d'autres apps. Supprimer un import laisse ce que Runsten a lu."
+    },
     "loading": "Chargement du véhicule",
     "error": "Le véhicule n'a pas pu être chargé. Réessayez dans un instant."
   },
@@ -1412,9 +1420,8 @@
     }
   },
   "imports": {
-    "title": "Historique importé",
-    "help": "Trajets et charges d'avant que Runsten ne lise le véhicule, importés d'autres apps. Supprimer un import laisse ce que Runsten a lu.",
-    "listTitle": "Imports",
+    "listTitle": "Par application",
+    "addTitle": "Ajouter de l'historique",
     "aximote": {
       "title": "Importer depuis Aximote",
       "beta": "Bêta",
@@ -1469,6 +1476,7 @@
       "title": "Importer depuis le Volvo Data Portal",
       "beta": "Bêta",
       "intro": "Dans l'UE, le Data Act vous permet de demander à Volvo Cars les données de votre voiture sur son Data Portal : demandez les trajets et les points de passage. Volvo envoie deux fichiers CSV, parfois après plusieurs heures ; choisissez-les ici. Seuls les trajets antérieurs à la première lecture du véhicule sont importés, avec leurs tracés tirés des points de passage. Importer à nouveau les remplace.",
+      "open": "Choisir les fichiers",
       "link": "Volvo Data Portal",
       "newTab": "(s'ouvre dans un nouvel onglet)",
       "trips": {
@@ -1481,6 +1489,7 @@
       },
       "clear": "Retirer : {file}",
       "start": "Importer",
+      "cancel": "Annuler",
       "done": "Import terminé",
       "report": {
         "imported": "Aucun trajet importé. | Un trajet importé. | {n} trajets importés.",

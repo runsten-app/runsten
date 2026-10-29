@@ -29,6 +29,7 @@ export function testRouter(routes: RouteRecordRaw[] = []): Router {
       { path: '/vehicles/:vehicle/battery', name: 'battery', component: Empty },
       { path: '/vehicles/:vehicle/health', name: 'health', component: Empty },
       { path: '/vehicles/:vehicle/settings', name: 'vehicleSettings', component: Empty },
+      { path: '/vehicles/:vehicle/settings/history', name: 'vehicleHistory', component: Empty },
       { path: '/settings', name: 'settings', component: Empty },
       { path: '/settings/vehicles', name: 'settingsVehicles', component: Empty },
       { path: '/settings/integrations', name: 'settingsIntegrations', component: Empty },

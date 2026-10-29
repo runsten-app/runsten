@@ -48,7 +48,7 @@ const button = (text: string) =>
 describe('DeleteVehicle', () => {
   it('names the vehicle, and says what goes with it once asked', async () => {
     const { w } = await mounted()
-    expect(w.find('h2').text()).toBe('Delete this vehicle')
+    expect(w.find('h3').text()).toBe('Delete this vehicle')
     expect(w.find('.delete').text()).toBe('Delete EX30')
     await w.find('.delete').trigger('click')
     await flushPromises()

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { mdiCloseCircle, mdiDatabaseImport, mdiOpenInNew } from '@mdi/js'
+import { mdiCloseCircle, mdiDatabaseImport, mdiFileUploadOutline, mdiOpenInNew } from '@mdi/js'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FileImport } from '@/entities/vehicle-import'
@@ -10,13 +10,16 @@ import { useImportVolvoDataPortal } from '../composables/useImportJob'
 
 // VolvoDataPortalImport imports the files an owner in the EU gets from the Volvo Data
 // Portal under the Data Act: the trips, and the waypoints that make their tracks. They
-// are written at once, and the report shows until the next import.
+// are written at once, and the report shows until the next import. The form waits behind
+// a button: most visits come for the list, or for Aximote.
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const f = useFormat()
 const { importFiles, isPending, error, reset } = useImportVolvoDataPortal(() => props.vehicle)
 
 const tripsId = 'portal-trips'
+const toggleId = 'portal-import-toggle'
+const opened = ref(false)
 const trips = ref<File | null>(null)
 const waypoints = ref<File | null>(null)
 const sent = ref(false)
@@ -43,6 +46,24 @@ const summary = computed(() =>
 )
 const summaryRef = ref<InstanceType<typeof ErrorSummary> | null>(null)
 
+// Opened, the form focuses its first field; closed, the focus goes back to its button.
+async function openForm() {
+  status.value = ''
+  opened.value = true
+  await nextTick()
+  document.getElementById(tripsId)?.focus()
+}
+
+async function closeForm() {
+  trips.value = null
+  waypoints.value = null
+  sent.value = false
+  opened.value = false
+  await nextTick()
+  reset()
+  document.getElementById(toggleId)?.focus()
+}
+
 async function submit() {
   sent.value = true
   status.value = ''
@@ -59,6 +80,9 @@ async function submit() {
     trips.value = null
     waypoints.value = null
     sent.value = false
+    opened.value = false
+    await nextTick()
+    document.getElementById(toggleId)?.focus()
     status.value = t('imports.portal.done')
   } catch {
     await nextTick()
@@ -78,13 +102,13 @@ const lines = computed(() => {
 </script>
 
 <template>
-  <div class="portal-import mb-6">
-    <h3 class="text-title-medium mb-2">
+  <div class="portal-import">
+    <h4 class="text-title-medium mb-2">
       {{ t('imports.portal.title') }}
       <v-chip size="small" variant="tonal" color="primary" class="ms-2 beta">
         {{ t('imports.portal.beta') }}
       </v-chip>
-    </h3>
+    </h4>
     <p class="text-body-medium mb-2">{{ t('imports.portal.intro') }}</p>
     <p class="text-body-medium mb-4">
       <a
@@ -108,7 +132,17 @@ const lines = computed(() => {
       <p v-for="line in lines" :key="line" class="text-body-medium">{{ line }}</p>
     </v-alert>
 
-    <v-form novalidate class="portal-form" @submit.prevent="submit">
+    <v-btn
+      v-if="!opened"
+      :id="toggleId"
+      :prepend-icon="mdiFileUploadOutline"
+      variant="tonal"
+      class="toggle"
+      @click="openForm"
+    >
+      {{ t('imports.portal.open') }}
+    </v-btn>
+    <v-form v-else novalidate class="portal-form" @submit.prevent="submit">
       <ErrorSummary
         v-if="summary.length"
         ref="summaryRef"
@@ -163,6 +197,11 @@ const lines = computed(() => {
         class="start"
       >
         {{ t('imports.portal.start') }}
+      </v-btn>
+      <!-- Not while the files are sent: an import closed and opened again would take the
+           earlier one's end for its own. -->
+      <v-btn variant="text" :disabled="isPending" class="cancel ms-2" @click="closeForm">
+        {{ t('imports.portal.cancel') }}
       </v-btn>
     </v-form>
     <p role="status" class="status text-body-medium mt-2">{{ status }}</p>

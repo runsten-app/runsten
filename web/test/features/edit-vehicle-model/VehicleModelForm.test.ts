@@ -69,7 +69,8 @@ async function save(w: VueWrapper) {
 describe('VehicleModelForm', () => {
   it('shows what the vehicle reports, and the variants in a fieldset', async () => {
     const w = await form(ex30)
-    expect(w.find('h2').text()).toBe('My EX30')
+    // No heading of its own: the page's area names it, the bar the vehicle.
+    expect(w.find('h2').exists()).toBe(false)
     expect(w.findAll('dt').map((d) => d.text())).toEqual([
       'VIN',
       'Model reported',

@@ -889,7 +889,15 @@
   "vehicleSettings": {
     "open": "Vehicle settings",
     "title": "Vehicle settings",
-    "help": "Runsten recognizes the vehicle's variant from what it reports, when only one fits. Your choice outranks the recognition, and shows wherever the vehicle does.",
+    "areas": "Vehicle settings areas",
+    "model": {
+      "title": "Vehicle",
+      "help": "Runsten recognizes the vehicle's variant from what it reports, when only one fits. Your choice outranks the recognition, and shows wherever the vehicle does."
+    },
+    "history": {
+      "title": "Imported history",
+      "help": "Trips and charges from before Runsten read the vehicle, imported from other apps. Deleting an import leaves what Runsten read."
+    },
     "loading": "Loading the vehicle",
     "error": "The vehicle could not be loaded. Try again in a moment."
   },
@@ -1412,9 +1420,8 @@
     }
   },
   "imports": {
-    "title": "Imported history",
-    "help": "Trips and charges from before Runsten read the vehicle, imported from other apps. Deleting an import leaves what Runsten read.",
-    "listTitle": "Imports",
+    "listTitle": "By application",
+    "addTitle": "Add history",
     "aximote": {
       "title": "Import from Aximote",
       "beta": "Beta",
@@ -1469,6 +1476,7 @@
       "title": "Import from the Volvo Data Portal",
       "beta": "Beta",
       "intro": "In the EU, the Data Act lets you ask Volvo Cars for your car's data on its Data Portal: ask for the trips and the waypoints. Volvo sends two CSV files, sometimes after several hours; choose them here. Only the trips from before the vehicle's first reading are imported, with their tracks from the waypoints. Importing again replaces them.",
+      "open": "Choose the files",
       "link": "Volvo Data Portal",
       "newTab": "(opens in a new tab)",
       "trips": {
@@ -1481,6 +1489,7 @@
       },
       "clear": "Remove: {file}",
       "start": "Import",
+      "cancel": "Cancel",
       "done": "Import finished",
       "report": {
         "imported": "No trip imported. | One trip imported. | {n} trips imported.",
