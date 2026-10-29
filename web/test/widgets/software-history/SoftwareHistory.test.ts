@@ -49,6 +49,17 @@ describe('SoftwareHistory', () => {
     expect(w.find('.more').exists()).toBe(false)
   })
 
+  it('says when the next page fails, keeping the versions read', async () => {
+    const [first, second] = versions.items
+    fetchSoftwareVersions
+      .mockResolvedValueOnce({ items: [first, second], next_cursor: 'next' })
+      .mockRejectedValue(new Error('down'))
+    const w = await mounted()
+    await w.find('.more').trigger('click')
+    await vi.waitFor(() => expect(w.find('.v-alert').exists()).toBe(true))
+    expect(w.findAll('.version')).toHaveLength(2)
+  })
+
   it('shows nothing for a vehicle that tells no version, and says when they fail', async () => {
     fetchSoftwareVersions.mockResolvedValue({ items: [], next_cursor: null })
     expect((await mounted()).find('.software-history').exists()).toBe(false)

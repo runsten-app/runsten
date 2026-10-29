@@ -28,10 +28,10 @@ function installed(v: SoftwareVersion): string {
   <v-card v-if="versions.length || error" class="software-history">
     <v-card-title tag="h2">{{ t('software.title') }}</v-card-title>
     <v-card-text>
-      <v-alert v-if="error && !versions.length" type="error" variant="tonal">
+      <v-alert v-if="error" type="error" variant="tonal" :class="{ 'mb-3': versions.length }">
         {{ t('software.error') }}
       </v-alert>
-      <ol v-else class="versions">
+      <ol v-if="versions.length" class="versions">
         <li v-for="(v, i) in versions" :key="v.id" class="version">
           <!-- The spaces are text: the words stay apart once the spans are read out. -->
           <span class="name">{{ v.version }}</span
