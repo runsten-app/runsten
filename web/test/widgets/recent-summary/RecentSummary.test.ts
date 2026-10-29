@@ -55,6 +55,10 @@ describe('RecentSummary', () => {
     expect(wrapper.find('.tile.energy dd').text()).toContain('44')
     const frame = wrapper.findComponent(ChartFrame)
     expect((frame.props('series') as Series[])[0]?.data).toEqual([73, 0, 0])
+    // One tile: the heading, the figures and the link are the chart's.
+    expect(frame.find('h2').text()).toBe('Last 30 days')
+    expect(frame.find('.tile.distance').exists()).toBe(true)
+    expect(frame.find('a.open-stats').exists()).toBe(true)
   })
 
   it('opens the same days in the statistics, and a day in the trips', async () => {
@@ -74,6 +78,8 @@ describe('RecentSummary', () => {
     expect(fetchStats).toHaveBeenCalledWith('v1', expect.not.objectContaining({ bucket: 'day' }))
     expect(wrapper.find('.recent-summary').exists()).toBe(true)
     expect(wrapper.findComponent(ChartFrame).exists()).toBe(false)
+    expect(wrapper.find('.recent-summary h2').text()).toBe('Last 30 days')
+    expect(wrapper.find('.recent-summary .tile.distance').exists()).toBe(true)
   })
 
   it('shows nothing without a trip or a charge', async () => {

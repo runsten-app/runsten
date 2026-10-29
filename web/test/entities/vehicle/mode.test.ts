@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { noChargeReading, vehicleMode, type State } from '@/entities/vehicle'
+import { vehicleMode, type State } from '@/entities/vehicle'
 import state from '@fixtures/state.json'
 import unknown from '@fixtures/state-unknown.json'
 
@@ -31,26 +31,4 @@ describe('vehicleMode', () => {
     expect(vehicleMode(state as State)).toBe('charging')
     expect(vehicleMode(unknown as State)).toBeNull()
   })
-})
-
-describe('noChargeReading', () => {
-  const charging = (state as State).charging
-  const at = (status: string | null, type: string | null) =>
-    noChargeReading({
-      ...charging,
-      status: status && reading(status),
-      type: type && reading(type),
-    } as State['charging'])?.value ?? null
-
-  it.each([
-    ['idle', 'AC', 'idle'],
-    ['done', null, 'done'],
-    ['scheduled', 'none', 'scheduled'],
-    ['charging', 'none', null],
-    ['discharging', null, null],
-    ['error', 'none', null],
-    [null, 'none', 'none'],
-    [null, 'AC', null],
-    [null, null, null],
-  ])('status %s, type %s → %s', (status, type, want) => expect(at(status, type)).toBe(want))
 })

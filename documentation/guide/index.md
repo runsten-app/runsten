@@ -1,5 +1,5 @@
 ---
-description: "The web interface of Runsten: the supported cars, the state of the car, the connection, your Volvo key, settings and preferences, privacy and accessibility."
+description: "The web interface of Runsten: the supported cars, the app on a phone's home screen, the state of the car, the connection, your Volvo key, settings and preferences, privacy and accessibility."
 ---
 
 # The web interface
@@ -14,9 +14,18 @@ Runsten reads your car from its manufacturer:
 
 <Screen view="state" alt="The State tab: charge level, range, odometer and last position." />
 
+## Installing it on a phone
+
+Runsten installs on a phone like an app: its own icon, full screen, without the browser's bars.
+
+- **iPhone**: open your instance in Safari, select **Share**, then **Add to Home Screen**.
+- **Android**: open it in Chrome, open the menu, then **Add to home screen** (or **Install app**).
+
+On an iPhone, the app takes Safari's session as it is added, then keeps its own: signing out of one leaves the other signed in. Android installs it only from an `https` address ([Reverse proxy](../self-hosting/reverse-proxy.md)).
+
 ## State
 
-The car as last read: its state of charge and range, whether it is charging, its odometer and its last position. Each value tells when it was last checked and since when it holds, and is marked as old when it is. When the car's own latest measure is more than half an hour old (a parked Polestar sends its readings when it chooses), the page tells when it was.
+The car as last read: its state of charge and range, whether it is charging, its odometer and its last position. The battery comes first. A charge running (or discharging, or failing) takes a tile of its own beside it; otherwise one line under the battery's bar says whether the cable is connected and how the last charge ended. The vehicle's tile gives the odometer and the last position, beside the state of charge of the last seven days, and the last 30 days end the page. Each value tells when it was last checked and since when it holds, and is marked as old when it is. When the car's own latest measure is more than half an hour old (a parked Polestar sends its readings when it chooses), the page tells when it was.
 
 A warning shows on every page of the vehicle when nothing new is read of it, with what to do ([Connection](#connection)).
 

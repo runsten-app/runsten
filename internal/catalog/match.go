@@ -25,8 +25,8 @@ type Result struct {
 	Recognized bool
 }
 
-// Match recognizes the variant of a vehicle from its family and model year, the
-// batteryCapacityKWH of its details and its VIN:
+// Match recognizes the variant of an electric vehicle from its family and model year,
+// the batteryCapacityKWH of its details and its VIN:
 //
 //  1. the variants of the family whose years hold modelYear;
 //  2. those that have already been seen reporting capacityKWh (api_kwh), or else those
@@ -38,41 +38,47 @@ type Result struct {
 // skips step 2: an absent field or 0.0 tells nothing of the battery (0.0 is what a
 // combustion car returns, and the caller keeps those out by their fuel type).
 func (c *Catalog) Match(family string, modelYear int, capacityKWh float64, vin string) Result {
-	return c.match(func(v Variant) bool { return v.Family == family }, modelYear, capacityKWh, vin, "")
+	return c.MatchReading(Reading{Family: family, ModelYear: modelYear, CapacityKWh: capacityKWh, VIN: vin, Powertrain: Electric})
 }
 
-// MatchBrand is Match among the variants of a brand, every family, for a vehicle whose
-// source tells its maker but not its family (a Polestar of the Data Portal): when none
-// fits, the candidates are the whole brand.
+// MatchBrand is Match among the electric variants of a brand, every family, for a vehicle
+// whose source tells its maker but not its family (a Polestar of the Data Portal): when
+// none fits, the candidates are the whole brand.
 func (c *Catalog) MatchBrand(brand Brand, modelYear int, capacityKWh float64, vin string) Result {
-	return c.match(func(v Variant) bool { return v.Brand == brand }, modelYear, capacityKWh, vin, "")
+	return c.MatchReading(Reading{Brand: brand, ModelYear: modelYear, CapacityKWh: capacityKWh, VIN: vin, Powertrain: Electric})
 }
 
-// MatchReading is Match, or MatchBrand for a reading without a family, with the
-// reading's trim too (byTrim): what Recognize rests on.
+// MatchReading is Match, or MatchBrand for a reading without a family, among the variants
+// of the reading's powertrain (Offer), with the reading's trim too (byTrim): what
+// Recognize rests on.
 func (c *Catalog) MatchReading(r Reading) Result {
-	if r.Family != "" {
-		return c.match(func(v Variant) bool { return v.Family == r.Family }, r.ModelYear, r.CapacityKWh, r.VIN, r.Trim)
-	}
-	return c.match(func(v Variant) bool { return v.Brand == r.Brand }, r.ModelYear, r.CapacityKWh, r.VIN, r.Trim)
-}
-
-func (c *Catalog) match(of func(Variant) bool, modelYear int, capacityKWh float64, vin, trim string) Result {
-	var all, fits []Variant
-	for _, v := range c.variants {
-		if !of(v) {
-			continue
-		}
-		all = append(all, v)
-		if modelYear <= 0 || v.Years.Contains(modelYear) {
+	all := c.Offer(r)
+	var fits []Variant
+	for _, v := range all {
+		if r.ModelYear <= 0 || v.Years.Contains(r.ModelYear) {
 			fits = append(fits, v)
 		}
 	}
-	fits = byTrim(byMotorCode(byCapacity(fits, capacityKWh), vin), trim)
+	fits = byTrim(byMotorCode(byCapacity(fits, r.CapacityKWh), r.VIN), r.Trim)
 	if len(fits) == 0 {
 		return Result{Candidates: all}
 	}
 	return Result{Candidates: fits, Recognized: len(fits) == 1}
+}
+
+// Offer lists the variants a vehicle may be, every year, in the order of the file: those
+// of its powertrain, of its family, else of its brand. Empty for a reading Offered refuses.
+func (c *Catalog) Offer(r Reading) []Variant {
+	if !r.Offered() {
+		return nil
+	}
+	var vs []Variant
+	for _, v := range c.variants {
+		if v.Powertrain == r.Powertrain && (v.Family == r.Family || r.Family == "" && v.Brand == r.Brand) {
+			vs = append(vs, v)
+		}
+	}
+	return vs
 }
 
 // Reading is what the vendor API says of a vehicle: its latest details and its VIN. The
@@ -86,22 +92,23 @@ type Reading struct {
 	CapacityKWh float64 // batteryCapacityKWH; ≤ 0: unknown
 	VIN         string
 	Trim        string // the vendor's badge (Tesla's trim_badging); empty: unknown
-	// BatteryElectric is true when the vehicle is known to run on its battery alone:
-	// false for a hybrid, a combustion car, and an unknown fuel type.
-	BatteryElectric bool
+	// Powertrain is core.Snapshot's: Electric or PlugInHybrid are matched among the
+	// variants of theirs; empty (unknown) or any other (a combustion car) never is.
+	Powertrain Powertrain
 }
 
-// Recognize returns the variant of a vehicle when exactly one fits (Match). Only a
-// battery electric vehicle is recognized: a hybrid's capacity may lie near an electric
-// variant's, and Runsten does not derive its charges correctly. It is the one rule of
-// recognition, for the API's reads and for the derivation alike.
+// Offered reports whether the catalog has variants to offer for the reading: a family
+// read, or a brand when the source tells the maker alone, of a powertrain the catalog
+// has.
+func (r Reading) Offered() bool {
+	return (r.Family != "" || r.Brand != "") && (r.Powertrain == Electric || r.Powertrain == PlugInHybrid)
+}
+
+// Recognize returns the variant of a vehicle when exactly one fits (MatchReading), among
+// the variants of its powertrain: a hybrid's capacity may lie near an electric variant's,
+// and the derivation tells their charges apart. It is the one rule of recognition, for
+// the API's reads and for the derivation alike.
 func (c *Catalog) Recognize(r Reading) (Variant, bool) {
-	if !r.BatteryElectric {
-		return Variant{}, false
-	}
-	if r.Family == "" && r.Brand == "" {
-		return Variant{}, false
-	}
 	m := c.MatchReading(r)
 	if !m.Recognized {
 		return Variant{}, false
@@ -110,28 +117,16 @@ func (c *Catalog) Recognize(r Reading) (Variant, bool) {
 }
 
 // Chosen returns the variant the user chose while the choice holds: one the catalog
-// still has, of the family read (of the brand read, when the family is unknown: the
-// choice then sets it), for a battery electric vehicle. A choice that no longer holds is
-// ignored, never an error: the recognition applies again.
+// still has (Offer), of the powertrain and family read (of the brand read, when the
+// family is unknown: the choice then sets it). A choice that no longer holds is ignored,
+// never an error: the recognition applies again.
 func (c *Catalog) Chosen(id string, r Reading) (Variant, bool) {
-	if !r.BatteryElectric {
-		return Variant{}, false
+	for _, v := range c.Offer(r) {
+		if v.ID == id {
+			return v, true
+		}
 	}
-	v, ok := c.Variant(id)
-	switch {
-	case !ok:
-		return Variant{}, false
-	case r.Family != "":
-		ok = v.Family == r.Family
-	case r.Brand != "":
-		ok = v.Brand == r.Brand
-	default:
-		ok = false
-	}
-	if !ok {
-		return Variant{}, false
-	}
-	return v, true
+	return Variant{}, false
 }
 
 // Effective returns the variant a vehicle is taken to be: the chosen one while it holds,

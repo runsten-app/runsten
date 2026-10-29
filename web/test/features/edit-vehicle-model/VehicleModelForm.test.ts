@@ -364,4 +364,17 @@ describe('VehicleModelForm', () => {
     await flushPromises()
     expect(labels(w, 'variants')[2]).toContain("D'après le constructeur")
   })
+
+  it('says when a variant does not charge on DC', async () => {
+    // A plug-in hybrid's: no DC power, so no source for one.
+    const noDC = options.map((o) => ({
+      ...o,
+      dc_max_kw: null,
+      levels: { ...o.levels, dc_max_kw: null },
+    }))
+    const w = await form(ex30, noDC)
+    const shown = labels(w, 'variants')
+    expect(shown[1]).toContain('AC 11 kW, 22 kW as an option · no DC charging ')
+    expect(shown[1]).not.toContain('DC power')
+  })
 })

@@ -1614,10 +1614,13 @@ components:
               type: string
             - type: "null"
         dc_max_kw:
-          enum:
-            - manufacturer
-            - secondary
-          type: string
+          description: null when dc_max_kw is.
+          oneOf:
+            - enum:
+                - manufacturer
+                - secondary
+              type: string
+            - type: "null"
         gross_kwh:
           enum:
             - manufacturer
@@ -2004,7 +2007,7 @@ components:
             - integer
             - "null"
         variant:
-          description: "The variant in effect, from Runsten's catalog: the one the user chose, else the one recognized, the only one that fits the family, model year, battery capacity and VIN the vendor reports. Its figures are the catalog's, from the manufacturer or else from public sources. null when none is chosen and none or several fit, for an unknown family and brand, and for a vehicle that is not battery electric: hybrids are neither recognized nor offered."
+          description: "The variant in effect, from Runsten's catalog: the one the user chose, else the one recognized, the only one that fits the family, model year, battery capacity and VIN the vendor reports. Its figures are the catalog's, from the manufacturer or else from public sources. null when none is chosen and none or several fit, for an unknown family and brand, and for a vehicle that is neither battery electric nor a plug-in hybrid, or whose fuel type is not read yet. A plug-in hybrid is matched among the plug-in hybrid variants only, an electric vehicle among the electric ones."
           oneOf:
             - $ref: "#/components/schemas/Variant"
             - type: "null"
@@ -4073,9 +4076,11 @@ components:
             - number
             - "null"
         dc_max_kw:
-          description: Maximum DC charging power.
+          description: Maximum DC charging power; null when the variant does not charge on DC (most plug-in hybrids).
           format: double
-          type: number
+          type:
+            - number
+            - "null"
         gross_kwh:
           description: Gross battery capacity.
           format: double
@@ -4128,9 +4133,11 @@ components:
           description: "The vehicle's details fit the variant, and not every variant of the family: the only candidate is the recognized variant. false for all when the details tell none apart, or fit none."
           type: boolean
         dc_max_kw:
-          description: Maximum DC charging power.
+          description: Maximum DC charging power; null when the variant does not charge on DC (most plug-in hybrids).
           format: double
-          type: number
+          type:
+            - number
+            - "null"
         family:
           description: "The model the variant is of, such as EX30 or Polestar 2: an interface groups the variants by it. A Polestar's are offered across the brand's models."
           minLength: 1
@@ -7684,7 +7691,7 @@ paths:
         - events
   /vehicles/{vehicle}/variants:
     get:
-      description: "The variants of the catalog of the family the vehicle reports: the candidates of the recognition first, then the rest of the family, whatever the model years. A vehicle whose vendor tells its brand but not its family (Polestar's Data Portal) is offered the brand's variants, and the one chosen sets its family. Empty until the details are read, for a family the catalog does not have, and for a vehicle that is not battery electric."
+      description: "The variants of the catalog of the family the vehicle reports: the candidates of the recognition first, then the rest of the family, whatever the model years. A vehicle whose vendor tells its brand but not its family (Polestar's Data Portal) is offered the brand's variants, and the one chosen sets its family. Empty until the details are read, for a family the catalog does not have, and for a vehicle that is neither battery electric nor a plug-in hybrid. A plug-in hybrid is offered the plug-in hybrid variants of its family, an electric vehicle the electric ones."
       operationId: listVariants
       parameters:
         - description: The vehicle ID.
