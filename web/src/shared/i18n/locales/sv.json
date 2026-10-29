@@ -781,6 +781,13 @@
       "dark": "Mörkt",
       "hint": "Automatiskt följer din enhet."
     },
+    "clock": {
+      "title": "Klocka",
+      "auto": "Automatiskt",
+      "h23": "24 timmar",
+      "h12": "12 timmar",
+      "hint": "Automatiskt skriver tiderna som ditt språk och din region gör."
+    },
     "maps": {
       "title": "Kartor",
       "hint": "Kartorna kommer från en tredjepartstjänst, som ser din IP-adress och de områden som visas.",

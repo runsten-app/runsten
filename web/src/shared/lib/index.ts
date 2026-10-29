@@ -23,6 +23,7 @@ export {
 } from './event-time'
 export { figureParts, type FigureParts } from './figure'
 export { groupByDay, type DayGroup } from './group-by-day'
+export { hourCycle, hourCycles, setHourCycle, type HourCycle } from './hour-cycle'
 export { mapsShown, mapTiles, showMaps, useMapsOn, type MapTiles } from './maps'
 export {
   amountInput,
