@@ -57,13 +57,15 @@ vi.mock('@/entities/place', async (original) => ({
 }))
 
 // The extensions' sections and account's actions: none in the public build, some in a test.
-const { sections, actions, build } = vi.hoisted(() => ({
+const { sections, accountSections, actions, build } = vi.hoisted(() => ({
   sections: [] as unknown[],
+  accountSections: [] as unknown[],
   actions: [] as unknown[],
   build: { releaseSection: true },
 }))
 vi.mock('@/pages/settings/extensions', () => ({
   extensionSections: sections,
+  extensionAccountSections: accountSections,
   extensionAccountActions: actions,
   get releaseSection() {
     return build.releaseSection
@@ -74,6 +76,7 @@ vi.mock('@/entities/session/extensions', () => ({ limitsPage: null }))
 
 beforeEach(() => {
   sections.length = 0
+  accountSections.length = 0
   actions.length = 0
   build.releaseSection = true
   Object.values(mocks).forEach((m) => m.mockReset())
@@ -85,75 +88,92 @@ beforeEach(() => {
   mocks.fetchInstance.mockResolvedValue(instance)
 })
 
-async function page(unavailable: string[] = []) {
+async function page(
+  area: 'costs' | 'vehicles' | 'integrations' | 'account' = 'costs',
+  unavailable: string[] = [],
+) {
   const queryClient = testQueryClient()
   queryClient.setQueryData(sessionKeys.current(), {
     ...session,
     limits: unavailable.length ? { history_from: null, unavailable, unread_vehicles: [] } : null,
   })
-  const { wrapper } = mountWith(SettingsPage, { queryClient })
+  const { wrapper } = mountWith(SettingsPage, { queryClient, props: { area } })
   await flushPromises()
   return wrapper
 }
 
+const headings = (w: Awaited<ReturnType<typeof page>>, tag: string) =>
+  w.findAll(tag).map((h) => h.text())
+
 describe('SettingsPage', () => {
+  it('leads to its four areas, each a route, the one shown marked', async () => {
+    mocks.fetchSettings.mockResolvedValue(settings)
+    const w = await page('integrations')
+    expect(w.find('h1').text()).toBe('Settings')
+    const nav = w.find('nav')
+    expect(nav.attributes('aria-label')).toBe('Settings areas')
+    const links = nav.findAll('a')
+    expect(links.map((l) => [l.text(), l.attributes('href')])).toEqual([
+      ['Costs', '/settings'],
+      ['Vehicles', '/settings/vehicles'],
+      ['Integrations', '/settings/integrations'],
+      ['Account', '/settings/account'],
+    ])
+    // The area's heading names the region the link leads to.
+    expect(headings(w, 'h2')).toEqual(['Integrations'])
+    expect(w.find('section').attributes('aria-labelledby')).toBe('settings-area-integrations')
+  })
+
+  it.each([
+    ['costs', ['Currency', 'Places and tariffs']],
+    ['vehicles', []],
+    ['integrations', ['API access', 'MQTT']],
+    ['account', ['Your data', 'About Runsten']],
+  ] as const)('has the parts of the %s under the area', async (area, parts) => {
+    mocks.fetchSettings.mockResolvedValue(settings)
+    const w = await page(area)
+    expect(headings(w, 'h3')).toEqual(parts)
+  })
+
   // Only when there is one: most accounts never have any.
-  it('has the costs without a charge after the vehicles, when there are some', async () => {
+  it('has the costs without a charge after the places, when there are some', async () => {
     mocks.fetchSettings.mockResolvedValue(settings)
     mocks.fetchOrphanCosts.mockResolvedValue(orphans.items)
     const w = await page()
-    expect(w.findAll('h2').map((h) => h.text())).toEqual([
-      'Currency',
-      'Places and tariffs',
-      'Vehicles',
-      'Costs without a charge',
-      'API access',
-      'MQTT',
-      'Your data',
-      'About Runsten',
-    ])
+    expect(headings(w, 'h3')).toEqual(['Currency', 'Places and tariffs', 'Costs without a charge'])
     expect(w.findAll('.orphan')).toHaveLength(1)
   })
 
   it("leaves the costs without a charge out, where the account's offer leaves the costs out", async () => {
     mocks.fetchSettings.mockResolvedValue(settings)
     mocks.fetchOrphanCosts.mockResolvedValue(orphans.items)
-    const w = await page(['costs'])
-    expect(w.findAll('h2').map((h) => h.text())).toEqual([
-      'Currency',
-      'Places and tariffs',
-      'Vehicles',
-      'API access',
-      'MQTT',
-      'Your data',
-      'About Runsten',
-    ])
+    const w = await page('costs', ['costs'])
+    expect(headings(w, 'h3')).toEqual(['Currency', 'Places and tariffs'])
     expect(mocks.fetchOrphanCosts).not.toHaveBeenCalled()
   })
 
-  it('has the currency and the places, under their headings', async () => {
+  // An area reads only what it shows.
+  it('reads neither the tokens nor the broker in the costs', async () => {
+    mocks.fetchSettings.mockResolvedValue(settings)
+    await page()
+    expect(mocks.fetchAccessTokens).not.toHaveBeenCalled()
+    expect(mocks.fetchMqtt).not.toHaveBeenCalled()
+  })
+
+  it('has the currency and the places', async () => {
     mocks.fetchSettings.mockResolvedValue(settings)
     const w = await page()
-    expect(w.find('h1').text()).toBe('Settings')
-    expect(w.findAll('h2').map((h) => h.text())).toEqual([
-      'Currency',
-      'Places and tariffs',
-      'Vehicles',
-      'API access',
-      'MQTT',
-      'Your data',
-      'About Runsten',
-    ])
     expect(w.findComponent({ name: 'VSelect' }).props('modelValue')).toBe('EUR')
     // The prices are in the account's currency.
     expect(w.find('.details').text()).toContain('€0.2142/kWh')
+    expect(w.find('a.new-place').attributes('href')).toBe('/settings/places/new')
     expect(w.find('.back').exists()).toBe(false)
   })
 
   // Whatever the offer: the export of the account.
-  it("ends with the account's data, to download", async () => {
+  it("has the account's data, to download", async () => {
     mocks.fetchSettings.mockResolvedValue(settings)
-    const w = await page(['costs', 'stats'])
+    const w = await page('account', ['costs', 'stats'])
     const data = w.find('.account-data')
     expect(data.find('a.export').attributes('href')).toBe('api/v1/account/export')
     expect(data.find('a.export').attributes()).toHaveProperty('download')
@@ -162,26 +182,42 @@ describe('SettingsPage', () => {
   it("has the extensions' actions beside the download of the account's data", async () => {
     mocks.fetchSettings.mockResolvedValue(settings)
     actions.push({ render: () => h('button', { class: 'extension-action' }, 'Delete') })
-    const w = await page()
+    const w = await page('account')
     expect(w.find('.account-data .extension-action').text()).toBe('Delete')
   })
 
-  it("has the extensions' sections after the access tokens, before the account's data", async () => {
-    mocks.fetchSettings.mockResolvedValue(settings)
-    sections.push({ render: () => h('section', { class: 'extension-section' }, 'Assistants') })
-    const w = await page()
-    const order = w
+  const order = (w: Awaited<ReturnType<typeof page>>) =>
+    w
+      .find('.area')
       .findAll('section')
       .map((s) => s.attributes('aria-labelledby') ?? s.classes().join(' '))
-    const ext = order.indexOf('extension-section')
-    expect(ext).toBe(order.indexOf('settings-mqtt-title') + 1)
-    expect(order[ext + 1]).toBe('settings-account-title')
+
+  it("has the extensions' sections in the integrations, after MQTT", async () => {
+    mocks.fetchSettings.mockResolvedValue(settings)
+    sections.push({ render: () => h('section', { class: 'extension-section' }, 'Assistants') })
+    const w = await page('integrations')
+    expect(order(w)).toEqual([
+      'settings-tokens-title',
+      'settings-mqtt-title',
+      'extension-section part',
+    ])
+  })
+
+  it("has the extensions' account sections before the account's data", async () => {
+    mocks.fetchSettings.mockResolvedValue(settings)
+    accountSections.push({ render: () => h('section', { class: 'extension-section' }, 'Emails') })
+    const w = await page('account')
+    expect(order(w)).toEqual([
+      'extension-section part',
+      'settings-account-title',
+      'settings-release-title',
+    ])
   })
 
   it("locks MQTT where the account's offer leaves it out, the broker set before kept", async () => {
     mocks.fetchSettings.mockResolvedValue(settings)
     mocks.fetchMqtt.mockResolvedValue(mqtt)
-    const w = await page(['mqtt'])
+    const w = await page('integrations', ['mqtt'])
     const section = w.find('[aria-labelledby="settings-mqtt-title"]')
     // Read from the messages: an instance may word them otherwise.
     expect(section.find('.feature-unavailable').text()).toContain(i18n.global.t('limits.mqtt'))
@@ -191,9 +227,9 @@ describe('SettingsPage', () => {
     expect(section.find('form').exists()).toBe(false)
   })
 
-  it('ends with the release the instance runs', async () => {
+  it('ends the account with the release the instance runs', async () => {
     mocks.fetchSettings.mockResolvedValue(settings)
-    const w = await page()
+    const w = await page('account')
     const section = w.find('[aria-labelledby="settings-release-title"]')
     expect(section.find('.version').text()).toBe('Version 0.11.0')
   })
@@ -201,8 +237,8 @@ describe('SettingsPage', () => {
   it('leaves the release out where the build does', async () => {
     mocks.fetchSettings.mockResolvedValue(settings)
     build.releaseSection = false
-    const w = await page()
-    expect(w.findAll('h2').map((h) => h.text())).not.toContain('About Runsten')
+    const w = await page('account')
+    expect(headings(w, 'h3')).toEqual(['Your data'])
     expect(mocks.fetchInstance).not.toHaveBeenCalled()
   })
 
@@ -220,7 +256,7 @@ describe('SettingsPage', () => {
   // A vehicle's model is its own: the settings only lead to it.
   it('leads to the settings of each vehicle, under its label', async () => {
     mocks.fetchSettings.mockResolvedValue(settings)
-    const w = await page()
+    const w = await page('vehicles')
     const links = w.findAll('.vehicle-links a')
     expect(links.map((l) => l.find('.v-list-item-title').text())).toEqual([
       'XC40 Recharge Twin · 2021',
@@ -233,7 +269,6 @@ describe('SettingsPage', () => {
       vehicles.items.map((v) => `/vehicles/${v.id}/settings`),
     )
     expect(w.find('.vehicle-model').exists()).toBe(false)
-    expect(w.find('a.new-place').attributes('href')).toBe('/settings/places/new')
   })
 
   it.each([
@@ -247,11 +282,11 @@ describe('SettingsPage', () => {
       () => mocks.fetchVehicles.mockRejectedValue(new ApiError(500, 'internal', '')),
       'The vehicles could not be loaded. Try again in a moment.',
     ],
-  ])('tells %s in the vehicles section', async (_, set, text) => {
+  ])('tells %s in the vehicles area', async (_, set, text) => {
     mocks.fetchSettings.mockResolvedValue(settings)
     set()
-    const w = await page()
-    expect(w.find('[aria-labelledby="settings-vehicles-title"]').text()).toContain(text)
+    const w = await page('vehicles')
+    expect(w.find('[aria-labelledby="settings-area-vehicles"]').text()).toContain(text)
   })
 
   it('tells a failure of the settings', async () => {

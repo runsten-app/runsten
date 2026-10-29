@@ -2,7 +2,7 @@ import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { tripKeys } from '@/entities/trip'
 import { importKeys, type FileImport } from '@/entities/vehicle-import'
-import { VehicleImports } from '@/features/manage-imports'
+import { ImportSources } from '@/features/manage-imports'
 import { ApiError } from '@/shared/api'
 import reportFixture from '@fixtures/import-volvo-data-portal.json'
 import { mountWith, testQueryClient } from '@test/utils'
@@ -34,12 +34,14 @@ afterEach(() => {
 
 async function mounted() {
   const queryClient = testQueryClient()
-  const m = mountWith(VehicleImports, {
+  const m = mountWith(ImportSources, {
     queryClient,
     props: { vehicle: 'v1' },
     attachTo: document.body,
   })
   wrapper = m.wrapper
+  await flushPromises()
+  await m.wrapper.find('.portal-import .toggle').trigger('click')
   await flushPromises()
   return { w: m.wrapper, queryClient }
 }
@@ -61,6 +63,17 @@ const summary = (w: VueWrapper) =>
   w.findAll('.portal-import .error-summary li').map((li) => li.text())
 
 describe('VolvoDataPortalImport', () => {
+  it('waits behind a button, which opens the form on its first field and gets the focus back', async () => {
+    const { w } = await mounted()
+    expect(document.activeElement?.id).toBe('portal-trips')
+    await w.find('.portal-form .cancel').trigger('click')
+    await flushPromises()
+    expect(w.find('.portal-form').exists()).toBe(false)
+    const toggle = w.find('.portal-import .toggle')
+    expect(toggle.text()).toBe('Choose the files')
+    expect(document.activeElement).toBe(toggle.element)
+  })
+
   it('imports the trips and the waypoints, shows the report, and reads again what changed', async () => {
     const { w, queryClient } = await mounted()
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
@@ -74,6 +87,9 @@ describe('VolvoDataPortalImport', () => {
     await submit(w)
     expect(api.importVolvoDataPortal).toHaveBeenCalledWith('v1', trips, waypoints)
     expect(status(w)).toBe('Import finished')
+    // The form closes on the report, its button focused.
+    expect(w.find('.portal-form').exists()).toBe(false)
+    expect(document.activeElement?.id).toBe('portal-import-toggle')
     const lines = w.findAll('.portal-import .import-report p').map((p) => p.text())
     expect(lines).toEqual([
       '2 trips imported.',
@@ -85,6 +101,20 @@ describe('VolvoDataPortalImport', () => {
     )
     expect(keys).toContainEqual(importKeys.list('v1'))
     expect(keys).toContainEqual(tripKeys.lists('v1'))
+  })
+
+  it('keeps the form while the files are sent', async () => {
+    const { w } = await mounted()
+    await choose(w, 'trips', trips)
+    let finish: (r: FileImport) => void = () => {}
+    api.importVolvoDataPortal.mockReturnValue(new Promise<FileImport>((r) => (finish = r)))
+    await w.find('.portal-form').trigger('submit')
+    await flushPromises()
+    expect(w.find('.portal-form .cancel').attributes('disabled')).toBeDefined()
+    finish(report)
+    await flushPromises()
+    expect(w.find('.portal-form').exists()).toBe(false)
+    expect(status(w)).toBe('Import finished')
   })
 
   it('imports the trips alone', async () => {

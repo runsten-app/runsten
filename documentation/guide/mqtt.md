@@ -10,7 +10,7 @@ It only publishes: nothing sent to the broker reaches the car, and Runsten sends
 
 ## Setting the broker
 
-In **Settings → MQTT**:
+In **Settings → Integrations**, under **MQTT**:
 
 - **Broker URL**: `mqtt://host:1883`, or `mqtts://host:8883` over TLS. For Home Assistant's Mosquitto add-on, `mqtt://homeassistant.local:1883`; if Runsten runs in Docker and that name does not resolve there, use Home Assistant's IP address.
 - **Username** and **Password**, if the broker asks for them. With the Mosquitto add-on, create a Home Assistant user for Runsten (or a login in the add-on's options). The password is stored encrypted, never shown again, and kept when the URL changes to the same host only.

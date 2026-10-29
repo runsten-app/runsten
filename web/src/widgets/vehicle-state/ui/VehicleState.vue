@@ -8,13 +8,12 @@ import {
   mdiParking,
   mdiSleep,
 } from '@mdi/js'
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   detailsStaleAfter,
   isStale,
   lastReport,
-  noChargeReading,
   ReadingItem,
   ReadingProvenance,
   reportLateAfter,
@@ -22,7 +21,6 @@ import {
   type Cable,
   type ChargingStatus,
   type CurrentChargeType,
-  type Engine,
   type Mode,
   type Reading,
   type Sleep,
@@ -36,7 +34,10 @@ import { LevelBar, MapView, StatusPill, TileFigure } from '@/shared/ui'
 
 // Verdandi: the current state of a vehicle, each value with how fresh it is. Each tile says
 // once when its values were checked and since when they hold, those of its first value;
-// a value that differs says its own. The slot adds to the line under the mode (the VIN).
+// a value that differs says its own. The battery comes first, with the charge as one line
+// under its bar; a charge running, discharging or failing takes a tile of its own beside
+// it. The aside slot takes the column beside the vehicle's tile (the state of charge over
+// the last days).
 const props = defineProps<{ vehicle: string }>()
 
 const { t } = useI18n()
@@ -102,14 +103,11 @@ const errorMessage = computed(() =>
   isApiError(error.value, 'not_found') ? t('vehicle.notFound') : t('state.error'),
 )
 
-// The power the car measures, else, where the car says no charge runs, none: a power it
-// leaves out then is no unknown.
+// The power the car measures: its tile shows only while a charge runs, discharges or
+// fails, when a power left out is unknown.
 const power = computed(() => {
-  const c = state.value?.charging
-  if (!c) return null
-  if (c.power_w) return { reading: c.power_w, value: quantity(c.power_w, 'kW', kilowatts) }
-  const none = noChargeReading(c)
-  return none ? { reading: none, value: t('charging.power.none') } : null
+  const p = state.value?.charging.power_w
+  return p ? { reading: p, value: quantity(p, 'kW', kilowatts) } : null
 })
 
 function quantity(r: Reading<number> | null, unit: Unit, convert = (v: number) => v) {
@@ -140,10 +138,6 @@ const typeLabels = computed<Record<CurrentChargeType, string>>(() => ({
   DC: 'DC',
   none: t('charging.type.none'),
 }))
-const engineLabels = computed<Record<Engine, string>>(() => ({
-  running: t('engine.running'),
-  stopped: t('engine.stopped'),
-}))
 
 // The charging status is the tile's title pill: done and charging are good news, an
 // error is one; the rest is said plainly.
@@ -165,7 +159,68 @@ const chargingTile = computed(() => {
   const c = state.value?.charging
   return c ? (c.power_w ?? c.type ?? c.cable ?? c.target_soc_pct ?? null) : null
 })
-const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_km ?? null)
+const vehicleTile = computed(() => state.value?.odometer_km ?? state.value?.software ?? null)
+
+// A charge that needs looking at gets its own tile, its figures large; otherwise (idle,
+// done, scheduled, unknown) one line under the battery's bar says it. The engine is not
+// shown: the mode's pill above says it, read from it.
+const chargeActive = computed(() => {
+  const s = state.value?.charging.status?.value
+  return s === 'charging' || s === 'discharging' || s === 'error'
+})
+const chargeTitle = useId()
+// The line's facts. The target is the bar's, unless no state of charge draws one.
+const chargeFacts = computed(() => {
+  type Fact = { key: string; label: string; reading: Reading | null; value: string | null }
+  const s = state.value
+  if (!s) return []
+  const c = s.charging
+  const facts: Fact[] = [
+    {
+      key: 'cable',
+      label: t('state.charging.cable'),
+      reading: c.cable,
+      value: label(c.cable, cableLabels.value),
+    },
+    {
+      key: 'type',
+      label: t('state.charging.type'),
+      reading: c.type,
+      value: label(c.type, typeLabels.value),
+    },
+  ]
+  if (!s.soc_pct)
+    facts.push({
+      key: 'target',
+      label: t('state.charging.target'),
+      reading: c.target_soc_pct,
+      value: quantity(c.target_soc_pct, 'percent'),
+    })
+  return facts.map((x) => ({
+    ...x,
+    stale: !!x.reading && isStale(x.reading.checked_at, now.value, connection.value),
+  }))
+})
+// The reading whose times the line shows: its first value shown, the status first (the
+// line shows no power).
+const chargeLineTile = computed(() => {
+  const s = state.value
+  if (!s) return null
+  const c = s.charging
+  return c.status ?? c.cable ?? c.type ?? (s.soc_pct ? null : c.target_soc_pct)
+})
+// The line says when its values were checked only where the battery's line does not
+// already say it, as a value does in its tile.
+const chargeOwn = computed(() => {
+  const r = chargeLineTile.value
+  const soc = state.value?.soc_pct
+  if (!r) return false
+  if (!soc) return true
+  return (
+    f.age(r.checked_at, now.value) !== f.age(soc.checked_at, now.value) ||
+    f.dateTime(r.fetched_at, now.value) !== f.dateTime(soc.fetched_at, now.value)
+  )
+})
 
 // The update waiting for the software (a Tesla's): its status, the version it brings, and
 // its progress while it downloads or installs.
@@ -198,7 +253,11 @@ const update = computed(() => {
 </script>
 
 <template>
-  <v-alert v-if="error && !state" type="error" variant="tonal">{{ errorMessage }}</v-alert>
+  <!-- No state: the aside (the last days) still shows, its data read apart. -->
+  <div v-if="error && !state">
+    <v-alert type="error" variant="tonal">{{ errorMessage }}</v-alert>
+    <div v-if="$slots.aside" class="mt-4"><slot name="aside" /></div>
+  </div>
   <v-progress-linear v-else-if="isPending" indeterminate :aria-label="t('state.loading')" />
   <div v-else-if="state" class="verdandi">
     <v-alert v-if="error" type="warning" variant="tonal" density="compact" class="mb-4">
@@ -209,13 +268,6 @@ const update = computed(() => {
       <StatusPill :icon="mode ? modeIcons[mode] : mdiHelpCircleOutline" class="mode">
         {{ mode ? modeLabels[mode] : t('state.mode.unknown') }}
       </StatusPill>
-      <span>
-        <time v-if="state.checked_at" :datetime="state.checked_at">{{
-          t('state.lastChecked', { age: f.age(state.checked_at, now) })
-        }}</time>
-        <template v-else>{{ t('state.neverChecked') }}</template>
-      </span>
-      <v-chip v-if="checkedStale" size="small" variant="outlined">{{ t('reading.stale') }}</v-chip>
       <span v-if="sleep" class="sleep d-inline-flex flex-wrap align-center ga-2">
         <StatusPill :icon="sleepIcons[sleep.value]">{{ sleepLabels[sleep.value] }}</StatusPill>
         <time :datetime="sleep.fetched_at">{{
@@ -225,14 +277,20 @@ const update = computed(() => {
           sleep.value === 'asleep' ? t('state.sleep.leftAlone') : t('state.sleep.unreachable')
         }}</span>
       </span>
+      <span>
+        <time v-if="state.checked_at" :datetime="state.checked_at">{{
+          t('state.lastChecked', { age: f.age(state.checked_at, now) })
+        }}</time>
+        <template v-else>{{ t('state.neverChecked') }}</template>
+      </span>
+      <v-chip v-if="checkedStale" size="small" variant="outlined">{{ t('reading.stale') }}</v-chip>
       <time v-if="reportedLate" :datetime="reportedLate" class="reported">{{
         t('state.lastReported', { time: f.dateTime(reportedLate, now) })
       }}</time>
-      <slot />
     </div>
 
     <v-row density="compact" class="tiles">
-      <v-col cols="12" md="7">
+      <v-col cols="12" :md="chargeActive ? 7 : 12">
         <v-card class="tile battery h-100">
           <v-card-title tag="h2">{{ t('state.battery') }}</v-card-title>
           <v-card-text class="tile-body">
@@ -265,6 +323,24 @@ const update = computed(() => {
                   <span class="details d-block mt-1">{{ t('state.capacityFromVariant') }}</span>
                 </dd>
               </div>
+              <!-- Neither reported nor known from a variant: said small, with where to
+                   choose the variant, rather than a large Unknown. -->
+              <ReadingItem
+                v-else-if="!state.battery_capacity_kwh"
+                :label="t('state.capacity')"
+                :reading="null"
+                :value="null"
+                :now="now"
+                :connection="connection"
+                size="small"
+                class="no-capacity"
+              >
+                <router-link
+                  :to="{ name: 'vehicleSettings', params: { vehicle } }"
+                  class="choose-variant d-block mt-1"
+                  >{{ t('state.chooseVariant') }}</router-link
+                >
+              </ReadingItem>
               <ReadingItem
                 v-else
                 :label="t('state.capacity')"
@@ -291,11 +367,50 @@ const update = computed(() => {
                 </span>
               </div>
             </div>
+            <section
+              v-if="!chargeActive"
+              class="charge-line"
+              data-test="charging"
+              :aria-labelledby="chargeTitle"
+            >
+              <div class="d-flex flex-wrap align-center charge-row">
+                <h3 :id="chargeTitle" class="charge-title">{{ t('state.charging.title') }}</h3>
+                <StatusPill
+                  :tone="
+                    state.charging.status ? statusTones[state.charging.status.value] : 'neutral'
+                  "
+                  class="charging-status"
+                >
+                  <span class="d-sr-only">{{ t('state.charging.status') }}:</span>
+                  {{ label(state.charging.status, statusLabels) ?? f.unknown() }}
+                </StatusPill>
+                <dl class="facts d-flex flex-wrap">
+                  <div
+                    v-for="fact in chargeFacts"
+                    :key="fact.key"
+                    class="reading fact"
+                    :class="{ stale: fact.stale }"
+                  >
+                    <dt class="label">{{ fact.label }}</dt>
+                    <dd class="value" :class="{ unknown: fact.value === null }">
+                      {{ fact.value ?? f.unknown() }}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+              <ReadingProvenance
+                v-if="chargeOwn && chargeLineTile"
+                :reading="chargeLineTile"
+                :now="now"
+                :connection="connection"
+                class="mt-2"
+              />
+            </section>
           </v-card-text>
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="5">
+      <v-col v-if="chargeActive" cols="12" md="5">
         <v-card class="tile h-100" data-test="charging">
           <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
             {{ t('state.charging.title') }}
@@ -334,6 +449,7 @@ const update = computed(() => {
                 :tile="chargingTile"
               />
               <ReadingItem
+                v-if="!state.soc_pct"
                 :label="t('state.charging.target')"
                 :reading="state.charging.target_soc_pct"
                 :value="quantity(state.charging.target_soc_pct, 'percent')"
@@ -353,19 +469,11 @@ const update = computed(() => {
         </v-card>
       </v-col>
 
-      <v-col cols="12" sm="6">
+      <v-col cols="12" :md="$slots.aside ? 5 : 12">
         <v-card class="tile h-100">
           <v-card-title tag="h2">{{ t('state.vehicle') }}</v-card-title>
           <v-card-text class="tile-body">
             <dl class="fields">
-              <ReadingItem
-                :label="t('state.engine')"
-                :reading="state.engine"
-                :value="label(state.engine, engineLabels)"
-                :now="now"
-                :connection="connection"
-                :tile="vehicleTile"
-              />
               <ReadingItem
                 :label="t('state.odometer')"
                 :reading="state.odometer_km"
@@ -383,6 +491,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
+                size="small"
               />
               <ReadingItem
                 v-if="update"
@@ -392,7 +501,20 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
+                size="small"
                 class="update"
+              />
+              <!-- Without a map, the coordinates are the position: a value of the tile. -->
+              <ReadingItem
+                v-if="!mapsOn"
+                :label="t('state.position')"
+                :reading="state.position"
+                :value="state.position ? f.coordinates(state.position.value) : null"
+                :now="now"
+                :connection="connection"
+                :tile="vehicleTile"
+                size="small"
+                class="coordinates"
               />
             </dl>
             <ReadingProvenance
@@ -400,40 +522,29 @@ const update = computed(() => {
               :reading="vehicleTile"
               :now="now"
               :connection="connection"
-              class="footer"
             />
-          </v-card-text>
-        </v-card>
-      </v-col>
-
-      <v-col cols="12" sm="6">
-        <v-card class="tile h-100">
-          <v-card-title tag="h2">{{ t('state.position') }}</v-card-title>
-          <v-card-text class="tile-body">
-            <dl>
-              <ReadingItem
-                :label="t('state.coordinates')"
-                :reading="state.position"
-                :value="state.position ? f.coordinates(state.position.value) : null"
-                :now="now"
-                :connection="connection"
-                :tile="state.position"
-                size="small"
+            <template v-if="state.position && mapsOn">
+              <MapView
+                :label="t('state.map')"
+                :markers="[{ position: state.position.value, label: t('state.position') }]"
               />
-            </dl>
-            <MapView
-              v-if="state.position"
-              :label="t('state.map')"
-              :markers="[{ position: state.position.value, label: t('state.position') }]"
-              class="mt-3"
-            />
-            <div
-              v-if="state.position"
-              class="footer d-flex flex-wrap align-center justify-space-between ga-3"
-            >
-              <ReadingProvenance :reading="state.position" :now="now" :connection="connection" />
+              <!-- With a map, the map is the position; its coordinates and times, small. -->
+              <dl class="position-line">
+                <div class="reading coordinates">
+                  <dt class="d-sr-only">{{ t('state.coordinates') }}</dt>
+                  <dd>
+                    <span class="value">{{ f.coordinates(state.position.value) }}</span>
+                    <ReadingProvenance
+                      :reading="state.position"
+                      :now="now"
+                      :connection="connection"
+                    />
+                  </dd>
+                </div>
+              </dl>
+            </template>
+            <div v-if="state.position && !mapsOn" class="footer">
               <v-btn
-                v-if="!mapsOn"
                 :href="openStreetMapUrl(state.position.value)"
                 target="_blank"
                 rel="noreferrer"
@@ -446,6 +557,10 @@ const update = computed(() => {
             </div>
           </v-card-text>
         </v-card>
+      </v-col>
+
+      <v-col v-if="$slots.aside" cols="12" md="7">
+        <slot name="aside" />
       </v-col>
     </v-row>
   </div>
@@ -507,6 +622,60 @@ const update = computed(() => {
   font-size: 0.75rem;
   line-height: 1.4;
   color: rgb(var(--v-theme-text-secondary));
+}
+.charge-line {
+  padding: 12px 16px;
+  border-radius: var(--v-control-radius);
+  background: rgb(var(--v-theme-surface-variant));
+}
+.charge-row {
+  gap: 8px 16px;
+}
+.charge-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.facts {
+  margin: 0;
+  gap: 4px 20px;
+  font-size: 0.875rem;
+}
+.fact {
+  display: flex;
+  gap: 6px;
+}
+.fact .label {
+  color: rgb(var(--v-theme-text-secondary));
+}
+.fact dd {
+  margin: 0;
+  font-weight: 500;
+}
+.fact dd.unknown,
+.fact.stale dd {
+  font-weight: 400;
+  color: rgb(var(--v-theme-text-secondary));
+}
+.no-capacity {
+  min-width: 7rem;
+}
+.choose-variant {
+  font-size: 0.8125rem;
+  color: rgb(var(--v-theme-primary));
+}
+.position-line dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  font-size: 0.75rem;
+  color: rgb(var(--v-theme-text-secondary));
+}
+.position-line .value {
+  font-variant-numeric: tabular-nums;
 }
 .osm {
   color: rgb(var(--v-theme-primary)) !important;

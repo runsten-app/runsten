@@ -73,6 +73,7 @@
     "range": "Autonomie",
     "capacity": "Capacité de la batterie",
     "capacityFromVariant": "Utile, selon la variante",
+    "chooseVariant": "Choisir sa variante",
     "charging": {
       "title": "Charge",
       "status": "Statut",
@@ -82,7 +83,6 @@
       "target": "Cible"
     },
     "vehicle": "Véhicule",
-    "engine": "Moteur",
     "odometer": "Odomètre",
     "map": "Carte de la position",
     "position": "Dernière position",
@@ -123,14 +123,7 @@
     },
     "type": {
       "none": "Aucun"
-    },
-    "power": {
-      "none": "Aucune"
     }
-  },
-  "engine": {
-    "running": "En marche",
-    "stopped": "Arrêté"
   },
   "nav": {
     "label": "Véhicule",
@@ -715,7 +708,7 @@
     "soc": "Niveau de charge",
     "driving": "Conduite",
     "charging": "Recharge",
-    "hint": "Les bandes sont les trajets et les recharges : pâles là où ils ont pu avoir lieu, plus marquées là où ils ont eu lieu à coup sûr. Entre elles, le véhicule était stationné. La ligne s'interrompt là où rien n'a été lu.",
+    "hint": "Bandes : trajets et recharges, plus marquées là où ils ont eu lieu à coup sûr. La ligne s'interrompt là où rien n'a été lu.",
     "summary": "Sur les 7 derniers jours, de {first} à {last}, entre {min} et {max} ; {trips} et {charges}.",
     "none": "Rien n'a été lu ces 7 derniers jours.",
     "tripCount": "aucun trajet | {n} trajet | {n} trajets",
@@ -748,6 +741,19 @@
     "title": "Réglages",
     "loading": "Chargement des réglages",
     "error": "Les réglages n'ont pas pu être chargés. Réessayez dans un instant.",
+    "areas": "Rubriques des réglages",
+    "costs": {
+      "title": "Coûts",
+      "help": "Ce que coûtent vos charges : la devise de tous les prix, et le tarif de chaque lieu."
+    },
+    "integrations": {
+      "title": "Intégrations",
+      "help": "D'autres programmes lisent vos véhicules : un script ou un assistant par l'API, Home Assistant par votre broker MQTT."
+    },
+    "account": {
+      "title": "Compte",
+      "help": "Les données de votre compte, et le Runsten qui le fait tourner."
+    },
     "currency": {
       "title": "Devise",
       "label": "Devise",
@@ -877,9 +883,28 @@
   "vehicleSettings": {
     "open": "Réglages du véhicule",
     "title": "Réglages du véhicule",
-    "help": "Runsten reconnaît la variante du véhicule d'après ce qu'il transmet, quand une seule correspond. Votre choix prime sur la reconnaissance, et se voit partout où le véhicule apparaît.",
+    "areas": "Rubriques des réglages du véhicule",
+    "model": {
+      "title": "Véhicule",
+      "help": "Runsten reconnaît la variante du véhicule d'après ce qu'il transmet, quand une seule correspond. Votre choix prime sur la reconnaissance, et se voit partout où le véhicule apparaît."
+    },
+    "history": {
+      "title": "Historique importé",
+      "help": "Trajets et charges d'avant que Runsten ne lise le véhicule, importés d'autres apps. Supprimer un import laisse ce que Runsten a lu."
+    },
     "loading": "Chargement du véhicule",
     "error": "Le véhicule n'a pas pu être chargé. Réessayez dans un instant."
+  },
+  "deleteVehicle": {
+    "title": "Supprimer ce véhicule",
+    "help": "Pour un véhicule vendu, ou que vous ne suivez plus. Sa connexion reste, et continue de lire vos autres véhicules.",
+    "button": "Supprimer {vehicle}",
+    "confirmTitle": "Supprimer {vehicle} ?",
+    "text": "Ses relevés, ses trajets, ses charges, son historique importé et les coûts saisis sont supprimés définitivement. Pour en garder une copie, téléchargez d'abord vos données dans les réglages.",
+    "again": "Une nouvelle connexion qui le liste de nouveau l'ajoute comme un nouveau véhicule, sans cet historique.",
+    "confirm": "Supprimer",
+    "cancel": "Annuler",
+    "error": "Le véhicule n'a pas pu être supprimé. Réessayez dans un instant."
   },
   "orphans": {
     "title": "Coûts sans charge",
@@ -1389,9 +1414,8 @@
     }
   },
   "imports": {
-    "title": "Historique importé",
-    "help": "Trajets et charges d'avant que Runsten ne lise le véhicule, importés d'autres apps. Supprimer un import laisse ce que Runsten a lu.",
-    "listTitle": "Imports",
+    "listTitle": "Par application",
+    "addTitle": "Ajouter de l'historique",
     "aximote": {
       "title": "Importer depuis Aximote",
       "beta": "Bêta",
@@ -1446,6 +1470,7 @@
       "title": "Importer depuis le Volvo Data Portal",
       "beta": "Bêta",
       "intro": "Dans l'UE, le Data Act vous permet de demander à Volvo Cars les données de votre voiture sur son Data Portal : demandez les trajets et les points de passage. Volvo envoie deux fichiers CSV, parfois après plusieurs heures ; choisissez-les ici. Seuls les trajets antérieurs à la première lecture du véhicule sont importés, avec leurs tracés tirés des points de passage. Importer à nouveau les remplace.",
+      "open": "Choisir les fichiers",
       "link": "Volvo Data Portal",
       "newTab": "(s'ouvre dans un nouvel onglet)",
       "trips": {
@@ -1458,6 +1483,7 @@
       },
       "clear": "Retirer : {file}",
       "start": "Importer",
+      "cancel": "Annuler",
       "done": "Import terminé",
       "report": {
         "imported": "Aucun trajet importé. | Un trajet importé. | {n} trajets importés.",

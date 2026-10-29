@@ -101,11 +101,21 @@ test('Settings: the currency, then a place with a window across midnight, reopen
   })
 })
 
-// The settings lead to each vehicle's own, as the vehicle's page does.
-test("Settings: the Vehicles section leads to a vehicle's settings", async ({ page }) => {
+// The settings lead to each vehicle's own, as the vehicle's page does, from their
+// Vehicles area, which the areas' navigation leads to.
+test("Settings: the Vehicles area leads to a vehicle's settings", async ({ page }, testInfo) => {
   await signIn(page)
   const vehicle = await vehicleId(page)
   await page.goto('/settings')
+  const areas = page.getByRole('navigation', { name: 'Settings areas' })
+  await expect(areas.getByRole('link', { name: 'Costs' })).toHaveAttribute('aria-current', 'page')
+  await areas.getByRole('link', { name: 'Vehicles' }).click()
+  await expect(page).toHaveURL(/\/settings\/vehicles$/)
+  await expect(areas.getByRole('link', { name: 'Vehicles' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  await checkView(page, testInfo, 'settings-vehicles')
   const section = page.getByRole('region', { name: 'Vehicles' })
   await section.getByRole('link', { name: /EX-SIM · 2026/ }).click()
   await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/settings$`))
@@ -122,14 +132,30 @@ test('Vehicle settings: a family the catalog lacks, from the vehicle page', asyn
   await page.goto(`/vehicles/${vehicle}`)
   await page.getByRole('link', { name: 'Vehicle settings' }).click()
   await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/settings$`))
-  const section = page.getByRole('region', { name: 'EX-SIM · 2026' })
-  await expect(section.getByRole('heading', { level: 2 })).toHaveText('EX-SIM · 2026')
+  // Two areas, each a link of the sub-navigation: the model first.
+  const areas = page.getByRole('navigation', { name: 'Vehicle settings areas' })
+  await expect(areas.getByRole('link')).toHaveText(['Vehicle', 'Imported history'])
+  await expect(areas.getByRole('link', { name: 'Vehicle', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  const section = page.getByRole('region', { name: 'Vehicle', exact: true })
   await expect(section.locator('dd')).toHaveText([/^[A-HJ-NPR-Z0-9]{17}$/, 'EX-SIM', '2026'])
   await expect(section.locator('.none')).toHaveText(
     "Runsten's catalog has no variant of the EX-SIM: it lists the battery-electric Volvo and Polestar models only.",
   )
   await expect(section.getByRole('radio')).toHaveCount(0)
+  // The deletion last, on a tile of its own.
+  await expect(section.getByRole('region', { name: 'Delete this vehicle' })).toBeVisible()
   await checkView(page, testInfo, 'vehicle-settings')
+
+  await areas.getByRole('link', { name: 'Imported history' }).click()
+  await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/settings/history$`))
+  await expect(page.getByRole('region', { name: 'Imported history' })).toBeVisible()
+  await expect(areas.getByRole('link', { name: 'Imported history' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
 })
 
 // A variant as GET /variants gives it (the catalog's EX30 figures, public sources).
@@ -338,9 +364,11 @@ test('Vehicle settings: the model, then the variant of a Polestar', async ({ pag
 })
 
 // The account's data: the export is downloaded whole.
-test("Settings: the account's data, downloaded", async ({ page }) => {
+test("Settings: the account's data, downloaded", async ({ page }, testInfo) => {
   await signIn(page)
-  await page.goto('/settings')
+  await page.goto('/settings/account')
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText('Account')
+  await checkView(page, testInfo, 'settings-account')
   const section = page.getByRole('region', { name: 'Your data' })
   const download = page.waitForEvent('download')
   await section.getByRole('link', { name: 'Download my data' }).click()

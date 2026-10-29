@@ -39,7 +39,6 @@ const { setVehicleModel, isPending, error, reset } = useSetVehicleModel()
 
 const id = computed(() => props.vehicle.id)
 const ids = computed(() => ({
-  title: `vehicle-${id.value}-title`,
   variant: field.variant(id.value),
   variantLegend: `vehicle-${id.value}-variant-legend`,
   models: `vehicle-${id.value}-models`,
@@ -162,8 +161,8 @@ function chargerLabel(c: number): string {
 </script>
 
 <template>
-  <section class="vehicle-model mb-6" :aria-labelledby="ids.title">
-    <h2 :id="ids.title" class="text-title-large mb-2">{{ label }}</h2>
+  <!-- Under its area's heading, on the page: the vehicle's name is the picker's, in the bar. -->
+  <div class="vehicle-model">
     <dl class="facts mb-4">
       <FactItem :label="t('vehicleModel.vin')" :value="vehicle.vin" class="vin" />
       <FactItem :label="t('vehicleModel.family')" :value="vehicle.model.family ?? f.unknown()" />
@@ -316,7 +315,7 @@ function chargerLabel(c: number): string {
       </div>
     </v-form>
     <p role="status" class="status text-body-medium mt-2">{{ status }}</p>
-  </section>
+  </div>
 </template>
 
 <style scoped>
@@ -334,6 +333,11 @@ fieldset {
 /* Seventeen characters at the figures' size are wider than a column: a row of its own. */
 .vin {
   grid-column: 1 / -1;
+}
+/* Four models do not fit a phone on one line: they wrap rather than run off it. */
+.models {
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 .option {
   align-items: flex-start;

@@ -73,6 +73,7 @@
     "range": "Range",
     "capacity": "Battery capacity",
     "capacityFromVariant": "Usable, from the variant",
+    "chooseVariant": "Choose its variant",
     "charging": {
       "title": "Charging",
       "status": "Status",
@@ -82,7 +83,6 @@
       "target": "Target"
     },
     "vehicle": "Vehicle",
-    "engine": "Engine",
     "odometer": "Odometer",
     "map": "Map of the position",
     "position": "Last position",
@@ -123,14 +123,7 @@
     },
     "type": {
       "none": "None"
-    },
-    "power": {
-      "none": "None"
     }
-  },
-  "engine": {
-    "running": "Running",
-    "stopped": "Stopped"
   },
   "nav": {
     "label": "Vehicle",
@@ -715,7 +708,7 @@
     "soc": "State of charge",
     "driving": "Driving",
     "charging": "Charging",
-    "hint": "The bands are the trips and the charges: faint where they may have been, stronger where they surely were. Between them, the vehicle was parked. The line breaks where nothing was read.",
+    "hint": "Bands: trips and charges, stronger where they surely were. The line breaks where nothing was read.",
     "summary": "Over the last 7 days, from {first} to {last}, between {min} and {max}; {trips} and {charges}.",
     "none": "Nothing was read in the last 7 days.",
     "tripCount": "no trip | {n} trip | {n} trips",
@@ -748,6 +741,19 @@
     "title": "Settings",
     "loading": "Loading the settings",
     "error": "The settings could not be loaded. Try again in a moment.",
+    "areas": "Settings areas",
+    "costs": {
+      "title": "Costs",
+      "help": "What your charges cost: the currency of every price, and the tariff of each place."
+    },
+    "integrations": {
+      "title": "Integrations",
+      "help": "Let other programs read your vehicles: a script or an assistant through the API, Home Assistant through your MQTT broker."
+    },
+    "account": {
+      "title": "Account",
+      "help": "Your account's data, and the Runsten it runs on."
+    },
     "currency": {
       "title": "Currency",
       "label": "Currency",
@@ -877,9 +883,28 @@
   "vehicleSettings": {
     "open": "Vehicle settings",
     "title": "Vehicle settings",
-    "help": "Runsten recognizes the vehicle's variant from what it reports, when only one fits. Your choice outranks the recognition, and shows wherever the vehicle does.",
+    "areas": "Vehicle settings areas",
+    "model": {
+      "title": "Vehicle",
+      "help": "Runsten recognizes the vehicle's variant from what it reports, when only one fits. Your choice outranks the recognition, and shows wherever the vehicle does."
+    },
+    "history": {
+      "title": "Imported history",
+      "help": "Trips and charges from before Runsten read the vehicle, imported from other apps. Deleting an import leaves what Runsten read."
+    },
     "loading": "Loading the vehicle",
     "error": "The vehicle could not be loaded. Try again in a moment."
+  },
+  "deleteVehicle": {
+    "title": "Delete this vehicle",
+    "help": "For a vehicle sold, or one you no longer follow. Its connection stays, and keeps reading your other vehicles.",
+    "button": "Delete {vehicle}",
+    "confirmTitle": "Delete {vehicle}?",
+    "text": "Its readings, trips, charges, imported history and the costs entered for them are deleted for good. To keep a copy, download your data in the settings first.",
+    "again": "A new connection that lists it again adds it as a new vehicle, without this history.",
+    "confirm": "Delete",
+    "cancel": "Cancel",
+    "error": "The vehicle could not be deleted. Try again in a moment."
   },
   "orphans": {
     "title": "Costs without a charge",
@@ -1389,9 +1414,8 @@
     }
   },
   "imports": {
-    "title": "Imported history",
-    "help": "Trips and charges from before Runsten read the vehicle, imported from other apps. Deleting an import leaves what Runsten read.",
-    "listTitle": "Imports",
+    "listTitle": "By application",
+    "addTitle": "Add history",
     "aximote": {
       "title": "Import from Aximote",
       "beta": "Beta",
@@ -1446,6 +1470,7 @@
       "title": "Import from the Volvo Data Portal",
       "beta": "Beta",
       "intro": "In the EU, the Data Act lets you ask Volvo Cars for your car's data on its Data Portal: ask for the trips and the waypoints. Volvo sends two CSV files, sometimes after several hours; choose them here. Only the trips from before the vehicle's first reading are imported, with their tracks from the waypoints. Importing again replaces them.",
+      "open": "Choose the files",
       "link": "Volvo Data Portal",
       "newTab": "(opens in a new tab)",
       "trips": {
@@ -1458,6 +1483,7 @@
       },
       "clear": "Remove: {file}",
       "start": "Import",
+      "cancel": "Cancel",
       "done": "Import finished",
       "report": {
         "imported": "No trip imported. | One trip imported. | {n} trips imported.",

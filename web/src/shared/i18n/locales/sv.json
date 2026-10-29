@@ -73,6 +73,7 @@
     "range": "Räckvidd",
     "capacity": "Batterikapacitet",
     "capacityFromVariant": "Användbar, enligt varianten",
+    "chooseVariant": "Välj dess variant",
     "charging": {
       "title": "Laddning",
       "status": "Status",
@@ -82,7 +83,6 @@
       "target": "Mål"
     },
     "vehicle": "Fordon",
-    "engine": "Motor",
     "odometer": "Mätarställning",
     "map": "Karta över positionen",
     "position": "Senaste position",
@@ -123,14 +123,7 @@
     },
     "type": {
       "none": "Ingen"
-    },
-    "power": {
-      "none": "Ingen"
     }
-  },
-  "engine": {
-    "running": "Igång",
-    "stopped": "Avstängd"
   },
   "nav": {
     "label": "Fordon",
@@ -715,7 +708,7 @@
     "soc": "Laddningsnivå",
     "driving": "Körning",
     "charging": "Laddning",
-    "hint": "Banden är resorna och laddningarna: ljusa där de kan ha skett, starkare där de säkert skedde. Mellan dem stod fordonet parkerat. Linjen bryts där inget lästes.",
+    "hint": "Band: resor och laddningar, starkare där de säkert skedde. Linjen bryts där inget lästes.",
     "summary": "Under de senaste 7 dagarna, från {first} till {last}, mellan {min} och {max}; {trips} och {charges}.",
     "none": "Inget lästes under de senaste 7 dagarna.",
     "tripCount": "ingen resa | {n} resa | {n} resor",
@@ -748,6 +741,19 @@
     "title": "Inställningar",
     "loading": "Läser in inställningarna",
     "error": "Inställningarna kunde inte läsas in. Försök igen om en stund.",
+    "areas": "Inställningsområden",
+    "costs": {
+      "title": "Kostnader",
+      "help": "Vad dina laddningar kostar: valutan för alla priser och tariffen för varje plats."
+    },
+    "integrations": {
+      "title": "Integrationer",
+      "help": "Låt andra program läsa dina fordon: ett skript eller en assistent via API:et, Home Assistant via din MQTT-broker."
+    },
+    "account": {
+      "title": "Konto",
+      "help": "Ditt kontos data och den Runsten det körs på."
+    },
     "currency": {
       "title": "Valuta",
       "label": "Valuta",
@@ -877,9 +883,28 @@
   "vehicleSettings": {
     "open": "Fordonsinställningar",
     "title": "Fordonsinställningar",
-    "help": "Runsten känner igen fordonets variant utifrån det fordonet rapporterar, när bara en passar. Ditt val går före igenkänningen och syns överallt där fordonet visas.",
+    "areas": "Delar av fordonsinställningarna",
+    "model": {
+      "title": "Fordon",
+      "help": "Runsten känner igen fordonets variant utifrån det fordonet rapporterar, när bara en passar. Ditt val går före igenkänningen och syns överallt där fordonet visas."
+    },
+    "history": {
+      "title": "Importerad historik",
+      "help": "Resor och laddningar från innan Runsten läste fordonet, importerade från andra appar. Att ta bort en import lämnar det Runsten läst."
+    },
     "loading": "Läser in fordonet",
     "error": "Fordonet kunde inte läsas in. Försök igen om en stund."
+  },
+  "deleteVehicle": {
+    "title": "Ta bort det här fordonet",
+    "help": "För ett sålt fordon, eller ett du inte längre följer. Dess anslutning finns kvar och fortsätter att läsa dina andra fordon.",
+    "button": "Ta bort {vehicle}",
+    "confirmTitle": "Ta bort {vehicle}?",
+    "text": "Dess avläsningar, resor, laddningar, importerade historik och de kostnader som angetts för dem tas bort för gott. Ladda först ned dina data i inställningarna för att behålla en kopia.",
+    "again": "En ny anslutning som listar det igen lägger till det som ett nytt fordon, utan den här historiken.",
+    "confirm": "Ta bort",
+    "cancel": "Avbryt",
+    "error": "Fordonet kunde inte tas bort. Försök igen om en stund."
   },
   "orphans": {
     "title": "Kostnader utan laddning",
@@ -1389,9 +1414,8 @@
     }
   },
   "imports": {
-    "title": "Importerad historik",
-    "help": "Resor och laddningar från innan Runsten läste fordonet, importerade från andra appar. Att ta bort en import lämnar det Runsten läst.",
-    "listTitle": "Importer",
+    "listTitle": "Per app",
+    "addTitle": "Lägg till historik",
     "aximote": {
       "title": "Importera från Aximote",
       "beta": "Beta",
@@ -1446,6 +1470,7 @@
       "title": "Importera från Volvo Data Portal",
       "beta": "Beta",
       "intro": "I EU ger Data Act dig rätt att begära bilens data från Volvo Cars på deras Data Portal: begär resorna och vägpunkterna. Volvo skickar två CSV-filer, ibland efter flera timmar; välj dem här. Bara resor från före fordonets första avläsning importeras, med spår från vägpunkterna. En ny import ersätter dem.",
+      "open": "Välj filerna",
       "link": "Volvo Data Portal",
       "newTab": "(öppnas i en ny flik)",
       "trips": {
@@ -1458,6 +1483,7 @@
       },
       "clear": "Ta bort: {file}",
       "start": "Importera",
+      "cancel": "Avbryt",
       "done": "Importen är klar",
       "report": {
         "imported": "Ingen resa importerad. | En resa importerad. | {n} resor importerade.",

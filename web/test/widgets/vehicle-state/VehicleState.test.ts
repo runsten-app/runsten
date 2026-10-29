@@ -1,5 +1,6 @@
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 import { ApiError } from '@/shared/api'
 import { i18n, type Locale } from '@/shared/i18n'
 import { VehicleState } from '@/widgets/vehicle-state'
@@ -71,35 +72,89 @@ describe('VehicleState', () => {
     expect(reading(w, 'State of charge')).toEqual({ value: '64%', details: '', stale: false })
     expect(reading(w, 'Range').value).toBe('256 km')
     expect(reading(w, 'Odometer')).toMatchObject({ value: '12,473 km', stale: false })
-    expect(reading(w, 'Engine').value).toBe('Stopped')
+    // The mode's pill says the engine: no value repeats it.
+    expect(() => reading(w, 'Engine')).toThrow()
     // Read once a day: not stale after 14 hours.
     expect(reading(w, 'Battery capacity')).toMatchObject({ value: '78 kWh', stale: false })
     expect(reading(w, 'Battery capacity').details).toMatch(/^checked .+ · since /)
-    expect(reading(w, 'Coordinates')).toMatchObject({ value: '45.76400, 4.83570', details: '' })
-    expect(provenance(w, 'Last position')).toBe('checked 36 min ago · since 17:30')
+    // Without a map, the coordinates are a value of the vehicle's tile, with their own times.
+    expect(reading(w, 'Last position').value).toBe('45.76400, 4.83570')
+    expect(reading(w, 'Last position').details).toBe('checked 36 min ago')
+    expect(provenance(w, 'Vehicle')).toMatch(/^checked .+ · since /)
   })
 
-  it('puts a charge in progress forward', async () => {
+  it('puts a charge in progress forward, in a tile of its own', async () => {
     const w = await mounted(state)
     expect(plain(w.find('.mode').text())).toBe('Charging')
+    expect(w.find('.charge-line').exists()).toBe(false)
+    const tile = w.find('.v-card[data-test="charging"]')
+    expect(tile.find('h2').text()).toContain('Charging')
     // The status is the tile's pill, named for a screen reader.
-    const status = w.find('.charging-status')
+    const status = tile.find('.charging-status')
     expect(plain(status.text())).toBe('Status: Charging')
     expect(status.classes()).toContain('status-pill--success')
     expect(reading(w, 'Power').value).toBe('7.4 kW')
     expect(reading(w, 'Type').value).toBe('AC')
     expect(reading(w, 'Cable').value).toBe('Connected')
-    expect(reading(w, 'Target').value).toBe('80%')
+    // The target is the bar's, said once.
+    expect(() => reading(w, 'Target')).toThrow()
+    expect(plain(w.find('.under-bar .target').text())).toBe('Target 80%')
   })
 
-  it('does not when the car is parked', async () => {
+  it.each(['done', 'idle', 'scheduled'])(
+    'says a charge %s in one line under the battery',
+    async (value) => {
+      const parked = {
+        ...state,
+        charging: { ...state.charging, status: { ...state.charging.status, value } },
+      }
+      const w = await mounted(parked)
+      expect(w.find('.v-card[data-test="charging"]').exists()).toBe(false)
+      const line = w.find('.battery .charge-line')
+      expect(line.find('h3').text()).toBe('Charging')
+      expect(line.attributes('aria-labelledby')).toBe(line.find('h3').attributes('id'))
+      expect(plain(line.find('.charging-status').text())).toMatch(/^Status: /)
+      expect(reading(w, 'Cable').value).toBe('Connected')
+      expect(reading(w, 'Type').value).toBe('AC')
+      // No power to tell while nothing charges, the target under the bar only.
+      expect(() => reading(w, 'Power')).toThrow()
+      expect(() => reading(w, 'Target')).toThrow()
+    },
+  )
+
+  it('keeps the target in the line where no state of charge draws a bar', async () => {
     const parked = {
       ...state,
+      soc_pct: null,
       charging: { ...state.charging, status: { ...state.charging.status, value: 'done' } },
     }
     const w = await mounted(parked)
-    expect(plain(w.find('.mode').text())).toBe('Parked')
-    expect(plain(w.find('.charging-status').text())).toBe('Status: Done')
+    expect(reading(w, 'Target').value).toBe('80%')
+    // Its times, which the bar's line no longer says.
+    expect(w.find('.charge-line .details').exists()).toBe(true)
+  })
+
+  it('dates the line by the values it shows, not by a power it does not', async () => {
+    const at = (t: string) => ({ reported_at: null, fetched_at: t, checked_at: t })
+    const w = await mounted({
+      ...state,
+      charging: {
+        ...state.charging,
+        status: { ...at('2026-09-28T18:00:00Z'), value: 'done' },
+        power_w: { ...at('2026-09-28T12:00:00Z'), value: 0 },
+      },
+    })
+    const times = w.findAll('.charge-line .details time').map((t) => t.attributes('datetime'))
+    expect(times).toEqual(['2026-09-28T18:00:00Z', '2026-09-28T18:00:00Z'])
+  })
+
+  it.each(['discharging', 'error'])('gives a charge %s its tile', async (value) => {
+    const w = await mounted({
+      ...state,
+      charging: { ...state.charging, status: { ...state.charging.status, value } },
+    })
+    expect(w.find('.v-card[data-test="charging"]').exists()).toBe(true)
+    expect(w.find('.charge-line').exists()).toBe(false)
   })
 
   it('tells a charge type the car says is none from an unknown one', async () => {
@@ -112,20 +167,11 @@ describe('VehicleState', () => {
     expect(reading(await mounted(none), 'Type').value).toBe('Aucun')
   })
 
-  it('tells no power where the car says no charge runs, an unknown one during a charge', async () => {
-    const idle = {
-      ...state,
-      charging: {
-        ...state.charging,
-        power_w: null,
-        status: { ...state.charging.status, value: 'idle' },
-      },
-    }
-    expect(reading(await mounted(idle), 'Power').value).toBe('None')
+  it('tells an unknown power during a charge', async () => {
     const charging = { ...state, charging: { ...state.charging, power_w: null } }
     expect(reading(await mounted(charging), 'Power').value).toBe('Unknown')
     i18n.global.locale.value = 'fr'
-    expect(reading(await mounted(idle), 'Puissance').value).toBe('Aucune')
+    expect(reading(await mounted(charging), 'Puissance').value).toBe('Inconnu')
   })
 
   it('links to OpenStreetMap, nowhere else, only on a click', async () => {
@@ -157,7 +203,9 @@ describe('VehicleState', () => {
     i18n.global.locale.value = locale
     const w = await mounted(unknown)
     const values = w.findAll('.reading .value').map((v) => v.text())
-    expect(values).toHaveLength(10)
+    // The battery's three, the odometer, the position, and the charge's line: its cable, type and
+    // target (no bar to show it).
+    expect(values).toHaveLength(8)
     expect(new Set(values)).toEqual(new Set([unknownText]))
     expect(w.find('.charging-status').text()).toContain(unknownText)
     expect(w.text()).toContain(never)
@@ -207,6 +255,22 @@ describe('VehicleState', () => {
     expect(w.find('.v-alert').text()).toContain('The state could not be refreshed')
   })
 
+  it('keeps its aside when the state cannot be loaded', async () => {
+    fetchVehicleState.mockRejectedValue(new ApiError(502, 'unavailable', ''))
+    const host = {
+      render: () =>
+        h(
+          VehicleState,
+          { vehicle: 'v1' },
+          { aside: () => h('p', { class: 'aside' }, 'Last days') },
+        ),
+    }
+    const { wrapper } = mountWith(host)
+    await flushPromises()
+    expect(wrapper.find('.v-alert').text()).toContain('The state could not be loaded.')
+    expect(wrapper.find('.aside').text()).toBe('Last days')
+  })
+
   it.each([
     [new ApiError(404, 'not_found', ''), 'This vehicle does not exist.'],
     [new ApiError(502, 'unavailable', ''), 'The state could not be loaded.'],
@@ -220,12 +284,7 @@ describe('VehicleState', () => {
   // A <dl> holds only its dt/dd groups.
   it('titles its cards with headings, and keeps its lists of values valid', async () => {
     const w = await mounted(state)
-    expect(w.findAll('.v-card-title').map((h) => h.element.tagName)).toEqual([
-      'H2',
-      'H2',
-      'H2',
-      'H2',
-    ])
+    expect(w.findAll('.v-card-title').map((h) => h.element.tagName)).toEqual(['H2', 'H2', 'H2'])
     for (const dl of w.findAll('dl')) {
       for (const child of dl.element.children) {
         expect(child.tagName).toBe('DIV')

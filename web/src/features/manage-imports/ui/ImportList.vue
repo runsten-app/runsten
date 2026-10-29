@@ -6,13 +6,11 @@ import type { VehicleImport } from '@/entities/vehicle-import'
 import { useFormat } from '@/shared/lib'
 import { ImportedBadge } from '@/shared/ui'
 import { useDeleteImport, useImports } from '../composables/useImports'
-import AximoteImport from './AximoteImport.vue'
-import VolvoDataPortalImport from './VolvoDataPortalImport.vue'
 
-// VehicleImports imports a vehicle's history from Aximote or, for a Volvo, from the files
-// of the Volvo Data Portal, then lists the trips and charges imported into it from other
-// applications, by source, and deletes one source's: what Runsten derived stays.
-const props = withDefaults(defineProps<{ vehicle: string; volvo?: boolean }>(), { volvo: true })
+// ImportList lists the trips and charges imported into a vehicle from other applications,
+// by source, and deletes one source's: what Runsten derived stays. A tile of its own,
+// before the imports themselves (ImportSources): what the vehicle holds comes first.
+const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const f = useFormat()
 const { imports, error } = useImports(() => props.vehicle)
@@ -23,7 +21,7 @@ const {
   reset,
 } = useDeleteImport(() => props.vehicle)
 
-const titleId = 'vehicle-imports-title'
+const titleId = 'import-list-title'
 const status = ref('')
 const deleted = ref<VehicleImport | null>(null)
 const confirming = computed({
@@ -65,23 +63,27 @@ async function confirm() {
 <template>
   <!-- Inert behind the dialog, which is teleported out of it: a modal leaves nothing
        behind it to reach, nor to read through its scrim. -->
-  <section class="vehicle-imports mb-6" :aria-labelledby="titleId" :inert="confirming || undefined">
-    <h2 :id="titleId" class="text-title-large mb-2" tabindex="-1">{{ t('imports.title') }}</h2>
-    <p class="text-body-medium mb-4">{{ t('imports.help') }}</p>
-    <AximoteImport :vehicle />
-    <VolvoDataPortalImport v-if="volvo" :vehicle />
-    <h3 class="text-title-medium mb-2">{{ t('imports.listTitle') }}</h3>
-    <v-alert v-if="error" type="error" variant="tonal" class="mb-4">
+  <v-card
+    tag="section"
+    class="import-list"
+    :aria-labelledby="titleId"
+    :inert="confirming || undefined"
+  >
+    <v-card-title :id="titleId" tag="h3" class="text-title-large" tabindex="-1">
+      {{ t('imports.listTitle') }}
+    </v-card-title>
+    <v-alert v-if="error" type="error" variant="tonal" class="mx-4 mb-4">
       {{ t('imports.error') }}
     </v-alert>
-    <v-list v-else-if="imports?.length" class="tile-list py-0 mb-4">
+    <!-- A list of rows on the tile: each in a listitem, the divider inside it. -->
+    <v-list v-else-if="imports?.length" class="py-0" bg-color="transparent">
       <div v-for="(i, n) in imports" :key="i.source" role="listitem" class="import">
         <v-divider v-if="n > 0" />
         <div class="d-flex flex-wrap align-center ga-2 px-4 py-3">
           <div class="flex-grow-1">
             <ImportedBadge :source="i.source" class="mb-1" />
             <p class="text-body-medium counts">{{ counts(i) }}</p>
-            <p class="text-body-medium text-secondary span">{{ span(i) }}</p>
+            <p class="text-body-medium text-medium-emphasis span">{{ span(i) }}</p>
           </div>
           <v-btn
             :prepend-icon="mdiDelete"
@@ -96,7 +98,9 @@ async function confirm() {
         </div>
       </div>
     </v-list>
-    <p v-else class="none text-body-medium mb-4">{{ t('imports.none') }}</p>
+    <v-card-text v-else class="pt-0">
+      <p class="none text-body-medium">{{ t('imports.none') }}</p>
+    </v-card-text>
 
     <v-dialog v-model="confirming" max-width="28rem" aria-labelledby="delete-import-title">
       <v-card v-if="deleted">
@@ -131,6 +135,9 @@ async function confirm() {
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <p role="status" class="status text-body-medium mt-2">{{ status }}</p>
-  </section>
+    <!-- Always in the page, padded only when it tells something. -->
+    <p role="status" class="status text-body-medium" :class="{ 'px-4 pb-4': status }">
+      {{ status }}
+    </p>
+  </v-card>
 </template>

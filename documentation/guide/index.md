@@ -16,7 +16,7 @@ Runsten reads your car from its manufacturer:
 
 ## State
 
-The car as last read: its state of charge and range, whether it is charging, its odometer and its last position. Each value tells when it was last checked and since when it holds, and is marked as old when it is. When the car's own latest measure is more than half an hour old (a parked Polestar sends its readings when it chooses), the page tells when it was.
+The car as last read: its state of charge and range, whether it is charging, its odometer and its last position. The battery comes first. A charge running (or discharging, or failing) takes a tile of its own beside it; otherwise one line under the battery's bar says whether the cable is connected and how the last charge ended. The vehicle's tile gives the odometer and the last position, beside the state of charge of the last seven days, and the last 30 days end the page. Each value tells when it was last checked and since when it holds, and is marked as old when it is. When the car's own latest measure is more than half an hour old (a parked Polestar sends its readings when it chooses), the page tells when it was.
 
 A warning shows on every page of the vehicle when nothing new is read of it, with what to do ([Connection](#connection)).
 
@@ -46,8 +46,8 @@ The key's quota is yours alone: 10,000 calls a day for each Volvo API, about sev
 
 ## Settings and preferences
 
-- **Settings** (the cog in the bar) are the account's: the currency, the places and their tariffs, and the costs left without a charge ([Places, tariffs and costs](./costs.md)). At the bottom, **About Runsten** shows the release the instance runs, and a newer one when the instance checks ([Updating](../self-hosting/updating.md#knowing-a-release-is-out)).
-- **A vehicle's settings** (the button by its name): its model and onboard charger ([Vehicle models](./vehicle-models.md)).
+- **Settings** (the cog in the bar) are the account's, in four areas: **Costs**, the currency, the places and their tariffs, and the costs left without a charge ([Places, tariffs and costs](./costs.md)); **Vehicles**, a way to each vehicle's own settings; **Integrations**, the access tokens and MQTT ([Home Assistant and MQTT](./mqtt.md)); **Account**, the download of your data. Under **Account**, **About Runsten** shows the release the instance runs, and a newer one when the instance checks ([Updating](../self-hosting/updating.md#knowing-a-release-is-out)).
+- **A vehicle's settings** (the button by its name), in two parts: **Vehicle**, its model and onboard charger ([Vehicle models](./vehicle-models.md)) and, at the bottom, **Delete this vehicle**, for a car sold or no longer followed: its readings, trips, charges, imported history and the costs entered for them are deleted for good, after a confirmation. Download your data in the settings first to keep a copy. Its connection stays and keeps reading your other vehicles; a new connection that lists the car again adds it as a new vehicle, without that history. **Imported history**: what was imported from other apps ([Importing your history](./importing.md)).
 - **Preferences** (the menu under your name, which also signs out): the language, the appearance, automatic, light or dark, the clock, automatic, 24-hour or 12-hour, whether the keyboard shortcuts are on, and, where the instance shows maps, whether to show them, kept in the browser.
 
 ## Privacy

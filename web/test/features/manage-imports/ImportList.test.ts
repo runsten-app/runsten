@@ -4,7 +4,7 @@ import { chargeKeys } from '@/entities/charge'
 import { statsKeys } from '@/entities/stats'
 import { tripKeys } from '@/entities/trip'
 import type { VehicleImport } from '@/entities/vehicle-import'
-import { VehicleImports } from '@/features/manage-imports'
+import { ImportList } from '@/features/manage-imports'
 import { ApiError } from '@/shared/api'
 import imports from '@fixtures/imports.json'
 import { mountWith, testQueryClient } from '@test/utils'
@@ -37,7 +37,7 @@ async function mounted(list: VehicleImport[] | Error = [aximote]) {
   if (list instanceof Error) api.fetchImports.mockRejectedValue(list)
   else api.fetchImports.mockResolvedValue(list)
   const queryClient = testQueryClient()
-  const mounted = mountWith(VehicleImports, {
+  const mounted = mountWith(ImportList, {
     queryClient,
     props: { vehicle: 'v1' },
     attachTo: document.body,
@@ -47,16 +47,12 @@ async function mounted(list: VehicleImport[] | Error = [aximote]) {
   return { w: mounted.wrapper, queryClient }
 }
 
-const status = (w: VueWrapper) => w.find('.vehicle-imports > [role="status"]').text()
+const status = (w: VueWrapper) => w.find('.import-list > [role="status"]').text()
 
-describe('VehicleImports', () => {
-  it('offers the imports from Aximote and the Volvo Data Portal above the list, empty without an import', async () => {
+describe('ImportList', () => {
+  it('says when nothing was imported', async () => {
     const { w } = await mounted([])
-    expect(w.findAll('h3').map((h) => h.text())).toEqual([
-      'Import from Aximote Beta',
-      'Import from the Volvo Data Portal Beta',
-      'Imports',
-    ])
+    expect(w.find('h3').text()).toBe('By application')
     expect(w.find('.none').text()).toBe('Nothing imported.')
     expect(api.fetchImports).toHaveBeenCalledWith('v1')
   })
@@ -66,7 +62,6 @@ describe('VehicleImports', () => {
       aximote,
       { ...aximote, source: 'volvo_csv', trips: 0, charges: 1 },
     ])
-    expect(w.find('h2').text()).toBe('Imported history')
     const rows = w.findAll('.import')
     expect(rows.map((r) => r.find('.imported').text())).toEqual([
       'Imported from Aximote',
@@ -94,7 +89,7 @@ describe('VehicleImports', () => {
     await flushPromises()
     expect(document.body.textContent).toContain('Delete this import?')
     // The section behind the dialog is inert; the dialog is outside it.
-    expect(w.find('.vehicle-imports').attributes('inert')).toBeDefined()
+    expect(w.find('.import-list').attributes('inert')).toBeDefined()
     expect(document.querySelector('.confirm-delete')?.closest('[inert]')).toBeNull()
     expect(document.body.textContent).toContain(
       'Imported from Aximote: 1 trip · 1 charge. They leave the lists and the statistics',
@@ -111,8 +106,8 @@ describe('VehicleImports', () => {
     await flushPromises()
     expect(api.deleteImport).toHaveBeenLastCalledWith('v1', 'aximote')
     expect(status(w)).toBe('Imported from Aximote: deleted.')
-    expect(w.find('.vehicle-imports').attributes('inert')).toBeUndefined()
-    expect(document.activeElement?.id).toBe('vehicle-imports-title')
+    expect(w.find('.import-list').attributes('inert')).toBeUndefined()
+    expect(document.activeElement?.id).toBe('import-list-title')
     const keys = invalidate.mock.calls.map(
       ([f]) => (f as { queryKey?: unknown } | undefined)?.queryKey,
     )

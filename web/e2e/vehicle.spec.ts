@@ -22,6 +22,9 @@ test('Verdandi: the state of charge, the range and how fresh they are', async ({
     /^checked (now|.+ ago) · since /,
   )
   await expect(reading(page, 'Range').locator('.value')).toHaveText(/^\d[\d,]*\s?km$/)
+  // The charge, one line under the battery's bar, or its own tile while one runs.
+  await expect(page.getByRole('heading', { name: 'Charging', exact: true })).toBeVisible()
+  await expect(reading(page, 'Odometer').locator('.value')).toHaveText(/^\d[\d,]*\s?km$/)
   await expect(page.getByText(/^Last checked (now|.+ ago)$/)).toBeVisible()
   await expect(page.getByRole('link', { name: 'State' })).toHaveAttribute('aria-current', 'page')
   await checkView(page, testInfo, 'state')

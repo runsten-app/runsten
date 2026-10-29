@@ -1,0 +1,85 @@
+<script setup lang="ts">
+import { mdiDelete } from '@mdi/js'
+import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useDeleteVehicle } from '../composables/useDeleteVehicle'
+
+// DeleteVehicle deletes a vehicle with its whole history, behind a confirmation that names
+// it. Its connection stays, for the account's other vehicles.
+const props = defineProps<{ vehicle: string; label: string }>()
+const { t } = useI18n()
+const { deleteVehicle, isPending, error, reset } = useDeleteVehicle(() => props.vehicle)
+
+const titleId = 'delete-vehicle-title'
+const confirming = ref(false)
+
+function ask() {
+  reset()
+  confirming.value = true
+}
+
+async function confirm() {
+  try {
+    await deleteVehicle()
+  } catch {
+    // Shown from the error, in the dialog.
+  }
+}
+</script>
+
+<template>
+  <!-- Inert behind the dialog, which is teleported out of it. -->
+  <!-- A tile of the vehicle's settings, under its area's heading. -->
+  <v-card
+    tag="section"
+    class="delete-vehicle"
+    :aria-labelledby="titleId"
+    :inert="confirming || undefined"
+  >
+    <v-card-title :id="titleId" tag="h3" class="text-title-large">
+      {{ t('deleteVehicle.title') }}
+    </v-card-title>
+    <v-card-text class="pt-0">
+      <p class="text-body-medium mb-4">{{ t('deleteVehicle.help') }}</p>
+      <v-btn :prepend-icon="mdiDelete" variant="tonal" color="error" class="delete" @click="ask">
+        {{ t('deleteVehicle.button', { vehicle: label }) }}
+      </v-btn>
+    </v-card-text>
+
+    <!-- Held open while the deletion runs: its failure is told in it. -->
+    <v-dialog
+      v-model="confirming"
+      :persistent="isPending"
+      max-width="28rem"
+      aria-labelledby="delete-vehicle-dialog-title"
+    >
+      <v-card>
+        <v-card-title id="delete-vehicle-dialog-title" tag="h2" class="text-title-large text-wrap">
+          {{ t('deleteVehicle.confirmTitle', { vehicle: label }) }}
+        </v-card-title>
+        <v-card-text>
+          <p class="text-body-medium mb-2">{{ t('deleteVehicle.text') }}</p>
+          <p class="text-body-medium">{{ t('deleteVehicle.again') }}</p>
+          <v-alert v-if="error" type="error" variant="tonal" class="mt-4">
+            {{ t('deleteVehicle.error') }}
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" :disabled="isPending" @click="confirming = false">
+            {{ t('deleteVehicle.cancel') }}
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="flat"
+            :loading="isPending"
+            class="confirm-delete"
+            @click="confirm"
+          >
+            {{ t('deleteVehicle.confirm') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-card>
+</template>

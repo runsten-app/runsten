@@ -32,8 +32,15 @@ const label = computed(() => (current.value ? vehicleLabel(current.value) : null
       <v-btn :to="{ name: 'home' }" variant="tonal" color="primary">{{ t('vehicle.home') }}</v-btn>
     </template>
     <template v-else>
-      <div class="d-flex align-start justify-space-between ga-3 mb-2">
-        <h1 class="text-headline-small vin title">{{ label ?? t('vehicle.title') }}</h1>
+      <!-- The bar's picker already names the vehicle: the heading stays, for the page's
+           outline and a screen reader, but small, its VIN beside it. -->
+      <div class="heading d-flex flex-wrap align-center ga-3 mb-3">
+        <div class="names d-flex flex-wrap align-baseline">
+          <h1 class="text-title-large vin">{{ label ?? t('vehicle.title') }}</h1>
+          <span v-if="current && label !== current.vin" class="vin text-medium-emphasis">{{
+            current.vin
+          }}</span>
+        </div>
         <!-- Its label beyond a phone; on one, the icon with the same name. -->
         <v-btn
           :to="{ name: 'vehicleSettings', params: { vehicle } }"
@@ -42,28 +49,32 @@ const label = computed(() => (current.value ? vehicleLabel(current.value) : null
           :text="xs ? undefined : t('vehicleSettings.open')"
           :aria-label="xs ? t('vehicleSettings.open') : undefined"
           :title="xs ? t('vehicleSettings.open') : undefined"
+          :size="xs ? 'small' : undefined"
+          variant="flat"
           color="surface"
-          class="vehicle-settings"
+          class="vehicle-settings ms-auto"
         />
       </div>
       <VehicleState :vehicle="vehicle">
-        <!-- The label names the model; the VIN still tells which car it is. -->
-        <span v-if="current && label !== current.vin" class="vin">{{ current.vin }}</span>
+        <template #aside>
+          <SocTimeline :vehicle="vehicle" class="h-100" />
+        </template>
       </VehicleState>
-      <SocTimeline :vehicle="vehicle" class="mt-4" />
-      <RecentSummary :vehicle="vehicle" class="mt-6" />
+      <RecentSummary :vehicle="vehicle" class="mt-4" />
     </template>
   </AppShell>
 </template>
 
 <style scoped>
+.names {
+  gap: 4px 12px;
+  min-inline-size: 0;
+}
 .vin {
   overflow-wrap: anywhere;
 }
-.title {
-  min-inline-size: 0;
-}
 span.vin {
+  font-size: 0.8125rem;
   letter-spacing: 0.03em;
 }
 </style>

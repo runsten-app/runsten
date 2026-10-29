@@ -278,6 +278,22 @@ func (s *Store) SetVehicleModel(ctx context.Context, accountID, vehicleID, varia
 	})
 }
 
+// DeleteVehicle implements api.VehicleDeletion: every table of a vehicle references it
+// with ON DELETE CASCADE, so its history goes with it, in one transaction. The
+// connection stays.
+func (s *Store) DeleteVehicle(ctx context.Context, accountID, vehicleID string) error {
+	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		tag, err := tx.Exec(ctx, "DELETE FROM vehicles WHERE id = $1", vehicleID)
+		if err != nil {
+			return fmt.Errorf("delete vehicle: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			return api.ErrNotFound
+		}
+		return nil
+	})
+}
+
 // SetVariantInEffect writes the copy of the vehicle's variant in effect (empty: none),
 // which the collector decides from the catalog. It checks nothing of the catalog; a
 // vehicle gone, or another account's, is left alone.

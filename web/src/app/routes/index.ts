@@ -79,14 +79,41 @@ export function createAppRouter(history: RouterHistory, queryClient: QueryClient
         path: '/vehicles/:vehicle/settings',
         name: 'vehicleSettings',
         component: () => import('@/pages/vehicle-settings').then((m) => m.VehicleSettingsPage),
-        props: true,
+        props: (to) => ({ vehicle: String(to.params.vehicle), area: 'model' }),
+      },
+      // Its imported history, an area of its own beside the model: the same page.
+      {
+        path: '/vehicles/:vehicle/settings/history',
+        name: 'vehicleHistory',
+        component: () => import('@/pages/vehicle-settings').then((m) => m.VehicleSettingsPage),
+        props: (to) => ({ vehicle: String(to.params.vehicle), area: 'history' }),
       },
       // The account's settings, loaded on demand like the statistics: most visits never
-      // open them. They belong to no vehicle: none is kept in the query.
+      // open them. They belong to no vehicle: none is kept in the query. Four areas of one
+      // page, each a route; the costs first, where "settings" has always led.
       {
         path: '/settings',
         name: 'settings',
         component: () => import('@/pages/settings').then((m) => m.SettingsPage),
+        props: { area: 'costs' },
+      },
+      {
+        path: '/settings/vehicles',
+        name: 'settingsVehicles',
+        component: () => import('@/pages/settings').then((m) => m.SettingsPage),
+        props: { area: 'vehicles' },
+      },
+      {
+        path: '/settings/integrations',
+        name: 'settingsIntegrations',
+        component: () => import('@/pages/settings').then((m) => m.SettingsPage),
+        props: { area: 'integrations' },
+      },
+      {
+        path: '/settings/account',
+        name: 'settingsAccount',
+        component: () => import('@/pages/settings').then((m) => m.SettingsPage),
+        props: { area: 'account' },
       },
       // The user's own preferences, kept in the browser: on demand, like the settings.
       {

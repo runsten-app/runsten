@@ -4,7 +4,7 @@ import { chargeKeys } from '@/entities/charge'
 import { statsKeys } from '@/entities/stats'
 import { tripKeys } from '@/entities/trip'
 import { importKeys, type AximoteVehicle, type ImportJob } from '@/entities/vehicle-import'
-import { VehicleImports } from '@/features/manage-imports'
+import { ImportSources } from '@/features/manage-imports'
 import { ApiError } from '@/shared/api'
 import vehiclesFixture from '@fixtures/aximote-vehicles.json'
 import doneFixture from '@fixtures/import-job-done.json'
@@ -41,7 +41,7 @@ afterEach(() => {
 async function mounted(job: ImportJob | null = null) {
   api.fetchImportJob.mockResolvedValue(job)
   const queryClient = testQueryClient()
-  const m = mountWith(VehicleImports, {
+  const m = mountWith(ImportSources, {
     queryClient,
     props: { vehicle: 'v1' },
     attachTo: document.body,

@@ -395,8 +395,15 @@ function pointY(raw: unknown): number | null {
 
 <template>
   <v-card class="chart-frame">
-    <v-card-title tag="h2">{{ title }}</v-card-title>
+    <!-- actions: a link beside the title (to the page the chart summarizes); the default
+         slot: what the chart's tile shows above it (the period's figures). -->
+    <v-card-title v-if="$slots.actions" class="d-flex flex-wrap align-center ga-2">
+      <h2 class="title me-auto">{{ title }}</h2>
+      <slot name="actions" />
+    </v-card-title>
+    <v-card-title v-else tag="h2">{{ title }}</v-card-title>
     <v-card-text>
+      <slot />
       <ul v-if="legend.length > 1 && !empty" class="legend">
         <li v-for="l in legend" :key="l.label">
           <span class="mark" :class="`mark--${l.mark}`" :style="{ '--mark': l.color }" />
@@ -458,6 +465,9 @@ function pointY(raw: unknown): number | null {
 </template>
 
 <style scoped>
+.title {
+  font: inherit;
+}
 .canvas {
   position: relative;
   height: 15rem;
