@@ -1,5 +1,7 @@
 {
   "time_zone": "UTC",
+  "basis": "all",
+  "rated_efficiency": null,
   "reference": {
     "capacity_kwh": 75,
     "source": "catalog_net"
@@ -440,7 +442,9 @@
     "span_soc": 1,
     "power_gap": 1,
     "low_power": 1,
-    "implausible": 1
+    "implausible": 1,
+    "no_efficiency": 0,
+    "low_soc": 0
   },
   "months": [
     {

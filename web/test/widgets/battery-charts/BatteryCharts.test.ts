@@ -5,6 +5,7 @@ import type { Battery } from '@/entities/battery'
 import { ChartFrame } from '@/shared/ui/chart'
 import { BatteryCharts } from '@/widgets/battery-charts'
 import battery from '@fixtures/battery.json'
+import rated from '@fixtures/battery-rated.json'
 import { mountWith, testRouter } from '@test/utils'
 
 vi.mock('vue-chartjs', () => import('@test/chart-stub'))
@@ -141,6 +142,37 @@ describe('BatteryCharts', () => {
     frames[0]?.vm.$emit('select', 99, 1) // no such point
     await flushPromises()
     expect(router.currentRoute.value.name).toBe('battery')
+  })
+
+  it('draws the rated estimates of a Tesla, in the color of the median they rest on', async () => {
+    const { wrapper: w, router } = await charts(rated)
+    const colors: Record<string, unknown> = vuetify.theme.themes.value.light?.colors ?? {}
+    const d = datasets(w, 'capacity')
+    expect(d.slice(0, 3).map((s) => [s.label, s.type, s.backgroundColor])).toEqual([
+      ['Charging power', 'scatter', colors['chart-5']],
+      ['Billed energy', 'scatter', colors['chart-2']],
+      ['Rated range', 'scatter', colors['chart-1']],
+    ])
+    expect(d.find((s) => s.label === 'Monthly median')?.borderColor).toBe(colors['chart-1'])
+    expect((d[2]?.data as unknown[]).length).toBe(6)
+    // A rated point leads to its charge.
+    w.findAllComponents(ChartFrame)[0]?.vm.$emit('select', 0, 2)
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/vehicles/v1/charges/2026-09-05T11:59:00.000000Z')
+    // Its range at a full charge follows the battery, not the season.
+    expect(w.findAllComponents(ChartFrame)[1]?.props('hint')).toBe(
+      "The car's rated range, a fixed conversion of its usable charge: it follows the battery, not the season.",
+    )
+  })
+
+  it('colors the rated estimates apart while they are too few to rest on', async () => {
+    const b = structuredClone(rated) as Battery
+    b.basis = 'all'
+    const { wrapper: w } = await charts(b)
+    const colors: Record<string, unknown> = vuetify.theme.themes.value.light?.colors ?? {}
+    const d = datasets(w, 'capacity')
+    expect(d[0]?.backgroundColor).toBe(colors['chart-1'])
+    expect(d[2]?.backgroundColor).toBe(colors['chart-5'])
   })
 
   it('follows what it draws on the y axis, and ticks the months once each', async () => {

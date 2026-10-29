@@ -540,7 +540,9 @@
       "cyclesNote": "L'énergie d'autant de charges complètes",
       "kept": "Charges utilisées",
       "setAside": "{n} charge non utilisée | {n} charges non utilisées",
-      "why": "Pourquoi ?"
+      "why": "Pourquoi ?",
+      "ratedBasis": "D'après l'autonomie nominale seule",
+      "efficiency": "Rendement nominal {value}, mesuré sur {n} charge | Rendement nominal {value}, mesuré sur {n} charges"
     },
     "why": {
       "title": "Pourquoi certaines charges ne donnent pas d'estimation",
@@ -552,7 +554,9 @@
       "powerGap": "Relevés trop éloignés",
       "lowPower": "Charge trop lente",
       "implausible": "Résultat trop éloigné",
-      "close": "Fermer"
+      "close": "Fermer",
+      "noEfficiency": "Aucune charge n'a encore mesuré le rendement nominal",
+      "lowSoc": "Charge utilisable sous 50 % à la fin"
     },
     "chart": {
       "capacity": {
@@ -569,7 +573,8 @@
         "hidden": "{n} estimation sans odomètre n'est pas tracée. | {n} estimations sans odomètre ne sont pas tracées.",
         "noOdometer": "Aucune estimation n'a d'odomètre.",
         "none": "Pas encore d'estimation : il faut une charge d'au moins 20 %.",
-        "hint": "Sélectionnez un point pour voir sa charge."
+        "hint": "Sélectionnez un point pour voir sa charge.",
+        "rated": "Autonomie nominale"
       },
       "range": {
         "title": "Autonomie à 100 % (estimation de la voiture)",
@@ -577,7 +582,8 @@
         "summary": "Autonomie à 100 % de {first} en {firstAt} à {last} en {lastAt}.",
         "one": "Autonomie à 100 % de {value} en {at}.",
         "none": "Aucune autonomie à 100 % pour l'instant.",
-        "hint": "L'estimation de la voiture, d'après votre conduite récente : elle baisse l'hiver, quelle que soit la batterie."
+        "hint": "L'estimation de la voiture, d'après votre conduite récente : elle baisse l'hiver, quelle que soit la batterie.",
+        "hintRated": "L'autonomie nominale de la voiture, une conversion fixe de sa charge utilisable : elle suit la batterie, pas la saison."
       },
       "header": {
         "month": "Mois",

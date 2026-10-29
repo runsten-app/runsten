@@ -53,6 +53,10 @@ Runsten makes at most 3,000 calls a day per token, to stay clear of limits Tesla
 
 A Tesla counts the energy that goes into its battery during a charge. Runsten reads that count: a charge shows the energy measured by the car beside its two estimates, and its cost rests on it rather than on the change of the state of charge. The charges recorded before Runsten kept it have none until the instance rebuilds its trips and charges ([Updating](../self-hosting/updating.md#update-notes)).
 
+## Its battery's capacity
+
+With that energy, the car's rated range and its usable charge, the [battery page](./battery.md#a-tesla) estimates the capacity of a Tesla's battery as TeslaMate does: the rated range at the end of each charge, brought back to 100 %, converted into kWh. Its estimate rests on the car's own count, far more precise than a Volvo's or a Polestar's; it is still an estimate, beside the usable capacity of the variant. The charges recorded before Runsten kept the rated range give none until the instance rebuilds its trips and charges ([Updating](../self-hosting/updating.md#update-notes)).
+
 ## Its variant
 
 The Owner API gives the car's model (Model 3, Model Y, Model S, Model X), its trim badge (`74d` for a Long Range Dual Motor, `p74d` for a Performance, `50` for a Standard Range or Rear-Wheel Drive), and Runsten reads its model year from the VIN; it gives no battery capacity: the vehicle's page shows the usable capacity of its variant instead. Runsten's catalogue has the European Model 3 and Model Y ([Vehicle models](./vehicle-models.md)):

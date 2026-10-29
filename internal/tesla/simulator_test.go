@@ -196,3 +196,56 @@ func TestSimulatorErrors(t *testing.T) {
 		t.Errorf("expired: %v, want KindUnauthorized", err)
 	}
 }
+
+// TestSimulatorRatedCapacity: the day's AC charge read every minute, as the collector
+// reads a charge, derived and estimated: the rated estimate finds the usable capacity
+// the scenario states, 75 kWh.
+func TestSimulatorRatedCapacity(t *testing.T) {
+	ctx := context.Background()
+	s := newSim(t)
+	// Parked at home before the charge, read until it is complete; the access lasts 8 h.
+	s.at(12 * time.Hour)
+	tok, err := s.Refresh(ctx, teslaapi.DevRefreshToken())
+	if err != nil {
+		t.Fatal(err)
+	}
+	products, err := s.Products(ctx, tok.Access)
+	if err != nil || len(products) != 1 {
+		t.Fatalf("products: %v %v", products, err)
+	}
+	var records []core.Record
+	for range 7 * 60 {
+		raw, err := s.VehicleData(ctx, tok.Access, products[0].ID)
+		if err != nil {
+			t.Fatalf("at %v: %v", s.clk.Now(), err)
+		}
+		snap, err := Normalize(VehicleData, raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		now := s.clk.Now()
+		records = append(records, core.Record{Source: Source, FetchedAt: now, CheckedAt: now, Snapshot: snap})
+		s.clk.Advance(time.Minute)
+	}
+	res := core.Derive(records, core.Cursor{}, core.DefaultParams(), nil)
+	if len(res.Charges) != 1 {
+		t.Fatalf("%d charges: %+v", len(res.Charges), res.Charges)
+	}
+	if c := res.Charges[0]; !c.StartRangeKm.OK || !c.EndRangeKm.OK || !c.EndUsableSoC.OK || !c.EnergyMeasuredKWh.OK {
+		t.Fatalf("charge: %+v", c)
+	}
+	tr, err := core.CapacityTrend(res.Charges, nil, nil, core.Value[core.Capacity]{}, core.DefaultParams(), core.DefaultCapacityParams(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []float64
+	for _, e := range tr.Estimates {
+		if e.Source == core.EstimateRated {
+			got = append(got, e.CapacityKWh)
+		}
+	}
+	// The usable level an integer, the range rounded to the hundredth of a mile: within 2 %.
+	if len(got) != 1 || math.Abs(got[0]-75)/75 > 0.02 {
+		t.Errorf("rated estimates %v, efficiency %+v, want 75 kWh", got, tr.Efficiency)
+	}
+}

@@ -74,7 +74,8 @@ type vehicleData struct {
 type chargeState struct {
 	Timestamp          *int64   `json:"timestamp"`
 	BatteryLevel       *float64 `json:"battery_level"`
-	BatteryRange       *float64 `json:"battery_range"` // mi
+	UsableLevel        *float64 `json:"usable_battery_level"`
+	BatteryRange       *float64 `json:"battery_range"` // mi, rated: a fixed conversion of the usable level
 	ChargingState      *string  `json:"charging_state"`
 	FastChargerPresent *bool    `json:"fast_charger_present"`
 	ChargerPower       *float64 `json:"charger_power"` // kW, whole
@@ -232,6 +233,7 @@ func normalizeCharge(c *chargeState, s *core.Snapshot) {
 	s.Covers |= core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
 		core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldEnergyAdded
 	s.SoC = number(c.BatteryLevel, at)
+	s.UsableSoC = number(c.UsableLevel, at)
 	s.EnergyAddedKWh = number(c.EnergyAdded, at)
 	s.RangeKm = scaled(c.BatteryRange, kmPerMile, at)
 	s.PowerW = scaled(c.ChargerPower, 1000, at)

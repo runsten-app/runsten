@@ -89,9 +89,12 @@ func carType(model string) string {
 func renderCharge(cs map[string]any, spec vehicle.Spec, st vehicle.State, now time.Time) {
 	usable := spec.UsableKWhAt(now)
 	miles := func(kwh float64) float64 { return kwh / spec.ConsumptionKWhPer100km * 100 / kmPerMile }
-	rangeMi := round(miles(st.SoC/100*usable), 2)
+	// The usable level a point below the SoC, as a real car read it; the rated range a
+	// fixed conversion of it, which the rated capacity estimate rests on.
+	level := max(0, st.SoC-1)
+	rangeMi := round(miles(level/100*usable), 2)
 	cs["battery_level"] = int(st.SoC)
-	cs["usable_battery_level"] = max(0, int(st.SoC)-1)
+	cs["usable_battery_level"] = int(level)
 	cs["battery_range"] = rangeMi
 	cs["ideal_battery_range"] = rangeMi
 	cs["charge_limit_soc"] = int(st.TargetSoC)

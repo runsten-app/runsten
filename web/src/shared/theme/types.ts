@@ -29,11 +29,13 @@ export type Palette = {
   track: string
   // The series of the charts, 3:1 at least against the ground and the tiles: chart-4 is
   // the uncertainty of chart-1, the same hue fainter, drawn as the edge of a band whose
-  // fill is chart-band. chart-grid for the horizontal rules, boundary for a measured zero.
+  // fill is chart-band; chart-5 a fifth series beside the four. chart-grid for the
+  // horizontal rules, boundary for a measured zero.
   'chart-1': string
   'chart-2': string
   'chart-3': string
   'chart-4': string
+  'chart-5': string
   'chart-band': string
   'chart-grid': string
   boundary: string
