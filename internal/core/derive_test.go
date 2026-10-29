@@ -851,6 +851,13 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 // time, from the cursor each derivation returns, as TestIncrementalMatchesRebuild does
 // from readings.
 func deriveIncrementally(records []Record, p Params) ([]Trip, []Charge) {
+	r := incremental(records, p)
+	return r.Trips, r.Charges
+}
+
+// incremental derives records as the collector does, one reading time after another,
+// and returns every event it kept.
+func incremental(records []Record, p Params) Result {
 	var times []time.Time
 	for _, r := range records {
 		times = append(times, r.FetchedAt, r.CheckedAt)
@@ -859,6 +866,7 @@ func deriveIncrementally(records []Record, p Params) ([]Trip, []Charge) {
 	times = slices.Compact(times)
 	var trips []Trip
 	var charges []Charge
+	var versions []SoftwareVersion
 	var cursor Cursor
 	for _, now := range times {
 		var since []Record
@@ -882,9 +890,10 @@ func deriveIncrementally(records []Record, p Params) ([]Trip, []Charge) {
 		res := Derive(since, cursor, p, nil)
 		trips = append(keepTrips(trips, cursor.Settled), res.Trips...)
 		charges = append(keepCharges(charges, cursor.Settled), res.Charges...)
+		versions = append(slices.DeleteFunc(versions, func(v SoftwareVersion) bool { return v.DetectedAt.After(cursor.Settled) }), res.Versions...)
 		cursor = res.Cursor
 	}
-	return trips, charges
+	return Result{Trips: trips, Charges: charges, Versions: versions, Cursor: cursor}
 }
 
 // A trip starting while charging ends the charge; the trip's SoC ends before the next
@@ -1494,6 +1503,66 @@ func TestDeriveMeasuredEnergy(t *testing.T) {
 			got := res.Charges[0].EnergyMeasuredKWh
 			if got.OK != tt.want.OK || math.Abs(got.V-tt.want.V) > 1e-9 {
 				t.Errorf("measured %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
+
+// software is a reading of the vehicle's software version.
+func software(v string) Snapshot {
+	return Snapshot{Covers: FieldSoftware, Software: Some(v, time.Time{})}
+}
+
+// Each version of the software is reported once, when first read: bounded by the last
+// reading of the previous one, the first with none before it.
+func TestSoftwareVersions(t *testing.T) {
+	tests := []struct {
+		name    string
+		records []Record
+		want    []SoftwareVersion
+	}{
+		{"none", []Record{rec(0, 10, nrg(50, ChargingIdle))}, nil},
+		{"the first", []Record{rec(5, 30, software("2026.38.3.1"))}, []SoftwareVersion{
+			{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+		}},
+		{
+			// Read again unchanged until minute 30: the new one was installed after it.
+			"an update",
+			[]Record{
+				rec(5, 30, software("2026.38.3.1")),
+				rec(40, 50, software("2026.38.3.2")),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{DetectedAt: m(40), Version: "2026.38.3.2", Installed: Bounds{After: m(30), Before: m(40)}},
+			},
+		},
+		{
+			// Other readings in between change nothing; the same version read again is no
+			// new one.
+			"the same version again",
+			[]Record{
+				rec(5, 5, software("2026.38.3.1")),
+				rec(10, 10, odo(12400)),
+				rec(20, 20, nrg(50, ChargingIdle)),
+				rec(60, 60, software("2026.38.3.1")),
+				rec(70, 70, odo(12401)),
+				rec(90, 90, software("2026.44.1")),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{DetectedAt: m(90), Version: "2026.44.1", Installed: Bounds{After: m(60), Before: m(90)}},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := Derive(tt.records, Cursor{}, DefaultParams(), nil)
+			if !reflect.DeepEqual(res.Versions, tt.want) {
+				t.Errorf("versions:\n got %+v\nwant %+v", res.Versions, tt.want)
+			}
+			if inc := incremental(tt.records, DefaultParams()); !reflect.DeepEqual(inc.Versions, res.Versions) {
+				t.Errorf("incremental:\n%+v\nrebuild:\n%+v", inc.Versions, res.Versions)
 			}
 		})
 	}

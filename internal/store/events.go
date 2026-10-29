@@ -110,7 +110,7 @@ func scanSnapshots(rows pgx.Rows) ([]derive.Snapshot, error) {
 // SaveDerivation implements derive.Store.
 func (s *Store) SaveDerivation(ctx context.Context, accountID, vehicleID string, after time.Time, res core.Result) error {
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
-		for _, table := range []string{"trips", "charges"} {
+		for _, table := range []string{"trips", "charges", "software_versions"} {
 			if _, err := tx.Exec(ctx, "DELETE FROM "+table+" WHERE vehicle_id = $1 AND detected_at > $2", vehicleID, after); err != nil {
 				return fmt.Errorf("delete %s: %w", table, err)
 			}
@@ -156,6 +156,18 @@ func (s *Store) SaveDerivation(ctx context.Context, accountID, vehicleID string,
 				return fmt.Errorf("insert charge: %w", err)
 			}
 		}
+		for _, v := range res.Versions {
+			var after *time.Time
+			if !v.Installed.After.IsZero() {
+				after = &v.Installed.After
+			}
+			_, err := tx.Exec(ctx, `
+				INSERT INTO software_versions (account_id, vehicle_id, detected_at, version, installed_after)
+				VALUES ($1, $2, $3, $4, $5)`, accountID, vehicleID, v.DetectedAt, v.Version, after)
+			if err != nil {
+				return fmt.Errorf("insert software version: %w", err)
+			}
+		}
 		_, err := tx.Exec(ctx, `
 			INSERT INTO derivation_cursors (account_id, vehicle_id, settled_at, replay_from) VALUES ($1, $2, $3, $4)
 			ON CONFLICT (vehicle_id) DO UPDATE SET settled_at = EXCLUDED.settled_at, replay_from = EXCLUDED.replay_from`,
@@ -165,6 +177,49 @@ func (s *Store) SaveDerivation(ctx context.Context, accountID, vehicleID string,
 		}
 		return nil
 	})
+}
+
+// ListSoftwareVersions implements api.Reader: the versions of the vehicle's software,
+// newest first, that may have been installed within the query's period, after its
+// cursor.
+func (s *Store) ListSoftwareVersions(ctx context.Context, accountID, vehicleID string, q api.EventQuery) ([]core.SoftwareVersion, error) {
+	where, args := "vehicle_id = $1", []any{vehicleID}
+	arg := func(v any) string {
+		args = append(args, v)
+		return "$" + strconv.Itoa(len(args))
+	}
+	if !q.From.IsZero() {
+		where += " AND detected_at > " + arg(q.From)
+	}
+	if !q.To.IsZero() {
+		where += " AND (installed_after IS NULL OR installed_after < " + arg(q.To) + ")"
+	}
+	if q.After != nil {
+		where += " AND detected_at < " + arg(q.After.DetectedAt)
+	}
+	where += " ORDER BY detected_at DESC"
+	if q.Limit > 0 {
+		where += " LIMIT " + arg(q.Limit)
+	}
+	var out []core.SoftwareVersion
+	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		rows, err := tx.Query(ctx, `SELECT detected_at, version, installed_after FROM software_versions WHERE `+where, args...)
+		if err != nil {
+			return err //nolint:wrapcheck // wrapped by inAccount
+		}
+		var v core.SoftwareVersion
+		var after *time.Time
+		_, err = pgx.ForEachRow(rows, []any{&v.DetectedAt, &v.Version, &after}, func() error {
+			w := core.SoftwareVersion{DetectedAt: v.DetectedAt.UTC(), Version: v.Version, Installed: core.Bounds{Before: v.DetectedAt.UTC()}}
+			if after != nil {
+				w.Installed.After = after.UTC()
+			}
+			out = append(out, w)
+			return nil
+		})
+		return err //nolint:wrapcheck // wrapped by inAccount
+	})
+	return out, err
 }
 
 // Trips returns the vehicle's derived trips, oldest first.

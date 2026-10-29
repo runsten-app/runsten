@@ -119,6 +119,10 @@ func TestSimulatorDay(t *testing.T) {
 		math.Abs(snap.OdometerKm.V-18200) > 1e-3 || snap.Engine.V != core.EngineStopped || snap.Connection.V != core.Disconnected {
 		t.Errorf("parked: %+v", snap)
 	}
+	// The template's version, as a real car read it, with the update it waited for.
+	if snap.Software.V != "2026.38.3.1" || !snap.SoftwareUpdate.OK {
+		t.Errorf("software: %+v, update %+v", snap.Software, snap.SoftwareUpdate)
+	}
 
 	// Left alone, it falls asleep: vehicle_data answers 408, its state offline.
 	s.at(15 * time.Minute)

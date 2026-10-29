@@ -26,7 +26,7 @@ func TestNormalizeFixture(t *testing.T) {
 	var none time.Time
 	at := time.UnixMilli(1793032171549).UTC()
 	want := core.Snapshot{
-		Covers:     chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel,
+		Covers:     chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel | core.FieldSoftware,
 		Engine:     core.Some(core.EngineStopped, at), // shift_state null
 		SoC:        core.Some(69.0, at),
 		UsableSoC:  core.Some(68.0, at),
@@ -47,6 +47,13 @@ func TestNormalizeFixture(t *testing.T) {
 		ModelYear:       core.Some(2021, none), // the VIN's M; efficiency_package says MY2020
 		Trim:            core.Some("74d", none),
 		BatteryElectric: core.Some(true, none),
+		Software:        core.Some("2026.38.3.1", at),
+		// Waiting for Wi-Fi to download the next.
+		SoftwareUpdate: core.Some(core.SoftwareUpdate{
+			Status: core.UpdateWaitingWiFi, Version: "2026.38.3.2",
+			DownloadPct: core.Some(0.0, none), InstallPct: core.Some(1.0, none),
+			Duration: core.Some(45*time.Minute, none),
+		}, at),
 	}
 	n := Normalizer{}
 	got, err := n.Normalize(core.Kind{Source: Source, Endpoint: string(VehicleData)}, fixture(t, "vehicle_data.json"))
@@ -267,5 +274,50 @@ func TestUploadOf(t *testing.T) {
 	}
 	if _, err := UploadOf([]byte(`{`)); err == nil {
 		t.Error("invalid JSON: no error")
+	}
+}
+
+func TestNormalizeSoftware(t *testing.T) {
+	at := time.UnixMilli(1793032171549).UTC()
+	var none time.Time
+	tests := []struct {
+		name   string
+		block  string
+		covers bool
+		want   core.Value[string]
+		update core.Value[core.SoftwareUpdate]
+	}{
+		{"no version", `{"odometer": 1}`, false, core.Value[string]{}, core.Value[core.SoftwareUpdate]{}},
+		{"an empty version", `{"car_version": " "}`, false, core.Value[string]{}, core.Value[core.SoftwareUpdate]{}},
+		{
+			"its build hash left out, no update", `{"car_version": "2025.32.3 abcdef123456",
+				"software_update": {"status": "", "version": " ", "download_perc": 0, "install_perc": 1, "expected_duration_sec": 2700}}`,
+			true, core.Some("2025.32.3", at),
+			core.Value[core.SoftwareUpdate]{},
+		},
+		{
+			"installing", `{"car_version": "2025.32.3 abcdef123456",
+				"software_update": {"status": "installing", "version": "2025.38.1 0123456789ab", "download_perc": 100, "install_perc": 40}}`,
+			true, core.Some("2025.32.3", at), core.Some(core.SoftwareUpdate{
+				Status: core.UpdateInstalling, Version: "2025.38.1",
+				DownloadPct: core.Some(100.0, none), InstallPct: core.Some(40.0, none),
+			}, at),
+		},
+		{
+			"a status not known", `{"car_version": "2025.32.3", "software_update": {"status": "paused"}}`,
+			true, core.Some("2025.32.3", at), core.Some(core.SoftwareUpdate{Status: core.UpdateUnknown}, at),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			raw := `{"response": {"vehicle_state": ` + strings.TrimSuffix(tt.block, "}") + `, "timestamp": 1793032171549}}}`
+			got, err := Normalize(VehicleData, []byte(raw))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.Covers&core.FieldSoftware != 0 != tt.covers || got.Software != tt.want || !reflect.DeepEqual(got.SoftwareUpdate, tt.update) {
+				t.Errorf("covers %v, software %+v, update %+v", got.Covers&core.FieldSoftware != 0, got.Software, got.SoftwareUpdate)
+			}
+		})
 	}
 }

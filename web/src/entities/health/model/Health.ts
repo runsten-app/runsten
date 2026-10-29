@@ -15,3 +15,7 @@ export type Wheel = Tyre['wheel']
 export type TyreWarning = NonNullable<Tyre['warning']>
 export type ServiceState = NonNullable<Service['state']>
 export type CheckName = Check['check']
+
+// SoftwareVersion is a version of the vehicle's software, from when it was first read.
+export type SoftwareVersion = components['schemas']['SoftwareVersion']
+export type SoftwareVersionPage = components['schemas']['PageSoftwareVersion']

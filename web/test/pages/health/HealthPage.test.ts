@@ -4,6 +4,7 @@ import { HealthPage } from '@/pages/health'
 import battery from '@fixtures/battery.json'
 import health from '@fixtures/health.json'
 import unknown from '@fixtures/health-unknown.json'
+import versions from '@fixtures/software-versions.json'
 import tyres from '@fixtures/tyres.json'
 import vehicles from '@fixtures/vehicles.json'
 import { mountWith, testRouter } from '@test/utils'
@@ -11,6 +12,7 @@ import { mountWith, testRouter } from '@test/utils'
 vi.mock('vue-chartjs', () => import('@test/chart-stub'))
 const mocks = vi.hoisted(() => ({
   fetchHealth: vi.fn(),
+  fetchSoftwareVersions: vi.fn(),
   fetchTyres: vi.fn(),
   fetchVehicles: vi.fn(),
   getBattery: vi.fn(),
@@ -18,6 +20,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/entities/health', async (original) => ({
   ...(await original<typeof import('@/entities/health')>()),
   fetchHealth: mocks.fetchHealth,
+  fetchSoftwareVersions: mocks.fetchSoftwareVersions,
   fetchTyres: mocks.fetchTyres,
 }))
 vi.mock('@/entities/battery', async (original) => ({
@@ -32,6 +35,7 @@ vi.mock('@/entities/vehicle', async (original) => ({
 beforeEach(() => {
   Object.values(mocks).forEach((m) => m.mockReset())
   mocks.fetchHealth.mockResolvedValue(health)
+  mocks.fetchSoftwareVersions.mockResolvedValue({ items: [], next_cursor: null })
   mocks.fetchTyres.mockResolvedValue(tyres)
   mocks.fetchVehicles.mockResolvedValue(vehicles.items)
   mocks.getBattery.mockResolvedValue(battery)
@@ -48,6 +52,19 @@ async function mounted() {
 }
 
 describe('HealthPage', () => {
+  it("lists the software's versions of a vehicle that tells them, none otherwise", async () => {
+    let w = await mounted()
+    expect(w.find('.software-history').exists()).toBe(false)
+    mocks.fetchSoftwareVersions.mockResolvedValue(versions)
+    w = await mounted()
+    expect(w.find('.software-history h2').text()).toBe('Software')
+    expect(w.findAll('.software-history .name').map((n) => n.text())).toEqual([
+      '2026.38.3.2',
+      '2026.38.3.1',
+      '2026.32.1',
+    ])
+  })
+
   it('shows the tiles and the pressures, in its own tab', async () => {
     const w = await mounted()
     expect(w.find('.v-main h1').text()).toBe('Health')

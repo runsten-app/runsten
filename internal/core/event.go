@@ -110,6 +110,18 @@ type Charge struct {
 	PaidCost       Value[Amount]
 }
 
+// SoftwareVersion is a version of the vehicle's software, from when it was first read.
+type SoftwareVersion struct {
+	// DetectedAt is the time of the first reading of the version: it identifies the
+	// version for a given vehicle, as an event's detection time.
+	DetectedAt time.Time
+	Version    string
+	// Installed bounds when the vehicle took it: after the last reading of the previous
+	// version, before its first one. After is zero for the first version Runsten read,
+	// installed at any time before.
+	Installed Bounds
+}
+
 // Amount is a sum of money in minor units of an ISO 4217 currency, which may be one
 // Runsten does not accept.
 type Amount struct {

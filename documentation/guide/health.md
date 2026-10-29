@@ -12,6 +12,7 @@ The **Health** tab shows the vehicle's latest health and the tyres' pressures ov
 - **Tyres**: each tyre's pressure, against the pressure the car recommends at its axle, and what the tyre pressure monitoring says of it: OK, low, very low, high, or a fault (of a sensor, or of the system).
 - **Service**: whether it is due (not yet, soon, due, overdue), and the time and the distance left until it.
 - **Warnings**: the brake fluid, the coolant, the oil, the washer fluid, the 12 V battery and each exterior light. The active ones are named; the others are counted.
+- **Software**, for a car that tells its version (a Tesla): each version of its software, newest first, with when the car took it: between the last time Runsten read the previous version and the first time it read this one.
 - **The pressures over time**, one chart per axle: the left and right tyres, and the recommended pressure, dashed, over 7 days, 30 days or 12 months. A pressure rises as the tyres warm up while driving, and falls in the cold. The line breaks where nothing was read.
 
 What a car does not report is said as such, never shown as fine.
