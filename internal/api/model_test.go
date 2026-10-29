@@ -149,7 +149,7 @@ func TestVariantsJSON(t *testing.T) {
 		},
 		{
 			"every one fits: no candidate", "",
-			core.Snapshot{Covers: core.FieldModel, Family: some("Polestar 3"), BatteryElectric: some(true)},
+			core.Snapshot{Covers: core.FieldModel, Family: some("Polestar 3"), Powertrain: some(core.Electric)},
 			"ps3-2024 ps3-rear-2026 ps3-dual-2026",
 		},
 		{

@@ -58,6 +58,8 @@ func TestNewValidation(t *testing.T) {
 		{"negative fade", fadedSpec(-0.02, t0), State{SoC: 50}, DefaultUploadPolicy()},
 		{"fade without a start", fadedSpec(0.02, time.Time{}), State{SoC: 50}, DefaultUploadPolicy()},
 		{"negative SoC", testSpec(), State{SoC: -1}, DefaultUploadPolicy()},
+		{"hold SoC of an electric car", func() Spec { s := testSpec(); s.HoldSoC = 2; return s }(), State{SoC: 50}, DefaultUploadPolicy()},
+		{"hold SoC of 100", func() Spec { s := hybridSpec(); s.HoldSoC = 100; return s }(), State{SoC: 50}, DefaultUploadPolicy()},
 		{"SoC > 100", testSpec(), State{SoC: 101}, DefaultUploadPolicy()},
 		{"zero interval", testSpec(), State{SoC: 50}, UploadPolicy{}},
 	}
@@ -291,6 +293,7 @@ func TestProfiles(t *testing.T) {
 		{"bev-generic", Supported, Supported},
 		{"ex30-like", NotFoundIdle, Unsupported},
 		{"ex90-like", NotFound, Supported},
+		{"v60-phev-like", NotFound, Unsupported},
 	}
 	for _, tt := range tests {
 		c, ok := Profile(tt.name)
@@ -355,5 +358,64 @@ func TestChargeAddedKWh(t *testing.T) {
 	v.PlugIn(at, AC, 8000, 90)
 	if s := v.State(); s.ChargeAddedKWh != 0 {
 		t.Errorf("ChargeAddedKWh at the next plug-in = %v, want 0", s.ChargeAddedKWh)
+	}
+}
+
+// hybridSpec is a plug-in hybrid of 20 kWh, its engine holding the battery at 2 %.
+func hybridSpec() Spec {
+	return Spec{Model: "V60", ModelYear: 2027, BatteryKWh: 20, ConsumptionKWhPer100km: 20, PlugInHybrid: true, HoldSoC: 2}
+}
+
+func newHybrid(t *testing.T, soc float64) *Vehicle {
+	t.Helper()
+	v, err := New(hybridSpec(), State{SoC: soc, OdometerKm: 1000, Position: home, Locked: true}, DefaultUploadPolicy(), t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return v
+}
+
+// Once its battery is down to HoldSoC, a plug-in hybrid's engine charges it a point up,
+// then lets it fall again: the SoC stays within a point of it, a step of driving aside.
+func TestPlugInHybridHoldsAnEmptyBattery(t *testing.T) {
+	v := newHybrid(t, 4)
+	v.StartDrive(t0)
+	at := t0
+	lo, hi := 100.0, 0.0
+	for i := range 400 { // 40 km by 100 m: 0.1 % a step
+		at = at.Add(6 * time.Second)
+		v.Drive(at, 0.1)
+		if i >= 20 { // past the first 2 km, down from 4 %
+			lo, hi = math.Min(lo, v.State().SoC), math.Max(hi, v.State().SoC)
+		}
+	}
+	if lo < 1.9-1e-9 || hi > 3.1+1e-9 || hi-lo < 0.9 {
+		t.Errorf("SoC held within [%v, %v], want 2 to 3 %%", lo, hi)
+	}
+}
+
+// In charge mode, a plug-in hybrid's engine charges its battery while driving, for that
+// drive only; an electric car has no engine to.
+func TestChargeWithEngine(t *testing.T) {
+	v := newHybrid(t, 10)
+	v.StartDrive(t0)
+	v.ChargeWithEngine(30)
+	v.Drive(t0.Add(10*time.Minute), 6) // 1.8 kWh: 9 % of 20 kWh
+	if s := v.State().SoC; !near(s, 19) {
+		t.Errorf("SoC %v after a charge mode, want 19", s)
+	}
+	v.EndDrive(t0.Add(10*time.Minute), home)
+	v.StartDrive(t0.Add(time.Hour))
+	v.Drive(t0.Add(time.Hour+10*time.Minute), 5) // the next drive draws again: 1 kWh
+	if s := v.State().SoC; !near(s, 14) {
+		t.Errorf("SoC %v on the next drive, want 14", s)
+	}
+
+	e := newVehicle(t, 50)
+	e.StartDrive(t0)
+	e.ChargeWithEngine(30)
+	e.Drive(t0.Add(time.Minute), 4) // 0.8 kWh of 80
+	if s := e.State().SoC; !near(s, 49) {
+		t.Errorf("an electric car's SoC %v, want 49", s)
 	}
 }

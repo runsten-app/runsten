@@ -65,10 +65,14 @@ type VehicleConfig struct {
 	FadePerYear            float64 `yaml:"fadePerYear"`
 	ConsumptionKWhPer100km float64 `yaml:"consumptionKWhPer100km"`
 	ChargingCurrentLimitA  float64 `yaml:"chargingCurrentLimitA"`
-	SoC                    float64 `yaml:"soc"`
-	TargetSoC              float64 `yaml:"targetSoc"`
-	OdometerKm             float64 `yaml:"odometerKm"`
-	Place                  string  `yaml:"place"`
+	// Powertrain is electric (the default) or plugin_hybrid: a Volvo whose engine holds
+	// its empty battery at HoldSoC (default 2 %), and whose drives may charge it.
+	Powertrain string  `yaml:"powertrain"`
+	HoldSoC    float64 `yaml:"holdSoc"`
+	SoC        float64 `yaml:"soc"`
+	TargetSoC  float64 `yaml:"targetSoc"`
+	OdometerKm float64 `yaml:"odometerKm"`
+	Place      string  `yaml:"place"`
 }
 
 // Place is a named location.
@@ -89,11 +93,13 @@ type Park struct {
 	Duration time.Duration `yaml:"duration"`
 }
 
-// Drive moves the vehicle to To, over DistanceKm, in Duration.
+// Drive moves the vehicle to To, over DistanceKm, in Duration. A plug-in hybrid's engine
+// may charge its battery meanwhile, EngineChargeKWhPer100km (a charge mode).
 type Drive struct {
-	To         string        `yaml:"to"`
-	DistanceKm float64       `yaml:"distanceKm"`
-	Duration   time.Duration `yaml:"duration"`
+	To                      string        `yaml:"to"`
+	DistanceKm              float64       `yaml:"distanceKm"`
+	Duration                time.Duration `yaml:"duration"`
+	EngineChargeKWhPer100km float64       `yaml:"engineChargeKWhPer100km"`
 }
 
 // Charge charges the vehicle in place up to UntilSoC.
@@ -102,6 +108,16 @@ type Charge struct {
 	PowerKW  float64 `yaml:"powerKW"`
 	UntilSoC float64 `yaml:"untilSoc"`
 }
+
+// Powertrains of a scenario's vehicle.
+const (
+	PowertrainElectric     = "electric"
+	PowertrainPlugInHybrid = "plugin_hybrid"
+)
+
+// defaultHoldSoC is the SoC a plug-in hybrid's engine holds its empty battery at, unless
+// the scenario says: a V60 of 2027 held 2 to 3 %.
+const defaultHoldSoC = 2
 
 // Brands of a scenario.
 const (
@@ -134,6 +150,18 @@ func (s *Scenario) Validate() error {
 	}
 	if s.Brand != "" && s.Brand != BrandVolvo && s.MarketRefused {
 		errs = append(errs, fmt.Errorf("marketRefused: a Volvo API refusal, not for a %s", s.Brand))
+	}
+	switch s.Vehicle.Powertrain {
+	case "", PowertrainElectric:
+		if s.Vehicle.HoldSoC != 0 {
+			errs = append(errs, errors.New("vehicle.holdSoc: a plug-in hybrid's"))
+		}
+	case PowertrainPlugInHybrid:
+		if s.Brand != "" && s.Brand != BrandVolvo {
+			errs = append(errs, fmt.Errorf("vehicle.powertrain: no plug-in hybrid of %s simulated", s.Brand))
+		}
+	default:
+		errs = append(errs, fmt.Errorf("vehicle.powertrain %q: electric or plugin_hybrid expected", s.Vehicle.Powertrain))
 	}
 	if !vinPattern.MatchString(s.VIN) {
 		errs = append(errs, fmt.Errorf("vin %q: 17 characters, no I, O or Q", s.VIN))
@@ -201,6 +229,9 @@ func (s *Scenario) validateStep(st Step) error {
 		}
 		if st.Drive.DistanceKm <= 0 || st.Drive.Duration <= 0 {
 			return errors.New("drive.distanceKm and drive.duration must be > 0")
+		}
+		if st.Drive.EngineChargeKWhPer100km < 0 || st.Drive.EngineChargeKWhPer100km > 0 && s.Vehicle.Powertrain != PowertrainPlugInHybrid {
+			return errors.New("drive.engineChargeKWhPer100km: ≥ 0, and a plug-in hybrid's")
 		}
 	case st.Charge != nil:
 		if _, err := chargeType(st.Charge.Type); err != nil {

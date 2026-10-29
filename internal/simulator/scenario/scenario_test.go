@@ -66,6 +66,10 @@ func TestParseRejectsInvalidScenarios(t *testing.T) {
 		{"unknown brand", [2]string{"vin: ", "brand: rivian\nvin: "}, "brand"},
 		{"refused polestar", [2]string{"vin: ", "brand: polestar\nmarketRefused: true\nvin: "}, "marketRefused"},
 		{"refused tesla", [2]string{"vin: ", "brand: tesla\nmarketRefused: true\nvin: "}, "marketRefused"},
+		{"unknown powertrain", [2]string{"soc: 60", "soc: 60\n  powertrain: diesel"}, "vehicle.powertrain"},
+		{"hybrid tesla", [2]string{"vin: YV1SMLT0000DT0001\nstart: 2026-09-28T05:00:00Z\nvehicle:\n", "brand: tesla\nvin: YV1SMLT0000DT0001\nstart: 2026-09-28T05:00:00Z\nvehicle:\n  powertrain: plugin_hybrid\n"}, "vehicle.powertrain"},
+		{"hold SoC of an electric car", [2]string{"soc: 60", "soc: 60\n  holdSoc: 2"}, "vehicle.holdSoc"},
+		{"engine charge of an electric car", [2]string{"distanceKm: 40", "distanceKm: 40, engineChargeKWhPer100km: 30"}, "engineChargeKWhPer100km"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -278,5 +282,27 @@ func TestStateAt(t *testing.T) {
 	}
 	if trim := sim.ReportAt(start.Add(time.Hour + 20*time.Minute)).Spec.Trim; trim != "74d" {
 		t.Errorf("trim %q, want 74d", trim)
+	}
+}
+
+// A plug-in hybrid's engine holds its empty battery at 2 % unless the scenario says.
+func TestPlugInHybridSpec(t *testing.T) {
+	tests := []struct {
+		name, add string
+		hybrid    bool
+		hold      float64
+	}{
+		{"electric by default", "", false, 0},
+		{"electric", "\n  powertrain: electric", false, 0},
+		{"plug-in hybrid", "\n  powertrain: plugin_hybrid", true, 2},
+		{"its own hold", "\n  powertrain: plugin_hybrid\n  holdSoc: 15", true, 15},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := mustSimulation(t, strings.Replace(commute, "soc: 60", "soc: 60"+tt.add, 1)).ReportAt(start).Spec
+			if spec.PlugInHybrid != tt.hybrid || spec.HoldSoC != tt.hold {
+				t.Errorf("plug-in hybrid %v, hold %v; want %v, %v", spec.PlugInHybrid, spec.HoldSoC, tt.hybrid, tt.hold)
+			}
+		})
 	}
 }
