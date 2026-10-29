@@ -81,7 +81,8 @@
       "power": "Effekt",
       "type": "Typ",
       "cable": "Kabel",
-      "target": "Mål"
+      "target": "Mål",
+      "follow": "Följ den pågående laddningen"
     },
     "vehicle": "Fordon",
     "odometer": "Mätarställning",
@@ -281,6 +282,24 @@
     },
     "averagePower": "Medeleffekt",
     "energyImportedNote": "Energin enligt laddeffekten är den som appen gav; den enligt laddningsnivån är Runstens uppskattning."
+  },
+  "chargeInProgress": {
+    "label": "Pågår",
+    "stopped": "Avläsningarna har upphört",
+    "paused": "Pausad",
+    "heading": "Nu",
+    "title": "Pågående laddning",
+    "since": "Sedan {time}",
+    "added": "{energy} hittills",
+    "readAgo": "senast läst {age}",
+    "stoppedHelp": "Inget har lästs efter {time}: laddningen kan ha avslutats sedan dess, osedd. Den visas som den var vid den senaste avläsningen.",
+    "charging": "Laddar sedan",
+    "readAt": "Senaste avläsning",
+    "note": "Läses igen varje minut, så som insamlaren läser fordonet medan det laddar. När laddningen är klar finns den i listan, med sitt slut.",
+    "power": "Effekt",
+    "energy": "Energi hittills",
+    "cost": "Kostnad hittills",
+    "costSoFar": "Uppskattad efter tariffen för {place}, fram till den senaste avläsningen"
   },
   "chargeCost": {
     "enter": "Ange kostnaden",
@@ -851,6 +870,7 @@
     "ac": "AC {kw}",
     "acOption": "AC {kw}, {option} som tillval",
     "dc": "DC {kw}",
+    "noDC": "ingen DC-laddning",
     "fromManufacturer": "Enligt tillverkaren",
     "fromPublic": "Enligt offentliga källor",
     "fromBoth": "Enligt tillverkaren; {figures}: enligt offentliga källor",

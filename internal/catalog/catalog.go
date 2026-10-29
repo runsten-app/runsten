@@ -1,4 +1,5 @@
-// Package catalog is the data sheet of the electric Volvo, Polestar and Tesla variants: battery
+// Package catalog is the data sheet of the electric and plug-in hybrid Volvo, Polestar and
+// Tesla variants: battery
 // capacities and charging powers, read from a sourced YAML file embedded in the binary,
 // and the recognition of a vehicle's variant from what the vendor API says of it.
 //
@@ -31,6 +32,16 @@ const (
 // readsCapacity reports whether the brand's sources tell the battery's capacity, which
 // Match compares: Tesla's Owner API tells none.
 func (b Brand) readsCapacity() bool { return b != Tesla }
+
+// Powertrain is what moves the vehicles of a variant, as core.Powertrain names it.
+type Powertrain string
+
+// The powertrains of the catalog. A reading of another (a combustion car, core's "other")
+// is never recognized.
+const (
+	Electric     Powertrain = "electric"
+	PlugInHybrid Powertrain = "plugin_hybrid"
+)
 
 // Chemistry is the cell chemistry of a battery; empty when unknown.
 type Chemistry string
@@ -78,13 +89,16 @@ type Variant struct {
 	Family string `yaml:"family"` // as the Volvo API returns descriptions.model
 	Name   string `yaml:"name"`
 	Years  Years  `yaml:"years"`
+	// Powertrain is Electric when the file leaves it out. A variant is recognized only
+	// for a vehicle of its powertrain: a hybrid's capacity may lie near an electric's.
+	Powertrain Powertrain `yaml:"powertrain"`
 
 	GrossKWh   float64   `yaml:"gross_kwh"`
 	NetKWh     *float64  `yaml:"net_kwh"` // nil: no source settles it
 	Chemistry  Chemistry `yaml:"chemistry"`
 	ACMaxKW    float64   `yaml:"ac_max_kw"`    // standard onboard charger
 	ACOptionKW *float64  `yaml:"ac_option_kw"` // optional onboard charger, if any
-	DCMaxKW    float64   `yaml:"dc_max_kw"`
+	DCMaxKW    *float64  `yaml:"dc_max_kw"`    // nil: no DC charging (a plug-in hybrid's)
 
 	// APIKWh are the values of batteryCapacityKWH seen for the variant. They need not be
 	// its capacity: the backend has returned a pack label or the net capacity for months.
@@ -169,7 +183,10 @@ func (v Variant) Level(f Figure) Level {
 
 // figures lists the figures the variant has, each of which needs a source.
 func (v Variant) figures() []Figure {
-	fs := []Figure{FigureGrossKWh, FigureACMaxKW, FigureDCMaxKW}
+	fs := []Figure{FigureGrossKWh, FigureACMaxKW}
+	if v.DCMaxKW != nil {
+		fs = append(fs, FigureDCMaxKW)
+	}
 	if v.NetKWh != nil {
 		fs = append(fs, FigureNetKWh)
 	}
@@ -207,6 +224,11 @@ func Parse(data []byte) (*Catalog, error) {
 	var variants []Variant
 	if err := dec.Decode(&variants); err != nil {
 		return nil, fmt.Errorf("reading the catalog: %w", err)
+	}
+	for i := range variants {
+		if variants[i].Powertrain == "" {
+			variants[i].Powertrain = Electric
+		}
 	}
 	if err := validate(variants); err != nil {
 		return nil, fmt.Errorf("invalid catalog: %w", err)

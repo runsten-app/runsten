@@ -205,10 +205,12 @@ type Config struct {
 	States       States
 	Readings     Readings
 	Health       VehicleHealth
-	Settings     Settings
-	Models       VehicleModels
-	Deletion     VehicleDeletion
-	Costs        ChargeCosts
+	// Charging gives the vehicles' charges in progress.
+	Charging Charging
+	Settings Settings
+	Models   VehicleModels
+	Deletion VehicleDeletion
+	Costs    ChargeCosts
 	// Imports are the vehicles' events imported from other applications; ImportJobs
 	// the imports asked for, run by the import worker; Aximote lists the vehicles of an
 	// Aximote account.
@@ -336,6 +338,7 @@ func New(cfg Config) *Server {
 	s.registerSoftware(s.api)
 	s.registerSeries(s.api)
 	s.registerHealth(s.api)
+	s.registerCharging(s.api)
 	s.registerSettings(s.api)
 	s.registerCosts(s.api)
 	s.registerConnection(s.api)

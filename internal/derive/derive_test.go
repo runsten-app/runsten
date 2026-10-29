@@ -416,6 +416,30 @@ func TestLongTripDC(t *testing.T) {
 	checkRebuild(t, st, d)
 }
 
+// TestInProgress reads the commute's AC charge while it charges: open, with what it
+// added so far, then, once over, the derived charge of the same ID.
+func TestInProgress(t *testing.T) {
+	st, d, _ := play(t, "commute.yaml", 19*time.Hour)
+	net, _ := simCatalog{}.NetCapacity(context.Background(), "a", "v")
+	open, err := d.InProgress(context.Background(), "a", "v", net)
+	if err != nil || !open.OK {
+		t.Fatalf("in progress %+v, %v", open, err)
+	}
+	c := open.V
+	if len(st.vehicle("v").charges) != 0 || c.Reconstructed || !c.Type.OK || c.Type.V != core.AC ||
+		!near(c.PowerW, 7400, 400) || !c.EnergyPowerKWh.OK || !c.EnergySoCKWh.OK || c.Capacity.V.Source != core.CapacityCatalogNet ||
+		!c.End.Before.After(c.Start.Before) || !at(c.Position, home.Lat, home.Lon) {
+		t.Errorf("in progress %+v", c)
+	}
+	st, d, _ = play(t, "commute.yaml", 23*time.Hour+30*time.Minute)
+	if over, err := d.InProgress(context.Background(), "a", "v", net); err != nil || over.OK {
+		t.Errorf("over: in progress %+v, %v", over, err)
+	}
+	if got := st.vehicle("v").charges; len(got) != 1 || !got[0].DetectedAt.Equal(c.DetectedAt) || got[0].Start != c.Start {
+		t.Errorf("derived %+v, in progress %+v", got, c)
+	}
+}
+
 // TestReadings reads the energy states of the commute's AC charge: each read within its
 // bounds, in order, the power at the charger's while it charges.
 func TestReadings(t *testing.T) {

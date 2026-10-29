@@ -405,6 +405,13 @@ func (d *detector) buildCharge(cb *chargeBuilder) Charge {
 	if c.Reconstructed {
 		c.Start.Before = c.End.Before
 	}
+	cb.energies(&c)
+	c.Position = s.Position
+	return c
+}
+
+// energies sets the charge's energies from what the builder followed so far.
+func (cb *chargeBuilder) energies(c *Charge) {
 	c.EnergySoCKWh = energy(c.EndSoC, c.StartSoC, c.Capacity)
 	if cb.intervals > 0 {
 		c.EnergyPowerKWh = Value[float64]{V: cb.wh / 1000, OK: true}
@@ -413,6 +420,35 @@ func (d *detector) buildCharge(cb *chargeBuilder) Charge {
 	if cb.counted && cb.measured > 0 {
 		c.EnergyMeasuredKWh = Value[float64]{V: cb.measured, OK: true}
 	}
+}
+
+// ChargeInProgress is the charge still open at the latest reading: what is known of it
+// so far, read as its end would be at that reading.
+type ChargeInProgress struct {
+	// Charge has the start, the type, the target and the sources the derived charge
+	// will have, under the same DetectedAt. Its end is the latest reading: End.After the
+	// latest one charging, End.Before the latest energy reading, later while the charge
+	// is paused (a status neither charging nor over: scheduled, error); EndSoC, the
+	// energies, the capacity and the position are those of that reading.
+	Charge
+	// PowerW is the charging power of the latest reading.
+	PowerW Value[float64]
+}
+
+// inProgress returns the open charge as it stands, without ending it.
+func (d *detector) inProgress(ps []point) ChargeInProgress {
+	cb, s := d.charge, d.st.snap
+	c := cb.c
+	readAt := later(later(d.st.seenAt(FieldSoC), d.st.seenAt(FieldCharging)), d.st.seenAt(FieldConnection))
+	c.End = Bounds{After: cb.lastCharging, Before: readAt}
+	c.endAt(s)
+	if s.TargetSoC.OK {
+		c.TargetSoC = s.TargetSoC
+	}
+	c.Capacity = d.capacity()
+	c.OdometerKm = s.OdometerKm
+	cb.energies(&c)
 	c.Position = s.Position
-	return c
+	c.Sources = sourcesIn(ps, c.Start.Before, readAt)
+	return ChargeInProgress{Charge: c, PowerW: s.PowerW}
 }

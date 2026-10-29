@@ -26,6 +26,7 @@ import {
   type Sleep,
   type UpdateStatus,
 } from '@/entities/vehicle'
+import { useChargeInProgress } from '@/features/browse-charges'
 import { useVehicle } from '@/features/select-vehicle'
 import { useVehicleState } from '@/features/watch-vehicle-state'
 import { isApiError } from '@/shared/api'
@@ -154,6 +155,19 @@ function label<T extends string>(r: Reading<T> | null, labels: Record<T, string>
   return r ? labels[r.value] : null
 }
 
+// The charge in progress, followed live on its page: read only while the cable is
+// connected or the car charges, when there may be one.
+const pluggedIn = computed(() => {
+  const c = state.value?.charging
+  return c?.cable?.value === 'connected' || c?.status?.value === 'charging'
+})
+const { charge: open } = useChargeInProgress(() => props.vehicle, pluggedIn)
+const openCharge = computed(() =>
+  pluggedIn.value && open.value
+    ? { name: 'charge', params: { vehicle: props.vehicle, id: open.value.id } }
+    : null,
+)
+
 // The reading whose times a tile shows once: its first known value.
 const chargingTile = computed(() => {
   const c = state.value?.charging
@@ -164,9 +178,13 @@ const vehicleTile = computed(() => state.value?.odometer_km ?? state.value?.soft
 // A charge that needs looking at gets its own tile, its figures large; otherwise (idle,
 // done, scheduled, unknown) one line under the battery's bar says it. The engine is not
 // shown: the mode's pill above says it, read from it.
+// Without a status (status and power are read apart), a power above zero says a charge
+// runs; a zero one says nothing.
 const chargeActive = computed(() => {
-  const s = state.value?.charging.status?.value
-  return s === 'charging' || s === 'discharging' || s === 'error'
+  const c = state.value?.charging
+  const s = c?.status?.value
+  if (s === 'charging' || s === 'discharging' || s === 'error') return true
+  return !c?.status && (c?.power_w?.value ?? 0) > 0
 })
 const chargeTitle = useId()
 // The line's facts. The target is the bar's, unless no state of charge draws one.
@@ -458,6 +476,13 @@ const update = computed(() => {
                 :tile="chargingTile"
               />
             </dl>
+            <router-link
+              v-if="openCharge"
+              :to="openCharge"
+              class="charge-link d-block text-body-medium text-primary mt-3"
+            >
+              {{ t('state.charging.follow') }}
+            </router-link>
             <ReadingProvenance
               v-if="chargingTile"
               :reading="chargingTile"

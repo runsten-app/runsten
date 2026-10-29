@@ -13,7 +13,8 @@ One entry per variant, a powertrain and battery over a range of model years:
 - `id`: lowercase words joined by hyphens, as `ex30-er-2024`;
 - `brand`, `family` exactly as the API's `descriptions.model` returns it, `name`, `years` (`[from, to]`, or `[from]` while on sale);
 - `gross_kwh`, `net_kwh` when a source settles it, `chemistry`;
-- `ac_max_kw`, `ac_option_kw`, `dc_max_kw`, `motor_codes`.
+- `powertrain`: `plugin_hybrid` for a plug-in hybrid, left out for an electric car;
+- `ac_max_kw`, `ac_option_kw`, `dc_max_kw` (left out of a plug-in hybrid that does not charge on DC), `motor_codes`.
 
 ## Sources
 

@@ -240,6 +240,8 @@ var goldenRequests = map[string]string{
 	"vehicle-reauth-required.json":  "GET /api/v1/vehicles/" + parked,
 	"state.json":                    "GET /api/v1/vehicles/" + car + "/state",
 	"state-unknown.json":            "GET /api/v1/vehicles/" + parked + "/state",
+	"charging.json":                 "GET /api/v1/vehicles/" + car + "/charging",
+	"charging-none.json":            "GET /api/v1/vehicles/" + parked + "/charging",
 	"trips-page-1.json":             "GET /api/v1/vehicles/" + car + "/trips",
 	"trips-page-2.json":             "GET /api/v1/vehicles/" + car + "/trips",
 	"trip.json":                     "GET /api/v1/vehicles/" + car + "/trips/2026-09-28T07:01:00.000000Z",

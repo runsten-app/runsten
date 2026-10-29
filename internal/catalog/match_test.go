@@ -10,9 +10,15 @@ import (
 // EX30's model code (positions 4-5), as the Volvo API returns them.
 func vin(code string) string { return "YV12Z" + code + "9XRS000001" }
 
+// electric keeps the electric variants: Match is theirs.
+func electric(vs []Variant) []Variant {
+	return slices.DeleteFunc(vs, func(v Variant) bool { return v.Powertrain != Electric })
+}
+
 func TestMatch(t *testing.T) {
 	c := mustLoad(t)
-	xc40 := ids(c.Family("XC40"))
+	// The XC40 plug-in hybrid is left out: Match is among the electric variants.
+	xc40 := ids(electric(c.Family("XC40")))
 	ex90 := ids(c.Family("EX90"))
 	tests := []struct {
 		name       string
@@ -41,7 +47,8 @@ func TestMatch(t *testing.T) {
 		{"EX90 2026 at the 400 V capacity", "EX90", 2026, 111, "", ex90, false},
 		{"within the gross tolerance", "EX90", 2025, 105.5, "", []string{"ex90-single-2024"}, true},
 		{"beyond the gross tolerance", "EX90", 2025, 105.6, "", ex90, false},
-		{"unknown family", "XC90", 2024, 18.819, "", nil, false},
+		{"unknown family", "P1800", 2024, 18.819, "", nil, false},
+		{"a family of plug-in hybrids alone", "V60", 2024, 18.819, "", nil, false},
 		{"model year out of the table", "XC40", 2019, 78, "", xc40, false},
 		{"unknown model year", "EX90", 0, 106, "", []string{"ex90-twin-2026"}, true},
 		{"capacity absent", "EX30", 2024, 0, "", []string{"ex30-lfp-2024", "ex30-er-2024", "ex30-twin-2024"}, false},
@@ -67,7 +74,10 @@ func TestMatch(t *testing.T) {
 
 func TestRecognize(t *testing.T) {
 	c := mustLoad(t)
-	ex30 := Reading{Family: "EX30", ModelYear: 2024, CapacityKWh: 69.0, VIN: vin("EL"), BatteryElectric: true}
+	ex30 := Reading{Family: "EX30", ModelYear: 2024, CapacityKWh: 69.0, VIN: vin("EL"), Powertrain: Electric}
+	phev := func(family string, year int, kwh float64) Reading {
+		return Reading{Family: family, ModelYear: year, CapacityKWh: kwh, Powertrain: PlugInHybrid}
+	}
 	tests := []struct {
 		name string
 		r    Reading
@@ -76,13 +86,28 @@ func TestRecognize(t *testing.T) {
 		{"one variant fits", ex30, "ex30-er-2024"},
 		{"several fit", with(ex30, func(r *Reading) { r.VIN = "" }), ""},
 		{"none fits", with(ex30, func(r *Reading) { r.CapacityKWh = 90 }), ""},
-		// It would be recognized, were it known to be battery electric.
-		{"a hybrid, or an unknown fuel type", with(ex30, func(r *Reading) { r.BatteryElectric = false }), ""},
+		// It would be recognized, were its powertrain known to be electric.
+		{"unknown fuel type", with(ex30, func(r *Reading) { r.Powertrain = "" }), ""},
+		{"a combustion car", with(ex30, func(r *Reading) { r.Powertrain = "other" }), ""},
+		{"a hybrid with an electric's capacity", with(ex30, func(r *Reading) { r.Powertrain = PlugInHybrid }), ""},
 		{"unknown family", with(ex30, func(r *Reading) { r.Family = "" }), ""},
-		{"year and capacity unknown", Reading{Family: "EX90", BatteryElectric: true}, ""},
-		{"no family, its brand", Reading{Brand: Polestar, ModelYear: 2026, CapacityKWh: 92, BatteryElectric: true}, "ps3-rear-2026"},
-		{"no family, its brand: several fit", Reading{Brand: Polestar, ModelYear: 2024, BatteryElectric: true}, ""},
-		{"no family, its brand, a hybrid", Reading{Brand: Polestar, ModelYear: 2026, CapacityKWh: 92}, ""},
+		{"year and capacity unknown", Reading{Family: "EX90", Powertrain: Electric}, ""},
+		{"no family, its brand", Reading{Brand: Polestar, ModelYear: 2026, CapacityKWh: 92, Powertrain: Electric}, "ps3-rear-2026"},
+		{"no family, its brand: several fit", Reading{Brand: Polestar, ModelYear: 2024, Powertrain: Electric}, ""},
+		{"no family, its brand, a hybrid", Reading{Brand: Polestar, ModelYear: 2026, CapacityKWh: 92, Powertrain: PlugInHybrid}, ""},
+		// The values Volvo's API reports for its plug-in hybrids.
+		{"V60 2021 at 11.832", phev("V60", 2021, 11.832), "v60-phev-2020"},
+		{"V60 2027 at 18.819", phev("V60", 2027, 18.819), "v60-phev-2022"},
+		// Model year 2022 had both packs.
+		{"XC60 2022 at 11.832", phev("XC60", 2022, 11.832), "xc60-phev-2020"},
+		{"XC60 2022 at 18.819", phev("XC60", 2022, 18.819), "xc60-phev-2022"},
+		{"XC60 2022, capacity unknown", phev("XC60", 2022, 0), ""},
+		{"XC90 2018 at its gross capacity", phev("XC90", 2018, 10.4), "xc90-t8-2018"},
+		{"XC90 2016", phev("XC90", 2016, 9.2), "xc90-t8-2016"},
+		{"XC40 2021, a hybrid", phev("XC40", 2021, 10.7), "xc40-phev-2020"},
+		{"XC40 2021 at a hybrid's capacity, read electric", with(phev("XC40", 2021, 10.7), func(r *Reading) { r.Powertrain = Electric }), ""},
+		{"XC40 2022 at an electric's capacity, read hybrid", phev("XC40", 2022, 78.012), ""},
+		{"Polestar 1, by its brand", Reading{Brand: Polestar, ModelYear: 2020, CapacityKWh: 34, Powertrain: PlugInHybrid}, "ps1-2020"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -97,9 +122,11 @@ func TestRecognize(t *testing.T) {
 func TestEffective(t *testing.T) {
 	c := mustLoad(t)
 	// Several EX30 fit without the VIN: nothing is recognized.
-	ex30 := Reading{Family: "EX30", ModelYear: 2024, CapacityKWh: 69.0, BatteryElectric: true}
+	ex30 := Reading{Family: "EX30", ModelYear: 2024, CapacityKWh: 69.0, Powertrain: Electric}
 	recognized := with(ex30, func(r *Reading) { r.VIN = vin("EL") })
-	polestar := Reading{Brand: Polestar, ModelYear: 2024, BatteryElectric: true}
+	polestar := Reading{Brand: Polestar, ModelYear: 2024, Powertrain: Electric}
+	xc40 := Reading{Family: "XC40", ModelYear: 2021, CapacityKWh: 78.012, Powertrain: Electric}
+	xc40PHEV := Reading{Family: "XC40", ModelYear: 2021, CapacityKWh: 10.7, Powertrain: PlugInHybrid}
 	tests := []struct {
 		name   string
 		chosen string
@@ -111,8 +138,13 @@ func TestEffective(t *testing.T) {
 		{"no choice: the recognition", "", recognized, "ex30-er-2024"},
 		{"a variant the catalog no longer has", "ex30-gone", recognized, "ex30-er-2024"},
 		{"a variant of another family", "xc40-twin-2021", recognized, "ex30-er-2024"},
-		{"a hybrid, even chosen", "ex30-er-2024", with(ex30, func(r *Reading) { r.BatteryElectric = false }), ""},
-		{"no family read", "ex30-er-2024", Reading{BatteryElectric: true}, ""},
+		{"an electric's variant for a hybrid", "ex30-er-2024", with(ex30, func(r *Reading) { r.Powertrain = PlugInHybrid }), ""},
+		{"unknown fuel type, even chosen", "ex30-er-2024", with(ex30, func(r *Reading) { r.Powertrain = "" }), ""},
+		{"no family read", "ex30-er-2024", Reading{Powertrain: Electric}, ""},
+		{"a hybrid's variant for an electric", "xc40-phev-2020", xc40, "xc40-twin-2021"},
+		{"an electric's variant for a hybrid of its family", "xc40-twin-2021", xc40PHEV, "xc40-phev-2020"},
+		{"a hybrid's choice", "xc40-phev-2020", with(xc40PHEV, func(r *Reading) { r.CapacityKWh = 0 }), "xc40-phev-2020"},
+		{"no family, a hybrid of its brand", "ps1-2020", polestar, ""},
 		// The Polestar Data Portal tells the brand alone: the choice sets the family.
 		{"no family, a variant of its brand", "ps2-lr-single-2024", polestar, "ps2-lr-single-2024"},
 		{"no family, a variant of another brand", "ex30-er-2024", polestar, ""},
@@ -132,7 +164,7 @@ func TestMatchBrand(t *testing.T) {
 	c := mustLoad(t)
 	var every []string
 	for _, v := range c.Variants() {
-		if v.Brand == Polestar {
+		if v.Brand == Polestar && v.Powertrain == Electric {
 			every = append(every, v.ID)
 		}
 	}
@@ -227,7 +259,7 @@ func TestRecognizeTesla(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.BatteryElectric = true
+			tt.r.Powertrain = Electric
 			m := c.MatchReading(tt.r)
 			if got := ids(m.Candidates); !slices.Equal(got, tt.want) {
 				t.Errorf("candidates %v, want %v", got, tt.want)

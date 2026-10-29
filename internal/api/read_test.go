@@ -54,6 +54,8 @@ type memReader struct {
 	current  map[string][]core.Record
 	health   map[string][]core.HealthRecord
 	versions map[string][]core.SoftwareVersion
+	open     map[string]core.ChargeInProgress // the charges in progress, by vehicle
+	net      core.NetCapacity                 // the one of the last InProgress
 	entered  []EnteredCost
 	settings *memSettings
 	next     int // of the entered costs' IDs
@@ -646,6 +648,11 @@ func TestVehicleModel(t *testing.T) {
 			// It would be recognized, were it battery electric.
 			"hybrid", vin, details("EX30", 2024, 69.0, false),
 			`{"family":"EX30","model_year":2024,"variant":null,"variant_source":null,"ac_max_kw":null}`,
+		},
+		{
+			"a plug-in hybrid recognized: no DC", "", details("V60", 2027, 18.819, false),
+			`{"family":"V60","model_year":2027,"variant":{"id":"v60-phev-2022","name":"V60 T6 / T8 Plug-in Hybrid (18.8 kWh)",` +
+				`"gross_kwh":18.8,"net_kwh":14.9,"ac_max_kw":6.4,"ac_option_kw":null,"dc_max_kw":null},"variant_source":"detected","ac_max_kw":null}`,
 		},
 		{
 			"fuel type unknown", vin,

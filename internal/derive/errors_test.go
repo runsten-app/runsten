@@ -42,8 +42,12 @@ func TestStoreErrors(t *testing.T) {
 		"save":      {saveErr: boom},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if err := New(st, volvo.Normalizer{}, core.DefaultParams(), nil, quiet).Update(context.Background(), "a", "v"); !errors.Is(err, boom) {
+			d := New(st, volvo.Normalizer{}, core.DefaultParams(), nil, quiet)
+			if err := d.Update(context.Background(), "a", "v"); !errors.Is(err, boom) {
 				t.Errorf("err = %v", err)
+			}
+			if _, err := d.InProgress(context.Background(), "a", "v", nil); name != "save" && !errors.Is(err, boom) {
+				t.Errorf("in progress: err = %v", err)
 			}
 		})
 	}

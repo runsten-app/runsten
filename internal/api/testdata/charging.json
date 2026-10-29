@@ -1,0 +1,43 @@
+{
+  "charge": {
+    "id": "2026-09-28T22:40:00.000000Z",
+    "detected_at": "2026-09-28T22:40:00Z",
+    "sources": [
+      "volvo"
+    ],
+    "start": {
+      "after": "2026-09-28T22:35:00Z",
+      "before": "2026-09-28T22:40:00Z"
+    },
+    "charging_at": "2026-09-28T23:10:00Z",
+    "read_at": "2026-09-28T23:12:00Z",
+    "type": "AC",
+    "start_soc_pct": 40,
+    "soc_pct": 52,
+    "target_soc_pct": 80,
+    "power_w": 7400,
+    "energy_soc_kwh": 9.6,
+    "energy_power_kwh": 9.1,
+    "energy_measured_kwh": null,
+    "capacity_kwh": 80,
+    "capacity_source": "api",
+    "position": {
+      "lat": 45.764,
+      "lon": 4.8357
+    },
+    "place": {
+      "id": "5e1f0000-0000-4000-8000-000000000001",
+      "name": "Maison de Tante Agathe"
+    },
+    "address": null,
+    "cost": {
+      "currency": "EUR",
+      "min_minor": 173,
+      "max_minor": 173,
+      "source": "tariff",
+      "energy_kwh": 10.909090909090908,
+      "efficiency": 0.88,
+      "note": null
+    }
+  }
+}

@@ -38,4 +38,10 @@ A Tesla also measures the energy that goes into its battery during a charge: the
 
 A charge shows its type (AC or DC), its energy, its place (or "Outside any place") and, once a currency is chosen, its cost. See [Places, tariffs and costs](./costs.md).
 
+## A charge in progress
+
+While the car charges, the **Charges** tab shows the charge first, under **Now**, marked **In progress**: since when, the state of charge from its start to now, the energy added so far and, at a place with a tariff, its cost so far. It leads to its details, which the vehicle's page links to as well, under **Charging**, read again every minute: the power now, the energies so far, the cost so far and the charge curve up to the latest reading. It is not yet a charge of the list: the totals and the statistics count it once it is over. Then the same page shows the charge as it ended, with its end and its duration, without leaving it.
+
+If nothing has been read for 15 minutes (the collector stopped, or lost the car), it no longer says **In progress** but **Readings stopped**, and when it was last read: the charge may have ended since, unseen. It shows the charge as it was at that reading, never as if it went on.
+
 A charge that stops with the cable still connected, and starts again before it is unplugged, is one charge: a solar charge, which stops and starts again with the sun, or a charge the car tops up later. Until it starts again, it shows as ended where it stopped. Unplugged, driven, or stopped for 24 hours or more, the next charge is a new one.

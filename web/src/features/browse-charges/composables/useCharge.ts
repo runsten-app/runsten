@@ -3,8 +3,13 @@ import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { chargeKeys, fetchCharge, type Charge, type ChargePage } from '@/entities/charge'
 
 // useCharge reads a charge. Coming from a list, the charge is already there: it is shown
-// at once, and read again only once as stale as that list.
-export function useCharge(vehicle: MaybeRefOrGetter<string>, id: MaybeRefOrGetter<string>) {
+// at once, and read again only once as stale as that list. Not enabled, it asks nothing:
+// the ID of a charge in progress is no charge yet.
+export function useCharge(
+  vehicle: MaybeRefOrGetter<string>,
+  id: MaybeRefOrGetter<string>,
+  enabled: MaybeRefOrGetter<boolean> = true,
+) {
   const queryClient = useQueryClient()
 
   function fromLists(): { charge: Charge; updatedAt: number } | undefined {
@@ -23,6 +28,7 @@ export function useCharge(vehicle: MaybeRefOrGetter<string>, id: MaybeRefOrGette
     queryFn: () => fetchCharge(toValue(vehicle), toValue(id)),
     initialData: () => fromLists()?.charge,
     initialDataUpdatedAt: () => fromLists()?.updatedAt,
+    enabled: computed(() => toValue(enabled)),
   })
   return { charge: data, isPending, error }
 }
