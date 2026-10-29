@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"runsten/internal/api"
 	"runsten/internal/collector"
 	"runsten/internal/core"
 	"runsten/internal/derive"
@@ -54,6 +55,10 @@ func sampleResult(at time.Time) core.Result {
 			Capacity: core.Value[core.Capacity]{V: core.Capacity{KWh: 80, Source: core.CapacityAPI}, OK: true},
 			Position: core.Value[core.Position]{V: core.Position{Lat: 45.7797, Lon: 4.927}, OK: true},
 		}},
+		Versions: []core.SoftwareVersion{{
+			DetectedAt: at.Add(90 * time.Minute), Version: "2026.38.3.2",
+			Installed: core.Bounds{After: at.Add(80 * time.Minute), Before: at.Add(90 * time.Minute)},
+		}},
 		Cursor: core.Cursor{Settled: at.Add(2 * time.Hour), From: at},
 	}
 }
@@ -79,6 +84,10 @@ func TestSaveDerivation(t *testing.T) {
 	charges, err := s.Charges(ctx, a, v)
 	if err != nil || !reflect.DeepEqual(charges, res.Charges) {
 		t.Errorf("charges = %+v, %v\nwant %+v", charges, err, res.Charges)
+	}
+	versions, err := s.ListSoftwareVersions(ctx, a, v, api.EventQuery{})
+	if err != nil || !reflect.DeepEqual(versions, res.Versions) {
+		t.Errorf("versions = %+v, %v\nwant %+v", versions, err, res.Versions)
 	}
 	if c, err := s.DerivationCursor(ctx, a, v); err != nil || c != res.Cursor {
 		t.Errorf("cursor %+v, %v", c, err)
@@ -248,7 +257,7 @@ func TestEventIsolation(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	tables := []string{"trips", "charges", "derivation_cursors"}
+	tables := []string{"trips", "charges", "software_versions", "derivation_cursors"}
 	count := func(account, table string) int {
 		t.Helper()
 		var n int
@@ -277,7 +286,9 @@ func TestEventIsolation(t *testing.T) {
 		trips, err := s.Trips(ctx, a, vb)
 		charges, err2 := s.Charges(ctx, a, vb)
 		cursor, err3 := s.DerivationCursor(ctx, a, vb)
-		if len(trips) != 0 || len(charges) != 0 || cursor != (core.Cursor{}) || err != nil || err2 != nil || err3 != nil {
+		versions, err4 := s.ListSoftwareVersions(ctx, a, vb, api.EventQuery{})
+		if len(trips) != 0 || len(charges) != 0 || len(versions) != 0 || cursor != (core.Cursor{}) ||
+			err != nil || err2 != nil || err3 != nil || err4 != nil {
 			t.Errorf("trips %v, charges %v, cursor %v", trips, charges, cursor)
 		}
 	})
@@ -538,5 +549,50 @@ func TestReadsSeeOneSnapshot(t *testing.T) {
 	})
 	if err == nil {
 		t.Error("a read deleted the charges")
+	}
+}
+
+// TestSoftwareVersions: the versions newest first, the first without a start, by page
+// and period.
+func TestSoftwareVersions(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, v := newVehicle(t, s, "token", "YV1AAAAAAAAAAAAA1")
+	versions := []core.SoftwareVersion{
+		{DetectedAt: t0, Version: "2026.32.1", Installed: core.Bounds{Before: t0}},
+		{DetectedAt: t0.Add(48 * time.Hour), Version: "2026.38.3.1", Installed: core.Bounds{After: t0.Add(40 * time.Hour), Before: t0.Add(48 * time.Hour)}},
+		{DetectedAt: t0.Add(96 * time.Hour), Version: "2026.38.3.2", Installed: core.Bounds{After: t0.Add(95 * time.Hour), Before: t0.Add(96 * time.Hour)}},
+	}
+	if err := s.SaveDerivation(ctx, a, v, time.Time{}, core.Result{Versions: versions}); err != nil {
+		t.Fatal(err)
+	}
+	for _, tt := range []struct {
+		name string
+		q    api.EventQuery
+		want []string
+	}{
+		{"all, newest first", api.EventQuery{}, []string{"2026.38.3.2", "2026.38.3.1", "2026.32.1"}},
+		{"a page", api.EventQuery{Limit: 2}, []string{"2026.38.3.2", "2026.38.3.1"}},
+		{"after a cursor", api.EventQuery{After: &api.EventKey{DetectedAt: t0.Add(96 * time.Hour)}}, []string{"2026.38.3.1", "2026.32.1"}},
+		// Installed within [from, to): between its bounds.
+		{"a period", api.EventQuery{From: t0.Add(44 * time.Hour), To: t0.Add(95 * time.Hour)}, []string{"2026.38.3.1"}},
+		{"the first, installed before any period", api.EventQuery{To: t0.Add(time.Hour)}, []string{"2026.32.1"}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := s.ListSoftwareVersions(ctx, a, v, tt.q)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var names []string
+			for _, g := range got {
+				names = append(names, g.Version)
+			}
+			if !reflect.DeepEqual(names, tt.want) {
+				t.Errorf("got %v, want %v", names, tt.want)
+			}
+		})
+	}
+	if got, _ := s.ListSoftwareVersions(ctx, a, v, api.EventQuery{}); len(got) != 3 || !reflect.DeepEqual(got[2], versions[0]) {
+		t.Errorf("versions %+v", got)
 	}
 }

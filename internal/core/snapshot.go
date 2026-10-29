@@ -85,7 +85,7 @@ const (
 )
 
 // Field identifies a value of Snapshot.
-type Field uint16
+type Field uint32
 
 // Snapshot fields, in processing order for readings taken at the same time: the engine
 // and energy states first, as the collector reads them first in a pass.
@@ -111,12 +111,14 @@ const (
 	// FieldSleep covers Sleep: no other value depends on it.
 	FieldSleep
 	FieldEnergyAdded
+	// FieldSoftware covers Software and SoftwareUpdate, told in the same block.
+	FieldSoftware
 
 	fieldCount = iota
 )
 
 // index returns the position of the lowest field of f.
-func (f Field) index() int { return bits.TrailingZeros16(uint16(f)) }
+func (f Field) index() int { return bits.TrailingZeros32(uint32(f)) }
 
 // Snapshot is a normalized reading of some of the vehicle's values. Covers lists the
 // fields the reading reports on: a covered field that is absent replaces the previous
@@ -161,6 +163,39 @@ type Snapshot struct {
 
 	// Sleep is whether the vehicle is awake, asleep or out of reach.
 	Sleep Value[SleepState]
+
+	// Software is the version of the vehicle's software (Tesla's car_version, without
+	// its build hash), and SoftwareUpdate the update waiting for it: absent when none is.
+	Software       Value[string]
+	SoftwareUpdate Value[SoftwareUpdate]
+}
+
+// UpdateStatus is where an update of the vehicle's software stands.
+type UpdateStatus string
+
+// Update statuses.
+const (
+	UpdateAvailable   UpdateStatus = "available"
+	UpdateScheduled   UpdateStatus = "scheduled"
+	UpdateDownloading UpdateStatus = "downloading"
+	// UpdateWaitingWiFi is an update the vehicle downloads only over Wi-Fi, waiting for
+	// one.
+	UpdateWaitingWiFi UpdateStatus = "waiting_wifi"
+	UpdateInstalling  UpdateStatus = "installing"
+	// UpdateUnknown is an update whose status the source tells in a word Runsten does not
+	// know: one waits all the same.
+	UpdateUnknown UpdateStatus = "unknown"
+)
+
+// SoftwareUpdate is an update waiting for the vehicle's software.
+type SoftwareUpdate struct {
+	Status UpdateStatus
+	// Version is the version it installs; empty when the source does not tell it.
+	Version string
+	// DownloadPct and InstallPct are its progress, in %.
+	DownloadPct, InstallPct Value[float64]
+	// Duration is how long the vehicle expects its installation to take.
+	Duration Value[time.Duration]
 }
 
 // merge copies the fields covered by o.
@@ -215,6 +250,9 @@ func (s *Snapshot) merge(o Snapshot) {
 	}
 	if set(FieldEnergyAdded) {
 		s.EnergyAddedKWh = o.EnergyAddedKWh
+	}
+	if set(FieldSoftware) {
+		s.Software, s.SoftwareUpdate = o.Software, o.SoftwareUpdate
 	}
 }
 

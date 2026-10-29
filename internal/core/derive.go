@@ -100,7 +100,9 @@ type Cursor struct {
 type Result struct {
 	Trips   []Trip
 	Charges []Charge
-	Cursor  Cursor
+	// Versions are the versions of the vehicle's software first read after the cursor.
+	Versions []SoftwareVersion
+	Cursor   Cursor
 }
 
 // Derive detects trips and charges in records, sorted or not.
@@ -121,6 +123,7 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 			d.stepTrip(pt, prev)
 			d.expireResumable(pt)
 			d.stepCharge(pt, prev)
+			d.stepSoftware(pt)
 		}
 		d.track(pt)
 		lastOfTime := i == len(ps)-1 || !ps[i+1].at.Equal(pt.at)
@@ -272,6 +275,11 @@ type detector struct {
 	odoMark         state     // state at the last odometer reading
 	idleRun         energyRun // SoC since the last odometer reading
 
+	// software is the latest version of the software read, and seen when it was last
+	// read: the version a new one follows.
+	software     Value[string]
+	softwareSeen time.Time
+
 	trip   *tripBuilder
 	charge *chargeBuilder
 	ended  *endedCharge
@@ -279,8 +287,27 @@ type detector struct {
 	resumable *chargeBuilder
 }
 
+// stepSoftware reports a version of the software read for the first time: one that
+// differs from the latest version read, which a reading without one leaves as it is.
+func (d *detector) stepSoftware(p point) {
+	v := d.st.snap.Software
+	if p.snap.Covers&FieldSoftware == 0 || !v.OK || d.software.OK && d.software.V == v.V {
+		return
+	}
+	var after time.Time
+	if d.software.OK {
+		after = d.softwareSeen
+	}
+	d.res.Versions = append(d.res.Versions, SoftwareVersion{
+		DetectedAt: p.at, Version: v.V, Installed: Bounds{After: after, Before: p.at},
+	})
+}
+
 func (d *detector) track(p point) {
 	s, c := d.st.snap, p.snap.Covers
+	if c&FieldSoftware != 0 && s.Software.OK {
+		d.software, d.softwareSeen = s.Software, p.at
+	}
 	if c&FieldEngine != 0 && s.Engine.OK && s.Engine.V != EngineRunning {
 		d.lastNotRunning = p.at
 	}

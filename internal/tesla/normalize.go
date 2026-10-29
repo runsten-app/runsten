@@ -94,6 +94,9 @@ type driveState struct {
 type vehicleState struct {
 	Timestamp *int64   `json:"timestamp"`
 	Odometer  *float64 `json:"odometer"` // mi
+	// The software's version, then its build hash: 2025.32.3 abcdef123456.
+	CarVersion     *string         `json:"car_version"`
+	SoftwareUpdate *softwareUpdate `json:"software_update"`
 
 	PressureFL *float64 `json:"tpms_pressure_fl"` // bar
 	PressureFR *float64 `json:"tpms_pressure_fr"`
@@ -116,6 +119,15 @@ type vehicleState struct {
 	HardFR           *bool    `json:"tpms_hard_warning_fr"`
 	HardRL           *bool    `json:"tpms_hard_warning_rl"`
 	HardRR           *bool    `json:"tpms_hard_warning_rr"`
+}
+
+// softwareUpdate is the update waiting for the car; an empty status when none waits.
+type softwareUpdate struct {
+	Status   *string  `json:"status"`
+	Version  *string  `json:"version"`
+	Download *float64 `json:"download_perc"`
+	Install  *float64 `json:"install_perc"`
+	Duration *float64 `json:"expected_duration_sec"`
 }
 
 type vehicleConfig struct {
@@ -178,6 +190,7 @@ func Normalize(e Endpoint, raw []byte) (core.Snapshot, error) {
 		if vs.Odometer != nil {
 			s.OdometerKm = core.Some(*vs.Odometer*kmPerMile, millis(vs.Timestamp))
 		}
+		normalizeSoftware(vs, &s)
 	}
 	if r.VehicleConfig != nil {
 		model(r.VIN, r.VehicleConfig, &s)
@@ -260,6 +273,56 @@ func normalizeCharge(c *chargeState, s *core.Snapshot) {
 		// fast_charger_type is no guide: it reads MCSingleWireCAN on an AC station.
 		s.ChargeType = core.Some(core.AC, at)
 	}
+}
+
+// updateStatuses maps software_update.status. Assumption: the words the community lists,
+// downloading_wifi_wait seen on a real car; an unknown one is an update all the same.
+var updateStatuses = map[string]core.UpdateStatus{
+	"available":             core.UpdateAvailable,
+	"scheduled":             core.UpdateScheduled,
+	"downloading":           core.UpdateDownloading,
+	"downloading_wifi_wait": core.UpdateWaitingWiFi,
+	"installing":            core.UpdateInstalling,
+}
+
+// normalizeSoftware reads the software's version and the update waiting for it. A
+// response without a version covers neither: the version a derivation compares a new
+// one with is the latest read, never one a response left out.
+func normalizeSoftware(vs *vehicleState, s *core.Snapshot) {
+	v := version(vs.CarVersion)
+	if v == "" {
+		return
+	}
+	at := millis(vs.Timestamp)
+	s.Covers |= core.FieldSoftware
+	s.Software = core.Some(v, at)
+	u := vs.SoftwareUpdate
+	if u == nil || u.Status == nil || strings.TrimSpace(*u.Status) == "" {
+		return
+	}
+	status, ok := updateStatuses[*u.Status]
+	if !ok {
+		status = core.UpdateUnknown
+	}
+	up := core.SoftwareUpdate{
+		Status: status, Version: version(u.Version),
+		DownloadPct: number(u.Download, time.Time{}), InstallPct: number(u.Install, time.Time{}),
+	}
+	if u.Duration != nil && *u.Duration > 0 {
+		up.Duration = core.Some(time.Duration(*u.Duration)*time.Second, time.Time{})
+	}
+	s.SoftwareUpdate = core.Some(up, at)
+}
+
+// version is a version without its build hash; empty when there is none.
+func version(v *string) string {
+	if v == nil {
+		return ""
+	}
+	if f := strings.Fields(*v); len(f) > 0 {
+		return f[0]
+	}
+	return ""
 }
 
 // shiftStates maps shift_state: the API has no engine status, and a car in gear drives.

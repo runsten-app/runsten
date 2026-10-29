@@ -50,6 +50,7 @@ var exportTables = []exportTable{
 	{name: "trips", orderBy: "vehicle_id, started_after, detected_at"},
 	{name: "charges", orderBy: "vehicle_id, started_after, detected_at"},
 	{name: "charge_costs", orderBy: "entered_at, id"},
+	{name: "software_versions", orderBy: "vehicle_id, detected_at"},
 	{name: "imported_trips", orderBy: "vehicle_id, source, started_at, source_id"},
 	{name: "imported_tracks", orderBy: "trip_id"},
 	{name: "imported_charges", orderBy: "vehicle_id, source, started_at, source_id"},
