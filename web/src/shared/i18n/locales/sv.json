@@ -16,7 +16,8 @@
     }
   },
   "user": {
-    "menu": "Konto: {username}"
+    "menu": "Konto: {username}",
+    "signedInAs": "Inloggad som {username}"
   },
   "common": {
     "unknown": "Okänt",
@@ -47,7 +48,7 @@
   },
   "vehicle": {
     "title": "Fordon",
-    "select": "Fordon",
+    "menu": "Fordon: {label}",
     "notFound": "Det här fordonet finns inte.",
     "home": "Tillbaka till mina fordon"
   },
