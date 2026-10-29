@@ -51,7 +51,7 @@ func TestNormalizeFixtures(t *testing.T) {
 				ConsumptionKWhPer100km: core.Some(20.1, at),
 				Brand:                  core.Some(Brand, none),
 				ModelYear:              core.Some(2023, none), // YSMTEST22PL000001: P
-				BatteryElectric:        core.Some(true, none),
+				Powertrain:             core.Some(core.Electric, none),
 			}
 		}()},
 		{Odometer, "telemetry/odometer.json", core.Snapshot{
@@ -224,7 +224,7 @@ func TestModelYear(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if s.ModelYear.OK != tt.ok || s.ModelYear.V != tt.year || !s.BatteryElectric.OK || !s.BatteryElectric.V ||
+		if s.ModelYear.OK != tt.ok || s.ModelYear.V != tt.year || !s.BatteryElectric() ||
 			s.Family.OK || s.Brand != core.Some(Brand, time.Time{}) || s.Covers&core.FieldModel == 0 {
 			t.Errorf("%s: %+v", tt.vin, s)
 		}
@@ -232,7 +232,7 @@ func TestModelYear(t *testing.T) {
 	// No VIN, or not one of 17 characters: the model is not covered.
 	for _, data := range []string{`{}`, `{"vin":"LPS"}`} {
 		s, err := Normalize(Battery, []byte(`{"data":`+data+`}`))
-		if err != nil || s.Covers&core.FieldModel != 0 || s.BatteryElectric.OK {
+		if err != nil || s.Covers&core.FieldModel != 0 || s.Powertrain.OK {
 			t.Errorf("%s: %+v, %v", data, s, err)
 		}
 	}

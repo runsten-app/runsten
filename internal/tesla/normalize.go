@@ -382,7 +382,7 @@ func model(vin string, c *vehicleConfig, s *core.Snapshot) {
 		s.ModelYear = core.Some(y, time.Time{})
 	}
 	// Every car_type the Owner API reads is battery electric.
-	s.BatteryElectric = core.Some(true, time.Time{})
+	s.Powertrain = core.Some(core.Electric, time.Time{})
 }
 
 // modelYear reads the model year at the VIN's tenth position (ISO 3779, on a 30-year

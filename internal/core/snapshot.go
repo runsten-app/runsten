@@ -84,6 +84,21 @@ const (
 	Offline SleepState = "offline"
 )
 
+// Powertrain is what moves the vehicle.
+type Powertrain string
+
+// Powertrains.
+const (
+	// Electric runs on its battery alone.
+	Electric Powertrain = "electric"
+	// PlugInHybrid has a battery charged on a plug and an engine, which may also move the
+	// SoC while driving (charge sustain, a charge mode).
+	PlugInHybrid Powertrain = "plugin_hybrid"
+	// OtherPowertrain is a combustion car, or a fuel the source names that Runsten does
+	// not know.
+	OtherPowertrain Powertrain = "other"
+)
+
 // Field identifies a value of Snapshot.
 type Field uint32
 
@@ -105,7 +120,7 @@ const (
 	FieldTripMeter
 	FieldConsumption
 	FieldCapacity
-	// FieldModel covers Brand, Family, ModelYear, Trim and BatteryElectric: what identifies
+	// FieldModel covers Brand, Family, ModelYear, Trim and Powertrain: what identifies
 	// the model, always reported together, by the same response as the capacity.
 	FieldModel
 	// FieldSleep covers Sleep: no other value depends on it.
@@ -157,9 +172,9 @@ type Snapshot struct {
 	// Trim is the vendor's badge of the powertrain and battery, when it tells one (Tesla's
 	// trim_badging: 74d, p74d, 50).
 	Trim Value[string]
-	// BatteryElectric tells whether the vehicle runs on its battery alone: false for a
-	// hybrid or a combustion car.
-	BatteryElectric Value[bool]
+	// Powertrain tells whether the vehicle runs on its battery alone, is a plug-in hybrid,
+	// or neither.
+	Powertrain Value[Powertrain]
 
 	// Sleep is whether the vehicle is awake, asleep or out of reach.
 	Sleep Value[SleepState]
@@ -197,6 +212,12 @@ type SoftwareUpdate struct {
 	// Duration is how long the vehicle expects its installation to take.
 	Duration Value[time.Duration]
 }
+
+// BatteryElectric is whether the vehicle is known to run on its battery alone.
+func (s Snapshot) BatteryElectric() bool { return s.Powertrain.OK && s.Powertrain.V == Electric }
+
+// PlugInHybrid is whether the vehicle is known to be a plug-in hybrid.
+func (s Snapshot) PlugInHybrid() bool { return s.Powertrain.OK && s.Powertrain.V == PlugInHybrid }
 
 // merge copies the fields covered by o.
 func (s *Snapshot) merge(o Snapshot) {
@@ -243,7 +264,7 @@ func (s *Snapshot) merge(o Snapshot) {
 		s.CapacityKWh = o.CapacityKWh
 	}
 	if set(FieldModel) {
-		s.Brand, s.Family, s.ModelYear, s.Trim, s.BatteryElectric = o.Brand, o.Family, o.ModelYear, o.Trim, o.BatteryElectric
+		s.Brand, s.Family, s.ModelYear, s.Trim, s.Powertrain = o.Brand, o.Family, o.ModelYear, o.Trim, o.Powertrain
 	}
 	if set(FieldSleep) {
 		s.Sleep = o.Sleep

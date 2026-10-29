@@ -5,10 +5,15 @@ import (
 	"time"
 )
 
+// details is a details response; a vehicle not electric is a plug-in hybrid.
 func details(kwh float64, family string, year int, electric bool) Snapshot {
+	pt := PlugInHybrid
+	if electric {
+		pt = Electric
+	}
 	return Snapshot{
 		Covers: FieldCapacity | FieldModel, CapacityKWh: Some(kwh, time.Time{}),
-		Family: Some(family, time.Time{}), ModelYear: Some(year, time.Time{}), BatteryElectric: Some(electric, time.Time{}),
+		Family: Some(family, time.Time{}), ModelYear: Some(year, time.Time{}), Powertrain: Some(pt, time.Time{}),
 	}
 }
 
@@ -80,8 +85,7 @@ func TestLatest(t *testing.T) {
 			},
 			check: func(t *testing.T, c Current) {
 				s := c.Snapshot
-				if s.CapacityKWh.V != 69 || s.Family.V != "EX30" || s.ModelYear.V != 2024 || !s.BatteryElectric.OK ||
-					!s.BatteryElectric.V {
+				if s.CapacityKWh.V != 69 || s.Family.V != "EX30" || s.ModelYear.V != 2024 || !s.BatteryElectric() {
 					t.Errorf("snapshot = %+v", s)
 				}
 				if f, k := c.Read(FieldModel); !f.Equal(m(0)) || !k.Equal(m(0)) {
@@ -96,7 +100,7 @@ func TestLatest(t *testing.T) {
 				rec(10, 10, Snapshot{Covers: FieldCapacity | FieldModel}),
 			},
 			check: func(t *testing.T, c Current) {
-				if s := c.Snapshot; s.CapacityKWh.OK || s.Family.OK || s.ModelYear.OK || s.BatteryElectric.OK {
+				if s := c.Snapshot; s.CapacityKWh.OK || s.Family.OK || s.ModelYear.OK || s.Powertrain.OK {
 					t.Errorf("snapshot = %+v", s)
 				}
 			},

@@ -43,11 +43,11 @@ func TestNormalizeFixtures(t *testing.T) {
 		// The Demo car, a diesel V60 II: its capacity is read, but it is no battery
 		// electric vehicle, which keeps its variant from being recognized.
 		{Details, "cv-vehicle.json", core.Snapshot{
-			Covers:          core.FieldCapacity | core.FieldModel,
-			CapacityKWh:     core.Some(78.0, time.Time{}),
-			Family:          core.Some("V60 II", time.Time{}),
-			ModelYear:       core.Some(2019, time.Time{}),
-			BatteryElectric: core.Some(false, time.Time{}),
+			Covers:      core.FieldCapacity | core.FieldModel,
+			CapacityKWh: core.Some(78.0, time.Time{}),
+			Family:      core.Some("V60 II", time.Time{}),
+			ModelYear:   core.Some(2019, time.Time{}),
+			Powertrain:  core.Some(core.OtherPowertrain, time.Time{}),
 		}},
 		{EnergyState, "energy-v2-state.json", core.Snapshot{
 			Covers: core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
@@ -171,16 +171,18 @@ func TestNormalizeDetails(t *testing.T) {
 			"EX30", `"batteryCapacityKWH":69.0,"modelYear":2024,"fuelType":"NONE","descriptions":{"model":"EX30"}`,
 			core.Snapshot{
 				CapacityKWh: core.Some(69.0, none), Family: core.Some("EX30", none), ModelYear: core.Some(2024, none),
-				BatteryElectric: core.Some(true, none),
+				Powertrain: core.Some(core.Electric, none),
 			},
 		},
 		{
 			"electric", `"modelYear":2024,"fuelType":"ELECTRIC","descriptions":{"model":"XC40"}`,
-			core.Snapshot{Family: core.Some("XC40", none), ModelYear: core.Some(2024, none), BatteryElectric: core.Some(true, none)},
+			core.Snapshot{Family: core.Some("XC40", none), ModelYear: core.Some(2024, none), Powertrain: core.Some(core.Electric, none)},
 		},
-		{"hybrid", `"fuelType":"PETROL/ELECTRIC"`, core.Snapshot{BatteryElectric: core.Some(false, none)}},
-		{"diesel", `"fuelType":"DIESEL"`, core.Snapshot{BatteryElectric: core.Some(false, none)}},
-		{"unknown fuel", `"fuelType":"HYDROGEN"`, core.Snapshot{BatteryElectric: core.Some(false, none)}},
+		{"plug-in hybrid", `"fuelType":"PETROL/ELECTRIC"`, core.Snapshot{Powertrain: core.Some(core.PlugInHybrid, none)}},
+		{"diesel plug-in hybrid", `"fuelType":"DIESEL/ELECTRIC"`, core.Snapshot{Powertrain: core.Some(core.PlugInHybrid, none)}},
+		{"two fuels, no electricity", `"fuelType":"PETROL/CNG"`, core.Snapshot{Powertrain: core.Some(core.OtherPowertrain, none)}},
+		{"diesel", `"fuelType":"DIESEL"`, core.Snapshot{Powertrain: core.Some(core.OtherPowertrain, none)}},
+		{"unknown fuel", `"fuelType":"HYDROGEN"`, core.Snapshot{Powertrain: core.Some(core.OtherPowertrain, none)}},
 		{"combustion capacity", `"batteryCapacityKWH":0.0`, core.Snapshot{}},
 		{"missing", ``, core.Snapshot{}},
 		{"null", `"modelYear":null,"fuelType":null,"descriptions":{"model":null}`, core.Snapshot{}},

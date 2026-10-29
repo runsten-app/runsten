@@ -1303,7 +1303,7 @@ func TestSources(t *testing.T) {
 
 func TestCapacity(t *testing.T) {
 	// As the catalog would: a battery electric EX30, of 64 kWh net.
-	ex30 := func(s Snapshot) (float64, bool) { return 64, s.Family.V == "EX30" && s.BatteryElectric.V }
+	ex30 := func(s Snapshot) (float64, bool) { return 64, s.Family.V == "EX30" && s.BatteryElectric() }
 	net := Value[Capacity]{V: Capacity{KWh: 64, Source: CapacityCatalogNet}, OK: true}
 	api := Value[Capacity]{V: Capacity{KWh: 69, Source: CapacityAPI}, OK: true}
 	tests := []struct {
@@ -1322,7 +1322,7 @@ func TestCapacity(t *testing.T) {
 		// The API's capacity is unknown, not the catalog's.
 		{
 			"the net capacity without the API's",
-			Snapshot{Covers: FieldModel, Family: Some("EX30", time.Time{}), BatteryElectric: Some(true, time.Time{})},
+			Snapshot{Covers: FieldModel, Family: Some("EX30", time.Time{}), Powertrain: Some(Electric, time.Time{})},
 			CapacityCatalogNet, ex30, net, 4.48, 12.8,
 		},
 		{"no capacity at all", Snapshot{Covers: FieldModel}, CapacityCatalogNet, ex30, Value[Capacity]{}, 0, 0},
