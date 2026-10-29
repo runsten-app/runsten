@@ -6,9 +6,10 @@ import {
   mdiEvPlugType2,
   mdiGauge,
   mdiHeartPulse,
+  mdiKeyboardOutline,
   mdiMapMarkerPath,
 } from '@mdi/js'
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
@@ -20,7 +21,7 @@ import { ShortcutsHelp, shortcutsEnabled, useShortcuts } from '@/features/keyboa
 import { periodQuery } from '@/features/filter-period'
 import { useConnectionSettings } from '@/features/manage-api-key'
 import { renewalDue } from '@/features/manage-polestar'
-import { VehicleSelect } from '@/features/select-vehicle'
+import { rememberedVehicle, rememberVehicle, VehicleMenu } from '@/features/select-vehicle'
 import { useHealth } from '@/features/view-health'
 import { useLimits } from '@/features/view-limits'
 import { CollectionNotice, useCollections } from '@/features/watch-collection'
@@ -36,8 +37,9 @@ import { extensionMenuItems, extensionNotices } from '../extensions'
 // and icons alone would say nothing. Every page tells first the extensions' notices, if
 // any; every page of a vehicle then warns when nothing new is read of it. The digits lead
 // to the tabs, in their order, "," to the settings; Shift held alone shows them, "?" lists
-// them. The settings, the connection and the user's own pages share one menu: the bar
-// keeps the vehicle. The connection is looked at when the reading fails, or the Polestar
+// them. The settings, the connection and the user's own pages share one menu. The bar
+// names the vehicle on every page, the account's included: the one seen last, else the
+// first; its menu leads to the account's other vehicles and to its settings. The connection is looked at when the reading fails, or the Polestar
 // credential is to be renewed: a dot on the menu and on it says so, from every page. A dot
 // on the health's tab says the vehicle needs attention (a tyre, the service, a warning),
 // from every page of the vehicle.
@@ -69,6 +71,20 @@ const from = computed(() => {
 const settings = { name: 'settings' }
 const connection = computed(() => ({ name: 'connection', query: from.value }))
 const { vehicles } = useCollections()
+watchEffect(() => {
+  if (props.vehicle) rememberVehicle(props.vehicle)
+})
+// The vehicle of the bar and of the digits: the page's, else, among the account's, the one
+// the connection was opened from, the one seen last, the first.
+const shown = computed(() => {
+  const listed = (id?: string) => (vehicles.value?.some((v) => v.id === id) ? id : undefined)
+  return (
+    props.vehicle ??
+    listed(from.value.vehicle) ??
+    listed(rememberedVehicle.value) ??
+    vehicles.value?.[0]?.id
+  )
+})
 const { connection: connectionSettings } = useConnectionSettings()
 // A vehicle the offer leaves unread is no failure: its notice tells it, on its pages.
 const now = useNow()
@@ -123,49 +139,71 @@ function sectionsOf(vehicle: string) {
   ]
 }
 const tabs = computed(() => (props.vehicle ? sectionsOf(props.vehicle) : []))
-// Beyond a vehicle's pages the digits still lead to its sections: the vehicle the page was
-// opened from, else the first one, as the home page does. "1" is the way back.
-const targets = computed(() => {
-  const vehicle = props.vehicle ?? from.value.vehicle ?? vehicles.value?.[0]?.id
-  return vehicle ? sectionsOf(vehicle) : []
-})
+// Beyond a vehicle's pages the digits still lead to the sections of the bar's vehicle: "1"
+// is the way back, as its menu is.
+const targets = computed(() => (shown.value ? sectionsOf(shown.value) : []))
 const { help, hints } = useShortcuts(() => targets.value.map((s) => s.to))
 const keys = (key: string) => (shortcutsEnabled.value ? key : undefined)
+// The key of the list of the keys, a character on every layout.
+const helpKey = '?'
 </script>
 
 <template>
   <v-app-bar flat color="background" height="64" class="app-bar">
     <div class="bar d-flex align-center ga-3 ga-sm-4">
-      <!-- On a phone with a vehicle, the mark alone: the picker needs the width. -->
+      <!-- On a phone with a vehicle, the mark alone: the vehicle's name needs the width. -->
       <router-link :to="{ name: 'home' }" class="brand">
         <span class="mark" aria-hidden="true"><span /><span /><span /><span /></span>
-        <span class="wordmark" :class="{ 'd-sr-only': xs && vehicle }">Runsten</span>
+        <span class="wordmark" :class="{ 'd-sr-only': xs && shown }">Runsten</span>
       </router-link>
-      <VehicleSelect v-if="vehicle" :vehicle class="picker" />
+      <VehicleMenu v-if="shown" :vehicle="shown" class="picker" />
       <v-spacer />
       <UserMenu :attention>
-        <v-list-item
-          :to="settings"
-          :prepend-icon="mdiCogOutline"
-          :title="t('settings.open')"
-          :aria-keyshortcuts="keys(',')"
-          class="settings"
-        >
-          <template v-if="shortcutsEnabled" #append>
-            <kbd class="menu-key" aria-hidden="true">,</kbd>
-          </template>
-        </v-list-item>
-        <v-list-item
-          :to="connection"
-          :prepend-icon="mdiConnection"
-          :title="t('connection.open')"
-          class="connection"
-        >
-          <template v-if="attention" #append>
-            <AttentionDot :label="attention" />
-          </template>
-        </v-list-item>
-        <component :is="item" v-for="(item, i) in extensionMenuItems" :key="i" />
+        <div role="listitem">
+          <v-list-item
+            :to="settings"
+            :prepend-icon="mdiCogOutline"
+            :title="t('settings.open')"
+            :aria-keyshortcuts="keys(',')"
+            class="settings"
+          >
+            <template v-if="shortcutsEnabled" #append>
+              <kbd class="menu-key" aria-hidden="true">,</kbd>
+            </template>
+          </v-list-item>
+        </div>
+        <div role="listitem">
+          <v-list-item
+            :to="connection"
+            :prepend-icon="mdiConnection"
+            :title="t('connection.open')"
+            class="connection"
+          >
+            <template v-if="attention" #append>
+              <AttentionDot :label="attention" />
+            </template>
+          </v-list-item>
+        </div>
+        <div v-for="(item, i) in extensionMenuItems" :key="i" role="listitem">
+          <component :is="item" />
+        </div>
+        <!-- A phone has no keys to list. -->
+        <template v-if="shortcutsEnabled && !xs" #own>
+          <div role="listitem">
+            <v-list-item
+              :prepend-icon="mdiKeyboardOutline"
+              :title="t('shortcuts.title')"
+              :aria-keyshortcuts="keys(helpKey)"
+              role="button"
+              class="shortcuts"
+              @click="help = true"
+            >
+              <template #append>
+                <kbd class="menu-key" aria-hidden="true">{{ helpKey }}</kbd>
+              </template>
+            </v-list-item>
+          </div>
+        </template>
       </UserMenu>
     </div>
   </v-app-bar>
@@ -176,6 +214,7 @@ const keys = (key: string) => (shortcutsEnabled.value ? key : undefined)
     color="background"
     :height="xs ? 64 : 68"
     :class="xs ? 'section-bar bottom' : 'section-bar top'"
+    tag="div"
     v-bind="xs ? { grow: true, active: true } : {}"
   >
     <!-- Links to pages, not tabs over panels: v-tabs would make them a tablist with a
@@ -278,14 +317,9 @@ const keys = (key: string) => (shortcutsEnabled.value ? key : undefined)
   text-transform: lowercase;
 }
 .picker {
-  flex: 0 1 26rem;
+  flex: 0 1 auto;
   min-inline-size: 0;
-}
-@media (max-width: 599.98px) {
-  /* The picker takes the width the spacer would. */
-  .picker {
-    flex: 100 1 auto;
-  }
+  max-inline-size: 26rem;
 }
 .section-bar.top {
   border-block-end: 1px solid rgb(var(--v-theme-line));
@@ -318,17 +352,11 @@ const keys = (key: string) => (shortcutsEnabled.value ? key : undefined)
   padding-inline: 2px;
   font-size: 0.75rem;
 }
-/* The keys, while Shift is held: over the corner of what they lead to. */
-.key-hint {
-  inset-block-start: auto;
-  inset-block-end: -12px;
-  inset-inline-end: 50%;
-  translate: 50% 0;
-}
+/* The keys, while Shift is held: at the icon's corner, the one the health's dot leaves. */
 .key-hint {
   position: absolute;
-  inset-block-start: 4px;
-  inset-inline-end: 4px;
+  inset-block-start: 6px;
+  inset-inline-end: calc(50% + 10px);
   min-inline-size: 1.25rem;
   padding: 0 4px;
   border-radius: var(--v-control-radius);
@@ -347,11 +375,19 @@ const keys = (key: string) => (shortcutsEnabled.value ? key : undefined)
   inset-block-start: 10px;
   inset-inline-start: calc(50% + 8px);
 }
-/* The settings' key, as a menu tells its shortcuts. */
+/* A key, as a menu tells its shortcuts: the shortcuts' list's, smaller. */
 .menu-key {
+  display: inline-block;
+  min-inline-size: 1.5rem;
+  padding: 0 6px;
+  border-radius: var(--v-control-radius);
+  background: rgb(var(--v-theme-surface-variant));
+  color: rgb(var(--v-theme-on-surface));
   font-family: inherit;
   font-size: 0.75rem;
-  color: rgb(var(--v-theme-text-secondary));
+  font-weight: 500;
+  line-height: 1.375rem;
+  text-align: center;
 }
 @media (max-width: 599.98px) {
   .bar {

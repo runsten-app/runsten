@@ -160,7 +160,56 @@ describe('AppShell', () => {
     items.push({ render: () => h('a', { class: 'v-list-item extension-item', href: '/plans' }) })
     const { link } = await shell({}, '/', 'extension-item')
     expect(link?.getAttribute('href')).toBe('/plans')
-    expect(link?.previousElementSibling?.classList).toContain('connection')
+    // Each in a listitem of its own, as the menu's rows.
+    expect(link?.parentElement?.getAttribute('role')).toBe('listitem')
+    expect(link?.parentElement?.previousElementSibling?.querySelector('.connection')).not.toBeNull()
+  })
+
+  // The pages under a vehicle rely on the bar to name it, the account's keep it.
+  it('names the vehicle in the bar, on its pages and beyond them', async () => {
+    const [, second, third] = vehicles.items
+    const router = testRouter()
+    await router.push(`/vehicles/${third?.id}`)
+    const onIts = mountWith(AppShell, { props: { vehicle: third?.id }, router })
+    await flushPromises()
+    expect(onIts.wrapper.find('button.vehicle-menu').text()).toBe(
+      'EX30 Single Motor Extended Range · 2024',
+    )
+    onIts.wrapper.unmount()
+
+    // The one seen last, not the first.
+    await router.push('/settings')
+    const beyond = mountWith(AppShell, { router })
+    await flushPromises()
+    expect(beyond.wrapper.find('button.vehicle-menu').text()).toBe(
+      'EX30 Single Motor Extended Range · 2024',
+    )
+    expect(beyond.wrapper.find('nav[aria-label="Vehicle"]').exists()).toBe(false)
+    beyond.wrapper.unmount()
+
+    // One the connection was opened from comes first.
+    await router.push(`/connection?vehicle=${second?.id}`)
+    const connection = mountWith(AppShell, { router })
+    await flushPromises()
+    expect(connection.wrapper.find('button.vehicle-menu').text()).toBe(second?.vin)
+  })
+
+  it('names no vehicle without one', async () => {
+    fetchVehicles.mockResolvedValue([])
+    const { wrapper } = await shell()
+    expect(wrapper.find('button.vehicle-menu').exists()).toBe(false)
+    expect(wrapper.find('.wordmark').classes()).not.toContain('d-sr-only')
+  })
+
+  // One banner: the tabs' bar is a navigation, not a second header.
+  it.each([false, true])('keeps the tabs out of a header, on a phone: %s', async (xs) => {
+    display.xs = xs
+    const router = testRouter()
+    await router.push('/vehicles/v1')
+    const { wrapper } = mountWith(AppShell, { props: { vehicle: 'v1' }, router })
+    await flushPromises()
+    expect(wrapper.findAll('header')).toHaveLength(1)
+    expect(wrapper.find('header nav[aria-label="Vehicle"]').exists()).toBe(false)
   })
 
   it('warns of nothing without a vehicle', async () => {
@@ -233,6 +282,24 @@ describe('AppShell shortcuts', () => {
     expect(link?.getAttribute('aria-keyshortcuts')).toBe(',')
     expect(link?.querySelector('.menu-key')?.getAttribute('aria-hidden')).toBe('true')
   })
+
+  it('opens the list of the keys from the menu, with its own key', async () => {
+    const { wrapper } = await shell()
+    const item = [...document.querySelectorAll<HTMLElement>('.shortcuts')].at(-1)
+    expect(item?.getAttribute('role')).toBe('button')
+    expect(item?.getAttribute('aria-keyshortcuts')).toBe('?')
+    expect(item?.textContent).toContain('Keyboard shortcuts')
+    item?.click()
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'ShortcutsHelp' }).props('modelValue')).toBe(true)
+  })
+
+  // A phone has no keys to list.
+  it('lists no keys on a phone', async () => {
+    display.xs = true
+    await shell()
+    expect(document.querySelector('.v-overlay--active .shortcuts')).toBeNull()
+  })
 })
 
 describe('AppShell shortcuts beyond a vehicle', () => {
@@ -251,11 +318,27 @@ describe('AppShell shortcuts beyond a vehicle', () => {
   })
 
   it('lead to the vehicle the connection was opened from', async () => {
+    const second = vehicles.items[1]?.id
     const router = testRouter()
-    await router.push('/connection?vehicle=v2')
+    await router.push(`/connection?vehicle=${second}`)
     mountWith(AppShell, { router })
     await flushPromises()
     press('3', 'Digit3')
-    await vi.waitFor(() => expect(router.currentRoute.value.fullPath).toBe('/vehicles/v2/trips'))
+    await vi.waitFor(() =>
+      expect(router.currentRoute.value.fullPath).toBe(`/vehicles/${second}/trips`),
+    )
+  })
+
+  // A vehicle the account does not have (deleted, a link from elsewhere) is not taken.
+  it('lead to a vehicle of the account when the connection names another', async () => {
+    const router = testRouter()
+    await router.push('/connection?vehicle=gone')
+    const { wrapper } = mountWith(AppShell, { router })
+    await flushPromises()
+    expect(wrapper.find('button.vehicle-menu').exists()).toBe(true)
+    press('1', 'Digit1')
+    await vi.waitFor(() =>
+      expect(router.currentRoute.value.path).toMatch(/^\/vehicles\/(?!gone)[^/]+$/),
+    )
   })
 })

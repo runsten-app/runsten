@@ -16,7 +16,8 @@
     }
   },
   "user": {
-    "menu": "Account: {username}"
+    "menu": "Account: {username}",
+    "signedInAs": "Signed in as {username}"
   },
   "common": {
     "unknown": "Unknown",
@@ -47,7 +48,7 @@
   },
   "vehicle": {
     "title": "Vehicle",
-    "select": "Vehicle",
+    "menu": "Vehicle: {label}",
     "notFound": "This vehicle does not exist.",
     "home": "Back to my vehicles"
   },

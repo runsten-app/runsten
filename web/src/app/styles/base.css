@@ -84,6 +84,22 @@ html {
 .v-dialog > .v-overlay__content > .v-card {
   border-radius: var(--v-tile-radius);
 }
+/* A menu is the period picker's raised surface: the dialogs' radius; on dark, where a
+   shadow hardly shows, the line instead. */
+.v-menu > .v-overlay__content > .v-list,
+.v-menu > .v-overlay__content > nav > .v-list {
+  border-radius: var(--v-tile-radius);
+  padding: 6px;
+  /* The icon beside its label, not a column away. */
+  --v-list-prepend-gap: 14px;
+}
+.v-theme--dark.v-menu > .v-overlay__content > .v-list,
+.v-theme--dark.v-menu > .v-overlay__content > nav > .v-list,
+.v-menu > .v-overlay__content > .v-list.v-theme--dark,
+.v-menu > .v-overlay__content > nav > .v-list.v-theme--dark {
+  box-shadow: none;
+  outline: 1px solid rgb(var(--v-theme-line));
+}
 
 /* A filled field without its underline at rest: a step of color tells it apart. The
    line comes back when it has the focus or an error. */

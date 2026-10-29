@@ -20,7 +20,7 @@ A Tesla tells its model, its model year (from its VIN) and its trim badge, but n
 
 ## Choosing
 
-In the vehicle's settings (the button by its name), choose the variant among those of its family (of its brand, for a Polestar of the Data Portal: the variant chosen sets its model), the candidates of the recognition first. Each shows its capacities and powers, and whether they come from the manufacturer or from public sources.
+In the vehicle's settings (the menu of its name in the bar), choose the variant among those of its family (of its brand, for a Polestar of the Data Portal: the variant chosen sets its model), the candidates of the recognition first. Each shows its capacities and powers, and whether they come from the manufacturer or from public sources.
 
 The choice outranks the recognition; **Automatic recognition** goes back to it.
 

@@ -34,7 +34,8 @@ const defaults = {
   VAutocomplete: field,
   VTextarea: field,
   VFileInput: field,
-  VMenu: { VList: { bgColor: 'surface' } },
+  // A menu floats: its shadow tells it from the tiles of its color (base.css: its radius).
+  VMenu: { VList: { bgColor: 'surface', elevation: 8 } },
   VDivider: { opacity: 1 },
 }
 

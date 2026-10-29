@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { mdiCarCog } from '@mdi/js'
 import { computed, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useDisplay } from 'vuetify'
 import { vehicleLabel } from '@/entities/vehicle'
 import { useVehicle } from '@/features/select-vehicle'
 import { isApiError } from '@/shared/api'
@@ -20,7 +18,6 @@ const RecentSummary = defineAsyncComponent(() =>
 
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
-const { xs } = useDisplay()
 const { vehicle: current, error } = useVehicle(() => props.vehicle)
 const label = computed(() => (current.value ? vehicleLabel(current.value) : null))
 </script>
@@ -32,8 +29,9 @@ const label = computed(() => (current.value ? vehicleLabel(current.value) : null
       <v-btn :to="{ name: 'home' }" variant="tonal" color="primary">{{ t('vehicle.home') }}</v-btn>
     </template>
     <template v-else>
-      <!-- The bar's picker already names the vehicle: the heading stays, for the page's
-           outline and a screen reader, but small, its VIN beside it. -->
+      <!-- The bar's menu already names the vehicle, and leads to its settings: the
+           heading stays, for the page's outline and a screen reader, but small, its VIN
+           beside it. -->
       <div class="heading d-flex flex-wrap align-center ga-3 mb-3">
         <div class="names d-flex flex-wrap align-baseline">
           <h1 class="text-title-large vin">{{ label ?? t('vehicle.title') }}</h1>
@@ -41,19 +39,6 @@ const label = computed(() => (current.value ? vehicleLabel(current.value) : null
             current.vin
           }}</span>
         </div>
-        <!-- Its label beyond a phone; on one, the icon with the same name. -->
-        <v-btn
-          :to="{ name: 'vehicleSettings', params: { vehicle } }"
-          :icon="xs ? mdiCarCog : undefined"
-          :prepend-icon="xs ? undefined : mdiCarCog"
-          :text="xs ? undefined : t('vehicleSettings.open')"
-          :aria-label="xs ? t('vehicleSettings.open') : undefined"
-          :title="xs ? t('vehicleSettings.open') : undefined"
-          :size="xs ? 'small' : undefined"
-          variant="flat"
-          color="surface"
-          class="vehicle-settings ms-auto"
-        />
       </div>
       <VehicleState :vehicle="vehicle">
         <template #aside>

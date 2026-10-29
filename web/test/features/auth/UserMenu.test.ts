@@ -45,6 +45,24 @@ describe('UserMenu', () => {
     wrapper.unmount()
   })
 
+  // Who is signed in first, then the account's, the reader's own and the sign-out apart.
+  it('groups its rows under who is signed in', async () => {
+    const { wrapper } = await opened()
+    const nav = [...document.querySelectorAll('nav')].at(-1)
+    expect(nav?.getAttribute('aria-label')).toBe('Account: admin')
+    const rows = [...(nav?.querySelector('[role="list"]')?.children ?? [])]
+    expect(rows.every((r) => r.getAttribute('role') === 'listitem')).toBe(true)
+    expect(rows[0]?.textContent?.trim()).toBe('Signed in as admin')
+    const kinds = rows.map((r) =>
+      r.querySelector('.v-divider')
+        ? '-'
+        : (r.querySelector('.v-list-item')?.className.match(/preferences|sign-out/)?.[0] ?? 'text'),
+    )
+    expect(kinds).toEqual(['text', '-', '-', 'preferences', '-', 'sign-out'])
+    expect(nav?.querySelector('.sign-out')?.getAttribute('role')).toBe('button')
+    wrapper.unmount()
+  })
+
   it('is an icon with the same name on a phone', async () => {
     display.xs = true
     const { wrapper, button } = await opened()

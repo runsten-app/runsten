@@ -50,7 +50,7 @@ async function page(vehicle: string) {
 }
 
 describe('VehiclePage', () => {
-  it('shows the vehicle, its state and the selector', async () => {
+  it('shows the vehicle, its state and its menu', async () => {
     mocks.fetchVehicle.mockResolvedValue(reauth)
     mocks.fetchVehicleState.mockResolvedValue(unknown)
     const w = await page(reauth.id)
@@ -58,16 +58,16 @@ describe('VehiclePage', () => {
     expect(w.find('h1').text()).toBe(reauth.vin)
     expect(w.findAll('.vin')).toHaveLength(1)
     expect(w.text()).toContain('Re-authentication required')
-    expect(w.findComponent({ name: 'VSelect' }).exists()).toBe(true)
+    expect(w.find('button.vehicle-menu').exists()).toBe(true)
     expect(mocks.fetchVehicleState).toHaveBeenCalledWith(reauth.id)
   })
 
-  it('has no selector with a single vehicle', async () => {
+  it('is named in the bar with a single vehicle too', async () => {
     mocks.fetchVehicles.mockResolvedValue([vehicles.items[0]])
     mocks.fetchVehicle.mockResolvedValue(vehicles.items[0])
     mocks.fetchVehicleState.mockResolvedValue(state)
     const w = await page(state.vehicle_id)
-    expect(w.findComponent({ name: 'VSelect' }).exists()).toBe(false)
+    expect(w.find('button.vehicle-menu').text()).toBe('XC40 Recharge Twin · 2021')
     expect(w.find('h1').text()).toBe('XC40 Recharge Twin · 2021')
     // The VIN beside the heading, which the bar's picker already names.
     expect(w.find('.heading span.vin').text()).toBe(vehicles.items[0]?.vin)
@@ -78,13 +78,12 @@ describe('VehiclePage', () => {
     expect(w.findComponent(RecentSummary).props('vehicle')).toBe(state.vehicle_id)
   })
 
-  it("leads to the vehicle's own settings", async () => {
+  // The bar's menu leads to the vehicle's settings: the page repeats no way there.
+  it("leaves the way to the vehicle's settings to the bar", async () => {
     mocks.fetchVehicle.mockResolvedValue(vehicles.items[0])
     mocks.fetchVehicleState.mockResolvedValue(state)
     const w = await page(state.vehicle_id)
-    const link = w.find('a.vehicle-settings')
-    expect(link.text()).toBe('Vehicle settings')
-    expect(link.attributes('href')).toBe(`/vehicles/${state.vehicle_id}/settings`)
+    expect(w.find('.v-main a[href$="/settings"]').exists()).toBe(false)
   })
 
   it('tells an unknown vehicle, with a way back', async () => {

@@ -11,7 +11,7 @@ Runsten reads your car from the day you connect it. What came before may be in a
 The import from Aximote is in **beta**: it follows Aximote's documentation, and has not yet been tried on many real accounts. If a trip or a charge looks wrong, tell us; importing again after a fix replaces what was imported.
 
 1. In the Aximote app, create a personal access token (it starts with `axm_pat_`).
-2. In Runsten, open the vehicle's settings (the button by its name), then **Imported history**, and under **Add history** paste it in **Aximote token**, then **Find my vehicles**.
+2. In Runsten, open the vehicle's settings (the menu of its name in the bar), then **Imported history**, and under **Add history** paste it in **Aximote token**, then **Find my vehicles**.
 3. Runsten lists the vehicles of your Aximote account. The one with this vehicle's VIN is chosen; when none has it, choose the one whose history this is: Runsten never guesses.
 4. **Import**. The import goes on in the background: you can leave the page. Its progress, then its report, show in the same place.
 
