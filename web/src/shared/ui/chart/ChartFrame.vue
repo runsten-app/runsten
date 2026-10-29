@@ -167,7 +167,19 @@ const data = computed(() => ({
       type: s.scatter ? ('scatter' as const) : undefined,
       backgroundColor: s.band || s.soft ? token('chart-band') : s.color,
       borderColor: s.color,
-      borderWidth: s.soft ? 1 : thin ? 1 : s.dashed ? 1.5 : props.kind === 'bar' ? 0 : 2.5,
+      borderWidth: s.soft
+        ? 1
+        : thin
+          ? 1
+          : s.dashed
+            ? 1.5
+            : props.kind === 'bar'
+              ? 0
+              : s.wide
+                ? 6
+                : 2.5,
+      // Chart.js draws the higher order first, under the others.
+      order: s.wide ? 1 : 0,
       borderDash: s.dashed ? [6, 4] : undefined,
       fill: s.band ? ('-1' as const) : false,
       // A line breaks where a value is unknown: a gap, never a zero.

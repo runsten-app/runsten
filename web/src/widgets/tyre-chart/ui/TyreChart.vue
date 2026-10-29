@@ -8,8 +8,8 @@ import { timeTicks, useFormat, useNow } from '@/shared/lib'
 import { ChartFrame, type Series } from '@/shared/ui/chart'
 
 // TyreChart draws the tyres' pressures over a window, as the vehicle gave them: one chart
-// per axle, its left and right tyres, and the pressure the vehicle recommends there,
-// dashed. A line breaks where nothing was read. The table for screen readers gives each
+// per axle, its left and right tyres, the left one wider so that the right one shows within
+// it when they are equal, and the pressure the vehicle recommends there, dashed. A line breaks where nothing was read. The table for screen readers gives each
 // day's (each month's over a year) lowest and highest pressure of each tyre.
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
@@ -81,19 +81,24 @@ function chartOf(a: Axle) {
       label: t('health.chart.left'),
       data: tyreLine(runs.value, (r) => inBar(a.left(r))),
       color: color('chart-1'),
+      wide: true,
     },
     {
       label: t('health.chart.right'),
       data: tyreLine(runs.value, (r) => inBar(a.right(r))),
       color: color('chart-2'),
     },
-    {
+  ]
+  // A vehicle that recommends no pressure (a Polestar of the Data Portal, so far) has no
+  // dashed line, nor its entry in the legend.
+  const recommended = readings.value.some((r) => a.recommended(r) !== null)
+  if (recommended)
+    lines.push({
       label: t('health.chart.recommended'),
       data: tyreLine(runs.value, (r) => inBar(a.recommended(r))),
       color: color('chart-3'),
       dashed: true,
-    },
-  ]
+    })
   const keys: string[] = []
   for (const r of readings.value) {
     const k = keyOf(r.at)
@@ -142,7 +147,8 @@ function chartOf(a: Axle) {
           lastRight: format(inBar(right.at(-1) ?? null)),
         })
       : null
-  return { lines, table, labels: keys.map(labelOf), summary }
+  const hint = recommended ? t('health.chart.hint') : t('health.chart.hintNoRecommended')
+  return { lines, table, labels: keys.map(labelOf), summary, hint }
 }
 const charts = computed(() => axles.value.map((a) => ({ axle: a, ...chartOf(a) })))
 
@@ -174,7 +180,7 @@ const formatPoint = (v: number) => f.dateTime(iso(v), now.value)
         kind="line"
         :title="c.axle.title"
         :summary="c.summary ?? t('health.chart.none')"
-        :hint="t('health.chart.hint')"
+        :hint="c.hint"
         :labels="c.labels"
         :series="c.lines"
         :table-series="c.table"

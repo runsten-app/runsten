@@ -408,6 +408,23 @@ describe('ChartFrame', () => {
     expect(datasets[2]?.borderDash).toEqual([6, 4])
   })
 
+  it('draws a wide line under the others, so that an equal one shows within it', () => {
+    const w = mounted({
+      kind: 'line',
+      series: [
+        { label: 'Left', data: [2.78, 2.78], color: '#5b8fc4', wide: true },
+        { label: 'Right', data: [2.78, 2.78], color: '#c4795b' },
+      ],
+    })
+    const datasets = (
+      w.findComponent({ name: 'Line' }).props('data') as {
+        datasets: { borderWidth: number; order: number }[]
+      }
+    ).datasets
+    expect(datasets.map((d) => d.order)).toEqual([1, 0])
+    expect(datasets[0]?.borderWidth).toBeGreaterThan(datasets[1]?.borderWidth ?? Infinity)
+  })
+
   it('shows each table series in its own format, and the y of a point', () => {
     const w = mounted({
       kind: 'line',
