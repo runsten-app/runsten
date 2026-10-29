@@ -3,9 +3,11 @@ import { mdiArrowLeft } from '@mdi/js'
 import { computed, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+import { useChargeInProgress } from '@/features/browse-charges'
 import { periodQuery } from '@/features/filter-period'
 import { AppShell } from '@/widgets/app-shell'
 import { ChargeDetails } from '@/widgets/charge-details'
+import { ChargeInProgressDetails } from '@/widgets/charge-in-progress'
 
 // The curve comes on demand, with Chart.js: the details show without waiting for it.
 const ChargeCurve = defineAsyncComponent(() =>
@@ -21,6 +23,11 @@ const list = computed(() => ({
   params: { vehicle: props.vehicle },
   query: periodQuery(route.query),
 }))
+
+// A charge in progress has the ID it will have once over: the same page follows it live,
+// then shows it derived, without leaving.
+const { charge: open, isPending } = useChargeInProgress(() => props.vehicle)
+const live = computed(() => (open.value?.id === props.id ? open.value : null))
 </script>
 
 <template>
@@ -34,7 +41,9 @@ const list = computed(() => ({
     >
       {{ t('charge.back') }}
     </v-btn>
-    <ChargeDetails :id="id" :vehicle="vehicle" />
-    <ChargeCurve :id="id" :vehicle="vehicle" class="mt-4" />
+    <v-progress-linear v-if="isPending" indeterminate :aria-label="t('charge.loading')" />
+    <ChargeInProgressDetails v-else-if="live" :charge="live" />
+    <ChargeDetails v-else :id="id" :vehicle="vehicle" />
+    <ChargeCurve v-if="!isPending" :id="id" :vehicle="vehicle" :live class="mt-4" />
   </AppShell>
 </template>

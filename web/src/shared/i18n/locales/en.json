@@ -79,7 +79,8 @@
       "power": "Power",
       "type": "Type",
       "cable": "Cable",
-      "target": "Target"
+      "target": "Target",
+      "follow": "Follow the charge in progress"
     },
     "vehicle": "Vehicle",
     "engine": "Engine",
@@ -287,6 +288,24 @@
     },
     "averagePower": "Average power",
     "energyImportedNote": "The energy from the charging power is the one the app gave; the one from the state of charge is Runsten's estimate."
+  },
+  "chargeInProgress": {
+    "label": "In progress",
+    "stopped": "Readings stopped",
+    "paused": "Paused",
+    "heading": "Now",
+    "title": "Charge in progress",
+    "since": "Since {time}",
+    "added": "{energy} so far",
+    "readAgo": "last read {age}",
+    "stoppedHelp": "Nothing was read after {time}: the charge may have ended since, unseen. It is shown as it was at its latest reading.",
+    "charging": "Charging for",
+    "readAt": "Latest reading",
+    "note": "Read again every minute, as the collector reads the vehicle while it charges. Once over, the charge is in the list, with its end.",
+    "power": "Power",
+    "energy": "Energy so far",
+    "cost": "Cost so far",
+    "costSoFar": "Estimated from the tariff of {place}, up to the latest reading"
   },
   "chargeCost": {
     "enter": "Enter the cost",

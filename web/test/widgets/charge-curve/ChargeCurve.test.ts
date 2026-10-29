@@ -5,6 +5,7 @@ import type { Series } from '@/shared/ui/chart'
 import { ChargeCurve } from '@/widgets/charge-curve'
 import charge from '@fixtures/charge.json'
 import charges from '@fixtures/charges.json'
+import inProgress from '@fixtures/charging.json'
 import series from '@fixtures/series.json'
 import { mountWith } from '@test/utils'
 
@@ -46,6 +47,19 @@ async function mounted(id = charge.id) {
 }
 
 describe('ChargeCurve', () => {
+  // A charge in progress is drawn up to its latest reading, without asking for a charge.
+  it('asks the readings of a charge in progress, up to its latest', async () => {
+    mocks.fetchSeries.mockResolvedValue(charging(6))
+    const live = inProgress.charge
+    mountWith(ChargeCurve, { props: { vehicle: 'v1', id: live?.id, live } })
+    await flushPromises()
+    expect(mocks.fetchCharge).not.toHaveBeenCalled()
+    expect(mocks.fetchSeries).toHaveBeenCalledWith('v1', {
+      from: '2026-09-28T22:35:00Z',
+      to: '2026-09-28T23:12:00.000Z',
+    })
+  })
+
   it("asks the charge's readings, between its bounds", async () => {
     mocks.fetchSeries.mockResolvedValue(charging(6))
     await mounted()

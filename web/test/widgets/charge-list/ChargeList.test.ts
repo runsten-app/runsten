@@ -1,19 +1,29 @@
 import { flushPromises } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '@/shared/api'
 import { ChargeList } from '@/widgets/charge-list'
 import charges from '@fixtures/charges.json'
 import imported from '@fixtures/charge-imported.json'
+import charging from '@fixtures/charging.json'
 import { heard, mountWith, seen, testRouter } from '@test/utils'
 
-const { fetchCharges } = vi.hoisted(() => ({ fetchCharges: vi.fn() }))
+const { fetchCharges, fetchChargeInProgress } = vi.hoisted(() => ({
+  fetchCharges: vi.fn(),
+  fetchChargeInProgress: vi.fn(),
+}))
 vi.mock('@/entities/charge', async (original) => ({
   ...(await original<typeof import('@/entities/charge')>()),
   fetchCharges,
+  fetchChargeInProgress,
 }))
 
 beforeEach(() => {
   fetchCharges.mockReset()
+  fetchChargeInProgress.mockReset()
+  fetchChargeInProgress.mockResolvedValue(null)
+})
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 const vehicle = 'v1'
@@ -28,6 +38,51 @@ async function mounted(props: Record<string, unknown> = {}) {
 }
 
 describe('ChargeList', () => {
+  // Its latest reading is at 23:12.
+  it('shows the charge in progress first, leading to its live details', async () => {
+    vi.useFakeTimers({ now: Date.parse('2026-09-28T23:13:00Z'), toFake: ['Date'] })
+    fetchChargeInProgress.mockResolvedValue(charging.charge)
+    fetchCharges.mockResolvedValue(charges)
+    const w = await mounted()
+    const live = w.find('.in-progress a.charge-in-progress-summary')
+    expect(live.attributes('href')).toBe(`/vehicles/${vehicle}/charges/${charging.charge?.id}`)
+    expect(live.find('.state').text()).toBe('In progress')
+    expect(plain(live.find('.figures').text())).toBe('AC · 40% → 52% · 9.6 kWh so far')
+    expect(plain(live.find('.cost').text())).toContain('€1.73')
+    expect(w.findAll('a.charge-summary')).toHaveLength(2)
+  })
+
+  it('tells when it was last read once the readings stopped', async () => {
+    vi.useFakeTimers({ now: Date.parse('2026-09-28T23:40:00Z'), toFake: ['Date'] })
+    fetchChargeInProgress.mockResolvedValue(charging.charge)
+    fetchCharges.mockResolvedValue({ items: [], next_cursor: null })
+    const w = await mounted()
+    const live = w.find('a.charge-in-progress-summary')
+    expect(live.find('.state').text()).toBe('Readings stopped')
+    expect(plain(live.find('.figures').text())).toBe(
+      'AC · 40% → 52% · 9.6 kWh so far · last read 28 min ago',
+    )
+    // Nothing else to list: no empty list told under it.
+    expect(w.find('.empty').exists()).toBe(false)
+  })
+
+  it('leaves it out of a period that ends before it', async () => {
+    fetchChargeInProgress.mockResolvedValue(charging.charge)
+    fetchCharges.mockResolvedValue(charges)
+    const w = await mounted({ from: '2026-09-01T00:00:00Z', to: '2026-09-28T00:00:00Z' })
+    expect(w.find('.in-progress').exists()).toBe(false)
+  })
+
+  // A charge that resumes is listed as it ended until the collector derives it again.
+  it('lists a charge of the same ID once, in progress', async () => {
+    const [first, second] = charges.items
+    fetchChargeInProgress.mockResolvedValue({ ...charging.charge, id: first?.id })
+    fetchCharges.mockResolvedValue({ items: [first, second], next_cursor: null })
+    const w = await mounted()
+    expect(w.findAll('a.charge-in-progress-summary')).toHaveLength(1)
+    expect(w.findAll('a.charge-summary')).toHaveLength(1)
+  })
+
   it('shows the charges, the reconstructed one without a duration', async () => {
     fetchCharges.mockResolvedValue(charges)
     const w = await mounted()
