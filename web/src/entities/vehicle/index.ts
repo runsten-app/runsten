@@ -1,4 +1,5 @@
 export {
+  deleteVehicle,
   fetchVariants,
   fetchVehicle,
   fetchVehicles,
