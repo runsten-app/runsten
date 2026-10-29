@@ -794,6 +794,13 @@
       "dark": "Sombre",
       "hint": "Automatique suit votre appareil."
     },
+    "clock": {
+      "title": "Horloge",
+      "auto": "Automatique",
+      "h23": "24 heures",
+      "h12": "12 heures",
+      "hint": "Automatique écrit les heures comme votre langue et votre région."
+    },
     "maps": {
       "title": "Cartes",
       "hint": "Les cartes viennent d'un service tiers, qui voit votre adresse IP et les zones affichées.",

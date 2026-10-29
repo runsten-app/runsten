@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { ShortcutsToggle } from '@/features/keyboard-shortcuts'
 import { AppearanceToggle } from '@/features/switch-appearance'
+import { ClockToggle } from '@/features/switch-clock'
 import { MapsToggle } from '@/features/switch-maps'
 import { LocaleSelect } from '@/features/switch-locale'
 import { mapTiles } from '@/shared/lib'
@@ -32,6 +33,13 @@ const maps = mapTiles() !== null
         {{ t('preferences.appearance.hint') }}
       </p>
       <AppearanceToggle />
+    </section>
+    <section aria-labelledby="preferences-clock-title" class="mt-8">
+      <h2 id="preferences-clock-title" class="text-title-large mb-1">
+        {{ t('preferences.clock.title') }}
+      </h2>
+      <p class="text-body-medium text-medium-emphasis mb-3">{{ t('preferences.clock.hint') }}</p>
+      <ClockToggle />
     </section>
     <section v-if="maps" aria-labelledby="preferences-maps-title" class="mt-8">
       <h2 id="preferences-maps-title" class="text-title-large mb-1">

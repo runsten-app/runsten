@@ -10,6 +10,7 @@ import {
 } from './calendar-names'
 import { formatCoordinates, type Position } from './coordinates'
 import { formatAge, formatBucket, formatDateTime } from './date-format'
+import { hourCycle, withHourCycle } from './hour-cycle'
 import {
   dayKey,
   formatBounds,
@@ -39,14 +40,17 @@ export type Spoken = { text: string; spoken: string }
 // ChargeCost is what a charge's cost needs to be shown: the API's, its currency a code.
 type ChargeCost = Amounts & { currency: string }
 
-// useFormat binds the formats to the chosen language, and shows a missing value as
+// useFormat binds the formats to the chosen language and clock, and shows a missing value as
 // "Unknown": never 0, never blank.
 export function useFormat() {
   const { t, locale } = useI18n()
   const intl = computed(() =>
-    isLocale(locale.value)
-      ? intlLocale(locale.value, navigator.languages, localeChosen.value)
-      : locale.value,
+    withHourCycle(
+      isLocale(locale.value)
+        ? intlLocale(locale.value, navigator.languages, localeChosen.value)
+        : locale.value,
+      hourCycle.value,
+    ),
   )
   const unknown = () => t('common.unknown')
   // amounts shows the bounds of a cost; unknown without them or without a currency.

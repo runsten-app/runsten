@@ -20,6 +20,13 @@ describe('PreferencesPage', () => {
     expect(i18n.global.locale.value).toBe('fr')
   })
 
+  it('offers the clock', async () => {
+    const { wrapper } = mountWith(PreferencesPage)
+    await flushPromises()
+    expect(wrapper.find('#preferences-clock-title').text()).toBe('Clock')
+    expect(wrapper.find('.clock-toggle').exists()).toBe(true)
+  })
+
   it('offers to hide the maps only where the instance has them', async () => {
     const without = mountWith(PreferencesPage).wrapper
     await flushPromises()

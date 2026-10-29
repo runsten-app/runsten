@@ -12,6 +12,7 @@ test('Preferences: from the user menu', async ({ page }, testInfo) => {
   await expect(page.getByRole('heading', { level: 2 })).toHaveText([
     'Language',
     'Appearance',
+    'Clock',
     'Keyboard shortcuts',
   ])
   await checkView(page, testInfo, 'preferences')

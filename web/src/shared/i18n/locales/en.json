@@ -794,6 +794,13 @@
       "dark": "Dark",
       "hint": "Automatic follows your device."
     },
+    "clock": {
+      "title": "Clock",
+      "auto": "Automatic",
+      "h23": "24-hour",
+      "h12": "12-hour",
+      "hint": "Automatic writes the times as your language and region do."
+    },
     "maps": {
       "title": "Maps",
       "hint": "The maps come from a third-party service, which sees your IP address and the areas shown.",
