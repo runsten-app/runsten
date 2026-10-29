@@ -101,11 +101,21 @@ test('Settings: the currency, then a place with a window across midnight, reopen
   })
 })
 
-// The settings lead to each vehicle's own, as the vehicle's page does.
-test("Settings: the Vehicles section leads to a vehicle's settings", async ({ page }) => {
+// The settings lead to each vehicle's own, as the vehicle's page does, from their
+// Vehicles area, which the areas' navigation leads to.
+test("Settings: the Vehicles area leads to a vehicle's settings", async ({ page }, testInfo) => {
   await signIn(page)
   const vehicle = await vehicleId(page)
   await page.goto('/settings')
+  const areas = page.getByRole('navigation', { name: 'Settings areas' })
+  await expect(areas.getByRole('link', { name: 'Costs' })).toHaveAttribute('aria-current', 'page')
+  await areas.getByRole('link', { name: 'Vehicles' }).click()
+  await expect(page).toHaveURL(/\/settings\/vehicles$/)
+  await expect(areas.getByRole('link', { name: 'Vehicles' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  await checkView(page, testInfo, 'settings-vehicles')
   const section = page.getByRole('region', { name: 'Vehicles' })
   await section.getByRole('link', { name: /EX-SIM · 2026/ }).click()
   await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/settings$`))
@@ -338,9 +348,11 @@ test('Vehicle settings: the model, then the variant of a Polestar', async ({ pag
 })
 
 // The account's data: the export is downloaded whole.
-test("Settings: the account's data, downloaded", async ({ page }) => {
+test("Settings: the account's data, downloaded", async ({ page }, testInfo) => {
   await signIn(page)
-  await page.goto('/settings')
+  await page.goto('/settings/account')
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText('Account')
+  await checkView(page, testInfo, 'settings-account')
   const section = page.getByRole('region', { name: 'Your data' })
   const download = page.waitForEvent('download')
   await section.getByRole('link', { name: 'Download my data' }).click()

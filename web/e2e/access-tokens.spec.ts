@@ -9,10 +9,8 @@ test('Settings: an access token reads the API, never writes, until revoked', asy
   const name = `E2E ${testInfo.project.name} ${Date.now()}`
   await signIn(page)
   const car = await vehicleId(page)
-  await page.goto('/settings')
-  const section = page.locator('section', {
-    has: page.getByRole('heading', { name: 'API access' }),
-  })
+  await page.goto('/settings/integrations')
+  const section = page.getByRole('region', { name: 'API access' })
   await section.getByRole('button', { name: 'New access token' }).click()
   await expect(page.getByLabel('Name', { exact: true })).toBeFocused()
   await page.getByLabel('Name', { exact: true }).fill(name)
