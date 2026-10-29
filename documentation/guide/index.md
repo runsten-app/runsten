@@ -16,7 +16,7 @@ Runsten reads your car from its manufacturer:
 
 ## State
 
-The car as last read: its state of charge and range, whether it is charging, its odometer and its last position. Each value tells when it was last checked and since when it holds, and is marked as old when it is. When the car's own latest measure is more than half an hour old (a parked Polestar sends its readings when it chooses), the page tells when it was.
+The car as last read: its state of charge and range, whether it is charging, its odometer and its last position. The battery comes first. A charge running (or discharging, or failing) takes a tile of its own beside it; otherwise one line under the battery's bar says whether the cable is connected and how the last charge ended. The vehicle's tile gives the odometer and the last position, beside the state of charge of the last seven days, and the last 30 days end the page. Each value tells when it was last checked and since when it holds, and is marked as old when it is. When the car's own latest measure is more than half an hour old (a parked Polestar sends its readings when it chooses), the page tells when it was.
 
 A warning shows on every page of the vehicle when nothing new is read of it, with what to do ([Connection](#connection)).
 

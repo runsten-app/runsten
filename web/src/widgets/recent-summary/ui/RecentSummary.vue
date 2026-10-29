@@ -98,9 +98,23 @@ function open(index: number) {
 </script>
 
 <template>
-  <section v-if="shown" class="recent-summary" aria-labelledby="recent-summary-title">
-    <div class="d-flex flex-wrap align-center justify-space-between ga-2 mb-3">
-      <h2 id="recent-summary-title" class="text-title-large">{{ t('recent.title') }}</h2>
+  <!-- One tile: the period's figures, then its distance by day; the totals alone where the
+       offer leaves out the statistics by interval. -->
+  <ChartFrame
+    v-if="shown && intervals.length > 1"
+    class="recent-summary distance"
+    kind="bar"
+    :title="t('recent.title')"
+    :summary="distance.summary"
+    :hint="t('recent.hint')"
+    :labels
+    :series="distance.series"
+    unit="km"
+    :interval-header="t('stats.bucket.dayHeader')"
+    :format="(v: number | null) => f.quantity(v, 'km')"
+    @select="(i: number) => open(i)"
+  >
+    <template #actions>
       <v-btn
         :to="{ name: 'stats', params: { vehicle }, query: days }"
         variant="text"
@@ -109,9 +123,9 @@ function open(index: number) {
       >
         {{ t('recent.stats') }}
       </v-btn>
-    </div>
+    </template>
     <!-- A <dl> holds div groups of dt and dd only. -->
-    <dl class="tiles mb-3">
+    <dl class="tiles">
       <div v-for="tile in tiles" :key="tile.key" :class="['tile', tile.key]">
         <dt class="label">{{ tile.label }}</dt>
         <dd>
@@ -119,33 +133,45 @@ function open(index: number) {
         </dd>
       </div>
     </dl>
-    <ChartFrame
-      v-if="intervals.length > 1"
-      class="distance"
-      kind="bar"
-      :title="t('stats.chart.distance.title')"
-      :summary="distance.summary"
-      :hint="t('recent.hint')"
-      :labels
-      :series="distance.series"
-      unit="km"
-      :interval-header="t('stats.bucket.dayHeader')"
-      :format="(v: number | null) => f.quantity(v, 'km')"
-      @select="(i: number) => open(i)"
-    />
-  </section>
+  </ChartFrame>
+  <v-card v-else-if="shown" class="recent-summary">
+    <v-card-title class="d-flex flex-wrap align-center ga-2">
+      <h2 class="title me-auto">{{ t('recent.title') }}</h2>
+      <v-btn
+        :to="{ name: 'stats', params: { vehicle }, query: days }"
+        variant="text"
+        color="primary"
+        class="open-stats"
+      >
+        {{ t('recent.stats') }}
+      </v-btn>
+    </v-card-title>
+    <v-card-text>
+      <dl class="tiles">
+        <div v-for="tile in tiles" :key="tile.key" :class="['tile', tile.key]">
+          <dt class="label">{{ tile.label }}</dt>
+          <dd>
+            <TileFigure :text="tile.value" :unknown="tile.value === f.unknown()" size="kpi" />
+          </dd>
+        </div>
+      </dl>
+    </v-card-text>
+  </v-card>
 </template>
 
 <style scoped>
+.title {
+  font: inherit;
+}
+/* The figures in a row of three over the chart, each on the tile's own ground: no tile of
+   their own, the chart's tile holds them. */
 .tiles {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 .tile {
-  padding: 20px;
-  border-radius: var(--v-tile-radius);
-  background: rgb(var(--v-theme-surface));
   min-width: 0;
 }
 .label {
@@ -159,13 +185,15 @@ dd {
 .distance :deep(.canvas) {
   height: 9rem;
 }
+/* On a phone, the consumption, the widest figure, takes a row of its own: three columns
+   cut its unit short. */
 @media (max-width: 599.98px) {
   .tiles {
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .tile {
-    padding: 16px;
-    border-radius: var(--v-tile-radius-phone);
+  .consumption {
+    grid-column: 1 / -1;
+    order: 1;
   }
 }
 </style>

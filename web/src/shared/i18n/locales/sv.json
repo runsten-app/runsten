@@ -73,6 +73,7 @@
     "range": "Räckvidd",
     "capacity": "Batterikapacitet",
     "capacityFromVariant": "Användbar, enligt varianten",
+    "chooseVariant": "Välj dess variant",
     "charging": {
       "title": "Laddning",
       "status": "Status",
@@ -82,7 +83,6 @@
       "target": "Mål"
     },
     "vehicle": "Fordon",
-    "engine": "Motor",
     "odometer": "Mätarställning",
     "map": "Karta över positionen",
     "position": "Senaste position",
@@ -123,14 +123,7 @@
     },
     "type": {
       "none": "Ingen"
-    },
-    "power": {
-      "none": "Ingen"
     }
-  },
-  "engine": {
-    "running": "Igång",
-    "stopped": "Avstängd"
   },
   "nav": {
     "label": "Fordon",
@@ -715,7 +708,7 @@
     "soc": "Laddningsnivå",
     "driving": "Körning",
     "charging": "Laddning",
-    "hint": "Banden är resorna och laddningarna: ljusa där de kan ha skett, starkare där de säkert skedde. Mellan dem stod fordonet parkerat. Linjen bryts där inget lästes.",
+    "hint": "Band: resor och laddningar, starkare där de säkert skedde. Linjen bryts där inget lästes.",
     "summary": "Under de senaste 7 dagarna, från {first} till {last}, mellan {min} och {max}; {trips} och {charges}.",
     "none": "Inget lästes under de senaste 7 dagarna.",
     "tripCount": "ingen resa | {n} resa | {n} resor",

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 import { vuetify } from '@/app/providers/vuetify'
 import { ChartFrame } from '@/shared/ui/chart'
 import { mountWith } from '@test/utils'
@@ -32,6 +33,28 @@ describe('ChartFrame', () => {
     const canvas = w.find('canvas')
     expect(canvas.attributes('role')).toBe('img')
     expect(canvas.attributes('aria-label')).toBe('Distance: 30 km in all.')
+  })
+
+  it('takes an action beside its heading and figures above the chart', () => {
+    const host = {
+      render: () =>
+        h(
+          ChartFrame,
+          { ...props, kind: 'bar' as const },
+          {
+            actions: () => h('a', { class: 'action', href: '/stats' }, 'See the statistics'),
+            default: () => h('p', { class: 'figures' }, '30 km'),
+          },
+        ),
+    }
+    const w = mountWith(host).wrapper
+    const title = w.find('.v-card-title')
+    expect(title.find('h2').text()).toBe('Distance')
+    expect(title.find('a.action').text()).toBe('See the statistics')
+    // The figures come first in the tile's body, before the canvas.
+    const text = w.find('.v-card-text').element
+    expect(text.firstElementChild?.className).toBe('figures')
+    expect(w.findAll('h2')).toHaveLength(1)
   })
 
   it('holds the same figures in a table for screen readers only, unknown told', () => {
