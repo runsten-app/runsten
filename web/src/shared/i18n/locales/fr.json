@@ -748,6 +748,19 @@
     "title": "Réglages",
     "loading": "Chargement des réglages",
     "error": "Les réglages n'ont pas pu être chargés. Réessayez dans un instant.",
+    "areas": "Rubriques des réglages",
+    "costs": {
+      "title": "Coûts",
+      "help": "Ce que coûtent vos charges : la devise de tous les prix, et le tarif de chaque lieu."
+    },
+    "integrations": {
+      "title": "Intégrations",
+      "help": "D'autres programmes lisent vos véhicules : un script ou un assistant par l'API, Home Assistant par votre broker MQTT."
+    },
+    "account": {
+      "title": "Compte",
+      "help": "Les données de votre compte, et le Runsten qui le fait tourner."
+    },
     "currency": {
       "title": "Devise",
       "label": "Devise",

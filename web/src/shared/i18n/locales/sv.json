@@ -748,6 +748,19 @@
     "title": "Inställningar",
     "loading": "Läser in inställningarna",
     "error": "Inställningarna kunde inte läsas in. Försök igen om en stund.",
+    "areas": "Inställningsområden",
+    "costs": {
+      "title": "Kostnader",
+      "help": "Vad dina laddningar kostar: valutan för alla priser och tariffen för varje plats."
+    },
+    "integrations": {
+      "title": "Integrationer",
+      "help": "Låt andra program läsa dina fordon: ett skript eller en assistent via API:et, Home Assistant via din MQTT-broker."
+    },
+    "account": {
+      "title": "Konto",
+      "help": "Ditt kontos data och den Runsten det körs på."
+    },
     "currency": {
       "title": "Valuta",
       "label": "Valuta",

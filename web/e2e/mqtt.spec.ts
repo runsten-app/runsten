@@ -6,8 +6,8 @@ test('Settings: an MQTT broker is set, changed and removed', async ({ page }, te
   await signIn(page)
   await exclusive('mqtt', async () => {
     await page.request.delete('/api/v1/mqtt')
-    await page.goto('/settings')
-    const section = page.locator('section', { has: page.getByRole('heading', { name: 'MQTT' }) })
+    await page.goto('/settings/integrations')
+    const section = page.getByRole('region', { name: 'MQTT' })
 
     // A wrong URL: told before sending, in a summary that leads to the field.
     await section.getByLabel('Broker URL').fill('homeassistant.local')

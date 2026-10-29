@@ -4,7 +4,7 @@ description: "Places, tariffs with off-peak hours, the cost of each charge as a 
 
 # Places, tariffs and costs
 
-Costs appear once a currency is chosen in **Settings**. Every price and cost is in it, without conversion; once a price or an entered cost exists, it can no longer change.
+Costs appear once a currency is chosen in **Settings → Costs**. Every price and cost is in it, without conversion; once a price or an entered cost exists, it can no longer change.
 
 ## Places
 
@@ -38,4 +38,4 @@ The power bounds how much energy each price can take, and narrows the range: the
 
 ## Costs without a charge
 
-When the charges are worked out again (after an update or a rebuild), an entered cost may no longer match exactly one charge. It is never lost: **Settings → Costs without a charge** lists it, to attach to one of the charges around its time, or delete. Until then, the statistics show it apart, never in the total, where it would count its charge twice.
+When the charges are worked out again (after an update or a rebuild), an entered cost may no longer match exactly one charge. It is never lost: **Settings → Costs**, under **Costs without a charge**, lists it, to attach to one of the charges around its time, or delete. Until then, the statistics show it apart, never in the total, where it would count its charge twice.
