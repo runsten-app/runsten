@@ -43,8 +43,12 @@ describe('TyreChart', () => {
     const w = await mounted()
     const [front, rear] = w.findAllComponents({ name: 'ChartFrame' })
     expect(front?.props('title')).toBe('Front tyres')
-    const [left, , recommended] = rear?.props('series') as Series[]
+    const [left, right, recommended] = rear?.props('series') as Series[]
     expect((left?.data as Point[]).map((p) => p.y)).toEqual([2.7, 2.7, null, 2.48, 2.48])
+    // The left one under the right one, which shows within it when they are equal.
+    expect(left?.wide).toBe(true)
+    expect(right?.wide).toBeUndefined()
+    expect(rear?.props('hint')).toContain('The dashed line')
     expect(recommended).toMatchObject({ label: 'Recommended', dashed: true })
     expect((recommended?.data as Point[])[0]?.y).toBe(2.9)
     // One day in the table: the lowest and the highest of each tyre.
@@ -54,6 +58,24 @@ describe('TyreChart', () => {
     expect(plain(rear?.props('summary'))).toBe(
       'From 2.7 bar to 2.48 bar on the left, from Unknown to Unknown on the right.',
     )
+  })
+
+  it('has no recommended pressure where the vehicle gives none', async () => {
+    mocks.fetchTyres.mockResolvedValue({
+      ...tyres,
+      runs: tyres.runs.map((run) => ({
+        readings: run.readings.map((r) => ({
+          ...r,
+          recommended_front_kpa: null,
+          recommended_rear_kpa: null,
+        })),
+      })),
+    })
+    const w = await mounted()
+    for (const chart of w.findAllComponents({ name: 'ChartFrame' })) {
+      expect((chart.props('series') as Series[]).map((s) => s.label)).toEqual(['Left', 'Right'])
+      expect(chart.props('hint')).not.toContain('dashed')
+    }
   })
 
   it('asks another window when chosen, split by month over a year', async () => {

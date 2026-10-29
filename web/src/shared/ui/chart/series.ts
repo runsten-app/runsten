@@ -11,6 +11,9 @@ export type Series = {
   scatter?: boolean
   // dashed: a reference to compare against, not data of its own.
   dashed?: boolean
+  // wide: a line drawn wider and under the others, so that another one of the same values
+  // still shows, within it (two tyres of one pressure).
+  wide?: boolean
   // band: filled towards the previous series, its lower bound (an interquartile range),
   // which is an edge: both are thin lines, the fill in the band color.
   band?: boolean
