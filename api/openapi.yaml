@@ -636,6 +636,143 @@ components:
         - capacity_kwh
         - capacity_source
       type: object
+    ChargeInProgress:
+      additionalProperties: false
+      properties:
+        address:
+          description: As a charge's.
+          type:
+            - string
+            - "null"
+        capacity_kwh:
+          description: "The battery capacity the energy estimate rests on, as of the readings that ended the event. null when none was known, and for an event derived before Runsten recorded it: a rebuild of the derived data gives it."
+          exclusiveMinimum: 0
+          format: double
+          type:
+            - number
+            - "null"
+        capacity_source:
+          description: "Where capacity_kwh comes from. catalog_net: the net capacity of the vehicle's variant in Runsten's catalog; an assumption, the state of charge running from 0 to 100 % over the usable capacity. api: the capacity the vendor reports, gross as far as the published values tell, when the catalog does not know the variant or its net capacity. null with capacity_kwh."
+          oneOf:
+            - enum:
+                - catalog_net
+                - api
+              type: string
+            - type: "null"
+        charging_at:
+          description: The latest reading of the charge charging.
+          format: date-time
+          pattern: Z$
+          type: string
+        cost:
+          description: What the charge cost so far, from the tariff of its place, as a charge's up to read_at; null when unknown. A charge in progress takes no entered cost.
+          oneOf:
+            - $ref: "#/components/schemas/Cost"
+            - type: "null"
+        detected_at:
+          description: The first reading that revealed the charge.
+          format: date-time
+          pattern: Z$
+          type: string
+        energy_measured_kwh:
+          description: The energy the vehicle measured into its battery so far, from its own counter (a Tesla's); null for a vehicle without one.
+          format: double
+          type:
+            - number
+            - "null"
+        energy_power_kwh:
+          description: "The other estimate: the charging power integrated over the readings so far."
+          format: double
+          type:
+            - number
+            - "null"
+        energy_soc_kwh:
+          description: "The energy added so far, one of two estimates: ΔSoC × capacity_kwh, from start_soc_pct to soc_pct."
+          format: double
+          type:
+            - number
+            - "null"
+        id:
+          description: "The ID the charge will have in the list once over: its detection time, to the microsecond. Treat it as opaque."
+          examples:
+            - "2026-09-28T18:30:00.000000Z"
+          type: string
+        place:
+          description: As a charge's.
+          oneOf:
+            - $ref: "#/components/schemas/PlaceRef"
+            - type: "null"
+        position:
+          oneOf:
+            - $ref: "#/components/schemas/Position"
+            - type: "null"
+        power_w:
+          description: The charging power at read_at, in W.
+          format: double
+          type:
+            - number
+            - "null"
+        read_at:
+          description: "The latest reading of the vehicle's charge, which the values below are: later than charging_at while the charge is paused (the vehicle says it is scheduled, or in error), the cable still connected. Far behind the present, the readings stopped: the charge may have ended since, unseen."
+          format: date-time
+          pattern: Z$
+          type: string
+        soc_pct:
+          description: The state of charge at read_at, in %.
+          format: double
+          type:
+            - number
+            - "null"
+        sources:
+          description: The sources of the charge's readings so far, sorted, as an event's.
+          examples:
+            - - volvo
+          items:
+            type: string
+          minItems: 1
+          type: array
+        start:
+          $ref: "#/components/schemas/Bounds"
+          description: When the charge started.
+        start_soc_pct:
+          format: double
+          type:
+            - number
+            - "null"
+        target_soc_pct:
+          format: double
+          type:
+            - number
+            - "null"
+        type:
+          oneOf:
+            - enum:
+                - AC
+                - DC
+              type: string
+            - type: "null"
+      required:
+        - id
+        - detected_at
+        - sources
+        - start
+        - charging_at
+        - read_at
+        - type
+        - start_soc_pct
+        - soc_pct
+        - target_soc_pct
+        - power_w
+        - energy_soc_kwh
+        - energy_power_kwh
+        - energy_measured_kwh
+        - position
+        - place
+        - address
+        - cost
+        - capacity_kwh
+        - capacity_source
+      type: object
     ChargeStats:
       additionalProperties: false
       properties:
@@ -835,6 +972,17 @@ components:
         - type
         - power_w
         - target_soc_pct
+      type: object
+    ChargingNow:
+      additionalProperties: false
+      properties:
+        charge:
+          description: The charge open at the vehicle's latest reading; null when none is.
+          oneOf:
+            - $ref: "#/components/schemas/ChargeInProgress"
+            - type: "null"
+      required:
+        - charge
       type: object
     Check:
       additionalProperties: false
@@ -6255,6 +6403,63 @@ paths:
       summary: Enter the cost of a charge
       tags:
         - costs
+  /vehicles/{vehicle}/charging:
+    get:
+      description: "The charge open at the vehicle's latest reading, as it stands: what it added so far, its power and its cost. It is not an event: the list of charges, its cursors and the statistics never count it. Once over, it is in the list under the same id, and this answers null. Read again every minute, as the collector writes; read_at tells how fresh it is."
+      operationId: getChargeInProgress
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChargingNow"
+          description: The charge in progress, or null.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: The charge in progress of a vehicle
+      tags:
+        - events
   /vehicles/{vehicle}/health:
     get:
       description: "The latest the vehicle told of its tyres (their pressures and warnings, and the recommended pressures), its next service, and its warnings (fluids, low voltage battery, exterior lights). What is told depends on the vehicle's source: a Volvo reports a warning per tyre and no pressure; a Polestar's credential reads the health only when it was granted its domain. Read every hour."
