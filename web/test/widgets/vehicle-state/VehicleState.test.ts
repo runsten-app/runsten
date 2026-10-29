@@ -134,6 +134,24 @@ describe('VehicleState', () => {
     expect(w.find('.charge-line .details').exists()).toBe(true)
   })
 
+  it('takes a power above zero without a status for a charge, not a zero one', async () => {
+    const power = (value: number) => ({
+      ...state,
+      charging: {
+        ...state.charging,
+        status: null,
+        power_w: { ...state.charging.cable, value },
+      },
+    })
+    let w = await mounted(power(7400))
+    expect(w.find('.v-card[data-test="charging"]').exists()).toBe(true)
+    expect(reading(w, 'Power').value).toBe('7.4 kW')
+    w.unmount()
+    w = await mounted(power(0))
+    expect(w.find('.charge-line').exists()).toBe(true)
+    expect(() => reading(w, 'Power')).toThrow()
+  })
+
   it('dates the line by the values it shows, not by a power it does not', async () => {
     const at = (t: string) => ({ reported_at: null, fetched_at: t, checked_at: t })
     const w = await mounted({
