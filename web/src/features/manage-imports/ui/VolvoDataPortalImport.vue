@@ -198,7 +198,9 @@ const lines = computed(() => {
       >
         {{ t('imports.portal.start') }}
       </v-btn>
-      <v-btn variant="text" class="cancel ms-2" @click="closeForm">
+      <!-- Not while the files are sent: an import closed and opened again would take the
+           earlier one's end for its own. -->
+      <v-btn variant="text" :disabled="isPending" class="cancel ms-2" @click="closeForm">
         {{ t('imports.portal.cancel') }}
       </v-btn>
     </v-form>

@@ -103,6 +103,20 @@ describe('VolvoDataPortalImport', () => {
     expect(keys).toContainEqual(tripKeys.lists('v1'))
   })
 
+  it('keeps the form while the files are sent', async () => {
+    const { w } = await mounted()
+    await choose(w, 'trips', trips)
+    let finish: (r: FileImport) => void = () => {}
+    api.importVolvoDataPortal.mockReturnValue(new Promise<FileImport>((r) => (finish = r)))
+    await w.find('.portal-form').trigger('submit')
+    await flushPromises()
+    expect(w.find('.portal-form .cancel').attributes('disabled')).toBeDefined()
+    finish(report)
+    await flushPromises()
+    expect(w.find('.portal-form').exists()).toBe(false)
+    expect(status(w)).toBe('Import finished')
+  })
+
   it('imports the trips alone', async () => {
     const { w } = await mounted()
     await choose(w, 'trips', trips)
