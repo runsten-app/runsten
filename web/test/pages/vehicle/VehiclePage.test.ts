@@ -78,13 +78,12 @@ describe('VehiclePage', () => {
     expect(w.findComponent(RecentSummary).props('vehicle')).toBe(state.vehicle_id)
   })
 
-  it("leads to the vehicle's own settings", async () => {
+  // The bar's menu leads to the vehicle's settings: the page repeats no way there.
+  it("leaves the way to the vehicle's settings to the bar", async () => {
     mocks.fetchVehicle.mockResolvedValue(vehicles.items[0])
     mocks.fetchVehicleState.mockResolvedValue(state)
     const w = await page(state.vehicle_id)
-    const link = w.find('a.vehicle-settings')
-    expect(link.text()).toBe('Vehicle settings')
-    expect(link.attributes('href')).toBe(`/vehicles/${state.vehicle_id}/settings`)
+    expect(w.find('.v-main a[href$="/settings"]').exists()).toBe(false)
   })
 
   it('tells an unknown vehicle, with a way back', async () => {

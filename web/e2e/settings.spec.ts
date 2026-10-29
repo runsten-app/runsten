@@ -124,12 +124,13 @@ test("Settings: the Vehicles area leads to a vehicle's settings", async ({ page 
 
 // The simulated vehicle reports a family the catalog does not have: its settings say so,
 // with what the vehicle reports, and offer no variant (the choice is tested in Vitest).
-test('Vehicle settings: a family the catalog lacks, from the vehicle page', async ({
+test("Vehicle settings: a family the catalog lacks, from the bar's vehicle menu", async ({
   page,
 }, testInfo) => {
   await signIn(page)
   const vehicle = await vehicleId(page)
   await page.goto(`/vehicles/${vehicle}`)
+  await page.locator('button.vehicle-menu').click()
   await page.getByRole('link', { name: 'Vehicle settings' }).click()
   await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/settings$`))
   // Two areas, each a link of the sub-navigation: the model first.
