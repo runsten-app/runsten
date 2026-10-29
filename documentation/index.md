@@ -22,7 +22,7 @@ Runsten works end to end, but is young: expect changes between versions. Polesta
 
 - **The collector** polls the manufacturer's API (the Volvo Cars API, Polestar's Data Portal, Tesla's Owner API): every 10 minutes while the car is parked, every minute while it drives or charges; a Tesla at its own pace, so that it can sleep. It stores every response as it came, and the Volvo ID tokens, the Polestar credential and the Tesla refresh token encrypted.
 - **Trips and charges** are worked out from those responses. A trip or a charge that happened while nothing could be read (an outage of the API, an exhausted quota) is still found, from the odometer or the state of charge, and marked as **reconstructed**. Since the responses are kept, the whole history can be worked out again after an update that improves it.
-- **The web interface** shows the car's state, its trips and charges, their costs from your tariffs, statistics and an estimate of the battery's capacity. It works on a phone as well as a desktop, in English, French and Swedish, light or dark.
+- **The web interface** shows the car's state, its trips and charges, their costs from your tariffs, statistics and an estimate of the battery's capacity. It works on a phone as well as a desktop, where it installs on the home screen like an app ([Installing it on a phone](./guide/index.md#installing-it-on-a-phone)), in English, French and Swedish, light or dark.
 - **The API** (`/api/v1`) serves the same data to your own scripts.
 
 ## Figures you can trust

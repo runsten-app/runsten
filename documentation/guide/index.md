@@ -1,5 +1,5 @@
 ---
-description: "The web interface of Runsten: the supported cars, the state of the car, the connection, your Volvo key, settings and preferences, privacy and accessibility."
+description: "The web interface of Runsten: the supported cars, the app on a phone's home screen, the state of the car, the connection, your Volvo key, settings and preferences, privacy and accessibility."
 ---
 
 # The web interface
@@ -13,6 +13,15 @@ Runsten reads your car from its manufacturer:
 - **Tesla** (beta), through the Owner API of the Tesla app: a refresh token of your Tesla account ([Your Tesla](./tesla.md)).
 
 <Screen view="state" alt="The State tab: charge level, range, odometer and last position." />
+
+## Installing it on a phone
+
+Runsten installs on a phone like an app: its own icon, full screen, without the browser's bars.
+
+- **iPhone**: open your instance in Safari, select **Share**, then **Add to Home Screen**.
+- **Android**: open it in Chrome, open the menu, then **Add to home screen** (or **Install app**).
+
+The app installed asks you to sign in once: on an iPhone it keeps its own session, apart from Safari's. Android installs it only from an `https` address ([Reverse proxy](../self-hosting/reverse-proxy.md)).
 
 ## State
 
