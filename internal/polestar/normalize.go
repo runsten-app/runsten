@@ -207,7 +207,7 @@ func model(vin string, s *core.Snapshot) {
 	}
 	// Assumption: the Data Portal serves the Polestar 2, 3, 4 and 5, all battery
 	// electric; the Polestar 1, a plug-in hybrid, is not among its eligible models.
-	s.BatteryElectric = core.Some(true, time.Time{})
+	s.Powertrain = core.Some(core.Electric, time.Time{})
 }
 
 // modelYear reads the model year at the VIN's tenth position (ISO 3779, on a 30-year

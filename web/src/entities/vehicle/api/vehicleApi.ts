@@ -23,3 +23,8 @@ export function setVehicleModel(vehicle: string, choice: ModelChoice): Promise<V
     api.PUT('/vehicles/{vehicle}/model', { params: { path: { vehicle } }, body: choice }),
   )
 }
+
+// deleteVehicle deletes the vehicle with its whole history; its connection stays.
+export async function deleteVehicle(vehicle: string): Promise<void> {
+  await unwrap(api.DELETE('/vehicles/{vehicle}', { params: { path: { vehicle } } }))
+}

@@ -1,0 +1,37 @@
+# A plug-in hybrid: a V60 of 2027, as two real ones answer (fuelType PETROL/ELECTRIC, its
+# charging power never reported, an 18.819 kWh battery). Its fuel is not simulated yet.
+#
+# The morning's drive empties the battery: from 2 %, the engine holds it, a point up and
+# down (charge sustain). In the afternoon, a short drive in charge mode (16:07 to 16:14),
+# between two of the collector's parked readings (16:06 and 16:16 in the derivation's
+# test), raises the SoC by about ten points, the cable disconnected: no charge for a
+# plug-in hybrid, only the trip the odometer reveals. Then a slow AC charge on a
+# household socket.
+#
+# The engine's charge rate is an assumption (30 kWh per 100 km): Volvo publishes none.
+# The VIN is fictitious; the catalog knows no plug-in hybrid yet. Fictitious coordinates
+# (Lyon).
+vin: YV1ZWH0000V60PHV1
+start: 2026-09-28T05:00:00Z
+vehicle:
+  profile: v60-phev-like
+  powertrain: plugin_hybrid
+  model: V60
+  modelYear: 2027
+  batteryKWh: 18.819
+  consumptionKWhPer100km: 20
+  soc: 45
+  targetSoc: 100
+  odometerKm: 1547
+  place: home
+places:
+  home: { lat: 45.7640, lon: 4.8357 }
+  work: { lat: 45.7797, lon: 4.9270 }
+steps:
+  - park: { duration: 2h }
+  - drive: { to: work, distanceKm: 50, duration: 55m }
+  - park: { duration: 8h12m }
+  - drive: { to: home, distanceKm: 6, duration: 7m, engineChargeKWhPer100km: 30 }
+  - park: { duration: 1h }
+  - charge: { type: AC, powerKW: 1.8, untilSoc: 60 }
+  - park: { duration: 2h }

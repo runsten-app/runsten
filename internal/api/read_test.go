@@ -537,11 +537,16 @@ func fixtures(m *memReader) {
 	m.current[shared] = []core.Record{{FetchedAt: h(5, 0), CheckedAt: h(5, 0), Snapshot: polestarDetails(2024)}}
 }
 
-// details is the snapshot of a details response.
+// details is the snapshot of a details response; a vehicle not electric is a plug-in
+// hybrid.
 func details(family string, year int, kwh float64, electric bool) core.Snapshot {
+	pt := core.PlugInHybrid
+	if electric {
+		pt = core.Electric
+	}
 	return core.Snapshot{
 		Covers: core.FieldCapacity | core.FieldModel, CapacityKWh: some(kwh),
-		Family: some(family), ModelYear: some(year), BatteryElectric: some(electric),
+		Family: some(family), ModelYear: some(year), Powertrain: some(pt),
 	}
 }
 
@@ -549,7 +554,7 @@ func details(family string, year int, kwh float64, electric bool) core.Snapshot 
 // brand and the model year, no family nor capacity.
 func polestarDetails(year int) core.Snapshot {
 	return core.Snapshot{
-		Covers: core.FieldModel, Brand: some("polestar"), ModelYear: some(year), BatteryElectric: some(true),
+		Covers: core.FieldModel, Brand: some("polestar"), ModelYear: some(year), Powertrain: some(core.Electric),
 	}
 }
 
@@ -649,7 +654,7 @@ func TestVehicleModel(t *testing.T) {
 		},
 		{
 			"year and capacity unknown", "",
-			core.Snapshot{Covers: core.FieldModel, Family: some("EX90"), BatteryElectric: some(true)},
+			core.Snapshot{Covers: core.FieldModel, Family: some("EX90"), Powertrain: some(core.Electric)},
 			`{"family":"EX90","model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null}`,
 		},
 		{"details never read", vin, core.Snapshot{}, `{"family":null,"model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null}`},

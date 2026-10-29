@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"slices"
+	"strings"
 	"time"
 
 	"runsten/internal/core"
@@ -325,14 +327,21 @@ func normalizeDetails(raw []byte, s *core.Snapshot) error {
 		s.ModelYear = core.Some(int(y), time.Time{})
 	}
 	if f, ok := text(v.Data.FuelType); ok {
-		s.BatteryElectric = core.Some(batteryElectric(f), time.Time{})
+		s.Powertrain = core.Some(powertrain(f), time.Time{})
 	}
 	return nil
 }
 
-// batteryElectric reads fuelType. The EX30 reports NONE, as if it had no fuel. A hybrid
-// reports its fuels joined by a slash (PETROL/ELECTRIC). Any other value is not taken
-// for a battery electric vehicle: recognizing its variant would only mislead.
-func batteryElectric(fuelType string) bool {
-	return fuelType == "ELECTRIC" || fuelType == "NONE"
+// powertrain reads fuelType. The EX30 reports NONE, as if it had no fuel. A plug-in
+// hybrid reports its fuels joined by a slash: PETROL/ELECTRIC, observed on V60s of 2021
+// and 2027; assumption: any list of fuels holding ELECTRIC is one (DIESEL/ELECTRIC). Any
+// other value is neither: recognizing a variant on it would only mislead.
+func powertrain(fuelType string) core.Powertrain {
+	if fuelType == "ELECTRIC" || fuelType == "NONE" {
+		return core.Electric
+	}
+	if fuels := strings.Split(fuelType, "/"); len(fuels) > 1 && slices.Contains(fuels, "ELECTRIC") {
+		return core.PlugInHybrid
+	}
+	return core.OtherPowertrain
 }

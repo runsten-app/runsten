@@ -567,3 +567,16 @@ func TestHMS(t *testing.T) {
 		t.Errorf("hms = %q", got)
 	}
 }
+
+// A plug-in hybrid tells its fuels joined by a slash, as two real V60s.
+func TestDetailsFuelType(t *testing.T) {
+	for _, tt := range []struct {
+		hybrid bool
+		want   string
+	}{{false, "ELECTRIC"}, {true, "PETROL/ELECTRIC"}} {
+		d := renderDetails(vin, vehicle.Report{Spec: vehicle.Spec{PlugInHybrid: tt.hybrid}}).(map[string]any)
+		if d["fuelType"] != tt.want {
+			t.Errorf("plug-in hybrid %v: fuelType %v, want %s", tt.hybrid, d["fuelType"], tt.want)
+		}
+	}
+}

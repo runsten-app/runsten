@@ -41,13 +41,13 @@ func TestNormalizeFixture(t *testing.T) {
 		EnergyAddedKWh: core.Some(5.9, at),
 		OdometerKm:     core.Some(miles(39620.727469), at),
 		// The latest fix, before the response.
-		Position:        core.Some(core.Position{Lat: 50.8467, Lon: 4.3525}, time.Unix(1793032115, 0)),
-		Brand:           core.Some(Brand, none),
-		Family:          core.Some("Model Y", none),
-		ModelYear:       core.Some(2021, none), // the VIN's M; efficiency_package says MY2020
-		Trim:            core.Some("74d", none),
-		BatteryElectric: core.Some(true, none),
-		Software:        core.Some("2026.38.3.1", at),
+		Position:   core.Some(core.Position{Lat: 50.8467, Lon: 4.3525}, time.Unix(1793032115, 0)),
+		Brand:      core.Some(Brand, none),
+		Family:     core.Some("Model Y", none),
+		ModelYear:  core.Some(2021, none), // the VIN's M; efficiency_package says MY2020
+		Trim:       core.Some("74d", none),
+		Powertrain: core.Some(core.Electric, none),
+		Software:   core.Some("2026.38.3.1", at),
 		// Waiting for Wi-Fi to download the next.
 		SoftwareUpdate: core.Some(core.SoftwareUpdate{
 			Status: core.UpdateWaitingWiFi, Version: "2026.38.3.2",
@@ -215,7 +215,7 @@ func TestNormalizeModel(t *testing.T) {
 		}
 		want := core.Snapshot{
 			Covers: core.FieldModel, Brand: core.Some(Brand, none), Family: tc.family, ModelYear: tc.year,
-			BatteryElectric: core.Some(true, none),
+			Powertrain: core.Some(core.Electric, none),
 		}
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("%s %s:\ngot  %+v\nwant %+v", tc.vin, tc.carType, got, want)

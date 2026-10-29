@@ -54,6 +54,8 @@ func Profile(name string) (Capabilities, bool) {
 		return Capabilities{ChargingPower: NotFoundIdle, ChargingCurrentLimit: Unsupported}, true
 	case "ex90-like":
 		return Capabilities{ChargingPower: NotFound, ChargingCurrentLimit: Supported}, true
+	case "v60-phev-like": // as two real V60 plug-in hybrids, of 2021 and 2027
+		return Capabilities{ChargingPower: NotFound, ChargingCurrentLimit: Unsupported}, true
 	}
 	return Capabilities{}, false
 }
@@ -80,6 +82,14 @@ type Spec struct {
 	ConsumptionKWhPer100km float64
 	ChargingCurrentLimitA  float64
 	Capabilities           Capabilities
+	// PlugInHybrid: an engine takes over once the battery is down to HoldSoC, and a
+	// drive may have it charge the battery (ChargeWithEngine). Its fuel is not
+	// simulated yet.
+	PlugInHybrid bool
+	// HoldSoC is the SoC a plug-in hybrid's engine holds an empty battery at: it lets it
+	// fall to HoldSoC, then charges it a point up, and again (charge sustain; a V60 of
+	// 2027 held 2 to 3 % over 41 km).
+	HoldSoC float64
 }
 
 // Validate checks that the specification is consistent.
@@ -95,6 +105,10 @@ func (s Spec) Validate() error {
 		return errors.New("fadePerYear requires a FadeStart")
 	case s.ConsumptionKWhPer100km <= 0:
 		return errors.New("consumptionKWhPer100km must be > 0")
+	case s.HoldSoC < 0 || s.HoldSoC >= 100:
+		return errors.New("holdSoc must be in [0, 100)")
+	case s.HoldSoC > 0 && !s.PlugInHybrid:
+		return errors.New("holdSoc is a plug-in hybrid's")
 	}
 	return nil
 }
@@ -218,6 +232,11 @@ type Vehicle struct {
 	tripStartKWh  float64
 	tripOrigin    Position
 	lastSoCReport int
+	// engineCharge is the energy a plug-in hybrid's engine puts into the battery on the
+	// current drive, in kWh per 100 km (ChargeWithEngine); sustain, whether it is
+	// charging an empty battery a point up.
+	engineCharge float64
+	sustain      bool
 }
 
 // New creates a vehicle in the given initial state. All groups are considered
@@ -251,6 +270,7 @@ func (v *Vehicle) Report() Report { return v.report }
 
 // StartDrive starts a trip. A plugged-in vehicle is unplugged first.
 func (v *Vehicle) StartDrive(at time.Time) {
+	v.engineCharge = 0
 	if v.state.PluggedIn {
 		v.Unplug(at)
 	}
@@ -276,12 +296,42 @@ func (v *Vehicle) Drive(at time.Time, distanceKm float64) {
 	v.state.OdometerKm += distanceKm
 	v.state.TotalDistanceKm += distanceKm
 	v.state.DistanceSinceChargeKm += distanceKm
-	v.state.TotalEnergyKWh += kwh
-	v.state.EnergySinceChargeKWh += kwh
+	if v.spec.PlugInHybrid {
+		kwh = v.hybridDraw(kwh, distanceKm)
+	}
+	v.state.TotalEnergyKWh += max(kwh, 0)
+	v.state.EnergySinceChargeKWh += max(kwh, 0)
 	v.setSoC(at, v.state.SoC-kwh/v.spec.UsableKWhAt(at)*100)
 	if at.Sub(v.report.StatusAt) >= v.policy.DriveInterval {
 		v.uploadStatus(at)
 	}
+}
+
+// ChargeWithEngine has a plug-in hybrid's engine put kWhPer100km into the battery for
+// the rest of the current drive (a charge mode), and move the vehicle meanwhile. Nothing
+// for another vehicle.
+func (v *Vehicle) ChargeWithEngine(kWhPer100km float64) {
+	if v.spec.PlugInHybrid && v.state.Driving {
+		v.engineCharge = kWhPer100km
+	}
+}
+
+// hybridDraw returns the energy a plug-in hybrid takes from its battery to drive
+// distanceKm, need kWh: negative when its engine charges it. Assumption: the engine
+// charges the battery at the rate the electric motor would have drawn it.
+func (v *Vehicle) hybridDraw(need, distanceKm float64) float64 {
+	switch {
+	case v.engineCharge > 0:
+		return -distanceKm * v.engineCharge / 100
+	case v.sustain && v.state.SoC >= v.spec.HoldSoC+1:
+		v.sustain = false
+	case !v.sustain && v.state.SoC <= v.spec.HoldSoC:
+		v.sustain = true
+	}
+	if v.sustain {
+		return -need
+	}
+	return need
 }
 
 // EndDrive ends the trip at the given destination.

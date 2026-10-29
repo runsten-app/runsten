@@ -18,13 +18,13 @@ func TestNetCapacity(t *testing.T) {
 	}
 	ex30 := core.Snapshot{
 		Covers: core.FieldCapacity | core.FieldModel, CapacityKWh: some(69.0),
-		Family: some("EX30"), ModelYear: some(2024), BatteryElectric: some(true),
+		Family: some("EX30"), ModelYear: some(2024), Powertrain: some(core.Electric),
 	}
 	hybrid := ex30
-	hybrid.BatteryElectric = some(false)
+	hybrid.Powertrain = some(core.PlugInHybrid)
 	// The Data Portal tells the brand, never the family: the variant chosen sets it.
 	polestar2 := core.Snapshot{
-		Covers: core.FieldModel, Brand: some("polestar"), ModelYear: some(2024), BatteryElectric: some(true),
+		Covers: core.FieldModel, Brand: some("polestar"), ModelYear: some(2024), Powertrain: some(core.Electric),
 	}
 	tests := []struct {
 		name   string

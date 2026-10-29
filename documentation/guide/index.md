@@ -47,7 +47,7 @@ The key's quota is yours alone: 10,000 calls a day for each Volvo API, about sev
 ## Settings and preferences
 
 - **Settings** (the cog in the bar) are the account's, in four areas: **Costs**, the currency, the places and their tariffs, and the costs left without a charge ([Places, tariffs and costs](./costs.md)); **Vehicles**, a way to each vehicle's own settings; **Integrations**, the access tokens and MQTT ([Home Assistant and MQTT](./mqtt.md)); **Account**, the download of your data. Under **Account**, **About Runsten** shows the release the instance runs, and a newer one when the instance checks ([Updating](../self-hosting/updating.md#knowing-a-release-is-out)).
-- **A vehicle's settings** (the button by its name): its model and onboard charger ([Vehicle models](./vehicle-models.md)).
+- **A vehicle's settings** (the button by its name): its model and onboard charger ([Vehicle models](./vehicle-models.md)), its imported history ([Importing your history](./importing.md)), and, at the bottom, **Delete this vehicle**, for a car sold or no longer followed: its readings, trips, charges, imported history and the costs entered for them are deleted for good, after a confirmation. Download your data in **Settings → Account** first to keep a copy. Its connection stays and keeps reading your other vehicles; a new connection that lists the car again adds it as a new vehicle, without that history.
 - **Preferences** (the menu under your name, which also signs out): the language, the appearance, automatic, light or dark, the clock, automatic, 24-hour or 12-hour, whether the keyboard shortcuts are on, and, where the instance shows maps, whether to show them, kept in the browser.
 
 ## Privacy
