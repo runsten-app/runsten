@@ -128,3 +128,47 @@ func TestRealPlugInHybrids(t *testing.T) {
 		})
 	}
 }
+
+// asElectric reads a plug-in hybrid's responses as a battery electric vehicle's.
+type asElectric struct{ volvo.Normalizer }
+
+func (n asElectric) Normalize(k core.Kind, raw []byte) (core.Snapshot, error) {
+	s, err := n.Normalizer.Normalize(k, raw)
+	if s.PlugInHybrid() {
+		s.Powertrain.V = core.Electric
+	}
+	return s, err //nolint:wrapcheck // the normalizer's own
+}
+
+// The simulated V60 drives in charge mode between two readings: its SoC rises, the
+// cable disconnected, and no charge is made of it; read as an electric car's, the same
+// responses would make one. Its charge on a socket is seen.
+func TestSimulatedPlugInHybrid(t *testing.T) {
+	st, d, _ := play(t, "v60-phev.yaml", 30*time.Hour)
+	checkRebuild(t, st, d)
+	v := st.vehicle("v")
+	if len(v.charges) != 1 || v.charges[0].Reconstructed || !near(v.charges[0].EndSoC, 60, 0.5) {
+		logEvents(t, st)
+		t.Fatalf("charges %+v", v.charges)
+	}
+	var revealed bool
+	for _, tr := range v.trips {
+		revealed = revealed || tr.Reconstructed
+	}
+	if len(v.trips) != 2 || !revealed {
+		logEvents(t, st)
+		t.Errorf("trips %+v: want the morning's and the one the odometer reveals", v.trips)
+	}
+
+	res, err := New(st, asElectric{}, core.DefaultParams(), nil, quiet).Rebuild(context.Background(), "a", "v")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var made bool
+	for _, c := range res.Charges {
+		made = made || c.Reconstructed
+	}
+	if !made {
+		t.Errorf("read as an electric car's, no charge made up: the scenario misses its point: %+v", res.Charges)
+	}
+}

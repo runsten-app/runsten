@@ -46,6 +46,10 @@ func newSimulation(sc *Scenario, policy vehicle.UploadPolicy, origin time.Time) 
 	}
 	origin, start := origin.UTC(), sc.Start.UTC()
 	vc := sc.Vehicle
+	hybrid, hold := vc.Powertrain == PowertrainPlugInHybrid, vc.HoldSoC
+	if hybrid && hold == 0 {
+		hold = defaultHoldSoC
+	}
 	spec := vehicle.Spec{
 		Model:                  vc.Model,
 		Trim:                   vc.Trim,
@@ -57,6 +61,8 @@ func newSimulation(sc *Scenario, policy vehicle.UploadPolicy, origin time.Time) 
 		ConsumptionKWhPer100km: vc.ConsumptionKWhPer100km,
 		ChargingCurrentLimitA:  vc.ChargingCurrentLimitA,
 		Capabilities:           caps,
+		PlugInHybrid:           hybrid,
+		HoldSoC:                hold,
 	}
 	initial := vehicle.State{
 		SoC:        vc.SoC,
@@ -163,6 +169,7 @@ func (s *Simulation) park(p *Park, to time.Time) {
 func (s *Simulation) drive(d *Drive, to time.Time) {
 	if !s.entered {
 		s.veh.StartDrive(s.now)
+		s.veh.ChargeWithEngine(d.EngineChargeKWhPer100km)
 		s.entered = true
 	}
 	end := s.stepStart.Add(d.Duration)

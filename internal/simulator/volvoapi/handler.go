@@ -138,11 +138,15 @@ func (h *Handler) vehicles(w http.ResponseWriter, _ *http.Request) {
 }
 
 func renderDetails(vin string, r vehicle.Report) any {
+	fuel := "ELECTRIC"
+	if r.Spec.PlugInHybrid {
+		fuel = "PETROL/ELECTRIC" // as two real V60s
+	}
 	return map[string]any{
 		"vin":                vin,
 		"modelYear":          r.Spec.ModelYear,
 		"gearbox":            "AUTOMATIC",
-		"fuelType":           "ELECTRIC",
+		"fuelType":           fuel,
 		"externalColour":     "SIMULATED",
 		"batteryCapacityKWH": r.Spec.BatteryKWh,
 		"images":             map[string]string{"exteriorImageUrl": "", "internalImageUrl": ""},
