@@ -91,6 +91,8 @@ type Field uint16
 // and energy states first, as the collector reads them first in a pass.
 const (
 	FieldEngine Field = 1 << iota
+	// FieldSoC covers SoC and UsableSoC: a source that tells the usable level tells it
+	// with the SoC, in the same block.
 	FieldSoC
 	FieldRange
 	FieldCharging
@@ -122,9 +124,12 @@ func (f Field) index() int { return bits.TrailingZeros16(uint16(f)) }
 type Snapshot struct {
 	Covers Field
 
-	Engine      Value[EngineState]
-	SoC         Value[float64] // %
-	RangeKm     Value[float64]
+	Engine  Value[EngineState]
+	SoC     Value[float64] // %
+	RangeKm Value[float64]
+	// UsableSoC is the part of the battery the vehicle can draw on now, in % of it (Tesla's
+	// usable_battery_level): below SoC when the cold locks some away.
+	UsableSoC   Value[float64]
 	Charging    Value[ChargingStatus]
 	Connection  Value[Connection]
 	ChargeType  Value[ChargeType]
@@ -167,7 +172,7 @@ func (s *Snapshot) merge(o Snapshot) {
 		s.Engine = o.Engine
 	}
 	if set(FieldSoC) {
-		s.SoC = o.SoC
+		s.SoC, s.UsableSoC = o.SoC, o.UsableSoC
 	}
 	if set(FieldRange) {
 		s.RangeKm = o.RangeKm

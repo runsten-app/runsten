@@ -45,11 +45,13 @@ func capacity(kwh float64) Snapshot {
 
 const energyFields = FieldSoC | FieldRange | FieldCharging | FieldConnection | FieldChargeType | FieldPower | FieldTargetSoC
 
-// nrg is an energy reading: SoC, status, and the cable connected unless idle.
+// nrg is an energy reading: SoC, its range and usable level, status, and the cable
+// connected unless idle.
 func nrg(soc float64, st ChargingStatus) Snapshot {
 	s := Snapshot{
 		Covers: energyFields, SoC: Some(soc, time.Time{}), RangeKm: Some(soc*4, time.Time{}),
-		Charging: Some(st, time.Time{}), TargetSoC: Some(80.0, time.Time{}),
+		UsableSoC: Some(soc-1, time.Time{}),
+		Charging:  Some(st, time.Time{}), TargetSoC: Some(80.0, time.Time{}),
 		Connection: Some(Connected, time.Time{}),
 	}
 	if st == ChargingIdle {
@@ -600,7 +602,7 @@ func checkCharges(t *testing.T, got, want []Charge) {
 	}
 	for i := range got {
 		g := got[i]
-		for _, v := range []*Value[float64]{&g.StartSoC, &g.EndSoC, &g.TargetSoC, &g.EnergySoCKWh, &g.EnergyPowerKWh, &g.OdometerKm} {
+		for _, v := range []*Value[float64]{&g.StartSoC, &g.EndSoC, &g.TargetSoC, &g.EnergySoCKWh, &g.EnergyPowerKWh, &g.OdometerKm, &g.StartRangeKm, &g.EndRangeKm, &g.EndUsableSoC} {
 			v.At = time.Time{}
 			v.V = float64(int(v.V*1000+0.5)) / 1000
 		}
@@ -610,6 +612,21 @@ func checkCharges(t *testing.T, got, want []Charge) {
 		w := want[i]
 		if !w.Capacity.OK { // not what the test is about: TestCapacity checks it
 			g.Capacity = Value[Capacity]{}
+		}
+		// The fixtures' range is four times their SoC and their usable level one point
+		// below it (nrg), or none: unless the test says otherwise, each end's are the ones
+		// read with its SoC.
+		if !w.StartRangeKm.OK && !w.EndRangeKm.OK && !w.EndUsableSoC.OK {
+			read := func(r, soc Value[float64], f func(float64) float64) bool {
+				return !r.OK || soc.OK && r == val(f(soc.V))
+			}
+			range4 := func(soc float64) float64 { return soc * 4 }
+			usable := func(soc float64) float64 { return soc - 1 }
+			if !read(g.StartRangeKm, g.StartSoC, range4) || !read(g.EndRangeKm, g.EndSoC, range4) || !read(g.EndUsableSoC, g.EndSoC, usable) {
+				t.Errorf("charge %d: ranges %+v, %+v and usable level %+v not read with the SoC %+v, %+v",
+					i, g.StartRangeKm, g.EndRangeKm, g.EndUsableSoC, g.StartSoC, g.EndSoC)
+			}
+			g.StartRangeKm, g.EndRangeKm, g.EndUsableSoC = Value[float64]{}, Value[float64]{}, Value[float64]{}
 		}
 		w.EnergyPowerKWh.V = float64(int(w.EnergyPowerKWh.V*1000+0.5)) / 1000
 		if w.Span.OK {

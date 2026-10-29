@@ -339,8 +339,9 @@ func TestVehicleData(t *testing.T) {
 		t.Errorf("vehicle_state: odometer %v, locked %v, media_info %v", vs["odometer"], vs["locked"], vs["media_info"])
 	}
 	cs := vd["charge_state"].(map[string]any)
-	// 58.4 % of 75 kWh at 15 kWh/100 km: 292 km, 181.44 mi.
-	if cs["battery_range"] != json.Number("181.44") || cs["charging_state"] != "Disconnected" || cs["charger_power"] != json.Number("0") {
+	// A SoC of 58.4 %, a usable level of 57.4 % of 75 kWh at 15 kWh/100 km: 287 km,
+	// 178.33 mi.
+	if cs["battery_range"] != json.Number("178.33") || cs["usable_battery_level"] != json.Number("57") || cs["charging_state"] != "Disconnected" || cs["charger_power"] != json.Number("0") {
 		t.Errorf("charge_state: range %v, state %v, power %v", cs["battery_range"], cs["charging_state"], cs["charger_power"])
 	}
 	ds := vd["drive_state"].(map[string]any)

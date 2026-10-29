@@ -143,12 +143,15 @@ func (s *Store) SaveDerivation(ctx context.Context, accountID, vehicleID string,
 					started_after, started_before, ended_after, ended_before, charge_type,
 					start_soc, end_soc, target_soc, energy_soc_kwh, energy_power_kwh, lat, lon,
 					capacity_kwh, capacity_source, span_start_soc, span_end_soc, span_energy_kwh,
-					span_max_gap_s, span_duration_s, odometer_km, sources, energy_measured_kwh)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)`,
+					span_max_gap_s, span_duration_s, odometer_km, sources, energy_measured_kwh,
+					start_range_km, end_range_km, end_usable_soc)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26,
+					$27, $28, $29)`,
 				accountID, vehicleID, c.DetectedAt, c.Reconstructed,
 				c.Start.After, c.Start.Before, c.End.After, c.End.Before, opt(c.Type),
 				opt(c.StartSoC), opt(c.EndSoC), opt(c.TargetSoC), opt(c.EnergySoCKWh), opt(c.EnergyPowerKWh), pos[0], pos[1],
-				kwh, source, span0, span1, spanKWh, gapS, durS, opt(c.OdometerKm), c.Sources, opt(c.EnergyMeasuredKWh))
+				kwh, source, span0, span1, spanKWh, gapS, durS, opt(c.OdometerKm), c.Sources, opt(c.EnergyMeasuredKWh),
+				opt(c.StartRangeKm), opt(c.EndRangeKm), opt(c.EndUsableSoC))
 			if err != nil {
 				return fmt.Errorf("insert charge: %w", err)
 			}
@@ -348,6 +351,7 @@ const (
 		charge_type, start_soc, end_soc, target_soc, energy_soc_kwh, energy_power_kwh, lat, lon,
 		capacity_kwh, capacity_source, span_start_soc, span_end_soc, span_energy_kwh,
 		span_max_gap_s, span_duration_s, odometer_km, sources, energy_measured_kwh,
+		start_range_km, end_range_km, end_usable_soc,
 		NULL::text AS source, NULL::text AS source_id, NULL::text AS address,
 		NULL::double precision AS average_power_kw, NULL::bigint AS cost_minor, NULL::text AS cost_currency
 		FROM charges`
@@ -356,6 +360,7 @@ const (
 		charge_type, start_soc, end_soc, NULL, energy_soc_kwh, energy_kwh, lat, lon,
 		capacity_kwh, capacity_source, NULL, NULL, NULL,
 		NULL, NULL, NULL, ARRAY[source], NULL,
+		NULL, NULL, NULL,
 		source, source_id, address, average_power_kw, cost_minor, cost_currency
 		FROM imported_charges`
 	derivedCharges = `(SELECT ` + derivedChargeColumns + `) charges`
@@ -445,6 +450,7 @@ func scanChargesOf(ctx context.Context, tx pgx.Tx, relation, where string, args 
 			charge_type, start_soc, end_soc, target_soc, energy_soc_kwh, energy_power_kwh, lat, lon,
 			capacity_kwh, capacity_source, span_start_soc, span_end_soc, span_energy_kwh,
 			span_max_gap_s, span_duration_s, odometer_km, sources, energy_measured_kwh,
+			start_range_km, end_range_km, end_usable_soc,
 			source, source_id, address, average_power_kw, cost_minor, cost_currency
 		FROM `+relation+` WHERE `+where, args...)
 	if err != nil {
@@ -453,13 +459,14 @@ func scanChargesOf(ctx context.Context, tx pgx.Tx, relation, where string, args 
 	var out []core.Charge
 	var c core.Charge
 	var typ, capSource, source, sourceID, addr, currency *string
-	var soc0, soc1, target, esoc, epow, emeas, lat, lon, capKWh, span0, span1, spanKWh, gapS, durS, odo, power *float64
+	var soc0, soc1, target, esoc, epow, emeas, range0, range1, usable1, lat, lon, capKWh, span0, span1, spanKWh, gapS, durS, odo, power *float64
 	var costMinor *int64
 	var sources []string
 	_, err = pgx.ForEachRow(rows, []any{
 		&c.DetectedAt, &c.Reconstructed, &c.Start.After, &c.Start.Before, &c.End.After, &c.End.Before,
 		&typ, &soc0, &soc1, &target, &esoc, &epow, &lat, &lon, &capKWh, &capSource,
 		&span0, &span1, &spanKWh, &gapS, &durS, &odo, &sources, &emeas,
+		&range0, &range1, &usable1,
 		&source, &sourceID, &addr, &power, &costMinor, &currency,
 	}, func() error {
 		ch := core.Charge{
@@ -469,6 +476,7 @@ func scanChargesOf(ctx context.Context, tx pgx.Tx, relation, where string, args 
 			Sources:  slices.Clone(sources),
 			Import:   importOf(source, sourceID, c.DetectedAt, addr, nil),
 			StartSoC: val(soc0), EndSoC: val(soc1), TargetSoC: val(target),
+			StartRangeKm: val(range0), EndRangeKm: val(range1), EndUsableSoC: val(usable1),
 			EnergySoCKWh: val(esoc), EnergyPowerKWh: val(epow), EnergyMeasuredKWh: val(emeas),
 			Position: position(lat, lon),
 			Span:     span(span0, span1, spanKWh, gapS, durS), OdometerKm: val(odo),

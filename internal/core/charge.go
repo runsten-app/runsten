@@ -147,7 +147,8 @@ func (d *detector) stepCharge(p point, prev state) {
 		d.charging(cb, p)
 	case cb.c.Reconstructed:
 		if !p.confirm && s.SoC.OK && s.SoC.V > cb.c.EndSoC.V {
-			cb.c.EndSoC, cb.endLimit, cb.hints = s.SoC, p.at, []time.Time{s.SoC.At}
+			cb.c.endAt(s)
+			cb.endLimit, cb.hints = p.at, []time.Time{s.SoC.At}
 			cb.c.Capacity = d.capacity()
 			cb.c.OdometerKm = s.OdometerKm
 			return
@@ -176,10 +177,10 @@ func (d *detector) startCharge(p point, prev state) {
 	cb := &chargeBuilder{c: Charge{
 		DetectedAt: p.at,
 		Start:      Bounds{After: after, Before: d.narrow(p.at, after, s.Charging.At)},
-		StartSoC:   prev.snap.SoC,
 	}, counter: sessionBase(prev.snap)}
+	cb.c.startAt(prev.snap)
 	if !cb.c.StartSoC.OK {
-		cb.c.StartSoC = s.SoC
+		cb.c.startAt(s)
 	}
 	d.charge = cb
 	d.charging(cb, p)
@@ -198,8 +199,6 @@ func (d *detector) reconstructCharge(p point, prev state) {
 			Reconstructed: true,
 			Start:         Bounds{After: after},
 			End:           Bounds{After: after},
-			StartSoC:      prev.snap.SoC,
-			EndSoC:        s.SoC,
 			TargetSoC:     s.TargetSoC,
 			Capacity:      d.capacity(),
 			OdometerKm:    s.OdometerKm,
@@ -207,6 +206,18 @@ func (d *detector) reconstructCharge(p point, prev state) {
 		endLimit: p.at,
 		hints:    []time.Time{s.SoC.At},
 	}
+	d.charge.c.startAt(prev.snap)
+	d.charge.c.endAt(s)
+}
+
+// startAt takes the charge's start values from the reading of its StartSoC.
+func (c *Charge) startAt(s Snapshot) {
+	c.StartSoC, c.StartRangeKm = s.SoC, s.RangeKm
+}
+
+// endAt takes the charge's end values from the reading of its EndSoC.
+func (c *Charge) endAt(s Snapshot) {
+	c.EndSoC, c.EndRangeKm, c.EndUsableSoC = s.SoC, s.RangeKm, s.UsableSoC
 }
 
 // resumeCharge goes on with the resumable charge, charging again. The charge it was
@@ -267,9 +278,9 @@ func (d *detector) endCharge(cb *chargeBuilder, p point, prev state, hint time.T
 	cb.count(s.EnergyAddedKWh)
 	cb.c.Capacity = d.capacity()
 	cb.c.OdometerKm = s.OdometerKm
-	cb.c.EndSoC = s.SoC
+	cb.c.endAt(s)
 	if !s.SoC.OK {
-		cb.c.EndSoC = prev.snap.SoC
+		cb.c.endAt(prev.snap)
 	}
 	if s.TargetSoC.OK {
 		cb.c.TargetSoC = s.TargetSoC
@@ -288,7 +299,7 @@ func (d *detector) interruptCharge(p point, prev state) {
 		cb.c.End.After, cb.endLimit, cb.hints = cb.lastCharging, p.at, nil
 		cb.c.Capacity = d.capacity()
 		cb.c.OdometerKm = d.st.snap.OdometerKm
-		cb.c.EndSoC = prev.snap.SoC
+		cb.c.endAt(prev.snap)
 	}
 	d.finishCharge()
 	d.releaseCharge()

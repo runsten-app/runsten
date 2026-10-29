@@ -29,6 +29,7 @@ func TestNormalizeFixture(t *testing.T) {
 		Covers:     chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel,
 		Engine:     core.Some(core.EngineStopped, at), // shift_state null
 		SoC:        core.Some(69.0, at),
+		UsableSoC:  core.Some(68.0, at),
 		RangeKm:    core.Some(miles(194.9), at),
 		Charging:   core.Some(core.ChargingDone, at),
 		Connection: core.Some(core.Connected, at),
@@ -110,10 +111,10 @@ func TestNormalizeCharge(t *testing.T) {
 		want core.Snapshot
 	}{
 		{"DC", `{"charging_state": "Charging", "fast_charger_present": true, "fast_charger_type": "Supercharger",
-			"charger_power": 120, "battery_level": 30, "charge_limit_soc": 80, "charge_energy_added": 12.34}`, core.Snapshot{
+			"charger_power": 120, "battery_level": 30, "usable_battery_level": 29, "charge_limit_soc": 80, "charge_energy_added": 12.34}`, core.Snapshot{
 			Charging: core.Some(core.ChargingActive, at), Connection: core.Some(core.Connected, at),
 			ChargeType: core.Some(core.DC, at), PowerW: core.Some(120000.0, at),
-			SoC: core.Some(30.0, at), TargetSoC: core.Some(80.0, at), EnergyAddedKWh: core.Some(12.34, at),
+			SoC: core.Some(30.0, at), UsableSoC: core.Some(29.0, at), TargetSoC: core.Some(80.0, at), EnergyAddedKWh: core.Some(12.34, at),
 		}},
 		{
 			"AC starting", `{"charging_state": "Starting", "fast_charger_present": false, "fast_charger_type": "MCSingleWireCAN"}`,

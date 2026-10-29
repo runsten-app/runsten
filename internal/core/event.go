@@ -80,6 +80,12 @@ type Charge struct {
 
 	Type                        Value[ChargeType]
 	StartSoC, EndSoC, TargetSoC Value[float64]
+	// StartRangeKm and EndRangeKm are the range the vehicle displayed at the readings of
+	// StartSoC and EndSoC, and EndUsableSoC the usable level of the latter's, when the
+	// vehicle tells it: a Tesla's rated range, a fixed conversion of its usable level,
+	// which the rated capacity estimate rests on.
+	StartRangeKm, EndRangeKm Value[float64]
+	EndUsableSoC             Value[float64]
 	// Two estimates, kept apart: neither is a measurement.
 	EnergySoCKWh   Value[float64] // ΔSoC × Capacity
 	EnergyPowerKWh Value[float64] // integral of the charging power over the observed readings
