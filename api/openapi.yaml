@@ -1733,6 +1733,25 @@ components:
         - token
         - vehicle
       type: object
+    Installed:
+      additionalProperties: false
+      properties:
+        after:
+          description: The last reading of the previous version; null for the first version Runsten read, installed at any time before.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        before:
+          description: The first reading of the version.
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - after
+        - before
+      type: object
     Instance:
       additionalProperties: false
       properties:
@@ -2184,6 +2203,22 @@ components:
         items:
           items:
             $ref: "#/components/schemas/Charge"
+          type: array
+        next_cursor:
+          description: The cursor of the next page; null on the last one.
+          type:
+            - string
+            - "null"
+      required:
+        - items
+        - next_cursor
+      type: object
+    PageSoftwareVersion:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/SoftwareVersion"
           type: array
         next_cursor:
           description: The cursor of the next page; null on the last one.
@@ -2921,6 +2956,62 @@ components:
         - fetched_at
         - checked_at
       type: object
+    ReadingSoftwareUpdate:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The last reading of the same value, unchanged.
+          format: date-time
+          pattern: Z$
+          type: string
+        fetched_at:
+          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
+          format: date-time
+          pattern: Z$
+          type: string
+        reported_at:
+          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        value:
+          $ref: "#/components/schemas/SoftwareUpdate"
+      required:
+        - value
+        - reported_at
+        - fetched_at
+        - checked_at
+      type: object
+    ReadingString:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The last reading of the same value, unchanged.
+          format: date-time
+          pattern: Z$
+          type: string
+        fetched_at:
+          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
+          format: date-time
+          pattern: Z$
+          type: string
+        reported_at:
+          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        value:
+          type: string
+      required:
+        - value
+        - reported_at
+        - fetched_at
+        - checked_at
+      type: object
     Release:
       additionalProperties: false
       properties:
@@ -3122,6 +3213,76 @@ components:
       required:
         - currency
       type: object
+    SoftwareUpdate:
+      additionalProperties: false
+      properties:
+        download_pct:
+          description: How much of it is downloaded, in %; null when unknown.
+          format: double
+          maximum: 100
+          minimum: 0
+          type:
+            - number
+            - "null"
+        duration_s:
+          description: How long the vehicle expects its installation to take, in seconds; null when it does not say.
+          format: int64
+          minimum: 1
+          type:
+            - integer
+            - "null"
+        install_pct:
+          description: How much of it is installed, in %; null when unknown.
+          format: double
+          maximum: 100
+          minimum: 0
+          type:
+            - number
+            - "null"
+        status:
+          description: "available: offered, not started. scheduled: set to install at a time. downloading. waiting_wifi: waiting for Wi-Fi to download. installing. unknown: a status Runsten does not know, an update waiting all the same."
+          enum:
+            - available
+            - scheduled
+            - downloading
+            - waiting_wifi
+            - installing
+            - unknown
+          type: string
+        version:
+          description: The version it installs; null when the vehicle does not tell it.
+          examples:
+            - 2026.38.3.2
+          type:
+            - string
+            - "null"
+      required:
+        - status
+        - version
+        - download_pct
+        - install_pct
+        - duration_s
+      type: object
+    SoftwareVersion:
+      additionalProperties: false
+      properties:
+        id:
+          description: "Identifies the version for its vehicle: its first reading's time, to the microsecond, which a rebuild of the derived data keeps. Treat it as opaque."
+          examples:
+            - "2026-10-26T16:29:31.549000Z"
+          type: string
+        installed:
+          $ref: "#/components/schemas/Installed"
+          description: "When the vehicle took it: between the last reading of the previous version and its own first one."
+        version:
+          examples:
+            - 2026.38.3.1
+          type: string
+      required:
+        - id
+        - version
+        - installed
+      type: object
     Span:
       additionalProperties: false
       properties:
@@ -3183,6 +3344,16 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ReadingFloat64"
             - type: "null"
+        software:
+          description: "The version of the vehicle's software, for a source that tells it (Tesla); null for the others. fetched_at is the response it was read in, as any value's, not its installation: that is in its history, GET /vehicles/{vehicle}/software-versions."
+          oneOf:
+            - $ref: "#/components/schemas/ReadingString"
+            - type: "null"
+        software_update:
+          description: The update waiting for the vehicle's software; null when none waits, or the source does not tell it.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingSoftwareUpdate"
+            - type: "null"
         vehicle_id:
           format: uuid
           type: string
@@ -3197,6 +3368,8 @@ components:
         - position
         - battery_capacity_kwh
         - charging
+        - software
+        - software_update
         - sleep
       type: object
     Stats:
@@ -6661,6 +6834,107 @@ paths:
         - sessionSecure: []
         - accessToken: []
       summary: The energy states of a vehicle over a window
+      tags:
+        - vehicles
+  /vehicles/{vehicle}/software-versions:
+    get:
+      description: "Each version of the vehicle's software, from when Runsten first read it, newest first: for a vehicle whose source tells it (a Tesla), [] for the others. Derived from the readings, as the trips: a rebuild of the derived data recomputes them. `from` and `to` keep the versions that may have been installed within the period. The version running and the update waiting are in the vehicle's state."
+      operationId: listSoftwareVersions
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+        - description: "Keeps the events that may have happened, at least partly, at or after this time: those with end.before after it. An event whose bounds straddle it is kept."
+          explode: false
+          in: query
+          name: from
+          schema:
+            description: "Keeps the events that may have happened, at least partly, at or after this time: those with end.before after it. An event whose bounds straddle it is kept."
+            examples:
+              - "2026-09-28T00:00:00Z"
+            format: date-time
+            type: string
+        - description: "Keeps the events that may have happened, at least partly, before this time: those with start.after before it. With from, it must come after from."
+          explode: false
+          in: query
+          name: to
+          schema:
+            description: "Keeps the events that may have happened, at least partly, before this time: those with start.after before it. With from, it must come after from."
+            examples:
+              - "2026-09-29T00:00:00Z"
+            format: date-time
+            type: string
+        - description: The next_cursor of the previous page. It stays valid when from or to change.
+          explode: false
+          in: query
+          name: cursor
+          schema:
+            description: The next_cursor of the previous page. It stays valid when from or to change.
+            type: string
+        - description: The maximum number of events of the page.
+          explode: false
+          in: query
+          name: limit
+          schema:
+            default: 50
+            description: The maximum number of events of the page.
+            format: int64
+            maximum: 200
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageSoftwareVersion"
+          description: A page of versions, newest first.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_parameter`: `from`, `to`, `limit` or `cursor`; the message names the parameter."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: The versions of a vehicle's software
       tags:
         - vehicles
   /vehicles/{vehicle}/state:

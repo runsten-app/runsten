@@ -26,6 +26,7 @@ import {
   type Mode,
   type Reading,
   type Sleep,
+  type UpdateStatus,
 } from '@/entities/vehicle'
 import { useVehicle } from '@/features/select-vehicle'
 import { useVehicleState } from '@/features/watch-vehicle-state'
@@ -165,6 +166,35 @@ const chargingTile = computed(() => {
   return c ? (c.power_w ?? c.type ?? c.cable ?? c.target_soc_pct ?? null) : null
 })
 const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_km ?? null)
+
+// The update waiting for the software (a Tesla's): its status, the version it brings, and
+// its progress while it downloads or installs.
+const updateLabels = computed<Record<UpdateStatus, string>>(() => ({
+  available: t('state.update.available'),
+  scheduled: t('state.update.scheduled'),
+  downloading: t('state.update.downloading'),
+  waiting_wifi: t('state.update.waitingWifi'),
+  installing: t('state.update.installing'),
+  unknown: t('state.update.unknown'),
+}))
+const update = computed(() => {
+  const u = state.value?.software_update
+  if (!u) return null
+  const { status, version, download_pct, install_pct } = u.value
+  const progress =
+    status === 'downloading' ? download_pct : status === 'installing' ? install_pct : null
+  const label =
+    progress === null
+      ? updateLabels.value[status]
+      : t('state.update.progress', {
+          status: updateLabels.value[status],
+          pct: f.quantity(progress, 'percent'),
+        })
+  return {
+    reading: u,
+    value: version ? t('state.update.version', { version, status: label }) : label,
+  }
+})
 </script>
 
 <template>
@@ -343,6 +373,26 @@ const vehicleTile = computed(() => state.value?.engine ?? state.value?.odometer_
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
+              />
+              <!-- A source that tells its software (a Tesla); nothing for the others. -->
+              <ReadingItem
+                v-if="state.software"
+                :label="t('state.software')"
+                :reading="state.software"
+                :value="state.software.value"
+                :now="now"
+                :connection="connection"
+                :tile="vehicleTile"
+              />
+              <ReadingItem
+                v-if="update"
+                :label="t('state.update.title')"
+                :reading="update.reading"
+                :value="update.value"
+                :now="now"
+                :connection="connection"
+                :tile="vehicleTile"
+                class="update"
               />
             </dl>
             <ReadingProvenance

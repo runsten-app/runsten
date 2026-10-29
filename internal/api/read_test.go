@@ -53,6 +53,7 @@ type memReader struct {
 	tracks   map[string][][2]float64 // of the imported trips, by source:id
 	current  map[string][]core.Record
 	health   map[string][]core.HealthRecord
+	versions map[string][]core.SoftwareVersion
 	entered  []EnteredCost
 	settings *memSettings
 	next     int // of the entered costs' IDs
@@ -279,6 +280,12 @@ func isEvent(ref EventRef, detected time.Time, imp core.Value[core.Import]) bool
 		return imp.OK && imp.V.Source == ref.Source && imp.V.SourceID == ref.SourceID
 	}
 	return !imp.OK && detected.Equal(ref.DetectedAt)
+}
+
+func (m *memReader) ListSoftwareVersions(_ context.Context, _, vehicle string, q EventQuery) ([]core.SoftwareVersion, error) {
+	return pageEvents(m.versions[vehicle], q, func(v core.SoftwareVersion) (core.Bounds, core.Bounds, EventKey) {
+		return v.Installed, v.Installed, EventKey{DetectedAt: v.DetectedAt}
+	}), m.err
 }
 
 func (m *memReader) ListTrips(_ context.Context, _, vehicle string, q EventQuery) ([]core.Trip, error) {

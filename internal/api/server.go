@@ -63,6 +63,9 @@ type Reader interface {
 	// ChargeHistory returns every charge of the account, by vehicle, each vehicle's with
 	// all its entered costs (Deciding empty), from one snapshot.
 	ChargeHistory(ctx context.Context, accountID string) ([]PricedCharges, error)
+	// ListSoftwareVersions returns the versions of the vehicle's software, newest first,
+	// that may have been installed within the query's period.
+	ListSoftwareVersions(ctx context.Context, accountID, vehicleID string, q EventQuery) ([]core.SoftwareVersion, error)
 }
 
 // States returns the latest known values of a vehicle, as of at.
@@ -328,6 +331,7 @@ func New(cfg Config) *Server {
 	s.registerModel(s.api)
 	s.registerStats(s.api)
 	s.registerBattery(s.api)
+	s.registerSoftware(s.api)
 	s.registerSeries(s.api)
 	s.registerHealth(s.api)
 	s.registerSettings(s.api)

@@ -93,6 +93,18 @@
       "offline": "Out of reach",
       "leftAlone": "Runsten lets it sleep: what it measures is read when it wakes up.",
       "unreachable": "Runsten reads it again as soon as Tesla can reach it."
+    },
+    "software": "Software",
+    "update": {
+      "title": "Software update",
+      "available": "Available",
+      "scheduled": "Scheduled",
+      "downloading": "Downloading",
+      "waitingWifi": "Waiting for Wi-Fi",
+      "installing": "Installing",
+      "unknown": "Pending",
+      "progress": "{status}, {pct}",
+      "version": "{version}: {status}"
     }
   },
   "charging": {
@@ -1594,5 +1606,13 @@
     "unread": "The latest release could not be read yet.",
     "releases": "All the releases",
     "newTab": "(opens in a new tab)"
+  },
+  "software": {
+    "title": "Software",
+    "current": "Running",
+    "installed": "Installed {when}",
+    "firstRead": "First read {when}",
+    "more": "Show more",
+    "error": "The software's versions could not be loaded."
   }
 }

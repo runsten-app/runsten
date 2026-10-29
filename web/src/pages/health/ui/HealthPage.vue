@@ -7,6 +7,7 @@ import { useFormat, useNow } from '@/shared/lib'
 import { AppShell } from '@/widgets/app-shell'
 import { BatterySummary } from '@/widgets/battery-tiles'
 import { HealthTiles } from '@/widgets/health-tiles'
+import { SoftwareHistory } from '@/widgets/software-history'
 
 // The pressures' chart comes on demand, with Chart.js, and only for a vehicle that gives
 // them: a Volvo gives a warning per tyre, never its pressure.
@@ -16,8 +17,9 @@ const TyreChart = defineAsyncComponent(() =>
 
 // HealthPage shows the vehicle's health: its battery's estimated capacity, which leads to
 // the battery's page, what it last told of its tyres, its service and its warnings, and
-// the tyres' pressures over time. The battery's comes first and stays whatever the
-// vehicle told: it is derived from the charges.
+// the tyres' pressures over time, then the versions of its software when it tells them.
+// The battery's comes first and stays whatever the vehicle told: it is derived from the
+// charges; so do the versions, derived from the readings.
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const f = useFormat()
@@ -43,6 +45,7 @@ const known = computed(() => (health.value?.checked_at ? health.value : null))
       <HealthTiles :health="known" />
       <TyreChart v-if="hasPressures(known)" :vehicle="vehicle" class="mt-6" />
     </template>
+    <SoftwareHistory :vehicle="vehicle" class="mt-6" />
   </AppShell>
 </template>
 

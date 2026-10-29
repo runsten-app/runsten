@@ -24,5 +24,7 @@
     "power_w": null,
     "target_soc_pct": null
   },
+  "software": null,
+  "software_update": null,
   "sleep": null
 }

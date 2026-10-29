@@ -93,6 +93,18 @@
       "offline": "Utom räckhåll",
       "leftAlone": "Runsten låter den sova: det den mäter läses när den vaknar.",
       "unreachable": "Runsten läser den igen så snart Tesla når den."
+    },
+    "software": "Programvara",
+    "update": {
+      "title": "Programuppdatering",
+      "available": "Tillgänglig",
+      "scheduled": "Schemalagd",
+      "downloading": "Laddas ner",
+      "waitingWifi": "Väntar på wifi",
+      "installing": "Installeras",
+      "unknown": "Väntande",
+      "progress": "{status}, {pct}",
+      "version": "{version}: {status}"
     }
   },
   "charging": {
@@ -1594,5 +1606,13 @@
     "unread": "Den senaste versionen har inte kunnat läsas in än.",
     "releases": "Alla versioner",
     "newTab": "(öppnas i en ny flik)"
+  },
+  "software": {
+    "title": "Programvara",
+    "current": "Installerad nu",
+    "installed": "Installerad {when}",
+    "firstRead": "Först läst {when}",
+    "more": "Visa fler",
+    "error": "Programvarans versioner kunde inte läsas in."
   }
 }

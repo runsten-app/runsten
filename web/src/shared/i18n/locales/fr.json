@@ -93,6 +93,18 @@
       "offline": "Injoignable",
       "leftAlone": "Runsten la laisse dormir : ce qu'elle mesure est lu à son réveil.",
       "unreachable": "Runsten la relit dès que Tesla peut la joindre."
+    },
+    "software": "Logiciel",
+    "update": {
+      "title": "Mise à jour du logiciel",
+      "available": "Disponible",
+      "scheduled": "Programmée",
+      "downloading": "Téléchargement",
+      "waitingWifi": "En attente du Wi-Fi",
+      "installing": "Installation",
+      "unknown": "En attente",
+      "progress": "{status}, {pct}",
+      "version": "{version} : {status}"
     }
   },
   "charging": {
@@ -1594,5 +1606,13 @@
     "unread": "La dernière version n'a pas encore pu être lue.",
     "releases": "Toutes les versions",
     "newTab": "(s'ouvre dans un nouvel onglet)"
+  },
+  "software": {
+    "title": "Logiciel",
+    "current": "En service",
+    "installed": "Installée {when}",
+    "firstRead": "Lue pour la première fois {when}",
+    "more": "Afficher plus",
+    "error": "Impossible de charger les versions du logiciel."
   }
 }
