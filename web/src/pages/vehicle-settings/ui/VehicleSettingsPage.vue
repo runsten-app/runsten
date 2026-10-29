@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { vehicleLabel } from '@/entities/vehicle'
+import { DeleteVehicle } from '@/features/delete-vehicle'
 import { VehicleModelForm } from '@/features/edit-vehicle-model'
 import { ImportList, ImportSources } from '@/features/manage-imports'
 import { useVehicle } from '@/features/select-vehicle'
@@ -9,10 +10,10 @@ import { isApiError } from '@/shared/api'
 import { SubNav } from '@/shared/ui'
 import { AppShell } from '@/widgets/app-shell'
 
-// VehicleSettingsPage is one vehicle's, in two areas, each a route: its model (the variant
-// and onboard charger the energies and costs rest on), and the history imported from other
-// applications (what it holds, then how to add to it). What the account shares
-// (currency, places, tariffs) stays in the settings.
+// VehicleSettingsPage is one vehicle's, in two areas, each a route: the vehicle (the variant
+// and onboard charger the energies and costs rest on, then its deletion, last), and the
+// history imported from other applications (what it holds, then how to add to it). What
+// the account shares (currency, places, tariffs) stays in the settings.
 const props = defineProps<{ vehicle: string; area: 'model' | 'history' }>()
 const { t } = useI18n()
 const { vehicle: current, isPending, error } = useVehicle(() => props.vehicle)
@@ -57,12 +58,16 @@ const titleId = computed(() => `vehicle-settings-${props.area}-title`)
           indeterminate
           :aria-label="t('vehicleSettings.loading')"
         />
-        <v-card v-else-if="current && area === 'model'">
-          <v-card-text>
-            <VehicleModelForm :vehicle="current" :label />
-          </v-card-text>
-        </v-card>
-        <div v-else-if="current" class="history">
+        <div v-else-if="current && area === 'model'" class="tiles">
+          <v-card>
+            <v-card-text>
+              <VehicleModelForm :vehicle="current" :label />
+            </v-card-text>
+          </v-card>
+          <!-- Destructive, so last, on a tile of its own. -->
+          <DeleteVehicle :vehicle :label />
+        </div>
+        <div v-else-if="current" class="tiles">
           <ImportList :vehicle />
           <!-- The Volvo Data Portal's files are a Volvo's history: none of a Polestar. -->
           <ImportSources :vehicle :volvo="current.connection.provider === 'volvo'" />
@@ -94,7 +99,7 @@ const titleId = computed(() => `vehicle-settings-${props.area}-title`)
     padding-top: 6px;
   }
 }
-.history {
+.tiles {
   display: grid;
   gap: 16px;
 }

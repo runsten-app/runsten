@@ -878,7 +878,7 @@
     "title": "Fordonsinställningar",
     "areas": "Delar av fordonsinställningarna",
     "model": {
-      "title": "Modell och laddare",
+      "title": "Fordon",
       "help": "Runsten känner igen fordonets variant utifrån det fordonet rapporterar, när bara en passar. Ditt val går före igenkänningen och syns överallt där fordonet visas."
     },
     "history": {
@@ -887,6 +887,17 @@
     },
     "loading": "Läser in fordonet",
     "error": "Fordonet kunde inte läsas in. Försök igen om en stund."
+  },
+  "deleteVehicle": {
+    "title": "Ta bort det här fordonet",
+    "help": "För ett sålt fordon, eller ett du inte längre följer. Dess anslutning finns kvar och fortsätter att läsa dina andra fordon.",
+    "button": "Ta bort {vehicle}",
+    "confirmTitle": "Ta bort {vehicle}?",
+    "text": "Dess avläsningar, resor, laddningar, importerade historik och de kostnader som angetts för dem tas bort för gott. Ladda först ned dina data i inställningarna för att behålla en kopia.",
+    "again": "En ny anslutning som listar det igen lägger till det som ett nytt fordon, utan den här historiken.",
+    "confirm": "Ta bort",
+    "cancel": "Avbryt",
+    "error": "Fordonet kunde inte tas bort. Försök igen om en stund."
   },
   "orphans": {
     "title": "Kostnader utan laddning",

@@ -1303,7 +1303,7 @@ func TestSources(t *testing.T) {
 
 func TestCapacity(t *testing.T) {
 	// As the catalog would: a battery electric EX30, of 64 kWh net.
-	ex30 := func(s Snapshot) (float64, bool) { return 64, s.Family.V == "EX30" && s.BatteryElectric.V }
+	ex30 := func(s Snapshot) (float64, bool) { return 64, s.Family.V == "EX30" && s.BatteryElectric() }
 	net := Value[Capacity]{V: Capacity{KWh: 64, Source: CapacityCatalogNet}, OK: true}
 	api := Value[Capacity]{V: Capacity{KWh: 69, Source: CapacityAPI}, OK: true}
 	tests := []struct {
@@ -1322,7 +1322,7 @@ func TestCapacity(t *testing.T) {
 		// The API's capacity is unknown, not the catalog's.
 		{
 			"the net capacity without the API's",
-			Snapshot{Covers: FieldModel, Family: Some("EX30", time.Time{}), BatteryElectric: Some(true, time.Time{})},
+			Snapshot{Covers: FieldModel, Family: Some("EX30", time.Time{}), Powertrain: Some(Electric, time.Time{})},
 			CapacityCatalogNet, ex30, net, 4.48, 12.8,
 		},
 		{"no capacity at all", Snapshot{Covers: FieldModel}, CapacityCatalogNet, ex30, Value[Capacity]{}, 0, 0},
@@ -1563,6 +1563,143 @@ func TestSoftwareVersions(t *testing.T) {
 			}
 			if inc := incremental(tt.records, DefaultParams()); !reflect.DeepEqual(inc.Versions, res.Versions) {
 				t.Errorf("incremental:\n%+v\nrebuild:\n%+v", inc.Versions, res.Versions)
+			}
+		})
+	}
+}
+
+// parked is an energy reading of a parked vehicle: not charging, the cable as given, the
+// SoC recorded by the vehicle at its minute.
+func parked(soc float64, c Connection, at int) Snapshot {
+	return Snapshot{
+		Covers: energyFields, SoC: Some(soc, m(at)), Charging: Some(ChargingIdle, m(at)),
+		Connection: Some(c, m(at)),
+	}
+}
+
+func powertrain(p Powertrain) Snapshot {
+	return Snapshot{Covers: FieldModel, Powertrain: Some(p, time.Time{})}
+}
+
+// A plug-in hybrid's engine raises the SoC while driving (a charge mode, or charge
+// sustain): a rise read parked is a charge only when the reading that shows it says the
+// cable is connected. A battery electric vehicle, or one whose powertrain is not known
+// yet, keeps the rule of the SoC alone.
+func TestHybridReconstructedCharges(t *testing.T) {
+	charge := func(at int) []Charge {
+		return []Charge{{
+			DetectedAt: m(at), Reconstructed: true, Start: Bounds{m(60), m(at - 5)}, End: Bounds{m(60), m(at - 5)},
+			StartSoC: val(40), EndSoC: val(60), EnergySoCKWh: val(3.6),
+		}}
+	}
+	tests := []struct {
+		name    string
+		records []Record
+		want    []Charge
+	}{
+		{
+			name: "plug-in hybrid, the cable connected",
+			records: []Record{
+				rec(0, 0, powertrain(PlugInHybrid)),
+				rec(0, 60, parked(40, Disconnected, 0)),
+				rec(120, 120, parked(60, Connected, 115)),
+			},
+			want: charge(120),
+		},
+		{
+			name: "plug-in hybrid, the cable disconnected",
+			records: []Record{
+				rec(0, 0, powertrain(PlugInHybrid)),
+				rec(0, 60, parked(40, Disconnected, 0)),
+				rec(120, 120, parked(60, Disconnected, 115)),
+			},
+		},
+		{
+			name: "plug-in hybrid, the cable not reported",
+			records: []Record{
+				rec(0, 0, powertrain(PlugInHybrid)),
+				rec(0, 60, Snapshot{Covers: energyFields, SoC: Some(40.0, m(0))}),
+				rec(120, 120, Snapshot{Covers: energyFields, SoC: Some(60.0, m(115))}),
+			},
+		},
+		{
+			// The cable read connected earlier says nothing of the reading that shows the
+			// rise.
+			name: "plug-in hybrid, the cable connected before, not since",
+			records: []Record{
+				rec(0, 0, powertrain(PlugInHybrid)),
+				rec(0, 60, parked(40, Connected, 0)),
+				rec(120, 120, Snapshot{Covers: FieldSoC, SoC: Some(60.0, m(115))}),
+			},
+		},
+		{
+			name: "battery electric, the cable disconnected",
+			records: []Record{
+				rec(0, 0, powertrain(Electric)),
+				rec(0, 60, parked(40, Disconnected, 0)),
+				rec(120, 120, parked(60, Disconnected, 115)),
+			},
+			want: charge(120),
+		},
+		{
+			// Until its details are read, a vehicle is taken for an electric one.
+			name: "plug-in hybrid read after the rise",
+			records: []Record{
+				rec(0, 60, parked(40, Disconnected, 0)),
+				rec(120, 120, parked(60, Disconnected, 115)),
+				rec(130, 130, powertrain(PlugInHybrid)),
+			},
+			want: charge(120),
+		},
+		{
+			// The engine charging the battery on a trip that was seen: never a charge, for
+			// any vehicle.
+			name: "plug-in hybrid, a charge mode while driving",
+			records: []Record{
+				rec(0, 0, powertrain(PlugInHybrid)),
+				rec(0, 20, engine(EngineStopped)),
+				rec(0, 20, parked(30, Disconnected, 0)),
+				rec(0, 20, odo(1550)),
+				rec(30, 30, engine(EngineRunning)),
+				rec(30, 30, parked(30, Disconnected, 30)),
+				rec(40, 40, parked(34, Disconnected, 40)),
+				rec(50, 50, parked(38, Disconnected, 50)),
+				rec(61, 61, engine(EngineStopped)),
+				rec(61, 61, odo(1580)),
+				rec(70, 120, parked(38, Disconnected, 70)),
+			},
+		},
+		{
+			// A V60's battery held empty by its engine on a 41 km trip: one point up and
+			// down, never a charge.
+			name: "plug-in hybrid, charge sustain",
+			records: []Record{
+				rec(0, 0, powertrain(PlugInHybrid)),
+				rec(0, 0, engine(EngineRunning)),
+				rec(0, 0, parked(3, Disconnected, 0)),
+				rec(5, 5, parked(2, Disconnected, 5)),
+				rec(10, 10, parked(3, Disconnected, 10)),
+				rec(15, 15, parked(2, Disconnected, 15)),
+				rec(20, 20, engine(EngineStopped)),
+				rec(25, 25, parked(3, Disconnected, 25)),
+				rec(35, 90, parked(2, Disconnected, 35)),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			records := append([]Record{rec(0, 0, capacity(18))}, tt.records...)
+			for _, p := range []Params{DefaultParams(), func() Params { p := DefaultParams(); p.VehicleTimestamps = false; return p }()} {
+				want := slices.Clone(tt.want)
+				if !p.VehicleTimestamps {
+					for i := range want { // the polling bounds alone
+						want[i].Start.Before, want[i].End.Before = m(120), m(120)
+					}
+				}
+				got := Derive(records, Cursor{}, p, nil)
+				checkCharges(t, got.Charges, want)
+				_, charges := deriveIncrementally(records, p)
+				checkCharges(t, charges, want)
 			}
 		})
 	}

@@ -878,7 +878,7 @@
     "title": "Réglages du véhicule",
     "areas": "Rubriques des réglages du véhicule",
     "model": {
-      "title": "Modèle et chargeur",
+      "title": "Véhicule",
       "help": "Runsten reconnaît la variante du véhicule d'après ce qu'il transmet, quand une seule correspond. Votre choix prime sur la reconnaissance, et se voit partout où le véhicule apparaît."
     },
     "history": {
@@ -887,6 +887,17 @@
     },
     "loading": "Chargement du véhicule",
     "error": "Le véhicule n'a pas pu être chargé. Réessayez dans un instant."
+  },
+  "deleteVehicle": {
+    "title": "Supprimer ce véhicule",
+    "help": "Pour un véhicule vendu, ou que vous ne suivez plus. Sa connexion reste, et continue de lire vos autres véhicules.",
+    "button": "Supprimer {vehicle}",
+    "confirmTitle": "Supprimer {vehicle} ?",
+    "text": "Ses relevés, ses trajets, ses charges, son historique importé et les coûts saisis sont supprimés définitivement. Pour en garder une copie, téléchargez d'abord vos données dans les réglages.",
+    "again": "Une nouvelle connexion qui le liste de nouveau l'ajoute comme un nouveau véhicule, sans cet historique.",
+    "confirm": "Supprimer",
+    "cancel": "Annuler",
+    "error": "Le véhicule n'a pas pu être supprimé. Réessayez dans un instant."
   },
   "orphans": {
     "title": "Coûts sans charge",

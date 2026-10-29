@@ -878,7 +878,7 @@
     "title": "Vehicle settings",
     "areas": "Vehicle settings areas",
     "model": {
-      "title": "Model and charger",
+      "title": "Vehicle",
       "help": "Runsten recognizes the vehicle's variant from what it reports, when only one fits. Your choice outranks the recognition, and shows wherever the vehicle does."
     },
     "history": {
@@ -887,6 +887,17 @@
     },
     "loading": "Loading the vehicle",
     "error": "The vehicle could not be loaded. Try again in a moment."
+  },
+  "deleteVehicle": {
+    "title": "Delete this vehicle",
+    "help": "For a vehicle sold, or one you no longer follow. Its connection stays, and keeps reading your other vehicles.",
+    "button": "Delete {vehicle}",
+    "confirmTitle": "Delete {vehicle}?",
+    "text": "Its readings, trips, charges, imported history and the costs entered for them are deleted for good. To keep a copy, download your data in the settings first.",
+    "again": "A new connection that lists it again adds it as a new vehicle, without this history.",
+    "confirm": "Delete",
+    "cancel": "Cancel",
+    "error": "The vehicle could not be deleted. Try again in a moment."
   },
   "orphans": {
     "title": "Costs without a charge",

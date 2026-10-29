@@ -124,17 +124,19 @@ test('Vehicle settings: a family the catalog lacks, from the vehicle page', asyn
   await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/settings$`))
   // Two areas, each a link of the sub-navigation: the model first.
   const areas = page.getByRole('navigation', { name: 'Vehicle settings areas' })
-  await expect(areas.getByRole('link')).toHaveText(['Model and charger', 'Imported history'])
-  await expect(areas.getByRole('link', { name: 'Model and charger' })).toHaveAttribute(
+  await expect(areas.getByRole('link')).toHaveText(['Vehicle', 'Imported history'])
+  await expect(areas.getByRole('link', { name: 'Vehicle', exact: true })).toHaveAttribute(
     'aria-current',
     'page',
   )
-  const section = page.getByRole('region', { name: 'Model and charger' })
+  const section = page.getByRole('region', { name: 'Vehicle', exact: true })
   await expect(section.locator('dd')).toHaveText([/^[A-HJ-NPR-Z0-9]{17}$/, 'EX-SIM', '2026'])
   await expect(section.locator('.none')).toHaveText(
     "Runsten's catalog has no variant of the EX-SIM: it lists the battery-electric Volvo and Polestar models only.",
   )
   await expect(section.getByRole('radio')).toHaveCount(0)
+  // The deletion last, on a tile of its own.
+  await expect(section.getByRole('region', { name: 'Delete this vehicle' })).toBeVisible()
   await checkView(page, testInfo, 'vehicle-settings')
 
   await areas.getByRole('link', { name: 'Imported history' }).click()

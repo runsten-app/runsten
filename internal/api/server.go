@@ -207,6 +207,7 @@ type Config struct {
 	Health       VehicleHealth
 	Settings     Settings
 	Models       VehicleModels
+	Deletion     VehicleDeletion
 	Costs        ChargeCosts
 	// Imports are the vehicles' events imported from other applications; ImportJobs
 	// the imports asked for, run by the import worker; Aximote lists the vehicles of an
@@ -329,6 +330,7 @@ func New(cfg Config) *Server {
 	s.registerImportJobs(s.api)
 	s.registerFileImports(s.api)
 	s.registerModel(s.api)
+	s.registerDeletion(s.api)
 	s.registerStats(s.api)
 	s.registerBattery(s.api)
 	s.registerSoftware(s.api)

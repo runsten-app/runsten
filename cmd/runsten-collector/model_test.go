@@ -17,7 +17,7 @@ func TestModel(t *testing.T) {
 	}
 	ex30 := core.Snapshot{
 		Covers: core.FieldCapacity | core.FieldModel, CapacityKWh: some(69.0),
-		Family: some("EX30"), ModelYear: some(2024), BatteryElectric: some(true),
+		Family: some("EX30"), ModelYear: some(2024), Powertrain: some(core.Electric),
 	}
 	er, _ := cat.Variant("ex30-er-2024")
 	tests := []struct {

@@ -38,8 +38,11 @@ describe('VehicleSettingsPage', () => {
     mocks.fetchVehicle.mockResolvedValue(ex30)
     const w = await page(ex30?.id ?? '')
     expect(w.find('.v-main h1').text()).toBe('Vehicle settings')
-    expect(w.find('.area h2').text()).toBe('Model and charger')
+    expect(w.find('.area h2').text()).toBe('Vehicle')
     expect(w.find('.vehicle-model form').exists()).toBe(true)
+    // The deletion last, on a tile of its own.
+    const tiles = w.findAll('.tiles > *')
+    expect(tiles.at(-1)?.classes()).toContain('delete-vehicle')
     expect(w.find('.import-list').exists()).toBe(false)
     expect(mocks.fetchVariants).toHaveBeenCalledWith(ex30?.id)
     // The vehicle's tabs, none of them this page's.
@@ -48,7 +51,7 @@ describe('VehicleSettingsPage', () => {
   })
 
   it.each([
-    ['model', 'Model and charger'],
+    ['model', 'Vehicle'],
     ['history', 'Imported history'],
   ] as const)('leads to its areas, %s the one shown', async (area, shown) => {
     mocks.fetchVehicle.mockResolvedValue(ex30)
@@ -57,7 +60,7 @@ describe('VehicleSettingsPage', () => {
     expect(nav.attributes('aria-label')).toBe('Vehicle settings areas')
     const links = nav.findAll('a')
     expect(links.map((a) => [a.text(), a.attributes('href')])).toEqual([
-      ['Model and charger', `/vehicles/${ex30?.id}/settings`],
+      ['Vehicle', `/vehicles/${ex30?.id}/settings`],
       ['Imported history', `/vehicles/${ex30?.id}/settings/history`],
     ])
     expect(nav.find('[aria-current="page"]').text()).toBe(shown)
@@ -68,10 +71,11 @@ describe('VehicleSettingsPage', () => {
   it('lists what was imported before the ways to import more', async () => {
     mocks.fetchVehicle.mockResolvedValue(ex30)
     const w = await page(ex30?.id ?? '', 'history')
-    const tiles = w.findAll('.history > section')
+    const tiles = w.findAll('.tiles > section')
     expect(tiles.map((s) => s.classes().includes('import-list'))).toEqual([true, false])
     expect(tiles[1]?.classes()).toContain('import-sources')
     expect(w.find('.vehicle-model').exists()).toBe(false)
+    expect(w.find('.delete-vehicle').exists()).toBe(false)
   })
 
   it.each([
@@ -92,5 +96,6 @@ describe('VehicleSettingsPage', () => {
     const w = await page('nope')
     expect(w.find('.v-main .v-alert').text()).toBe(text)
     expect(w.find('.vehicle-model').exists()).toBe(false)
+    expect(w.find('.delete-vehicle').exists()).toBe(false)
   })
 })

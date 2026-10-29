@@ -85,7 +85,7 @@ type vehicleModel struct {
 // of a battery-electric vehicle. Hybrids are left out, recognized or chosen alike: their
 // charges are not derived correctly.
 func offered(n core.Snapshot) bool {
-	return (n.Family.OK || n.Brand.OK) && n.BatteryElectric.OK && n.BatteryElectric.V
+	return (n.Family.OK || n.Brand.OK) && n.BatteryElectric()
 }
 
 // offer lists the variants the user may choose from: the family's, else the brand's.
@@ -134,7 +134,7 @@ func effectiveModel(c *catalog.Catalog, n core.Snapshot, v Vehicle) vehicleModel
 func catalogReading(n core.Snapshot, vin string) catalog.Reading {
 	return catalog.Reading{
 		Brand: catalog.Brand(n.Brand.V), Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
-		Trim: n.Trim.V, BatteryElectric: n.BatteryElectric.OK && n.BatteryElectric.V,
+		Trim: n.Trim.V, BatteryElectric: n.BatteryElectric(),
 	}
 }
 
