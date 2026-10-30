@@ -227,7 +227,7 @@ describe('VehicleModelForm', () => {
     [
       'a family the catalog lacks',
       { ...ex30, model: { ...ex30.model, family: 'EX-SIM', variant: null, variant_source: null } },
-      "Runsten's catalog has no variant of the EX-SIM: it lists the battery-electric Volvo and Polestar models only.",
+      "Runsten's catalog has no variant of the EX-SIM: it lists the electric Volvo, Polestar and Tesla models, and the plug-in hybrid Volvos and the Polestar 1, only.",
     ],
     [
       'details never read',

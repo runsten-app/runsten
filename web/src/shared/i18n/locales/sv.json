@@ -853,7 +853,7 @@
     "loading": "Läser in varianterna",
     "loadError": "Varianterna kunde inte läsas in. Försök igen om en stund.",
     "notRead": "Runsten har inte läst fordonets detaljer än: dess variant kan väljas när de har lästs.",
-    "noVariant": "Runstens katalog har ingen variant av {family}: den listar bara helt eldrivna Volvo- och Polestar-modeller.",
+    "noVariant": "Runstens katalog har ingen variant av {family}: den listar bara eldrivna Volvo-, Polestar- och Tesla-modeller samt Volvos laddhybrider och Polestar 1.",
     "variant": "Variant",
     "variantHelp": "Siffrorna är katalogens. De varianter som fordonets detaljer passar kommer först.",
     "model": "Modell",

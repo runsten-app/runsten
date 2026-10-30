@@ -853,7 +853,7 @@
     "loading": "Chargement des variantes",
     "loadError": "Les variantes n'ont pas pu être chargées. Réessayez dans un instant.",
     "notRead": "Runsten n'a pas encore lu les détails de ce véhicule : sa variante pourra être choisie ensuite.",
-    "noVariant": "Le catalogue de Runsten n'a aucune variante du {family} : il ne liste que les Volvo et Polestar entièrement électriques.",
+    "noVariant": "Le catalogue de Runsten n'a aucune variante du {family} : il ne liste que les Volvo, Polestar et Tesla électriques, et les Volvo hybrides rechargeables et la Polestar 1.",
     "variant": "Variante",
     "variantHelp": "Les chiffres sont ceux du catalogue. Les variantes auxquelles correspondent les détails du véhicule viennent en premier.",
     "model": "Modèle",

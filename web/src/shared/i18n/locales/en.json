@@ -853,7 +853,7 @@
     "loading": "Loading the variants",
     "loadError": "The variants could not be loaded. Try again in a moment.",
     "notRead": "Runsten has not read the details of this vehicle yet: its variant can be chosen once they are.",
-    "noVariant": "Runsten's catalog has no variant of the {family}: it lists the battery-electric Volvo and Polestar models only.",
+    "noVariant": "Runsten's catalog has no variant of the {family}: it lists the electric Volvo, Polestar and Tesla models, and the plug-in hybrid Volvos and the Polestar 1, only.",
     "variant": "Variant",
     "variantHelp": "The figures are those of the catalog. The variants the vehicle's details fit come first.",
     "model": "Model",
