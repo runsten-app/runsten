@@ -14,7 +14,8 @@
       "dc_max_kw": 153
     },
     "variant_source": "chosen",
-    "ac_max_kw": 11
+    "ac_max_kw": 11,
+    "powertrain": "electric"
   },
   "connection": {
     "provider": "volvo",

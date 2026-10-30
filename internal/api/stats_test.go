@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"runsten/internal/core"
 )
 
 // costStats are the cost fields of the charges, in all or of a type.
@@ -186,6 +188,59 @@ func TestStatsJSON(t *testing.T) {
 		}
 		if trips != 3 || starts != 1 || ends != 1 {
 			t.Errorf("trips %d, charges %d and %d: %+v %+v", trips, starts, ends, s.TripsByDistance, s.ChargesBySoC)
+		}
+	})
+	t.Run("a plug-in hybrid has no consumption", func(t *testing.T) {
+		// consumption reads every consumption of a response: the totals', each
+		// interval's and each band's.
+		consumption := func(t *testing.T, target string) (known, all int) {
+			t.Helper()
+			_, body := get(t, noFollow(), target, c)
+			var s struct {
+				Totals struct {
+					Trips struct {
+						Consumption *float64 `json:"consumption_kwh_per_100km"`
+					} `json:"trips"`
+				} `json:"totals"`
+				Buckets []struct {
+					Trips struct {
+						Consumption *float64 `json:"consumption_kwh_per_100km"`
+					} `json:"trips"`
+				} `json:"buckets"`
+				TripsByDistance struct {
+					Bands []struct {
+						Consumption *float64 `json:"consumption_kwh_per_100km"`
+					} `json:"bands"`
+				} `json:"trips_by_distance"`
+			}
+			if err := json.Unmarshal([]byte(body), &s); err != nil {
+				t.Fatal(err)
+			}
+			values := []*float64{s.Totals.Trips.Consumption}
+			for _, b := range s.Buckets {
+				values = append(values, b.Trips.Consumption)
+			}
+			for _, b := range s.TripsByDistance.Bands {
+				values = append(values, b.Consumption)
+			}
+			for _, v := range values {
+				if v != nil {
+					known++
+				}
+			}
+			return known, len(values)
+		}
+		if known, _ := consumption(t, byDay); known == 0 {
+			t.Fatal("the electric car has no consumption: the case proves nothing")
+		}
+		before := e.reader.current[car]
+		defer func() { e.reader.current[car] = before }()
+		e.reader.current[car] = []core.Record{{FetchedAt: h(5, 0), CheckedAt: h(5, 0), Snapshot: details("V60", 2027, 18.819, false)}}
+		if known, all := consumption(t, byDay); known != 0 {
+			t.Errorf("%d consumptions of %d known, want none", known, all)
+		}
+		if s := read(t, byDay); s.Totals.Trips.Count == 0 {
+			t.Errorf("the hybrid's trips are gone: %+v", s.Totals.Trips)
 		}
 	})
 	t.Run("each charge of the period is in one group of places", func(t *testing.T) {

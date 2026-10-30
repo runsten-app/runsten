@@ -613,7 +613,7 @@ func TestVehiclesJSON(t *testing.T) {
 	// No vehicle yet: an empty list, not null.
 	_, body = get(t, noFollow(), e.api.URL+"/api/v1/vehicles", e.session(t, "other"))
 	if body != `{"items":[{"id":"`+foreign+`","vin":"YV1SMLT0000DT0003",`+
-		`"model":{"family":null,"model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null},"connection":{"provider":"volvo","status":"active","api_key":"instance","credential":null,"authorized_at":null,"refreshed_at":null,"reauth_at":null,"reauth_reason":null},`+
+		`"model":{"family":null,"model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null,"powertrain":null},"connection":{"provider":"volvo","status":"active","api_key":"instance","credential":null,"authorized_at":null,"refreshed_at":null,"reauth_at":null,"reauth_reason":null},`+
 		`"market_refused_at":null,"unshared_at":null,"collection":null}]}`+"\n" {
 		t.Errorf("other account: %s", body)
 	}
@@ -634,37 +634,37 @@ func TestVehicleModel(t *testing.T) {
 		{
 			"recognized", vin, details("EX30", 2024, 69.0, true),
 			`{"family":"EX30","model_year":2024,"variant":{"id":"ex30-er-2024","name":"EX30 Single Motor Extended Range",` +
-				`"gross_kwh":69,"net_kwh":64,"ac_max_kw":11,"ac_option_kw":22,"dc_max_kw":153},"variant_source":"detected","ac_max_kw":null}`,
+				`"gross_kwh":69,"net_kwh":64,"ac_max_kw":11,"ac_option_kw":22,"dc_max_kw":153},"variant_source":"detected","ac_max_kw":null,"powertrain":"electric"}`,
 		},
 		{
 			"several candidates", "YV1SMLT0000DT0001", details("EX30", 2024, 69.0, true),
-			`{"family":"EX30","model_year":2024,"variant":null,"variant_source":null,"ac_max_kw":null}`,
+			`{"family":"EX30","model_year":2024,"variant":null,"variant_source":null,"ac_max_kw":null,"powertrain":"electric"}`,
 		},
 		{
 			"unknown family", vin, details("EX-SIM", 2026, 80, true),
-			`{"family":"EX-SIM","model_year":2026,"variant":null,"variant_source":null,"ac_max_kw":null}`,
+			`{"family":"EX-SIM","model_year":2026,"variant":null,"variant_source":null,"ac_max_kw":null,"powertrain":"electric"}`,
 		},
 		{
 			// It would be recognized, were it battery electric.
 			"hybrid", vin, details("EX30", 2024, 69.0, false),
-			`{"family":"EX30","model_year":2024,"variant":null,"variant_source":null,"ac_max_kw":null}`,
+			`{"family":"EX30","model_year":2024,"variant":null,"variant_source":null,"ac_max_kw":null,"powertrain":"plugin_hybrid"}`,
 		},
 		{
 			"a plug-in hybrid recognized: no DC", "", details("V60", 2027, 18.819, false),
 			`{"family":"V60","model_year":2027,"variant":{"id":"v60-phev-2022","name":"V60 T6 / T8 Plug-in Hybrid (18.8 kWh)",` +
-				`"gross_kwh":18.8,"net_kwh":14.9,"ac_max_kw":6.4,"ac_option_kw":null,"dc_max_kw":null},"variant_source":"detected","ac_max_kw":null}`,
+				`"gross_kwh":18.8,"net_kwh":14.9,"ac_max_kw":6.4,"ac_option_kw":null,"dc_max_kw":null},"variant_source":"detected","ac_max_kw":null,"powertrain":"plugin_hybrid"}`,
 		},
 		{
 			"fuel type unknown", vin,
 			core.Snapshot{Covers: core.FieldCapacity | core.FieldModel, CapacityKWh: some(69.0), Family: some("EX30")},
-			`{"family":"EX30","model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null}`,
+			`{"family":"EX30","model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null,"powertrain":null}`,
 		},
 		{
 			"year and capacity unknown", "",
 			core.Snapshot{Covers: core.FieldModel, Family: some("EX90"), Powertrain: some(core.Electric)},
-			`{"family":"EX90","model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null}`,
+			`{"family":"EX90","model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null,"powertrain":"electric"}`,
 		},
-		{"details never read", vin, core.Snapshot{}, `{"family":null,"model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null}`},
+		{"details never read", vin, core.Snapshot{}, `{"family":null,"model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null,"powertrain":null}`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

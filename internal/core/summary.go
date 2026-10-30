@@ -213,6 +213,22 @@ type Summary struct {
 	ChargesByPlace  ChargesByPlace
 }
 
+// WithoutConsumption is s with every consumption unknown: a plug-in hybrid's trips
+// measure the battery's energy only, and nothing tells which kilometres the engine
+// drove, so an energy over the whole distance would pass for a low consumption.
+func (s Summary) WithoutConsumption() Summary {
+	s.Totals.Trips.ConsumptionKWhPer100km = Value[float64]{}
+	s.Buckets = slices.Clone(s.Buckets)
+	for i := range s.Buckets {
+		s.Buckets[i].Trips.ConsumptionKWhPer100km = Value[float64]{}
+	}
+	s.TripsByDistance.Bands = slices.Clone(s.TripsByDistance.Bands)
+	for i := range s.TripsByDistance.Bands {
+		s.TripsByDistance.Bands[i].ConsumptionKWhPer100km = Value[float64]{}
+	}
+	return s
+}
+
 // Summarize aggregates the trips and charges of a vehicle over [from, to), split by
 // bucket in loc (UTC if nil).
 //

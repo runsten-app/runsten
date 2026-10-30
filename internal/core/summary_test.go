@@ -368,6 +368,39 @@ func TestSummarizeTripsByDistance(t *testing.T) {
 	}
 }
 
+// A plug-in hybrid's summary has no consumption, in the totals, the intervals or the
+// bands, and keeps every other figure; the summary it came from is left as it was.
+func TestSummaryWithoutConsumption(t *testing.T) {
+	t1 := pt("2026-06-01 08:00")
+	trips := []Trip{drive(t1, t1.Add(time.Hour), 41, 1.3, 60, 55), drive(t1.Add(3*time.Hour), t1.Add(4*time.Hour), 12, 2, 55, 47)}
+	s, err := Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketDay, DefaultParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := s.WithoutConsumption()
+
+	if h.Totals.Trips.ConsumptionKWhPer100km.OK {
+		t.Errorf("totals' consumption = %v, want unknown", h.Totals.Trips.ConsumptionKWhPer100km)
+	}
+	for i, b := range h.Buckets {
+		if b.Trips.ConsumptionKWhPer100km.OK {
+			t.Errorf("bucket %d's consumption = %v, want unknown", i, b.Trips.ConsumptionKWhPer100km)
+		}
+	}
+	for i, b := range h.TripsByDistance.Bands {
+		if b.ConsumptionKWhPer100km.OK {
+			t.Errorf("band %d's consumption = %v, want unknown", i, b.ConsumptionKWhPer100km)
+		}
+	}
+	if h.Totals.Trips.Count != 2 || h.Totals.Trips.DistanceKm != 53 || h.Totals.Trips.EnergyKWh != 3.3 {
+		t.Errorf("trips = %+v, want the same counts, distance and energy", h.Totals.Trips)
+	}
+	if !s.Totals.Trips.ConsumptionKWhPer100km.OK || !s.Buckets[0].Trips.ConsumptionKWhPer100km.OK ||
+		!s.TripsByDistance.Bands[1].ConsumptionKWhPer100km.OK {
+		t.Error("the original summary lost its consumption")
+	}
+}
+
 // The observed charges of the period count by the SoC they started and ended at, rounded
 // to the nearest point; a reconstructed charge and one without a SoC are left out.
 func TestSummarizeChargesBySoC(t *testing.T) {
