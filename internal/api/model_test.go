@@ -217,11 +217,11 @@ func TestPutVehicleModel(t *testing.T) {
 		{
 			"the Twin Motor, charger not stated", `{"variant_id":"ex30-twin-2024","ac_max_kw":null}`,
 			`{"family":"EX30","model_year":2024,"variant":{"id":"ex30-twin-2024","name":"EX30 Twin Motor Performance / Cross Country",` +
-				`"gross_kwh":69,"net_kwh":64,"ac_max_kw":11,"ac_option_kw":22,"dc_max_kw":153},"variant_source":"chosen","ac_max_kw":null}`,
+				`"gross_kwh":69,"net_kwh":64,"ac_max_kw":11,"ac_option_kw":22,"dc_max_kw":153},"variant_source":"chosen","ac_max_kw":null,"powertrain":"electric"}`,
 		},
 		{
 			"back to the recognition: none", `{"variant_id":null,"ac_max_kw":null}`,
-			`{"family":"EX30","model_year":2024,"variant":null,"variant_source":null,"ac_max_kw":null}`,
+			`{"family":"EX30","model_year":2024,"variant":null,"variant_source":null,"ac_max_kw":null,"powertrain":"electric"}`,
 		},
 	} {
 		resp, body := put(chosen, tt.body)
@@ -236,7 +236,7 @@ func TestPutVehicleModel(t *testing.T) {
 
 	// The recognized XC40: its charger can be stated without choosing the variant.
 	resp, body = put(car, `{"variant_id":null,"ac_max_kw":11}`)
-	if resp.status != http.StatusOK || !strings.Contains(body, `"variant_source":"detected","ac_max_kw":11}`) {
+	if resp.status != http.StatusOK || !strings.Contains(body, `"variant_source":"detected","ac_max_kw":11,"powertrain":"electric"}`) {
 		t.Errorf("charger of the recognized variant: %d %s", resp.status, body)
 	}
 

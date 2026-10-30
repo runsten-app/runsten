@@ -1374,7 +1374,7 @@ components:
       additionalProperties: false
       properties:
         consumption_kwh_per_100km:
-          description: An estimate over the band's trips whose energy is known and distance positive, as trips.consumption_kwh_per_100km. null without such a trip.
+          description: An estimate over the band's trips whose energy is known and distance positive, as trips.consumption_kwh_per_100km. null without such a trip, and for a plug-in hybrid.
           format: double
           type:
             - number
@@ -2006,6 +2006,15 @@ components:
           type:
             - integer
             - "null"
+        powertrain:
+          description: "What moves the vehicle, as its details tell: electric, its battery alone; plugin_hybrid, a battery charged on a plug and an engine, whose trips' energy is the battery's only, so that the statistics give it no consumption; other, a combustion car or a fuel Runsten does not know. null until the vehicle's details are read."
+          oneOf:
+            - enum:
+                - electric
+                - plugin_hybrid
+                - other
+              type: string
+            - type: "null"
         variant:
           description: "The variant in effect, from Runsten's catalog: the one the user chose, else the one recognized, the only one that fits the family, model year, battery capacity and VIN the vendor reports. Its figures are the catalog's, from the manufacturer or else from public sources. null when none is chosen and none or several fit, for an unknown family and brand, and for a vehicle that is neither battery electric nor a plug-in hybrid, or whose fuel type is not read yet. A plug-in hybrid is matched among the plug-in hybrid variants only, an electric vehicle among the electric ones."
           oneOf:
@@ -2025,6 +2034,7 @@ components:
         - variant
         - variant_source
         - ac_max_kw
+        - powertrain
       type: object
     ModelYears:
       additionalProperties: false
@@ -3816,7 +3826,7 @@ components:
       additionalProperties: false
       properties:
         consumption_kwh_per_100km:
-          description: "An estimate: the energy over the distance of the trips where both are known and the distance positive, reconstructed ones included. null without such a trip."
+          description: "An estimate: the energy over the distance of the trips where both are known and the distance positive, reconstructed ones included. null without such a trip, and for a plug-in hybrid (the vehicle's model.powertrain): its trips' energy is the battery's only, whatever the engine drove."
           format: double
           type:
             - number

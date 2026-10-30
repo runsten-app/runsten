@@ -16,7 +16,8 @@
           "dc_max_kw": 150
         },
         "variant_source": "detected",
-        "ac_max_kw": null
+        "ac_max_kw": null,
+        "powertrain": "electric"
       },
       "connection": {
         "provider": "volvo",
@@ -62,7 +63,8 @@
         "model_year": null,
         "variant": null,
         "variant_source": null,
-        "ac_max_kw": null
+        "ac_max_kw": null,
+        "powertrain": null
       },
       "connection": {
         "provider": "volvo",
@@ -107,7 +109,8 @@
           "dc_max_kw": 153
         },
         "variant_source": "chosen",
-        "ac_max_kw": 11
+        "ac_max_kw": 11,
+        "powertrain": "electric"
       },
       "connection": {
         "provider": "volvo",
@@ -131,7 +134,8 @@
         "model_year": null,
         "variant": null,
         "variant_source": null,
-        "ac_max_kw": null
+        "ac_max_kw": null,
+        "powertrain": null
       },
       "connection": {
         "provider": "volvo",
@@ -176,7 +180,8 @@
           "dc_max_kw": 155
         },
         "variant_source": "chosen",
-        "ac_max_kw": null
+        "ac_max_kw": null,
+        "powertrain": "electric"
       },
       "connection": {
         "provider": "polestar",

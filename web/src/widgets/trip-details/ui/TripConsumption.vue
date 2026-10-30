@@ -3,18 +3,24 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { bandOf } from '@/entities/stats'
 import type { Trip } from '@/entities/trip'
+import { useVehicle } from '@/features/select-vehicle'
 import { useBandLabel, useStats } from '@/features/view-stats'
 import { parsePeriod, shortcutDays, useFormat } from '@/shared/lib'
 import { FactItem } from '@/shared/ui'
 
 // TripConsumption sets a trip's consumption beside its month's: the average of every
 // trip, and that of the trips of the same band of distance, as the statistics give them
-// over the month the trip started in, in the reader's time zone.
+// over the month the trip started in, in the reader's time zone. A plug-in hybrid's
+// trip has none: its energy is the battery's alone, whatever the engine drove.
 const props = defineProps<{ vehicle: string; trip: Trip }>()
 const { t } = useI18n()
 const f = useFormat()
 const bandLabel = useBandLabel()
 
+// Until the vehicle is read, its powertrain is unknown: no card rather than a hybrid's
+// figures for a moment, or for good when the read fails.
+const { vehicle: details } = useVehicle(() => props.vehicle)
+const hybrid = computed(() => details.value?.model.powertrain === 'plugin_hybrid')
 const days = computed(() => shortcutDays('thisMonth', new Date(props.trip.start.after)))
 const period = computed(() => parsePeriod(days.value.from, days.value.to))
 const { stats } = useStats(
@@ -51,11 +57,14 @@ const similar = computed(() =>
 </script>
 
 <template>
-  <v-card class="h-100 consumption">
+  <v-card v-if="details" class="h-100 consumption">
     <v-card-title tag="h2" class="text-title-medium">{{
       t('trip.consumption.title')
     }}</v-card-title>
-    <v-card-text>
+    <v-card-text v-if="hybrid">
+      <p class="hybrid-note text-body-medium">{{ t('trip.consumption.hybrid') }}</p>
+    </v-card-text>
+    <v-card-text v-else>
       <dl class="facts">
         <FactItem :label="t('trip.consumption.own')" :value="f.quantity(own, 'kWhPer100km')" />
         <template v-if="stats">

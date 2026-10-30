@@ -7,15 +7,17 @@ import { TripDetails } from '@/widgets/trip-details'
 import stats from '@fixtures/stats.json'
 import imported from '@fixtures/trip-imported.json'
 import trip from '@fixtures/trip.json'
+import vehicle from '@fixtures/vehicle-model.json'
 import track from '@fixtures/trip-track.json'
 import page1 from '@fixtures/trips-page-1.json'
 import { withMapTiles, withoutMapTiles } from '@test/mapMeta'
 import { mountWith } from '@test/utils'
 
-const { fetchTrip, fetchTripTrack, fetchStats } = vi.hoisted(() => ({
+const { fetchTrip, fetchTripTrack, fetchStats, fetchVehicle } = vi.hoisted(() => ({
   fetchTrip: vi.fn(),
   fetchTripTrack: vi.fn(),
   fetchStats: vi.fn(),
+  fetchVehicle: vi.fn(),
 }))
 vi.mock('@/entities/trip', async (original) => ({
   ...(await original<typeof import('@/entities/trip')>()),
@@ -25,6 +27,10 @@ vi.mock('@/entities/trip', async (original) => ({
 vi.mock('@/entities/stats', async (original) => ({
   ...(await original<typeof import('@/entities/stats')>()),
   fetchStats,
+}))
+vi.mock('@/entities/vehicle', async (original) => ({
+  ...(await original<typeof import('@/entities/vehicle')>()),
+  fetchVehicle,
 }))
 
 // month is the statistics of the trip's month: 16 kWh/100 km on average, 20 for the
@@ -43,6 +49,8 @@ beforeEach(() => {
   fetchTripTrack.mockResolvedValue(track)
   fetchStats.mockReset()
   fetchStats.mockResolvedValue(month())
+  fetchVehicle.mockReset()
+  fetchVehicle.mockResolvedValue(vehicle)
 })
 afterEach(() => {
   i18n.global.locale.value = 'en'
@@ -212,6 +220,26 @@ describe('TripDetails', () => {
     const link = w.find('.consumption .stats-link')
     expect(plain(link.text())).toBe('See the statistics of September')
     expect(link.attributes('href')).toBe('/vehicles/v1/stats?from=2026-09-01&to=2026-09-30')
+  })
+
+  it("gives a plug-in hybrid's trip no consumption, and says why", async () => {
+    fetchVehicle.mockResolvedValue({
+      ...vehicle,
+      model: { ...vehicle.model, powertrain: 'plugin_hybrid' },
+    })
+    const w = await mounted(trip)
+    const card = w.find('.consumption')
+    expect(card.find('.v-card-title').text()).toBe('Consumption')
+    expect(card.find('dl').exists()).toBe(false)
+    expect(card.find('.hybrid-note').text()).toContain('plug-in hybrid')
+    expect(card.find('.stats-link').exists()).toBe(false)
+  })
+
+  it('shows no consumption until the vehicle tells its powertrain', async () => {
+    fetchVehicle.mockReturnValue(new Promise(() => {}))
+    expect((await mounted(trip)).find('.consumption').exists()).toBe(false)
+    fetchVehicle.mockRejectedValue(new ApiError(500, 'internal', 'failed'))
+    expect((await mounted(trip)).find('.consumption').exists()).toBe(false)
   })
 
   it('compares a reconstructed trip with the month only: it may hold several', async () => {

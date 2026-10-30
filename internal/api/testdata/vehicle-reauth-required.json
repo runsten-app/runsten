@@ -6,7 +6,8 @@
     "model_year": null,
     "variant": null,
     "variant_source": null,
-    "ac_max_kw": null
+    "ac_max_kw": null,
+    "powertrain": null
   },
   "connection": {
     "provider": "volvo",

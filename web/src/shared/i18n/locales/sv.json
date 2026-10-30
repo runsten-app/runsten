@@ -225,6 +225,7 @@
       "similar": "Resor {band} i {month}",
       "gap": "{pct} för den här resan",
       "note": "Uppskattningar från laddningsnivån, på en procentenhet när: en kort resa kan avvika mycket från genomsnittet.",
+      "hybrid": "Uppskattas inte för en laddhybrid: laddnivån visar bara batteriets energi, inte hur stor del av resan motorn körde.",
       "statsLink": "Se statistiken för {month}"
     },
     "energyImportedNote": "Energin är den som appen gav."
@@ -852,7 +853,7 @@
     "loading": "Läser in varianterna",
     "loadError": "Varianterna kunde inte läsas in. Försök igen om en stund.",
     "notRead": "Runsten har inte läst fordonets detaljer än: dess variant kan väljas när de har lästs.",
-    "noVariant": "Runstens katalog har ingen variant av {family}: den listar bara helt eldrivna Volvo- och Polestar-modeller.",
+    "noVariant": "Runstens katalog har ingen variant av {family}: den listar bara eldrivna Volvo-, Polestar- och Tesla-modeller samt Volvos laddhybrider och Polestar 1.",
     "variant": "Variant",
     "variantHelp": "Siffrorna är katalogens. De varianter som fordonets detaljer passar kommer först.",
     "model": "Modell",

@@ -11,6 +11,7 @@ const unknown: Model = {
   variant: null,
   variant_source: null,
   ac_max_kw: null,
+  powertrain: null,
 }
 const ex30: Model = { ...unknown, family: 'EX30', model_year: 2024 }
 

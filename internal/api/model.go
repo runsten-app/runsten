@@ -56,6 +56,14 @@ type modelJSON struct {
 	Variant       null[variantJSON]       `json:"variant" doc:"The variant in effect, from Runsten's catalog: the one the user chose, else the one recognized, the only one that fits the family, model year, battery capacity and VIN the vendor reports. Its figures are the catalog's, from the manufacturer or else from public sources. null when none is chosen and none or several fit, for an unknown family and brand, and for a vehicle that is neither battery electric nor a plug-in hybrid, or whose fuel type is not read yet. A plug-in hybrid is matched among the plug-in hybrid variants only, an electric vehicle among the electric ones."`
 	VariantSource null[variantSourceJSON] `json:"variant_source" doc:"chosen: by the user (PUT /vehicles/{vehicle}/model); detected: recognized from the vehicle's details, recomputed on every read. A chosen variant the catalog no longer has, or of another family (brand) than the vehicle reports, is ignored: the recognition applies again. null without a variant."`
 	ACMaxKW       *float64                `json:"ac_max_kw" doc:"The onboard charger the user stated, one of the variant's (its ac_max_kw or ac_option_kw). null when not stated, or when it is not one of the chargers of the variant in effect (ignored): the costs then take the more powerful, an upper bound."`
+	Powertrain    null[powertrainJSON]    `json:"powertrain" doc:"What moves the vehicle, as its details tell: electric, its battery alone; plugin_hybrid, a battery charged on a plug and an engine, whose trips' energy is the battery's only, so that the statistics give it no consumption; other, a combustion car or a fuel Runsten does not know. null until the vehicle's details are read."`
+}
+
+type powertrainJSON string
+
+// Schema lists the powertrains.
+func (powertrainJSON) Schema(huma.Registry) *huma.Schema {
+	return enumSchema(core.Electric, core.PlugInHybrid, core.OtherPowertrain)
 }
 
 // vehicleModel is what the vehicle is taken to be: the family and year it reports, and
@@ -63,8 +71,9 @@ type modelJSON struct {
 // JSON of the vehicle, the variants offered, the checks of a choice and the costs all
 // read it.
 type vehicleModel struct {
-	Family    core.Value[string]
-	ModelYear core.Value[int]
+	Family     core.Value[string]
+	ModelYear  core.Value[int]
+	Powertrain core.Value[core.Powertrain]
 	// Match is the recognition from the details, whatever the user chose. Empty for a
 	// vehicle the catalog does not offer variants for.
 	Match catalog.Result
@@ -85,7 +94,7 @@ type vehicleModel struct {
 // variant the catalog still has, of the family read. The charger stated holds while it is
 // one of the variant's in effect. Pure: it reads nothing else.
 func effectiveModel(c *catalog.Catalog, n core.Snapshot, v Vehicle) vehicleModel {
-	m := vehicleModel{Family: n.Family, ModelYear: n.ModelYear}
+	m := vehicleModel{Family: n.Family, ModelYear: n.ModelYear, Powertrain: n.Powertrain}
 	r := catalogReading(n, v.VIN)
 	if !r.Offered() {
 		return m
@@ -136,6 +145,7 @@ func modelOf(m vehicleModel) modelJSON {
 	out := modelJSON{
 		Family: opt(m.Family, same), ModelYear: opt(m.ModelYear, same),
 		Variant: nullOf(m.Variant, variantOf), ACMaxKW: opt(m.StatedChargerKW, same),
+		Powertrain: nullOf(m.Powertrain, text[core.Powertrain, powertrainJSON]),
 	}
 	if m.Source != "" {
 		out.VariantSource = known(m.Source)
@@ -156,11 +166,18 @@ func variantOf(v catalog.Variant) variantJSON { return variantJSON{variantFields
 // bounds the costs of its AC charges; unknown without a variant. The error is the store's,
 // for the caller to report.
 func (s *Server) chargerOf(ctx context.Context, v Vehicle) (core.Value[float64], error) {
+	m, err := s.modelNow(ctx, v)
+	return m.ChargerKW, err
+}
+
+// modelNow reads the vehicle's current state for its model in effect. The error is the
+// store's, for the caller to report.
+func (s *Server) modelNow(ctx context.Context, v Vehicle) (vehicleModel, error) {
 	c, err := s.States.Current(ctx, sessionFrom(ctx).AccountID, v.ID, s.Clock.Now())
 	if err != nil {
-		return core.Value[float64]{}, err //nolint:wrapcheck // reported by the caller, never shown
+		return vehicleModel{}, err //nolint:wrapcheck // reported by the caller, never shown
 	}
-	return effectiveModel(s.Catalog, c.Snapshot, v).ChargerKW, nil
+	return effectiveModel(s.Catalog, c.Snapshot, v), nil
 }
 
 // detailsOf reads the vehicle's current state for its model: its latest details, on

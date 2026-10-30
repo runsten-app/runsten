@@ -49,7 +49,7 @@ type tripStatsJSON struct {
 	EnergyKWh          float64  `json:"energy_kwh" doc:"The sum of the known energy estimates (ΔSoC × battery capacity)."`
 	EnergyUnknown      int      `json:"energy_unknown" minimum:"0"`
 	// An average: null over nothing, never 0.
-	ConsumptionKWhPer100km *float64 `json:"consumption_kwh_per_100km" doc:"An estimate: the energy over the distance of the trips where both are known and the distance positive, reconstructed ones included. null without such a trip."`
+	ConsumptionKWhPer100km *float64 `json:"consumption_kwh_per_100km" doc:"An estimate: the energy over the distance of the trips where both are known and the distance positive, reconstructed ones included. null without such a trip, and for a plug-in hybrid (the vehicle's model.powertrain): its trips' energy is the battery's only, whatever the engine drove."`
 }
 
 // costSumJSON is a sum of costs known by bounds, in minor units of the account's
@@ -136,7 +136,7 @@ type distanceBandJSON struct {
 	MaxKm *float64 `json:"max_km" doc:"And of less than max_km; null for the last band, which has no upper limit."`
 	Count int      `json:"count" minimum:"0"`
 	// An average: null over nothing.
-	ConsumptionKWhPer100km *float64 `json:"consumption_kwh_per_100km" doc:"An estimate over the band's trips whose energy is known and distance positive, as trips.consumption_kwh_per_100km. null without such a trip."`
+	ConsumptionKWhPer100km *float64 `json:"consumption_kwh_per_100km" doc:"An estimate over the band's trips whose energy is known and distance positive, as trips.consumption_kwh_per_100km. null without such a trip, and for a plug-in hybrid."`
 }
 
 type tripsByDistanceJSON struct {
@@ -356,13 +356,13 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 		out.ChargesByPlace = chargesByPlaceOf(core.NoChargesByPlace())
 		return respond(out), nil
 	}
-	charger, err := s.chargerOf(ctx, v)
+	model, err := s.modelNow(ctx, v)
 	if err != nil {
 		return nil, s.internal("vehicle model not read", err)
 	}
 	costs := core.Costs{Charges: make([]core.Value[core.Cost], len(p.Charges)), Orphans: p.Orphans}
 	if !l.NoCosts {
-		costs.Charges = s.costs(p.PricedCharges, charger)
+		costs.Charges = s.costs(p.PricedCharges, model.ChargerKW)
 	}
 	sum, err := core.Summarize(p.Trips, p.Charges, costs, p.Places, from, to, loc, core.Bucket(in.Bucket), s.Params)
 	switch {
@@ -370,6 +370,9 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 		return nil, apiError(http.StatusBadRequest, codeInvalidParameter, "bucket: the period would have more than 400 intervals")
 	case err != nil:
 		return nil, s.internal("stats not computed", err)
+	}
+	if model.Powertrain.V == core.PlugInHybrid {
+		sum = sum.WithoutConsumption()
 	}
 	out.Totals = periodStatsOf(sum.Totals)
 	out.TripsByDistance, out.ChargesBySoC = tripsByDistanceOf(sum.TripsByDistance), chargesBySoCOf(sum.ChargesBySoC)

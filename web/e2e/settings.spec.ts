@@ -143,7 +143,7 @@ test("Vehicle settings: a family the catalog lacks, from the bar's vehicle menu"
   const section = page.getByRole('region', { name: 'Vehicle', exact: true })
   await expect(section.locator('dd')).toHaveText([/^[A-HJ-NPR-Z0-9]{17}$/, 'EX-SIM', '2026'])
   await expect(section.locator('.none')).toHaveText(
-    "Runsten's catalog has no variant of the EX-SIM: it lists the battery-electric Volvo and Polestar models only.",
+    "Runsten's catalog has no variant of the EX-SIM: it lists the electric Volvo, Polestar and Tesla models, and the plug-in hybrid Volvos and the Polestar 1, only.",
   )
   await expect(section.getByRole('radio')).toHaveCount(0)
   // The deletion last, on a tile of its own.
@@ -197,6 +197,7 @@ test('Vehicle settings: the variant and the charger of an EX30, as its driver ch
     variant: null,
     variant_source: null,
     ac_max_kw: null,
+    powertrain: 'electric',
   }
   await page.route('**/api/v1/vehicles', async (route) => {
     const res = await route.fetch()
@@ -293,6 +294,7 @@ test('Vehicle settings: the model, then the variant of a Polestar', async ({ pag
     variant: null,
     variant_source: null,
     ac_max_kw: null,
+    powertrain: 'electric',
   }
   await page.route('**/api/v1/vehicles', async (route) => {
     const res = await route.fetch()
