@@ -163,7 +163,7 @@ vehicle=$(get /api/v1/vehicles | jq -er '.items | select(length == 1) | .[0] | s
 until_api "/api/v1/vehicles/$vehicle/state" '.soc_pct.value != null and .odometer_km.value != null and .checked_at != null'
 # The scenario's family is not in the catalog: read, but no variant recognized, none to
 # choose, and a variant of another family refused.
-until_api "/api/v1/vehicles/$vehicle" '.model == {"family": "EX-SIM", "model_year": 2026, "variant": null, "variant_source": null, "ac_max_kw": null}'
+until_api "/api/v1/vehicles/$vehicle" '.model == {"family": "EX-SIM", "model_year": 2026, "variant": null, "variant_source": null, "ac_max_kw": null, "powertrain": "electric"}'
 get "/api/v1/vehicles/$vehicle/variants" | jq -e '.items == []' >/dev/null || fail "variants offered for EX-SIM"
 [ "$(curl -s -o /dev/null -w '%{http_code}' -b "$jar" -X PUT -H 'Content-Type: application/json' \
 	-d '{"variant_id":"ex30-er-2024","ac_max_kw":null}' "$api/api/v1/vehicles/$vehicle/model")" = 400 ] ||

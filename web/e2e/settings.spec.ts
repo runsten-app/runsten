@@ -197,6 +197,7 @@ test('Vehicle settings: the variant and the charger of an EX30, as its driver ch
     variant: null,
     variant_source: null,
     ac_max_kw: null,
+    powertrain: 'electric',
   }
   await page.route('**/api/v1/vehicles', async (route) => {
     const res = await route.fetch()
@@ -293,6 +294,7 @@ test('Vehicle settings: the model, then the variant of a Polestar', async ({ pag
     variant: null,
     variant_source: null,
     ac_max_kw: null,
+    powertrain: 'electric',
   }
   await page.route('**/api/v1/vehicles', async (route) => {
     const res = await route.fetch()
