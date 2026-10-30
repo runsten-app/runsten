@@ -225,6 +225,7 @@
       "similar": "Resor {band} i {month}",
       "gap": "{pct} för den här resan",
       "note": "Uppskattningar från laddningsnivån, på en procentenhet när: en kort resa kan avvika mycket från genomsnittet.",
+      "hybrid": "Uppskattas inte för en laddhybrid: laddnivån visar bara batteriets energi, inte hur stor del av resan motorn körde.",
       "statsLink": "Se statistiken för {month}"
     },
     "energyImportedNote": "Energin är den som appen gav."

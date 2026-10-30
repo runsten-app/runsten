@@ -225,6 +225,7 @@
       "similar": "Trips {band} in {month}",
       "gap": "{pct} for this trip",
       "note": "Estimates from the state of charge, to a point: a short trip may read far from the average.",
+      "hybrid": "Not estimated for a plug-in hybrid: the state of charge tells the battery's energy only, and not which part of the trip the engine drove.",
       "statsLink": "See the statistics of {month}"
     },
     "energyImportedNote": "The energy is the one the app gave."

@@ -225,6 +225,7 @@
       "similar": "Trajets de {band} en {month}",
       "gap": "{pct} pour ce trajet",
       "note": "Estimations d’après le niveau de charge, au point près : un trajet court peut s’écarter beaucoup de la moyenne.",
+      "hybrid": "Non estimée pour un hybride rechargeable : l'état de charge ne dit que l'énergie de la batterie, pas quelle part du trajet le moteur a faite.",
       "statsLink": "Voir les statistiques de {month}"
     },
     "energyImportedNote": "L'énergie est celle que l'app a donnée."
