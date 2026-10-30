@@ -235,6 +235,13 @@ describe('TripDetails', () => {
     expect(card.find('.stats-link').exists()).toBe(false)
   })
 
+  it('shows no consumption until the vehicle tells its powertrain', async () => {
+    fetchVehicle.mockReturnValue(new Promise(() => {}))
+    expect((await mounted(trip)).find('.consumption').exists()).toBe(false)
+    fetchVehicle.mockRejectedValue(new ApiError(500, 'internal', 'failed'))
+    expect((await mounted(trip)).find('.consumption').exists()).toBe(false)
+  })
+
   it('compares a reconstructed trip with the month only: it may hold several', async () => {
     const w = await mounted({ ...trip, reconstructed: true, energy_kwh: null })
     expect(facts(w, 'consumption')).toEqual({

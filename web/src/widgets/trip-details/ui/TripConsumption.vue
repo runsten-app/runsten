@@ -17,6 +17,8 @@ const { t } = useI18n()
 const f = useFormat()
 const bandLabel = useBandLabel()
 
+// Until the vehicle is read, its powertrain is unknown: no card rather than a hybrid's
+// figures for a moment, or for good when the read fails.
 const { vehicle: details } = useVehicle(() => props.vehicle)
 const hybrid = computed(() => details.value?.model.powertrain === 'plugin_hybrid')
 const days = computed(() => shortcutDays('thisMonth', new Date(props.trip.start.after)))
@@ -55,7 +57,7 @@ const similar = computed(() =>
 </script>
 
 <template>
-  <v-card class="h-100 consumption">
+  <v-card v-if="details" class="h-100 consumption">
     <v-card-title tag="h2" class="text-title-medium">{{
       t('trip.consumption.title')
     }}</v-card-title>
