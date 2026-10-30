@@ -23,4 +23,5 @@ Selecting a bar opens the trips or charges of its interval.
 - **A sum covers the known values**, and says how many events lacked one. An average over no known value is unknown.
 - **The odometer** is read from the trips (at their start and end) and the charges (at their end). It only moves while driving, so it holds over a day without a trip. The distance it tells over the period may differ from the sum of the trips: a trip whose distance is unknown is in the one, not in the other.
 - **Energies, consumption and the loss while parked are estimates** from the state of charge; the page says so.
+- **A plug-in hybrid has no consumption**: its trips' energy is the battery's alone, whatever the engine drove ([Plug-in hybrids](./vehicle-models.md#plug-in-hybrids)).
 - **Days, weeks and months** are those of your browser's time zone. Weeks start on Monday.

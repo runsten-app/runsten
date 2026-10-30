@@ -37,4 +37,18 @@ When the variant offers a 22 kW onboard charger as an option, state which one th
 
 Volvo reports the gross capacity of the battery. Runsten assumes, until a measurement confirms it, that the state of charge runs over the net (usable) capacity, and uses it when the catalog knows it. For an EX30 of 69 kWh gross, 64 net, energies are 7 % lower than on the gross capacity.
 
+## Plug-in hybrids
+
+A plug-in hybrid is collected like any Volvo. What works:
+
+- **Charges on a plug**, with their energy and their cost. While driving, the engine may also raise the state of charge (holding an empty battery, or a charge mode): such a rise is never taken for a charge. A rise seen while parked is a charge only when the car says its cable is connected.
+- **Trips**, with their distance and the energy taken from the battery.
+- **The variant**, its net capacity and its onboard charger, as for an electric car.
+- **The health** (tyres, service, warnings) and the current state.
+
+What does not, yet:
+
+- **Consumption**: none is shown, for a trip or in the statistics. The state of charge tells the battery's energy only, not which part of a trip the engine drove: an energy over the whole distance would pass for a very low consumption.
+- **Fuel**: the fuel a trip burned, the refuels and their cost are not counted.
+
 A missing or wrong variant? [Contribute it](../contributing/variants.md).
