@@ -1090,7 +1090,7 @@
     "title": "Connection",
     "backToVehicle": "Back to the vehicle",
     "attention": "The connection needs your attention",
-    "intro": "Runsten reads your vehicles in the background, from Volvo's API and Polestar's Data Portal: that is its collector. This page tells whether it reads them, and if not, why.",
+    "intro": "Runsten reads your vehicles in the background, from each manufacturer's API: that is its collector. This page tells whether it reads them, and if not, why.",
     "loading": "Loading the connection",
     "error": "The connection could not be loaded. Try again in a moment.",
     "refreshFailed": "The connection could not be refreshed: what it shows may be out of date.",

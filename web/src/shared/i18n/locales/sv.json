@@ -1090,7 +1090,7 @@
     "title": "Anslutning",
     "backToVehicle": "Tillbaka till fordonet",
     "attention": "Anslutningen behöver din uppmärksamhet",
-    "intro": "Runsten läser dina fordon i bakgrunden, från Volvos API och Polestars Data Portal: det är dess insamlare. Den här sidan visar om den läser dem, och om inte, varför.",
+    "intro": "Runsten läser dina fordon i bakgrunden, från varje tillverkares API: det är dess insamlare. Den här sidan visar om den läser dem, och om inte, varför.",
     "loading": "Läser in anslutningen",
     "error": "Anslutningen kunde inte läsas in. Försök igen om en stund.",
     "refreshFailed": "Anslutningen kunde inte uppdateras: det som visas kan vara inaktuellt.",
