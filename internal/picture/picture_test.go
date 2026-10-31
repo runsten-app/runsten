@@ -20,10 +20,12 @@ type cdn struct {
 	body     []byte
 	location string
 	asked    []string
+	headers  http.Header
 }
 
 func (c *cdn) RoundTrip(req *http.Request) (*http.Response, error) {
 	c.asked = append(c.asked, req.URL.String())
+	c.headers = req.Header
 	h := http.Header{"Content-Type": {c.typ}}
 	status := c.status
 	if c.location != "" && len(c.asked) == 1 {
@@ -64,10 +66,16 @@ func TestServes(t *testing.T) {
 func TestPicture(t *testing.T) {
 	clk := clock.NewManual(time.Unix(0, 0))
 	c := &cdn{status: http.StatusOK, typ: "image/png", body: []byte("png")}
-	r := relay(c, clk, DefaultParams())
+	p := DefaultParams()
+	p.UserAgent = "Runsten/v1.2.3"
+	r := relay(c, clk, p)
 	got, err := r.Picture(context.Background(), ext)
 	if err != nil || got.Type != "image/png" || string(got.Data) != "png" {
 		t.Fatalf("got %+v, %v", got, err)
+	}
+	// What Volvo's CDN requires, or it refuses.
+	if c.headers.Get("User-Agent") != "Runsten/v1.2.3" || c.headers.Get("Accept-Language") == "" {
+		t.Errorf("headers %v", c.headers)
 	}
 	// Asked at 640 px, the rest of the query as it was.
 	if want := "https://cas.volvocars.com/image/exterior/default.png?market=se&w=640&bg=00000000&fallback"; c.asked[0] != want {

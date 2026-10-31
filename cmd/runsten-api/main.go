@@ -270,10 +270,12 @@ func run(args []string) error {
 		go checker.Run(ctx)
 		releases = latestRelease{checker}
 	}
+	pictureParams := picture.DefaultParams()
+	pictureParams.UserAgent = "Runsten/" + version
 	handler := api.New(api.Config{
 		Sessions: sessions, AccessTokens: sessions,
 		Addresses:   addresses,
-		Pictures:    pictures{picture.New(picture.DefaultParams(), hc, clock.Real{})},
+		Pictures:    pictures{picture.New(pictureParams, hc, clock.Real{})},
 		Reader:      st,
 		Settings:    st,
 		Models:      st,

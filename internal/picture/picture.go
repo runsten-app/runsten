@@ -22,10 +22,12 @@ import (
 type Params struct {
 	// Hosts are the hosts a picture may come from: the vendors' CDNs, over https.
 	Hosts []string
-	// Width is the width asked of the CDN in place of the URL's w; 0 keeps it.
-	// Assumption: the CDN scales the picture to it, as its parameter says. A thumbnail
-	// and a tile need no more than 640 px; the details ask for 1920.
+	// Width is the width asked of the CDN in place of the URL's w; 0 keeps it. The CDN
+	// scales the picture to about it (asked 640, a picture of 750 px came, 2026-10): a
+	// thumbnail and a tile need no more; the details ask for 1920.
 	Width int
+	// UserAgent names the relay to the CDN: Runsten and its version.
+	UserAgent string
 	// MaxSize is the largest picture relayed, MaxBytes what the cache holds in all.
 	MaxSize, MaxBytes int
 	// TTL is how long a picture is kept.
@@ -144,7 +146,13 @@ func (r *Relay) fetch(ctx context.Context, u string) (Picture, error) {
 	if err != nil {
 		return Picture{}, fmt.Errorf("picture request: %w", err)
 	}
+	// Volvo's CDN (Akamai) refuses a request without Accept-Language and Accept-Encoding,
+	// or with Go's own User-Agent, or one holding a URL, with a 403 "Access Denied"
+	// (observed 2026-10-31, the same answer every time). The transport sends
+	// Accept-Encoding: gzip itself, and decompresses.
 	req.Header.Set("Accept", "image/png,image/webp,image/jpeg")
+	req.Header.Set("Accept-Language", "en")
+	req.Header.Set("User-Agent", r.p.UserAgent)
 	resp, err := r.hc.Do(req)
 	if err != nil {
 		return Picture{}, fmt.Errorf("%w: %w", ErrUnavailable, err)
