@@ -897,6 +897,87 @@ func incremental(records []Record, p Params) Result {
 	return Result{Trips: trips, Charges: charges, Versions: versions, Cursor: cursor, InProgress: open}
 }
 
+// read is one reading of a vehicle that tells its engine, odometer and position at once
+// (a Tesla's vehicle_data).
+func read(e EngineState, km float64, p Position, at time.Time) Snapshot {
+	return Snapshot{
+		Covers:     FieldEngine | FieldOdometer | FieldPosition,
+		Engine:     Some(e, time.Time{}),
+		OdometerKm: Some(km, time.Time{}),
+		Position:   Some(p, at),
+	}
+}
+
+// Put in drive and back without moving (to unplug), then driven off, the reading that
+// starts the drive already on the way: the first is no trip, and the drive starts from
+// the odometer it had.
+func TestTripThatNeverMoved(t *testing.T) {
+	records := []Record{
+		rec(0, 0, capacity(100)),
+		rec(0, 0, read(EngineStopped, 1000, home, m(0))),
+		rec(10, 10, read(EngineRunning, 1000, home, m(10))),
+		rec(11, 11, read(EngineStopped, 1000, home, m(11))),
+		rec(30, 30, read(EngineRunning, 1001, work, m(30))),
+		rec(40, 40, read(EngineStopped, 1010, work, m(40))),
+		rec(60, 60, read(EngineStopped, 1010, work, m(60))),
+	}
+	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	if len(res.Trips) != 1 {
+		t.Fatalf("trips %+v", res.Trips)
+	}
+	if tr := res.Trips[0]; tr.StartOdometerKm.V != 1000 || tr.DistanceKm.V != 10 {
+		t.Errorf("trip from %+v, distance %+v", tr.StartOdometerKm, tr.DistanceKm)
+	}
+}
+
+// A trip ended by the next one keeps the odometer read before it: the reading that
+// starts the next may already be on the way.
+func TestTripEndedByTheNext(t *testing.T) {
+	records := []Record{
+		rec(0, 0, capacity(100)),
+		rec(0, 0, read(EngineStopped, 1000, home, m(0))),
+		rec(10, 10, read(EngineRunning, 1000, home, m(10))),
+		rec(20, 20, read(EngineStopped, 1005, work, m(20))),
+		rec(25, 25, read(EngineRunning, 1006, home, m(25))),
+		rec(35, 35, read(EngineStopped, 1011, home, m(35))),
+		rec(60, 60, read(EngineStopped, 1011, home, m(60))),
+	}
+	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	if len(res.Trips) != 2 {
+		t.Fatalf("trips %+v", res.Trips)
+	}
+	if tr := res.Trips[0]; tr.EndOdometerKm.V != 1005 || tr.DistanceKm.V != 5 {
+		t.Errorf("first trip to %+v, distance %+v", tr.EndOdometerKm, tr.DistanceKm)
+	}
+}
+
+// A vehicle read on the way, the reading that starts the trip already away from the
+// charger (one reading tells the engine and the position): the charge stays where it
+// charged, where the trip starts from.
+func TestChargeInterruptedOnTheWay(t *testing.T) {
+	records := []Record{
+		rec(0, 0, capacity(100)),
+		rec(0, 0, engine(EngineStopped)),
+		rec(0, 0, odo(1000)),
+		rec(0, 0, loc(home, m(0))),
+		rec(0, 0, nrg(50, ChargingIdle)),
+		rec(15, 15, charging(55, 50000, DC)),
+		rec(25, 25, charging(60, 50000, DC)),
+		rec(30, 30, Snapshot{
+			Covers: FieldEngine | FieldPosition,
+			Engine: Some(EngineRunning, time.Time{}), Position: Some(work, m(30)),
+		}),
+		rec(30, 30, nrg(60, ChargingIdle)),
+	}
+	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	if len(res.Charges) != 1 {
+		t.Fatalf("charges %+v", res.Charges)
+	}
+	if c := res.Charges[0]; c.Position.V != home {
+		t.Errorf("charge at %+v, want %+v", c.Position, home)
+	}
+}
+
 // A trip starting while charging ends the charge; the trip's SoC ends before the next
 // charge starts.
 func TestTripAndCharge(t *testing.T) {
