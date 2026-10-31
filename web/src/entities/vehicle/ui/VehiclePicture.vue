@@ -40,9 +40,12 @@ watch(
   block-size: 1.75rem;
   inline-size: 3rem;
 }
+/* Volvo's are 16:9, the car in a band across the middle: a wider frame crops the empty
+   ground above and below it, never the car (half of the height at most). */
 .large {
   inline-size: 100%;
   max-inline-size: 20rem;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 2.2;
+  object-fit: cover;
 }
 </style>

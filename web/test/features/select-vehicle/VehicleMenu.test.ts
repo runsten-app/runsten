@@ -55,6 +55,14 @@ describe('VehicleMenu', () => {
       null,
       null, // a Polestar: none
     ])
+    // The others keep its place: every label starts at the same place.
+    expect(rows.map((a) => !!a.querySelector('.no-picture'))).toEqual([
+      false,
+      true,
+      true,
+      true,
+      true,
+    ])
     // Its label stays its name: the picture is decorative.
     expect(rows[0]?.querySelector('img')?.getAttribute('alt')).toBe('')
   })

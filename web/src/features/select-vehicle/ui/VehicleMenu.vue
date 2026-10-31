@@ -62,6 +62,7 @@ const { vehicle: own } = useVehicle(
   () => props.vehicle,
   () => (!!vehicles.value || !!error.value) && !listed.value,
 )
+const pictured = computed(() => items.value.some((i) => i.vehicle?.sheet?.picture))
 const label = computed(() => listed.value ?? (own.value ? vehicleLabel(own.value) : ''))
 const shown = computed(() => items.value.find((i) => i.id === props.vehicle)?.vehicle ?? own.value)
 const name = computed(() => t('vehicle.menu', { label: label.value }))
@@ -93,8 +94,10 @@ const name = computed(() => t('vehicle.menu', { label: label.value }))
             :active="false"
             class="vehicle-item"
           >
-            <template v-if="item.vehicle?.sheet?.picture" #prepend>
-              <VehiclePicture :vehicle="item.vehicle" class="me-3" />
+            <!-- Once one has a picture, every label starts at the same place. -->
+            <template v-if="pictured" #prepend>
+              <VehiclePicture v-if="item.vehicle" :vehicle="item.vehicle" class="me-3" />
+              <span v-if="!item.vehicle?.sheet?.picture" class="no-picture me-3" />
             </template>
             <template v-if="item.id === vehicle" #append>
               <v-icon :icon="mdiCheck" size="small" />
@@ -122,6 +125,10 @@ const name = computed(() => t('vehicle.menu', { label: label.value }))
 }
 .vehicle-menu :deep(.v-btn__content) {
   min-inline-size: 0;
+}
+.no-picture {
+  display: block;
+  inline-size: 3rem;
 }
 .vehicle-list {
   min-inline-size: 16rem;
