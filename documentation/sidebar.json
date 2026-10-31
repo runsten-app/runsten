@@ -20,7 +20,7 @@
     "text": "Connecting your car",
     "items": [
       { "text": "Volvo", "link": "/docs/self-hosting/volvo" },
-      { "text": "Polestar (beta)", "link": "/docs/guide/polestar" },
+      { "text": "Polestar", "link": "/docs/guide/polestar" },
       { "text": "Tesla (beta)", "link": "/docs/guide/tesla" }
     ]
   },

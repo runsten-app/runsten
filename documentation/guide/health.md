@@ -1,5 +1,5 @@
 ---
-description: "A vehicle's health in Runsten: its battery's estimated capacity, its tyres and their pressures over time, its next service, its warnings, and what Volvo and Polestar each report."
+description: "A vehicle's health in Runsten: its battery's estimated capacity, its tyres and their pressures over time, its next service, its warnings, and what each brand reports."
 ---
 
 # Health
@@ -21,11 +21,12 @@ What a car does not report is said as such, never shown as fine.
 
 ## What each car tells
 
-| | Volvo | Polestar |
-|---|---|---|
-| Tyres | a warning per tyre, no pressure | the pressures and the warnings, when the model gives them |
-| Service | the months and the distance left | the days and the distance left |
-| Warnings | the fluids and the lights | the fluids, the 12 V battery and the lights |
+| | Volvo | Polestar | Tesla |
+|---|---|---|---|
+| Tyres | a warning per tyre, no pressure | the pressures and the warnings, when the model gives them | the pressures, the recommended ones and the warnings |
+| Service | the months and the distance left | the days and the distance left | none |
+| Warnings | the fluids and the lights | the fluids, the 12 V battery and the lights | none |
+| Software | none | none | its version and its updates |
 
 - A **Volvo**'s health comes from the Connected Vehicle API's tyres, warnings and diagnostics, which Runsten reads every hour already: it costs no more calls. Without a pressure, its page has no chart.
 - A **Polestar**'s comes from the Data Portal's **health** domain, optional: grant it to your credential ([Your Polestar](./polestar.md)), else the page says the car told nothing of it. The Polestar 2 we have seen a response of reports no tyre; which models give their pressures is not known yet. Tell us what yours gives.

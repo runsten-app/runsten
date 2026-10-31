@@ -43,7 +43,7 @@
     },
     "choose": {
       "volvo": "I have a Volvo",
-      "polestar": "I have a Polestar (beta)",
+      "polestar": "I have a Polestar",
       "tesla": "I have a Tesla (beta)"
     }
   },
@@ -1092,7 +1092,7 @@
     "title": "Connection",
     "backToVehicle": "Back to the vehicle",
     "attention": "The connection needs your attention",
-    "intro": "Runsten reads your vehicles in the background, from Volvo's API and Polestar's Data Portal: that is its collector. This page tells whether it reads them, and if not, why.",
+    "intro": "Runsten reads your vehicles in the background, from each manufacturer's API: that is its collector. This page tells whether it reads them, and if not, why.",
     "loading": "Loading the connection",
     "error": "The connection could not be loaded. Try again in a moment.",
     "refreshFailed": "The connection could not be refreshed: what it shows may be out of date.",
@@ -1551,7 +1551,6 @@
   },
   "polestar": {
     "intro": "Runsten reads your Polestar with a credential you create on Polestar's Data Portal, the access the EU Data Act gives its owners. Its quota of calls is yours alone.",
-    "beta": "Polestar support is in beta: how often a car sends its readings while driving is not verified yet.",
     "guide": "Read the guide",
     "refused": {
       "title": "Your Polestar credential was refused",
