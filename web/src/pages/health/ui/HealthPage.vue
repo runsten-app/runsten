@@ -3,7 +3,6 @@ import { computed, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   activeWarnings,
-  allFine,
   hasPressures,
   needsAttention,
   reportedFine,
@@ -36,8 +35,7 @@ const { health, isPending, error } = useHealth(() => props.vehicle)
 const text = useHealthText()
 const known = computed(() => (health.value?.checked_at ? health.value : null))
 // The page's answer first, under its title: what needs attention, named, or nothing to
-// report when the car told all of it, or nothing in what it tells when it told part of
-// it. Then how fresh it is.
+// report in what the vehicle tells. Then how fresh it is.
 const verdict = computed(() => {
   const h = known.value
   if (!h) return null
@@ -54,9 +52,8 @@ const verdict = computed(() => {
     ]
     return { attention: true, text: t('health.verdict.attention', { items: items.join(', ') }) }
   }
-  if (allFine(h)) return { attention: false, text: t('health.verdict.fine') }
-  // Fine in what the vehicle tells, which is not all: said so, never fine outright.
-  return reportedFine(h) ? { attention: false, text: t('health.verdict.reportedFine') } : null
+  // What the vehicle does not report, or reports without a state, is never said fine.
+  return reportedFine(h) ? { attention: false, text: t('health.verdict.fine') } : null
 })
 </script>
 

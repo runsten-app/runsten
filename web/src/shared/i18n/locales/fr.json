@@ -654,8 +654,7 @@
     },
     "verdict": {
       "attention": "À surveiller : {items}.",
-      "fine": "Rien à signaler.",
-      "reportedFine": "Rien à signaler dans ce que dit le véhicule."
+      "fine": "Rien de ce que dit le véhicule ne demande d’attention."
     },
     "upkeep": {
       "title": "Entretien et alertes",

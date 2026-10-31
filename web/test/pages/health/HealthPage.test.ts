@@ -91,18 +91,20 @@ describe('HealthPage', () => {
     expect(tile.find('a').attributes('href')).toBe(`/vehicles/${vehicle}/battery`)
   })
 
-  it('says nothing is to report only of a health known in full', async () => {
+  it('says nothing needs attention only of what the vehicle reports', async () => {
     const fine = {
       ...health,
       tyres: { ...health.tyres, wheels: health.tyres.wheels.map((x) => ({ ...x, warning: 'ok' })) },
       checks: health.checks.map((c) => ({ ...c, warning: false })),
     }
     mocks.fetchHealth.mockResolvedValue(fine)
-    expect((await mounted()).find('.verdict').text()).toMatch(/^Nothing to report\. · Last/)
-    // Neither the service nor the checks reported (a Tesla): fine in what it tells only.
+    expect((await mounted()).find('.verdict').text()).toMatch(
+      /^Nothing the vehicle reports needs attention\. · Last/,
+    )
+    // Neither the service nor the checks reported (a Tesla): the same, of its tyres.
     mocks.fetchHealth.mockResolvedValue({ ...fine, service: null, checks: [] })
     expect((await mounted()).find('.verdict').text()).toMatch(
-      /^Nothing to report in what the vehicle tells\. · Last/,
+      /^Nothing the vehicle reports needs attention\. · Last/,
     )
     // A tyre without its monitoring's word: neither fine nor a warning, the freshness only.
     mocks.fetchHealth.mockResolvedValue({
