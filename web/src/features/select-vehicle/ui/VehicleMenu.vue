@@ -3,7 +3,7 @@ import { mdiCarCog, mdiCheck, mdiChevronDown } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, type RouteLocationRaw } from 'vue-router'
-import { vehicleLabel, vehicleLabels } from '@/entities/vehicle'
+import { vehicleLabel, vehicleLabels, VehiclePicture } from '@/entities/vehicle'
 import { useVehicle } from '../composables/useVehicle'
 import { useVehicles } from '../composables/useVehicles'
 
@@ -11,6 +11,7 @@ import { useVehicles } from '../composables/useVehicles'
 // pages under it rely on it rather than repeating its label. It lists the account's
 // vehicles, each leading to the same section of the other (a details page to its list, a
 // list with its period), the account's pages to its state; then the vehicle's settings.
+// Each vehicle's picture goes beside its label, where its vendor gives one.
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const route = useRoute()
@@ -44,10 +45,16 @@ function target(vehicle: string): RouteLocationRaw {
   }
 }
 
-// In the order of the list.
-const items = computed(() =>
-  [...vehicleLabels(vehicles.value ?? [])].map(([id, title]) => ({ id, title, to: target(id) })),
-)
+// In the order of the list, each with its picture when it has one.
+const items = computed(() => {
+  const list = vehicles.value ?? []
+  return [...vehicleLabels(list)].map(([id, title]) => ({
+    id,
+    title,
+    to: target(id),
+    vehicle: list.find((v) => v.id === id),
+  }))
+})
 const listed = computed(() => items.value.find((i) => i.id === props.vehicle)?.title)
 // The list failed, or lacks it: the vehicle's own read (cached on its pages) still names
 // it, so that the way to its settings stays.
@@ -56,6 +63,7 @@ const { vehicle: own } = useVehicle(
   () => (!!vehicles.value || !!error.value) && !listed.value,
 )
 const label = computed(() => listed.value ?? (own.value ? vehicleLabel(own.value) : ''))
+const shown = computed(() => items.value.find((i) => i.id === props.vehicle)?.vehicle ?? own.value)
 const name = computed(() => t('vehicle.menu', { label: label.value }))
 </script>
 
@@ -69,6 +77,7 @@ const name = computed(() => t('vehicle.menu', { label: label.value }))
         variant="text"
         class="vehicle-menu"
       >
+        <VehiclePicture v-if="shown" :vehicle="shown" class="me-2" />
         <span class="text-truncate">{{ label }}</span>
       </v-btn>
     </template>
@@ -84,6 +93,9 @@ const name = computed(() => t('vehicle.menu', { label: label.value }))
             :active="false"
             class="vehicle-item"
           >
+            <template v-if="item.vehicle?.sheet?.picture" #prepend>
+              <VehiclePicture :vehicle="item.vehicle" class="me-3" />
+            </template>
             <template v-if="item.id === vehicle" #append>
               <v-icon :icon="mdiCheck" size="small" />
             </template>

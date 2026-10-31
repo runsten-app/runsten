@@ -40,9 +40,12 @@ describe('VehicleSettingsPage', () => {
     expect(w.find('.v-main h1').text()).toBe('Vehicle settings')
     expect(w.find('.area h2').text()).toBe('Vehicle')
     expect(w.find('.vehicle-model form').exists()).toBe(true)
-    // The deletion last, on a tile of its own.
+    // Its sheet after the model; the deletion last, on a tile of its own.
     const tiles = w.findAll('.tiles > *')
-    expect(tiles.at(-1)?.classes()).toContain('delete-vehicle')
+    expect(
+      tiles.map((t) => t.classes().find((c) => c === 'vehicle-sheet' || c === 'delete-vehicle')),
+    ).toEqual([undefined, 'vehicle-sheet', 'delete-vehicle'])
+    expect(w.find('.vehicle-sheet h3').text()).toBe('Sheet')
     expect(w.find('.import-list').exists()).toBe(false)
     expect(mocks.fetchVariants).toHaveBeenCalledWith(ex30?.id)
     // The vehicle's tabs, none of them this page's.
