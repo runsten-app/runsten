@@ -32,6 +32,7 @@ import { useVehicleState } from '@/features/watch-vehicle-state'
 import { isApiError } from '@/shared/api'
 import { kilowatts, openStreetMapUrl, useFormat, useMapsOn, useNow, type Unit } from '@/shared/lib'
 import { LevelBar, MapView, StatusPill, TileFigure } from '@/shared/ui'
+import OpeningsLine from './OpeningsLine.vue'
 
 // Verdandi: the current state of a vehicle, each value with how fresh it is. Each tile says
 // once when its values were checked and since when they hold, those of its first value;
@@ -545,6 +546,14 @@ const update = computed(() => {
             <ReadingProvenance
               v-if="vehicleTile"
               :reading="vehicleTile"
+              :now="now"
+              :connection="connection"
+            />
+            <!-- A source that tells its doors and windows; nothing for the others. -->
+            <OpeningsLine
+              v-if="state.doors || state.windows"
+              :doors="state.doors"
+              :windows="state.windows"
               :now="now"
               :connection="connection"
             />

@@ -400,6 +400,68 @@ describe('VehicleState', () => {
     expect(() => reading(w, 'Software update')).toThrow()
   })
 
+  it('says in a line whether the car is locked and what is open, nothing for a car without', async () => {
+    const at = {
+      reported_at: '2026-09-28T19:00:00Z',
+      fetched_at: '2026-09-28T19:00:30Z',
+      checked_at: '2026-09-28T19:05:00Z',
+    }
+    const closed = {
+      front_left: 'closed',
+      front_right: 'closed',
+      rear_left: 'closed',
+      rear_right: 'closed',
+    } as const
+    const doors = {
+      ...closed,
+      locked: true,
+      hood: 'closed',
+      tailgate: 'closed',
+      tank_lid: null,
+      sentry: null,
+    } as const
+    const windows = { ...closed, sunroof: null } as const
+    // Each part of the line: the heading, the pill and the facts.
+    const line = (w: Awaited<ReturnType<typeof mounted>>) =>
+      w
+        .findAll('[data-test="openings"] .row > *')
+        .map((e) => plain(e.text()))
+        .join(' | ')
+    let w = await mounted({
+      ...state,
+      doors: { ...at, value: doors },
+      windows: { ...at, value: windows },
+    })
+    expect(line(w)).toBe('Doors and windows | Locked | All closed')
+    expect(w.find('[data-test="openings"] h3').text()).toBe('Doors and windows')
+    expect(plain(w.find('[data-test="openings"] .details').text())).toBe(
+      'checked 1 min ago · since 19:00',
+    )
+    expect(w.find('[data-test="openings"] .measured').exists()).toBe(false)
+    w.unmount()
+    // Unlocked, watching, a window open and a door ajar; measured hours before: said.
+    w = await mounted({
+      ...state,
+      doors: {
+        ...at,
+        reported_at: '2026-09-28T15:00:00Z',
+        value: { ...doors, locked: false, rear_left: 'ajar', sentry: true },
+      },
+      windows: { ...at, value: { ...windows, front_left: 'open', rear_right: 'open' } },
+    })
+    expect(line(w)).toBe(
+      'Doors and windows | Unlocked | Open: front left window and rear right window | Ajar: rear left door | Sentry Mode on',
+    )
+    expect(w.find('[data-test="openings"] .measured').text()).toBe('The car last measured 15:00')
+    w.unmount()
+    // The windows alone, the lock untold: no pill, no time of the doors.
+    w = await mounted({ ...state, windows: { ...at, value: windows } })
+    expect(line(w)).toBe('Doors and windows | All closed')
+    w.unmount()
+    w = await mounted(state)
+    expect(w.find('[data-test="openings"]').exists()).toBe(false)
+  })
+
   it("tells the car's latest measure once it is older than half an hour", async () => {
     let w = await mounted(state)
     expect(w.find('.reported').exists()).toBe(false)
