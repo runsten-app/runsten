@@ -146,6 +146,17 @@ describe('StatsDistributions', () => {
       name: 'charges',
       query: { ...period, place: 'no_position' },
     })
+    // The same lists from the keyboard: a link per group, the outside ones as one.
+    const links = wrapper.findAll('.by-place .place-links a')
+    expect(links.map((a) => [a.text(), a.attributes('href')])).toEqual([
+      [
+        'Maison de Tante Agathe',
+        '/vehicles/v1/charges?from=2026-09-01&to=2026-09-30&place=5e1f0000-0000-4000-8000-000000000001',
+      ],
+      ['Elsewhere', '/vehicles/v1/charges?from=2026-09-01&to=2026-09-30&place=outside'],
+      ['No position', '/vehicles/v1/charges?from=2026-09-01&to=2026-09-30&place=no_position'],
+    ])
+    expect(wrapper.findAll('.cost-by-place .place-links a')).toHaveLength(3)
     expect(await opened(byPlace, 9)).toEqual({
       name: 'stats',
       query: { ...period, view: 'charging' },

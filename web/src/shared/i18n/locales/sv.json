@@ -513,7 +513,8 @@
         "summary": "Laddad energi per plats: {total} totalt, mest för {at} ({max}).",
         "none": "Ingen laddning med känd energi under perioden.",
         "hint": "En laddning räknas på platsen för dess kostnad: utan position på den plats som även tar sådana, om det finns en.",
-        "reconstructed": "{n} rekonstruerad laddning medräknad, på samma sätt. | {n} rekonstruerade laddningar medräknade, på samma sätt."
+        "reconstructed": "{n} rekonstruerad laddning medräknad, på samma sätt. | {n} rekonstruerade laddningar medräknade, på samma sätt.",
+        "links": "Laddningar:"
       },
       "costByPlace": {
         "title": "Laddningarnas kostnad per plats",

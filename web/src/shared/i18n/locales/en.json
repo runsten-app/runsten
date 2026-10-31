@@ -513,7 +513,8 @@
         "summary": "Energy charged by place: {total} in all, the most for {at} ({max}).",
         "none": "No charge with a known energy in this period.",
         "hint": "A charge counts at the place its cost takes: one without a position at the place that also takes those, if any.",
-        "reconstructed": "{n} reconstructed charge included, counted the same way. | {n} reconstructed charges included, counted the same way."
+        "reconstructed": "{n} reconstructed charge included, counted the same way. | {n} reconstructed charges included, counted the same way.",
+        "links": "Charges:"
       },
       "costByPlace": {
         "title": "Cost of charges by place",

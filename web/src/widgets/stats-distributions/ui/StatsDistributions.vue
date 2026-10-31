@@ -12,9 +12,9 @@ import type { Stats } from '@/entities/stats'
 // StatsDistributions draws how the period's trips and charges spread, whatever its
 // split: the trips by distance and what each band consumed, the charges by the state of
 // charge they started and ended at, and where they took place, with what they cost
-// there. A band holds events of the whole period: a press on a place leads to the list
-// of its charges over the same period, the list filtering by place; on another band, no
-// list filters by it, nowhere. The view keeps those of driving, of charging or of the
+// there. A band holds events of the whole period: a press on a place, or its link above
+// the chart (the keyboard's way), leads to the list of its charges over the same period,
+// the list filtering by place; on another band, no list filters by it, nowhere. The view keeps those of driving, of charging or of the
 // costs.
 const props = defineProps<{
   vehicle: string
@@ -150,14 +150,32 @@ const places = computed(() => {
 })
 const placeLabels = computed(() => places.value.map((p) => p.label))
 
-// openPlace leads to the charges of a group over the page's period: those outside every
+// placeList is the list of a group's charges over the page's period: those outside every
 // place, whatever their type, for a type's.
+function placeList(place: string) {
+  const query = { ...periodQuery(route.query), place }
+  return { name: 'charges', params: { vehicle: props.vehicle }, query }
+}
 function openPlace(index: number) {
   const g = places.value[index]
-  if (!g) return
-  const query = { ...periodQuery(route.query), place: g.place }
-  return router.push({ name: 'charges', params: { vehicle: props.vehicle }, query })
+  if (g) return router.push(placeList(g.place))
 }
+// placeLinks lead to the same lists as the bars, from the keyboard: one per group, the
+// three outside every place as one.
+const placeLinks = computed(() => {
+  const seen = new Set<string>()
+  return places.value.flatMap((g) => {
+    if (seen.has(g.place)) return []
+    seen.add(g.place)
+    const label =
+      g.place === 'outside'
+        ? t('placeFilter.outside')
+        : g.place === 'no_position'
+          ? t('placeFilter.noPosition')
+          : g.label
+    return [{ label, to: placeList(g.place) }]
+  })
+})
 
 // byPlace is the energy charged at each place: a group whose energies are all unknown
 // has no bar, never a zero. The table adds how many charges each holds.
@@ -312,7 +330,15 @@ const costByPlace = computed(() => {
       :interval-header="t('stats.chart.byPlace.header')"
       :format="(v) => f.quantity(v, 'kWh', 0)"
       @select="(i: number) => openPlace(i)"
-    />
+    >
+      <p v-if="placeLinks.length" class="place-links text-body-small mb-3">
+        {{ t('stats.chart.byPlace.links') }}
+        <template v-for="(l, i) in placeLinks" :key="l.to.query.place"
+          ><template v-if="i"> · </template
+          ><router-link :to="l.to">{{ l.label }}</router-link></template
+        >
+      </p>
+    </ChartFrame>
     <ChartFrame
       v-if="costByPlace && view === 'costs'"
       class="cost-by-place"
@@ -329,7 +355,15 @@ const costByPlace = computed(() => {
       :interval-header="t('stats.chart.byPlace.header')"
       :format="costByPlace.format"
       @select="(i: number) => openPlace(i)"
-    />
+    >
+      <p v-if="placeLinks.length" class="place-links text-body-small mb-3">
+        {{ t('stats.chart.byPlace.links') }}
+        <template v-for="(l, i) in placeLinks" :key="l.to.query.place"
+          ><template v-if="i"> · </template
+          ><router-link :to="l.to">{{ l.label }}</router-link></template
+        >
+      </p>
+    </ChartFrame>
   </div>
 </template>
 

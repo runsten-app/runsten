@@ -513,7 +513,8 @@
         "summary": "Énergie chargée par lieu : {total} en tout, le plus pour {at} ({max}).",
         "none": "Aucune recharge d'énergie connue sur cette période.",
         "hint": "Une recharge compte au lieu de son coût : sans position, au lieu qui prend aussi celles-là, s'il y en a un.",
-        "reconstructed": "{n} recharge reconstituée comprise, comptée de la même façon. | {n} recharges reconstituées comprises, comptées de la même façon."
+        "reconstructed": "{n} recharge reconstituée comprise, comptée de la même façon. | {n} recharges reconstituées comprises, comptées de la même façon.",
+        "links": "Charges :"
       },
       "costByPlace": {
         "title": "Coût des recharges par lieu",
