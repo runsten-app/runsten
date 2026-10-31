@@ -4,16 +4,15 @@ description: "A vehicle's health in Runsten: its battery's estimated capacity, i
 
 # Health
 
-The **Health** tab shows the vehicle's latest health and the tyres' pressures over time. A dot on the tab, from every page of the vehicle, says that something needs your attention: a tyre, the service, a warning. Runsten reads it every hour: it changes slowly.
+The **Health** tab shows the vehicle's latest health, and, folded, the tyres' pressures over time. Under its title, one line answers first: what needs your attention, named (a tyre, the service, a warning), or nothing to report when the car told all of it, and when it was last read. A dot on the tab, from every page of the vehicle, says that something needs your attention: a tyre, the service, a warning. Runsten reads it every hour: it changes slowly.
 
 <Screen view="health" alt="The Health tab: the battery, the tyres, the service and the warnings." />
 
 - **Battery**: its estimated capacity, which leads to the [battery page](./battery.md): its estimates and their evolution.
+- **Software**, for a car that tells its version (a Tesla): its latest versions, newest first, with when the car took it: between the last time Runsten read the previous version and the first time it read this one. **Show all versions** lists the older ones.
 - **Tyres**: each tyre's pressure, against the pressure the car recommends at its axle, and what the tyre pressure monitoring says of it: OK, low, very low, high, or a fault (of a sensor, or of the system).
-- **Service**: whether it is due (not yet, soon, due, overdue), and the time and the distance left until it.
-- **Warnings**: the brake fluid, the coolant, the oil, the washer fluid, the 12 V battery and each exterior light. The active ones are named; the others are counted.
-- **Software**, for a car that tells its version (a Tesla): each version of its software, newest first, with when the car took it: between the last time Runsten read the previous version and the first time it read this one.
-- **The pressures over time**, one chart per axle: the left and right tyres, and the recommended pressure, dashed, over 7 days, 30 days or 12 months. A pressure rises as the tyres warm up while driving, and falls in the cold. The line breaks where nothing was read.
+- **Service and warnings**, in one tile: whether the service is due (not yet, soon, due, overdue), and the time and the distance left until it; then the warnings: the brake fluid, the coolant, the oil, the washer fluid, the 12 V battery and each exterior light. The active ones are named; the others are counted. A car that tells neither gets one sentence.
+- **Pressures over time**, folded under the tiles: opened, one chart per axle: the left and right tyres, and the recommended pressure, dashed, over 7 days, 30 days or 12 months. A pressure rises as the tyres warm up while driving, and falls in the cold. The line breaks where nothing was read.
 
 What a car does not report is said as such, never shown as fine.
 

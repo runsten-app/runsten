@@ -68,8 +68,15 @@ describe('HealthPage', () => {
   it('shows the tiles and the pressures, in its own tab', async () => {
     const w = await mounted()
     expect(w.find('.v-main h1').text()).toBe('Health')
-    expect(w.find('.intro').text()).toContain('a Volvo gives a warning per tyre')
+    // The answer under the title: what needs attention, named, then how fresh it is.
+    expect(w.find('.verdict').text()).toMatch(
+      /^Needs attention: Rear left \(Low\), Rear right \(Fault\), Washer fluid\. · Last checked /,
+    )
     expect(w.find('.health-tiles').exists()).toBe(true)
+    // The pressures over time folded, their chart asked for once opened.
+    expect(w.findAll('.chart-frame')).toHaveLength(0)
+    expect(mocks.fetchTyres).not.toHaveBeenCalled()
+    await w.find('.pressures button').trigger('click')
     await vi.waitFor(() => expect(w.findAll('.chart-frame')).toHaveLength(2))
     // The fixture needs attention: the dot's description follows the label.
     expect(w.find('.v-tab[aria-current="page"]').text()).toBe('Health Needs attention')
@@ -84,6 +91,22 @@ describe('HealthPage', () => {
     expect(tile.find('a').attributes('href')).toBe(`/vehicles/${vehicle}/battery`)
   })
 
+  it('says nothing is to report only of a health known in full', async () => {
+    const fine = {
+      ...health,
+      tyres: { ...health.tyres, wheels: health.tyres.wheels.map((x) => ({ ...x, warning: 'ok' })) },
+      checks: health.checks.map((c) => ({ ...c, warning: false })),
+    }
+    mocks.fetchHealth.mockResolvedValue(fine)
+    expect((await mounted()).find('.verdict').text()).toMatch(/^Nothing to report\. · Last/)
+    // A tyre without its monitoring's word: neither fine nor a warning, the freshness only.
+    mocks.fetchHealth.mockResolvedValue({
+      ...fine,
+      tyres: { ...fine.tyres, wheels: fine.tyres.wheels.map((x) => ({ ...x, warning: null })) },
+    })
+    expect((await mounted()).find('.verdict').text()).toMatch(/^Last checked /)
+  })
+
   it('draws no chart for a vehicle without pressures', async () => {
     mocks.fetchHealth.mockResolvedValue({
       ...health,
@@ -94,7 +117,7 @@ describe('HealthPage', () => {
     })
     const w = await mounted()
     expect(w.find('.health-tiles').exists()).toBe(true)
-    expect(w.find('.tyre-chart').exists()).toBe(false)
+    expect(w.find('.pressures').exists()).toBe(false)
     expect(mocks.fetchTyres).not.toHaveBeenCalled()
   })
 

@@ -35,6 +35,16 @@ describe('SoftwareHistory', () => {
     expect(w.find('.more').exists()).toBe(false)
   })
 
+  it('shows the latest three, the others on demand', async () => {
+    const more = [...versions.items, ...versions.items].map((v, i) => ({ ...v, id: `${i}` }))
+    fetchSoftwareVersions.mockResolvedValue({ items: more, next_cursor: null })
+    const w = await mounted()
+    expect(w.findAll('.version')).toHaveLength(3)
+    await w.find('.all').trigger('click')
+    expect(w.findAll('.version')).toHaveLength(6)
+    expect(w.find('.all').exists()).toBe(false)
+  })
+
   it('reads the next page on demand', async () => {
     const [first, second, third] = versions.items
     fetchSoftwareVersions

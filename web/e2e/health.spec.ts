@@ -88,6 +88,9 @@ test('Health: the pressures of a Polestar over time', async ({ page }, testInfo)
   await page.goto(`/vehicles/${vehicle}/health`)
   await expect(page.locator('[data-test="tyres"] .wheel').nth(2)).toContainText('2.48')
   await expect(page.locator('[data-test="warnings"] li')).toHaveText(['Washer fluid'])
+  // Folded under the tiles: opened, the pressures over time.
+  await expect(page.locator('.chart-frame')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Pressures over time' }).click()
   await expect(page.locator('.chart-frame')).toHaveCount(2)
   // A low tyre and a warning: the tab says the vehicle needs attention, its name unchanged.
   const tab = page

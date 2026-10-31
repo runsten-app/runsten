@@ -17,8 +17,8 @@ import { useFormat, useNow } from '@/shared/lib'
 import { StatusPill } from '@/shared/ui'
 
 // HealthTiles shows the vehicle's latest health: its tyres, wheel by wheel, against the
-// pressure it recommends; its next service; and its warnings, the active ones named, the
-// others counted. What the vehicle does not report is said, never shown as fine.
+// pressure it recommends; then, in one tile, its next service and its warnings, the active
+// ones named, the others counted. What the vehicle does not report is said, never shown as fine.
 const props = defineProps<{ health: Health }>()
 const { t } = useI18n()
 const f = useFormat()
@@ -101,79 +101,90 @@ const checksAt = computed(() => props.health.checks.find((c) => c.reported_at)?.
       </v-card>
     </v-col>
 
+    <!-- The service and the warnings, rarely of note: one tile, a line each, beside the
+         tyres; a vehicle that tells neither gets a sentence, not two empty tiles. -->
     <v-col cols="12" md="6">
-      <v-card class="tile h-100" data-test="service">
-        <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
-          {{ t('health.service.title') }}
-          <StatusPill v-if="health.service?.state" :tone="serviceTones[health.service.state]">
-            {{ text.serviceStates.value[health.service.state] }}
-          </StatusPill>
-        </v-card-title>
+      <v-card class="tile upkeep">
+        <v-card-title tag="h2">{{ t('health.upkeep.title') }}</v-card-title>
         <v-card-text>
-          <p v-if="!health.service" class="mb-0">{{ t('health.service.notReported') }}</p>
+          <p v-if="!health.service && !health.checks.length" class="mb-0" data-test="upkeep-none">
+            {{ t('health.upkeep.notReported') }}
+          </p>
           <template v-else>
-            <dl class="fields">
-              <div>
-                <dt class="text-medium-emphasis">{{ t('health.service.time') }}</dt>
-                <dd>
-                  <template v-if="health.service.days !== null">
-                    {{
-                      t(
-                        'health.service.days',
-                        { n: f.number(health.service.days) },
-                        health.service.days,
-                      )
-                    }}
-                  </template>
-                  <template v-else-if="health.service.months !== null">
-                    {{
-                      t(
-                        'health.service.months',
-                        { n: f.number(health.service.months) },
-                        health.service.months,
-                      )
-                    }}
-                  </template>
-                  <template v-else>{{ f.unknown() }}</template>
-                </dd>
+            <section class="part" data-test="service">
+              <div class="part-head">
+                <h3 class="part-title">{{ t('health.service.title') }}</h3>
+                <StatusPill v-if="health.service?.state" :tone="serviceTones[health.service.state]">
+                  {{ text.serviceStates.value[health.service.state] }}
+                </StatusPill>
               </div>
-              <div>
-                <dt class="text-medium-emphasis">{{ t('health.service.distance') }}</dt>
-                <dd>{{ f.quantity(health.service.distance_km, 'km') }}</dd>
+              <p v-if="!health.service" class="text-medium-emphasis mb-0">
+                {{ t('health.service.notReported') }}
+              </p>
+              <dl v-else class="fields">
+                <div>
+                  <dt class="text-medium-emphasis">{{ t('health.service.time') }}</dt>
+                  <dd>
+                    <template v-if="health.service.days !== null">
+                      {{
+                        t(
+                          'health.service.days',
+                          { n: f.number(health.service.days) },
+                          health.service.days,
+                        )
+                      }}
+                    </template>
+                    <template v-else-if="health.service.months !== null">
+                      {{
+                        t(
+                          'health.service.months',
+                          { n: f.number(health.service.months) },
+                          health.service.months,
+                        )
+                      }}
+                    </template>
+                    <template v-else>{{ f.unknown() }}</template>
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-medium-emphasis">{{ t('health.service.distance') }}</dt>
+                  <dd>{{ f.quantity(health.service.distance_km, 'km') }}</dd>
+                </div>
+              </dl>
+              <p v-if="health.service && measured(health.service.reported_at)" class="footer">
+                {{ measured(health.service.reported_at) }}
+              </p>
+            </section>
+            <section class="part" data-test="warnings">
+              <div class="part-head">
+                <h3 class="part-title">{{ t('health.warnings.title') }}</h3>
+                <StatusPill
+                  v-if="health.checks.length"
+                  :tone="active.length ? 'warning' : 'success'"
+                >
+                  {{ active.length ? t('health.attention') : t('health.fine') }}
+                </StatusPill>
               </div>
-            </dl>
-            <p v-if="measured(health.service.reported_at)" class="text-medium-emphasis footer mb-0">
-              {{ measured(health.service.reported_at) }}
-            </p>
+              <p v-if="!health.checks.length" class="text-medium-emphasis mb-0">
+                {{ t('health.warnings.notReported') }}
+              </p>
+              <ul v-else-if="active.length" class="active">
+                <li v-for="c in active" :key="c.check">{{ text.checks.value[c.check] }}</li>
+              </ul>
+              <p v-else class="mb-0">
+                {{
+                  t(
+                    'health.warnings.none',
+                    { n: f.number(health.checks.length) },
+                    health.checks.length,
+                  )
+                }}
+              </p>
+              <p v-if="health.checks.length && measured(checksAt)" class="footer">
+                {{ measured(checksAt) }}
+              </p>
+            </section>
           </template>
-        </v-card-text>
-      </v-card>
-    </v-col>
-
-    <v-col cols="12">
-      <v-card class="tile" data-test="warnings">
-        <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
-          {{ t('health.warnings.title') }}
-          <StatusPill v-if="health.checks.length" :tone="active.length ? 'warning' : 'success'">
-            {{ active.length ? t('health.attention') : t('health.fine') }}
-          </StatusPill>
-        </v-card-title>
-        <v-card-text>
-          <p v-if="!health.checks.length" class="mb-0">{{ t('health.warnings.notReported') }}</p>
-          <ul v-else-if="active.length" class="active">
-            <li v-for="c in active" :key="c.check">{{ text.checks.value[c.check] }}</li>
-          </ul>
-          <p v-else class="mb-0">
-            {{
-              t('health.warnings.none', { n: f.number(health.checks.length) }, health.checks.length)
-            }}
-          </p>
-          <p
-            v-if="health.checks.length && measured(checksAt)"
-            class="text-medium-emphasis footer mb-0"
-          >
-            {{ measured(checksAt) }}
-          </p>
         </v-card-text>
       </v-card>
     </v-col>
@@ -205,8 +216,25 @@ const checksAt = computed(() => props.health.checks.find((c) => c.reported_at)?.
   font-size: 1.5rem;
   font-weight: 300;
 }
+.part + .part {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.part-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.part-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
 .fields {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
 }
@@ -218,7 +246,8 @@ const checksAt = computed(() => props.health.checks.find((c) => c.reported_at)?.
   padding-inline-start: 20px;
 }
 .footer {
-  margin-top: 12px;
+  margin: 12px 0 0;
   font-size: 0.8125rem;
+  color: rgb(var(--v-theme-text-secondary));
 }
 </style>
