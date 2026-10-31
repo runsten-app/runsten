@@ -229,7 +229,7 @@ func (s *Scenario) validateStep(st Step) error {
 			return errors.New("park.duration must be > 0")
 		}
 		for _, o := range st.Park.Open {
-			if !slices.Contains(vehicle.Openings, o) {
+			if !slices.Contains(vehicle.Openings(), o) {
 				return fmt.Errorf("park.open: unknown opening %q", o)
 			}
 		}

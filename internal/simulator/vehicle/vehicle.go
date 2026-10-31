@@ -171,7 +171,7 @@ type State struct {
 	Driving    bool
 	Position   Position
 	Locked     bool
-	// Open is what is left open, a bit per name of Openings (comparable, as a State
+	// Open is what is left open, a bit per name of Openings() (comparable, as a State
 	// must be): nothing once a drive starts.
 	Open           uint16
 	PluggedIn      bool
@@ -193,15 +193,18 @@ type State struct {
 	EnergySinceChargeKWh  float64
 }
 
-// Openings are the names of what a vehicle may leave open, in its State.Open.
-var Openings = []string{
-	"front_left_door", "front_right_door", "rear_left_door", "rear_right_door", "hood", "tailgate", "tank_lid",
-	"front_left_window", "front_right_window", "rear_left_window", "rear_right_window", "sunroof",
+// Openings returns the names of what a vehicle may leave open, in the order of the bits
+// of its State.Open.
+func Openings() []string {
+	return []string{
+		"front_left_door", "front_right_door", "rear_left_door", "rear_right_door", "hood", "tailgate", "tank_lid",
+		"front_left_window", "front_right_window", "rear_left_window", "rear_right_window", "sunroof",
+	}
 }
 
 // IsOpen tells whether the opening is left open.
 func (s State) IsOpen(name string) bool {
-	i := slices.Index(Openings, name)
+	i := slices.Index(Openings(), name)
 	return i >= 0 && s.Open&(1<<i) != 0
 }
 
@@ -380,7 +383,7 @@ func (v *Vehicle) LeaveOpen(at time.Time, unlocked bool, open []string) {
 	v.state.Locked = !unlocked
 	v.state.Open = 0
 	for _, name := range open {
-		if i := slices.Index(Openings, name); i >= 0 {
+		if i := slices.Index(Openings(), name); i >= 0 {
 			v.state.Open |= 1 << i
 		}
 	}
