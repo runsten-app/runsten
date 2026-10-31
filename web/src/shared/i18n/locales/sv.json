@@ -43,7 +43,7 @@
     },
     "choose": {
       "volvo": "Jag har en Volvo",
-      "polestar": "Jag har en Polestar (beta)",
+      "polestar": "Jag har en Polestar",
       "tesla": "Jag har en Tesla (beta)"
     }
   },
@@ -1549,7 +1549,6 @@
   },
   "polestar": {
     "intro": "Runsten läser din Polestar med inloggningsuppgifter som du skapar på Polestars Data Portal, den åtkomst som EU:s dataakt ger ägarna. Dess kvot av anrop är bara din.",
-    "beta": "Stödet för Polestar är i beta: hur ofta en bil skickar sina värden under körning är ännu inte kontrollerat.",
     "guide": "Läs guiden",
     "refused": {
       "title": "Dina Polestar-uppgifter avvisades",

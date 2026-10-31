@@ -43,7 +43,7 @@
     },
     "choose": {
       "volvo": "J'ai une Volvo",
-      "polestar": "J'ai une Polestar (bêta)",
+      "polestar": "J'ai une Polestar",
       "tesla": "J'ai une Tesla (bêta)"
     }
   },
@@ -1549,7 +1549,6 @@
   },
   "polestar": {
     "intro": "Runsten lit votre Polestar avec un identifiant que vous créez sur le Data Portal de Polestar, l'accès que le Data Act européen donne aux propriétaires. Son quota d'appels n'est qu'à vous.",
-    "beta": "La prise en charge de Polestar est en bêta : la fréquence d'envoi d'une voiture en roulage n'est pas encore vérifiée.",
     "guide": "Lire le guide",
     "refused": {
       "title": "Votre identifiant Polestar a été refusé",

@@ -71,7 +71,7 @@ describe('HomePage', () => {
     // A Polestar's credential is given in the connection page's Polestar section.
     const polestar = wrapper.find('a.polestar')
     expect(polestar.attributes('href')).toBe('/connection#polestar')
-    expect(polestar.text()).toBe('I have a Polestar (beta)')
+    expect(polestar.text()).toBe('I have a Polestar')
     // A Tesla's refresh token, in its own tab.
     const tesla = wrapper.find('a.tesla')
     expect(tesla.attributes('href')).toBe('/connection#tesla')
@@ -114,7 +114,7 @@ describe('HomePage', () => {
     expect(wrapper.find('.volvo').exists()).toBe(false)
     const polestar = wrapper.find('a.polestar')
     expect(polestar.attributes('href')).toBe('/connection#polestar')
-    expect(polestar.text()).toBe('I have a Polestar (beta)')
+    expect(polestar.text()).toBe('I have a Polestar')
     expect(wrapper.find('a.tesla').attributes('href')).toBe('/connection#tesla')
   })
 

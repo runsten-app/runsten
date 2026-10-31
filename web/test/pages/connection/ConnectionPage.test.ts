@@ -90,7 +90,7 @@ describe('ConnectionPage', () => {
     // A dot on each tab whose vehicles need the user: a lost grant, a Polestar unshared.
     expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
       'Volvo needs your attention',
-      'Polestar Beta needs your attention',
+      'Polestar needs your attention',
       'Tesla Beta',
     ])
     expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Volvo')
@@ -135,7 +135,7 @@ describe('ConnectionPage', () => {
     mocks.fetchVehicles.mockResolvedValue(items.filter((v) => v.connection.provider === 'polestar'))
     const w = await page()
     expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
-      'Polestar Beta needs your attention',
+      'Polestar needs your attention',
       'Tesla Beta',
     ])
     expect(w.find('#connection-panel-polestar').exists()).toBe(true)
@@ -163,7 +163,7 @@ describe('ConnectionPage', () => {
     const w = await page()
     expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
       'Volvo needs your attention',
-      'Polestar Beta needs your attention',
+      'Polestar needs your attention',
     ])
     expect(w.find('#connection-panel-tesla').exists()).toBe(false)
   })
@@ -229,7 +229,7 @@ describe('ConnectionPage', () => {
     const w = await page()
     expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
       'Volvo',
-      'Polestar Beta needs your attention',
+      'Polestar needs your attention',
       'Tesla Beta',
     ])
   })
@@ -317,8 +317,8 @@ describe('ConnectionPage', () => {
     expect(w.find('[aria-labelledby="connection-polestar-title"] .polestar-form').exists()).toBe(
       true,
     )
-    // In beta: its tab says so.
-    expect(w.find('#connection-tab-polestar .beta').text()).toBe('Beta')
+    // Out of beta: its tab no longer says so.
+    expect(w.find('#connection-tab-polestar .beta').exists()).toBe(false)
   })
 
   describe('opened at a tab', () => {

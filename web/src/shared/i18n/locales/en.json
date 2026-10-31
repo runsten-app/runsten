@@ -43,7 +43,7 @@
     },
     "choose": {
       "volvo": "I have a Volvo",
-      "polestar": "I have a Polestar (beta)",
+      "polestar": "I have a Polestar",
       "tesla": "I have a Tesla (beta)"
     }
   },
@@ -1549,7 +1549,6 @@
   },
   "polestar": {
     "intro": "Runsten reads your Polestar with a credential you create on Polestar's Data Portal, the access the EU Data Act gives its owners. Its quota of calls is yours alone.",
-    "beta": "Polestar support is in beta: how often a car sends its readings while driving is not verified yet.",
     "guide": "Read the guide",
     "refused": {
       "title": "Your Polestar credential was refused",

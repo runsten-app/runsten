@@ -67,7 +67,7 @@ describe('PolestarForm', () => {
     expect(w().text()).toContain(
       "Runsten reads your Polestar with a credential you create on Polestar's Data Portal",
     )
-    expect(w().text()).toContain('Polestar support is in beta')
+    expect(w().text()).not.toContain('beta')
     const portal = w().find('a.portal')
     expect(portal.attributes('href')).toBe('https://data-portal.polestar.com/')
     expect(portal.attributes('rel')).toBe('noreferrer')
