@@ -26,6 +26,7 @@ type softwareUpdateJSON struct {
 	DownloadPct *float64         `json:"download_pct" minimum:"0" maximum:"100" doc:"How much of it is downloaded, in %; null when unknown."`
 	InstallPct  *float64         `json:"install_pct" minimum:"0" maximum:"100" doc:"How much of it is installed, in %; null when unknown."`
 	DurationS   *int64           `json:"duration_s" minimum:"1" doc:"How long the vehicle expects its installation to take, in seconds; null when it does not say."`
+	ScheduledAt *time.Time       `json:"scheduled_at" pattern:"Z$" doc:"When the owner set it to install; null when not scheduled, or the vehicle does not say."`
 }
 
 func softwareUpdateOf(u core.SoftwareUpdate) softwareUpdateJSON {
@@ -40,6 +41,9 @@ func softwareUpdateOf(u core.SoftwareUpdate) softwareUpdateJSON {
 		s := int64(u.Duration.V / time.Second)
 		out.DurationS = &s
 	}
+	if u.ScheduledAt.OK {
+		out.ScheduledAt = &u.ScheduledAt.V
+	}
 	return out
 }
 
@@ -51,16 +55,21 @@ type installedJSON struct {
 
 // softwareVersionJSON is a version of the vehicle's software.
 type softwareVersionJSON struct {
-	ID        string        `json:"id" doc:"Identifies the version for its vehicle: its first reading's time, to the microsecond, which a rebuild of the derived data keeps. Treat it as opaque." example:"2026-10-26T16:29:31.549000Z"`
-	Version   string        `json:"version" example:"2026.38.3.1"`
-	Installed installedJSON `json:"installed" doc:"When the vehicle took it: between the last reading of the previous version and its own first one."`
+	ID           string           `json:"id" doc:"Identifies the version for its vehicle: its first reading's time, to the microsecond, which a rebuild of the derived data keeps. Treat it as opaque." example:"2026-10-26T16:29:31.549000Z"`
+	Version      string           `json:"version" example:"2026.38.3.1"`
+	Installed    installedJSON    `json:"installed" doc:"When the vehicle took it: between the last reading of the previous version and its own first one."`
+	InstallStart null[boundsJSON] `json:"install_start" doc:"When the vehicle started installing it: between the last reading without an installation in progress and the first reading of one. Its installation ended within installed: from it to installed, the installation's duration lies between installed.after − install_start.before and installed.before − install_start.after. null when no reading saw it installing: the vehicle asleep or out of reach, or the version read before Runsten read an installation."`
 }
 
 func softwareVersionOf(v core.SoftwareVersion) softwareVersionJSON {
-	return softwareVersionJSON{
+	out := softwareVersionJSON{
 		ID: v.DetectedAt.UTC().Format(idFormat), Version: v.Version,
 		Installed: installedJSON{After: timeOrNil(v.Installed.After), Before: v.Installed.Before},
 	}
+	if !v.InstallStarted.Before.IsZero() {
+		out.InstallStart = known(boundsJSON{After: v.InstallStarted.After, Before: v.InstallStarted.Before})
+	}
+	return out
 }
 
 // listSoftwareVersions reads a page of the vehicle's versions, newest first.

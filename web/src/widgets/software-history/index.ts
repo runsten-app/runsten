@@ -1,1 +1,2 @@
-export { default as SoftwareHistory } from './ui/SoftwareHistory.vue'
+export { default as SoftwareSummary } from './ui/SoftwareSummary.vue'
+export { default as SoftwareVersions } from './ui/SoftwareVersions.vue'

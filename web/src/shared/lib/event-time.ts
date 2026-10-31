@@ -93,3 +93,22 @@ export function formatTotalDuration(d: Duration, locale: string): string {
   const f = new Intl.NumberFormat(locale, { style: 'unit', unit: 'hour', unitDisplay: 'short' })
   return min === max ? f.format(min) : f.formatRange(min, max)
 }
+
+const day = 24 * hour
+
+// formatDays shows how long a state lasted, from hours to years: as formatDuration under
+// a day, else in days ("12–13 days"), each bound to the nearest day, where an hour means
+// nothing. Without a max (no earlier bound), "at least" the min, as atLeast words it.
+export function formatDays(
+  d: { min: number; max: number | null },
+  locale: string,
+  atLeast: (s: string) => string,
+): string {
+  if (d.max === null) return atLeast(formatDays({ min: d.min, max: d.min }, locale, atLeast))
+  if (d.max < day) return formatDuration({ min: d.min, max: d.max }, locale)
+  const f = new Intl.NumberFormat(locale, { style: 'unit', unit: 'day', unitDisplay: 'long' })
+  // A min under half a day stays 0: "0–1 days", never a day the bounds do not ensure.
+  const min = Math.round(d.min / day)
+  const max = Math.round(d.max / day)
+  return min >= max ? f.format(max) : f.formatRange(min, max)
+}

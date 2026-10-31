@@ -23,6 +23,7 @@
     "unknown": "Okänt",
     "openInOsm": "Öppna i OpenStreetMap",
     "atLeast": "Minst",
+    "atLeastValue": "minst {value}",
     "atMost": "Högst"
   },
   "cost": {
@@ -101,6 +102,7 @@
       "title": "Programuppdatering",
       "available": "Tillgänglig",
       "scheduled": "Schemalagd",
+      "scheduledAt": "Schemalagd till {when}",
       "downloading": "Laddas ner",
       "waitingWifi": "Väntar på wifi",
       "installing": "Installeras",
@@ -1674,11 +1676,22 @@
   },
   "software": {
     "title": "Programvara",
-    "current": "Installerad nu",
+    "current": "Version som körs",
     "installed": "Installerad {when}",
     "firstRead": "Först läst {when}",
-    "all": "Visa alla versioner",
     "more": "Visa fler",
-    "error": "Programvarans versioner kunde inte läsas in."
+    "error": "Programvarans versioner kunde inte läsas in.",
+    "running": "Installerad nu",
+    "open": "Se versionshistoriken",
+    "history": "Versioner",
+    "version": "Version",
+    "ran": "Använd i",
+    "installation": "Installation",
+    "soFar": "hittills",
+    "notSeen": "Installationen sågs inte",
+    "unseen": "—: ingen avläsning såg installationen, bilen sov eller var utom räckhåll under tiden.",
+    "none": "Det här fordonet anger inte sin programvaruversion.",
+    "loading": "Versionerna läses in",
+    "now": "Nu"
   }
 }

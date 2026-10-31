@@ -23,6 +23,7 @@
     "unknown": "Inconnu",
     "openInOsm": "Ouvrir dans OpenStreetMap",
     "atLeast": "Au moins",
+    "atLeastValue": "au moins {value}",
     "atMost": "Au plus"
   },
   "cost": {
@@ -101,6 +102,7 @@
       "title": "Mise à jour du logiciel",
       "available": "Disponible",
       "scheduled": "Programmée",
+      "scheduledAt": "Programmée pour {when}",
       "downloading": "Téléchargement",
       "waitingWifi": "En attente du Wi-Fi",
       "installing": "Installation",
@@ -1674,11 +1676,22 @@
   },
   "software": {
     "title": "Logiciel",
-    "current": "En service",
+    "current": "Version en service",
     "installed": "Installée {when}",
     "firstRead": "Lue pour la première fois {when}",
-    "all": "Voir toutes les versions",
     "more": "Afficher plus",
-    "error": "Impossible de charger les versions du logiciel."
+    "error": "Impossible de charger les versions du logiciel.",
+    "running": "En service",
+    "open": "Voir l'historique des versions",
+    "history": "Versions",
+    "version": "Version",
+    "ran": "Utilisée",
+    "installation": "Installation",
+    "soFar": "à ce jour",
+    "notSeen": "Installation non vue",
+    "unseen": "— : aucun relevé n'a vu l'installation, la voiture endormie ou hors de portée pendant ce temps.",
+    "none": "Ce véhicule n'indique pas la version de son logiciel.",
+    "loading": "Chargement des versions",
+    "now": "Maintenant"
   }
 }
