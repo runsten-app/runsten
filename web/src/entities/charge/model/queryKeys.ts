@@ -4,8 +4,8 @@ export const chargeKeys = {
   details: () => ['charge'] as const,
   // Every list of a vehicle, whatever the period: where a charge may already be.
   lists: (vehicle: string) => ['charges', vehicle] as const,
-  list: (vehicle: string, from?: string, to?: string) =>
-    ['charges', vehicle, from ?? null, to ?? null] as const,
+  list: (vehicle: string, from?: string, to?: string, place?: string) =>
+    ['charges', vehicle, from ?? null, to ?? null, place ?? null] as const,
   detail: (vehicle: string, id: string) => ['charge', vehicle, id] as const,
   // The charge in progress, apart from the lists: it is no event of theirs.
   inProgress: (vehicle: string) => ['charge-in-progress', vehicle] as const,

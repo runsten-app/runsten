@@ -38,9 +38,19 @@ describe('stats API', () => {
       null,
       'UTC',
       null,
+      null,
     ])
     const key = statsKeys.period(vehicle, { from: 'a', to: 'b', tz: 'UTC', bucket: 'week' })
-    expect(key).toEqual(['stats', vehicle, 'a', 'b', 'UTC', 'week'])
+    expect(key).toEqual(['stats', vehicle, 'a', 'b', 'UTC', 'week', null])
+    expect(statsKeys.period(vehicle, { tz: 'UTC', place: 'outside' })).toEqual([
+      'stats',
+      vehicle,
+      null,
+      null,
+      'UTC',
+      null,
+      'outside',
+    ])
     expect(key.slice(0, 2)).toEqual(statsKeys.all(vehicle))
   })
 })

@@ -33,7 +33,14 @@ describe('charge API', () => {
   })
 
   it('has one key per query, the lists under one prefix', () => {
-    expect(chargeKeys.list(vehicle, 'a')).toEqual(['charges', vehicle, 'a', null])
+    expect(chargeKeys.list(vehicle, 'a')).toEqual(['charges', vehicle, 'a', null, null])
+    expect(chargeKeys.list(vehicle, 'a', 'b', 'outside')).toEqual([
+      'charges',
+      vehicle,
+      'a',
+      'b',
+      'outside',
+    ])
     expect(chargeKeys.lists(vehicle)).toEqual(['charges', vehicle])
     expect(chargeKeys.detail(vehicle, charge.id)).toEqual(['charge', vehicle, charge.id])
   })

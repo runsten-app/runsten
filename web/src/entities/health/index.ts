@@ -16,6 +16,7 @@ export type {
   Wheel,
 } from './model/Health'
 export { healthKeys } from './model/queryKeys'
+export { versionRuns, type VersionRun } from './model/software'
 export {
   activeWarnings,
   bar,

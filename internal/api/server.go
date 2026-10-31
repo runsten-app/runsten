@@ -171,6 +171,9 @@ type EventQuery struct {
 	From, To time.Time
 	After    *EventKey // resume after this event
 	Limit    int       // zero: every event
+	// Place keeps the charges of one place, the Limit of them read past the others;
+	// the trips ignore it.
+	Place core.ChargesAt
 }
 
 // EventKey is the position of an event in the newest-first order.

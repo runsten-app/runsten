@@ -124,6 +124,12 @@ type SoftwareVersion struct {
 	// version, before its first one. After is zero for the first version Runsten read,
 	// installed at any time before.
 	Installed Bounds
+	// InstallStarted bounds when the vehicle started installing it: after the last
+	// reading without an installation in progress, before the first reading of one. Zero
+	// when no reading saw it installing (the vehicle asleep or out of reach, or a source
+	// that does not tell it). The installation ended within Installed: the vehicle tells
+	// the previous version until it restarts on the new one.
+	InstallStarted Bounds
 }
 
 // Amount is a sum of money in minor units of an ISO 4217 currency, which may be one

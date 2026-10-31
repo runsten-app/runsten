@@ -1673,8 +1673,17 @@ func software(v string) Snapshot {
 	return Snapshot{Covers: FieldSoftware, Software: Some(v, time.Time{})}
 }
 
+// updating is a reading of version 2026.38.3.1 with an update to 2026.38.3.2 at the status
+// given.
+func updating(st UpdateStatus) Snapshot {
+	s := software("2026.38.3.1")
+	s.SoftwareUpdate = Some(SoftwareUpdate{Status: st, Version: "2026.38.3.2"}, time.Time{})
+	return s
+}
+
 // Each version of the software is reported once, when first read: bounded by the last
-// reading of the previous one, the first with none before it.
+// reading of the previous one, the first with none before it. Its installation started
+// after the last reading without one in progress, before the first reading of it.
 func TestSoftwareVersions(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -1712,6 +1721,69 @@ func TestSoftwareVersions(t *testing.T) {
 			[]SoftwareVersion{
 				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
 				{DetectedAt: m(90), Version: "2026.44.1", Installed: Bounds{After: m(60), Before: m(90)}},
+			},
+		},
+		{
+			// Scheduled, then installing from minute 32 to 55 at least, read again as an
+			// odometer reading settles the cursor between: the installation keeps it.
+			"an installation seen",
+			[]Record{
+				rec(5, 30, updating(UpdateScheduled)),
+				rec(32, 33, updating(UpdateInstalling)),
+				rec(34, 34, odo(12400)),
+				rec(40, 55, updating(UpdateInstalling)),
+				rec(70, 80, software("2026.38.3.2")),
+				rec(81, 81, odo(12400)),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{
+					DetectedAt: m(70), Version: "2026.38.3.2", Installed: Bounds{After: m(55), Before: m(70)},
+					InstallStarted: Bounds{After: m(30), Before: m(32)},
+				},
+			},
+		},
+		{
+			// An installation given up (back to available) is not the one that brings the
+			// version: only the last one counts.
+			"an installation given up",
+			[]Record{
+				rec(5, 30, updating(UpdateAvailable)),
+				rec(32, 33, updating(UpdateInstalling)),
+				rec(40, 50, updating(UpdateAvailable)),
+				rec(60, 61, updating(UpdateInstalling)),
+				rec(70, 70, software("2026.38.3.2")),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{
+					DetectedAt: m(70), Version: "2026.38.3.2", Installed: Bounds{After: m(61), Before: m(70)},
+					InstallStarted: Bounds{After: m(50), Before: m(60)},
+				},
+			},
+		},
+		{
+			// Installing at the first reading: its start is not bounded, nor told.
+			"installing from the first reading",
+			[]Record{
+				rec(5, 10, updating(UpdateInstalling)),
+				rec(20, 20, software("2026.38.3.2")),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{DetectedAt: m(20), Version: "2026.38.3.2", Installed: Bounds{After: m(10), Before: m(20)}},
+			},
+		},
+		{
+			// Asleep through it: no reading saw it installing.
+			"an installation not seen",
+			[]Record{
+				rec(5, 30, updating(UpdateScheduled)),
+				rec(300, 300, software("2026.38.3.2")),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{DetectedAt: m(300), Version: "2026.38.3.2", Installed: Bounds{After: m(30), Before: m(300)}},
 			},
 		},
 	}

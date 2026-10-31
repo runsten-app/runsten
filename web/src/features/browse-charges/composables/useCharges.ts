@@ -3,16 +3,25 @@ import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { fetchCharges, chargeKeys } from '@/entities/charge'
 
 // useCharges reads the charges of a vehicle in a period (RFC 3339 instants, either open),
-// newest first, a page at a time: loadMore asks the next one while there is one.
+// of a place when given, newest first, a page at a time: loadMore asks the next one while
+// there is one.
 export function useCharges(
   vehicle: MaybeRefOrGetter<string>,
   from: MaybeRefOrGetter<string | undefined>,
   to: MaybeRefOrGetter<string | undefined>,
+  place?: MaybeRefOrGetter<string | undefined>,
 ) {
   const q = useInfiniteQuery({
-    queryKey: computed(() => chargeKeys.list(toValue(vehicle), toValue(from), toValue(to))),
+    queryKey: computed(() =>
+      chargeKeys.list(toValue(vehicle), toValue(from), toValue(to), toValue(place)),
+    ),
     queryFn: ({ pageParam }) =>
-      fetchCharges(toValue(vehicle), { from: toValue(from), to: toValue(to), cursor: pageParam }),
+      fetchCharges(toValue(vehicle), {
+        from: toValue(from),
+        to: toValue(to),
+        cursor: pageParam,
+        place: toValue(place),
+      }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (p) => p.next_cursor ?? undefined,
   })

@@ -378,6 +378,7 @@ describe('VehicleState', () => {
       download_pct: 40,
       install_pct: null,
       duration_s: 2700,
+      scheduled_at: null,
     }
     let w = await mounted({
       ...state,
@@ -394,6 +395,19 @@ describe('VehicleState', () => {
       software_update: { ...at, value: { ...update, status: 'waiting_wifi', version: null } },
     })
     expect(reading(w, 'Software update').value).toBe('Waiting for Wi-Fi')
+    // Scheduled: when, as the owner set it.
+    w.unmount()
+    w = await mounted({
+      ...state,
+      software: { ...at, value: '2026.38.3.1' },
+      software_update: {
+        ...at,
+        value: { ...update, status: 'scheduled', scheduled_at: '2026-09-29T01:50:00Z' },
+      },
+    })
+    expect(reading(w, 'Software update').value).toBe(
+      '2026.38.3.2: Scheduled for 29 Sept 2026, 01:50',
+    )
     w.unmount()
     w = await mounted(state)
     expect(() => reading(w, 'Software')).toThrow()

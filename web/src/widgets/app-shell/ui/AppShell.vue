@@ -19,6 +19,7 @@ import { collectionState, needsAttention } from '@/entities/vehicle'
 import { UserMenu } from '@/features/auth'
 import { ShortcutsHelp, shortcutsEnabled, useShortcuts } from '@/features/keyboard-shortcuts'
 import { periodQuery } from '@/features/filter-period'
+import { placeQuery } from '@/features/filter-place'
 import { useConnectionSettings } from '@/features/manage-api-key'
 import { renewalDue } from '@/features/manage-polestar'
 import { rememberedVehicle, rememberVehicle, VehicleMenu } from '@/features/select-vehicle'
@@ -55,6 +56,8 @@ const sections: Record<string, Section> = {
   health: 'health',
   // The battery's estimated capacity is a figure of the health, reached from its page.
   battery: 'health',
+  // So is the history of its software.
+  software: 'health',
   trips: 'trips',
   trip: 'trips',
   charges: 'charges',
@@ -128,7 +131,8 @@ function sectionsOf(vehicle: string) {
       value: 'charges',
       icon: mdiEvPlugType2,
       label: t('nav.charges'),
-      to: { name: 'charges', params, query },
+      // The place too, from a charge back to its list.
+      to: { name: 'charges', params, query: { ...query, ...placeQuery(route.query) } },
     },
     {
       value: 'stats',

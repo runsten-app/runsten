@@ -20,6 +20,15 @@ describe('CsvDownload', () => {
     expect(link.text()).toBe('Download CSV')
   })
 
+  it('downloads the charges of a place', () => {
+    const { wrapper } = mountWith(CsvDownload, {
+      props: { kind: 'charges', vehicle: 'v1', place: 'outside' },
+    })
+    expect(wrapper.find('a.csv-download').attributes('href')).toBe(
+      'api/v1/vehicles/v1/charges.csv?place=outside',
+    )
+  })
+
   it('downloads the whole history of the charges without a period', () => {
     const { wrapper } = mountWith(CsvDownload, { props: { kind: 'charges', vehicle: 'v1' } })
     expect(wrapper.find('a.csv-download').attributes('href')).toBe('api/v1/vehicles/v1/charges.csv')

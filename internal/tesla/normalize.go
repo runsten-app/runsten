@@ -141,6 +141,8 @@ type softwareUpdate struct {
 	Download *float64 `json:"download_perc"`
 	Install  *float64 `json:"install_perc"`
 	Duration *float64 `json:"expected_duration_sec"`
+	// Scheduled is when the owner set it to install, in milliseconds.
+	Scheduled *int64 `json:"scheduled_time_ms"`
 }
 
 type vehicleConfig struct {
@@ -326,6 +328,9 @@ func normalizeSoftware(vs *vehicleState, s *core.Snapshot) {
 	}
 	if u.Duration != nil && *u.Duration > 0 {
 		up.Duration = core.Some(time.Duration(*u.Duration)*time.Second, time.Time{})
+	}
+	if t := millis(u.Scheduled); !t.IsZero() {
+		up.ScheduledAt = core.Some(t, time.Time{})
 	}
 	s.SoftwareUpdate = core.Some(up, at)
 }

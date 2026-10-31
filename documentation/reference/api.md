@@ -25,7 +25,7 @@ A request body is sent as `application/json`, but the files of an import, as `mu
 | Route | |
 |---|---|
 | `GET`, `POST`, `DELETE /api/v1/session` | the current session; sign in; sign out |
-| `GET /api/v1/vehicles`, `…/vehicles/{id}` | the vehicles, their model, the state of their connection (Volvo or Polestar) and what the collector did on its latest pass |
+| `GET /api/v1/vehicles`, `…/vehicles/{id}` | the vehicles, their model, the state of their connection (Volvo, Polestar or Tesla) and what the collector did on its latest pass |
 | `GET /api/v1/vehicles/{id}/variants` | the catalog's variants of the vehicle's family (of its brand, for a Polestar of the Data Portal), the candidates of the recognition first |
 | `PUT /api/v1/vehicles/{id}/model` | choose the variant and the onboard charger (`null` for the recognition, and for a charger not stated) |
 | `GET /api/v1/vehicles/{id}/state` | the latest known values: SoC, range, odometer, position, charging, each with when it was read |
@@ -53,7 +53,7 @@ A request body is sent as `application/json`, but the files of an import, as `mu
 - **Times** are RFC 3339 in UTC. Trip and charge times are bounds: `start.after`, `start.before`, `end.after`, `end.before`. `reconstructed` marks the events that were never seen.
 - **Imported events** come in the same lists as the derived ones, with `imported: true`: trips and charges another app (Aximote, the Volvo Cars app) or Volvo Cars' Data Portal cut from its own readings, before Runsten read the vehicle. Their times are exact (`after` equals `before`), and their ID is their source and their ID there, `aximote:8812`. `sources` tells where every event comes from: the sources of a derived event's readings (`volvo`), or the app of an imported one.
 - **Unknown is `null`**, never zero.
-- **Energies** are estimates: ΔSoC × `capacity_kwh`, with `capacity_source` `catalog_net` (the net capacity of the variant) or `api` (the capacity Volvo reports).
+- **Energies** are estimates: ΔSoC × `capacity_kwh`, with `capacity_source` `catalog_net` (the net capacity of the variant) or `api` (the capacity the car reports, a Volvo's).
 - **Durations** are `{"min", "max"}` in seconds.
 - **A cost** is `{"currency", "min_minor", "max_minor", "source", …}`, `min_minor = max_minor` when it is one amount; `source` is `tariff`, `entered`, or `imported` (what the app of an imported charge says it cost, in the account's currency).
 - **Statistics** count each event once, in the interval that holds its `start.after`; a sum's `_unknown` companion counts the events that lacked a value. At most 400 intervals; `tz` is an IANA time zone, `UTC` by default.

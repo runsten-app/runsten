@@ -66,6 +66,22 @@ describe('ChargeList', () => {
     expect(w.find('.empty').exists()).toBe(false)
   })
 
+  it('shows it at the place of the list only, which it has as a charge', async () => {
+    vi.useFakeTimers({ now: Date.parse('2026-09-28T23:13:00Z'), toFake: ['Date'] })
+    fetchChargeInProgress.mockResolvedValue(charging.charge)
+    fetchCharges.mockResolvedValue(charges)
+    const home = charging.charge?.place?.id
+    expect((await mounted({ place: home })).find('.in-progress').exists()).toBe(true)
+    expect((await mounted({ place: 'outside' })).find('.in-progress').exists()).toBe(false)
+    expect((await mounted({ place: 'no_position' })).find('.in-progress').exists()).toBe(false)
+    expect(fetchCharges).toHaveBeenLastCalledWith(vehicle, {
+      from: undefined,
+      to: undefined,
+      cursor: undefined,
+      place: 'no_position',
+    })
+  })
+
   it('leaves it out of a period that ends before it', async () => {
     fetchChargeInProgress.mockResolvedValue(charging.charge)
     fetchCharges.mockResolvedValue(charges)
@@ -146,6 +162,9 @@ describe('ChargeList', () => {
     fetchCharges.mockResolvedValue({ items: [], next_cursor: null })
     expect((await mounted({ to: '2026-09-01T00:00:00.000Z' })).find('.empty').text()).toBe(
       'No charge in this period.',
+    )
+    expect((await mounted({ place: 'outside' })).find('.empty').text()).toBe(
+      'No charge at this place in this period.',
     )
     fetchCharges.mockRejectedValue(new ApiError(500, 'internal', ''))
     expect((await mounted()).find('.v-alert').text()).toBe(

@@ -67,6 +67,13 @@ export function createAppRouter(history: RouterHistory, queryClient: QueryClient
         component: () => import('@/pages/battery').then((m) => m.BatteryPage),
         props: true,
       },
+      // The history of the vehicle's software, from the health page, as the battery's.
+      {
+        path: '/vehicles/:vehicle/software',
+        name: 'software',
+        component: () => import('@/pages/software').then((m) => m.SoftwarePage),
+        props: true,
+      },
       // The vehicle's health, a tab of its own: its chart loads Chart.js.
       {
         path: '/vehicles/:vehicle/health',

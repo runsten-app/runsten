@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"maps"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -313,7 +314,9 @@ func (m *memReader) TripTrack(_ context.Context, _, vehicle string, ref EventRef
 }
 
 func (m *memReader) ListCharges(ctx context.Context, acc, vehicle string, q EventQuery) (PricedCharges, error) {
-	return m.priced(ctx, acc, vehicle, pageEvents(m.charges[vehicle], q, chargeBounds)), m.err
+	places, _ := m.settings.Places(ctx, acc)
+	kept := slices.DeleteFunc(slices.Clone(m.charges[vehicle]), func(c core.Charge) bool { return !q.Place.Keeps(c, places) })
+	return m.priced(ctx, acc, vehicle, pageEvents(kept, q, chargeBounds)), m.err
 }
 
 func (m *memReader) FindCharge(ctx context.Context, acc, vehicle string, ref EventRef) (PricedCharges, bool, error) {
@@ -805,6 +808,86 @@ func TestTripsJSON(t *testing.T) {
 			wantError(t, body, "invalid_parameter")
 		}
 	})
+}
+
+// TestChargesAtPlace reads the list, its totals and its CSV file of each group of the
+// charges by place.
+func TestChargesAtPlace(t *testing.T) {
+	e, c := readerEnv(t)
+	base := e.api.URL + "/api/v1/vehicles/" + car
+	home := homePlace(t).ID
+	for _, tt := range []struct {
+		place string
+		want  []string // the IDs, newest first
+	}{
+		{"", []string{"2026-09-28T18:30:00.000000Z", "2026-09-28T04:00:00.000000Z"}},
+		{home, []string{"2026-09-28T18:30:00.000000Z"}},
+		{strings.ToUpper(home), []string{"2026-09-28T18:30:00.000000Z"}},
+		{"outside", nil},
+		{"no_position", []string{"2026-09-28T04:00:00.000000Z"}},
+		{"00000000-0000-4000-8000-000000000000", nil}, // a place the account lacks
+	} {
+		t.Run("place="+tt.place, func(t *testing.T) {
+			query := "?from=2026-09-27T00:00:00Z&to=2026-09-30T00:00:00Z&place=" + url.QueryEscape(tt.place)
+			var ids []string
+			for cursor := ""; ; {
+				resp, body := get(t, noFollow(), base+"/charges"+query+"&limit=1"+cursor, c)
+				if resp.status != http.StatusOK {
+					t.Fatalf("status %d: %s", resp.status, body)
+				}
+				var p struct {
+					Items []struct {
+						ID string `json:"id"`
+					} `json:"items"`
+					NextCursor *string `json:"next_cursor"`
+				}
+				if err := json.Unmarshal([]byte(body), &p); err != nil {
+					t.Fatal(err)
+				}
+				for _, i := range p.Items {
+					ids = append(ids, i.ID)
+				}
+				if p.NextCursor == nil {
+					break
+				}
+				cursor = "&cursor=" + url.QueryEscape(*p.NextCursor)
+			}
+			if !slices.Equal(ids, tt.want) {
+				t.Errorf("listed %v, want %v", ids, tt.want)
+			}
+			_, body := get(t, noFollow(), base+"/stats"+query, c)
+			var stats struct {
+				Totals struct {
+					Charges struct {
+						Count int `json:"count"`
+					} `json:"charges"`
+					Trips struct {
+						Count int `json:"count"`
+					} `json:"trips"`
+				} `json:"totals"`
+			}
+			if err := json.Unmarshal([]byte(body), &stats); err != nil {
+				t.Fatal(err)
+			}
+			if stats.Totals.Charges.Count != len(tt.want) || stats.Totals.Trips.Count == 0 {
+				t.Errorf("stats count %d charges, %d trips; want %d charges and every trip: %s",
+					stats.Totals.Charges.Count, stats.Totals.Trips.Count, len(tt.want), body)
+			}
+			_, body = get(t, noFollow(), base+"/charges.csv"+query, c)
+			if rows := strings.Count(body, "\r\n") - 1; rows != len(tt.want) {
+				t.Errorf("CSV of %d rows, want %d:\n%s", rows, len(tt.want), body)
+			}
+		})
+	}
+	for _, path := range []string{"/charges", "/stats", "/charges.csv"} {
+		for _, place := range []string{"home", "Outside", "5e1f0000"} {
+			resp, body := get(t, noFollow(), base+path+"?place="+place, c)
+			if resp.status != http.StatusBadRequest || !strings.Contains(body, "place") {
+				t.Errorf("%s?place=%s: %d %s", path, place, resp.status, body)
+			}
+			wantError(t, body, "invalid_parameter")
+		}
+	}
 }
 
 func TestChargesJSON(t *testing.T) {

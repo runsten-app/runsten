@@ -157,13 +157,11 @@ func (s *Store) SaveDerivation(ctx context.Context, accountID, vehicleID string,
 			}
 		}
 		for _, v := range res.Versions {
-			var after *time.Time
-			if !v.Installed.After.IsZero() {
-				after = &v.Installed.After
-			}
 			_, err := tx.Exec(ctx, `
-				INSERT INTO software_versions (account_id, vehicle_id, detected_at, version, installed_after)
-				VALUES ($1, $2, $3, $4, $5)`, accountID, vehicleID, v.DetectedAt, v.Version, after)
+				INSERT INTO software_versions (account_id, vehicle_id, detected_at, version, installed_after,
+					install_started_after, install_started_before)
+				VALUES ($1, $2, $3, $4, $5, $6, $7)`, accountID, vehicleID, v.DetectedAt, v.Version,
+				nullTime(v.Installed.After), nullTime(v.InstallStarted.After), nullTime(v.InstallStarted.Before))
 			if err != nil {
 				return fmt.Errorf("insert software version: %w", err)
 			}
@@ -203,16 +201,21 @@ func (s *Store) ListSoftwareVersions(ctx context.Context, accountID, vehicleID s
 	}
 	var out []core.SoftwareVersion
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
-		rows, err := tx.Query(ctx, `SELECT detected_at, version, installed_after FROM software_versions WHERE `+where, args...)
+		rows, err := tx.Query(ctx, `
+			SELECT detected_at, version, installed_after, install_started_after, install_started_before
+			FROM software_versions WHERE `+where, args...)
 		if err != nil {
 			return err //nolint:wrapcheck // wrapped by inAccount
 		}
 		var v core.SoftwareVersion
-		var after *time.Time
-		_, err = pgx.ForEachRow(rows, []any{&v.DetectedAt, &v.Version, &after}, func() error {
+		var after, startAfter, startBefore *time.Time
+		_, err = pgx.ForEachRow(rows, []any{&v.DetectedAt, &v.Version, &after, &startAfter, &startBefore}, func() error {
 			w := core.SoftwareVersion{DetectedAt: v.DetectedAt.UTC(), Version: v.Version, Installed: core.Bounds{Before: v.DetectedAt.UTC()}}
 			if after != nil {
 				w.Installed.After = after.UTC()
+			}
+			if startAfter != nil && startBefore != nil {
+				w.InstallStarted = core.Bounds{After: startAfter.UTC(), Before: startBefore.UTC()}
 			}
 			out = append(out, w)
 			return nil
@@ -273,10 +276,9 @@ func (s *Store) Charges(ctx context.Context, accountID, vehicleID string) ([]cor
 // ListCharges implements api.Reader: a page of charges, derived and imported, with what
 // their costs depend on, from one snapshot.
 func (s *Store) ListCharges(ctx context.Context, accountID, vehicleID string, q api.EventQuery) (api.PricedCharges, error) {
-	where, args := eventPage(vehicleID, q)
 	var out api.PricedCharges
 	err := s.readInAccount(ctx, accountID, func(tx pgx.Tx) error {
-		charges, err := scanChargesOf(ctx, tx, chargeEvents, where, args...)
+		charges, err := chargePage(ctx, tx, vehicleID, q)
 		if err != nil {
 			return err
 		}
@@ -284,6 +286,51 @@ func (s *Store) ListCharges(ctx context.Context, accountID, vehicleID string, q 
 		return err
 	})
 	return out, err
+}
+
+// chargeBatch is how many charges chargePage reads at a time.
+const chargeBatch = 200
+
+// chargePage reads the query's page of charges. A charge's place is computed from its
+// position (core.PlaceOf), which SQL does not know: those of a place are kept from
+// batches read in the page's order, until the page is full or the period read.
+func chargePage(ctx context.Context, tx pgx.Tx, vehicleID string, q api.EventQuery) ([]core.Charge, error) {
+	if q.Place.Group == core.PlaceGroupAny {
+		where, args := eventPage(vehicleID, q)
+		return scanChargesOf(ctx, tx, chargeEvents, where, args...)
+	}
+	places, err := queryPlaces(ctx, tx, "TRUE")
+	if err != nil {
+		return nil, err
+	}
+	batch := q
+	if q.Limit > 0 {
+		batch.Limit = max(q.Limit, chargeBatch)
+	}
+	var out []core.Charge
+	for {
+		where, args := eventPage(vehicleID, batch)
+		read, err := scanChargesOf(ctx, tx, chargeEvents, where, args...)
+		if err != nil {
+			return nil, err
+		}
+		for _, c := range read {
+			if q.Place.Keeps(c, places) {
+				out = append(out, c)
+			}
+			if q.Limit > 0 && len(out) == q.Limit {
+				return out, nil
+			}
+		}
+		if batch.Limit == 0 || len(read) < batch.Limit {
+			return out, nil
+		}
+		last := read[len(read)-1]
+		batch.After = &api.EventKey{StartedAfter: last.Start.After, DetectedAt: last.DetectedAt}
+		if last.Import.OK {
+			batch.After.Import = importKey(last.Import.V.Source, last.Import.V.SourceID)
+		}
+	}
 }
 
 // FindCharge implements api.Reader, like ListCharges.

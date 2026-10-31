@@ -687,14 +687,36 @@ func (s *Server) listTrips(ctx context.Context, in *listInput) (*body[page[tripJ
 	})
 }
 
-func (s *Server) listCharges(ctx context.Context, in *listInput) (*body[page[chargeJSON]], error) {
+// chargeListInput is listInput with the place of the charges.
+type chargeListInput struct {
+	Vehicle string    `path:"vehicle" doc:"The vehicle ID."`
+	From    time.Time `query:"from" doc:"Keeps the events that may have happened, at least partly, at or after this time: those with end.before after it. An event whose bounds straddle it is kept." example:"2026-09-28T00:00:00Z"`
+	To      time.Time `query:"to" doc:"Keeps the events that may have happened, at least partly, before this time: those with start.after before it. With from, it must come after from." example:"2026-09-29T00:00:00Z"`
+	Cursor  string    `query:"cursor" doc:"The next_cursor of the previous page. It stays valid when from or to change."`
+	Limit   int       `query:"limit" minimum:"1" maximum:"200" default:"50" doc:"The maximum number of events of the page."`
+	Place   string    `query:"place" pattern:"^(outside|no_position|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$" doc:"Keeps the charges of one group of the statistics' charges_by_place: a place's ID (the charges whose place is this one, as charges.place), outside (a position outside every place) or no_position (no position, and no place takes them). A place the account does not have keeps none. Without it, every charge." example:"outside"`
+}
+
+// chargesAt reads the place parameter, whose pattern the schema checks.
+func chargesAt(place string) core.ChargesAt {
+	switch g := core.PlaceGroup(place); g {
+	case core.PlaceGroupAny, core.PlaceGroupOutside, core.PlaceGroupNoPosition:
+		return core.ChargesAt{Group: g}
+	default:
+		return core.ChargesAt{Group: core.PlaceGroupPlace, PlaceID: strings.ToLower(place)}
+	}
+}
+
+func (s *Server) listCharges(ctx context.Context, in *chargeListInput) (*body[page[chargeJSON]], error) {
 	var priced PricedCharges
 	var charger core.Value[float64]
-	return listEvents(ctx, s, in, func(acc string, v Vehicle, q EventQuery) ([]core.Charge, error) {
+	list := &listInput{Vehicle: in.Vehicle, From: in.From, To: in.To, Cursor: in.Cursor, Limit: in.Limit}
+	return listEvents(ctx, s, list, func(acc string, v Vehicle, q EventQuery) ([]core.Charge, error) {
 		var err error
 		if charger, err = s.chargerOf(ctx, v); err != nil {
 			return nil, err
 		}
+		q.Place = chargesAt(in.Place)
 		priced, err = s.Reader.ListCharges(ctx, acc, v.ID, q)
 		return priced.Charges, err //nolint:wrapcheck // logged by listEvents, never shown
 	}, func(c core.Charge) EventKey { return eventKey(c.Start, c.DetectedAt, c.Import) }, func(page []core.Charge, l AccountLimits) []chargeJSON {
@@ -828,6 +850,8 @@ func (s *Server) registerReads(api huma.API) {
 		http.StatusBadRequest: errParameter, http.StatusUnauthorized: errUnauthorized, http.StatusNotFound: errVehicle,
 		http.StatusInternalServerError: errInternal,
 	}
+	chargeListErrs := maps.Clone(listErrs)
+	chargeListErrs[http.StatusBadRequest] = "`invalid_parameter`: `from`, `to`, `limit`, `cursor` or `place`; the message names the parameter."
 	eventErrs := map[int]string{
 		http.StatusUnauthorized: errUnauthorized, http.StatusNotFound: errEvent, http.StatusInternalServerError: errInternal,
 	}
@@ -870,7 +894,7 @@ func (s *Server) registerReads(api huma.API) {
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "listCharges", Method: http.MethodGet, Path: "/vehicles/{vehicle}/charges", Tags: []string{"events"},
 		Summary: "The charges of a vehicle (Urd)", Description: listDescription,
-	}, "A page of charges, newest first.", listErrs), s.listCharges)
+	}, "A page of charges, newest first.", chargeListErrs), s.listCharges)
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "getCharge", Method: http.MethodGet, Path: "/vehicles/{vehicle}/charges/{id}", Tags: []string{"events"},
 		Summary: "A charge", Description: "The same object as the item of the list.",

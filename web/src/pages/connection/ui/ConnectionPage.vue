@@ -204,7 +204,7 @@ const alerted = computed(
         >
           {{ brandLabels[b] }}
           <v-chip
-            v-if="b !== 'volvo'"
+            v-if="b === 'tesla'"
             size="x-small"
             variant="tonal"
             color="primary"

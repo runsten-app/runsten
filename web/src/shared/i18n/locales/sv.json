@@ -23,6 +23,7 @@
     "unknown": "Okänt",
     "openInOsm": "Öppna i OpenStreetMap",
     "atLeast": "Minst",
+    "atLeastValue": "minst {value}",
     "atMost": "Högst"
   },
   "cost": {
@@ -42,7 +43,7 @@
     },
     "choose": {
       "volvo": "Jag har en Volvo",
-      "polestar": "Jag har en Polestar (beta)",
+      "polestar": "Jag har en Polestar",
       "tesla": "Jag har en Tesla (beta)"
     }
   },
@@ -101,6 +102,7 @@
       "title": "Programuppdatering",
       "available": "Tillgänglig",
       "scheduled": "Schemalagd",
+      "scheduledAt": "Schemalagd till {when}",
       "downloading": "Laddas ner",
       "waitingWifi": "Väntar på wifi",
       "installing": "Installeras",
@@ -245,6 +247,7 @@
     "error": "Laddningarna kunde inte läsas in. Försök igen om en stund.",
     "empty": "Inga laddningar registrerade ännu.",
     "emptyPeriod": "Inga laddningar under denna period.",
+    "emptyPlace": "Inga laddningar på denna plats under denna period.",
     "loadMore": "Visa fler",
     "moreFailed": "Fler laddningar kunde inte läsas in. Försök igen.",
     "end": "Inga fler laddningar.",
@@ -519,7 +522,8 @@
         "summary": "Laddad energi per plats: {total} totalt, mest för {at} ({max}).",
         "none": "Ingen laddning med känd energi under perioden.",
         "hint": "En laddning räknas på platsen för dess kostnad: utan position på den plats som även tar sådana, om det finns en.",
-        "reconstructed": "{n} rekonstruerad laddning medräknad, på samma sätt. | {n} rekonstruerade laddningar medräknade, på samma sätt."
+        "reconstructed": "{n} rekonstruerad laddning medräknad, på samma sätt. | {n} rekonstruerade laddningar medräknade, på samma sätt.",
+        "links": "Laddningar:"
       },
       "costByPlace": {
         "title": "Laddningarnas kostnad per plats",
@@ -1097,7 +1101,7 @@
     "title": "Anslutning",
     "backToVehicle": "Tillbaka till fordonet",
     "attention": "Anslutningen behöver din uppmärksamhet",
-    "intro": "Runsten läser dina fordon i bakgrunden, från Volvos API och Polestars Data Portal: det är dess insamlare. Den här sidan visar om den läser dem, och om inte, varför.",
+    "intro": "Runsten läser dina fordon i bakgrunden, från varje tillverkares API: det är dess insamlare. Den här sidan visar om den läser dem, och om inte, varför.",
     "loading": "Läser in anslutningen",
     "error": "Anslutningen kunde inte läsas in. Försök igen om en stund.",
     "refreshFailed": "Anslutningen kunde inte uppdateras: det som visas kan vara inaktuellt.",
@@ -1556,7 +1560,6 @@
   },
   "polestar": {
     "intro": "Runsten läser din Polestar med inloggningsuppgifter som du skapar på Polestars Data Portal, den åtkomst som EU:s dataakt ger ägarna. Dess kvot av anrop är bara din.",
-    "beta": "Stödet för Polestar är i beta: hur ofta en bil skickar sina värden under körning är ännu inte kontrollerat.",
     "guide": "Läs guiden",
     "refused": {
       "title": "Dina Polestar-uppgifter avvisades",
@@ -1683,11 +1686,29 @@
   },
   "software": {
     "title": "Programvara",
-    "current": "Installerad nu",
+    "current": "Version som körs",
     "installed": "Installerad {when}",
     "firstRead": "Först läst {when}",
-    "all": "Visa alla versioner",
     "more": "Visa fler",
-    "error": "Programvarans versioner kunde inte läsas in."
+    "error": "Programvarans versioner kunde inte läsas in.",
+    "running": "Installerad nu",
+    "open": "Se versionshistoriken",
+    "history": "Versioner",
+    "version": "Version",
+    "ran": "Använd i",
+    "installation": "Installation",
+    "soFar": "hittills",
+    "notSeen": "Installationen sågs inte",
+    "unseen": "—: ingen avläsning såg installationen, bilen sov eller var utom räckhåll under tiden.",
+    "none": "Det här fordonet anger inte sin programvaruversion.",
+    "loading": "Versionerna läses in",
+    "now": "Nu"
+  },
+  "placeFilter": {
+    "label": "Plats",
+    "any": "Alla platser",
+    "outside": "Annat ställe",
+    "noPosition": "Utan position",
+    "deleted": "En borttagen plats"
   }
 }
