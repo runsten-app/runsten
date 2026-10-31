@@ -236,6 +236,7 @@
     "error": "Les charges n'ont pas pu être chargées. Réessayez dans un instant.",
     "empty": "Aucune charge enregistrée pour l'instant.",
     "emptyPeriod": "Aucune charge sur cette période.",
+    "emptyPlace": "Aucune charge à ce lieu sur cette période.",
     "loadMore": "Afficher plus",
     "moreFailed": "La suite des charges n'a pas pu être chargée. Réessayez.",
     "end": "Il n'y a pas d'autre charge.",
@@ -1670,5 +1671,12 @@
     "firstRead": "Lue pour la première fois {when}",
     "more": "Afficher plus",
     "error": "Impossible de charger les versions du logiciel."
+  },
+  "placeFilter": {
+    "label": "Lieu",
+    "any": "Tous les lieux",
+    "outside": "Ailleurs",
+    "noPosition": "Sans position",
+    "deleted": "Un lieu supprimé"
   }
 }

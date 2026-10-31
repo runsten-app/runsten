@@ -236,6 +236,7 @@
     "error": "Laddningarna kunde inte läsas in. Försök igen om en stund.",
     "empty": "Inga laddningar registrerade ännu.",
     "emptyPeriod": "Inga laddningar under denna period.",
+    "emptyPlace": "Inga laddningar på denna plats under denna period.",
     "loadMore": "Visa fler",
     "moreFailed": "Fler laddningar kunde inte läsas in. Försök igen.",
     "end": "Inga fler laddningar.",
@@ -1670,5 +1671,12 @@
     "firstRead": "Först läst {when}",
     "more": "Visa fler",
     "error": "Programvarans versioner kunde inte läsas in."
+  },
+  "placeFilter": {
+    "label": "Plats",
+    "any": "Alla platser",
+    "outside": "Annat ställe",
+    "noPosition": "Utan position",
+    "deleted": "En borttagen plats"
   }
 }

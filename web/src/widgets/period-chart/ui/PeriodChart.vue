@@ -10,14 +10,16 @@ import { ChartFrame, type Series } from '@/shared/ui/chart'
 
 // PeriodChart is the list's period at a glance: the distance of the trips, or the energy
 // of the charges, by day, week or month as its length says (months for a period open at
-// the start). Pressing a bar narrows the list to its interval. The analysis stays on the
-// statistics page: one chart here, compact, never more.
+// the start), of the charges' place when given. Pressing a bar narrows the list to its
+// interval. The analysis stays on the statistics page: one chart here, compact, never
+// more.
 const props = defineProps<{
   vehicle: string
   from?: string
   to?: string
   days: Days
   kind: 'trips' | 'charges'
+  place?: string
 }>()
 const { t } = useI18n()
 const f = useFormat()
@@ -32,6 +34,7 @@ const { stats } = useStats(
   () => props.from,
   () => props.to,
   () => (lacks('stats') ? undefined : bucket.value),
+  () => props.place,
 )
 
 function color(name: string): string {

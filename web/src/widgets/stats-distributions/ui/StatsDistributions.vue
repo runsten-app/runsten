@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
+import { periodQuery } from '@/features/filter-period'
 import { useBandLabel, useStats, type StatsView } from '@/features/view-stats'
 import { majorUnits, useFormat, type Bucket } from '@/shared/lib'
 import { ChartFrame, type Series } from '@/shared/ui/chart'
@@ -10,8 +12,10 @@ import type { Stats } from '@/entities/stats'
 // StatsDistributions draws how the period's trips and charges spread, whatever its
 // split: the trips by distance and what each band consumed, the charges by the state of
 // charge they started and ended at, and where they took place, with what they cost
-// there. A band holds events of the whole period, no list filters by it: a press leads
-// nowhere. The view keeps those of driving, of charging or of the costs.
+// there. A band holds events of the whole period: a press on a place leads to the list
+// of its charges over the same period, the list filtering by place; on another band, no
+// list filters by it, nowhere. The view keeps those of driving, of charging or of the
+// costs.
 const props = defineProps<{
   vehicle: string
   from?: string
@@ -23,6 +27,8 @@ const { t } = useI18n()
 const f = useFormat()
 const theme = useTheme()
 const bandLabel = useBandLabel()
+const route = useRoute()
+const router = useRouter()
 // The same query as the charts by interval: one request for the page.
 const { stats } = useStats(
   () => props.vehicle,
@@ -133,16 +139,25 @@ const places = computed(() => {
   if (!p) return []
   const named = [...p.places]
     .sort((a, b) => b.energy_soc_kwh - a.energy_soc_kwh)
-    .map((g) => ({ label: g.place.name, group: g }))
+    .map((g) => ({ label: g.place.name, group: g, place: g.place.id }))
   const others = [
-    { label: t('stats.chart.byPlace.outsideAC'), group: p.outside.ac },
-    { label: t('stats.chart.byPlace.outsideDC'), group: p.outside.dc },
-    { label: t('stats.chart.byPlace.outsideUnknown'), group: p.outside.unknown },
-    { label: t('stats.chart.byPlace.noPosition'), group: p.no_position },
+    { label: t('stats.chart.byPlace.outsideAC'), group: p.outside.ac, place: 'outside' },
+    { label: t('stats.chart.byPlace.outsideDC'), group: p.outside.dc, place: 'outside' },
+    { label: t('stats.chart.byPlace.outsideUnknown'), group: p.outside.unknown, place: 'outside' },
+    { label: t('stats.chart.byPlace.noPosition'), group: p.no_position, place: 'no_position' },
   ].filter((g) => g.group.count > 0)
   return [...named, ...others]
 })
 const placeLabels = computed(() => places.value.map((p) => p.label))
+
+// openPlace leads to the charges of a group over the page's period: those outside every
+// place, whatever their type, for a type's.
+function openPlace(index: number) {
+  const g = places.value[index]
+  if (!g) return
+  const query = { ...periodQuery(route.query), place: g.place }
+  return router.push({ name: 'charges', params: { vehicle: props.vehicle }, query })
+}
 
 // byPlace is the energy charged at each place: a group whose energies are all unknown
 // has no bar, never a zero. The table adds how many charges each holds.
@@ -296,7 +311,7 @@ const costByPlace = computed(() => {
       unit="kWh"
       :interval-header="t('stats.chart.byPlace.header')"
       :format="(v) => f.quantity(v, 'kWh', 0)"
-      :selectable="false"
+      @select="(i: number) => openPlace(i)"
     />
     <ChartFrame
       v-if="costByPlace && view === 'costs'"
@@ -313,7 +328,7 @@ const costByPlace = computed(() => {
       :unit="costByPlace.unit"
       :interval-header="t('stats.chart.byPlace.header')"
       :format="costByPlace.format"
-      :selectable="false"
+      @select="(i: number) => openPlace(i)"
     />
   </div>
 </template>

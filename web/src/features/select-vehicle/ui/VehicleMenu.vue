@@ -28,13 +28,19 @@ const sections: Record<string, string> = {
   vehicleSettings: 'vehicleSettings',
   vehicleHistory: 'vehicleHistory',
 }
-// The period of a list or the statistics; nothing else of the query.
+// The period of a list or the statistics, and the charges' place, the account's;
+// nothing else of the query.
 const periodic = new Set(['trips', 'charges', 'stats'])
 
 function target(vehicle: string): RouteLocationRaw {
   const name = sections[String(route.name)] ?? 'vehicle'
-  const { from, to } = route.query
-  return { name, params: { vehicle }, query: periodic.has(name) ? { from, to } : {} }
+  const { from, to, place } = route.query
+  if (!periodic.has(name)) return { name, params: { vehicle }, query: {} }
+  return {
+    name,
+    params: { vehicle },
+    query: name === 'charges' ? { from, to, place } : { from, to },
+  }
 }
 
 // In the order of the list.
