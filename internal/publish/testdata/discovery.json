@@ -809,7 +809,7 @@
     "unique_id": "runsten_0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69_battery_heater",
     "state_topic": "runsten/vehicles/0b7e6a52-3f1d-4c8e-9a51-1f2d3c4b5a69/battery_heater",
     "value_template": "{{ 'ON' if value == 'on' else ('OFF' if value == 'off' else 'None') }}",
-    "device_class": "heat",
+    "device_class": "running",
     "payload_on": "ON",
     "payload_off": "OFF",
     "availability_topic": "runsten/status",

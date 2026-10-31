@@ -103,8 +103,7 @@ With discovery on, each vehicle is a device named as the web interface names it 
 | Credential | binary sensor, problem: on unless `valid` (a Polestar's only) | `credential_status` |
 | Credential expiry | sensor, timestamp, diagnostic (a Polestar's only) | `credential_expires_at` |
 | Outside temperature, Cabin temperature | sensor, temperature, °C (a Tesla's only) | `outside_temp_c`, `cabin_temp_c` |
-| Climate, Preconditioning | binary sensor, running (a Tesla's only) | `climate`, `preconditioning` |
-| Battery heater | binary sensor, heat (a Tesla's only) | `battery_heater` |
+| Climate, Preconditioning, Battery heater | binary sensor, running (a Tesla's only) | `climate`, `preconditioning`, `battery_heater` |
 
 The **Credential** entity turns on two weeks before the Polestar credential expires, and stays on until another is given: an automation can notify your phone, without opening Runsten. For instance:
 

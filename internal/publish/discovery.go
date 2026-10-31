@@ -177,7 +177,7 @@ func entities() []entity {
 		climate(sensor("cabin_temperature", "Cabin temperature", "cabin_temp_c", "temperature", "°C", "measurement")),
 		climate(binary("climate", "Climate", "climate", "running", onOff(On, Off))),
 		climate(binary("preconditioning", "Preconditioning", "preconditioning", "running", onOff(On, Off))),
-		climate(binary("battery_heater", "Battery heater", "battery_heater", "heat", onOff(On, Off))),
+		climate(binary("battery_heater", "Battery heater", "battery_heater", "running", onOff(On, Off))),
 		// Its position from the attributes of the location's JSON; an empty location
 		// makes it unknown.
 		{component: "device_tracker", object: "location", name: "Location", topic: "location", config: config{
