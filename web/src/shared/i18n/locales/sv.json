@@ -107,6 +107,13 @@
       "unknown": "Väntande",
       "progress": "{status}, {pct}",
       "version": "{version}: {status}"
+    },
+    "climate": {
+      "outside": "Ute",
+      "cabin": "Kupé",
+      "climateOn": "Klimat på",
+      "preconditioning": "Förkonditionering",
+      "batteryHeater": "Batteriet värms"
     }
   },
   "charging": {
@@ -228,7 +235,8 @@
       "hybrid": "Uppskattas inte för en laddhybrid: laddnivån visar bara batteriets energi, inte hur stor del av resan motorn körde.",
       "statsLink": "Se statistiken för {month}"
     },
-    "energyImportedNote": "Energin är den som appen gav."
+    "energyImportedNote": "Energin är den som appen gav.",
+    "outsideTemp": "Utetemperatur (medel)"
   },
   "charges": {
     "title": "Laddningar",

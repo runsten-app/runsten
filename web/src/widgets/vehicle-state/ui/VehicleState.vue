@@ -173,7 +173,22 @@ const chargingTile = computed(() => {
   const c = state.value?.charging
   return c ? (c.power_w ?? c.type ?? c.cable ?? c.target_soc_pct ?? null) : null
 })
-const vehicleTile = computed(() => state.value?.odometer_km ?? state.value?.software ?? null)
+const vehicleTile = computed(() => {
+  const s = state.value
+  if (!s) return null
+  return s.odometer_km ?? s.climate.outside_temp_c ?? s.climate.cabin_temp_c ?? s.software ?? null
+})
+
+// The climate, said under the cabin's temperature only while it runs: preconditioning
+// first, which runs it too.
+const climateRunning = computed(() => {
+  const c = state.value?.climate
+  if (c?.preconditioning?.value) return t('state.climate.preconditioning')
+  if (c?.on?.value) return t('state.climate.climateOn')
+  return null
+})
+// The battery heated (a Tesla's, in the cold), said only while it is.
+const batteryHeating = computed(() => !!state.value?.climate.battery_heater?.value)
 
 // A charge that needs looking at gets its own tile, its figures large; otherwise (idle,
 // done, scheduled, unknown) one line under the battery's bar says it. The engine is not
@@ -379,6 +394,9 @@ const update = computed(() => {
               />
               <div class="under-bar d-flex flex-wrap justify-space-between ga-2 mt-2">
                 <ReadingProvenance :reading="state.soc_pct" :now="now" :connection="connection" />
+                <span v-if="batteryHeating" class="heater">{{
+                  t('state.climate.batteryHeater')
+                }}</span>
                 <span v-if="state.charging.target_soc_pct" class="target">
                   {{ t('state.charging.target') }}
                   <strong>{{ quantity(state.charging.target_soc_pct, 'percent') }}</strong>
@@ -507,6 +525,31 @@ const update = computed(() => {
                 :connection="connection"
                 :tile="vehicleTile"
               />
+              <!-- A source that tells its temperatures (a Tesla); nothing for the others. -->
+              <ReadingItem
+                v-if="state.climate.outside_temp_c"
+                :label="t('state.climate.outside')"
+                :reading="state.climate.outside_temp_c"
+                :value="quantity(state.climate.outside_temp_c, 'celsius')"
+                :now="now"
+                :connection="connection"
+                :tile="vehicleTile"
+                class="outside"
+              />
+              <ReadingItem
+                v-if="state.climate.cabin_temp_c"
+                :label="t('state.climate.cabin')"
+                :reading="state.climate.cabin_temp_c"
+                :value="quantity(state.climate.cabin_temp_c, 'celsius')"
+                :now="now"
+                :connection="connection"
+                :tile="vehicleTile"
+                class="cabin"
+              >
+                <span v-if="climateRunning" class="climate-running d-block mt-1">{{
+                  climateRunning
+                }}</span>
+              </ReadingItem>
               <!-- A source that tells its software (a Tesla); nothing for the others. -->
               <ReadingItem
                 v-if="state.software"
@@ -623,6 +666,10 @@ const update = computed(() => {
   margin-top: auto;
 }
 .under-bar {
+  font-size: 0.75rem;
+  color: rgb(var(--v-theme-text-secondary));
+}
+.climate-running {
   font-size: 0.75rem;
   color: rgb(var(--v-theme-text-secondary));
 }

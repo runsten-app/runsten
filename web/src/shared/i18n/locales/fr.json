@@ -107,6 +107,13 @@
       "unknown": "En attente",
       "progress": "{status}, {pct}",
       "version": "{version} : {status}"
+    },
+    "climate": {
+      "outside": "Extérieur",
+      "cabin": "Habitacle",
+      "climateOn": "Climatisation en marche",
+      "preconditioning": "Préconditionnement",
+      "batteryHeater": "Batterie en chauffe"
     }
   },
   "charging": {
@@ -228,7 +235,8 @@
       "hybrid": "Non estimée pour un hybride rechargeable : l'état de charge ne dit que l'énergie de la batterie, pas quelle part du trajet le moteur a faite.",
       "statsLink": "Voir les statistiques de {month}"
     },
-    "energyImportedNote": "L'énergie est celle que l'app a donnée."
+    "energyImportedNote": "L'énergie est celle que l'app a donnée.",
+    "outsideTemp": "Température extérieure (moyenne)"
   },
   "charges": {
     "title": "Charges",

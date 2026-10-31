@@ -107,6 +107,13 @@
       "unknown": "Pending",
       "progress": "{status}, {pct}",
       "version": "{version}: {status}"
+    },
+    "climate": {
+      "outside": "Outside",
+      "cabin": "Cabin",
+      "climateOn": "Climate on",
+      "preconditioning": "Preconditioning",
+      "batteryHeater": "Battery heating"
     }
   },
   "charging": {
@@ -228,7 +235,8 @@
       "hybrid": "Not estimated for a plug-in hybrid: the state of charge tells the battery's energy only, and not which part of the trip the engine drove.",
       "statsLink": "See the statistics of {month}"
     },
-    "energyImportedNote": "The energy is the one the app gave."
+    "energyImportedNote": "The energy is the one the app gave.",
+    "outsideTemp": "Outside temperature (average)"
   },
   "charges": {
     "title": "Charges",

@@ -400,6 +400,45 @@ describe('VehicleState', () => {
     expect(() => reading(w, 'Software update')).toThrow()
   })
 
+  it('tells the temperatures and the climate that runs, nothing for a car without', async () => {
+    const at = {
+      reported_at: null,
+      fetched_at: '2026-09-28T18:40:00Z',
+      checked_at: '2026-09-28T19:06:00Z',
+    }
+    const climate = {
+      outside_temp_c: { ...at, value: -3.5 },
+      cabin_temp_c: { ...at, value: 19.5 },
+      on: { ...at, value: true },
+      preconditioning: { ...at, value: false },
+      battery_heater: { ...at, value: true },
+    }
+    let w = await mounted({ ...state, climate })
+    expect(reading(w, 'Outside').value).toBe('-3.5°C')
+    expect(reading(w, 'Cabin').value).toBe('19.5°C')
+    expect(w.find('.climate-running').text()).toBe('Climate on')
+    expect(w.find('.heater').text()).toBe('Battery heating')
+    // Preconditioning says it, which runs the climate too; the heater off says nothing.
+    w.unmount()
+    w = await mounted({
+      ...state,
+      climate: {
+        ...climate,
+        preconditioning: { ...at, value: true },
+        battery_heater: { ...at, value: false },
+      },
+    })
+    expect(w.find('.climate-running').text()).toBe('Preconditioning')
+    expect(w.find('.heater').exists()).toBe(false)
+    // A car without: neither the temperatures nor an Unknown in their place.
+    w.unmount()
+    w = await mounted(state)
+    expect(() => reading(w, 'Outside')).toThrow()
+    expect(() => reading(w, 'Cabin')).toThrow()
+    expect(w.find('.climate-running').exists()).toBe(false)
+    expect(w.find('.heater').exists()).toBe(false)
+  })
+
   it("tells the car's latest measure once it is older than half an hour", async () => {
     let w = await mounted(state)
     expect(w.find('.reported').exists()).toBe(false)

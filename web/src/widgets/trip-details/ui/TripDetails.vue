@@ -143,6 +143,12 @@ const newPlace = (p: Position) => ({
                 :label="t('trip.odometer')"
                 :value="f.change(trip.start_odometer_km, trip.end_odometer_km, 'km')"
               />
+              <!-- Only for a vehicle that tells it (a Tesla): no Unknown for the others. -->
+              <FactItem
+                v-if="trip.outside_temp_c !== null"
+                :label="t('trip.outsideTemp')"
+                :value="f.quantity(trip.outside_temp_c, 'celsius')"
+              />
             </dl>
             <p class="note text-body-small text-medium-emphasis mt-3">
               {{
