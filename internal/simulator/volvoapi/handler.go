@@ -150,8 +150,8 @@ func renderDetails(vin string, r vehicle.Report) any {
 			"driveType": "FWD", "enginePowerKw": 251.0, "grossWeightKg": 2550, "numberOfSeats": 5, "engineCapacityCc": 1969,
 		}
 	}
-	// Registered the autumn before its model year, as most are.
-	specs["firstRegistrationDate"] = fmt.Sprintf("%04d-11-15T00:00:00", r.Spec.ModelYear-1)
+	// Registered in the September before its model year, as most are.
+	specs["firstRegistrationDate"] = fmt.Sprintf("%04d-09-15T00:00:00", r.Spec.ModelYear-1)
 	return map[string]any{
 		"vin":                vin,
 		"modelYear":          r.Spec.ModelYear,
