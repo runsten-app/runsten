@@ -14,6 +14,13 @@
       "internalImageUrl": "https://cas.volvocars.com/image/vbsnext-v4/interior/MY19_1817/225/1/RC0000_f13/NC04/DI02/RU06/_/_/FJ01/EV02/K502/default.png?market=us&client=connected-vehicle-api&w=1920&bg=00000000&angle=0&fallback"
     },
     "modelYear": 2019,
+    "specifications": {
+      "driveType": "AWD",
+      "enginePowerKw": 140.0,
+      "grossWeightKg": 2400,
+      "numberOfSeats": 5,
+      "firstRegistrationDate": "2019-05-21T00:00:00"
+    },
     "vin": "YV4952NA4F120DEMO"
   }
 }

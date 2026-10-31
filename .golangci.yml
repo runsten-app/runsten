@@ -165,6 +165,14 @@ linters:
               desc: the API declares Releases, the binary adapts the checker
             - pkg: runsten/internal/core
               desc: no business code
+        # The vendors' pictures of the vehicles: a client, which no business code reaches.
+        picture-is-a-client:
+          files: ["**/internal/picture/**"]
+          deny:
+            - pkg: runsten/internal/api
+              desc: the API declares Pictures, the binary wires the relay
+            - pkg: runsten/internal/core
+              desc: no business code
         # The reader of the Volvo Data Portal's files returns their values as they are.
         volvoportal-is-a-reader:
           files: ["**/internal/volvoportal/**"]

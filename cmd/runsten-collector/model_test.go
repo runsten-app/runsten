@@ -31,6 +31,11 @@ func TestModel(t *testing.T) {
 		{"several fit: the family", "YV1SMLT0000DT0001", "", ex30, publish.Model{Family: "EX30", Year: 2024}},
 		{"chosen", "YV1SMLT0000DT0001", "ex30-er-2024", ex30, publish.Model{Variant: er.Name, Family: "EX30", Brand: "Volvo", Year: 2024}},
 		{"details never read", "YV12ZEL9XRS000001", "", core.Snapshot{}, publish.Model{}},
+		{
+			"named by its owner", "YV1SMLT0000DT0001", "",
+			core.Snapshot{Covers: core.FieldSheet, Sheet: some(core.Sheet{Name: "Blixt"})},
+			publish.Model{Name: "Blixt"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

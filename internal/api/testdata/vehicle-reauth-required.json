@@ -9,6 +9,7 @@
     "ac_max_kw": null,
     "powertrain": null
   },
+  "sheet": null,
   "connection": {
     "provider": "volvo",
     "status": "reauth_required",

@@ -225,6 +225,8 @@ type Config struct {
 	// Addresses name the positions outside the places; nil without a geocoder: no
 	// address, and nothing asked of a third party.
 	Addresses Addresses
+	// Pictures relays the vehicles' pictures; nil: none is given.
+	Pictures Pictures
 	// Params are the derivation's: the statistics take their noise threshold of the
 	// state of charge.
 	Params core.Params
@@ -335,6 +337,7 @@ func New(cfg Config) *Server {
 	s.registerImportJobs(s.api)
 	s.registerFileImports(s.api)
 	s.registerModel(s.api)
+	s.registerSheet(s.api)
 	s.registerDeletion(s.api)
 	s.registerStats(s.api)
 	s.registerBattery(s.api)

@@ -118,6 +118,7 @@ import (
 	"runsten/internal/geocode/nominatim"
 	"runsten/internal/importer"
 	"runsten/internal/oauth"
+	"runsten/internal/picture"
 	"runsten/internal/platform/clock"
 	"runsten/internal/platform/health"
 	"runsten/internal/platform/httpserver"
@@ -272,6 +273,7 @@ func run(args []string) error {
 	handler := api.New(api.Config{
 		Sessions: sessions, AccessTokens: sessions,
 		Addresses:   addresses,
+		Pictures:    pictures{picture.New(picture.DefaultParams(), hc, clock.Real{})},
 		Reader:      st,
 		Settings:    st,
 		Models:      st,
