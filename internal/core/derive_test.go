@@ -928,6 +928,9 @@ func TestTripThatNeverMoved(t *testing.T) {
 	if tr := res.Trips[0]; tr.StartOdometerKm.V != 1000 || tr.DistanceKm.V != 10 {
 		t.Errorf("trip from %+v, distance %+v", tr.StartOdometerKm, tr.DistanceKm)
 	}
+	if trips, charges := deriveIncrementally(records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+		t.Errorf("never moved, incremental:\n%+v %+v\nrebuild:\n%+v %+v", trips, charges, res.Trips, res.Charges)
+	}
 }
 
 // A trip ended by the next one keeps the odometer read before it: the reading that
@@ -948,6 +951,9 @@ func TestTripEndedByTheNext(t *testing.T) {
 	}
 	if tr := res.Trips[0]; tr.EndOdometerKm.V != 1005 || tr.DistanceKm.V != 5 {
 		t.Errorf("first trip to %+v, distance %+v", tr.EndOdometerKm, tr.DistanceKm)
+	}
+	if trips, charges := deriveIncrementally(records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+		t.Errorf("ended by the next, incremental:\n%+v %+v\nrebuild:\n%+v %+v", trips, charges, res.Trips, res.Charges)
 	}
 }
 
@@ -975,6 +981,9 @@ func TestChargeInterruptedOnTheWay(t *testing.T) {
 	}
 	if c := res.Charges[0]; c.Position.V != home {
 		t.Errorf("charge at %+v, want %+v", c.Position, home)
+	}
+	if trips, charges := deriveIncrementally(records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+		t.Errorf("interrupted on the way, incremental:\n%+v %+v\nrebuild:\n%+v %+v", trips, charges, res.Trips, res.Charges)
 	}
 }
 
