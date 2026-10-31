@@ -78,7 +78,7 @@ mosquitto_sub -h homeassistant.local -u runsten -P '…' -v -t 'runsten/#'
 
 ## Home Assistant entities
 
-With discovery on, each vehicle is a device named as the web interface names it (the name you gave a Tesla in Tesla's app, else its model and model year, never its VIN), with these entities:
+With discovery on, each vehicle is a device named after the name you gave a Tesla in Tesla's app, else its model and model year, as in the web interface, but never after its VIN: before its details are read, it is `Volvo` and the first characters of its ID, and two that read alike end with characters of their ID, where the web interface shows its VIN. It has these entities:
 
 | Entity | Type | From |
 |---|---|---|
