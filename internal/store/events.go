@@ -157,13 +157,11 @@ func (s *Store) SaveDerivation(ctx context.Context, accountID, vehicleID string,
 			}
 		}
 		for _, v := range res.Versions {
-			var after *time.Time
-			if !v.Installed.After.IsZero() {
-				after = &v.Installed.After
-			}
 			_, err := tx.Exec(ctx, `
-				INSERT INTO software_versions (account_id, vehicle_id, detected_at, version, installed_after)
-				VALUES ($1, $2, $3, $4, $5)`, accountID, vehicleID, v.DetectedAt, v.Version, after)
+				INSERT INTO software_versions (account_id, vehicle_id, detected_at, version, installed_after,
+					install_started_after, install_started_before)
+				VALUES ($1, $2, $3, $4, $5, $6, $7)`, accountID, vehicleID, v.DetectedAt, v.Version,
+				nullTime(v.Installed.After), nullTime(v.InstallStarted.After), nullTime(v.InstallStarted.Before))
 			if err != nil {
 				return fmt.Errorf("insert software version: %w", err)
 			}
@@ -203,16 +201,21 @@ func (s *Store) ListSoftwareVersions(ctx context.Context, accountID, vehicleID s
 	}
 	var out []core.SoftwareVersion
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
-		rows, err := tx.Query(ctx, `SELECT detected_at, version, installed_after FROM software_versions WHERE `+where, args...)
+		rows, err := tx.Query(ctx, `
+			SELECT detected_at, version, installed_after, install_started_after, install_started_before
+			FROM software_versions WHERE `+where, args...)
 		if err != nil {
 			return err //nolint:wrapcheck // wrapped by inAccount
 		}
 		var v core.SoftwareVersion
-		var after *time.Time
-		_, err = pgx.ForEachRow(rows, []any{&v.DetectedAt, &v.Version, &after}, func() error {
+		var after, startAfter, startBefore *time.Time
+		_, err = pgx.ForEachRow(rows, []any{&v.DetectedAt, &v.Version, &after, &startAfter, &startBefore}, func() error {
 			w := core.SoftwareVersion{DetectedAt: v.DetectedAt.UTC(), Version: v.Version, Installed: core.Bounds{Before: v.DetectedAt.UTC()}}
 			if after != nil {
 				w.Installed.After = after.UTC()
+			}
+			if startAfter != nil && startBefore != nil {
+				w.InstallStarted = core.Bounds{After: startAfter.UTC(), Before: startBefore.UTC()}
 			}
 			out = append(out, w)
 			return nil

@@ -3400,6 +3400,13 @@ components:
           type:
             - number
             - "null"
+        scheduled_at:
+          description: When the owner set it to install; null when not scheduled, or the vehicle does not say.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
         status:
           description: "available: offered, not started. scheduled: set to install at a time. downloading. waiting_wifi: waiting for Wi-Fi to download. installing. unknown: a status Runsten does not know, an update waiting all the same."
           enum:
@@ -3423,6 +3430,7 @@ components:
         - download_pct
         - install_pct
         - duration_s
+        - scheduled_at
       type: object
     SoftwareVersion:
       additionalProperties: false
@@ -3432,6 +3440,11 @@ components:
           examples:
             - "2026-10-26T16:29:31.549000Z"
           type: string
+        install_start:
+          description: "When the vehicle started installing it: between the last reading without an installation in progress and the first reading of one. Its installation ended within installed: from it to installed, the installation's duration lies between installed.after − install_start.before and installed.before − install_start.after. null when no reading saw it installing: the vehicle asleep or out of reach, or the version read before Runsten read an installation."
+          oneOf:
+            - $ref: "#/components/schemas/Bounds"
+            - type: "null"
         installed:
           $ref: "#/components/schemas/Installed"
           description: "When the vehicle took it: between the last reading of the previous version and its own first one."
@@ -3443,6 +3456,7 @@ components:
         - id
         - version
         - installed
+        - install_start
       type: object
     Span:
       additionalProperties: false

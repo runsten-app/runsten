@@ -211,6 +211,8 @@ type SoftwareUpdate struct {
 	DownloadPct, InstallPct Value[float64]
 	// Duration is how long the vehicle expects its installation to take.
 	Duration Value[time.Duration]
+	// ScheduledAt is when the owner set it to install.
+	ScheduledAt Value[time.Time]
 }
 
 // BatteryElectric is whether the vehicle is known to run on its battery alone.

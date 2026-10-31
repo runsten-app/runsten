@@ -304,6 +304,17 @@ func TestNormalizeSoftware(t *testing.T) {
 			}, at),
 		},
 		{
+			// As a Model Y told it, set to install at night.
+			"scheduled", `{"car_version": "2026.38.3.1 7f5c3e1a2b4d",
+				"software_update": {"status": "scheduled", "version": "2026.38.3.2", "install_perc": 10, "download_perc": 100,
+					"scheduled_time_ms": 1793497800944, "expected_duration_sec": 1800}}`,
+			true, core.Some("2026.38.3.1", at), core.Some(core.SoftwareUpdate{
+				Status: core.UpdateScheduled, Version: "2026.38.3.2",
+				DownloadPct: core.Some(100.0, none), InstallPct: core.Some(10.0, none),
+				Duration: core.Some(30*time.Minute, none), ScheduledAt: core.Some(time.UnixMilli(1793497800944).UTC(), none),
+			}, at),
+		},
+		{
 			"a status not known", `{"car_version": "2025.32.3", "software_update": {"status": "paused"}}`,
 			true, core.Some("2025.32.3", at), core.Some(core.SoftwareUpdate{Status: core.UpdateUnknown}, at),
 		},
