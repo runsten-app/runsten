@@ -107,7 +107,8 @@ export function formatDays(
   if (d.max === null) return atLeast(formatDays({ min: d.min, max: d.min }, locale, atLeast))
   if (d.max < day) return formatDuration({ min: d.min, max: d.max }, locale)
   const f = new Intl.NumberFormat(locale, { style: 'unit', unit: 'day', unitDisplay: 'long' })
-  const min = Math.max(1, Math.round(d.min / day))
+  // A min under half a day stays 0: "0–1 days", never a day the bounds do not ensure.
+  const min = Math.round(d.min / day)
   const max = Math.round(d.max / day)
   return min >= max ? f.format(max) : f.formatRange(min, max)
 }

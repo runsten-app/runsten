@@ -134,8 +134,10 @@ describe('formatDays', () => {
     [12 * 24 * 60 - 60, 13 * 24 * 60 + 60, 'en-GB', '12–13 days'],
     [12 * 24 * 60 - 60, 13 * 24 * 60 + 60, 'fr-FR', '12–13 jours'],
     [12 * 24 * 60 - 60, 13 * 24 * 60 + 60, 'sv-SE', '12–13 dygn'],
-    // Beyond a day, never "0 days": 20 hours count as one.
+    // Beyond a day, 20 hours count as one; but a min that may be a few hours stays 0.
     [20 * 60, 30 * 60, 'en-GB', '1 day'],
+    [2 * 60, 25 * 60, 'en-GB', '0–1 days'],
+    [0, 24 * 60, 'en-GB', '0–1 days'],
     // No max: at least the min.
     [12 * 24 * 60, null, 'en-GB', 'at least 12 days'],
     [90, null, 'en-GB', 'at least 1 hr, 30 mins'],
