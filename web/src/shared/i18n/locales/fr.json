@@ -91,6 +91,8 @@
       "locked": "Verrouillée",
       "unlocked": "Déverrouillée",
       "allClosed": "Tout est fermé",
+      "doorsClosed": "Portes fermées",
+      "windowsClosed": "Vitres fermées",
       "open": "Ouvert : {list}",
       "ajar": "Entrouvert : {list}",
       "sentry": "Mode Sentinelle activé",

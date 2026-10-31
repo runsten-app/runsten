@@ -91,6 +91,8 @@
       "locked": "Locked",
       "unlocked": "Unlocked",
       "allClosed": "All closed",
+      "doorsClosed": "Doors closed",
+      "windowsClosed": "Windows closed",
       "open": "Open: {list}",
       "ajar": "Ajar: {list}",
       "sentry": "Sentry Mode on",

@@ -44,22 +44,34 @@ const listed = (state: 'open' | 'ajar') => {
   const words = summary.value.open.filter((o) => o.state === state).map((o) => names.value[o.name])
   return words.length ? f.list(words) : null
 }
-// What is open, then what is ajar; all closed only when the vehicle told some opening.
+// What is open, then what is ajar; else closed, said only of what the vehicle told: all
+// closed needs both the doors and the windows (a Volvo reads them apart).
 const facts = computed(() => {
   const open = listed('open')
   const ajar = listed('ajar')
   const out: string[] = []
   if (open) out.push(t('state.openings.open', { list: open }))
   if (ajar) out.push(t('state.openings.ajar', { list: ajar }))
-  if (!out.length && summary.value.told) out.push(t('state.openings.allClosed'))
+  const { doorsTold, windowsTold } = summary.value
+  if (!out.length && doorsTold && windowsTold) out.push(t('state.openings.allClosed'))
+  else if (!out.length && doorsTold) out.push(t('state.openings.doorsClosed'))
+  else if (!out.length && windowsTold) out.push(t('state.openings.windowsClosed'))
   return out
 })
 const sentry = computed(() => !!props.doors?.value.sentry)
 
-// The reading whose times the line shows: the doors', which tell the lock.
-const reading = computed(() => props.doors ?? props.windows)
+// The line is as fresh as its oldest part: its times are those of the doors or of the
+// windows, whichever was checked last the longest ago (a Volvo reads them apart), and the
+// car's measure the older of the two.
+const reading = computed(() => {
+  const d = props.doors
+  const w = props.windows
+  if (!d || !w) return d ?? w
+  return Date.parse(w.checked_at) < Date.parse(d.checked_at) ? w : d
+})
 const measured = computed(() => {
-  const at = reading.value?.reported_at
+  const ats = [props.doors?.reported_at, props.windows?.reported_at].filter((a): a is string => !!a)
+  const at = ats.sort((a, b) => Date.parse(a) - Date.parse(b))[0]
   return at && props.now - Date.parse(at) > reportLateAfter ? at : null
 })
 </script>

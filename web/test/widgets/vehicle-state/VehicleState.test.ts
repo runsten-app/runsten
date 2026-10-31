@@ -454,9 +454,30 @@ describe('VehicleState', () => {
     )
     expect(w.find('[data-test="openings"] .measured').text()).toBe('The car last measured 15:00')
     w.unmount()
-    // The windows alone, the lock untold: no pill, no time of the doors.
+    // The windows alone, the lock untold: no pill, and closed said of the windows only.
     w = await mounted({ ...state, windows: { ...at, value: windows } })
-    expect(line(w)).toBe('Doors and windows | All closed')
+    expect(line(w)).toBe('Doors and windows | Windows closed')
+    w.unmount()
+    // The doors alone: closed said of the doors only.
+    w = await mounted({ ...state, doors: { ...at, value: doors } })
+    expect(line(w)).toBe('Doors and windows | Locked | Doors closed')
+    w.unmount()
+    // Read apart and the windows checked longer ago: the line takes their times, and the
+    // older of the car's measures.
+    w = await mounted({
+      ...state,
+      doors: { ...at, value: doors },
+      windows: {
+        reported_at: '2026-09-28T14:00:00Z',
+        fetched_at: '2026-09-28T16:00:00Z',
+        checked_at: '2026-09-28T18:00:00Z',
+        value: windows,
+      },
+    })
+    expect(plain(w.find('[data-test="openings"] .details').text())).toBe(
+      'checked 1 hr ago · since 16:00',
+    )
+    expect(w.find('[data-test="openings"] .measured').text()).toBe('The car last measured 14:00')
     w.unmount()
     w = await mounted(state)
     expect(w.find('[data-test="openings"]').exists()).toBe(false)

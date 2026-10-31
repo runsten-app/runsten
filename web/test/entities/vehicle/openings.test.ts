@@ -22,7 +22,12 @@ const windows: Windows = {
 
 describe('openings', () => {
   it('names what is open or ajar, doors first, and leaves out what is not told', () => {
-    expect(openings(doors, windows)).toEqual({ locked: true, open: [], told: true })
+    expect(openings(doors, windows)).toEqual({
+      locked: true,
+      open: [],
+      doorsTold: true,
+      windowsTold: true,
+    })
     expect(
       openings({ ...doors, locked: false, tailgate: 'open' }, { ...windows, sunroof: 'ajar' }),
     ).toEqual({
@@ -31,12 +36,20 @@ describe('openings', () => {
         { name: 'tailgate', state: 'open' },
         { name: 'sunroof', state: 'ajar' },
       ],
-      told: true,
+      doorsTold: true,
+      windowsTold: true,
     })
   })
 
   it('tells nothing of what the vehicle does not tell', () => {
-    expect(openings(null, null)).toEqual({ locked: null, open: [], told: false })
+    expect(openings(null, null)).toEqual({
+      locked: null,
+      open: [],
+      doorsTold: false,
+      windowsTold: false,
+    })
+    // The windows alone: nothing told of the doors.
+    expect(openings(null, windows)).toMatchObject({ doorsTold: false, windowsTold: true })
     // The lock alone: nothing told of the openings, so nothing is "all closed".
     const lockOnly: Doors = {
       ...doors,
@@ -47,6 +60,11 @@ describe('openings', () => {
       hood: null,
       tailgate: null,
     }
-    expect(openings(lockOnly, null)).toEqual({ locked: true, open: [], told: false })
+    expect(openings(lockOnly, null)).toEqual({
+      locked: true,
+      open: [],
+      doorsTold: false,
+      windowsTold: false,
+    })
   })
 })

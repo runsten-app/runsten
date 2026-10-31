@@ -91,6 +91,8 @@
       "locked": "Låst",
       "unlocked": "Olåst",
       "allClosed": "Allt stängt",
+      "doorsClosed": "Dörrarna stängda",
+      "windowsClosed": "Fönstren stängda",
       "open": "Öppet: {list}",
       "ajar": "På glänt: {list}",
       "sentry": "Vaktläge på",
