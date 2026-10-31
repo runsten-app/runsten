@@ -9,7 +9,10 @@ The **Health** tab shows the vehicle's latest health, and, folded, the tyres' pr
 <Screen view="health" alt="The Health tab: the battery, the tyres, the service and the warnings." />
 
 - **Battery**: its estimated capacity, which leads to the [battery page](./battery.md): its estimates and their evolution.
-- **Software**, for a car that tells its version (a Tesla): its latest versions, newest first, with when the car took it: between the last time Runsten read the previous version and the first time it read this one. **Show all versions** lists the older ones.
+- **Software**, for a car that tells its version (a Tesla): the version running, since when, and the update waiting for it (its progress, or the time it is scheduled for). **See the version history** leads to every version the car had, newest first, each with:
+  - when the car took it: between the last time Runsten read the previous version and the first time it read this one;
+  - how long the car ran it, until the next one or until now; for the first version Runsten read, at least since that reading;
+  - how long its installation took, from the first reading of the car installing it to the first reading of the version, when a reading saw it installing. A dash otherwise: the car was asleep or out of reach meanwhile, and the installation's time is not known, never shown as 0.
 - **Tyres**: each tyre's pressure, against the pressure the car recommends at its axle, and what the tyre pressure monitoring says of it: OK, low, very low, high, or a fault (of a sensor, or of the system).
 - **Service and warnings**, in one tile: whether the service is due (not yet, soon, due, overdue), and the time and the distance left until it; then the warnings: the brake fluid, the coolant, the oil, the washer fluid, the 12 V battery and each exterior light. The active ones are named; with none active, the tile says how many checks the car reported. A car that tells neither gets one sentence.
 - **Pressures over time**, folded under the tiles: opened, one chart per axle: the left and right tyres, and the recommended pressure, dashed, over 7 days, 30 days or 12 months. A pressure rises as the tyres warm up while driving, and falls in the cold. The line breaks where nothing was read.

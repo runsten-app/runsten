@@ -23,6 +23,7 @@
     "unknown": "Unknown",
     "openInOsm": "Open in OpenStreetMap",
     "atLeast": "At least",
+    "atLeastValue": "at least {value}",
     "atMost": "At most"
   },
   "cost": {
@@ -101,6 +102,7 @@
       "title": "Software update",
       "available": "Available",
       "scheduled": "Scheduled",
+      "scheduledAt": "Scheduled for {when}",
       "downloading": "Downloading",
       "waitingWifi": "Waiting for Wi-Fi",
       "installing": "Installing",
@@ -1674,11 +1676,22 @@
   },
   "software": {
     "title": "Software",
-    "current": "Running",
+    "current": "Version running",
     "installed": "Installed {when}",
     "firstRead": "First read {when}",
-    "all": "Show all versions",
     "more": "Show more",
-    "error": "The software's versions could not be loaded."
+    "error": "The software's versions could not be loaded.",
+    "running": "Running",
+    "open": "See the version history",
+    "history": "Versions",
+    "version": "Version",
+    "ran": "Ran for",
+    "installation": "Installation",
+    "soFar": "so far",
+    "notSeen": "Installation not seen",
+    "unseen": "—: no reading saw the installation, the car asleep or out of reach meanwhile.",
+    "none": "This vehicle does not tell the version of its software.",
+    "loading": "Loading the versions",
+    "now": "Now"
   }
 }

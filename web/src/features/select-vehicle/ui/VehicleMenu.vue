@@ -20,6 +20,7 @@ const sections: Record<string, string> = {
   vehicle: 'vehicle',
   health: 'health',
   battery: 'battery',
+  software: 'software',
   trips: 'trips',
   trip: 'trips',
   charges: 'charges',

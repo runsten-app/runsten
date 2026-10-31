@@ -55,6 +55,8 @@ const sections: Record<string, Section> = {
   health: 'health',
   // The battery's estimated capacity is a figure of the health, reached from its page.
   battery: 'health',
+  // So is the history of its software.
+  software: 'health',
   trips: 'trips',
   trip: 'trips',
   charges: 'charges',

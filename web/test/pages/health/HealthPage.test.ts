@@ -52,17 +52,16 @@ async function mounted() {
 }
 
 describe('HealthPage', () => {
-  it("lists the software's versions of a vehicle that tells them, none otherwise", async () => {
+  it("tells the software's version of a vehicle that tells it, nothing otherwise", async () => {
     let w = await mounted()
-    expect(w.find('.software-history').exists()).toBe(false)
+    expect(w.find('.software-summary').exists()).toBe(false)
     mocks.fetchSoftwareVersions.mockResolvedValue(versions)
     w = await mounted()
-    expect(w.find('.software-history h2').text()).toBe('Software')
-    expect(w.findAll('.software-history .name').map((n) => n.text())).toEqual([
-      '2026.38.3.2',
-      '2026.38.3.1',
-      '2026.32.1',
-    ])
+    expect(w.find('.software-summary h2').text()).toBe('Software')
+    expect(w.find('.software-summary .value').text()).toBe('2026.38.3.2')
+    // The history on a page of its own.
+    expect(w.find('.software-summary a').attributes('href')).toBe(`/vehicles/${vehicle}/software`)
+    expect(w.find('.version').exists()).toBe(false)
   })
 
   it('shows the tiles and the pressures, in its own tab', async () => {

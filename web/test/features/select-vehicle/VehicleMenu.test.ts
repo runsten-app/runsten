@@ -76,6 +76,7 @@ describe('VehicleMenu', () => {
   it.each([
     ['/health', '/health'],
     ['/battery', '/battery'],
+    ['/software', '/software'],
     ['/trips?from=2026-09-01&to=2026-09-30', '/trips?from=2026-09-01&to=2026-09-30'],
     ['/trips/2026-09-28T07:01:00.000000Z?from=2026-09-01', '/trips?from=2026-09-01'],
     ['/charges/x?from=2026-09-01', '/charges?from=2026-09-01'],

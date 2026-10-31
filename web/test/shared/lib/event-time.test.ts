@@ -3,6 +3,7 @@ import {
   dayKey,
   formatBounds,
   formatDay,
+  formatDays,
   formatDuration,
   formatTime,
   formatTotalDuration,
@@ -119,6 +120,31 @@ describe('formatDuration', () => {
 
   it('rounds outwards to whole minutes', () => {
     expect(plain(formatDuration({ min: 38.9 * min, max: 44.1 * min }, 'en-GB'))).toBe('38–45 mins')
+  })
+})
+
+describe('formatDays', () => {
+  const day = 24 * 60 * min
+  const atLeast = (s: string) => `at least ${s}`
+  it.each<[number, number | null, string, string]>([
+    // Under a day, as formatDuration.
+    [5 * 60, 6 * 60, 'en-GB', '5 hrs – 6 hrs'],
+    // Beyond, in days, each bound to the nearest: an hour means nothing there.
+    [12 * 24 * 60, 12 * 24 * 60 + 60, 'en-GB', '12 days'],
+    [12 * 24 * 60 - 60, 13 * 24 * 60 + 60, 'en-GB', '12–13 days'],
+    [12 * 24 * 60 - 60, 13 * 24 * 60 + 60, 'fr-FR', '12–13 jours'],
+    [12 * 24 * 60 - 60, 13 * 24 * 60 + 60, 'sv-SE', '12–13 dygn'],
+    // Beyond a day, never "0 days": 20 hours count as one.
+    [20 * 60, 30 * 60, 'en-GB', '1 day'],
+    // No max: at least the min.
+    [12 * 24 * 60, null, 'en-GB', 'at least 12 days'],
+    [90, null, 'en-GB', 'at least 1 hr, 30 mins'],
+  ])('%s to %s min in %s → %s', (from, to, locale, want) => {
+    const d = { min: from * min, max: to === null ? null : to * min }
+    expect(plain(formatDays(d, locale, atLeast))).toBe(want)
+  })
+  it('is a day once both bounds round alike', () => {
+    expect(plain(formatDays({ min: 0.6 * day, max: 1.4 * day }, 'en-GB', atLeast))).toBe('1 day')
   })
 })
 

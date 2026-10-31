@@ -59,7 +59,7 @@ With that energy, the car's rated range and its usable charge, the [battery page
 
 ## Its software
 
-The vehicle's page gives the version of the car's software, and the update waiting for it, when there is one: available, scheduled, downloading (with its progress), waiting for Wi-Fi, or installing. The **Health** tab lists the versions it had, newest first, each with when the car took it, between two readings of Runsten: tie a change of range or of consumption to an update with it, as with TeslaMate. A version installed before the instance read the car shows from its first reading.
+The vehicle's page gives the version of the car's software, and the update waiting for it, when there is one: available, scheduled (with the time set), downloading (with its progress), waiting for Wi-Fi, or installing. The **Health** tab gives the version running and leads to the history of the versions it had, newest first, each with when the car took it, between two readings of Runsten, how long the car ran it, and how long its installation took when Runsten read the car installing it: tie a change of range or of consumption to an update with it, as with TeslaMate. A version installed before the instance read the car shows from its first reading.
 
 ## Its variant
 
