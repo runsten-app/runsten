@@ -4,6 +4,7 @@ import { HealthPage } from '@/pages/health'
 import battery from '@fixtures/battery.json'
 import health from '@fixtures/health.json'
 import unknown from '@fixtures/health-unknown.json'
+import noSoftware from '@fixtures/state-unknown.json'
 import versions from '@fixtures/software-versions.json'
 import tyres from '@fixtures/tyres.json'
 import vehicles from '@fixtures/vehicles.json'
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   fetchSoftwareVersions: vi.fn(),
   fetchTyres: vi.fn(),
   fetchVehicles: vi.fn(),
+  fetchVehicleState: vi.fn(),
   getBattery: vi.fn(),
 }))
 vi.mock('@/entities/health', async (original) => ({
@@ -30,6 +32,7 @@ vi.mock('@/entities/battery', async (original) => ({
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
   fetchVehicles: mocks.fetchVehicles,
+  fetchVehicleState: mocks.fetchVehicleState,
 }))
 
 beforeEach(() => {
@@ -38,6 +41,8 @@ beforeEach(() => {
   mocks.fetchSoftwareVersions.mockResolvedValue({ items: [], next_cursor: null })
   mocks.fetchTyres.mockResolvedValue(tyres)
   mocks.fetchVehicles.mockResolvedValue(vehicles.items)
+  // A state that tells no software: the versions alone tell it.
+  mocks.fetchVehicleState.mockResolvedValue(noSoftware)
   mocks.getBattery.mockResolvedValue(battery)
 })
 
