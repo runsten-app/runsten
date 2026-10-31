@@ -654,7 +654,8 @@
     },
     "verdict": {
       "attention": "Behöver åtgärdas: {items}.",
-      "fine": "Inget att anmärka."
+      "fine": "Inget att anmärka.",
+      "reportedFine": "Inget att anmärka i det fordonet anger."
     },
     "upkeep": {
       "title": "Service och varningar",

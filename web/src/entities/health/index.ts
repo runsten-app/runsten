@@ -23,6 +23,7 @@ export {
   hasPressures,
   needsAttention,
   recommendedFor,
+  reportedFine,
   tyresFine,
   tyreTrouble,
   wheels,

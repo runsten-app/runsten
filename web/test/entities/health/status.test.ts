@@ -6,6 +6,7 @@ import {
   hasPressures,
   needsAttention,
   recommendedFor,
+  reportedFine,
   tyresFine,
   tyreTrouble,
   type Health,
@@ -78,8 +79,17 @@ describe('health status', () => {
       checks: h.checks.map((c) => ({ ...c, warning: false })),
     }
     expect(needsAttention(fine)).toBe(false)
-    // Fine only when known in full.
-    expect(allFine(fine)).toBe(true)
+    // Fine only when known in full: a part not reported is not known to be fine.
+    const tyres = h.tyres && {
+      ...h.tyres,
+      wheels: h.tyres.wheels.map((w) => ({ ...w, warning: 'ok' as const })),
+    }
+    expect(allFine({ ...fine, tyres })).toBe(true)
+    expect(allFine(fine)).toBe(false)
+    expect(reportedFine(fine)).toBe(true)
+    expect(allFine({ ...fine, tyres, service: null })).toBe(false)
+    expect(reportedFine({ ...fine, tyres, service: null, checks: [] })).toBe(true)
+    expect(reportedFine({ ...fine, tyres: null, service: null, checks: [] })).toBe(false)
     expect(allFine({ ...fine, tyres: h.tyres })).toBe(false)
     const noState = { days: null, months: null, distance_km: null, reported_at: null, state: null }
     expect(allFine({ ...fine, service: noState })).toBe(false)

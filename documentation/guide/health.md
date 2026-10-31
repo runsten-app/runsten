@@ -4,7 +4,7 @@ description: "A vehicle's health in Runsten: its battery's estimated capacity, i
 
 # Health
 
-The **Health** tab shows the vehicle's latest health, and, folded, the tyres' pressures over time. Under its title, one line answers first: what needs your attention, named (a tyre, the service, a warning), or nothing to report when the car told all of it, and when it was last read. A dot on the tab, from every page of the vehicle, says that something needs your attention: a tyre, the service, a warning. Runsten reads it every hour: it changes slowly.
+The **Health** tab shows the vehicle's latest health, and, folded, the tyres' pressures over time. Under its title, one line answers first: what needs your attention, named (a tyre, the service, a warning), or nothing to report: outright when the car told all of it, "in what the vehicle tells" when it told only part of it (a Tesla tells no service nor warnings); then when it was last read. A dot on the tab, from every page of the vehicle, says that something needs your attention: a tyre, the service, a warning. Runsten reads it every hour: it changes slowly.
 
 <Screen view="health" alt="The Health tab: the battery, the tyres, the service and the warnings." />
 

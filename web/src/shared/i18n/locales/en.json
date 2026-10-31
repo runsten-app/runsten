@@ -654,7 +654,8 @@
     },
     "verdict": {
       "attention": "Needs attention: {items}.",
-      "fine": "Nothing to report."
+      "fine": "Nothing to report.",
+      "reportedFine": "Nothing to report in what the vehicle tells."
     },
     "upkeep": {
       "title": "Service and warnings",

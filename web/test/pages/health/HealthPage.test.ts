@@ -99,6 +99,11 @@ describe('HealthPage', () => {
     }
     mocks.fetchHealth.mockResolvedValue(fine)
     expect((await mounted()).find('.verdict').text()).toMatch(/^Nothing to report\. · Last/)
+    // Neither the service nor the checks reported (a Tesla): fine in what it tells only.
+    mocks.fetchHealth.mockResolvedValue({ ...fine, service: null, checks: [] })
+    expect((await mounted()).find('.verdict').text()).toMatch(
+      /^Nothing to report in what the vehicle tells\. · Last/,
+    )
     // A tyre without its monitoring's word: neither fine nor a warning, the freshness only.
     mocks.fetchHealth.mockResolvedValue({
       ...fine,
