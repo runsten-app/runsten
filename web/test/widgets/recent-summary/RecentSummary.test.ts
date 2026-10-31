@@ -58,6 +58,8 @@ describe('RecentSummary', () => {
     // One tile: the heading, the figures and the link are the chart's.
     expect(frame.find('h2').text()).toBe('Last 30 days')
     expect(frame.find('.tile.distance').exists()).toBe(true)
+    // The title names the period: the chart's label says what it draws.
+    expect(frame.find('.chart-label').text()).toBe('Distance by day')
     expect(frame.find('a.open-stats').exists()).toBe(true)
   })
 

@@ -16,9 +16,22 @@ export function formatDay(iso: string, locale: string, timeZone?: string): strin
 }
 
 // formatBounds shows bounds as a range ("07:01–07:05"), or a single time when they
-// coincide. The date is left out when both fall on day (the day of a heading), and told
-// once when they fall on the same other day.
+// coincide. Bounds less than a minute apart, finer than the minutes shown, are one time
+// too: their middle, to the nearest minute, not two neighbouring minutes ("07:01–07:02"
+// for twenty seconds). The date is left out when both fall on day (the day of a heading),
+// and told once when they fall on the same other day.
 export function formatBounds(b: Bounds, locale: string, day?: string, timeZone?: string): string {
+  const span = Date.parse(b.before) - Date.parse(b.after)
+  if (span > 0 && span < minute) {
+    const middle = Date.parse(b.after) + span / 2
+    let at = new Date(Math.round(middle / minute) * minute).toISOString()
+    // Rounded up past midnight, bounds of one day would show the next: down instead.
+    const sameDay = dayKey(b.after, timeZone) === dayKey(b.before, timeZone)
+    if (sameDay && dayKey(at, timeZone) !== dayKey(b.after, timeZone)) {
+      at = new Date(Math.floor(middle / minute) * minute).toISOString()
+    }
+    return formatBounds({ after: at, before: at }, locale, day, timeZone)
+  }
   const after = new Date(b.after)
   const before = new Date(b.before)
   const onDay =
@@ -79,4 +92,23 @@ export function formatTotalDuration(d: Duration, locale: string): string {
   const max = Math.ceil(d.max / hour)
   const f = new Intl.NumberFormat(locale, { style: 'unit', unit: 'hour', unitDisplay: 'short' })
   return min === max ? f.format(min) : f.formatRange(min, max)
+}
+
+const day = 24 * hour
+
+// formatDays shows how long a state lasted, from hours to years: as formatDuration under
+// a day, else in days ("12–13 days"), each bound to the nearest day, where an hour means
+// nothing. Without a max (no earlier bound), "at least" the min, as atLeast words it.
+export function formatDays(
+  d: { min: number; max: number | null },
+  locale: string,
+  atLeast: (s: string) => string,
+): string {
+  if (d.max === null) return atLeast(formatDays({ min: d.min, max: d.min }, locale, atLeast))
+  if (d.max < day) return formatDuration({ min: d.min, max: d.max }, locale)
+  const f = new Intl.NumberFormat(locale, { style: 'unit', unit: 'day', unitDisplay: 'long' })
+  // A min under half a day stays 0: "0–1 days", never a day the bounds do not ensure.
+  const min = Math.round(d.min / day)
+  const max = Math.round(d.max / day)
+  return min >= max ? f.format(max) : f.formatRange(min, max)
 }

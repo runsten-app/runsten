@@ -316,6 +316,11 @@ func (d *detector) interruptCharge(p point, prev state) {
 		cb.c.endAt(prev.snap)
 	}
 	d.finishCharge()
+	// The reading that starts the trip may be read on the way: the charge is where the
+	// trip starts from.
+	if pos := prev.snap.Position; pos.OK {
+		d.ended.c.Position = pos
+	}
 	d.releaseCharge()
 }
 

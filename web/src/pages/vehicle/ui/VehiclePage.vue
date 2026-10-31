@@ -29,17 +29,9 @@ const label = computed(() => (current.value ? vehicleLabel(current.value) : null
       <v-btn :to="{ name: 'home' }" variant="tonal" color="primary">{{ t('vehicle.home') }}</v-btn>
     </template>
     <template v-else>
-      <!-- The bar's menu already names the vehicle, and leads to its settings: the
-           heading stays, for the page's outline and a screen reader, but small, its VIN
-           beside it. -->
-      <div class="heading d-flex flex-wrap align-center ga-3 mb-3">
-        <div class="names d-flex flex-wrap align-baseline">
-          <h1 class="text-title-large vin">{{ label ?? t('vehicle.title') }}</h1>
-          <span v-if="current && label !== current.vin" class="vin text-medium-emphasis">{{
-            current.vin
-          }}</span>
-        </div>
-      </div>
+      <!-- The bar's menu already names the vehicle, and its settings give the VIN: the
+           heading stays for the page's outline and a screen reader, unseen. -->
+      <h1 class="d-sr-only">{{ label ?? t('vehicle.title') }}</h1>
       <VehicleState :vehicle="vehicle">
         <template #aside>
           <SocTimeline :vehicle="vehicle" class="h-100" />
@@ -49,17 +41,3 @@ const label = computed(() => (current.value ? vehicleLabel(current.value) : null
     </template>
   </AppShell>
 </template>
-
-<style scoped>
-.names {
-  gap: 4px 12px;
-  min-inline-size: 0;
-}
-.vin {
-  overflow-wrap: anywhere;
-}
-span.vin {
-  font-size: 0.8125rem;
-  letter-spacing: 0.03em;
-}
-</style>

@@ -34,9 +34,26 @@ describe('HealthTiles', () => {
   it('says what the vehicle does not report, never shows it fine', () => {
     const w = mounted({ ...h, tyres: null, service: null, checks: [] })
     expect(w.find('[data-test="tyres"]').text()).toContain('does not report its tyres')
-    expect(w.find('[data-test="service"]').text()).toContain('does not tell when its next service')
-    expect(w.find('[data-test="warnings"]').text()).toContain('reports no check')
+    // Neither the service nor the warnings: one sentence, not two empty parts.
+    expect(w.find('[data-test="upkeep-none"]').text()).toBe(
+      'The vehicle tells neither its next service nor its warnings.',
+    )
+    expect(w.find('[data-test="service"]').exists()).toBe(false)
     expect(w.findAll('.status-pill')).toHaveLength(0)
+  })
+
+  it('says which of the service and the warnings the vehicle does not report', () => {
+    const w = mounted({ ...h, service: null })
+    expect(w.find('.upkeep h2').text()).toBe('Service and warnings')
+    expect(w.find('[data-test="service"]').text()).toContain('does not tell when its next service')
+    expect(w.findAll('[data-test="warnings"] li').map((li) => li.text())).toEqual(['Washer fluid'])
+    expect(
+      plain(
+        mounted({ ...h, checks: [] })
+          .find('[data-test="warnings"]')
+          .text(),
+      ),
+    ).toContain('reports no check')
   })
 
   it('tells a Volvo’s tyres by their warnings, the months to its service, and no warning counted', () => {

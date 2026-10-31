@@ -133,6 +133,8 @@ function open(index: number) {
         </dd>
       </div>
     </dl>
+    <!-- The title names the period only: the chart's own label says what it draws. -->
+    <p class="label chart-label">{{ t('recent.chart') }}</p>
   </ChartFrame>
   <v-card v-else-if="shown" class="recent-summary">
     <v-card-title class="d-flex flex-wrap align-center ga-2">
@@ -181,6 +183,9 @@ function open(index: number) {
 }
 dd {
   margin: 0;
+}
+.chart-label {
+  margin-bottom: 8px;
 }
 .distance :deep(.canvas) {
   height: 9rem;

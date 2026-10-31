@@ -16,13 +16,14 @@ export type {
   Wheel,
 } from './model/Health'
 export { healthKeys } from './model/queryKeys'
+export { versionRuns, type VersionRun } from './model/software'
 export {
   activeWarnings,
-  allFine,
   bar,
   hasPressures,
   needsAttention,
   recommendedFor,
+  reportedFine,
   tyresFine,
   tyreTrouble,
   wheels,

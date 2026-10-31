@@ -54,9 +54,8 @@ describe('VehiclePage', () => {
     mocks.fetchVehicle.mockResolvedValue(reauth)
     mocks.fetchVehicleState.mockResolvedValue(unknown)
     const w = await page(reauth.id)
-    // Its details were never read: the VIN is the title, and not repeated.
+    // Its details were never read: the VIN is the title.
     expect(w.find('h1').text()).toBe(reauth.vin)
-    expect(w.findAll('.vin')).toHaveLength(1)
     expect(w.text()).toContain('Re-authentication required')
     expect(w.find('button.vehicle-menu').exists()).toBe(true)
     expect(mocks.fetchVehicleState).toHaveBeenCalledWith(reauth.id)
@@ -68,9 +67,10 @@ describe('VehiclePage', () => {
     mocks.fetchVehicleState.mockResolvedValue(state)
     const w = await page(state.vehicle_id)
     expect(w.find('button.vehicle-menu').text()).toBe('XC40 Recharge Twin · 2021')
+    // The bar's picker names it: the heading is for screen readers only, without the VIN.
     expect(w.find('h1').text()).toBe('XC40 Recharge Twin · 2021')
-    // The VIN beside the heading, which the bar's picker already names.
-    expect(w.find('.heading span.vin').text()).toBe(vehicles.items[0]?.vin)
+    expect(w.find('h1').classes()).toContain('d-sr-only')
+    expect(w.text()).not.toContain(vehicles.items[0]?.vin)
     expect(w.text()).toContain('64%')
     expect(w.findComponent({ name: 'SocTimeline' }).props('vehicle')).toBe(state.vehicle_id)
     // The last days beside the vehicle's tile, in the state's grid.

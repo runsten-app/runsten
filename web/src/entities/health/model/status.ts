@@ -44,11 +44,17 @@ export function activeWarnings(h: Health) {
   return h.checks.filter((c) => c.warning)
 }
 
-// allFine tells whether the health is known in full and nothing warns: the tyres all
-// known, the service's state known; an incomplete health is neither fine nor a warning.
-export function allFine(h: Health): boolean {
+// reportedFine tells whether nothing warns in what the vehicle reports, something of it
+// reported: the tyres it reports all known, the state of the service it reports known.
+// Never more: a check reported with an unknown state is left out, and which checks a
+// vehicle reports depends on its model, so no health is known to be complete.
+export function reportedFine(h: Health): boolean {
+  const reported = !!h.tyres || !!h.service || h.checks.length > 0
   return (
-    !needsAttention(h) && (!h.tyres || tyresFine(h)) && (!h.service || h.service.state !== null)
+    reported &&
+    !needsAttention(h) &&
+    (!h.tyres || tyresFine(h)) &&
+    (!h.service || h.service.state !== null)
   )
 }
 

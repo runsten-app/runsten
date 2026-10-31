@@ -4,6 +4,7 @@ import { HealthPage } from '@/pages/health'
 import battery from '@fixtures/battery.json'
 import health from '@fixtures/health.json'
 import unknown from '@fixtures/health-unknown.json'
+import noSoftware from '@fixtures/state-unknown.json'
 import versions from '@fixtures/software-versions.json'
 import tyres from '@fixtures/tyres.json'
 import vehicles from '@fixtures/vehicles.json'
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   fetchSoftwareVersions: vi.fn(),
   fetchTyres: vi.fn(),
   fetchVehicles: vi.fn(),
+  fetchVehicleState: vi.fn(),
   getBattery: vi.fn(),
 }))
 vi.mock('@/entities/health', async (original) => ({
@@ -30,6 +32,7 @@ vi.mock('@/entities/battery', async (original) => ({
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
   fetchVehicles: mocks.fetchVehicles,
+  fetchVehicleState: mocks.fetchVehicleState,
 }))
 
 beforeEach(() => {
@@ -38,6 +41,8 @@ beforeEach(() => {
   mocks.fetchSoftwareVersions.mockResolvedValue({ items: [], next_cursor: null })
   mocks.fetchTyres.mockResolvedValue(tyres)
   mocks.fetchVehicles.mockResolvedValue(vehicles.items)
+  // A state that tells no software: the versions alone tell it.
+  mocks.fetchVehicleState.mockResolvedValue(noSoftware)
   mocks.getBattery.mockResolvedValue(battery)
 })
 
@@ -52,24 +57,30 @@ async function mounted() {
 }
 
 describe('HealthPage', () => {
-  it("lists the software's versions of a vehicle that tells them, none otherwise", async () => {
+  it("tells the software's version of a vehicle that tells it, nothing otherwise", async () => {
     let w = await mounted()
-    expect(w.find('.software-history').exists()).toBe(false)
+    expect(w.find('.software-summary').exists()).toBe(false)
     mocks.fetchSoftwareVersions.mockResolvedValue(versions)
     w = await mounted()
-    expect(w.find('.software-history h2').text()).toBe('Software')
-    expect(w.findAll('.software-history .name').map((n) => n.text())).toEqual([
-      '2026.38.3.2',
-      '2026.38.3.1',
-      '2026.32.1',
-    ])
+    expect(w.find('.software-summary h2').text()).toBe('Software')
+    expect(w.find('.software-summary .value').text()).toBe('2026.38.3.2')
+    // The history on a page of its own.
+    expect(w.find('.software-summary a').attributes('href')).toBe(`/vehicles/${vehicle}/software`)
+    expect(w.find('.version').exists()).toBe(false)
   })
 
   it('shows the tiles and the pressures, in its own tab', async () => {
     const w = await mounted()
     expect(w.find('.v-main h1').text()).toBe('Health')
-    expect(w.find('.intro').text()).toContain('a Volvo gives a warning per tyre')
+    // The answer under the title: what needs attention, named, then how fresh it is.
+    expect(w.find('.verdict').text()).toMatch(
+      /^Needs attention: Rear left \(Low\), Rear right \(Fault\), Washer fluid\. · Last checked /,
+    )
     expect(w.find('.health-tiles').exists()).toBe(true)
+    // The pressures over time folded, their chart asked for once opened.
+    expect(w.findAll('.chart-frame')).toHaveLength(0)
+    expect(mocks.fetchTyres).not.toHaveBeenCalled()
+    await w.find('.pressures button').trigger('click')
     await vi.waitFor(() => expect(w.findAll('.chart-frame')).toHaveLength(2))
     // The fixture needs attention: the dot's description follows the label.
     expect(w.find('.v-tab[aria-current="page"]').text()).toBe('Health Needs attention')
@@ -84,6 +95,29 @@ describe('HealthPage', () => {
     expect(tile.find('a').attributes('href')).toBe(`/vehicles/${vehicle}/battery`)
   })
 
+  it('says nothing needs attention only of what the vehicle reports', async () => {
+    const fine = {
+      ...health,
+      tyres: { ...health.tyres, wheels: health.tyres.wheels.map((x) => ({ ...x, warning: 'ok' })) },
+      checks: health.checks.map((c) => ({ ...c, warning: false })),
+    }
+    mocks.fetchHealth.mockResolvedValue(fine)
+    expect((await mounted()).find('.verdict').text()).toMatch(
+      /^Nothing the vehicle reports needs attention\. · Last/,
+    )
+    // Neither the service nor the checks reported (a Tesla): the same, of its tyres.
+    mocks.fetchHealth.mockResolvedValue({ ...fine, service: null, checks: [] })
+    expect((await mounted()).find('.verdict').text()).toMatch(
+      /^Nothing the vehicle reports needs attention\. · Last/,
+    )
+    // A tyre without its monitoring's word: neither fine nor a warning, the freshness only.
+    mocks.fetchHealth.mockResolvedValue({
+      ...fine,
+      tyres: { ...fine.tyres, wheels: fine.tyres.wheels.map((x) => ({ ...x, warning: null })) },
+    })
+    expect((await mounted()).find('.verdict').text()).toMatch(/^Last checked /)
+  })
+
   it('draws no chart for a vehicle without pressures', async () => {
     mocks.fetchHealth.mockResolvedValue({
       ...health,
@@ -94,7 +128,7 @@ describe('HealthPage', () => {
     })
     const w = await mounted()
     expect(w.find('.health-tiles').exists()).toBe(true)
-    expect(w.find('.tyre-chart').exists()).toBe(false)
+    expect(w.find('.pressures').exists()).toBe(false)
     expect(mocks.fetchTyres).not.toHaveBeenCalled()
   })
 

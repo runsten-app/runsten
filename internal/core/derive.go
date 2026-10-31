@@ -137,12 +137,16 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		}
 		// Never settle on the last readings: a reading stored later may bear their time.
 		groupEnd := lastOfTime && i < len(ps)-1
-		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil && d.resumable == nil {
+		// Nor during an installation: replayed from after its start, it would lose it.
+		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil && d.resumable == nil &&
+			d.installing.Before.IsZero() {
 			d.res.Cursor = Cursor{Settled: pt.at, From: d.st.rowAt(FieldOdometer)}
 		}
 	}
 	if d.trip != nil && d.trip.phase == tripEnding {
-		d.res.Trips = append(d.res.Trips, d.buildTrip(d.trip))
+		if t := d.buildTrip(d.trip, &d.st); !t.stayed() {
+			d.res.Trips = append(d.res.Trips, t)
+		}
 	}
 	d.releaseCharge()
 	if d.charge != nil && d.charge.c.Reconstructed {
@@ -286,6 +290,11 @@ type detector struct {
 	// read: the version a new one follows.
 	software     Value[string]
 	softwareSeen time.Time
+	// notInstalling is the last reading of the software without an installation in
+	// progress, and installing bounds the start of the one in progress: zero when none is,
+	// or when its start is not bounded (no reading before it).
+	notInstalling time.Time
+	installing    Bounds
 
 	trip   *tripBuilder
 	charge *chargeBuilder
@@ -306,13 +315,20 @@ func (d *detector) stepSoftware(p point) {
 		after = d.softwareSeen
 	}
 	d.res.Versions = append(d.res.Versions, SoftwareVersion{
-		DetectedAt: p.at, Version: v.V, Installed: Bounds{After: after, Before: p.at},
+		DetectedAt: p.at, Version: v.V, Installed: Bounds{After: after, Before: p.at}, InstallStarted: d.installing,
 	})
 }
 
 func (d *detector) track(p point) {
 	s, c := d.st.snap, p.snap.Covers
 	if c&FieldSoftware != 0 && s.Software.OK {
+		switch {
+		case !s.SoftwareUpdate.OK || s.SoftwareUpdate.V.Status != UpdateInstalling || d.software.OK && d.software.V != s.Software.V:
+			// None in progress, or a new version read: the one installed is over.
+			d.notInstalling, d.installing = p.at, Bounds{}
+		case d.installing.Before.IsZero() && !d.notInstalling.IsZero():
+			d.installing = Bounds{After: d.notInstalling, Before: p.at}
+		}
 		d.software, d.softwareSeen = s.Software, p.at
 	}
 	if c&FieldEngine != 0 && s.Engine.OK && s.Engine.V != EngineRunning {

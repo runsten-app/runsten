@@ -13,7 +13,6 @@ test('Verdandi: the state of charge, the range and how fresh they are', async ({
   await expect(page).toHaveURL(/\/vehicles\/[^/]+$/)
   // The scenario's family is not in the catalog: the family and year, no variant.
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('EX-SIM · 2026')
-  await expect(page.getByText(/^YV1[A-Z0-9]{14}$/)).toBeVisible()
 
   const soc = reading(page, 'State of charge')
   await expect(soc.locator('.value')).toHaveText(/^\d+(\.\d+)?\s?%$/)

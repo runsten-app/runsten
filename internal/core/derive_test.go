@@ -897,6 +897,96 @@ func incremental(records []Record, p Params) Result {
 	return Result{Trips: trips, Charges: charges, Versions: versions, Cursor: cursor, InProgress: open}
 }
 
+// read is one reading of a vehicle that tells its engine, odometer and position at once
+// (a Tesla's vehicle_data).
+func read(e EngineState, km float64, p Position, at time.Time) Snapshot {
+	return Snapshot{
+		Covers:     FieldEngine | FieldOdometer | FieldPosition,
+		Engine:     Some(e, time.Time{}),
+		OdometerKm: Some(km, time.Time{}),
+		Position:   Some(p, at),
+	}
+}
+
+// Put in drive and back without moving (to unplug), then driven off, the reading that
+// starts the drive already on the way: the first is no trip, and the drive starts from
+// the odometer it had.
+func TestTripThatNeverMoved(t *testing.T) {
+	records := []Record{
+		rec(0, 0, capacity(100)),
+		rec(0, 0, read(EngineStopped, 1000, home, m(0))),
+		rec(10, 10, read(EngineRunning, 1000, home, m(10))),
+		rec(11, 11, read(EngineStopped, 1000, home, m(11))),
+		rec(30, 30, read(EngineRunning, 1001, work, m(30))),
+		rec(40, 40, read(EngineStopped, 1010, work, m(40))),
+		rec(60, 60, read(EngineStopped, 1010, work, m(60))),
+	}
+	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	if len(res.Trips) != 1 {
+		t.Fatalf("trips %+v", res.Trips)
+	}
+	if tr := res.Trips[0]; tr.StartOdometerKm.V != 1000 || tr.DistanceKm.V != 10 {
+		t.Errorf("trip from %+v, distance %+v", tr.StartOdometerKm, tr.DistanceKm)
+	}
+	if trips, charges := deriveIncrementally(records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+		t.Errorf("never moved, incremental:\n%+v %+v\nrebuild:\n%+v %+v", trips, charges, res.Trips, res.Charges)
+	}
+}
+
+// A trip ended by the next one keeps the odometer read before it: the reading that
+// starts the next may already be on the way.
+func TestTripEndedByTheNext(t *testing.T) {
+	records := []Record{
+		rec(0, 0, capacity(100)),
+		rec(0, 0, read(EngineStopped, 1000, home, m(0))),
+		rec(10, 10, read(EngineRunning, 1000, home, m(10))),
+		rec(20, 20, read(EngineStopped, 1005, work, m(20))),
+		rec(25, 25, read(EngineRunning, 1006, home, m(25))),
+		rec(35, 35, read(EngineStopped, 1011, home, m(35))),
+		rec(60, 60, read(EngineStopped, 1011, home, m(60))),
+	}
+	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	if len(res.Trips) != 2 {
+		t.Fatalf("trips %+v", res.Trips)
+	}
+	if tr := res.Trips[0]; tr.EndOdometerKm.V != 1005 || tr.DistanceKm.V != 5 {
+		t.Errorf("first trip to %+v, distance %+v", tr.EndOdometerKm, tr.DistanceKm)
+	}
+	if trips, charges := deriveIncrementally(records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+		t.Errorf("ended by the next, incremental:\n%+v %+v\nrebuild:\n%+v %+v", trips, charges, res.Trips, res.Charges)
+	}
+}
+
+// A vehicle read on the way, the reading that starts the trip already away from the
+// charger (one reading tells the engine and the position): the charge stays where it
+// charged, where the trip starts from.
+func TestChargeInterruptedOnTheWay(t *testing.T) {
+	records := []Record{
+		rec(0, 0, capacity(100)),
+		rec(0, 0, engine(EngineStopped)),
+		rec(0, 0, odo(1000)),
+		rec(0, 0, loc(home, m(0))),
+		rec(0, 0, nrg(50, ChargingIdle)),
+		rec(15, 15, charging(55, 50000, DC)),
+		rec(25, 25, charging(60, 50000, DC)),
+		rec(30, 30, Snapshot{
+			Covers: FieldEngine | FieldPosition,
+			Engine: Some(EngineRunning, time.Time{}), Position: Some(work, m(30)),
+		}),
+		rec(30, 30, nrg(60, ChargingIdle)),
+	}
+	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	if len(res.Charges) != 1 {
+		t.Fatalf("charges %+v", res.Charges)
+	}
+	if c := res.Charges[0]; c.Position.V != home {
+		t.Errorf("charge at %+v, want %+v", c.Position, home)
+	}
+	if trips, charges := deriveIncrementally(records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+		t.Errorf("interrupted on the way, incremental:\n%+v %+v\nrebuild:\n%+v %+v", trips, charges, res.Trips, res.Charges)
+	}
+}
+
 // A trip starting while charging ends the charge; the trip's SoC ends before the next
 // charge starts.
 func TestTripAndCharge(t *testing.T) {
@@ -1577,8 +1667,17 @@ func software(v string) Snapshot {
 	return Snapshot{Covers: FieldSoftware, Software: Some(v, time.Time{})}
 }
 
+// updating is a reading of version 2026.38.3.1 with an update to 2026.38.3.2 at the status
+// given.
+func updating(st UpdateStatus) Snapshot {
+	s := software("2026.38.3.1")
+	s.SoftwareUpdate = Some(SoftwareUpdate{Status: st, Version: "2026.38.3.2"}, time.Time{})
+	return s
+}
+
 // Each version of the software is reported once, when first read: bounded by the last
-// reading of the previous one, the first with none before it.
+// reading of the previous one, the first with none before it. Its installation started
+// after the last reading without one in progress, before the first reading of it.
 func TestSoftwareVersions(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -1616,6 +1715,69 @@ func TestSoftwareVersions(t *testing.T) {
 			[]SoftwareVersion{
 				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
 				{DetectedAt: m(90), Version: "2026.44.1", Installed: Bounds{After: m(60), Before: m(90)}},
+			},
+		},
+		{
+			// Scheduled, then installing from minute 32 to 55 at least, read again as an
+			// odometer reading settles the cursor between: the installation keeps it.
+			"an installation seen",
+			[]Record{
+				rec(5, 30, updating(UpdateScheduled)),
+				rec(32, 33, updating(UpdateInstalling)),
+				rec(34, 34, odo(12400)),
+				rec(40, 55, updating(UpdateInstalling)),
+				rec(70, 80, software("2026.38.3.2")),
+				rec(81, 81, odo(12400)),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{
+					DetectedAt: m(70), Version: "2026.38.3.2", Installed: Bounds{After: m(55), Before: m(70)},
+					InstallStarted: Bounds{After: m(30), Before: m(32)},
+				},
+			},
+		},
+		{
+			// An installation given up (back to available) is not the one that brings the
+			// version: only the last one counts.
+			"an installation given up",
+			[]Record{
+				rec(5, 30, updating(UpdateAvailable)),
+				rec(32, 33, updating(UpdateInstalling)),
+				rec(40, 50, updating(UpdateAvailable)),
+				rec(60, 61, updating(UpdateInstalling)),
+				rec(70, 70, software("2026.38.3.2")),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{
+					DetectedAt: m(70), Version: "2026.38.3.2", Installed: Bounds{After: m(61), Before: m(70)},
+					InstallStarted: Bounds{After: m(50), Before: m(60)},
+				},
+			},
+		},
+		{
+			// Installing at the first reading: its start is not bounded, nor told.
+			"installing from the first reading",
+			[]Record{
+				rec(5, 10, updating(UpdateInstalling)),
+				rec(20, 20, software("2026.38.3.2")),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{DetectedAt: m(20), Version: "2026.38.3.2", Installed: Bounds{After: m(10), Before: m(20)}},
+			},
+		},
+		{
+			// Asleep through it: no reading saw it installing.
+			"an installation not seen",
+			[]Record{
+				rec(5, 30, updating(UpdateScheduled)),
+				rec(300, 300, software("2026.38.3.2")),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{DetectedAt: m(300), Version: "2026.38.3.2", Installed: Bounds{After: m(30), Before: m(300)}},
 			},
 		},
 	}

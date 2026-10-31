@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   activeWarnings,
-  allFine,
   bar,
   hasPressures,
   needsAttention,
   recommendedFor,
+  reportedFine,
   tyresFine,
   tyreTrouble,
   type Health,
@@ -78,11 +78,19 @@ describe('health status', () => {
       checks: h.checks.map((c) => ({ ...c, warning: false })),
     }
     expect(needsAttention(fine)).toBe(false)
-    // Fine only when known in full.
-    expect(allFine(fine)).toBe(true)
-    expect(allFine({ ...fine, tyres: h.tyres })).toBe(false)
+    // Fine in what the vehicle reports: what it reports known, something reported.
+    const tyres = h.tyres && {
+      ...h.tyres,
+      wheels: h.tyres.wheels.map((w) => ({ ...w, warning: 'ok' as const })),
+    }
+    expect(reportedFine({ ...fine, tyres })).toBe(true)
+    expect(reportedFine(fine)).toBe(true)
+    expect(reportedFine({ ...fine, tyres, service: null, checks: [] })).toBe(true)
+    expect(reportedFine({ ...fine, tyres: null, service: null, checks: [] })).toBe(false)
+    // A tyre without its monitoring's word, a service without its state: not fine.
+    expect(reportedFine({ ...fine, tyres: h.tyres })).toBe(false)
     const noState = { days: null, months: null, distance_km: null, reported_at: null, state: null }
-    expect(allFine({ ...fine, service: noState })).toBe(false)
+    expect(reportedFine({ ...fine, service: noState })).toBe(false)
     const due = (state: 'ok' | 'soon' | 'due' | 'overdue'): Health => ({
       ...fine,
       service: {
