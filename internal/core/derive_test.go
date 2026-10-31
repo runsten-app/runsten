@@ -1920,6 +1920,15 @@ func TestTripOutsideTemp(t *testing.T) {
 			want:    val(5),
 		},
 		{
+			name: "a response without a temperature before the trip keeps the one before it",
+			records: append(trip(),
+				rec(0, 0, climate(5, m(0))),
+				rec(20, 70, Snapshot{Covers: FieldClimate, CabinTempC: Some(19.0, time.Time{})}),
+			),
+			p:    DefaultParams(),
+			want: val(5),
+		},
+		{
 			name: "a climate without its outside temperature",
 			records: append(trip(),
 				rec(45, 45, Snapshot{Covers: FieldClimate, CabinTempC: Some(19.0, time.Time{})}),

@@ -311,8 +311,8 @@ type detector struct {
 	odoMark         state     // state at the last odometer reading
 	idleRun         energyRun // SoC since the last odometer reading
 
-	// outside is the outside temperature of the latest response fetched that covers the
-	// climate: a trip's when none is fetched while it runs (a temperature that holds).
+	// outside is the outside temperature of the latest response fetched that tells one: a
+	// trip's when none is fetched while it runs (a temperature that holds).
 	outside Value[float64]
 
 	// software is the latest version of the software read, and seen when it was last
@@ -348,9 +348,11 @@ func (d *detector) track(p point) {
 	if c&FieldSoftware != 0 && s.Software.OK {
 		d.software, d.softwareSeen = s.Software, p.at
 	}
-	if c&FieldClimate != 0 && !p.confirm {
+	// A response without a temperature (a car just woken) keeps the one before, as the
+	// trip's mean leaves it out.
+	if c&FieldClimate != 0 && !p.confirm && p.snap.OutsideTempC.OK {
 		// Undated, as a mean is: one fact of the trip, whichever response it comes from.
-		d.outside = Value[float64]{V: p.snap.OutsideTempC.V, OK: p.snap.OutsideTempC.OK}
+		d.outside = Value[float64]{V: p.snap.OutsideTempC.V, OK: true}
 	}
 	if c&FieldEngine != 0 && s.Engine.OK && s.Engine.V != EngineRunning {
 		d.lastNotRunning = p.at

@@ -430,12 +430,23 @@ describe('VehicleState', () => {
     })
     expect(w.find('.climate-running').text()).toBe('Preconditioning')
     expect(w.find('.heater').exists()).toBe(false)
+    // Without the cabin's temperature, nor a state of charge: what runs still says itself.
+    w.unmount()
+    w = await mounted({
+      ...state,
+      soc_pct: null,
+      climate: { ...climate, cabin_temp_c: null },
+    })
+    expect(() => reading(w, 'Cabin')).toThrow()
+    expect(reading(w, 'Climate').value).toBe('Climate on')
+    expect(w.find('.heater').text()).toBe('Battery heating')
     // A car without: neither the temperatures nor an Unknown in their place.
     w.unmount()
     w = await mounted(state)
     expect(() => reading(w, 'Outside')).toThrow()
     expect(() => reading(w, 'Cabin')).toThrow()
     expect(w.find('.climate-running').exists()).toBe(false)
+    expect(() => reading(w, 'Climate')).toThrow()
     expect(w.find('.heater').exists()).toBe(false)
   })
 

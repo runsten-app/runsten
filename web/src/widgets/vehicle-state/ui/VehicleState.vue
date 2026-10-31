@@ -183,8 +183,9 @@ const vehicleTile = computed(() => {
 // first, which runs it too.
 const climateRunning = computed(() => {
   const c = state.value?.climate
-  if (c?.preconditioning?.value) return t('state.climate.preconditioning')
-  if (c?.on?.value) return t('state.climate.climateOn')
+  if (c?.preconditioning?.value)
+    return { reading: c.preconditioning, value: t('state.climate.preconditioning') }
+  if (c?.on?.value) return { reading: c.on, value: t('state.climate.climateOn') }
   return null
 })
 // The battery heated (a Tesla's, in the cold), said only while it is.
@@ -403,6 +404,10 @@ const update = computed(() => {
                 </span>
               </div>
             </div>
+            <!-- Without a state of charge, no line under its bar to say it on. -->
+            <div v-if="batteryHeating && !state.soc_pct" class="under-bar">
+              <span class="heater">{{ t('state.climate.batteryHeater') }}</span>
+            </div>
             <section
               v-if="!chargeActive"
               class="charge-line"
@@ -547,9 +552,21 @@ const update = computed(() => {
                 class="cabin"
               >
                 <span v-if="climateRunning" class="climate-running d-block mt-1">{{
-                  climateRunning
+                  climateRunning.value
                 }}</span>
               </ReadingItem>
+              <!-- Without the cabin's temperature, what runs says itself. -->
+              <ReadingItem
+                v-else-if="climateRunning"
+                :label="t('state.climate.title')"
+                :reading="climateRunning.reading"
+                :value="climateRunning.value"
+                :now="now"
+                :connection="connection"
+                :tile="vehicleTile"
+                size="small"
+                class="climate"
+              />
               <!-- A source that tells its software (a Tesla); nothing for the others. -->
               <ReadingItem
                 v-if="state.software"
