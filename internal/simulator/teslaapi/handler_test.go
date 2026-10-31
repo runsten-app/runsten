@@ -349,6 +349,10 @@ func TestVehicleData(t *testing.T) {
 		ds["gps_as_of"] != json.Number(strconv.FormatInt(t0.Unix(), 10)) {
 		t.Errorf("drive_state: %v", ds)
 	}
+	// Parked, the climate off and the cabin at the outside temperature.
+	if cl := vd["climate_state"].(map[string]any); cl["is_climate_on"] != false || cl["inside_temp"] != cl["outside_temp"] {
+		t.Errorf("climate_state: on %v, inside %v, outside %v", cl["is_climate_on"], cl["inside_temp"], cl["outside_temp"])
+	}
 	ms := json.Number(strconv.FormatInt(t0.UnixMilli(), 10))
 	for _, b := range []string{"charge_state", "climate_state", "drive_state", "gui_settings", "vehicle_config", "vehicle_state"} {
 		if ts := vd[b].(map[string]any)["timestamp"]; ts != ms {

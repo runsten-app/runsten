@@ -50,6 +50,10 @@ type Trip struct {
 	// that settles the trip later may be one an incremental derivation never replays.
 	Capacity Value[Capacity]
 	From, To Value[Position]
+	// OutsideTempC is the mean of the outside temperatures the responses fetched while
+	// the trip ran tell (outsideTemp), else that of the latest fetched before it, in °C;
+	// absent for a reconstructed trip.
+	OutsideTempC Value[float64]
 
 	// Vehicle's own trip figures at the end of the trip, for comparison: their exact
 	// semantics are unknown, they are never used to derive anything.

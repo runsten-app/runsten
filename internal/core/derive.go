@@ -155,6 +155,9 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 	for i := range d.res.Trips {
 		t := &d.res.Trips[i]
 		t.Sources = sourcesIn(ps, t.Start.Before, later(t.End.Before, t.DetectedAt))
+		if v := outsideTemp(ps, t.DetectedAt, t.End.Before); v.OK && !t.Reconstructed {
+			t.OutsideTempC = v
+		}
 	}
 	for i := range d.res.Charges {
 		c := &d.res.Charges[i]
@@ -191,6 +194,30 @@ func sourcesIn(ps []point, from, to time.Time) []string {
 	}
 	slices.Sort(out)
 	return out
+}
+
+// outsideTemp returns the mean of the outside temperatures of the responses fetched within
+// [from, to]: a trip's from the reading that detected it, after the cursor's settled time
+// as every reading an incremental derivation replays, to its end. Each response counts
+// once, at its fetch: its confirmation moves as a run of identical responses grows, which
+// would make an incremental derivation and a rebuild differ. A response covering the
+// climate without a temperature counts for nothing. Absent when none was fetched: the trip
+// keeps the one fetched last before it (detector.outside).
+func outsideTemp(ps []point, from, to time.Time) Value[float64] {
+	var sum float64
+	n := 0
+	for i := sort.Search(len(ps), func(i int) bool { return !ps[i].at.Before(from) }); i < len(ps) && !ps[i].at.After(to); i++ {
+		p := ps[i]
+		if p.confirm || p.snap.Covers&FieldClimate == 0 || !p.snap.OutsideTempC.OK {
+			continue
+		}
+		sum += p.snap.OutsideTempC.V
+		n++
+	}
+	if n == 0 {
+		return Value[float64]{}
+	}
+	return Value[float64]{V: sum / float64(n), OK: true}
 }
 
 // point is a reading: a record at its FetchedAt, or again, unchanged, at its CheckedAt.
@@ -284,6 +311,10 @@ type detector struct {
 	odoMark         state     // state at the last odometer reading
 	idleRun         energyRun // SoC since the last odometer reading
 
+	// outside is the outside temperature of the latest response fetched that covers the
+	// climate: a trip's when none is fetched while it runs (a temperature that holds).
+	outside Value[float64]
+
 	// software is the latest version of the software read, and seen when it was last
 	// read: the version a new one follows.
 	software     Value[string]
@@ -316,6 +347,10 @@ func (d *detector) track(p point) {
 	s, c := d.st.snap, p.snap.Covers
 	if c&FieldSoftware != 0 && s.Software.OK {
 		d.software, d.softwareSeen = s.Software, p.at
+	}
+	if c&FieldClimate != 0 && !p.confirm {
+		// Undated, as a mean is: one fact of the trip, whichever response it comes from.
+		d.outside = Value[float64]{V: p.snap.OutsideTempC.V, OK: p.snap.OutsideTempC.OK}
 	}
 	if c&FieldEngine != 0 && s.Engine.OK && s.Engine.V != EngineRunning {
 		d.lastNotRunning = p.at

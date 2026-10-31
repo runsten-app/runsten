@@ -82,6 +82,13 @@
       "checked_at": "2026-09-28T19:03:00Z"
     }
   },
+  "climate": {
+    "outside_temp_c": null,
+    "cabin_temp_c": null,
+    "on": null,
+    "preconditioning": null,
+    "battery_heater": null
+  },
   "software": null,
   "software_update": null,
   "sleep": null

@@ -36,6 +36,7 @@
   "end_place": null,
   "start_address": "Boulevard Vivier-Merle, Lyon",
   "end_address": "Rue de la République, Lyon",
+  "outside_temp_c": null,
   "vehicle_reported": {
     "trip_meter_km": null,
     "consumption_kwh_per_100km": null

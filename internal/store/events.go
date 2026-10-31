@@ -123,13 +123,13 @@ func (s *Store) SaveDerivation(ctx context.Context, accountID, vehicleID string,
 					started_after, started_before, ended_after, ended_before,
 					start_odometer_km, end_odometer_km, distance_km, start_soc, end_soc,
 					start_range_km, end_range_km, energy_kwh, start_lat, start_lon, end_lat, end_lon,
-					trip_meter_km, consumption_kwh_per_100km, capacity_kwh, capacity_source, sources)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)`,
+					trip_meter_km, consumption_kwh_per_100km, capacity_kwh, capacity_source, sources, outside_temp_c)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)`,
 				accountID, vehicleID, t.DetectedAt, t.Reconstructed,
 				t.Start.After, t.Start.Before, t.End.After, t.End.Before,
 				opt(t.StartOdometerKm), opt(t.EndOdometerKm), opt(t.DistanceKm), opt(t.StartSoC), opt(t.EndSoC),
 				opt(t.StartRangeKm), opt(t.EndRangeKm), opt(t.EnergyKWh), from[0], from[1], to[0], to[1],
-				opt(t.TripMeterKm), opt(t.ConsumptionKWhPer100km), kwh, source, t.Sources)
+				opt(t.TripMeterKm), opt(t.ConsumptionKWhPer100km), kwh, source, t.Sources, opt(t.OutsideTempC))
 			if err != nil {
 				return fmt.Errorf("insert trip: %w", err)
 			}
@@ -384,14 +384,14 @@ const (
 		started_after, started_before, ended_after, ended_before,
 		start_odometer_km, end_odometer_km, distance_km, start_soc, end_soc,
 		start_range_km, end_range_km, energy_kwh, start_lat, start_lon, end_lat, end_lon,
-		trip_meter_km, consumption_kwh_per_100km, capacity_kwh, capacity_source, sources,
+		trip_meter_km, consumption_kwh_per_100km, capacity_kwh, capacity_source, sources, outside_temp_c,
 		NULL::text AS source, NULL::text AS source_id, NULL::text AS start_address, NULL::text AS end_address
 		FROM trips`
 	importedTripColumns = `vehicle_id, imported_at, source || ':' || source_id, false,
 		started_at, started_at, ended_at, ended_at,
 		start_odometer_km, end_odometer_km, distance_km, start_soc, end_soc,
 		NULL, NULL, energy_kwh, start_lat, start_lon, end_lat, end_lon,
-		NULL, NULL, capacity_kwh, capacity_source, ARRAY[source],
+		NULL, NULL, capacity_kwh, capacity_source, ARRAY[source], NULL,
 		source, source_id, start_address, end_address
 		FROM imported_trips`
 	derivedTrips = `(SELECT ` + derivedTripColumns + `) trips`
@@ -438,20 +438,20 @@ func scanTrips(ctx context.Context, tx pgx.Tx, relation, where string, args ...a
 			start_odometer_km, end_odometer_km, distance_km, start_soc, end_soc,
 			start_range_km, end_range_km, energy_kwh, start_lat, start_lon, end_lat, end_lon,
 			trip_meter_km, consumption_kwh_per_100km, capacity_kwh, capacity_source, sources,
-			source, source_id, start_address, end_address
+			outside_temp_c, source, source_id, start_address, end_address
 		FROM `+relation+` WHERE `+where, args...)
 	if err != nil {
 		return nil, err //nolint:wrapcheck // wrapped by inAccount
 	}
 	var out []core.Trip
 	var t core.Trip
-	var odo0, odo1, dist, soc0, soc1, rng0, rng1, kwh, lat0, lon0, lat1, lon1, meter, cons, capKWh *float64
+	var odo0, odo1, dist, soc0, soc1, rng0, rng1, kwh, lat0, lon0, lat1, lon1, meter, cons, capKWh, outside *float64
 	var capSource, source, sourceID, addr0, addr1 *string
 	var sources []string
 	_, err = pgx.ForEachRow(rows, []any{
 		&t.DetectedAt, &t.Reconstructed, &t.Start.After, &t.Start.Before, &t.End.After, &t.End.Before,
 		&odo0, &odo1, &dist, &soc0, &soc1, &rng0, &rng1, &kwh, &lat0, &lon0, &lat1, &lon1, &meter, &cons, &capKWh, &capSource,
-		&sources, &source, &sourceID, &addr0, &addr1,
+		&sources, &outside, &source, &sourceID, &addr0, &addr1,
 	}, func() error {
 		out = append(out, core.Trip{
 			DetectedAt: t.DetectedAt.UTC(), Reconstructed: t.Reconstructed,
@@ -463,6 +463,7 @@ func scanTrips(ctx context.Context, tx pgx.Tx, relation, where string, args ...a
 			StartSoC: val(soc0), EndSoC: val(soc1), StartRangeKm: val(rng0), EndRangeKm: val(rng1),
 			EnergyKWh: val(kwh), From: position(lat0, lon0), To: position(lat1, lon1),
 			TripMeterKm: val(meter), ConsumptionKWhPer100km: val(cons), Capacity: capacity(capKWh, capSource),
+			OutsideTempC: val(outside),
 		})
 		return nil
 	})

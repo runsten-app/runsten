@@ -43,7 +43,7 @@ func sampleResult(at time.Time) core.Result {
 			StartSoC: some(62), EndSoC: some(54), EnergyKWh: some(6.4),
 			Capacity:    core.Value[core.Capacity]{V: core.Capacity{KWh: 80, Source: core.CapacityCatalogNet}, OK: true},
 			From:        core.Value[core.Position]{V: core.Position{Lat: 45.764, Lon: 4.8357}, OK: true},
-			TripMeterKm: some(32),
+			TripMeterKm: some(32), OutsideTempC: some(-2.5),
 		}},
 		Charges: []core.Charge{{
 			DetectedAt: at.Add(time.Hour), Reconstructed: true, Sources: fromVolvo,

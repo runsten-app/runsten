@@ -65,6 +65,7 @@ type vehicleData struct {
 		VIN           string         `json:"vin"`
 		State         *string        `json:"state"`
 		ChargeState   *chargeState   `json:"charge_state"`
+		ClimateState  *climateState  `json:"climate_state"`
 		DriveState    *driveState    `json:"drive_state"`
 		VehicleState  *vehicleState  `json:"vehicle_state"`
 		VehicleConfig *vehicleConfig `json:"vehicle_config"`
@@ -81,6 +82,18 @@ type chargeState struct {
 	ChargerPower       *float64 `json:"charger_power"` // kW, whole
 	ChargeLimitSoC     *float64 `json:"charge_limit_soc"`
 	EnergyAdded        *float64 `json:"charge_energy_added"` // kWh, this session's
+}
+
+// climateState is what the normalization reads of the climate. Assumption: temperatures
+// in °C whatever the car displays (gui_temperature_units), as the community documents
+// them; the real car read was set to °C, which does not tell.
+type climateState struct {
+	Timestamp       *int64   `json:"timestamp"`
+	OutsideTemp     *float64 `json:"outside_temp"`
+	InsideTemp      *float64 `json:"inside_temp"`
+	ClimateOn       *bool    `json:"is_climate_on"`
+	Preconditioning *bool    `json:"is_preconditioning"`
+	BatteryHeater   *bool    `json:"battery_heater"`
 }
 
 type driveState struct {
@@ -181,6 +194,9 @@ func Normalize(e Endpoint, raw []byte) (core.Snapshot, error) {
 	}
 	if c := r.ChargeState; c != nil {
 		normalizeCharge(c, &s)
+	}
+	if c := r.ClimateState; c != nil {
+		normalizeClimate(c, &s)
 	}
 	if d := r.DriveState; d != nil {
 		normalizeDrive(d, &s)
@@ -323,6 +339,25 @@ func version(v *string) string {
 		return f[0]
 	}
 	return ""
+}
+
+func normalizeClimate(c *climateState, s *core.Snapshot) {
+	at := millis(c.Timestamp)
+	s.Covers |= core.FieldClimate
+	s.OutsideTempC = number(c.OutsideTemp, at)
+	s.CabinTempC = number(c.InsideTemp, at)
+	flag := func(b *bool) core.Value[bool] {
+		if b == nil {
+			return core.Value[bool]{}
+		}
+		return core.Some(*b, at)
+	}
+	cl := core.Climate{
+		On: flag(c.ClimateOn), Preconditioning: flag(c.Preconditioning), BatteryHeater: flag(c.BatteryHeater),
+	}
+	if cl.On.OK || cl.Preconditioning.OK || cl.BatteryHeater.OK {
+		s.Climate = core.Some(cl, at)
+	}
 }
 
 // shiftStates maps shift_state: the API has no engine status, and a car in gear drives.

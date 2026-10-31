@@ -1035,6 +1035,41 @@ components:
         - warning
         - reported_at
       type: object
+    Climate:
+      additionalProperties: false
+      properties:
+        battery_heater:
+          description: The battery is being heated.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingBool"
+            - type: "null"
+        cabin_temp_c:
+          description: The temperature the vehicle measures in its cabin, in °C.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingFloat64"
+            - type: "null"
+        "on":
+          description: "The cabin's climate is running: by hand, from the app or on a schedule."
+          oneOf:
+            - $ref: "#/components/schemas/ReadingBool"
+            - type: "null"
+        outside_temp_c:
+          description: The temperature the vehicle measures outside, in °C.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingFloat64"
+            - type: "null"
+        preconditioning:
+          description: The vehicle is heating or cooling its cabin and battery before a departure.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingBool"
+            - type: "null"
+      required:
+        - outside_temp_c
+        - cabin_temp_c
+        - "on"
+        - preconditioning
+        - battery_heater
+      type: object
     Collection:
       additionalProperties: false
       properties:
@@ -2898,6 +2933,34 @@ components:
         - kwh_per_km
         - charges
       type: object
+    ReadingBool:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The last reading of the same value, unchanged.
+          format: date-time
+          pattern: Z$
+          type: string
+        fetched_at:
+          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
+          format: date-time
+          pattern: Z$
+          type: string
+        reported_at:
+          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        value:
+          type: boolean
+      required:
+        - value
+        - reported_at
+        - fetched_at
+        - checked_at
+      type: object
     ReadingCable:
       additionalProperties: false
       properties:
@@ -3476,6 +3539,9 @@ components:
           type:
             - string
             - "null"
+        climate:
+          $ref: "#/components/schemas/Climate"
+          description: The temperatures and what heats or cools the vehicle, for a source that tells them (Tesla); every value null for the others.
         connection:
           $ref: "#/components/schemas/Connection"
         engine:
@@ -3529,6 +3595,7 @@ components:
         - position
         - battery_capacity_kwh
         - charging
+        - climate
         - software
         - software_update
         - sleep
@@ -3750,6 +3817,12 @@ components:
         imported:
           description: "The event was imported from another application, which cut it from its own readings: it is not derived from Runsten's, and its times are the application's own, start.after equal to start.before, end.after to end.before. Only events before the vehicle's first reading are imported."
           type: boolean
+        outside_temp_c:
+          description: "The mean outside temperature, in °C, of the responses Runsten fetched while the trip ran, else of the latest one before it (a temperature that held), for a vehicle that tells it (Tesla). null for the others, a reconstructed or imported trip, and a trip derived before Runsten kept it: a rebuild of the derived data gives it."
+          format: double
+          type:
+            - number
+            - "null"
         reconstructed:
           description: "The event was never seen, only revealed by the odometer or the state of charge: it lies somewhere within [start.after, end.before], and start and end are that same interval."
           type: boolean
@@ -3811,6 +3884,7 @@ components:
         - end_place
         - start_address
         - end_address
+        - outside_temp_c
         - vehicle_reported
         - id
         - detected_at
