@@ -8,8 +8,8 @@ const pattern =
   /^(outside|no_position|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/
 
 // placeQuery picks the place of the charges out of a route's query, to carry it with the
-// period; one the API would refuse is none.
+// period; one the API would refuse is none. An ID is lowercased, as the API gives them.
 export function placeQuery(query: LocationQuery): { place?: ChargePlace } {
   const p = query.place
-  return typeof p === 'string' && pattern.test(p) ? { place: p } : {}
+  return typeof p === 'string' && pattern.test(p) ? { place: p.toLowerCase() } : {}
 }

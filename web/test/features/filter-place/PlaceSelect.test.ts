@@ -79,6 +79,7 @@ describe('placeQuery', () => {
     expect(placeQuery({ place: 'outside' })).toEqual({ place: 'outside' })
     expect(placeQuery({ place: 'no_position' })).toEqual({ place: 'no_position' })
     expect(placeQuery({ place: home?.id ?? '' })).toEqual({ place: home?.id })
+    expect(placeQuery({ place: home?.id.toUpperCase() ?? '' })).toEqual({ place: home?.id })
     expect(placeQuery({ place: 'home' })).toEqual({})
     expect(placeQuery({ place: ['outside'] })).toEqual({})
     expect(placeQuery({})).toEqual({})
