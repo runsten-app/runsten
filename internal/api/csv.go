@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"maps"
 	"net/http"
 	"slices"
 	"strconv"
@@ -25,6 +26,14 @@ type csvInput struct {
 	Vehicle string    `path:"vehicle" doc:"The vehicle ID."`
 	From    time.Time `query:"from" doc:"Keeps the events that may have happened, at least partly, at or after this time, as the lists do." example:"2026-09-01T00:00:00Z"`
 	To      time.Time `query:"to" doc:"Keeps the events that may have happened, at least partly, before this time. With from, it must come after from." example:"2026-10-01T00:00:00Z"`
+}
+
+// chargesCSVInput is csvInput with the place of the charges.
+type chargesCSVInput struct {
+	Vehicle string    `path:"vehicle" doc:"The vehicle ID."`
+	From    time.Time `query:"from" doc:"Keeps the events that may have happened, at least partly, at or after this time, as the lists do." example:"2026-09-01T00:00:00Z"`
+	To      time.Time `query:"to" doc:"Keeps the events that may have happened, at least partly, before this time. With from, it must come after from." example:"2026-10-01T00:00:00Z"`
+	Place   string    `query:"place" pattern:"^(outside|no_position|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$" doc:"Keeps the charges of one group of the statistics' charges_by_place, as the list does with the same parameter: a place's ID, outside or no_position." example:"outside"`
 }
 
 type csvOutput struct {
@@ -126,14 +135,16 @@ var chargesHeader = []string{
 	"average_power_kw", "imported", "sources",
 }
 
-func (s *Server) chargesCSV(ctx context.Context, in *csvInput) (*csvOutput, error) {
+func (s *Server) chargesCSV(ctx context.Context, in *chargesCSVInput) (*csvOutput, error) {
 	var priced PricedCharges
 	var charger core.Value[float64]
-	charges, l, err := csvEvents(ctx, s, in, func(acc string, v Vehicle, q EventQuery) ([]core.Charge, error) {
+	period := &csvInput{Vehicle: in.Vehicle, From: in.From, To: in.To}
+	charges, l, err := csvEvents(ctx, s, period, func(acc string, v Vehicle, q EventQuery) ([]core.Charge, error) {
 		var err error
 		if charger, err = s.chargerOf(ctx, v); err != nil {
 			return nil, err
 		}
+		q.Place = chargesAt(in.Place)
 		priced, err = s.Reader.ListCharges(ctx, acc, v.ID, q)
 		return priced.Charges, err //nolint:wrapcheck // logged by csvEvents, never shown
 	})
@@ -249,32 +260,32 @@ func (s *Server) registerCSV(api huma.API) {
 		"(`start_after` is `start.after`). Times are RFC 3339 in UTC, numbers have a decimal point, an unknown value " +
 		"is an empty cell, `sources` are separated by spaces. A text that would begin with `=`, `+`, `-` or `@` is " +
 		"prefixed with `'`, so that no spreadsheet takes it for a formula."
-	for _, op := range []struct {
-		id, kind, summary, columns string
-		handler                    func(context.Context, *csvInput) (*csvOutput, error)
-	}{
-		{"tripsCSV", "trips", "The trips of a vehicle, as CSV", "", s.tripsCSV},
-		{
-			"chargesCSV", "charges", "The charges of a vehicle, as CSV",
-			" A charge's cost is in major units of the currency (`cost_min` and `cost_max`, 5.24 for 524 cents).", s.chargesCSV,
+	csvOperation(s, api, "tripsCSV", "trips", "The trips of a vehicle, as CSV", description, errs, s.tripsCSV)
+	chargeErrs := maps.Clone(errs)
+	chargeErrs[http.StatusBadRequest] = "`invalid_parameter`: `from`, `to` or `place`; the message names the parameter."
+	csvOperation(s, api, "chargesCSV", "charges", "The charges of a vehicle, as CSV", description+
+		" A charge's cost is in major units of the currency (`cost_min` and `cost_max`, 5.24 for 524 cents).", chargeErrs, s.chargesCSV)
+}
+
+// csvOperation registers the CSV file of a kind of event.
+func csvOperation[I any](s *Server, api huma.API, id, kind, summary, description string, errs map[int]string,
+	handler func(context.Context, *I) (*csvOutput, error),
+) {
+	o := s.operation(huma.Operation{
+		OperationID: id, Method: http.MethodGet, Path: "/vehicles/{vehicle}/" + kind + ".csv", Tags: []string{"events"},
+		Summary: summary, Description: description,
+		Middlewares: huma.Middlewares{s.requireCSV},
+	}, "The CSV file, as an attachment (Content-Disposition), named after the day.", errs)
+	o.Responses["200"].Content = map[string]*huma.MediaType{
+		"text/csv": {Schema: &huma.Schema{Type: huma.TypeString, Description: "The header row, then a row per event."}},
+	}
+	huma.Register(api, o, handler)
+	// huma describes the output's headers itself, Content-Type among them, which
+	// the content's media type already tells.
+	api.OpenAPI().Paths[o.Path].Get.Responses["200"].Headers = map[string]*huma.Param{
+		"Content-Disposition": {
+			Description: "attachment, with a file name such as runsten-" + kind + "-2026-10-01.csv.", Required: true,
+			Schema: &huma.Schema{Type: huma.TypeString},
 		},
-	} {
-		o := s.operation(huma.Operation{
-			OperationID: op.id, Method: http.MethodGet, Path: "/vehicles/{vehicle}/" + op.kind + ".csv", Tags: []string{"events"},
-			Summary: op.summary, Description: description + op.columns,
-			Middlewares: huma.Middlewares{s.requireCSV},
-		}, "The CSV file, as an attachment (Content-Disposition), named after the day.", errs)
-		o.Responses["200"].Content = map[string]*huma.MediaType{
-			"text/csv": {Schema: &huma.Schema{Type: huma.TypeString, Description: "The header row, then a row per event."}},
-		}
-		huma.Register(api, o, op.handler)
-		// huma describes the output's headers itself, Content-Type among them, which
-		// the content's media type already tells.
-		api.OpenAPI().Paths[o.Path].Get.Responses["200"].Headers = map[string]*huma.Param{
-			"Content-Disposition": {
-				Description: "attachment, with a file name such as runsten-" + op.kind + "-2026-10-01.csv.", Required: true,
-				Schema: &huma.Schema{Type: huma.TypeString},
-			},
-		}
 	}
 }

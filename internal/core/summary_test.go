@@ -187,7 +187,7 @@ func TestSummarizeIntervals(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := Summarize(nil, nil, Costs{}, nil, tt.from, tt.to, tt.loc, tt.bucket, DefaultParams())
+			s, err := Summarize(nil, nil, Costs{}, nil, tt.from, tt.to, tt.loc, tt.bucket, ChargesAt{}, DefaultParams())
 			if !errors.Is(err, tt.wantErr) {
 				t.Fatalf("error = %v, want %v", err, tt.wantErr)
 			}
@@ -220,7 +220,7 @@ func TestSummarizeAttachment(t *testing.T) {
 		drive(pt("2026-06-03 23:59"), pt("2026-06-04 00:30"), 5, 1, 75, 74),  // last minute of 3 June
 		drive(pt("2026-06-04 00:00"), pt("2026-06-04 00:30"), 7, 1, 74, 73),  // at to: out
 	}
-	s, err := Summarize(trips, nil, Costs{}, nil, from, to, paris, BucketDay, DefaultParams())
+	s, err := Summarize(trips, nil, Costs{}, nil, from, to, paris, BucketDay, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -318,7 +318,7 @@ func TestSummarizeTrips(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := Summarize(tt.trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, DefaultParams())
+			s, err := Summarize(tt.trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -349,7 +349,7 @@ func TestSummarizeTripsByDistance(t *testing.T) {
 		},
 		noDistance,
 	}
-	s, err := Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketDay, DefaultParams())
+	s, err := Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketDay, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -373,7 +373,7 @@ func TestSummarizeTripsByDistance(t *testing.T) {
 func TestSummaryWithoutConsumption(t *testing.T) {
 	t1 := pt("2026-06-01 08:00")
 	trips := []Trip{drive(t1, t1.Add(time.Hour), 41, 1.3, 60, 55), drive(t1.Add(3*time.Hour), t1.Add(4*time.Hour), 12, 2, 55, 47)}
-	s, err := Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketDay, DefaultParams())
+	s, err := Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketDay, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -419,7 +419,7 @@ func TestSummarizeChargesBySoC(t *testing.T) {
 		},
 		noEnd,
 	}
-	s, err := Summarize(nil, charges, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, DefaultParams())
+	s, err := Summarize(nil, charges, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -471,7 +471,7 @@ func TestSummarizeChargesByPlace(t *testing.T) {
 		{},
 		{},
 	}}
-	s, err := Summarize(nil, charges, costs, []Place{home, empty, work}, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, DefaultParams())
+	s, err := Summarize(nil, charges, costs, []Place{home, empty, work}, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -489,8 +489,45 @@ func TestSummarizeChargesByPlace(t *testing.T) {
 		t.Errorf("by place = %+v\nwant        %+v", got, want)
 	}
 
+	// Each group, picked, is the period's charges: the same sums, the orphans left out,
+	// the parked intervals those of every event.
+	costs.Orphans = []EnteredCost{{WindowAfter: h(1), AmountMinor: 900}}
+	all, err := Summarize(nil, charges, costs, []Place{home, empty, work}, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tt := range []struct {
+		at   ChargesAt
+		want PlaceStats
+	}{
+		{ChargesAt{Group: PlaceGroupPlace, PlaceID: "home"}, want.Places[0].PlaceStats},
+		{ChargesAt{Group: PlaceGroupPlace, PlaceID: "work"}, want.Places[1].PlaceStats},
+		{ChargesAt{Group: PlaceGroupPlace, PlaceID: "empty"}, PlaceStats{}},
+		{ChargesAt{Group: PlaceGroupPlace, PlaceID: "deleted"}, PlaceStats{}},
+		{ChargesAt{Group: PlaceGroupOutside}, PlaceStats{
+			Count: 3, Reconstructed: 1, EnergySoCKWh: 59, Cost: CostSum{Min: 2000, Max: 2000, Unknown: 2, Entered: 1},
+		}},
+		{ChargesAt{Group: PlaceGroupNoPosition}, want.NoPosition},
+	} {
+		s, err := Summarize(nil, charges, costs, []Place{home, empty, work}, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, tt.at, DefaultParams())
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := s.Totals.Charges
+		got := PlaceStats{Count: c.Count, Reconstructed: c.Reconstructed, EnergySoCKWh: c.EnergySoCKWh, EnergySoCUnknown: c.EnergySoCUnknown, Cost: c.Cost}
+		if !reflect.DeepEqual(got, tt.want) || c.Orphaned != (OrphanedCosts{}) {
+			t.Errorf("%+v: charges = %+v, orphaned %+v; want %+v", tt.at, got, c.Orphaned, tt.want)
+		}
+		if s.Totals.Parked != all.Totals.Parked {
+			t.Errorf("%+v: parked = %+v, want every event's %+v", tt.at, s.Totals.Parked, all.Totals.Parked)
+		}
+	}
+	if all.Totals.Charges.Orphaned.Count != 1 {
+		t.Errorf("orphaned = %+v, want the one of the period", all.Totals.Charges.Orphaned)
+	}
+
 	// Without places, every charge is outside, or without a position.
-	s, err = Summarize(nil, charges, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, DefaultParams())
+	s, err = Summarize(nil, charges, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -566,7 +603,7 @@ func TestSummarizeCharges(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := Summarize(nil, tt.charges, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, DefaultParams())
+			s, err := Summarize(nil, tt.charges, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -605,7 +642,7 @@ func TestSummarizeCosts(t *testing.T) {
 			{WindowAfter: to, AmountMinor: 6},                     // after it
 		},
 	}
-	s, err := Summarize(nil, charges, costs, nil, from, to, paris, BucketDay, DefaultParams())
+	s, err := Summarize(nil, charges, costs, nil, from, to, paris, BucketDay, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -641,7 +678,7 @@ func TestSummarizeCosts(t *testing.T) {
 	}
 
 	// Fewer costs than charges: the others are unknown.
-	s, err = Summarize(nil, charges, Costs{Charges: costs.Charges[:2]}, nil, from, to, paris, BucketNone, DefaultParams())
+	s, err = Summarize(nil, charges, Costs{Charges: costs.Charges[:2]}, nil, from, to, paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -788,7 +825,7 @@ func TestSummarizeParked(t *testing.T) {
 			if tt.params != nil {
 				tt.params(&p)
 			}
-			s, err := Summarize(tt.trips, tt.charges, Costs{}, nil, from, to, paris, BucketDay, p)
+			s, err := Summarize(tt.trips, tt.charges, Costs{}, nil, from, to, paris, BucketDay, ChargesAt{}, p)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -880,7 +917,7 @@ func TestSummarizeOdometer(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := Summarize(tt.trips, tt.charges, Costs{}, nil, from, to, paris, BucketDay, DefaultParams())
+			s, err := Summarize(tt.trips, tt.charges, Costs{}, nil, from, to, paris, BucketDay, ChargesAt{}, DefaultParams())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -962,7 +999,7 @@ func TestSummarizeTotalsAreSums(t *testing.T) {
 	from, to := pt("2026-03-01 00:00"), pt("2026-11-01 00:00")
 	for seed := range uint64(4) {
 		trips, charges, costs := history(seed)
-		none, err := Summarize(trips, charges, costs, nil, from, to, paris, BucketNone, DefaultParams())
+		none, err := Summarize(trips, charges, costs, nil, from, to, paris, BucketNone, ChargesAt{}, DefaultParams())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -971,7 +1008,7 @@ func TestSummarizeTotalsAreSums(t *testing.T) {
 			t.Fatalf("seed %d: empty history %+v", seed, none.Totals)
 		}
 		for _, bucket := range []Bucket{BucketDay, BucketWeek, BucketMonth} {
-			s, err := Summarize(trips, charges, costs, nil, from, to, paris, bucket, DefaultParams())
+			s, err := Summarize(trips, charges, costs, nil, from, to, paris, bucket, ChargesAt{}, DefaultParams())
 			if err != nil {
 				t.Fatal(err)
 			}

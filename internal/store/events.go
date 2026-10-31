@@ -273,10 +273,9 @@ func (s *Store) Charges(ctx context.Context, accountID, vehicleID string) ([]cor
 // ListCharges implements api.Reader: a page of charges, derived and imported, with what
 // their costs depend on, from one snapshot.
 func (s *Store) ListCharges(ctx context.Context, accountID, vehicleID string, q api.EventQuery) (api.PricedCharges, error) {
-	where, args := eventPage(vehicleID, q)
 	var out api.PricedCharges
 	err := s.readInAccount(ctx, accountID, func(tx pgx.Tx) error {
-		charges, err := scanChargesOf(ctx, tx, chargeEvents, where, args...)
+		charges, err := chargePage(ctx, tx, vehicleID, q)
 		if err != nil {
 			return err
 		}
@@ -284,6 +283,51 @@ func (s *Store) ListCharges(ctx context.Context, accountID, vehicleID string, q 
 		return err
 	})
 	return out, err
+}
+
+// chargeBatch is how many charges chargePage reads at a time.
+const chargeBatch = 200
+
+// chargePage reads the query's page of charges. A charge's place is computed from its
+// position (core.PlaceOf), which SQL does not know: those of a place are kept from
+// batches read in the page's order, until the page is full or the period read.
+func chargePage(ctx context.Context, tx pgx.Tx, vehicleID string, q api.EventQuery) ([]core.Charge, error) {
+	if q.Place.Group == core.PlaceGroupAny {
+		where, args := eventPage(vehicleID, q)
+		return scanChargesOf(ctx, tx, chargeEvents, where, args...)
+	}
+	places, err := queryPlaces(ctx, tx, "TRUE")
+	if err != nil {
+		return nil, err
+	}
+	batch := q
+	if q.Limit > 0 {
+		batch.Limit = max(q.Limit, chargeBatch)
+	}
+	var out []core.Charge
+	for {
+		where, args := eventPage(vehicleID, batch)
+		read, err := scanChargesOf(ctx, tx, chargeEvents, where, args...)
+		if err != nil {
+			return nil, err
+		}
+		for _, c := range read {
+			if q.Place.Keeps(c, places) {
+				out = append(out, c)
+			}
+			if q.Limit > 0 && len(out) == q.Limit {
+				return out, nil
+			}
+		}
+		if batch.Limit == 0 || len(read) < batch.Limit {
+			return out, nil
+		}
+		last := read[len(read)-1]
+		batch.After = &api.EventKey{StartedAfter: last.Start.After, DetectedAt: last.DetectedAt}
+		if last.Import.OK {
+			batch.After.Import = importKey(last.Import.V.Source, last.Import.V.SourceID)
+		}
+	}
 }
 
 // FindCharge implements api.Reader, like ListCharges.
