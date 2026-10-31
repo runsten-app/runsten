@@ -24,7 +24,12 @@ export function formatBounds(b: Bounds, locale: string, day?: string, timeZone?:
   const span = Date.parse(b.before) - Date.parse(b.after)
   if (span > 0 && span < minute) {
     const middle = Date.parse(b.after) + span / 2
-    const at = new Date(Math.round(middle / minute) * minute).toISOString()
+    let at = new Date(Math.round(middle / minute) * minute).toISOString()
+    // Rounded up past midnight, bounds of one day would show the next: down instead.
+    const sameDay = dayKey(b.after, timeZone) === dayKey(b.before, timeZone)
+    if (sameDay && dayKey(at, timeZone) !== dayKey(b.after, timeZone)) {
+      at = new Date(Math.floor(middle / minute) * minute).toISOString()
+    }
     return formatBounds({ after: at, before: at }, locale, day, timeZone)
   }
   const after = new Date(b.after)
