@@ -13,14 +13,14 @@ func csvLines(lines ...string) string { return strings.Join(lines, "\r\n") + "\r
 const (
 	tripsCSVHeader = "id,reconstructed,start_after,start_before,end_after,end_before,distance_km,start_odometer_km," +
 		"end_odometer_km,start_soc_pct,end_soc_pct,start_range_km,end_range_km,energy_kwh,capacity_kwh,capacity_source," +
-		"start_lat,start_lon,start_place,start_address,end_lat,end_lon,end_place,end_address,vehicle_trip_meter_km," +
+		"start_lat,start_lon,start_place,start_address,end_lat,end_lon,end_place,end_address,outside_temp_c,vehicle_trip_meter_km," +
 		"vehicle_consumption_kwh_per_100km,imported,sources"
 	tripMorning = "2026-09-28T07:01:00.000000Z,false,2026-09-28T06:55:00Z,2026-09-28T07:01:00Z,2026-09-28T07:39:00Z," +
-		"2026-09-28T07:40:00Z,32,12400,12432,62,54.5,248,218,6,80,api,45.764,4.8357,Maison de Tante Agathe,,45.7797,4.927,,,32.2,18.1,false,volvo"
+		"2026-09-28T07:40:00Z,32,12400,12432,62,54.5,248,218,6,80,api,45.764,4.8357,Maison de Tante Agathe,,45.7797,4.927,,,8.5,32.2,18.1,false,volvo"
 	tripReconstructed = "2026-09-28T13:00:00.000000Z,true,2026-09-28T12:00:00Z,2026-09-28T13:00:00Z,2026-09-28T12:00:00Z," +
-		"2026-09-28T13:00:00Z,8,12432,12440,,,,,,,,,,,,,,,,,,false,volvo"
+		"2026-09-28T13:00:00Z,8,12432,12440,,,,,,,,,,,,,,,,,,,false,volvo"
 	tripEvening = "2026-09-28T16:41:00.000000Z,false,2026-09-28T16:35:00Z,2026-09-28T16:41:00Z,2026-09-28T17:24:00Z," +
-		"2026-09-28T17:25:00Z,33,12440,12473,,,,,,75,catalog_net,45.7797,4.927,,,45.764,4.8357,Maison de Tante Agathe,,,,false,volvo"
+		"2026-09-28T17:25:00Z,33,12440,12473,,,,,,75,catalog_net,45.7797,4.927,,,45.764,4.8357,Maison de Tante Agathe,,,,,false,volvo"
 
 	chargesCSVHeader = "id,reconstructed,start_after,start_before,end_after,end_before,type,start_soc_pct,end_soc_pct," +
 		"target_soc_pct,energy_soc_kwh,energy_power_kwh,energy_measured_kwh,capacity_kwh,capacity_source,lat,lon,place,address,cost_currency," +

@@ -71,7 +71,15 @@ func renderVehicleData(c *car, r vehicle.Report, st vehicle.State, now time.Time
 		delete(cfg, "trim_badging")
 	}
 
-	block("climate_state")["is_climate_on"] = st.Driving
+	// The climate runs while driving, the cabin at its setting; parked, it stays at the
+	// outside temperature, the template's.
+	cl := block("climate_state")
+	cl["is_climate_on"] = st.Driving
+	if st.Driving {
+		cl["inside_temp"] = cl["driver_temp_setting"]
+	} else {
+		cl["inside_temp"] = cl["outside_temp"]
+	}
 	block("gui_settings")
 	return v, nil
 }

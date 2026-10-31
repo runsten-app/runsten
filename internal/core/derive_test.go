@@ -1324,6 +1324,9 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 			soc, km = min(50+float64(i-400)/5, 80), 12470
 		}
 		add(i, engine(e))
+		// A temperature that holds two hours: its responses are confirmed, which a trip's
+		// mean leaves out.
+		add(i, climate(10+float64(i/120), time.Time{}))
 		st := ChargingIdle
 		if i >= 400 && soc < 80 {
 			st = ChargingActive
@@ -1396,6 +1399,9 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 	}
 	if got := full.Charges[0].Position; got != Some(home, m(555)) {
 		t.Errorf("charge at %+v", got)
+	}
+	if got := full.Trips[0].OutsideTempC; got != val(10) || full.Trips[1].OutsideTempC.OK {
+		t.Errorf("outside temperatures %+v, %+v", got, full.Trips[1].OutsideTempC)
 	}
 	if got := full.Trips[0].Sources; !slices.Equal(got, []string{"car", "volvo"}) {
 		t.Errorf("sources %q", got)
@@ -1926,6 +1932,116 @@ func TestHybridReconstructedCharges(t *testing.T) {
 				checkCharges(t, got.Charges, want)
 				_, charges := deriveIncrementally(records, p)
 				checkCharges(t, charges, want)
+			}
+		})
+	}
+}
+
+// climate is a reading of the climate block: the outside temperature, recorded by the
+// vehicle at ts.
+func climate(outside float64, ts time.Time) Snapshot {
+	return Snapshot{Covers: FieldClimate, OutsideTempC: Some(outside, ts), CabinTempC: Some(20.0, ts)}
+}
+
+// A trip's outside temperature is the mean of the responses fetched from the reading that
+// detected it to its end: each response once, at its fetch, never its confirmation, nor
+// a response before the trip or after its end; without one, the latest fetched before.
+func TestTripOutsideTemp(t *testing.T) {
+	stopped := func(at time.Time) Snapshot {
+		s := read(EngineStopped, 12432, work, m(60))
+		s.Engine.At = at
+		return s
+	}
+	// withClimate is a Tesla's vehicle_data: the engine, odometer, position and climate
+	// in one response.
+	withClimate := func(s Snapshot, outside float64) Snapshot {
+		c := climate(outside, time.Time{})
+		s.Covers |= c.Covers
+		s.OutsideTempC, s.CabinTempC = c.OutsideTempC, c.CabinTempC
+		return s
+	}
+	tesla := []Record{
+		rec(0, 20, withClimate(read(EngineStopped, 12400, home, m(0)), 2)),
+		rec(30, 30, withClimate(read(EngineRunning, 12400, home, m(0)), 10)),
+		rec(45, 45, withClimate(read(EngineRunning, 12415, home, m(0)), 12)),
+		rec(61, 61, withClimate(stopped(m(58)), 20)),
+	}
+	noTimestamps := DefaultParams()
+	noTimestamps.VehicleTimestamps = false
+	tests := []struct {
+		name    string
+		records []Record
+		p       Params
+		want    Value[float64]
+	}{
+		{
+			name: "climate read apart, its timestamps out of order",
+			records: append(trip(),
+				rec(0, 40, climate(5, m(0))),   // fetched before the trip, confirmed during it
+				rec(30, 30, climate(9, m(29))), // fetched with the reading that detects it
+				rec(45, 50, climate(11, m(20))),
+				rec(70, 70, climate(30, m(70))), // after its end
+			),
+			p:    DefaultParams(),
+			want: val(10),
+		},
+		{
+			name:    "a temperature that holds: the response fetched before the trip",
+			records: append(trip(), rec(0, 70, climate(5, m(0)))),
+			p:       DefaultParams(),
+			want:    val(5),
+		},
+		{
+			name: "a response without a temperature before the trip keeps the one before it",
+			records: append(trip(),
+				rec(0, 0, climate(5, m(0))),
+				rec(20, 70, Snapshot{Covers: FieldClimate, CabinTempC: Some(19.0, time.Time{})}),
+			),
+			p:    DefaultParams(),
+			want: val(5),
+		},
+		{
+			name: "a climate without its outside temperature",
+			records: append(trip(),
+				rec(45, 45, Snapshot{Covers: FieldClimate, CabinTempC: Some(19.0, time.Time{})}),
+			),
+			p: DefaultParams(),
+		},
+		{
+			name:    "one response tells the engine and the climate, the end narrowed by the vehicle",
+			records: tesla,
+			p:       DefaultParams(),
+			want:    val(11),
+		},
+		{
+			name:    "the same without the vehicle's timestamps: the end is the stop's reading",
+			records: tesla,
+			p:       noTimestamps,
+			want:    val(14),
+		},
+		{
+			name: "a reconstructed trip has none",
+			records: []Record{
+				rec(0, 0, odo(12400)),
+				rec(0, 0, climate(5, time.Time{})),
+				rec(60, 60, climate(6, time.Time{})),
+				rec(60, 60, odo(12430)),
+			},
+			p: DefaultParams(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			full := Derive(tt.records, Cursor{}, tt.p, nil)
+			if len(full.Trips) != 1 {
+				t.Fatalf("trips %+v", full.Trips)
+			}
+			if got := full.Trips[0].OutsideTempC; got != tt.want {
+				t.Errorf("outside %+v, want %+v", got, tt.want)
+			}
+			trips, _ := deriveIncrementally(tt.records, tt.p)
+			if !reflect.DeepEqual(trips, full.Trips) {
+				t.Errorf("incremental:\n%+v\nfull:\n%+v", trips, full.Trips)
 			}
 		})
 	}

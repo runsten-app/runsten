@@ -83,6 +83,7 @@ func (d *detector) startTrip(p point, prev state) {
 			StartSoC:        prev.snap.SoC,
 			StartRangeKm:    prev.snap.RangeKm,
 			From:            prev.snap.Position,
+			OutsideTempC:    d.outside,
 		},
 		phase:        tripDriving,
 		lastRunning:  p.at,
@@ -137,6 +138,7 @@ func (d *detector) resumeTrip(tb *tripBuilder, p point) {
 	if tb.t.Reconstructed {
 		tb.t.Reconstructed = false
 		tb.t.Start.Before = d.narrow(tb.t.DetectedAt, tb.t.Start.After, tb.hints...)
+		tb.t.OutsideTempC = d.outside
 	}
 	tb.phase, tb.lastRunning = tripDriving, p.at
 	tb.stopAt, tb.endLimit, tb.hints = time.Time{}, time.Time{}, nil

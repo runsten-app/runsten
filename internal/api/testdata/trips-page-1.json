@@ -41,6 +41,7 @@
       },
       "start_address": null,
       "end_address": null,
+      "outside_temp_c": null,
       "vehicle_reported": {
         "trip_meter_km": null,
         "consumption_kwh_per_100km": null
@@ -78,6 +79,7 @@
       "end_place": null,
       "start_address": null,
       "end_address": null,
+      "outside_temp_c": null,
       "vehicle_reported": {
         "trip_meter_km": null,
         "consumption_kwh_per_100km": null

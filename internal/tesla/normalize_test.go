@@ -26,7 +26,8 @@ func TestNormalizeFixture(t *testing.T) {
 	var none time.Time
 	at := time.UnixMilli(1793032171549).UTC()
 	want := core.Snapshot{
-		Covers:     chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel | core.FieldSoftware,
+		Covers: chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel |
+			core.FieldSoftware | core.FieldClimate,
 		Engine:     core.Some(core.EngineStopped, at), // shift_state null
 		SoC:        core.Some(69.0, at),
 		UsableSoC:  core.Some(68.0, at),
@@ -53,6 +54,11 @@ func TestNormalizeFixture(t *testing.T) {
 			Status: core.UpdateWaitingWiFi, Version: "2026.38.3.2",
 			DownloadPct: core.Some(0.0, none), InstallPct: core.Some(1.0, none),
 			Duration: core.Some(45*time.Minute, none),
+		}, at),
+		OutsideTempC: core.Some(16.0, at),
+		CabinTempC:   core.Some(16.0, at),
+		Climate: core.Some(core.Climate{
+			On: core.Some(false, at), Preconditioning: core.Some(false, at), BatteryHeater: core.Some(false, at),
 		}, at),
 	}
 	n := Normalizer{}
@@ -183,6 +189,36 @@ func TestNormalizeDrive(t *testing.T) {
 	}
 	for _, tc := range tests {
 		raw := []byte(`{"response": {"drive_state": {` + tc.body + `, "timestamp": 1793032171549}}}`)
+		got, err := Normalize(VehicleData, raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(got, tc.want) {
+			t.Errorf("%s:\ngot  %+v\nwant %+v", tc.body, got, tc.want)
+		}
+	}
+}
+
+// TestNormalizeClimate: the temperatures and what runs, each absent when null; a block
+// without any covers the climate, absent.
+func TestNormalizeClimate(t *testing.T) {
+	at := time.UnixMilli(1793032171549).UTC()
+	tests := []struct {
+		body string
+		want core.Snapshot
+	}{
+		{`"outside_temp": -3.5, "inside_temp": 19.5, "is_climate_on": true, "is_preconditioning": true, "battery_heater": true`, core.Snapshot{
+			Covers: core.FieldClimate, OutsideTempC: core.Some(-3.5, at), CabinTempC: core.Some(19.5, at),
+			Climate: core.Some(core.Climate{On: core.Some(true, at), Preconditioning: core.Some(true, at), BatteryHeater: core.Some(true, at)}, at),
+		}},
+		// Asleep a moment before, the car gives no temperature yet.
+		{`"outside_temp": null, "inside_temp": null, "is_climate_on": false`, core.Snapshot{
+			Covers: core.FieldClimate, Climate: core.Some(core.Climate{On: core.Some(false, at)}, at),
+		}},
+		{`"defrost_mode": 0`, core.Snapshot{Covers: core.FieldClimate}},
+	}
+	for _, tc := range tests {
+		raw := []byte(`{"response": {"climate_state": {` + tc.body + `, "timestamp": 1793032171549}}}`)
 		got, err := Normalize(VehicleData, raw)
 		if err != nil {
 			t.Fatal(err)

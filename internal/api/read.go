@@ -342,6 +342,33 @@ type chargingJSON struct {
 	TargetSoCPct null[reading[float64]]               `json:"target_soc_pct" doc:"Target state of charge, in %."`
 }
 
+type climateJSON struct {
+	OutsideTempC    null[reading[float64]] `json:"outside_temp_c" doc:"The temperature the vehicle measures outside, in °C."`
+	CabinTempC      null[reading[float64]] `json:"cabin_temp_c" doc:"The temperature the vehicle measures in its cabin, in °C."`
+	On              null[reading[bool]]    `json:"on" doc:"The cabin's climate is running: by hand, from the app or on a schedule."`
+	Preconditioning null[reading[bool]]    `json:"preconditioning" doc:"The vehicle is heating or cooling its cabin and battery before a departure."`
+	BatteryHeater   null[reading[bool]]    `json:"battery_heater" doc:"The battery is being heated."`
+}
+
+// climateOf is the vehicle's climate, each value null where the source does not tell it
+// (a Tesla tells them; a Volvo or a Polestar none).
+func climateOf(c core.Current) climateJSON {
+	n := c.Snapshot
+	flag := func(get func(core.Climate) core.Value[bool]) null[reading[bool]] {
+		if !n.Climate.OK {
+			return null[reading[bool]]{}
+		}
+		return readingOf(c, core.FieldClimate, get(n.Climate.V), same)
+	}
+	return climateJSON{
+		OutsideTempC:    readingOf(c, core.FieldClimate, n.OutsideTempC, same),
+		CabinTempC:      readingOf(c, core.FieldClimate, n.CabinTempC, same),
+		On:              flag(func(cl core.Climate) core.Value[bool] { return cl.On }),
+		Preconditioning: flag(func(cl core.Climate) core.Value[bool] { return cl.Preconditioning }),
+		BatteryHeater:   flag(func(cl core.Climate) core.Value[bool] { return cl.BatteryHeater }),
+	}
+}
+
 type stateJSON struct {
 	VehicleID          string                            `json:"vehicle_id" format:"uuid"`
 	Connection         connectionJSON                    `json:"connection"`
@@ -353,6 +380,7 @@ type stateJSON struct {
 	Position           null[reading[positionJSON]]       `json:"position"`
 	BatteryCapacityKWh null[reading[float64]]            `json:"battery_capacity_kwh" doc:"The battery capacity the vendor reports. The energy estimates rest on it when Runsten's catalog does not know the vehicle's variant or its net capacity (capacity_source api), and on the variant's net capacity otherwise."`
 	Charging           chargingJSON                      `json:"charging"`
+	Climate            climateJSON                       `json:"climate" doc:"The temperatures and what heats or cools the vehicle, for a source that tells them (Tesla); every value null for the others."`
 	Software           null[reading[string]]             `json:"software" doc:"The version of the vehicle's software, for a source that tells it (Tesla); null for the others. fetched_at is the response it was read in, as any value's, not its installation: that is in its history, GET /vehicles/{vehicle}/software-versions."`
 	SoftwareUpdate     null[reading[softwareUpdateJSON]] `json:"software_update" doc:"The update waiting for the vehicle's software; null when none waits, or the source does not tell it."`
 	Sleep              null[reading[sleepJSON]]          `json:"sleep" doc:"Whether the vehicle is awake, asleep, or offline (out of reach: asleep or without a network), for a source that lets it fall asleep and tells it (Tesla); null for the others. While it is not awake, Runsten leaves it alone: the other values are those it had when it fell asleep, read again when it wakes up. fetched_at is the first reading of the state, after the vehicle changed to it."`
@@ -386,6 +414,7 @@ func (s *Server) getState(ctx context.Context, in *vehicleInput) (*body[stateJSO
 			PowerW:       readingOf(c, core.FieldPower, n.PowerW, same),
 			TargetSoCPct: readingOf(c, core.FieldTargetSoC, n.TargetSoC, same),
 		},
+		Climate:        climateOf(c),
 		Sleep:          readingOf(c, core.FieldSleep, n.Sleep, text[core.SleepState, sleepJSON]),
 		Software:       readingOf(c, core.FieldSoftware, n.Software, same),
 		SoftwareUpdate: readingOf(c, core.FieldSoftware, n.SoftwareUpdate, softwareUpdateOf),
@@ -484,6 +513,7 @@ type tripJSON struct {
 	EndPlace        null[placeRefJSON] `json:"end_place" doc:"The place of end_position, as for start_place."`
 	StartAddress    *string            `json:"start_address" doc:"The street and town of start_position, from the instance's reverse geocoder, outside every place; for an imported trip, else the name the application gave. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one."`
 	EndAddress      *string            `json:"end_address" doc:"The address of end_position, as for start_address."`
+	OutsideTempC    *float64           `json:"outside_temp_c" doc:"The mean outside temperature, in °C, of the responses Runsten fetched while the trip ran, else of the latest one before it (a temperature that held), for a vehicle that tells it (Tesla). null for the others, a reconstructed or imported trip, and a trip derived before Runsten kept it: a rebuild of the derived data gives it."`
 	VehicleReported vehicleTripJSON    `json:"vehicle_reported" doc:"The vehicle's own trip figures, for comparison only: their exact semantics are unknown, and a reconstructed trip has none."`
 }
 
@@ -502,6 +532,7 @@ func tripOf(t core.Trip, places []core.Place, book addressBook) tripJSON {
 		StartPlace: start, EndPlace: end,
 		StartAddress: addressOr(book.of(t.From), start, t.Import.V.StartAddress),
 		EndAddress:   addressOr(book.of(t.To), end, t.Import.V.EndAddress),
+		OutsideTempC: opt(t.OutsideTempC, same),
 		VehicleReported: vehicleTripJSON{
 			TripMeterKm: opt(t.TripMeterKm, same), ConsumptionKWhPer100km: opt(t.ConsumptionKWhPer100km, same),
 		},

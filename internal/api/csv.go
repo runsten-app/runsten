@@ -96,7 +96,7 @@ var tripsHeader = []string{
 	"distance_km", "start_odometer_km", "end_odometer_km", "start_soc_pct", "end_soc_pct",
 	"start_range_km", "end_range_km", "energy_kwh", "capacity_kwh", "capacity_source",
 	"start_lat", "start_lon", "start_place", "start_address", "end_lat", "end_lon", "end_place", "end_address",
-	"vehicle_trip_meter_km", "vehicle_consumption_kwh_per_100km", "imported", "sources",
+	"outside_temp_c", "vehicle_trip_meter_km", "vehicle_consumption_kwh_per_100km", "imported", "sources",
 }
 
 func (s *Server) tripsCSV(ctx context.Context, in *csvInput) (*csvOutput, error) {
@@ -121,7 +121,7 @@ func (s *Server) tripsCSV(ctx context.Context, in *csvInput) (*csvOutput, error)
 		}, capacityCells(j.CapacityFields),
 			positionCells(j.StartPosition, j.StartPlace, j.StartAddress),
 			positionCells(j.EndPosition, j.EndPlace, j.EndAddress),
-			[]string{num(j.VehicleReported.TripMeterKm), num(j.VehicleReported.ConsumptionKWhPer100km)},
+			[]string{num(j.OutsideTempC), num(j.VehicleReported.TripMeterKm), num(j.VehicleReported.ConsumptionKWhPer100km)},
 			provenanceCells(j.EventFields))
 	}
 	return s.csvFile("trips", tripsHeader, rows)

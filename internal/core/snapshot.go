@@ -128,6 +128,8 @@ const (
 	FieldEnergyAdded
 	// FieldSoftware covers Software and SoftwareUpdate, told in the same block.
 	FieldSoftware
+	// FieldClimate covers OutsideTempC, CabinTempC and Climate, told in the same block.
+	FieldClimate
 
 	fieldCount = iota
 )
@@ -183,6 +185,24 @@ type Snapshot struct {
 	// its build hash), and SoftwareUpdate the update waiting for it: absent when none is.
 	Software       Value[string]
 	SoftwareUpdate Value[SoftwareUpdate]
+
+	// OutsideTempC is the temperature the vehicle measures outside, CabinTempC inside, in
+	// °C; Climate what heats or cools it.
+	OutsideTempC Value[float64]
+	CabinTempC   Value[float64]
+	Climate      Value[Climate]
+}
+
+// Climate is what of the vehicle's climate runs. Each is absent when the source does not
+// tell it.
+type Climate struct {
+	// On is the cabin's climate running, by hand, from the app or on a schedule.
+	On Value[bool]
+	// Preconditioning is the vehicle heating or cooling its cabin and battery before a
+	// departure.
+	Preconditioning Value[bool]
+	// BatteryHeater is the battery being heated.
+	BatteryHeater Value[bool]
 }
 
 // UpdateStatus is where an update of the vehicle's software stands.
@@ -276,6 +296,9 @@ func (s *Snapshot) merge(o Snapshot) {
 	}
 	if set(FieldSoftware) {
 		s.Software, s.SoftwareUpdate = o.Software, o.SoftwareUpdate
+	}
+	if set(FieldClimate) {
+		s.OutsideTempC, s.CabinTempC, s.Climate = o.OutsideTempC, o.CabinTempC, o.Climate
 	}
 }
 

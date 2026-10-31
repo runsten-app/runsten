@@ -492,6 +492,7 @@ func fixtures(m *memReader) {
 			StartSoC: some(62.0), EndSoC: some(54.5), StartRangeKm: some(248.0), EndRangeKm: some(218.0), EnergyKWh: some(6.0),
 			Capacity: fromAPI,
 			From:     some(home), To: some(work), TripMeterKm: some(32.2), ConsumptionKWhPer100km: some(18.1),
+			OutsideTempC: some(8.5),
 		},
 		{
 			// Revealed by the odometer after an outage: no position, no vehicle figures.
