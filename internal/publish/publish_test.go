@@ -32,7 +32,8 @@ func TestState(t *testing.T) {
 	t0 := time.Date(2026, 10, 4, 8, 0, 0, 0, time.UTC)
 	full := core.Snapshot{
 		Covers: core.FieldEngine | core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
-			core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldOdometer | core.FieldPosition,
+			core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldOdometer | core.FieldPosition |
+			core.FieldClimate,
 		Engine:     core.Some(core.EngineStopped, t0),
 		SoC:        core.Some(80.0, t0),
 		RangeKm:    core.Some(312.5, t0),
@@ -43,6 +44,22 @@ func TestState(t *testing.T) {
 		TargetSoC:  core.Some(90.0, t0),
 		OdometerKm: core.Some(12345.0, t0),
 		Position:   core.Some(core.Position{Lat: 59.3293, Lon: 18.0686}, t0),
+		// A Tesla's, its preconditioning untold.
+		OutsideTempC: core.Some(-3.5, t0),
+		CabinTempC:   core.Some(19.0, t0),
+		Climate:      core.Some(core.Climate{On: core.Some(true, t0), BatteryHeater: core.Some(false, t0)}, t0),
+	}
+	climate := map[string]string{
+		"outside_temp_c": "-3.5", "cabin_temp_c": "19", "climate": "on", "preconditioning": "", "battery_heater": "off",
+	}
+	none := map[string]string{
+		"outside_temp_c": "", "cabin_temp_c": "", "climate": "", "preconditioning": "", "battery_heater": "",
+	}
+	with := func(m, more map[string]string) map[string]string {
+		for k, v := range more {
+			m[k] = v
+		}
+		return m
 	}
 	tests := []struct {
 		name    string
@@ -54,22 +71,22 @@ func TestState(t *testing.T) {
 			name:    "every value known",
 			records: []core.Record{{FetchedAt: t0, CheckedAt: t0.Add(5 * time.Minute), Snapshot: full}},
 			b:       broker(true),
-			want: map[string]string{
+			want: with(map[string]string{
 				"battery_level": "80", "range_km": "312.5", "charging_status": "charging", "plug": "connected",
 				"charge_type": "AC", "charging_power_kw": "11.04", "target_soc": "90", "odometer_km": "12345",
 				"engine": "stopped", "location": `{"latitude":59.3293,"longitude":18.0686}`,
 				"read_at": "2026-10-04T08:05:00Z",
-			},
+			}, climate),
 		},
 		{
 			name:    "location not published: emptied",
 			records: []core.Record{{FetchedAt: t0, CheckedAt: t0, Snapshot: full}},
 			b:       broker(false),
-			want: map[string]string{
+			want: with(map[string]string{
 				"battery_level": "80", "range_km": "312.5", "charging_status": "charging", "plug": "connected",
 				"charge_type": "AC", "charging_power_kw": "11.04", "target_soc": "90", "odometer_km": "12345",
 				"engine": "stopped", "location": "", "read_at": "2026-10-04T08:00:00Z",
-			},
+			}, climate),
 		},
 		{
 			name: "unknown values are empty, never zero",
@@ -77,19 +94,19 @@ func TestState(t *testing.T) {
 				Covers: core.FieldSoC | core.FieldPower | core.FieldPosition, SoC: core.Some(0.0, t0),
 			}}},
 			b: broker(true),
-			want: map[string]string{
+			want: with(map[string]string{
 				"battery_level": "0", "range_km": "", "charging_status": "", "plug": "", "charge_type": "",
 				"charging_power_kw": "", "target_soc": "", "odometer_km": "", "engine": "", "location": "",
 				"read_at": "2026-10-04T08:00:00Z",
-			},
+			}, none),
 		},
 		{
 			name: "nothing read",
 			b:    broker(true),
-			want: map[string]string{
+			want: with(map[string]string{
 				"battery_level": "", "range_km": "", "charging_status": "", "plug": "", "charge_type": "",
 				"charging_power_kw": "", "target_soc": "", "odometer_km": "", "engine": "", "location": "", "read_at": "",
-			},
+			}, none),
 		},
 	}
 	for _, tt := range tests {
@@ -120,7 +137,8 @@ func TestStateOrder(t *testing.T) {
 	want := []string{
 		base + "battery_level", base + "range_km", base + "charging_status", base + "plug", base + "charge_type",
 		base + "charging_power_kw", base + "target_soc", base + "odometer_km", base + "engine", base + "location",
-		base + "read_at",
+		base + "read_at", base + "outside_temp_c", base + "cabin_temp_c", base + "climate", base + "preconditioning",
+		base + "battery_heater",
 	}
 	if !slices.Equal(topics, want) {
 		t.Errorf("topics = %v", topics)

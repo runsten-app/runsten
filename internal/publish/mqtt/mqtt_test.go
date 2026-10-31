@@ -330,9 +330,9 @@ func TestPublish(t *testing.T) {
 	if w := cl.Properties.Will; w.TopicName != "runsten/status" || string(w.Payload) != "offline" || !w.Retain || w.Qos != 1 {
 		t.Errorf("testament = %+v", w)
 	}
-	// online, and the 11 values of the state and the 15 of the health, the unknown ones empty
-	if n := len(b.takeAtLeast(t, 27)); n != 27 {
-		t.Errorf("%d messages on connection, want 27", n)
+	// online, and the 16 values of the state and the 15 of the health, the unknown ones empty
+	if n := len(b.takeAtLeast(t, 32)); n != 32 {
+		t.Errorf("%d messages on connection, want 32", n)
 	}
 
 	// Only the value that changed.
@@ -358,7 +358,7 @@ func TestPublish(t *testing.T) {
 	eventually(t, "reconnected", func() bool {
 		synced(t, p, nil)
 		again = append(again, b.take()...)
-		return len(again) >= 27
+		return len(again) >= 32
 	})
 	if s := st.statusOf(); s.Failure != publish.FailUnreachable || s.ConnectedAt.Before(connectedAt) {
 		t.Errorf("status after a loss = %+v", s)
@@ -403,8 +403,24 @@ func TestPublishDiscovery(t *testing.T) {
 	if got := deviceName(t, b.retainedUnder("homeassistant/#")[batteryConfig]); got != "EX30 Extended Range · 2024" {
 		t.Errorf("device = %q", got)
 	}
+	// Neither the credential's nor the climate's: the vehicle tells neither.
 	if n := len(b.retainedUnder("homeassistant/#")); n != 27 {
 		t.Errorf("%d configurations, want 27", n)
+	}
+	// Once it tells its climate, its 5 entities.
+	climate := core.Latest([]core.Record{{FetchedAt: t0, CheckedAt: t0, Snapshot: core.Snapshot{
+		Covers: core.FieldSoC | core.FieldEngine | core.FieldPosition | core.FieldClimate,
+		SoC:    core.Some(80.0, t0), Engine: core.Some(core.EngineStopped, t0),
+		Position:     core.Some(core.Position{Lat: 59.3293, Lon: 18.0686}, t0),
+		OutsideTempC: core.Some(4.5, t0),
+	}}})
+	sts.current[vehicle] = climate
+	if err := p.Publish(context.Background(), account, vehicle); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "climate configured", func() bool { return len(b.retainedUnder("homeassistant/#")) == 32 })
+	if got := b.retained()[state+"outside_temp_c"]; got != "4.5" {
+		t.Errorf("outside_temp_c = %q", got)
 	}
 
 	if err := p.Publish(context.Background(), account, second); err != nil {

@@ -26,6 +26,9 @@ type Model struct {
 	Family  string
 	Brand   string // as written: Volvo, Polestar
 	Year    int    // model year; 0: unknown
+	// Climate: the vehicle tells its temperatures and climate (a Tesla); their entities
+	// are configured only then.
+	Climate bool
 }
 
 // idDigits of a vehicle's ID tell it apart where nothing else does.
@@ -81,6 +84,9 @@ type entity struct {
 	// credential: an entity of the credential the vehicle is read with, configured only
 	// for a vehicle read with one.
 	credential bool
+	// climate: an entity of the climate, configured only for a vehicle that tells it
+	// (Model.Climate).
+	climate bool
 }
 
 // unknown is a value template that takes an empty payload for unknown.
@@ -129,6 +135,10 @@ func entities() []entity {
 	credential.credential = true
 	expiresAt := sensor("credential_expires_at", "Credential expiry", "credential_expires_at", "timestamp", "", "")
 	expiresAt.config.EntityCategory, expiresAt.credential = "diagnostic", true
+	climate := func(e entity) entity {
+		e.climate = true
+		return e
+	}
 	return []entity{
 		sensor("battery_level", "Battery", "battery_level", "battery", "%", "measurement"),
 		sensor("range", "Range", "range_km", "distance", "km", "measurement"),
@@ -162,6 +172,12 @@ func entities() []entity {
 		problem("lights", "Lights", "warning_lights"),
 		credential,
 		expiresAt,
+		// The climate: unknown where it reports nothing, as asleep.
+		climate(sensor("outside_temperature", "Outside temperature", "outside_temp_c", "temperature", "°C", "measurement")),
+		climate(sensor("cabin_temperature", "Cabin temperature", "cabin_temp_c", "temperature", "°C", "measurement")),
+		climate(binary("climate", "Climate", "climate", "running", onOff(On, Off))),
+		climate(binary("preconditioning", "Preconditioning", "preconditioning", "running", onOff(On, Off))),
+		climate(binary("battery_heater", "Battery heater", "battery_heater", "heat", onOff(On, Off))),
 		// Its position from the attributes of the location's JSON; an empty location
 		// makes it unknown.
 		{component: "device_tracker", object: "location", name: "Location", topic: "location", config: config{
@@ -222,7 +238,7 @@ func discoveryTopic(b Broker, vehicleID string, e entity) string {
 // Discovery is the configuration of each entity of the vehicle, retained, named label
 // (Labels). Without the location published, the device tracker's is empty: it removes
 // the one published before; so are the credential's, for a vehicle read without one
-// (credential false).
+// (credential false), and the climate's, for a vehicle that does not tell it.
 func Discovery(b Broker, vehicleID, label string, m Model, credential bool) []Message {
 	base := b.TopicPrefix + "/vehicles/" + vehicleID + "/"
 	dev := device{Identifiers: []string{"runsten_" + vehicleID}, Name: label, Manufacturer: m.Brand, Model: m.name()}
@@ -230,7 +246,7 @@ func Discovery(b Broker, vehicleID, label string, m Model, credential bool) []Me
 	msgs := make([]Message, 0, len(es))
 	for _, e := range es {
 		msg := Message{Topic: discoveryTopic(b, vehicleID, e), Retained: true}
-		if (e.component != "device_tracker" || b.PublishLocation) && (!e.credential || credential) {
+		if (e.component != "device_tracker" || b.PublishLocation) && (!e.credential || credential) && (!e.climate || m.Climate) {
 			c := e.config
 			c.Name, c.UniqueID = e.name, "runsten_"+vehicleID+"_"+e.object
 			if e.component == "device_tracker" {

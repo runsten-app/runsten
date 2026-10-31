@@ -60,6 +60,8 @@ Under `<prefix>/vehicles/<vehicle id>/`, where the prefix is `runsten` by defaul
 | `warning_lights` | `warning` when an exterior light fails; `ok` only when every light the car reports is known; the web interface names which |
 | `credential_status` | a Polestar's only: `valid`, `expiring` (two weeks before its expiry), `expired`, `refused` (Polestar refused it) or `missing` (none given) |
 | `credential_expires_at` | a Polestar's only: when its credential expires at the latest, in RFC 3339, UTC; empty without one |
+| `outside_temp_c`, `cabin_temp_c` | a Tesla's only: the temperature outside and in the cabin, in °C |
+| `climate`, `preconditioning`, `battery_heater` | a Tesla's only: `on` or `off`, whether the climate runs, the car preconditions, or heats its battery |
 
 - Numbers are written with a point, as short as they read: `80`, `312.5`, `11.04`.
 - **An unknown value is an empty message**, which removes the previous one: unknown is never zero.
@@ -100,6 +102,9 @@ With discovery on, each vehicle is a device named as the web interface names it 
 | Brake fluid, Coolant, Oil, Washer fluid, 12 V battery, Lights | binary sensor, problem | `warning_…` |
 | Credential | binary sensor, problem: on unless `valid` (a Polestar's only) | `credential_status` |
 | Credential expiry | sensor, timestamp, diagnostic (a Polestar's only) | `credential_expires_at` |
+| Outside temperature, Cabin temperature | sensor, temperature, °C (a Tesla's only) | `outside_temp_c`, `cabin_temp_c` |
+| Climate, Preconditioning | binary sensor, running (a Tesla's only) | `climate`, `preconditioning` |
+| Battery heater | binary sensor, heat (a Tesla's only) | `battery_heater` |
 
 The **Credential** entity turns on two weeks before the Polestar credential expires, and stays on until another is given: an automation can notify your phone, without opening Runsten. For instance:
 

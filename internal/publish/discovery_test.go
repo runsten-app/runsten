@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -53,7 +54,7 @@ func TestLabels(t *testing.T) {
 // topics: testdata/discovery.json (go test ./internal/publish -update writes it).
 func TestDiscovery(t *testing.T) {
 	b := Broker{TopicPrefix: "runsten", DiscoveryPrefix: "homeassistant", PublishLocation: true}
-	m := Model{Variant: "EX30 Single Motor Extended Range", Family: "EX30", Brand: "Volvo", Year: 2025}
+	m := Model{Variant: "EX30 Single Motor Extended Range", Family: "EX30", Brand: "Volvo", Year: 2025, Climate: true}
 	msgs := Discovery(b, vehicle, "EX30 Single Motor Extended Range · 2025", m, true)
 	var out bytes.Buffer
 	out.WriteString("{\n")
@@ -94,12 +95,15 @@ func TestDiscovery(t *testing.T) {
 	}
 
 	// Without the location, the device tracker's configuration is emptied, and so are the
-	// credential's for a vehicle read without one; every configuration is emptied to
-	// remove the vehicle.
+	// credential's for a vehicle read without one, and the climate's for a vehicle that
+	// does not tell it; every configuration is emptied to remove the vehicle.
 	b.PublishLocation = false
+	m.Climate = false
 	removed := RemoveDiscovery(b, vehicle)
+	climate := []string{"/outside_temperature/", "/cabin_temperature/", "/climate/", "/preconditioning/", "/battery_heater/"}
 	for i, msg := range Discovery(b, vehicle, "x", m, false) {
-		emptied := strings.Contains(msg.Topic, "/device_tracker/") || strings.Contains(msg.Topic, "/credential")
+		emptied := strings.Contains(msg.Topic, "/device_tracker/") || strings.Contains(msg.Topic, "/credential") ||
+			slices.ContainsFunc(climate, func(c string) bool { return strings.Contains(msg.Topic, c) })
 		if emptied != (msg.Payload == "") {
 			t.Errorf("%s: payload %q without the location", msg.Topic, msg.Payload)
 		}
@@ -114,7 +118,7 @@ func TestDiscovery(t *testing.T) {
 
 func TestRemoveState(t *testing.T) {
 	msgs := RemoveState(broker(true), vehicle)
-	if len(msgs) != 13+15 {
+	if len(msgs) != 18+15 {
 		t.Fatalf("%d messages", len(msgs))
 	}
 	for _, m := range msgs {

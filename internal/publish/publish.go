@@ -128,6 +128,11 @@ func State(b Broker, vehicleID string, c core.Current) []Message {
 		{"engine", text(n.Engine, str[core.EngineState])},
 		{"location", location},
 		{"read_at", readAt},
+		{"outside_temp_c", text(n.OutsideTempC, number)},
+		{"cabin_temp_c", text(n.CabinTempC, number)},
+		{"climate", running(n.Climate, func(c core.Climate) core.Value[bool] { return c.On })},
+		{"preconditioning", running(n.Climate, func(c core.Climate) core.Value[bool] { return c.Preconditioning })},
+		{"battery_heater", running(n.Climate, func(c core.Climate) core.Value[bool] { return c.BatteryHeater })},
 	}
 	msgs := make([]Message, len(values))
 	for i, v := range values {
@@ -145,6 +150,25 @@ func text[T any](v core.Value[T], f func(T) string) string {
 }
 
 func str[T ~string](v T) string { return string(v) }
+
+// The payloads of what of the climate runs.
+const (
+	On  = "on"
+	Off = "off"
+)
+
+// running is on or off, what of the climate get reads; empty when it is unknown.
+func running(c core.Value[core.Climate], get func(core.Climate) core.Value[bool]) string {
+	if !c.OK {
+		return ""
+	}
+	return text(get(c.V), func(b bool) string {
+		if b {
+			return On
+		}
+		return Off
+	})
+}
 
 // number writes a decimal number with a point, as short as it reads back the same.
 func number(f float64) string { return strconv.FormatFloat(f, 'f', -1, 64) }

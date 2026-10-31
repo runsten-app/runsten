@@ -63,7 +63,7 @@ The vehicle's page gives the version of the car's software, and the update waiti
 
 ## Its temperatures
 
-The vehicle's page gives the temperature the car measures outside and in its cabin, saying when the climate runs or the car preconditions, and when it heats its battery. Each trip gives the average outside temperature of the readings Runsten took while it ran, in its details and in the trips' CSV file: a consumption in winter reads against it. A trip Runsten did not see (found from the odometer) has none, nor do the trips recorded before Runsten kept it, until the instance rebuilds its trips and charges ([Updating](../self-hosting/updating.md#update-notes)). A Volvo or a Polestar tells no temperature Runsten reads: their pages show none.
+The vehicle's page gives the temperature the car measures outside and in its cabin, saying when the climate runs or the car preconditions, and when it heats its battery. Each trip gives the average outside temperature of the readings Runsten took while it ran, in its details and in the trips' CSV file: a consumption in winter reads against it. With [MQTT](./mqtt.md), Home Assistant gets the temperatures and the climate as entities of the car. A trip Runsten did not see (found from the odometer) has none, nor do the trips recorded before Runsten kept it, until the instance rebuilds its trips and charges ([Updating](../self-hosting/updating.md#update-notes)). A Volvo or a Polestar tells no temperature Runsten reads: their pages show none.
 
 ## Its variant
 

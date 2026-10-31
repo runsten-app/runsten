@@ -243,6 +243,7 @@ func (p *Publisher) Publish(ctx context.Context, accountID, vehicleID string) er
 	if err != nil {
 		return fmt.Errorf("model of vehicle %s: %w", vehicleID, err)
 	}
+	m.Climate = cur.Snapshot.Covers&core.FieldClimate != 0
 	// The health is read apart: its failure keeps the health published before, and
 	// never holds the state back.
 	values := publish.State(c.b, vehicleID, cur)
