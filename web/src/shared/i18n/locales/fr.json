@@ -750,6 +750,7 @@
     "power": "Puissance",
     "soc": "Niveau de charge",
     "time": "Heure",
+    "chart": "Distance par jour",
     "hint": "Telles que le véhicule les a données pendant la recharge ; la ligne s'interrompt là où rien n'a été lu.",
     "summary": "Jusqu'à {peak} ; niveau de charge de {from} à {to}.",
     "few": "Aucune lecture de la puissance pendant cette recharge : trop peu pour tracer sa courbe. | Une lecture de la puissance pendant cette recharge : trop peu pour tracer sa courbe. | {n} lectures de la puissance pendant cette recharge : trop peu pour tracer sa courbe."

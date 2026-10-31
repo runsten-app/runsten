@@ -750,6 +750,7 @@
     "power": "Effekt",
     "soc": "Laddningsnivå",
     "time": "Tid",
+    "chart": "Sträcka per dag",
     "hint": "Som fordonet angav dem under laddningen; linjen bryts där inget lästes.",
     "summary": "Upp till {peak}; laddningsnivå från {from} till {to}.",
     "few": "Ingen avläsning av effekten under denna laddning: för få för att rita dess kurva. | En avläsning av effekten under denna laddning: för få för att rita dess kurva. | {n} avläsningar av effekten under denna laddning: för få för att rita dess kurva."

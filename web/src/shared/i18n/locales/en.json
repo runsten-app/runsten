@@ -750,6 +750,7 @@
     "power": "Power",
     "soc": "State of charge",
     "time": "Time",
+    "chart": "Distance by day",
     "hint": "As the vehicle gave them during the charge; the line breaks where nothing was read.",
     "summary": "Up to {peak}; state of charge from {from} to {to}.",
     "few": "No reading of the power during this charge: too few to draw its curve. | One reading of the power during this charge: too few to draw its curve. | {n} readings of the power during this charge: too few to draw its curve."
