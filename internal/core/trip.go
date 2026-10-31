@@ -34,7 +34,7 @@ func (d *detector) stepTrip(p point, prev state) {
 
 	tb := d.trip
 	if tb != nil && tb.phase == tripEnding && !p.at.Before(tb.stopAt.Add(d.p.SettleWindow)) {
-		d.finishTrip()
+		d.finishTrip(&prev)
 		tb = nil
 	}
 	switch {
@@ -58,7 +58,7 @@ func (d *detector) stepTrip(p point, prev state) {
 		}
 	case running:
 		if tb.arrived || !d.p.ResumeBeforeArrival {
-			d.finishTrip()
+			d.finishTrip(&prev)
 			d.startTrip(p, prev)
 			return
 		}
@@ -158,13 +158,19 @@ func (tb *tripBuilder) checkArrival(st *state, stamps bool, end time.Time) {
 	}
 }
 
-func (d *detector) finishTrip() {
-	d.res.Trips = append(d.res.Trips, d.buildTrip(d.trip))
+// finishTrip ends the trip with the readings up to st: those before the one that ends
+// it, a trip starting or the settle window over, which may already be on the way.
+// A trip that never moved, its odometer and its position the same at both ends (put in
+// drive and back, to unplug), is none.
+func (d *detector) finishTrip(st *state) {
+	if t := d.buildTrip(d.trip, st); !t.stayed() {
+		d.res.Trips = append(d.res.Trips, t)
+	}
 	d.trip = nil
 }
 
-func (d *detector) buildTrip(tb *tripBuilder) Trip {
-	t, s := tb.t, d.st.snap
+func (d *detector) buildTrip(tb *tripBuilder, st *state) Trip {
+	t, s := tb.t, st.snap
 	t.End.Before = d.narrow(tb.endLimit, t.End.After, append(tb.hints, t.To.At)...)
 	if t.Reconstructed {
 		t.Start.Before = t.End.Before
@@ -174,8 +180,19 @@ func (d *detector) buildTrip(tb *tripBuilder) Trip {
 	t.EndSoC, t.EndRangeKm = tb.run.soc, tb.run.rng
 	t.EnergyKWh = energy(t.StartSoC, t.EndSoC, t.Capacity)
 	// The trip statistics of a reconstructed trip may describe another one.
-	if !t.Reconstructed && !d.st.rowAt(FieldTripMeter).Before(tb.stopAt) {
+	if !t.Reconstructed && !st.rowAt(FieldTripMeter).Before(tb.stopAt) {
 		t.TripMeterKm, t.ConsumptionKWhPer100km = s.TripMeterKm, s.ConsumptionKWhPer100km
 	}
 	return t
+}
+
+// stayedM is how far apart a trip's ends may be read and the trip be none: a fix
+// wanders a few metres, parked.
+const stayedM = 25
+
+// stayed reports whether the trip never moved: an observed trip whose odometer did not
+// change, and whose arrival was read within stayedM of its departure.
+func (t Trip) stayed() bool {
+	return !t.Reconstructed && t.DistanceKm.OK && t.DistanceKm.V == 0 &&
+		t.From.OK && t.To.OK && distanceM(t.From.V, t.To.V) <= stayedM
 }

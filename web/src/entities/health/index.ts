@@ -18,11 +18,11 @@ export type {
 export { healthKeys } from './model/queryKeys'
 export {
   activeWarnings,
-  allFine,
   bar,
   hasPressures,
   needsAttention,
   recommendedFor,
+  reportedFine,
   tyresFine,
   tyreTrouble,
   wheels,

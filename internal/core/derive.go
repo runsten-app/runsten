@@ -142,7 +142,9 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		}
 	}
 	if d.trip != nil && d.trip.phase == tripEnding {
-		d.res.Trips = append(d.res.Trips, d.buildTrip(d.trip))
+		if t := d.buildTrip(d.trip, &d.st); !t.stayed() {
+			d.res.Trips = append(d.res.Trips, t)
+		}
 	}
 	d.releaseCharge()
 	if d.charge != nil && d.charge.c.Reconstructed {

@@ -626,7 +626,6 @@
   },
   "health": {
     "title": "Health",
-    "intro": "The battery's capacity, estimated from the charges, and what the vehicle tells of its tyres, its next service and its warnings, read every hour. What it tells depends on its model and its source: a Volvo gives a warning per tyre, not its pressure.",
     "loading": "Loading the health",
     "error": "The health could not be loaded. Try again in a moment.",
     "none": "The vehicle has told nothing of its health yet.",
@@ -652,6 +651,14 @@
         "high": "High",
         "fault": "Fault"
       }
+    },
+    "verdict": {
+      "attention": "Needs attention: {items}.",
+      "fine": "Nothing the vehicle reports needs attention."
+    },
+    "upkeep": {
+      "title": "Service and warnings",
+      "notReported": "The vehicle tells neither its next service nor its warnings."
     },
     "service": {
       "title": "Service",
@@ -704,6 +711,7 @@
       "light_turn_rear_right": "Rear right indicator"
     },
     "chart": {
+      "history": "Pressures over time",
       "front": "Front tyres",
       "rear": "Rear tyres",
       "left": "Left",
@@ -742,6 +750,7 @@
   },
   "recent": {
     "title": "Last 30 days",
+    "chart": "Distance by day",
     "stats": "See the statistics",
     "hint": "The distance of each day. Press a day to see its trips."
   },
@@ -1668,6 +1677,7 @@
     "current": "Running",
     "installed": "Installed {when}",
     "firstRead": "First read {when}",
+    "all": "Show all versions",
     "more": "Show more",
     "error": "The software's versions could not be loaded."
   }

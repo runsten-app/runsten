@@ -626,7 +626,6 @@
   },
   "health": {
     "title": "Santé",
-    "intro": "La capacité de la batterie, estimée à partir des charges, et ce que le véhicule dit de ses pneus, de son prochain entretien et de ses alertes, lu toutes les heures. Ce qu'il dit dépend de son modèle et de sa source : une Volvo donne une alerte par pneu, pas sa pression.",
     "loading": "Chargement de la santé",
     "error": "La santé n’a pas pu être chargée. Réessayez dans un instant.",
     "none": "Le véhicule n’a encore rien dit de sa santé.",
@@ -652,6 +651,14 @@
         "high": "Haute",
         "fault": "Défaut"
       }
+    },
+    "verdict": {
+      "attention": "À surveiller : {items}.",
+      "fine": "Rien de ce que dit le véhicule ne demande d’attention."
+    },
+    "upkeep": {
+      "title": "Entretien et alertes",
+      "notReported": "Le véhicule ne donne ni son prochain entretien ni ses alertes."
     },
     "service": {
       "title": "Entretien",
@@ -704,6 +711,7 @@
       "light_turn_rear_right": "Clignotant arrière droit"
     },
     "chart": {
+      "history": "Historique des pressions",
       "front": "Pneus avant",
       "rear": "Pneus arrière",
       "left": "Gauche",
@@ -742,6 +750,7 @@
   },
   "recent": {
     "title": "30 derniers jours",
+    "chart": "Distance par jour",
     "stats": "Voir les statistiques",
     "hint": "La distance de chaque jour. Appuyez sur un jour pour voir ses trajets."
   },
@@ -1668,6 +1677,7 @@
     "current": "En service",
     "installed": "Installée {when}",
     "firstRead": "Lue pour la première fois {when}",
+    "all": "Voir toutes les versions",
     "more": "Afficher plus",
     "error": "Impossible de charger les versions du logiciel."
   }
