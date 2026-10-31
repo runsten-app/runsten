@@ -31,6 +31,10 @@ func (Normalizer) Kinds() []core.Kind { return kinds(VehicleState, VehicleData) 
 // and the charging power.
 func (Normalizer) EnergyKinds() []core.Kind { return kinds(VehicleData) }
 
+// StateKinds returns nothing: vehicle_data, which Kinds holds, tells the doors and the
+// windows too.
+func (Normalizer) StateKinds() []core.Kind { return nil }
+
 // HealthKinds returns the kinds of response NormalizeHealth reads.
 func (Normalizer) HealthKinds() []core.Kind { return kinds(VehicleData) }
 
@@ -119,6 +123,22 @@ type vehicleState struct {
 	HardFR           *bool    `json:"tpms_hard_warning_fr"`
 	HardRL           *bool    `json:"tpms_hard_warning_rl"`
 	HardRR           *bool    `json:"tpms_hard_warning_rr"`
+
+	Locked *bool `json:"locked"`
+	// The doors and windows, the driver's side and the passenger's (d, p), front and
+	// rear; the trunks, front and rear. Assumption: 0 is closed, any other value open, as
+	// the community reads them (a window vented is not told apart).
+	DriverFront          *int  `json:"df"`
+	DriverRear           *int  `json:"dr"`
+	PassengerFront       *int  `json:"pf"`
+	PassengerRear        *int  `json:"pr"`
+	FrontTrunk           *int  `json:"ft"`
+	RearTrunk            *int  `json:"rt"`
+	DriverFrontWindow    *int  `json:"fd_window"`
+	PassengerFrontWindow *int  `json:"fp_window"`
+	DriverRearWindow     *int  `json:"rd_window"`
+	PassengerRearWindow  *int  `json:"rp_window"`
+	Sentry               *bool `json:"sentry_mode"`
 }
 
 // softwareUpdate is the update waiting for the car; an empty status when none waits.
@@ -133,6 +153,8 @@ type softwareUpdate struct {
 type vehicleConfig struct {
 	CarType     *string `json:"car_type"`
 	TrimBadging *string `json:"trim_badging"`
+	// RHD is a right-hand drive car: its driver's side is the right.
+	RHD *bool `json:"rhd"`
 }
 
 func parseVehicleData(raw []byte) (vehicleData, error) {
@@ -191,6 +213,7 @@ func Normalize(e Endpoint, raw []byte) (core.Snapshot, error) {
 			s.OdometerKm = core.Some(*vs.Odometer*kmPerMile, millis(vs.Timestamp))
 		}
 		normalizeSoftware(vs, &s)
+		normalizeOpenings(vs, r.VehicleConfig, &s)
 	}
 	if r.VehicleConfig != nil {
 		model(r.VIN, r.VehicleConfig, &s)
@@ -397,4 +420,47 @@ func modelYear(vin string) (int, bool) {
 		return 0, false
 	}
 	return 2010 + i, true
+}
+
+// normalizeOpenings reads the locks, the doors and the windows. The driver's side is the
+// left unless the configuration tells a right-hand drive.
+func normalizeOpenings(vs *vehicleState, cfg *vehicleConfig, s *core.Snapshot) {
+	at := millis(vs.Timestamp)
+	open := func(v *int) core.Value[core.Opening] {
+		if v == nil {
+			return core.Value[core.Opening]{}
+		}
+		if *v == 0 {
+			return core.Some(core.Closed, at)
+		}
+		return core.Some(core.Open, at)
+	}
+	flag := func(b *bool) core.Value[bool] {
+		if b == nil {
+			return core.Value[bool]{}
+		}
+		return core.Some(*b, at)
+	}
+	rhd := cfg != nil && cfg.RHD != nil && *cfg.RHD
+	sides := func(driver, passenger *int) (left, right core.Value[core.Opening]) {
+		if rhd {
+			return open(passenger), open(driver)
+		}
+		return open(driver), open(passenger)
+	}
+	s.Covers |= core.FieldDoors | core.FieldWindows
+	d := core.Doors{
+		Locked: flag(vs.Locked), Hood: open(vs.FrontTrunk), Tailgate: open(vs.RearTrunk), Sentry: flag(vs.Sentry),
+	}
+	d.FrontLeft, d.FrontRight = sides(vs.DriverFront, vs.PassengerFront)
+	d.RearLeft, d.RearRight = sides(vs.DriverRear, vs.PassengerRear)
+	if d != (core.Doors{}) {
+		s.Doors = core.Some(d, at)
+	}
+	var w core.Windows
+	w.FrontLeft, w.FrontRight = sides(vs.DriverFrontWindow, vs.PassengerFrontWindow)
+	w.RearLeft, w.RearRight = sides(vs.DriverRearWindow, vs.PassengerRearWindow)
+	if w != (core.Windows{}) {
+		s.Windows = core.Some(w, at)
+	}
 }

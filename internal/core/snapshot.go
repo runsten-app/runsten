@@ -128,6 +128,11 @@ const (
 	FieldEnergyAdded
 	// FieldSoftware covers Software and SoftwareUpdate, told in the same block.
 	FieldSoftware
+	// FieldDoors covers Doors: the doors, the hood, the tailgate, the tank lid and the
+	// locks, which every source tells together.
+	FieldDoors
+	// FieldWindows covers Windows: a Volvo tells them apart from the doors.
+	FieldWindows
 
 	fieldCount = iota
 )
@@ -183,6 +188,43 @@ type Snapshot struct {
 	// its build hash), and SoftwareUpdate the update waiting for it: absent when none is.
 	Software       Value[string]
 	SoftwareUpdate Value[SoftwareUpdate]
+
+	// Doors and Windows are what of the vehicle is open, and whether it is locked; absent
+	// when the source tells none of it.
+	Doors   Value[Doors]
+	Windows Value[Windows]
+}
+
+// Opening is whether a door, a window or a lid is open.
+type Opening string
+
+// Openings.
+const (
+	Closed Opening = "closed"
+	// Ajar is a door not fully shut, or a window left open a crack.
+	Ajar Opening = "ajar"
+	Open Opening = "open"
+)
+
+// Doors is what a source tells of the doors and the locks. Each is absent when it does
+// not tell it.
+type Doors struct {
+	// Locked is the central lock.
+	Locked                                     Value[bool]
+	FrontLeft, FrontRight, RearLeft, RearRight Value[Opening]
+	// Hood is the front lid, a front trunk's on an electric car; Tailgate the rear one.
+	Hood, Tailgate Value[Opening]
+	// TankLid is the fuel filler's lid.
+	TankLid Value[Opening]
+	// Sentry is the vehicle watching its surroundings with its cameras while parked
+	// (Tesla's Sentry Mode).
+	Sentry Value[bool]
+}
+
+// Windows is what a source tells of the windows. Each is absent when it does not tell it.
+type Windows struct {
+	FrontLeft, FrontRight, RearLeft, RearRight Value[Opening]
+	Sunroof                                    Value[Opening]
 }
 
 // UpdateStatus is where an update of the vehicle's software stands.
@@ -274,6 +316,12 @@ func (s *Snapshot) merge(o Snapshot) {
 	}
 	if set(FieldSoftware) {
 		s.Software, s.SoftwareUpdate = o.Software, o.SoftwareUpdate
+	}
+	if set(FieldDoors) {
+		s.Doors = o.Doors
+	}
+	if set(FieldWindows) {
+		s.Windows = o.Windows
 	}
 }
 

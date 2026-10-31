@@ -60,7 +60,25 @@ func TestNormalizeFixtures(t *testing.T) {
 			PowerW:     core.Some(1600.0, energyAt),
 			TargetSoC:  core.Some(85.0, energyAt),
 		}},
-		{Doors, "cv-doors.json", core.Snapshot{}},
+		// The Demo car's, locked, a window open.
+		{Doors, "cv-doors.json", func() core.Snapshot {
+			at := ts("2026-09-25T15:37:22.985858324Z")
+			closed := core.Some(core.Closed, at)
+			return core.Snapshot{Covers: core.FieldDoors, Doors: core.Some(core.Doors{
+				Locked:    core.Some(true, at),
+				FrontLeft: closed, FrontRight: closed, RearLeft: closed, RearRight: closed,
+				Hood: closed, Tailgate: closed, TankLid: closed,
+			}, at)}
+		}()},
+		{Windows, "cv-windows.json", func() core.Snapshot {
+			at := ts("2026-09-25T15:37:23.105928815Z")
+			closed := core.Some(core.Closed, at)
+			return core.Snapshot{Covers: core.FieldWindows, Windows: core.Some(core.Windows{
+				FrontLeft: core.Some(core.Open, at), FrontRight: closed, RearLeft: closed, RearRight: closed,
+				Sunroof: closed,
+			}, at)}
+		}()},
+		{Tyres, "cv-tyres.json", core.Snapshot{}},
 	}
 	for _, tt := range tests {
 		t.Run(string(tt.ep), func(t *testing.T) {
@@ -206,6 +224,36 @@ func TestNormalizeDetails(t *testing.T) {
 	}
 }
 
+// TestNormalizeOpenings: an UNSPECIFIED or unknown value is absent, the latest timestamp
+// dates the response, and one that tells nothing covers its field all the same, emptied.
+func TestNormalizeOpenings(t *testing.T) {
+	early, late := ts("2026-10-11T10:00:00Z"), ts("2026-10-11T10:05:00Z")
+	s, err := Normalize(Doors, []byte(`{"data": {
+		"centralLock": {"value": "UNLOCKED", "timestamp": "2026-10-11T10:00:00Z"},
+		"frontLeftDoor": {"value": "AJAR", "timestamp": "2026-10-11T10:05:00Z"},
+		"tailgate": {"value": "UNSPECIFIED", "timestamp": "2026-10-11T10:06:00Z"},
+		"hood": {"value": "HALF", "timestamp": "2026-10-11T10:06:00Z"}}}`))
+	want := core.Snapshot{Covers: core.FieldDoors, Doors: core.Some(core.Doors{
+		Locked: core.Some(false, early), FrontLeft: core.Some(core.Ajar, late),
+	}, late)}
+	if err != nil || !reflect.DeepEqual(s, want) {
+		t.Errorf("doors: got  %+v, %v\nwant %+v", s, err, want)
+	}
+	s, err = Normalize(Doors, []byte(`{"data": {"centralLock": {"value": "UNSPECIFIED"}}}`))
+	if err != nil || !reflect.DeepEqual(s, core.Snapshot{Covers: core.FieldDoors}) {
+		t.Errorf("doors unknown: %+v, %v", s, err)
+	}
+	s, err = Normalize(Windows, []byte(`{"data": {"sunroof": {"value": "AJAR", "timestamp": "2026-10-11T10:00:00Z"}}}`))
+	if err != nil || !reflect.DeepEqual(s, core.Snapshot{Covers: core.FieldWindows, Windows: core.Some(core.Windows{Sunroof: core.Some(core.Ajar, early)}, early)}) {
+		t.Errorf("windows: %+v, %v", s, err)
+	}
+	for _, ep := range []Endpoint{Doors, Windows} {
+		if _, err := Normalize(ep, []byte("[")); err == nil {
+			t.Errorf("%s: invalid JSON accepted", ep)
+		}
+	}
+}
+
 func TestNormalizer(t *testing.T) {
 	var n Normalizer
 	if got := n.Kinds(); len(got) != len(NormalizedEndpoints()) || got[0] != (core.Kind{Source: Source, Endpoint: string(EngineStatus)}) {
@@ -213,6 +261,10 @@ func TestNormalizer(t *testing.T) {
 	}
 	if got := n.EnergyKinds(); len(got) != 1 || got[0].Endpoint != string(EnergyState) {
 		t.Errorf("energy kinds %v", got)
+	}
+	// The doors and windows are no readings of the derivation.
+	if got := n.StateKinds(); len(got) != 2 || got[0].Endpoint != string(Doors) || got[1].Endpoint != string(Windows) {
+		t.Errorf("state kinds %v", got)
 	}
 	odo := []byte(`{"data":{"odometer":{"value":1234,"unit":"km","timestamp":"2026-10-11T10:00:00Z"}}}`)
 	got, err := n.Normalize(core.Kind{Source: Source, Endpoint: string(Odometer)}, odo)

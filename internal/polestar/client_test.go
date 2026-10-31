@@ -104,8 +104,8 @@ func TestFetchDomains(t *testing.T) {
 			}
 		})
 	}
-	if _, err := c.Fetch(ctx, tok, devCredential().AccountID, simVIN, "exterior"); !errors.Is(err, ErrUnknownDomain) {
-		t.Errorf("exterior: %v", err)
+	if _, err := c.Fetch(ctx, tok, devCredential().AccountID, simVIN, "pre-cleaning"); !errors.Is(err, ErrUnknownDomain) {
+		t.Errorf("pre-cleaning: %v", err)
 	}
 }
 

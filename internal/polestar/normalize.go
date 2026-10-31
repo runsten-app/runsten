@@ -36,6 +36,10 @@ func (Normalizer) NormalizeHealth(k core.Kind, raw []byte) (core.Health, error) 
 	return NormalizeHealth(Domain(k.Endpoint), raw)
 }
 
+// StateKinds returns the kinds the current state reads beyond Kinds: the exterior (the
+// doors, the windows and the locks), which the derivation leaves out.
+func (Normalizer) StateKinds() []core.Kind { return kinds(Exterior) }
+
 // EnergyKinds returns the kinds holding the energy state: the state of charge, the range
 // and the charging power.
 func (Normalizer) EnergyKinds() []core.Kind { return kinds(Battery) }
@@ -75,6 +79,8 @@ func Normalize(d Domain, raw []byte) (core.Snapshot, error) {
 		err = normalizeAvailability(raw, &s)
 	case TargetSoC:
 		err = normalizeTargetSoC(raw, &s)
+	case Exterior:
+		err = normalizeExterior(raw, &s)
 	default:
 		return s, nil
 	}
@@ -303,6 +309,59 @@ func normalizeTargetSoC(raw []byte, s *core.Snapshot) error {
 	s.Covers = core.FieldTargetSoC
 	if t := v.Data.TargetSoC; t != nil {
 		s.TargetSoC = number(t.Level, v.Data.Timestamp.instant())
+	}
+	return nil
+}
+
+// openings maps a door's, a lid's or a window's state, without its prefix OPEN_STATUS_.
+// Assumption: OPEN and AJAR, as the Volvo Cars API's; only CLOSED was seen.
+var openings = map[string]core.Opening{"OPEN": core.Open, "AJAR": core.Ajar, "CLOSED": core.Closed}
+
+// normalizeExterior reads the doors, the windows and the central lock, told in one
+// response: it covers both. Its alarm (only ALARM_STATUS_IDLE seen, its other words
+// unknown) and tailgateLock (the central lock tells it) are left out.
+func normalizeExterior(raw []byte, s *core.Snapshot) error {
+	var v struct {
+		Data struct {
+			Timestamp        *stamp `json:"timestamp"`
+			CentralLock      string `json:"centralLock"`
+			FrontLeftDoor    string `json:"frontLeftDoor"`
+			FrontRightDoor   string `json:"frontRightDoor"`
+			RearLeftDoor     string `json:"rearLeftDoor"`
+			RearRightDoor    string `json:"rearRightDoor"`
+			Hood             string `json:"hood"`
+			Tailgate         string `json:"tailgate"`
+			TankLid          string `json:"tankLid"`
+			FrontLeftWindow  string `json:"frontLeftWindow"`
+			FrontRightWindow string `json:"frontRightWindow"`
+			RearLeftWindow   string `json:"rearLeftWindow"`
+			RearRightWindow  string `json:"rearRightWindow"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return err //nolint:wrapcheck // wrapped by Normalize
+	}
+	d, at := v.Data, v.Data.Timestamp.instant()
+	s.Covers = core.FieldDoors | core.FieldWindows
+	open := func(v string) core.Value[core.Opening] { return enum(v, "OPEN_STATUS_", at, openings) }
+	doors := core.Doors{
+		FrontLeft: open(d.FrontLeftDoor), FrontRight: open(d.FrontRightDoor),
+		RearLeft: open(d.RearLeftDoor), RearRight: open(d.RearRightDoor),
+		Hood: open(d.Hood), Tailgate: open(d.Tailgate), TankLid: open(d.TankLid),
+	}
+	// Assumption: UNLOCKED, as the Volvo Cars API's; only LOCKED was seen.
+	if d.CentralLock == "LOCK_STATUS_LOCKED" || d.CentralLock == "LOCK_STATUS_UNLOCKED" {
+		doors.Locked = core.Some(d.CentralLock == "LOCK_STATUS_LOCKED", at)
+	}
+	if doors != (core.Doors{}) {
+		s.Doors = core.Some(doors, at)
+	}
+	windows := core.Windows{
+		FrontLeft: open(d.FrontLeftWindow), FrontRight: open(d.FrontRightWindow),
+		RearLeft: open(d.RearLeftWindow), RearRight: open(d.RearRightWindow),
+	}
+	if windows != (core.Windows{}) {
+		s.Windows = core.Some(windows, at)
 	}
 	return nil
 }
