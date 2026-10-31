@@ -41,7 +41,7 @@ A car that reports its battery's capacity (a Volvo) reports the gross one. Runst
 
 ## Plug-in hybrids
 
-A plug-in hybrid is read like any other car of its brand. Runsten knows a car is one when its manufacturer's API says so: a Volvo's tells its fuel type. Polestar's Data Portal does not, and a car read through it is taken for an electric one; Tesla makes none.
+A plug-in hybrid is read like any other car of its brand. Runsten knows a car is one when its manufacturer's API says so: a Volvo's tells its fuel type. Polestar's Data Portal does not: it reads every car as an electric one, so a Polestar 1 is never recognized as a plug-in hybrid. Tesla makes none.
 
 What works for a plug-in hybrid:
 
