@@ -190,7 +190,6 @@ const autocomplete: Record<Field, string> = {
       {{ t('polestar.intro') }}
     </p>
     <p class="text-body-medium mb-3">
-      {{ t('polestar.beta') }}
       <a :href="guide.href" target="_blank" rel="noreferrer" class="guide">
         {{ t('polestar.guide') }}<v-icon :icon="mdiOpenInNew" size="x-small" class="ms-1" />
         <span class="d-sr-only">{{ t('polestar.steps.newTab') }}</span>

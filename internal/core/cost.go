@@ -115,6 +115,40 @@ func PlaceOf(c Charge, places []Place) (Place, bool) {
 	return places[i], true
 }
 
+// ChargesAt picks the charges of one group of ChargesByPlace. The zero value keeps every
+// charge.
+type ChargesAt struct {
+	Group PlaceGroup
+	// PlaceID is the place of PlaceGroupPlace: one the account does not have keeps none.
+	PlaceID string
+}
+
+// PlaceGroup is a group of ChargesByPlace.
+type PlaceGroup string
+
+// The groups of ChargesByPlace.
+const (
+	PlaceGroupAny        PlaceGroup = ""
+	PlaceGroupPlace      PlaceGroup = "place"       // the charges PlaceOf puts at a place
+	PlaceGroupOutside    PlaceGroup = "outside"     // with a position outside every place
+	PlaceGroupNoPosition PlaceGroup = "no_position" // without a position, at no place
+)
+
+// Keeps tells whether c belongs to the group, as ChargesByPlace counts it.
+func (at ChargesAt) Keeps(c Charge, places []Place) bool {
+	switch at.Group {
+	case PlaceGroupPlace:
+		i := placeIndex(c, places)
+		return i >= 0 && places[i].ID == at.PlaceID
+	case PlaceGroupOutside:
+		return c.Position.OK && placeIndex(c, places) < 0
+	case PlaceGroupNoPosition:
+		return !c.Position.OK && placeIndex(c, places) < 0
+	default:
+		return true
+	}
+}
+
 // placeIndex is the index of PlaceOf's place in places, or -1.
 func placeIndex(c Charge, places []Place) int {
 	if !c.Position.OK {

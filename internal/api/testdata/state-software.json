@@ -24,6 +24,13 @@
     "power_w": null,
     "target_soc_pct": null
   },
+  "climate": {
+    "outside_temp_c": null,
+    "cabin_temp_c": null,
+    "on": null,
+    "preconditioning": null,
+    "battery_heater": null
+  },
   "software": {
     "value": "2026.38.3.1",
     "reported_at": "2026-09-28T04:00:00Z",
@@ -36,7 +43,8 @@
       "version": "2026.38.3.2",
       "download_pct": 0,
       "install_pct": 1,
-      "duration_s": 2700
+      "duration_s": 2700,
+      "scheduled_at": "2026-09-28T23:50:00Z"
     },
     "reported_at": "2026-09-28T04:00:00Z",
     "fetched_at": "2026-09-28T05:00:00Z",

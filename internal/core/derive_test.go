@@ -1324,6 +1324,9 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 			soc, km = min(50+float64(i-400)/5, 80), 12470
 		}
 		add(i, engine(e))
+		// A temperature that holds two hours: its responses are confirmed, which a trip's
+		// mean leaves out.
+		add(i, climate(10+float64(i/120), time.Time{}))
 		st := ChargingIdle
 		if i >= 400 && soc < 80 {
 			st = ChargingActive
@@ -1396,6 +1399,9 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 	}
 	if got := full.Charges[0].Position; got != Some(home, m(555)) {
 		t.Errorf("charge at %+v", got)
+	}
+	if got := full.Trips[0].OutsideTempC; got != val(10) || full.Trips[1].OutsideTempC.OK {
+		t.Errorf("outside temperatures %+v, %+v", got, full.Trips[1].OutsideTempC)
 	}
 	if got := full.Trips[0].Sources; !slices.Equal(got, []string{"car", "volvo"}) {
 		t.Errorf("sources %q", got)
@@ -1667,8 +1673,17 @@ func software(v string) Snapshot {
 	return Snapshot{Covers: FieldSoftware, Software: Some(v, time.Time{})}
 }
 
+// updating is a reading of version 2026.38.3.1 with an update to 2026.38.3.2 at the status
+// given.
+func updating(st UpdateStatus) Snapshot {
+	s := software("2026.38.3.1")
+	s.SoftwareUpdate = Some(SoftwareUpdate{Status: st, Version: "2026.38.3.2"}, time.Time{})
+	return s
+}
+
 // Each version of the software is reported once, when first read: bounded by the last
-// reading of the previous one, the first with none before it.
+// reading of the previous one, the first with none before it. Its installation started
+// after the last reading without one in progress, before the first reading of it.
 func TestSoftwareVersions(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -1706,6 +1721,69 @@ func TestSoftwareVersions(t *testing.T) {
 			[]SoftwareVersion{
 				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
 				{DetectedAt: m(90), Version: "2026.44.1", Installed: Bounds{After: m(60), Before: m(90)}},
+			},
+		},
+		{
+			// Scheduled, then installing from minute 32 to 55 at least, read again as an
+			// odometer reading settles the cursor between: the installation keeps it.
+			"an installation seen",
+			[]Record{
+				rec(5, 30, updating(UpdateScheduled)),
+				rec(32, 33, updating(UpdateInstalling)),
+				rec(34, 34, odo(12400)),
+				rec(40, 55, updating(UpdateInstalling)),
+				rec(70, 80, software("2026.38.3.2")),
+				rec(81, 81, odo(12400)),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{
+					DetectedAt: m(70), Version: "2026.38.3.2", Installed: Bounds{After: m(55), Before: m(70)},
+					InstallStarted: Bounds{After: m(30), Before: m(32)},
+				},
+			},
+		},
+		{
+			// An installation given up (back to available) is not the one that brings the
+			// version: only the last one counts.
+			"an installation given up",
+			[]Record{
+				rec(5, 30, updating(UpdateAvailable)),
+				rec(32, 33, updating(UpdateInstalling)),
+				rec(40, 50, updating(UpdateAvailable)),
+				rec(60, 61, updating(UpdateInstalling)),
+				rec(70, 70, software("2026.38.3.2")),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{
+					DetectedAt: m(70), Version: "2026.38.3.2", Installed: Bounds{After: m(61), Before: m(70)},
+					InstallStarted: Bounds{After: m(50), Before: m(60)},
+				},
+			},
+		},
+		{
+			// Installing at the first reading: its start is not bounded, nor told.
+			"installing from the first reading",
+			[]Record{
+				rec(5, 10, updating(UpdateInstalling)),
+				rec(20, 20, software("2026.38.3.2")),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{DetectedAt: m(20), Version: "2026.38.3.2", Installed: Bounds{After: m(10), Before: m(20)}},
+			},
+		},
+		{
+			// Asleep through it: no reading saw it installing.
+			"an installation not seen",
+			[]Record{
+				rec(5, 30, updating(UpdateScheduled)),
+				rec(300, 300, software("2026.38.3.2")),
+			},
+			[]SoftwareVersion{
+				{DetectedAt: m(5), Version: "2026.38.3.1", Installed: Bounds{Before: m(5)}},
+				{DetectedAt: m(300), Version: "2026.38.3.2", Installed: Bounds{After: m(30), Before: m(300)}},
 			},
 		},
 	}
@@ -1854,6 +1932,116 @@ func TestHybridReconstructedCharges(t *testing.T) {
 				checkCharges(t, got.Charges, want)
 				_, charges := deriveIncrementally(records, p)
 				checkCharges(t, charges, want)
+			}
+		})
+	}
+}
+
+// climate is a reading of the climate block: the outside temperature, recorded by the
+// vehicle at ts.
+func climate(outside float64, ts time.Time) Snapshot {
+	return Snapshot{Covers: FieldClimate, OutsideTempC: Some(outside, ts), CabinTempC: Some(20.0, ts)}
+}
+
+// A trip's outside temperature is the mean of the responses fetched from the reading that
+// detected it to its end: each response once, at its fetch, never its confirmation, nor
+// a response before the trip or after its end; without one, the latest fetched before.
+func TestTripOutsideTemp(t *testing.T) {
+	stopped := func(at time.Time) Snapshot {
+		s := read(EngineStopped, 12432, work, m(60))
+		s.Engine.At = at
+		return s
+	}
+	// withClimate is a Tesla's vehicle_data: the engine, odometer, position and climate
+	// in one response.
+	withClimate := func(s Snapshot, outside float64) Snapshot {
+		c := climate(outside, time.Time{})
+		s.Covers |= c.Covers
+		s.OutsideTempC, s.CabinTempC = c.OutsideTempC, c.CabinTempC
+		return s
+	}
+	tesla := []Record{
+		rec(0, 20, withClimate(read(EngineStopped, 12400, home, m(0)), 2)),
+		rec(30, 30, withClimate(read(EngineRunning, 12400, home, m(0)), 10)),
+		rec(45, 45, withClimate(read(EngineRunning, 12415, home, m(0)), 12)),
+		rec(61, 61, withClimate(stopped(m(58)), 20)),
+	}
+	noTimestamps := DefaultParams()
+	noTimestamps.VehicleTimestamps = false
+	tests := []struct {
+		name    string
+		records []Record
+		p       Params
+		want    Value[float64]
+	}{
+		{
+			name: "climate read apart, its timestamps out of order",
+			records: append(trip(),
+				rec(0, 40, climate(5, m(0))),   // fetched before the trip, confirmed during it
+				rec(30, 30, climate(9, m(29))), // fetched with the reading that detects it
+				rec(45, 50, climate(11, m(20))),
+				rec(70, 70, climate(30, m(70))), // after its end
+			),
+			p:    DefaultParams(),
+			want: val(10),
+		},
+		{
+			name:    "a temperature that holds: the response fetched before the trip",
+			records: append(trip(), rec(0, 70, climate(5, m(0)))),
+			p:       DefaultParams(),
+			want:    val(5),
+		},
+		{
+			name: "a response without a temperature before the trip keeps the one before it",
+			records: append(trip(),
+				rec(0, 0, climate(5, m(0))),
+				rec(20, 70, Snapshot{Covers: FieldClimate, CabinTempC: Some(19.0, time.Time{})}),
+			),
+			p:    DefaultParams(),
+			want: val(5),
+		},
+		{
+			name: "a climate without its outside temperature",
+			records: append(trip(),
+				rec(45, 45, Snapshot{Covers: FieldClimate, CabinTempC: Some(19.0, time.Time{})}),
+			),
+			p: DefaultParams(),
+		},
+		{
+			name:    "one response tells the engine and the climate, the end narrowed by the vehicle",
+			records: tesla,
+			p:       DefaultParams(),
+			want:    val(11),
+		},
+		{
+			name:    "the same without the vehicle's timestamps: the end is the stop's reading",
+			records: tesla,
+			p:       noTimestamps,
+			want:    val(14),
+		},
+		{
+			name: "a reconstructed trip has none",
+			records: []Record{
+				rec(0, 0, odo(12400)),
+				rec(0, 0, climate(5, time.Time{})),
+				rec(60, 60, climate(6, time.Time{})),
+				rec(60, 60, odo(12430)),
+			},
+			p: DefaultParams(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			full := Derive(tt.records, Cursor{}, tt.p, nil)
+			if len(full.Trips) != 1 {
+				t.Fatalf("trips %+v", full.Trips)
+			}
+			if got := full.Trips[0].OutsideTempC; got != tt.want {
+				t.Errorf("outside %+v, want %+v", got, tt.want)
+			}
+			trips, _ := deriveIncrementally(tt.records, tt.p)
+			if !reflect.DeepEqual(trips, full.Trips) {
+				t.Errorf("incremental:\n%+v\nfull:\n%+v", trips, full.Trips)
 			}
 		})
 	}

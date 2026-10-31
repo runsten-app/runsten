@@ -19,13 +19,14 @@ docker compose logs api collector web
 
 ## Nothing new is read
 
-The **Connection** page of the web interface tells what the collector did on its latest pass over each vehicle ([Your Volvo application](./volvo.md#the-connection-page)):
+The **Connection** page of the web interface tells what the collector did on its latest pass over each vehicle, in words that depend on its brand ([Connection](../guide/index.md#connection)):
 
-- **Grant lost**: the Volvo ID must be connected again (a grant lasts 6 months at most).
-- **Quota**: the daily call volume of the application is used up; reading resumes when it is renewed. Trips and charges missed meanwhile are found afterwards, as reconstructed.
+- **Grant lost**: a Volvo's Volvo ID must be connected again (a grant lasts 6 months at most).
+- **Quota**: the daily call volume of the Volvo application is used up; reading resumes when it is renewed. Trips and charges missed meanwhile are found afterwards, as reconstructed.
 - **Paused**: the API refused too many calls; the collector waits.
 - **Market not served**: the Volvo Cars API refuses the car, its market being one it does not serve ("Vehicle does not belong to allowed markets"). Nothing can be read of it: the collector marks it and no longer polls it. A new connection of the Volvo ID tries it again.
 - **Polestar credential refused**, **vehicle no longer shared**, **domain not granted**: the Data Portal refused the owner's credential (expired after its 90 days), no longer lets it read the car, or it lacks a domain ([Your Polestar](../guide/polestar.md#when-it-is-not-read)). The instance must reach `pc-api.polestar.com` over https.
+- **Tesla refresh token refused**, **vehicle no longer in the account**: the Tesla token was revoked or the car left the account ([Your Tesla](../guide/tesla.md#when-it-is-not-read)).
 - **Collector stopped**: no pass for 15 minutes. Look at `docker compose logs collector`.
 
 ## Debug page

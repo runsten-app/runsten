@@ -5,6 +5,7 @@ import { ChargesPage } from '@/pages/charges'
 import charges from '@fixtures/charges.json'
 import totals from '@fixtures/stats-totals.json'
 import vehicles from '@fixtures/vehicles.json'
+import places from '@fixtures/places.json'
 import { sessionKeys } from '@/entities/session'
 import session from '@fixtures/session.json'
 import { mountWith, testQueryClient, testRouter } from '@test/utils'
@@ -19,6 +20,7 @@ vi.mock('@/widgets/period-chart', () => ({
       from: { type: String, default: undefined },
       to: { type: String, default: undefined },
       days: { type: Object, required: true },
+      place: { type: String, default: undefined },
     },
     render: () => null,
   }),
@@ -27,6 +29,11 @@ const mocks = vi.hoisted(() => ({
   fetchCharges: vi.fn(),
   fetchVehicles: vi.fn(),
   fetchStats: vi.fn(),
+  fetchPlaces: vi.fn(),
+}))
+vi.mock('@/entities/place', async (original) => ({
+  ...(await original<typeof import('@/entities/place')>()),
+  fetchPlaces: mocks.fetchPlaces,
 }))
 vi.mock('@/entities/charge', async (original) => ({
   ...(await original<typeof import('@/entities/charge')>()),
@@ -46,6 +53,7 @@ beforeEach(() => {
   mocks.fetchCharges.mockResolvedValue(charges)
   mocks.fetchVehicles.mockResolvedValue(vehicles.items)
   mocks.fetchStats.mockResolvedValue(totals)
+  mocks.fetchPlaces.mockResolvedValue(places.items)
 })
 
 const vehicle = vehicles.items[0]?.id ?? ''
@@ -81,6 +89,32 @@ describe('ChargesPage', () => {
     expect(wrapper.find('a.csv-download').attributes('href')).toBe(
       `api/v1/vehicles/${vehicle}/charges.csv?to=2026-09-29T00%3A00%3A00.000Z`,
     )
+  })
+
+  it('narrows the list, its totals, its chart and its file to the place of the URL', async () => {
+    const router = testRouter()
+    await router.push(`/vehicles/${vehicle}/charges?to=2026-09-28&place=outside`)
+    const { wrapper } = mountWith(ChargesPage, { router, props: { vehicle } })
+    await flushPromises()
+    expect(wrapper.find('.place-select').text()).toContain('Elsewhere')
+    expect(mocks.fetchCharges).toHaveBeenCalledWith(vehicle, {
+      from: undefined,
+      to: '2026-09-29T00:00:00.000Z',
+      cursor: undefined,
+      place: 'outside',
+    })
+    expect(mocks.fetchStats).toHaveBeenCalledWith(
+      vehicle,
+      expect.objectContaining({ to: '2026-09-29T00:00:00.000Z', place: 'outside' }),
+    )
+    expect(wrapper.findComponent({ name: 'PeriodChart' }).props('place')).toBe('outside')
+    expect(wrapper.find('a.csv-download').attributes('href')).toBe(
+      `api/v1/vehicles/${vehicle}/charges.csv?to=2026-09-29T00%3A00%3A00.000Z&place=outside`,
+    )
+    // The tabs keep the place for the charges only.
+    const tabs = wrapper.findAll('.v-tab').map((t) => t.attributes('href'))
+    expect(tabs[2]).toBe(`/vehicles/${vehicle}/trips?to=2026-09-28`)
+    expect(tabs[3]).toBe(`/vehicles/${vehicle}/charges?to=2026-09-28&place=outside`)
   })
 
   it('offers no CSV file to an account whose offer leaves it out', async () => {

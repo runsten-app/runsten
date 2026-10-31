@@ -43,7 +43,7 @@ func sampleResult(at time.Time) core.Result {
 			StartSoC: some(62), EndSoC: some(54), EnergyKWh: some(6.4),
 			Capacity:    core.Value[core.Capacity]{V: core.Capacity{KWh: 80, Source: core.CapacityCatalogNet}, OK: true},
 			From:        core.Value[core.Position]{V: core.Position{Lat: 45.764, Lon: 4.8357}, OK: true},
-			TripMeterKm: some(32),
+			TripMeterKm: some(32), OutsideTempC: some(-2.5),
 		}},
 		Charges: []core.Charge{{
 			DetectedAt: at.Add(time.Hour), Reconstructed: true, Sources: fromVolvo,
@@ -553,7 +553,7 @@ func TestReadsSeeOneSnapshot(t *testing.T) {
 }
 
 // TestSoftwareVersions: the versions newest first, the first without a start, by page
-// and period.
+// and period, each with its installation's start when one was seen.
 func TestSoftwareVersions(t *testing.T) {
 	s, _ := testStore(t)
 	ctx := context.Background()
@@ -561,7 +561,10 @@ func TestSoftwareVersions(t *testing.T) {
 	versions := []core.SoftwareVersion{
 		{DetectedAt: t0, Version: "2026.32.1", Installed: core.Bounds{Before: t0}},
 		{DetectedAt: t0.Add(48 * time.Hour), Version: "2026.38.3.1", Installed: core.Bounds{After: t0.Add(40 * time.Hour), Before: t0.Add(48 * time.Hour)}},
-		{DetectedAt: t0.Add(96 * time.Hour), Version: "2026.38.3.2", Installed: core.Bounds{After: t0.Add(95 * time.Hour), Before: t0.Add(96 * time.Hour)}},
+		{
+			DetectedAt: t0.Add(96 * time.Hour), Version: "2026.38.3.2", Installed: core.Bounds{After: t0.Add(95 * time.Hour), Before: t0.Add(96 * time.Hour)},
+			InstallStarted: core.Bounds{After: t0.Add(94 * time.Hour), Before: t0.Add(94*time.Hour + time.Minute)},
+		},
 	}
 	if err := s.SaveDerivation(ctx, a, v, time.Time{}, core.Result{Versions: versions}); err != nil {
 		t.Fatal(err)
@@ -592,7 +595,8 @@ func TestSoftwareVersions(t *testing.T) {
 			}
 		})
 	}
-	if got, _ := s.ListSoftwareVersions(ctx, a, v, api.EventQuery{}); len(got) != 3 || !reflect.DeepEqual(got[2], versions[0]) {
+	if got, _ := s.ListSoftwareVersions(ctx, a, v, api.EventQuery{}); len(got) != 3 || !reflect.DeepEqual(got[2], versions[0]) ||
+		!reflect.DeepEqual(got[0], versions[2]) {
 		t.Errorf("versions %+v", got)
 	}
 }

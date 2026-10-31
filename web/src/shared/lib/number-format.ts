@@ -1,9 +1,13 @@
-// The units Runsten shows. Intl formats kilometers and percents itself; it has no watt,
+// The units Runsten shows. Intl formats kilometers, percents and degrees itself; it has no watt,
 // watt-hour nor pressure unit, so kW, kWh, kWh/100 km and bar are a formatted number and a
 // symbol.
-export type Unit = 'km' | 'percent' | 'kW' | 'kWh' | 'kWhPer100km' | 'bar'
+export type Unit = 'km' | 'percent' | 'kW' | 'kWh' | 'kWhPer100km' | 'bar' | 'celsius'
 
-const intlUnits: Partial<Record<Unit, string>> = { km: 'kilometer', percent: 'percent' }
+const intlUnits: Partial<Record<Unit, string>> = {
+  km: 'kilometer',
+  percent: 'percent',
+  celsius: 'celsius',
+}
 const symbols: Partial<Record<Unit, string>> = { kWhPer100km: 'kWh/100\u00a0km' }
 const fractionDigits: Record<Unit, number> = {
   km: 0,
@@ -13,6 +17,8 @@ const fractionDigits: Record<Unit, number> = {
   kWhPer100km: 1,
   // A tyre's pressure, measured to the kPa.
   bar: 2,
+  // A Tesla tells its temperatures to the half degree.
+  celsius: 1,
 }
 
 // formatQuantity formats a value in its unit, in the locale, with at most digits

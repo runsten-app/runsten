@@ -55,6 +55,11 @@ describe('ChargePage', () => {
     const wrapper = await mounted('nope', '?to=2026-09-30')
     expect(wrapper.find('.v-alert').text()).toBe('This charge does not exist.')
     expect(wrapper.find('a.back').attributes('href')).toBe('/vehicles/v1/charges?to=2026-09-30')
+    // The place too, chosen in the list.
+    const atPlace = await mounted('nope', '?to=2026-09-30&place=outside')
+    expect(atPlace.find('a.back').attributes('href')).toBe(
+      '/vehicles/v1/charges?to=2026-09-30&place=outside',
+    )
     expect(wrapper.find('.v-tab[aria-current="page"]').text()).toBe('Charges')
     expect(wrapper.findComponent({ name: 'ChargeCurve' }).props()).toEqual({
       vehicle: 'v1',

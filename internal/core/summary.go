@@ -240,7 +240,11 @@ func (s Summary) WithoutConsumption() Summary {
 // costs holds the costs of charges, in the same order, and the orphaned entered costs:
 // those whose WindowAfter lies in the period count apart. places are the account's, in
 // a stable order, which group the charges.
-func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from, to time.Time, loc *time.Location, bucket Bucket, p Params) (Summary, error) {
+//
+// at keeps the charges of one place in the charges' sums, the orphaned costs, which are
+// at no place, left out; the others still open and close the parked intervals and give
+// their odometer, as the trips do.
+func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from, to time.Time, loc *time.Location, bucket Bucket, at ChargesAt, p Params) (Summary, error) {
 	if !from.Before(to) {
 		return Summary{}, ErrEmptyPeriod
 	}
@@ -294,19 +298,24 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 		if i < len(costs.Charges) {
 			cost = costs.Charges[i]
 		}
-		add(c.Start.After, func(a *acc) { a.charge(c, cost) })
 		reading(c.Start.After, c.OdometerKm)
+		evs = append(evs, event{c.DetectedAt, c.Start, c.End, c.StartSoC, c.EndSoC})
+		if !at.Keeps(c, places) {
+			continue
+		}
+		add(c.Start.After, func(a *acc) { a.charge(c, cost) })
 		if in(c.Start.After, from, to) {
 			bySoC.add(c)
 			byPlace.add(c, cost)
 		}
-		evs = append(evs, event{c.DetectedAt, c.Start, c.End, c.StartSoC, c.EndSoC})
 	}
-	for _, o := range costs.Orphans {
-		add(o.WindowAfter, func(a *acc) {
-			a.s.Charges.Orphaned.Count++
-			a.s.Charges.Orphaned.AmountMinor += o.AmountMinor
-		})
+	if at.Group == PlaceGroupAny {
+		for _, o := range costs.Orphans {
+			add(o.WindowAfter, func(a *acc) {
+				a.s.Charges.Orphaned.Count++
+				a.s.Charges.Orphaned.AmountMinor += o.AmountMinor
+			})
+		}
 	}
 	slices.SortStableFunc(evs, func(a, b event) int {
 		return cmp.Or(a.start.After.Compare(b.start.After), a.detectedAt.Compare(b.detectedAt))

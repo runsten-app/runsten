@@ -8,12 +8,14 @@ import { SpokenText } from '@/shared/ui'
 // PeriodTotals sums the trips or the charges of the list's period, in one line. An event
 // counts where it started: one across a limit of the period is listed, not counted, and
 // the line says so ("started in the period"). The cost of the charges comes with the
-// account's currency only: without it, none is known.
+// account's currency only: without it, none is known. With a place, the charges of the
+// place only, as the list.
 const props = defineProps<{
   vehicle: string
   from?: string
   to?: string
   kind: 'trips' | 'charges'
+  place?: string
 }>()
 const { t } = useI18n()
 const f = useFormat()
@@ -21,6 +23,8 @@ const { stats, error } = useStats(
   () => props.vehicle,
   () => props.from,
   () => props.to,
+  undefined,
+  () => props.place,
 )
 const filtered = computed(() => !!(props.from || props.to))
 

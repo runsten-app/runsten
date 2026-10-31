@@ -15,6 +15,7 @@ import {
   dayKey,
   formatBounds,
   formatDay,
+  formatDays,
   formatDuration,
   formatTime,
   formatTotalDuration,
@@ -77,6 +78,9 @@ export function useFormat() {
     time: (iso: string, day?: string) => formatTime(iso, intl.value, day),
     duration: (start: Bounds, end: Bounds) =>
       formatDuration(honestDuration(start, end), intl.value),
+    // days shows how long a state lasted, in days beyond one; without a max, at least.
+    days: (d: { min: number; max: number | null }) =>
+      formatDays(d, intl.value, (s) => t('common.atLeastValue', { value: s })),
     // totalDuration shows a sum of durations, in seconds as the API gives it.
     totalDuration: (s: { min: number; max: number }) =>
       formatTotalDuration({ min: s.min * 1000, max: s.max * 1000 }, intl.value),

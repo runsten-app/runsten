@@ -5,5 +5,13 @@ export const statsKeys = {
   every: () => ['stats'] as const,
   all: (vehicle: string) => ['stats', vehicle] as const,
   period: (vehicle: string, q: StatsQuery) =>
-    ['stats', vehicle, q.from ?? null, q.to ?? null, q.tz, q.bucket ?? null] as const,
+    [
+      'stats',
+      vehicle,
+      q.from ?? null,
+      q.to ?? null,
+      q.tz,
+      q.bucket ?? null,
+      q.place ?? null,
+    ] as const,
 }

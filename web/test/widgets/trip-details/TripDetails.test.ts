@@ -92,6 +92,7 @@ describe('TripDetails', () => {
       'State of charge': '62% → 55%',
       Range: '248 km → 218 km',
       Odometer: '12,400 km → 12,432 km',
+      'Outside temperature (average)': '8.5°C',
     })
     expect(w.find('.figures .note').text()).toContain('No meter is read.')
     expect(w.find('.reconstructed-note').exists()).toBe(false)
@@ -108,6 +109,8 @@ describe('TripDetails', () => {
       'The times are those the app gave, to the minute or better: no range.',
     )
     expect(w.find('.figures .note').text()).toBe('The energy is the one the app gave.')
+    // No temperature from the app: none said, not an Unknown.
+    expect(facts(w, 'figures')).not.toHaveProperty('Outside temperature (average)')
     // Outside every place, the street the app named.
     expect(facts(w, 'positions')).toEqual({
       Start: 'Boulevard Vivier-Merle, Lyon',

@@ -8,7 +8,7 @@ import { ChartFrame } from '@/shared/ui/chart'
 import { StatsDistributions } from '@/widgets/stats-distributions'
 import empty from '@fixtures/stats-empty.json'
 import stats from '@fixtures/stats.json'
-import { mountWith } from '@test/utils'
+import { mountWith, testRouter } from '@test/utils'
 
 vi.mock('vue-chartjs', () => import('@test/chart-stub'))
 const { fetchStats } = vi.hoisted(() => ({ fetchStats: vi.fn() }))
@@ -110,9 +110,57 @@ describe('StatsDistributions', () => {
     expect(plain(w.find('.by-distance .hint').text())).toBe(
       '1 trip left out: reconstructed, which may hold several, or without a distance.',
     )
-    // No list filters by band: a press leads nowhere.
+    // No list filters by band: a press leads nowhere; the list filters by place.
     const frames = w.findAllComponents(ChartFrame)
-    expect(frames.map((f) => f.props('selectable'))).toEqual([false, false, false, false, false])
+    expect(frames.map((f) => f.props('selectable'))).toEqual([false, false, false, true, true])
+  })
+
+  it('leads from a place to the list of its charges over the same period', async () => {
+    const s = structuredClone(stats) as Stats
+    s.charges_by_place.outside.dc.count = 1
+    fetchStats.mockResolvedValue(s)
+    const router = testRouter()
+    await router.push('/vehicles/v1/stats?from=2026-09-01&to=2026-09-30&view=charging')
+    const { wrapper } = mountWith(AllViews, { router, props: { vehicle: 'v1' } })
+    await flushPromises()
+    // The frames of the views in order: the places' energy, then their cost.
+    const frames = wrapper.findAllComponents(ChartFrame)
+    const [byPlace, costByPlace] = [frames[3], frames[4]]
+    const opened = async (frame: (typeof frames)[number] | undefined, i: number) => {
+      await router.push('/vehicles/v1/stats?from=2026-09-01&to=2026-09-30&view=charging')
+      frame?.vm.$emit('select', i)
+      await flushPromises()
+      return { name: router.currentRoute.value.name, query: router.currentRoute.value.query }
+    }
+    const period = { from: '2026-09-01', to: '2026-09-30' }
+    // The place, then outside by type (DC), then without a position.
+    expect(await opened(byPlace, 0)).toEqual({
+      name: 'charges',
+      query: { ...period, place: '5e1f0000-0000-4000-8000-000000000001' },
+    })
+    expect(await opened(byPlace, 1)).toEqual({
+      name: 'charges',
+      query: { ...period, place: 'outside' },
+    })
+    expect(await opened(costByPlace, 2)).toEqual({
+      name: 'charges',
+      query: { ...period, place: 'no_position' },
+    })
+    // The same lists from the keyboard: a link per group, the outside ones as one.
+    const links = wrapper.findAll('.by-place .place-links a')
+    expect(links.map((a) => [a.text(), a.attributes('href')])).toEqual([
+      [
+        'Maison de Tante Agathe',
+        '/vehicles/v1/charges?from=2026-09-01&to=2026-09-30&place=5e1f0000-0000-4000-8000-000000000001',
+      ],
+      ['Elsewhere', '/vehicles/v1/charges?from=2026-09-01&to=2026-09-30&place=outside'],
+      ['No position', '/vehicles/v1/charges?from=2026-09-01&to=2026-09-30&place=no_position'],
+    ])
+    expect(wrapper.findAll('.cost-by-place .place-links a')).toHaveLength(3)
+    expect(await opened(byPlace, 9)).toEqual({
+      name: 'stats',
+      query: { ...period, view: 'charging' },
+    })
   })
 
   it('draws the charges by the state of charge they started and ended at', async () => {

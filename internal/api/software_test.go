@@ -17,7 +17,7 @@ func TestStateSoftware(t *testing.T) {
 		SoftwareUpdate: core.Some(core.SoftwareUpdate{
 			Status: core.UpdateWaitingWiFi, Version: "2026.38.3.2",
 			DownloadPct: core.Some(0.0, time.Time{}), InstallPct: core.Some(1.0, time.Time{}),
-			Duration: core.Some(45*time.Minute, time.Time{}),
+			Duration: core.Some(45*time.Minute, time.Time{}), ScheduledAt: core.Some(h(23, 50), time.Time{}),
 		}, h(4, 0)),
 	}
 	e.reader.current[car] = []core.Record{{FetchedAt: h(5, 0), CheckedAt: h(5, 30), Snapshot: snap}}
@@ -33,7 +33,8 @@ func TestStateSoftware(t *testing.T) {
 	if want := `{"value":"2026.38.3.1","reported_at":"2026-09-28T04:00:00Z","fetched_at":"2026-09-28T05:00:00Z","checked_at":"2026-09-28T05:30:00Z"}`; string(st.Software) != want {
 		t.Errorf("software = %s\nwant       %s", st.Software, want)
 	}
-	if want := `{"value":{"status":"waiting_wifi","version":"2026.38.3.2","download_pct":0,"install_pct":1,"duration_s":2700},` +
+	if want := `{"value":{"status":"waiting_wifi","version":"2026.38.3.2","download_pct":0,"install_pct":1,"duration_s":2700,` +
+		`"scheduled_at":"2026-09-28T23:50:00Z"},` +
 		`"reported_at":"2026-09-28T04:00:00Z","fetched_at":"2026-09-28T05:00:00Z","checked_at":"2026-09-28T05:30:00Z"}`; string(st.SoftwareUpdate) != want {
 		t.Errorf("software_update = %s\nwant              %s", st.SoftwareUpdate, want)
 	}
@@ -45,7 +46,7 @@ func TestStateSoftware(t *testing.T) {
 	if err := json.Unmarshal([]byte(body), &st); err != nil {
 		t.Fatal(err)
 	}
-	if want := `{"status":"unknown","version":null,"download_pct":null,"install_pct":null,"duration_s":null}`; !json.Valid(st.SoftwareUpdate) ||
+	if want := `{"status":"unknown","version":null,"download_pct":null,"install_pct":null,"duration_s":null,"scheduled_at":null}`; !json.Valid(st.SoftwareUpdate) ||
 		string(st.SoftwareUpdate[len(`{"value":`):len(`{"value":`)+len(want)]) != want {
 		t.Errorf("software_update = %s", st.SoftwareUpdate)
 	}
@@ -56,7 +57,10 @@ func TestSoftwareVersionsJSON(t *testing.T) {
 	e.reader.versions = map[string][]core.SoftwareVersion{car: {
 		{DetectedAt: h(1, 0), Version: "2026.32.1", Installed: core.Bounds{Before: h(1, 0)}},
 		{DetectedAt: h(3, 0), Version: "2026.38.3.1", Installed: core.Bounds{After: h(2, 30), Before: h(3, 0)}},
-		{DetectedAt: h(5, 0), Version: "2026.38.3.2", Installed: core.Bounds{After: h(4, 0), Before: h(5, 0)}},
+		{
+			DetectedAt: h(5, 0), Version: "2026.38.3.2", Installed: core.Bounds{After: h(4, 0), Before: h(5, 0)},
+			InstallStarted: core.Bounds{After: h(3, 30), Before: h(3, 31)},
+		},
 	}}
 	base := e.api.URL + "/api/v1/vehicles/" + car + "/software-versions"
 	_, body := get(t, noFollow(), base, c)

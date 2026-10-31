@@ -1035,6 +1035,41 @@ components:
         - warning
         - reported_at
       type: object
+    Climate:
+      additionalProperties: false
+      properties:
+        battery_heater:
+          description: The battery is being heated.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingBool"
+            - type: "null"
+        cabin_temp_c:
+          description: The temperature the vehicle measures in its cabin, in °C.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingFloat64"
+            - type: "null"
+        "on":
+          description: "The cabin's climate is running: by hand, from the app or on a schedule."
+          oneOf:
+            - $ref: "#/components/schemas/ReadingBool"
+            - type: "null"
+        outside_temp_c:
+          description: The temperature the vehicle measures outside, in °C.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingFloat64"
+            - type: "null"
+        preconditioning:
+          description: The vehicle is heating or cooling its cabin and battery before a departure.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingBool"
+            - type: "null"
+      required:
+        - outside_temp_c
+        - cabin_temp_c
+        - "on"
+        - preconditioning
+        - battery_heater
+      type: object
     Collection:
       additionalProperties: false
       properties:
@@ -2985,6 +3020,34 @@ components:
         - kwh_per_km
         - charges
       type: object
+    ReadingBool:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The last reading of the same value, unchanged.
+          format: date-time
+          pattern: Z$
+          type: string
+        fetched_at:
+          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
+          format: date-time
+          pattern: Z$
+          type: string
+        reported_at:
+          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        value:
+          type: boolean
+      required:
+        - value
+        - reported_at
+        - fetched_at
+        - checked_at
+      type: object
     ReadingCable:
       additionalProperties: false
       properties:
@@ -3543,6 +3606,13 @@ components:
           type:
             - number
             - "null"
+        scheduled_at:
+          description: When the owner set it to install; null when not scheduled, or the vehicle does not say.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
         status:
           description: "available: offered, not started. scheduled: set to install at a time. downloading. waiting_wifi: waiting for Wi-Fi to download. installing. unknown: a status Runsten does not know, an update waiting all the same."
           enum:
@@ -3566,6 +3636,7 @@ components:
         - download_pct
         - install_pct
         - duration_s
+        - scheduled_at
       type: object
     SoftwareVersion:
       additionalProperties: false
@@ -3575,6 +3646,11 @@ components:
           examples:
             - "2026-10-26T16:29:31.549000Z"
           type: string
+        install_start:
+          description: "When the vehicle started installing it: between the last reading without an installation in progress and the first reading of one. Its installation ended within installed: from it to installed, the installation's duration lies between installed.after − install_start.before and installed.before − install_start.after. null when no reading saw it installing: the vehicle asleep or out of reach, or the version read before Runsten read an installation."
+          oneOf:
+            - $ref: "#/components/schemas/Bounds"
+            - type: "null"
         installed:
           $ref: "#/components/schemas/Installed"
           description: "When the vehicle took it: between the last reading of the previous version and its own first one."
@@ -3586,6 +3662,7 @@ components:
         - id
         - version
         - installed
+        - install_start
       type: object
     Span:
       additionalProperties: false
@@ -3619,6 +3696,9 @@ components:
           type:
             - string
             - "null"
+        climate:
+          $ref: "#/components/schemas/Climate"
+          description: The temperatures and what heats or cools the vehicle, for a source that tells them (Tesla); every value null for the others.
         connection:
           $ref: "#/components/schemas/Connection"
         doors:
@@ -3682,6 +3762,7 @@ components:
         - position
         - battery_capacity_kwh
         - charging
+        - climate
         - software
         - software_update
         - doors
@@ -3905,6 +3986,12 @@ components:
         imported:
           description: "The event was imported from another application, which cut it from its own readings: it is not derived from Runsten's, and its times are the application's own, start.after equal to start.before, end.after to end.before. Only events before the vehicle's first reading are imported."
           type: boolean
+        outside_temp_c:
+          description: "The mean outside temperature, in °C, of the responses Runsten fetched while the trip ran, else of the latest one before it (a temperature that held), for a vehicle that tells it (Tesla). null for the others, a reconstructed or imported trip, and a trip derived before Runsten kept it: a rebuild of the derived data gives it."
+          format: double
+          type:
+            - number
+            - "null"
         reconstructed:
           description: "The event was never seen, only revealed by the odometer or the state of charge: it lies somewhere within [start.after, end.before], and start and end are that same interval."
           type: boolean
@@ -3966,6 +4053,7 @@ components:
         - end_place
         - start_address
         - end_address
+        - outside_temp_c
         - vehicle_reported
         - id
         - detected_at
@@ -6282,6 +6370,16 @@ paths:
             maximum: 200
             minimum: 1
             type: integer
+        - description: "Keeps the charges of one group of the statistics' charges_by_place: a place's ID (the charges whose place is this one, as charges.place), outside (a position outside every place) or no_position (no position, and no place takes them). A place the account does not have keeps none. Without it, every charge."
+          explode: false
+          in: query
+          name: place
+          schema:
+            description: "Keeps the charges of one group of the statistics' charges_by_place: a place's ID (the charges whose place is this one, as charges.place), outside (a position outside every place) or no_position (no position, and no place takes them). A place the account does not have keeps none. Without it, every charge."
+            examples:
+              - outside
+            pattern: ^(outside|no_position|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$
+            type: string
       responses:
         "200":
           content:
@@ -6294,7 +6392,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_parameter`: `from`, `to`, `limit` or `cursor`; the message names the parameter."
+          description: "`invalid_parameter`: `from`, `to`, `limit`, `cursor` or `place`; the message names the parameter."
         "401":
           content:
             application/json:
@@ -6365,6 +6463,16 @@ paths:
               - "2026-10-01T00:00:00Z"
             format: date-time
             type: string
+        - description: "Keeps the charges of one group of the statistics' charges_by_place, as the list does with the same parameter: a place's ID, outside or no_position."
+          explode: false
+          in: query
+          name: place
+          schema:
+            description: "Keeps the charges of one group of the statistics' charges_by_place, as the list does with the same parameter: a place's ID, outside or no_position."
+            examples:
+              - outside
+            pattern: ^(outside|no_position|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$
+            type: string
       responses:
         "200":
           content:
@@ -6384,7 +6492,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_parameter`: `from` or `to`; the message names the parameter."
+          description: "`invalid_parameter`: `from`, `to` or `place`; the message names the parameter."
         "401":
           content:
             application/json:
@@ -7523,6 +7631,16 @@ paths:
               - week
               - month
             type: string
+        - description: "Counts the charges of one group of charges_by_place only, as the list of the charges does with the same parameter: a place's ID, outside or no_position. The orphaned entered costs, at no place, are left out; the trips, the parked intervals and the odometer stay those of every event."
+          explode: false
+          in: query
+          name: place
+          schema:
+            description: "Counts the charges of one group of charges_by_place only, as the list of the charges does with the same parameter: a place's ID, outside or no_position. The orphaned entered costs, at no place, are left out; the trips, the parked intervals and the odometer stay those of every event."
+            examples:
+              - outside
+            pattern: ^(outside|no_position|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$
+            type: string
       responses:
         "200":
           content:
@@ -7535,7 +7653,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_parameter`: `from`, `to`, `tz` or `bucket`, or more than 400 intervals; the message names the parameter."
+          description: "`invalid_parameter`: `from`, `to`, `tz`, `bucket` or `place`, or more than 400 intervals; the message names the parameter."
         "401":
           content:
             application/json:

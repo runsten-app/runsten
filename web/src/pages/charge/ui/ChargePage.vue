@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useChargeInProgress } from '@/features/browse-charges'
 import { periodQuery } from '@/features/filter-period'
+import { placeQuery } from '@/features/filter-place'
 import { AppShell } from '@/widgets/app-shell'
 import { ChargeDetails } from '@/widgets/charge-details'
 import { ChargeInProgressDetails } from '@/widgets/charge-in-progress'
@@ -17,11 +18,11 @@ const ChargeCurve = defineAsyncComponent(() =>
 const props = defineProps<{ vehicle: string; id: string }>()
 const { t } = useI18n()
 const route = useRoute()
-// Back to the list as it was left: the same period.
+// Back to the list as it was left: the same period and place.
 const list = computed(() => ({
   name: 'charges',
   params: { vehicle: props.vehicle },
-  query: periodQuery(route.query),
+  query: { ...periodQuery(route.query), ...placeQuery(route.query) },
 }))
 
 // A charge in progress has the ID it will have once over: the same page follows it live,

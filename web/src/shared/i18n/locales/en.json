@@ -23,6 +23,7 @@
     "unknown": "Unknown",
     "openInOsm": "Open in OpenStreetMap",
     "atLeast": "At least",
+    "atLeastValue": "at least {value}",
     "atMost": "At most"
   },
   "cost": {
@@ -42,7 +43,7 @@
     },
     "choose": {
       "volvo": "I have a Volvo",
-      "polestar": "I have a Polestar (beta)",
+      "polestar": "I have a Polestar",
       "tesla": "I have a Tesla (beta)"
     }
   },
@@ -126,12 +127,21 @@
       "title": "Software update",
       "available": "Available",
       "scheduled": "Scheduled",
+      "scheduledAt": "Scheduled for {when}",
       "downloading": "Downloading",
       "waitingWifi": "Waiting for Wi-Fi",
       "installing": "Installing",
       "unknown": "Pending",
       "progress": "{status}, {pct}",
       "version": "{version}: {status}"
+    },
+    "climate": {
+      "title": "Climate",
+      "outside": "Outside",
+      "cabin": "Cabin",
+      "climateOn": "Climate on",
+      "preconditioning": "Preconditioning",
+      "batteryHeater": "Battery heating"
     }
   },
   "charging": {
@@ -253,7 +263,8 @@
       "hybrid": "Not estimated for a plug-in hybrid: the state of charge tells the battery's energy only, and not which part of the trip the engine drove.",
       "statsLink": "See the statistics of {month}"
     },
-    "energyImportedNote": "The energy is the one the app gave."
+    "energyImportedNote": "The energy is the one the app gave.",
+    "outsideTemp": "Outside temperature (average)"
   },
   "charges": {
     "title": "Charges",
@@ -261,6 +272,7 @@
     "error": "The charges could not be loaded. Try again in a moment.",
     "empty": "No charge recorded yet.",
     "emptyPeriod": "No charge in this period.",
+    "emptyPlace": "No charge at this place in this period.",
     "loadMore": "Load more",
     "moreFailed": "More charges could not be loaded. Try again.",
     "end": "No more charges.",
@@ -535,7 +547,8 @@
         "summary": "Energy charged by place: {total} in all, the most for {at} ({max}).",
         "none": "No charge with a known energy in this period.",
         "hint": "A charge counts at the place its cost takes: one without a position at the place that also takes those, if any.",
-        "reconstructed": "{n} reconstructed charge included, counted the same way. | {n} reconstructed charges included, counted the same way."
+        "reconstructed": "{n} reconstructed charge included, counted the same way. | {n} reconstructed charges included, counted the same way.",
+        "links": "Charges:"
       },
       "costByPlace": {
         "title": "Cost of charges by place",
@@ -1113,7 +1126,7 @@
     "title": "Connection",
     "backToVehicle": "Back to the vehicle",
     "attention": "The connection needs your attention",
-    "intro": "Runsten reads your vehicles in the background, from Volvo's API and Polestar's Data Portal: that is its collector. This page tells whether it reads them, and if not, why.",
+    "intro": "Runsten reads your vehicles in the background, from each manufacturer's API: that is its collector. This page tells whether it reads them, and if not, why.",
     "loading": "Loading the connection",
     "error": "The connection could not be loaded. Try again in a moment.",
     "refreshFailed": "The connection could not be refreshed: what it shows may be out of date.",
@@ -1572,7 +1585,6 @@
   },
   "polestar": {
     "intro": "Runsten reads your Polestar with a credential you create on Polestar's Data Portal, the access the EU Data Act gives its owners. Its quota of calls is yours alone.",
-    "beta": "Polestar support is in beta: how often a car sends its readings while driving is not verified yet.",
     "guide": "Read the guide",
     "refused": {
       "title": "Your Polestar credential was refused",
@@ -1699,11 +1711,29 @@
   },
   "software": {
     "title": "Software",
-    "current": "Running",
+    "current": "Version running",
     "installed": "Installed {when}",
     "firstRead": "First read {when}",
-    "all": "Show all versions",
     "more": "Show more",
-    "error": "The software's versions could not be loaded."
+    "error": "The software's versions could not be loaded.",
+    "running": "Running",
+    "open": "See the version history",
+    "history": "Versions",
+    "version": "Version",
+    "ran": "Ran for",
+    "installation": "Installation",
+    "soFar": "so far",
+    "notSeen": "Installation not seen",
+    "unseen": "—: no reading saw the installation, the car asleep or out of reach meanwhile.",
+    "none": "This vehicle does not tell the version of its software.",
+    "loading": "Loading the versions",
+    "now": "Now"
+  },
+  "placeFilter": {
+    "label": "Place",
+    "any": "All places",
+    "outside": "Elsewhere",
+    "noPosition": "No position",
+    "deleted": "A deleted place"
   }
 }

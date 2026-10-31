@@ -24,11 +24,10 @@ import {
   type Mode,
   type Reading,
   type Sleep,
-  type UpdateStatus,
 } from '@/entities/vehicle'
 import { useChargeInProgress } from '@/features/browse-charges'
 import { useVehicle } from '@/features/select-vehicle'
-import { useVehicleState } from '@/features/watch-vehicle-state'
+import { useUpdateText, useVehicleState } from '@/features/watch-vehicle-state'
 import { isApiError } from '@/shared/api'
 import { kilowatts, openStreetMapUrl, useFormat, useMapsOn, useNow, type Unit } from '@/shared/lib'
 import { LevelBar, MapView, StatusPill, TileFigure } from '@/shared/ui'
@@ -174,7 +173,23 @@ const chargingTile = computed(() => {
   const c = state.value?.charging
   return c ? (c.power_w ?? c.type ?? c.cable ?? c.target_soc_pct ?? null) : null
 })
-const vehicleTile = computed(() => state.value?.odometer_km ?? state.value?.software ?? null)
+const vehicleTile = computed(() => {
+  const s = state.value
+  if (!s) return null
+  return s.odometer_km ?? s.climate.outside_temp_c ?? s.climate.cabin_temp_c ?? s.software ?? null
+})
+
+// The climate, said under the cabin's temperature only while it runs: preconditioning
+// first, which runs it too.
+const climateRunning = computed(() => {
+  const c = state.value?.climate
+  if (c?.preconditioning?.value)
+    return { reading: c.preconditioning, value: t('state.climate.preconditioning') }
+  if (c?.on?.value) return { reading: c.on, value: t('state.climate.climateOn') }
+  return null
+})
+// The battery heated (a Tesla's, in the cold), said only while it is.
+const batteryHeating = computed(() => !!state.value?.climate.battery_heater?.value)
 
 // A charge that needs looking at gets its own tile, its figures large; otherwise (idle,
 // done, scheduled, unknown) one line under the battery's bar says it. The engine is not
@@ -241,33 +256,12 @@ const chargeOwn = computed(() => {
   )
 })
 
-// The update waiting for the software (a Tesla's): its status, the version it brings, and
-// its progress while it downloads or installs.
-const updateLabels = computed<Record<UpdateStatus, string>>(() => ({
-  available: t('state.update.available'),
-  scheduled: t('state.update.scheduled'),
-  downloading: t('state.update.downloading'),
-  waiting_wifi: t('state.update.waitingWifi'),
-  installing: t('state.update.installing'),
-  unknown: t('state.update.unknown'),
-}))
+// The update waiting for the software (a Tesla's): its status, the version it brings, its
+// progress while it downloads or installs, and when it is set to install.
+const updateText = useUpdateText()
 const update = computed(() => {
   const u = state.value?.software_update
-  if (!u) return null
-  const { status, version, download_pct, install_pct } = u.value
-  const progress =
-    status === 'downloading' ? download_pct : status === 'installing' ? install_pct : null
-  const label =
-    progress === null
-      ? updateLabels.value[status]
-      : t('state.update.progress', {
-          status: updateLabels.value[status],
-          pct: f.quantity(progress, 'percent'),
-        })
-  return {
-    reading: u,
-    value: version ? t('state.update.version', { version, status: label }) : label,
-  }
+  return u ? { reading: u, value: updateText(u.value, now.value) } : null
 })
 </script>
 
@@ -380,11 +374,18 @@ const update = computed(() => {
               />
               <div class="under-bar d-flex flex-wrap justify-space-between ga-2 mt-2">
                 <ReadingProvenance :reading="state.soc_pct" :now="now" :connection="connection" />
+                <span v-if="batteryHeating" class="heater">{{
+                  t('state.climate.batteryHeater')
+                }}</span>
                 <span v-if="state.charging.target_soc_pct" class="target">
                   {{ t('state.charging.target') }}
                   <strong>{{ quantity(state.charging.target_soc_pct, 'percent') }}</strong>
                 </span>
               </div>
+            </div>
+            <!-- Without a state of charge, no line under its bar to say it on. -->
+            <div v-if="batteryHeating && !state.soc_pct" class="under-bar">
+              <span class="heater">{{ t('state.climate.batteryHeater') }}</span>
             </div>
             <section
               v-if="!chargeActive"
@@ -507,6 +508,43 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
+              />
+              <!-- A source that tells its temperatures (a Tesla); nothing for the others. -->
+              <ReadingItem
+                v-if="state.climate.outside_temp_c"
+                :label="t('state.climate.outside')"
+                :reading="state.climate.outside_temp_c"
+                :value="quantity(state.climate.outside_temp_c, 'celsius')"
+                :now="now"
+                :connection="connection"
+                :tile="vehicleTile"
+                class="outside"
+              />
+              <ReadingItem
+                v-if="state.climate.cabin_temp_c"
+                :label="t('state.climate.cabin')"
+                :reading="state.climate.cabin_temp_c"
+                :value="quantity(state.climate.cabin_temp_c, 'celsius')"
+                :now="now"
+                :connection="connection"
+                :tile="vehicleTile"
+                class="cabin"
+              >
+                <span v-if="climateRunning" class="climate-running d-block mt-1">{{
+                  climateRunning.value
+                }}</span>
+              </ReadingItem>
+              <!-- Without the cabin's temperature, what runs says itself. -->
+              <ReadingItem
+                v-else-if="climateRunning"
+                :label="t('state.climate.title')"
+                :reading="climateRunning.reading"
+                :value="climateRunning.value"
+                :now="now"
+                :connection="connection"
+                :tile="vehicleTile"
+                size="small"
+                class="climate"
               />
               <!-- A source that tells its software (a Tesla); nothing for the others. -->
               <ReadingItem
@@ -632,6 +670,10 @@ const update = computed(() => {
   margin-top: auto;
 }
 .under-bar {
+  font-size: 0.75rem;
+  color: rgb(var(--v-theme-text-secondary));
+}
+.climate-running {
   font-size: 0.75rem;
   color: rgb(var(--v-theme-text-secondary));
 }

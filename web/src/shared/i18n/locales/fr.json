@@ -23,6 +23,7 @@
     "unknown": "Inconnu",
     "openInOsm": "Ouvrir dans OpenStreetMap",
     "atLeast": "Au moins",
+    "atLeastValue": "au moins {value}",
     "atMost": "Au plus"
   },
   "cost": {
@@ -42,7 +43,7 @@
     },
     "choose": {
       "volvo": "J'ai une Volvo",
-      "polestar": "J'ai une Polestar (bêta)",
+      "polestar": "J'ai une Polestar",
       "tesla": "J'ai une Tesla (bêta)"
     }
   },
@@ -126,12 +127,21 @@
       "title": "Mise à jour du logiciel",
       "available": "Disponible",
       "scheduled": "Programmée",
+      "scheduledAt": "Programmée pour {when}",
       "downloading": "Téléchargement",
       "waitingWifi": "En attente du Wi-Fi",
       "installing": "Installation",
       "unknown": "En attente",
       "progress": "{status}, {pct}",
       "version": "{version} : {status}"
+    },
+    "climate": {
+      "title": "Climatisation",
+      "outside": "Extérieur",
+      "cabin": "Habitacle",
+      "climateOn": "Climatisation en marche",
+      "preconditioning": "Préconditionnement",
+      "batteryHeater": "Batterie en chauffe"
     }
   },
   "charging": {
@@ -253,7 +263,8 @@
       "hybrid": "Non estimée pour un hybride rechargeable : l'état de charge ne dit que l'énergie de la batterie, pas quelle part du trajet le moteur a faite.",
       "statsLink": "Voir les statistiques de {month}"
     },
-    "energyImportedNote": "L'énergie est celle que l'app a donnée."
+    "energyImportedNote": "L'énergie est celle que l'app a donnée.",
+    "outsideTemp": "Température extérieure (moyenne)"
   },
   "charges": {
     "title": "Charges",
@@ -261,6 +272,7 @@
     "error": "Les charges n'ont pas pu être chargées. Réessayez dans un instant.",
     "empty": "Aucune charge enregistrée pour l'instant.",
     "emptyPeriod": "Aucune charge sur cette période.",
+    "emptyPlace": "Aucune charge à ce lieu sur cette période.",
     "loadMore": "Afficher plus",
     "moreFailed": "La suite des charges n'a pas pu être chargée. Réessayez.",
     "end": "Il n'y a pas d'autre charge.",
@@ -535,7 +547,8 @@
         "summary": "Énergie chargée par lieu : {total} en tout, le plus pour {at} ({max}).",
         "none": "Aucune recharge d'énergie connue sur cette période.",
         "hint": "Une recharge compte au lieu de son coût : sans position, au lieu qui prend aussi celles-là, s'il y en a un.",
-        "reconstructed": "{n} recharge reconstituée comprise, comptée de la même façon. | {n} recharges reconstituées comprises, comptées de la même façon."
+        "reconstructed": "{n} recharge reconstituée comprise, comptée de la même façon. | {n} recharges reconstituées comprises, comptées de la même façon.",
+        "links": "Charges :"
       },
       "costByPlace": {
         "title": "Coût des recharges par lieu",
@@ -1113,7 +1126,7 @@
     "title": "Connexion",
     "backToVehicle": "Retour au véhicule",
     "attention": "La connexion demande votre attention",
-    "intro": "Runsten lit vos véhicules en arrière-plan, par l'API de Volvo et le Data Portal de Polestar : c'est son collecteur. Cette page dit s'il les lit, et sinon pourquoi.",
+    "intro": "Runsten lit vos véhicules en arrière-plan, par l'API de chaque constructeur : c'est son collecteur. Cette page dit s'il les lit, et sinon pourquoi.",
     "loading": "Chargement de la connexion",
     "error": "La connexion n'a pas pu être chargée. Réessayez dans un instant.",
     "refreshFailed": "La connexion n'a pas pu être actualisée : ce qu'elle montre peut être dépassé.",
@@ -1572,7 +1585,6 @@
   },
   "polestar": {
     "intro": "Runsten lit votre Polestar avec un identifiant que vous créez sur le Data Portal de Polestar, l'accès que le Data Act européen donne aux propriétaires. Son quota d'appels n'est qu'à vous.",
-    "beta": "La prise en charge de Polestar est en bêta : la fréquence d'envoi d'une voiture en roulage n'est pas encore vérifiée.",
     "guide": "Lire le guide",
     "refused": {
       "title": "Votre identifiant Polestar a été refusé",
@@ -1699,11 +1711,29 @@
   },
   "software": {
     "title": "Logiciel",
-    "current": "En service",
+    "current": "Version en service",
     "installed": "Installée {when}",
     "firstRead": "Lue pour la première fois {when}",
-    "all": "Voir toutes les versions",
     "more": "Afficher plus",
-    "error": "Impossible de charger les versions du logiciel."
+    "error": "Impossible de charger les versions du logiciel.",
+    "running": "En service",
+    "open": "Voir l'historique des versions",
+    "history": "Versions",
+    "version": "Version",
+    "ran": "Utilisée",
+    "installation": "Installation",
+    "soFar": "à ce jour",
+    "notSeen": "Installation non vue",
+    "unseen": "— : aucun relevé n'a vu l'installation, la voiture endormie ou hors de portée pendant ce temps.",
+    "none": "Ce véhicule n'indique pas la version de son logiciel.",
+    "loading": "Chargement des versions",
+    "now": "Maintenant"
+  },
+  "placeFilter": {
+    "label": "Lieu",
+    "any": "Tous les lieux",
+    "outside": "Ailleurs",
+    "noPosition": "Sans position",
+    "deleted": "Un lieu supprimé"
   }
 }

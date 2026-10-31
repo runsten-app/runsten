@@ -137,7 +137,9 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		}
 		// Never settle on the last readings: a reading stored later may bear their time.
 		groupEnd := lastOfTime && i < len(ps)-1
-		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil && d.resumable == nil {
+		// Nor during an installation: replayed from after its start, it would lose it.
+		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil && d.resumable == nil &&
+			d.installing.Before.IsZero() {
 			d.res.Cursor = Cursor{Settled: pt.at, From: d.st.rowAt(FieldOdometer)}
 		}
 	}
@@ -155,6 +157,9 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 	for i := range d.res.Trips {
 		t := &d.res.Trips[i]
 		t.Sources = sourcesIn(ps, t.Start.Before, later(t.End.Before, t.DetectedAt))
+		if v := outsideTemp(ps, t.DetectedAt, t.End.Before); v.OK && !t.Reconstructed {
+			t.OutsideTempC = v
+		}
 	}
 	for i := range d.res.Charges {
 		c := &d.res.Charges[i]
@@ -191,6 +196,30 @@ func sourcesIn(ps []point, from, to time.Time) []string {
 	}
 	slices.Sort(out)
 	return out
+}
+
+// outsideTemp returns the mean of the outside temperatures of the responses fetched within
+// [from, to]: a trip's from the reading that detected it, after the cursor's settled time
+// as every reading an incremental derivation replays, to its end. Each response counts
+// once, at its fetch: its confirmation moves as a run of identical responses grows, which
+// would make an incremental derivation and a rebuild differ. A response covering the
+// climate without a temperature counts for nothing. Absent when none was fetched: the trip
+// keeps the one fetched last before it (detector.outside).
+func outsideTemp(ps []point, from, to time.Time) Value[float64] {
+	var sum float64
+	n := 0
+	for i := sort.Search(len(ps), func(i int) bool { return !ps[i].at.Before(from) }); i < len(ps) && !ps[i].at.After(to); i++ {
+		p := ps[i]
+		if p.confirm || p.snap.Covers&FieldClimate == 0 || !p.snap.OutsideTempC.OK {
+			continue
+		}
+		sum += p.snap.OutsideTempC.V
+		n++
+	}
+	if n == 0 {
+		return Value[float64]{}
+	}
+	return Value[float64]{V: sum / float64(n), OK: true}
 }
 
 // point is a reading: a record at its FetchedAt, or again, unchanged, at its CheckedAt.
@@ -284,10 +313,19 @@ type detector struct {
 	odoMark         state     // state at the last odometer reading
 	idleRun         energyRun // SoC since the last odometer reading
 
+	// outside is the outside temperature of the latest response fetched that tells one: a
+	// trip's when none is fetched while it runs (a temperature that holds).
+	outside Value[float64]
+
 	// software is the latest version of the software read, and seen when it was last
 	// read: the version a new one follows.
 	software     Value[string]
 	softwareSeen time.Time
+	// notInstalling is the last reading of the software without an installation in
+	// progress, and installing bounds the start of the one in progress: zero when none is,
+	// or when its start is not bounded (no reading before it).
+	notInstalling time.Time
+	installing    Bounds
 
 	trip   *tripBuilder
 	charge *chargeBuilder
@@ -308,14 +346,27 @@ func (d *detector) stepSoftware(p point) {
 		after = d.softwareSeen
 	}
 	d.res.Versions = append(d.res.Versions, SoftwareVersion{
-		DetectedAt: p.at, Version: v.V, Installed: Bounds{After: after, Before: p.at},
+		DetectedAt: p.at, Version: v.V, Installed: Bounds{After: after, Before: p.at}, InstallStarted: d.installing,
 	})
 }
 
 func (d *detector) track(p point) {
 	s, c := d.st.snap, p.snap.Covers
 	if c&FieldSoftware != 0 && s.Software.OK {
+		switch {
+		case !s.SoftwareUpdate.OK || s.SoftwareUpdate.V.Status != UpdateInstalling || d.software.OK && d.software.V != s.Software.V:
+			// None in progress, or a new version read: the one installed is over.
+			d.notInstalling, d.installing = p.at, Bounds{}
+		case d.installing.Before.IsZero() && !d.notInstalling.IsZero():
+			d.installing = Bounds{After: d.notInstalling, Before: p.at}
+		}
 		d.software, d.softwareSeen = s.Software, p.at
+	}
+	// A response without a temperature (a car just woken) keeps the one before, as the
+	// trip's mean leaves it out.
+	if c&FieldClimate != 0 && !p.confirm && p.snap.OutsideTempC.OK {
+		// Undated, as a mean is: one fact of the trip, whichever response it comes from.
+		d.outside = Value[float64]{V: p.snap.OutsideTempC.V, OK: true}
 	}
 	if c&FieldEngine != 0 && s.Engine.OK && s.Engine.V != EngineRunning {
 		d.lastNotRunning = p.at

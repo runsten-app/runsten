@@ -45,6 +45,7 @@ export type {
   ModelChoice,
   Reading,
   Sleep,
+  SoftwareUpdate,
   UpdateStatus,
   SourceLevel,
   State,

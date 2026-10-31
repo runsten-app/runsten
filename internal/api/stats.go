@@ -18,6 +18,7 @@ type statsInput struct {
 	To      time.Time `query:"to" doc:"The end of the period, excluded; it must come after from. Without it, now." example:"2026-10-01T00:00:00+02:00"`
 	TZ      string    `query:"tz" default:"UTC" doc:"The IANA time zone in which days, weeks and months are split, changes of daylight saving time included." example:"Europe/Paris"`
 	Bucket  string    `query:"bucket" enum:"day,week,month" doc:"Splits the period into intervals: days, ISO weeks (from Monday) or months. Without it, the totals only."`
+	Place   string    `query:"place" pattern:"^(outside|no_position|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$" doc:"Counts the charges of one group of charges_by_place only, as the list of the charges does with the same parameter: a place's ID, outside or no_position. The orphaned entered costs, at no place, are left out; the trips, the parked intervals and the odometer stay those of every event." example:"outside"`
 }
 
 // bucketName is the split of a period.
@@ -364,7 +365,7 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 	if !l.NoCosts {
 		costs.Charges = s.costs(p.PricedCharges, model.ChargerKW)
 	}
-	sum, err := core.Summarize(p.Trips, p.Charges, costs, p.Places, from, to, loc, core.Bucket(in.Bucket), s.Params)
+	sum, err := core.Summarize(p.Trips, p.Charges, costs, p.Places, from, to, loc, core.Bucket(in.Bucket), chargesAt(in.Place), s.Params)
 	switch {
 	case errors.Is(err, core.ErrTooManyBuckets):
 		return nil, apiError(http.StatusBadRequest, codeInvalidParameter, "bucket: the period would have more than 400 intervals")
@@ -418,7 +419,7 @@ func (s *Server) registerStats(api huma.API) {
 			"that lacked one; a sum over no event is 0, an average `null`. Energies, consumption, costs and the " +
 			"loss of the state of charge are estimates. At most 400 intervals.",
 	}, "The statistics.", map[int]string{
-		http.StatusBadRequest: "`invalid_parameter`: `from`, `to`, `tz` or `bucket`, or more than 400 intervals; " +
+		http.StatusBadRequest: "`invalid_parameter`: `from`, `to`, `tz`, `bucket` or `place`, or more than 400 intervals; " +
 			"the message names the parameter.",
 		http.StatusUnauthorized: errUnauthorized, http.StatusForbidden: "`feature_unavailable`: `bucket`, while the " +
 			"account's offer leaves out the statistics (`limits.unavailable` of the session).",

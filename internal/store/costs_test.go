@@ -936,3 +936,92 @@ func TestCostIsolation(t *testing.T) {
 		}
 	})
 }
+
+// TestListChargesAtPlace pages through the charges of one place, rare among the others:
+// its pages are full, across the batches read, and the groups those of the statistics.
+func TestListChargesAtPlace(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, v := newVehicle(t, s, "token-a", "YV1AAAAAAAAAAAAA1")
+	w := work()
+	id, err := s.CreatePlace(ctx, a, w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hours := make([]int, 2*chargeBatch+50)
+	for i := range hours {
+		hours[i] = 2 * i
+	}
+	charges := chargesAt(hours...)
+	away := core.Position{Lat: 48.85, Lon: 2.35}
+	var atWork, outside, none []time.Time // oldest first
+	for i := range charges {
+		c := &charges[i]
+		switch {
+		case i%60 == 7:
+			c.Position = core.Value[core.Position]{V: w.Position, OK: true}
+			atWork = append(atWork, c.DetectedAt)
+		case i%3 == 0:
+			c.Position = core.Value[core.Position]{V: away, OK: true}
+			outside = append(outside, c.DetectedAt)
+		default:
+			none = append(none, c.DetectedAt)
+		}
+	}
+	if err := s.SaveDerivation(ctx, a, v, time.Time{}, core.Result{Charges: charges}); err != nil {
+		t.Fatal(err)
+	}
+	// read pages through the charges of a group, newest first, as the API does.
+	read := func(t *testing.T, at core.ChargesAt, limit int) (got []time.Time) {
+		t.Helper()
+		var after *api.EventKey
+		for {
+			p, err := s.ListCharges(ctx, a, v, api.EventQuery{After: after, Limit: limit, Place: at})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, c := range p.Charges {
+				got = append(got, c.DetectedAt)
+			}
+			if len(p.Charges) < limit || limit == 0 {
+				return got
+			}
+			last := p.Charges[len(p.Charges)-1]
+			after = &api.EventKey{StartedAfter: last.Start.After, DetectedAt: last.DetectedAt}
+		}
+	}
+	newest := func(ts []time.Time) []time.Time {
+		out := slices.Clone(ts)
+		slices.Reverse(out)
+		return out
+	}
+	every := make([]time.Time, len(charges))
+	for i, c := range charges {
+		every[i] = c.DetectedAt
+	}
+	for _, tt := range []struct {
+		name  string
+		at    core.ChargesAt
+		limit int
+		want  []time.Time
+	}{
+		{"a place, by pages", core.ChargesAt{Group: core.PlaceGroupPlace, PlaceID: id}, 3, newest(atWork)},
+		{"a place, at once", core.ChargesAt{Group: core.PlaceGroupPlace, PlaceID: id}, 0, newest(atWork)},
+		{"outside, by pages", core.ChargesAt{Group: core.PlaceGroupOutside}, 50, newest(outside)},
+		{"no position, at once", core.ChargesAt{Group: core.PlaceGroupNoPosition}, 0, newest(none)},
+		{"every charge", core.ChargesAt{}, 120, newest(every)},
+		{"a place the account lacks", core.ChargesAt{Group: core.PlaceGroupPlace, PlaceID: "00000000-0000-0000-0000-000000000000"}, 3, nil},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := read(t, tt.at, tt.limit)
+			if !slices.EqualFunc(got, tt.want, time.Time.Equal) {
+				t.Errorf("got %d charges %v\nwant %d %v", len(got), got, len(tt.want), tt.want)
+			}
+		})
+	}
+	// A page is full though its charges lie in several batches.
+	p, err := s.ListCharges(ctx, a, v, api.EventQuery{Limit: 7, Place: core.ChargesAt{Group: core.PlaceGroupPlace, PlaceID: id}})
+	if err != nil || len(p.Charges) != 7 || len(p.Places) != 1 {
+		t.Errorf("page of 7: %d charges, %d places, %v", len(p.Charges), len(p.Places), err)
+	}
+}

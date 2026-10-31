@@ -128,6 +128,8 @@ const (
 	FieldEnergyAdded
 	// FieldSoftware covers Software and SoftwareUpdate, told in the same block.
 	FieldSoftware
+	// FieldClimate covers OutsideTempC, CabinTempC and Climate, told in the same block.
+	FieldClimate
 	// FieldDoors covers Doors: the doors, the hood, the tailgate, the tank lid and the
 	// locks, which every source tells together.
 	FieldDoors
@@ -189,10 +191,28 @@ type Snapshot struct {
 	Software       Value[string]
 	SoftwareUpdate Value[SoftwareUpdate]
 
+	// OutsideTempC is the temperature the vehicle measures outside, CabinTempC inside, in
+	// °C; Climate what heats or cools it.
+	OutsideTempC Value[float64]
+	CabinTempC   Value[float64]
+	Climate      Value[Climate]
+
 	// Doors and Windows are what of the vehicle is open, and whether it is locked; absent
 	// when the source tells none of it.
 	Doors   Value[Doors]
 	Windows Value[Windows]
+}
+
+// Climate is what of the vehicle's climate runs. Each is absent when the source does not
+// tell it.
+type Climate struct {
+	// On is the cabin's climate running, by hand, from the app or on a schedule.
+	On Value[bool]
+	// Preconditioning is the vehicle heating or cooling its cabin and battery before a
+	// departure.
+	Preconditioning Value[bool]
+	// BatteryHeater is the battery being heated.
+	BatteryHeater Value[bool]
 }
 
 // Opening is whether a door, a window or a lid is open.
@@ -253,6 +273,8 @@ type SoftwareUpdate struct {
 	DownloadPct, InstallPct Value[float64]
 	// Duration is how long the vehicle expects its installation to take.
 	Duration Value[time.Duration]
+	// ScheduledAt is when the owner set it to install.
+	ScheduledAt Value[time.Time]
 }
 
 // BatteryElectric is whether the vehicle is known to run on its battery alone.
@@ -316,6 +338,9 @@ func (s *Snapshot) merge(o Snapshot) {
 	}
 	if set(FieldSoftware) {
 		s.Software, s.SoftwareUpdate = o.Software, o.SoftwareUpdate
+	}
+	if set(FieldClimate) {
+		s.OutsideTempC, s.CabinTempC, s.Climate = o.OutsideTempC, o.CabinTempC, o.Climate
 	}
 	if set(FieldDoors) {
 		s.Doors = o.Doors

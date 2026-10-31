@@ -170,6 +170,19 @@ describe('battery page', () => {
   })
 })
 
+describe('software page', () => {
+  it('is loaded on demand, as the battery’s, from the health page', async () => {
+    fetchSession.mockResolvedValue(session)
+    const r = router()
+    await r.push('/vehicles/v1/software')
+    expect(r.currentRoute.value.name).toBe('software')
+    expect(r.currentRoute.value.params.vehicle).toBe('v1')
+    const record = r.currentRoute.value.matched[0]
+    expect(typeof record?.components?.default).toBe('object')
+    expect(record?.props.default).toBe(true)
+  })
+})
+
 describe('settings', () => {
   it.each([
     ['/settings', 'settings'],

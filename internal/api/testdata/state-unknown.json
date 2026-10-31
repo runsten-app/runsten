@@ -24,6 +24,13 @@
     "power_w": null,
     "target_soc_pct": null
   },
+  "climate": {
+    "outside_temp_c": null,
+    "cabin_temp_c": null,
+    "on": null,
+    "preconditioning": null,
+    "battery_heater": null
+  },
   "software": null,
   "software_update": null,
   "doors": null,

@@ -8,6 +8,10 @@ The **Trips** and **Charges** tabs list the events of a period, by day, newest f
 
 <Screen view="trips" alt="The Trips tab: the trips of a period, by day, under their totals." />
 
+## Charges by place
+
+Beside the period, the **Charges** tab chooses a place: one of your places, **Elsewhere** (a position outside every place) or **No position**. The list, its totals, its chart and its CSV file then hold the charges of that place only: "at home, over the last three months, 412 kWh for €61.20 – €64.80". A charge without a position is at the place that takes those, if you marked one ([Places, tariffs and costs](./costs.md)), never a DC one. The place stays in the address of the page, with the period; in the statistics, selecting a place's bar opens the same list.
+
 ## Reading the times
 
 The car is read every few minutes, never continuously. So a time is the two readings around it:
@@ -24,13 +28,13 @@ A value the car did not give says **Unknown**, never 0.
 
 A vehicle's history may start before Runsten read it: trips and charges imported from another app ([Importing your history](./importing.md)) are marked with it, "Imported from Aximote" or "Imported from the Volvo Data Portal". Only what started before Runsten's first reading of the vehicle is imported, so they never duplicate the events Runsten saw. Their times and figures are the app's own: one time at each end, never a range, and the energy and cost it gave, when it gave them. A charge's cost is the app's when it is in your currency, else its place's tariff's.
 
-An imported trip with a track draws it on its map, where your instance shows maps and you have not hidden them; otherwise, as a trip Runsten read, it has its two ends only: Volvo gives no position while driving.
+An imported trip with a track draws it on its map, where your instance shows maps and you have not hidden them; otherwise, as a trip Runsten read, it has its two ends only: Runsten draws no track of the trips it reads.
 
 They count in the lists and the statistics like the others. The vehicle's settings list them by app, in **Imported history**, and delete one app's at once; what Runsten read stays.
 
 ## Energies
 
-The energy of a trip or a charge is an estimate: the change of the state of charge times the battery's capacity. Runsten uses the net (usable) capacity of the vehicle's model when it knows it, else the capacity Volvo reports ([Vehicle models](./vehicle-models.md)). Each trip and charge tells which.
+The energy of a trip or a charge is an estimate: the change of the state of charge times the battery's capacity. Runsten uses the net (usable) capacity of the vehicle's model when it knows it, else the capacity the car reports, if it reports one ([Vehicle models](./vehicle-models.md)). Each trip and charge tells which.
 
 A Tesla also measures the energy that goes into its battery during a charge: the charge shows it first, measured by the vehicle, beside the two estimates.
 

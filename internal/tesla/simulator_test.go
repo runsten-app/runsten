@@ -148,6 +148,10 @@ func TestSimulatorDay(t *testing.T) {
 	if snap.Engine.V != core.EngineRunning || math.Abs(snap.OdometerKm.V-18207) > 0.01 {
 		t.Errorf("driving: engine %v, odometer %v", snap.Engine.V, snap.OdometerKm.V)
 	}
+	// The climate on, the cabin at its setting.
+	if snap.OutsideTempC.V != 16 || snap.CabinTempC.V != 20 || !snap.Climate.V.On.V {
+		t.Errorf("driving: outside %+v, cabin %+v, climate %+v", snap.OutsideTempC, snap.CabinTempC, snap.Climate)
+	}
 
 	// Charging at home, after the drive back and an hour parked; the access token
 	// expired meanwhile, refreshed with the rotated refresh token.

@@ -50,6 +50,10 @@ type Trip struct {
 	// that settles the trip later may be one an incremental derivation never replays.
 	Capacity Value[Capacity]
 	From, To Value[Position]
+	// OutsideTempC is the mean of the outside temperatures the responses fetched while
+	// the trip ran tell (outsideTemp), else that of the latest fetched before it, in °C;
+	// absent for a reconstructed trip.
+	OutsideTempC Value[float64]
 
 	// Vehicle's own trip figures at the end of the trip, for comparison: their exact
 	// semantics are unknown, they are never used to derive anything.
@@ -120,6 +124,12 @@ type SoftwareVersion struct {
 	// version, before its first one. After is zero for the first version Runsten read,
 	// installed at any time before.
 	Installed Bounds
+	// InstallStarted bounds when the vehicle started installing it: after the last
+	// reading without an installation in progress, before the first reading of one. Zero
+	// when no reading saw it installing (the vehicle asleep or out of reach, or a source
+	// that does not tell it). The installation ended within Installed: the vehicle tells
+	// the previous version until it restarts on the new one.
+	InstallStarted Bounds
 }
 
 // Amount is a sum of money in minor units of an ISO 4217 currency, which may be one

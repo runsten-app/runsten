@@ -58,8 +58,8 @@ func TestNormalizeFixture(t *testing.T) {
 	var none time.Time
 	at := time.UnixMilli(1793032171549).UTC()
 	want := core.Snapshot{
-		Covers: chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel | core.FieldSoftware |
-			core.FieldDoors | core.FieldWindows,
+		Covers: chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel |
+			core.FieldSoftware | core.FieldClimate | core.FieldDoors | core.FieldWindows,
 		Engine:     core.Some(core.EngineStopped, at), // shift_state null
 		SoC:        core.Some(69.0, at),
 		UsableSoC:  core.Some(68.0, at),
@@ -86,6 +86,11 @@ func TestNormalizeFixture(t *testing.T) {
 			Status: core.UpdateWaitingWiFi, Version: "2026.38.3.2",
 			DownloadPct: core.Some(0.0, none), InstallPct: core.Some(1.0, none),
 			Duration: core.Some(45*time.Minute, none),
+		}, at),
+		OutsideTempC: core.Some(16.0, at),
+		CabinTempC:   core.Some(16.0, at),
+		Climate: core.Some(core.Climate{
+			On: core.Some(false, at), Preconditioning: core.Some(false, at), BatteryHeater: core.Some(false, at),
 		}, at),
 		// Locked, all closed, Sentry Mode off; no tank lid nor sunroof told.
 		Doors: core.Some(core.Doors{
@@ -238,6 +243,36 @@ func TestNormalizeDrive(t *testing.T) {
 	}
 }
 
+// TestNormalizeClimate: the temperatures and what runs, each absent when null; a block
+// without any covers the climate, absent.
+func TestNormalizeClimate(t *testing.T) {
+	at := time.UnixMilli(1793032171549).UTC()
+	tests := []struct {
+		body string
+		want core.Snapshot
+	}{
+		{`"outside_temp": -3.5, "inside_temp": 19.5, "is_climate_on": true, "is_preconditioning": true, "battery_heater": true`, core.Snapshot{
+			Covers: core.FieldClimate, OutsideTempC: core.Some(-3.5, at), CabinTempC: core.Some(19.5, at),
+			Climate: core.Some(core.Climate{On: core.Some(true, at), Preconditioning: core.Some(true, at), BatteryHeater: core.Some(true, at)}, at),
+		}},
+		// Asleep a moment before, the car gives no temperature yet.
+		{`"outside_temp": null, "inside_temp": null, "is_climate_on": false`, core.Snapshot{
+			Covers: core.FieldClimate, Climate: core.Some(core.Climate{On: core.Some(false, at)}, at),
+		}},
+		{`"defrost_mode": 0`, core.Snapshot{Covers: core.FieldClimate}},
+	}
+	for _, tc := range tests {
+		raw := []byte(`{"response": {"climate_state": {` + tc.body + `, "timestamp": 1793032171549}}}`)
+		got, err := Normalize(VehicleData, raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(got, tc.want) {
+			t.Errorf("%s:\ngot  %+v\nwant %+v", tc.body, got, tc.want)
+		}
+	}
+}
+
 func TestNormalizeModel(t *testing.T) {
 	var none time.Time
 	for _, tc := range []struct {
@@ -346,6 +381,17 @@ func TestNormalizeSoftware(t *testing.T) {
 			true, core.Some("2025.32.3", at), core.Some(core.SoftwareUpdate{
 				Status: core.UpdateInstalling, Version: "2025.38.1",
 				DownloadPct: core.Some(100.0, none), InstallPct: core.Some(40.0, none),
+			}, at),
+		},
+		{
+			// As a Model Y told it, set to install at night.
+			"scheduled", `{"car_version": "2026.38.3.1 7f5c3e1a2b4d",
+				"software_update": {"status": "scheduled", "version": "2026.38.3.2", "install_perc": 10, "download_perc": 100,
+					"scheduled_time_ms": 1793497800944, "expected_duration_sec": 1800}}`,
+			true, core.Some("2026.38.3.1", at), core.Some(core.SoftwareUpdate{
+				Status: core.UpdateScheduled, Version: "2026.38.3.2",
+				DownloadPct: core.Some(100.0, none), InstallPct: core.Some(10.0, none),
+				Duration: core.Some(30*time.Minute, none), ScheduledAt: core.Some(time.UnixMilli(1793497800944).UTC(), none),
 			}, at),
 		},
 		{

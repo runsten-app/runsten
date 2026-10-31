@@ -13,6 +13,7 @@ export {
   dayKey,
   formatBounds,
   formatDay,
+  formatDays,
   formatDuration,
   formatTime,
   formatTotalDuration,

@@ -15,7 +15,7 @@ The **Stats** tab shows the totals of a period, this month by default, a shortcu
 
 <Screen view="stats" alt="The Stats tab: distance, consumption, energy charged and cost, by day." />
 
-Selecting a bar opens the trips or charges of its interval.
+Selecting a bar opens the trips or charges of its interval; a place's bar, the charges of that place over the period ([Charges by place](./trips-and-charges.md#charges-by-place)).
 
 ## How the figures are counted
 
