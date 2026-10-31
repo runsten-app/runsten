@@ -4,15 +4,17 @@ description: "How Runsten recognizes the variant of your car, choosing it, the o
 
 # Vehicle models
 
-Runsten carries a catalog of the electric Volvo, Polestar and Tesla variants (the European Model 3 and Model Y), and of the plug-in hybrid Volvos (the T6 and T8 of the 60 and 90 series, the T4 and T5 of the XC40) and the Polestar 1: for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power (most plug-in hybrids have none), and the sources of every figure. It comes with Runsten: an update brings its corrections.
+Runsten carries a catalog of the variants of the brands it reads: the electric Volvos and Polestars, the European Tesla Model 3 and Model Y, and the plug-in hybrids (the T6 and T8 Volvos of the 60 and 90 series, the T4 and T5 of the XC40, and the Polestar 1): for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power (most plug-in hybrids have none), and the sources of every figure. It comes with Runsten: an update brings its corrections.
 
 The model matters for two things: the net capacity, on which energies rest, and the onboard charger, which bounds the cost of an AC charge.
 
 ## Recognition
 
-The variant is worked out from the details the Volvo API reports and the VIN; nothing more is collected. The vehicle is recognized when exactly one variant fits, among those of its powertrain: a plug-in hybrid among the plug-in hybrids, an electric car among the electric ones, so that a hybrid is never taken for an electric car of a battery nearby. A car whose fuel type is not read yet, or that runs on fuel alone, has no variant.
+The variant is worked out from what the manufacturer's API reports of the car and its VIN; nothing more is collected. What that is depends on the brand, below. The vehicle is recognized when exactly one variant fits, among those of its powertrain: a plug-in hybrid among the plug-in hybrids, an electric car among the electric ones, so that a hybrid is never taken for an electric car of a battery nearby. A car whose fuel type is not read yet, or that runs on fuel alone, has no variant.
 
-When several variants fit, or none, the vehicle has no variant until you choose one: its energies rest on the capacity Volvo reports.
+When several variants fit, or none, the vehicle has no variant until you choose one: its energies then rest on the capacity the car reports, if it reports one (a Volvo does, a Polestar or a Tesla does not).
+
+A Volvo tells its model, its model year, its fuel type and its battery's gross capacity: it is recognized from them.
 
 A Polestar read through the Data Portal tells its model year (from its VIN), but neither its model nor its battery's capacity: several Polestar variants fit, and none is recognized. Choose yours: without a variant, its energies are unknown ([Your Polestar](./polestar.md#choose-its-variant)).
 
@@ -35,11 +37,13 @@ When the variant offers a 22 kW onboard charger as an option, state which one th
 
 ## Net capacity
 
-Volvo reports the gross capacity of the battery. Runsten assumes, until a measurement confirms it, that the state of charge runs over the net (usable) capacity, and uses it when the catalog knows it. For an EX30 of 69 kWh gross, 64 net, energies are 7 % lower than on the gross capacity.
+A car that reports its battery's capacity (a Volvo) reports the gross one. Runsten assumes, until a measurement confirms it, that the state of charge runs over the net (usable) capacity, and uses it when the catalog knows it. For an EX30 of 69 kWh gross, 64 net, energies are 7 % lower than on the gross capacity.
 
 ## Plug-in hybrids
 
-A plug-in hybrid is collected like any Volvo. What works:
+A plug-in hybrid is read like any other car of its brand. Runsten knows a car is one when its manufacturer's API says so: a Volvo's tells its fuel type. Polestar's Data Portal does not, and a car read through it is taken for an electric one; Tesla makes none.
+
+What works for a plug-in hybrid:
 
 - **Charges on a plug**, with their energy and their cost. While driving, the engine may also raise the state of charge (holding an empty battery, or a charge mode): such a rise is never taken for a charge. A rise seen while parked is a charge only when the car says its cable is connected.
 - **Trips**, with their distance and the energy taken from the battery.
