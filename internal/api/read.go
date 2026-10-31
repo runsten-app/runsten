@@ -355,6 +355,8 @@ type stateJSON struct {
 	Charging           chargingJSON                      `json:"charging"`
 	Software           null[reading[string]]             `json:"software" doc:"The version of the vehicle's software, for a source that tells it (Tesla); null for the others. fetched_at is the response it was read in, as any value's, not its installation: that is in its history, GET /vehicles/{vehicle}/software-versions."`
 	SoftwareUpdate     null[reading[softwareUpdateJSON]] `json:"software_update" doc:"The update waiting for the vehicle's software; null when none waits, or the source does not tell it."`
+	Doors              null[reading[doorsJSON]]          `json:"doors" doc:"The doors, the lids and the locks, for a source that tells them; null for the others. One response tells them all: reported_at is the latest of their own timestamps, and a Polestar's are often hours older than fetched_at."`
+	Windows            null[reading[windowsJSON]]        `json:"windows" doc:"The windows and the sunroof, for a source that tells them; null for the others."`
 	Sleep              null[reading[sleepJSON]]          `json:"sleep" doc:"Whether the vehicle is awake, asleep, or offline (out of reach: asleep or without a network), for a source that lets it fall asleep and tells it (Tesla); null for the others. While it is not awake, Runsten leaves it alone: the other values are those it had when it fell asleep, read again when it wakes up. fetched_at is the first reading of the state, after the vehicle changed to it."`
 }
 
@@ -386,6 +388,8 @@ func (s *Server) getState(ctx context.Context, in *vehicleInput) (*body[stateJSO
 			PowerW:       readingOf(c, core.FieldPower, n.PowerW, same),
 			TargetSoCPct: readingOf(c, core.FieldTargetSoC, n.TargetSoC, same),
 		},
+		Doors:          readingOf(c, core.FieldDoors, n.Doors, doorsOf),
+		Windows:        readingOf(c, core.FieldWindows, n.Windows, windowsOf),
 		Sleep:          readingOf(c, core.FieldSleep, n.Sleep, text[core.SleepState, sleepJSON]),
 		Software:       readingOf(c, core.FieldSoftware, n.Software, same),
 		SoftwareUpdate: readingOf(c, core.FieldSoftware, n.SoftwareUpdate, softwareUpdateOf),
