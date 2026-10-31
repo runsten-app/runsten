@@ -118,6 +118,12 @@ tbody tr + tr > * {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* On a phone, a range of hours and minutes wraps rather than push its column out. */
+@media (max-width: 599.98px) {
+  .num {
+    white-space: normal;
+  }
+}
 .name {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
