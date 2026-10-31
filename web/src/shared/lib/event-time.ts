@@ -16,9 +16,17 @@ export function formatDay(iso: string, locale: string, timeZone?: string): strin
 }
 
 // formatBounds shows bounds as a range ("07:01–07:05"), or a single time when they
-// coincide. The date is left out when both fall on day (the day of a heading), and told
-// once when they fall on the same other day.
+// coincide. Bounds less than a minute apart, finer than the minutes shown, are one time
+// too: their middle, to the nearest minute, not two neighbouring minutes ("07:01–07:02"
+// for twenty seconds). The date is left out when both fall on day (the day of a heading),
+// and told once when they fall on the same other day.
 export function formatBounds(b: Bounds, locale: string, day?: string, timeZone?: string): string {
+  const span = Date.parse(b.before) - Date.parse(b.after)
+  if (span > 0 && span < minute) {
+    const middle = Date.parse(b.after) + span / 2
+    const at = new Date(Math.round(middle / minute) * minute).toISOString()
+    return formatBounds({ after: at, before: at }, locale, day, timeZone)
+  }
   const after = new Date(b.after)
   const before = new Date(b.before)
   const onDay =
