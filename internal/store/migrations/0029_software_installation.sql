@@ -8,4 +8,5 @@ ALTER TABLE software_versions
     ADD COLUMN install_started_after timestamptz,
     ADD COLUMN install_started_before timestamptz,
     ADD CHECK ((install_started_after IS NULL) = (install_started_before IS NULL)),
-    ADD CHECK (install_started_after <= install_started_before AND install_started_before <= installed_after);
+    ADD CHECK (install_started_before IS NULL OR installed_after IS NOT NULL
+        AND install_started_after <= install_started_before AND install_started_before <= installed_after);
