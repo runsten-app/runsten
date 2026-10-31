@@ -87,6 +87,7 @@ func NewHandler(srcs []Source, clk clock.Clock, cred Credential, limits Limits, 
 		"availability": h.renderAvailability,
 		"target-soc":   renderTargetSoC,
 		"health":       renderHealth,
+		"exterior":     renderExterior,
 	}
 	v1 := http.NewServeMux()
 	v1.HandleFunc("GET "+Prefix+"v1/vehicles", h.vehicles)
@@ -364,3 +365,28 @@ func latest(a, b time.Time) time.Time {
 }
 
 func round1(x float64) float64 { return math.Round(x*10) / 10 }
+
+// renderExterior renders the doors, the windows and the locks. The alarm is always idle,
+// the only word seen of it.
+func renderExterior(_ string, r vehicle.Report, _ time.Time) (any, time.Time) {
+	s, at := r.Status, r.StatusAt
+	lock := "LOCK_STATUS_UNLOCKED"
+	if s.Locked {
+		lock = "LOCK_STATUS_LOCKED"
+	}
+	m := map[string]any{
+		"timestamp": timestamp(at), "centralLock": lock, "tailgateLock": lock, "alarm": "ALARM_STATUS_IDLE",
+	}
+	for field, name := range map[string]string{
+		"frontLeftDoor": "front_left_door", "frontRightDoor": "front_right_door", "rearLeftDoor": "rear_left_door",
+		"rearRightDoor": "rear_right_door", "hood": "hood", "tailgate": "tailgate", "tankLid": "tank_lid",
+		"frontLeftWindow": "front_left_window", "frontRightWindow": "front_right_window",
+		"rearLeftWindow": "rear_left_window", "rearRightWindow": "rear_right_window",
+	} {
+		m[field] = "OPEN_STATUS_CLOSED"
+		if s.IsOpen(name) {
+			m[field] = "OPEN_STATUS_OPEN"
+		}
+	}
+	return m, at
+}

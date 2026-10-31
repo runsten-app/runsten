@@ -2,6 +2,7 @@ import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { HealthPage } from '@/pages/health'
 import battery from '@fixtures/battery.json'
+import openingsState from '@fixtures/state-openings.json'
 import health from '@fixtures/health.json'
 import unknown from '@fixtures/health-unknown.json'
 import noSoftware from '@fixtures/state-unknown.json'
@@ -57,6 +58,23 @@ async function mounted() {
 }
 
 describe('HealthPage', () => {
+  it('ends with the doors and windows of a vehicle that tells them, nothing otherwise', async () => {
+    let w = await mounted()
+    expect(w.find('[data-test="openings"]').exists()).toBe(false)
+    mocks.fetchVehicleState.mockResolvedValue(openingsState)
+    w = await mounted()
+    const tile = w.find('[data-test="openings"]')
+    expect(tile.find('h2').text()).toBe('Doors and windows')
+    expect(tile.find('.lock').text()).toBe('Unlocked')
+    expect(tile.findAll('.fact').map((f) => f.text())).toEqual([
+      'Open: rear left window',
+      'Ajar: front left door',
+      'Sentry Mode on',
+    ])
+    // Never a warning of the health: the verdict says nothing of them.
+    expect(w.find('.verdict').text()).not.toContain('door')
+  })
+
   it("tells the software's version of a vehicle that tells it, nothing otherwise", async () => {
     let w = await mounted()
     expect(w.find('.software-summary').exists()).toBe(false)

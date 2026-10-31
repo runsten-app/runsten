@@ -20,6 +20,38 @@ func bar(v float64) float64 { return v * kPaPerBar }
 const chargeFields = core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
 	core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldEnergyAdded
 
+// TestNormalizeOpenings: any value but 0 is open, the driver's side is the left but on a
+// right-hand drive car, and a block without any of them covers them all the same.
+func TestNormalizeOpenings(t *testing.T) {
+	at := time.UnixMilli(1793032171549).UTC()
+	read := func(t *testing.T, vs, cfg string) core.Snapshot {
+		t.Helper()
+		s, err := Normalize(VehicleData, []byte(`{"response": {"vehicle_state": {"timestamp": 1793032171549, `+vs+`}, "vehicle_config": {`+cfg+`}}}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return s
+	}
+	s := read(t, `"locked": false, "df": 1, "rt": 2, "fd_window": 0, "rp_window": 2, "sentry_mode": true`, `"rhd": false`)
+	if want := core.Some(core.Doors{
+		Locked: core.Some(false, at), FrontLeft: core.Some(core.Open, at), Tailgate: core.Some(core.Open, at), Sentry: core.Some(true, at),
+	}, at); !reflect.DeepEqual(s.Doors, want) {
+		t.Errorf("doors %+v", s.Doors)
+	}
+	if want := core.Some(core.Windows{FrontLeft: core.Some(core.Closed, at), RearRight: core.Some(core.Open, at)}, at); !reflect.DeepEqual(s.Windows, want) {
+		t.Errorf("windows %+v", s.Windows)
+	}
+	s = read(t, `"df": 1, "pr": 0, "fd_window": 1`, `"rhd": true`)
+	if !s.Doors.V.FrontRight.OK || s.Doors.V.FrontRight.V != core.Open || s.Doors.V.RearLeft.V != core.Closed ||
+		s.Doors.V.FrontLeft.OK || s.Windows.V.FrontRight.V != core.Open {
+		t.Errorf("right-hand drive: %+v %+v", s.Doors, s.Windows)
+	}
+	s = read(t, `"odometer": 1`, ``)
+	if s.Covers&(core.FieldDoors|core.FieldWindows) != core.FieldDoors|core.FieldWindows || s.Doors.OK || s.Windows.OK {
+		t.Errorf("none told: %+v", s)
+	}
+}
+
 // TestNormalizeFixture: the real response of a Model Y, parked asleep a moment before,
 // plugged to an AC station, its charge complete.
 func TestNormalizeFixture(t *testing.T) {
@@ -27,7 +59,7 @@ func TestNormalizeFixture(t *testing.T) {
 	at := time.UnixMilli(1793032171549).UTC()
 	want := core.Snapshot{
 		Covers: chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel |
-			core.FieldSoftware | core.FieldClimate,
+			core.FieldSoftware | core.FieldClimate | core.FieldDoors | core.FieldWindows,
 		Engine:     core.Some(core.EngineStopped, at), // shift_state null
 		SoC:        core.Some(69.0, at),
 		UsableSoC:  core.Some(68.0, at),
@@ -59,6 +91,18 @@ func TestNormalizeFixture(t *testing.T) {
 		CabinTempC:   core.Some(16.0, at),
 		Climate: core.Some(core.Climate{
 			On: core.Some(false, at), Preconditioning: core.Some(false, at), BatteryHeater: core.Some(false, at),
+		}, at),
+		// Locked, all closed, Sentry Mode off; no tank lid nor sunroof told.
+		Doors: core.Some(core.Doors{
+			Locked:    core.Some(true, at),
+			FrontLeft: core.Some(core.Closed, at), FrontRight: core.Some(core.Closed, at),
+			RearLeft: core.Some(core.Closed, at), RearRight: core.Some(core.Closed, at),
+			Hood: core.Some(core.Closed, at), Tailgate: core.Some(core.Closed, at),
+			Sentry: core.Some(false, at),
+		}, at),
+		Windows: core.Some(core.Windows{
+			FrontLeft: core.Some(core.Closed, at), FrontRight: core.Some(core.Closed, at),
+			RearLeft: core.Some(core.Closed, at), RearRight: core.Some(core.Closed, at),
 		}, at),
 	}
 	n := Normalizer{}

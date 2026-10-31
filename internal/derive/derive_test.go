@@ -541,6 +541,15 @@ func TestCurrent(t *testing.T) {
 	if !c.CheckedAt().After(now.Add(-10 * time.Minute)) {
 		t.Errorf("checked at %s", c.CheckedAt())
 	}
+	// The doors and windows, which the derivation does not read: parked after a drive,
+	// locked and closed.
+	if dr, w := s.Doors, s.Windows; !dr.OK || !dr.V.Locked.OK || !dr.V.Locked.V || dr.V.Tailgate.V != core.Closed ||
+		!w.OK || w.V.Sunroof.V != core.Closed {
+		t.Errorf("doors %+v, windows %+v", dr, w)
+	}
+	if fetched, _ := c.Read(core.FieldDoors); fetched.IsZero() {
+		t.Error("doors never read")
+	}
 	// Before any snapshot: nothing known.
 	if c, err := d.Current(context.Background(), "a", "v", day); err != nil || c.Snapshot.Covers != 0 {
 		t.Errorf("before the first pass: %+v, %v", c.Snapshot, err)

@@ -189,6 +189,7 @@ func TestShapeMatchesRealAPI(t *testing.T) {
 		{"v1/vehicles/" + vin + "/telemetry/location", "telemetry/location.json"},
 		{"v1/vehicles/" + vin + "/telemetry/availability", "telemetry/availability.json"},
 		{"v1/vehicles/" + vin + "/charging/target-soc", "charging/target-soc.json"},
+		{"v1/vehicles/" + vin + "/telemetry/exterior", "telemetry/exterior.json"},
 		{"v1/vehicles/" + vin + "/charging/is-at-charge-location", "charging/is-at-charge-location.json"},
 	}
 	for _, c := range cases {
@@ -263,7 +264,7 @@ func TestCallsAreChecked(t *testing.T) {
 		{"no x-client-id", battery, tok, "", 400, "VALIDATION_INVALID_PARAMETER"},
 		{"client ID as x-client-id", battery, tok, "runsten-dev", 403, "AUTHZ_CLIENT_ID_MISMATCH"},
 		{"another VIN", "v1/vehicles/LPSVSEDE5RL000002/telemetry/battery", tok, account, 403, "AUTHZ_VIN_UNAUTHORIZED"},
-		{"a domain not uploaded", "v1/vehicles/" + vin + "/telemetry/exterior", tok, account, 404, "DATA_NOT_AVAILABLE"},
+		{"a domain not uploaded", "v1/vehicles/" + vin + "/telemetry/pre-cleaning", tok, account, 404, "DATA_NOT_AVAILABLE"},
 		{"an unknown domain", "v1/vehicles/" + vin + "/telemetry/tyres", tok, account, 404, "VALIDATION_RESOURCE_NOT_FOUND"},
 	}
 	for _, c := range cases {

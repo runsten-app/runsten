@@ -53,5 +53,7 @@
   },
   "software": null,
   "software_update": null,
+  "doors": null,
+  "windows": null,
   "sleep": null
 }

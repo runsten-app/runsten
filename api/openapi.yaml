@@ -1435,6 +1435,93 @@ components:
         - count
         - consumption_kwh_per_100km
       type: object
+    Doors:
+      additionalProperties: false
+      properties:
+        front_left:
+          description: "The front left door: closed, ajar (not fully shut) or open; null when the vehicle does not tell it."
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+        front_right:
+          description: The front right door, as front_left.
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+        hood:
+          description: The front lid, a front trunk's on an electric car, as front_left.
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+        locked:
+          description: The central lock; null when the vehicle does not tell it.
+          type:
+            - boolean
+            - "null"
+        rear_left:
+          description: The rear left door, as front_left.
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+        rear_right:
+          description: The rear right door, as front_left.
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+        sentry:
+          description: The vehicle watches its surroundings with its cameras while parked (Tesla's Sentry Mode); null for a vehicle that does not tell it.
+          type:
+            - boolean
+            - "null"
+        tailgate:
+          description: The tailgate or rear trunk, as front_left.
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+        tank_lid:
+          description: The fuel filler's lid, as front_left.
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+      required:
+        - locked
+        - front_left
+        - front_right
+        - rear_left
+        - rear_right
+        - hood
+        - tailgate
+        - tank_lid
+        - sentry
+      type: object
     EnteredCost:
       additionalProperties: false
       properties:
@@ -3060,6 +3147,34 @@ components:
         - fetched_at
         - checked_at
       type: object
+    ReadingDoors:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The last reading of the same value, unchanged.
+          format: date-time
+          pattern: Z$
+          type: string
+        fetched_at:
+          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
+          format: date-time
+          pattern: Z$
+          type: string
+        reported_at:
+          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        value:
+          $ref: "#/components/schemas/Doors"
+      required:
+        - value
+        - reported_at
+        - fetched_at
+        - checked_at
+      type: object
     ReadingEngine:
       additionalProperties: false
       properties:
@@ -3230,6 +3345,34 @@ components:
             - "null"
         value:
           type: string
+      required:
+        - value
+        - reported_at
+        - fetched_at
+        - checked_at
+      type: object
+    ReadingWindows:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The last reading of the same value, unchanged.
+          format: date-time
+          pattern: Z$
+          type: string
+        fetched_at:
+          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
+          format: date-time
+          pattern: Z$
+          type: string
+        reported_at:
+          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        value:
+          $ref: "#/components/schemas/Windows"
       required:
         - value
         - reported_at
@@ -3558,6 +3701,11 @@ components:
           description: The temperatures and what heats or cools the vehicle, for a source that tells them (Tesla); every value null for the others.
         connection:
           $ref: "#/components/schemas/Connection"
+        doors:
+          description: "The doors, the lids and the locks, for a source that tells them; null for the others. One response tells them all: reported_at is the latest of their own timestamps, and a Polestar's are often hours older than fetched_at."
+          oneOf:
+            - $ref: "#/components/schemas/ReadingDoors"
+            - type: "null"
         engine:
           oneOf:
             - $ref: "#/components/schemas/ReadingEngine"
@@ -3598,6 +3746,11 @@ components:
         vehicle_id:
           format: uuid
           type: string
+        windows:
+          description: The windows and the sunroof, for a source that tells them; null for the others.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingWindows"
+            - type: "null"
       required:
         - vehicle_id
         - connection
@@ -3612,6 +3765,8 @@ components:
         - climate
         - software
         - software_update
+        - doors
+        - windows
         - sleep
       type: object
     Stats:
@@ -4363,6 +4518,61 @@ components:
       required:
         - trip_meter_km
         - consumption_kwh_per_100km
+      type: object
+    Windows:
+      additionalProperties: false
+      properties:
+        front_left:
+          description: "The front left window: closed, ajar (open a crack) or open; null when the vehicle does not tell it."
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+        front_right:
+          description: The front right window, as front_left.
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+        rear_left:
+          description: The rear left window, as front_left.
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+        rear_right:
+          description: The rear right window, as front_left.
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+        sunroof:
+          description: The sunroof, as front_left; null for a vehicle without one, or that does not tell it.
+          oneOf:
+            - enum:
+                - closed
+                - ajar
+                - open
+              type: string
+            - type: "null"
+      required:
+        - front_left
+        - front_right
+        - rear_left
+        - rear_right
+        - sunroof
       type: object
   securitySchemes:
     accessToken:

@@ -209,31 +209,48 @@ func renderDoors(r vehicle.Report) any {
 	if r.Status.Locked {
 		lock = "LOCKED"
 	}
-	out := statusMap(r.StatusAt, "CLOSED", "frontLeftDoor", "frontRightDoor", "rearLeftDoor",
-		"rearRightDoor", "hood", "tailgate", "tankLid")
+	out := openings(r, map[string]string{
+		"frontLeftDoor": "front_left_door", "frontRightDoor": "front_right_door", "rearLeftDoor": "rear_left_door",
+		"rearRightDoor": "rear_right_door", "hood": "hood", "tailgate": "tailgate", "tankLid": "tank_lid",
+	})
 	out["centralLock"] = cv(r.StatusAt, tsNano, "", lock)
 	return out
 }
 
 func renderWindows(r vehicle.Report) any {
-	return statusMap(r.StatusAt, "CLOSED", "frontLeftWindow", "frontRightWindow", "rearLeftWindow",
-		"rearRightWindow", "sunroof")
+	return openings(r, map[string]string{
+		"frontLeftWindow": "front_left_window", "frontRightWindow": "front_right_window",
+		"rearLeftWindow": "rear_left_window", "rearRightWindow": "rear_right_window", "sunroof": "sunroof",
+	})
+}
+
+// openings renders each field OPEN or CLOSED, by the name of its opening in the vehicle's.
+func openings(r vehicle.Report, names map[string]string) map[string]cvValue {
+	out := make(map[string]cvValue, len(names))
+	for field, name := range names {
+		v := "CLOSED"
+		if r.Status.IsOpen(name) {
+			v = "OPEN"
+		}
+		out[field] = cv(r.StatusAt, tsNano, "", v)
+	}
+	return out
 }
 
 func renderTyres(r vehicle.Report) any {
-	return statusMap(r.StatusAt, "NO_WARNING", "frontLeft", "frontRight", "rearLeft", "rearRight")
+	return noWarnings(r.StatusAt, "frontLeft", "frontRight", "rearLeft", "rearRight")
 }
 
 func renderBrakes(r vehicle.Report) any {
-	return statusMap(r.StatusAt, "NO_WARNING", "brakeFluidLevelWarning")
+	return noWarnings(r.StatusAt, "brakeFluidLevelWarning")
 }
 
 func renderEngine(r vehicle.Report) any {
-	return statusMap(r.StatusAt, "NO_WARNING", "engineCoolantLevelWarning", "oilLevelWarning")
+	return noWarnings(r.StatusAt, "engineCoolantLevelWarning", "oilLevelWarning")
 }
 
 func renderDiagnostics(r vehicle.Report) any {
-	out := statusMap(r.StatusAt, "NO_WARNING", "serviceWarning", "serviceTrigger", "washerFluidLevelWarning")
+	out := noWarnings(r.StatusAt, "serviceWarning", "serviceTrigger", "washerFluidLevelWarning")
 	out["distanceToService"] = cv(r.StatusAt, tsNano, "km", 20000)
 	out["engineHoursToService"] = cv(r.StatusAt, tsNano, "h", 1000)
 	out["timeToService"] = cv(r.StatusAt, tsNano, "months", 12)
@@ -241,7 +258,7 @@ func renderDiagnostics(r vehicle.Report) any {
 }
 
 func renderWarnings(r vehicle.Report) any {
-	return statusMap(r.StatusAt, "NO_WARNING",
+	return noWarnings(r.StatusAt,
 		"brakeLightCenterWarning", "brakeLightLeftWarning", "brakeLightRightWarning",
 		"daytimeRunningLightLeftWarning", "daytimeRunningLightRightWarning",
 		"fogLightFrontWarning", "fogLightRearWarning", "hazardLightsWarning",
@@ -253,10 +270,11 @@ func renderWarnings(r vehicle.Report) any {
 		"turnIndicationRearLeftWarning", "turnIndicationRearRightWarning")
 }
 
-func statusMap(at time.Time, value string, fields ...string) map[string]cvValue {
+// noWarnings renders each field without a warning.
+func noWarnings(at time.Time, fields ...string) map[string]cvValue {
 	out := make(map[string]cvValue, len(fields))
 	for _, f := range fields {
-		out[f] = cv(at, tsNano, "", value)
+		out[f] = cv(at, tsNano, "", "NO_WARNING")
 	}
 	return out
 }

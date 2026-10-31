@@ -1,0 +1,65 @@
+{
+  "vehicle_id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a01",
+  "connection": {
+    "provider": "volvo",
+    "status": "active",
+    "api_key": "instance",
+    "credential": null,
+    "authorized_at": "2026-09-28T05:00:00Z",
+    "refreshed_at": "2026-09-28T06:00:00Z",
+    "reauth_at": null,
+    "reauth_reason": null
+  },
+  "checked_at": "2026-09-28T05:30:00Z",
+  "engine": null,
+  "soc_pct": null,
+  "range_km": null,
+  "odometer_km": null,
+  "position": null,
+  "battery_capacity_kwh": null,
+  "charging": {
+    "status": null,
+    "cable": null,
+    "type": null,
+    "power_w": null,
+    "target_soc_pct": null
+  },
+  "climate": {
+    "outside_temp_c": null,
+    "cabin_temp_c": null,
+    "on": null,
+    "preconditioning": null,
+    "battery_heater": null
+  },
+  "software": null,
+  "software_update": null,
+  "doors": {
+    "value": {
+      "locked": false,
+      "front_left": "ajar",
+      "front_right": "closed",
+      "rear_left": "closed",
+      "rear_right": "closed",
+      "hood": "closed",
+      "tailgate": "closed",
+      "tank_lid": null,
+      "sentry": true
+    },
+    "reported_at": "2026-09-28T03:00:00Z",
+    "fetched_at": "2026-09-28T04:00:00Z",
+    "checked_at": "2026-09-28T05:00:00Z"
+  },
+  "windows": {
+    "value": {
+      "front_left": "closed",
+      "front_right": "closed",
+      "rear_left": "open",
+      "rear_right": "closed",
+      "sunroof": null
+    },
+    "reported_at": "2026-09-28T03:00:00Z",
+    "fetched_at": "2026-09-28T04:30:00Z",
+    "checked_at": "2026-09-28T05:30:00Z"
+  },
+  "sleep": null
+}

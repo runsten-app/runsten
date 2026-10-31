@@ -71,7 +71,20 @@ func TestNormalizeFixtures(t *testing.T) {
 			Covers:    core.FieldTargetSoC,
 			TargetSoC: core.Some(80.0, time.Unix(1789729185, 785000000)),
 		}},
-		// A domain the client does not read carries nothing the domain uses.
+		{Exterior, "telemetry/exterior.json", func() core.Snapshot {
+			at := time.Unix(1789729816, 418289732).UTC()
+			closed := core.Some(core.Closed, at)
+			return core.Snapshot{
+				Covers: core.FieldDoors | core.FieldWindows,
+				Doors: core.Some(core.Doors{
+					Locked:    core.Some(true, at),
+					FrontLeft: closed, FrontRight: closed, RearLeft: closed, RearRight: closed,
+					Hood: closed, Tailgate: closed, TankLid: closed,
+				}, at),
+				Windows: core.Some(core.Windows{FrontLeft: closed, FrontRight: closed, RearLeft: closed, RearRight: closed}, at),
+			}
+		}()},
+		// The health is read apart (NormalizeHealth): nothing of a snapshot.
 		{"health", "telemetry/health.json", core.Snapshot{}},
 	}
 	for _, tt := range tests {
@@ -238,6 +251,28 @@ func TestModelYear(t *testing.T) {
 	}
 }
 
+// TestNormalizeExterior: a door or window open or ajar, the car unlocked; what is left
+// out (UNSPECIFIED) or unknown is absent, and a response without any of them covers them
+// all the same, emptied.
+func TestNormalizeExterior(t *testing.T) {
+	at := time.Unix(1789729816, 0).UTC()
+	s, err := Normalize(Exterior, []byte(`{"data": {"timestamp": {"seconds": "1789729816"},
+		"centralLock": "LOCK_STATUS_UNLOCKED", "frontLeftDoor": "OPEN_STATUS_AJAR",
+		"rearRightWindow": "OPEN_STATUS_OPEN", "tailgate": "OPEN_STATUS_SOMETHING", "alarm": "ALARM_STATUS_IDLE"}}`))
+	want := core.Snapshot{
+		Covers:  core.FieldDoors | core.FieldWindows,
+		Doors:   core.Some(core.Doors{Locked: core.Some(false, at), FrontLeft: core.Some(core.Ajar, at)}, at),
+		Windows: core.Some(core.Windows{RearRight: core.Some(core.Open, at)}, at),
+	}
+	if err != nil || !reflect.DeepEqual(s, want) {
+		t.Errorf("got  %+v, %v\nwant %+v", s, err, want)
+	}
+	s, err = Normalize(Exterior, []byte(`{"data": {"timestamp": {"seconds": "1789729816"}, "centralLock": "LOCK_STATUS_UNSPECIFIED"}}`))
+	if err != nil || !reflect.DeepEqual(s, core.Snapshot{Covers: core.FieldDoors | core.FieldWindows}) {
+		t.Errorf("nothing told: %+v, %v", s, err)
+	}
+}
+
 func TestNormalizeInvalidJSON(t *testing.T) {
 	for _, d := range Domains() {
 		_, err := Normalize(d, []byte("["))
@@ -252,10 +287,14 @@ func TestNormalizeInvalidJSON(t *testing.T) {
 
 func TestNormalizer(t *testing.T) {
 	var n Normalizer
-	// The health is no reading of the derivation.
-	if got := n.Kinds(); len(got) != len(Domains())-1 || got[0] != (core.Kind{Source: Source, Endpoint: string(Battery)}) ||
-		slices.Contains(got, core.Kind{Source: Source, Endpoint: string(Health)}) {
+	// Neither the health nor the exterior is a reading of the derivation.
+	if got := n.Kinds(); len(got) != len(Domains())-2 || got[0] != (core.Kind{Source: Source, Endpoint: string(Battery)}) ||
+		slices.Contains(got, core.Kind{Source: Source, Endpoint: string(Health)}) ||
+		slices.Contains(got, core.Kind{Source: Source, Endpoint: string(Exterior)}) {
 		t.Errorf("kinds %v", got)
+	}
+	if got := n.StateKinds(); len(got) != 1 || got[0] != (core.Kind{Source: Source, Endpoint: "exterior"}) {
+		t.Errorf("state kinds %v", got)
 	}
 	if got := n.HealthKinds(); len(got) != 1 || got[0] != (core.Kind{Source: Source, Endpoint: "health"}) {
 		t.Errorf("health kinds %v", got)

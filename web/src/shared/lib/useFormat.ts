@@ -96,6 +96,9 @@ export function useFormat() {
     // calendarMonth names the month of a day; calendarRange shows two days as one range.
     calendarMonth: (day: string) => formatCalendarMonth(day, intl.value),
     calendarRange: (from: string, to: string) => formatCalendarRange(from, to, intl.value),
+    // list joins words as the language does ("a, b and c").
+    list: (words: string[]) =>
+      new Intl.ListFormat(intl.value, { type: 'conjunction' }).format(words),
     // number shows a count or an index, with at most digits decimals (the cycles).
     number: (v: number, digits?: number) =>
       new Intl.NumberFormat(

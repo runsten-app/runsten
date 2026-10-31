@@ -25,6 +25,10 @@ type Normalizer struct{}
 // Kinds returns the kinds of response Normalize reads.
 func (Normalizer) Kinds() []core.Kind { return kinds(NormalizedEndpoints()...) }
 
+// StateKinds returns the kinds the current state reads beyond Kinds: the doors and the
+// windows, read hourly, which the derivation leaves out.
+func (Normalizer) StateKinds() []core.Kind { return kinds(Doors, Windows) }
+
 // EnergyKinds returns the kinds holding the energy state: the state of charge, the range
 // and the charging power.
 func (Normalizer) EnergyKinds() []core.Kind { return kinds(EnergyState) }
@@ -45,8 +49,8 @@ func kinds(eps ...Endpoint) []core.Kind {
 	return out
 }
 
-// NormalizedEndpoints lists the endpoints Normalize reads; the others carry nothing the
-// domain uses.
+// NormalizedEndpoints lists the endpoints the derivation reads; Normalize reads the
+// doors and the windows too (StateKinds), the others carry nothing the domain uses.
 func NormalizedEndpoints() []Endpoint {
 	return []Endpoint{EngineStatus, EnergyState, Odometer, Location, Statistics, Details}
 }
@@ -70,6 +74,10 @@ func Normalize(ep Endpoint, raw []byte) (core.Snapshot, error) {
 		err = normalizeStatistics(raw, &s)
 	case Details:
 		err = normalizeDetails(raw, &s)
+	case Doors:
+		err = normalizeDoors(raw, &s)
+	case Windows:
+		err = normalizeWindows(raw, &s)
 	default:
 		return s, nil
 	}
@@ -344,4 +352,87 @@ func powertrain(fuelType string) core.Powertrain {
 		return core.PlugInHybrid
 	}
 	return core.OtherPowertrain
+}
+
+// openings maps a door's, a lid's or a window's state (the Connected Vehicle API's
+// documentation lists OPEN, CLOSED, AJAR and UNSPECIFIED: unknown, absent).
+var openings = map[string]core.Opening{"OPEN": core.Open, "AJAR": core.Ajar, "CLOSED": core.Closed}
+
+// opening reads one value, and keeps the latest of their timestamps in at: the
+// response's.
+func opening(v *cvValue, at *time.Time) core.Value[core.Opening] {
+	if v == nil {
+		return core.Value[core.Opening]{}
+	}
+	o := enum(v.Value, timestamp(v.Timestamp), openings)
+	if o.OK && o.At.After(*at) {
+		*at = o.At
+	}
+	return o
+}
+
+func normalizeDoors(raw []byte, s *core.Snapshot) error {
+	var v struct {
+		Data struct {
+			CentralLock    *cvValue `json:"centralLock"`
+			FrontLeftDoor  *cvValue `json:"frontLeftDoor"`
+			FrontRightDoor *cvValue `json:"frontRightDoor"`
+			RearLeftDoor   *cvValue `json:"rearLeftDoor"`
+			RearRightDoor  *cvValue `json:"rearRightDoor"`
+			Hood           *cvValue `json:"hood"`
+			Tailgate       *cvValue `json:"tailgate"`
+			TankLid        *cvValue `json:"tankLid"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return err //nolint:wrapcheck // wrapped by Normalize
+	}
+	s.Covers = core.FieldDoors
+	d := v.Data
+	var at time.Time
+	doors := core.Doors{
+		FrontLeft: opening(d.FrontLeftDoor, &at), FrontRight: opening(d.FrontRightDoor, &at),
+		RearLeft: opening(d.RearLeftDoor, &at), RearRight: opening(d.RearRightDoor, &at),
+		Hood: opening(d.Hood, &at), Tailgate: opening(d.Tailgate, &at), TankLid: opening(d.TankLid, &at),
+	}
+	if l := d.CentralLock; l != nil {
+		// LOCKED or UNLOCKED; UNSPECIFIED is unknown.
+		if lock, ok := text(l.Value); ok && (lock == "LOCKED" || lock == "UNLOCKED") {
+			doors.Locked = core.Some(lock == "LOCKED", timestamp(l.Timestamp))
+			if doors.Locked.At.After(at) {
+				at = doors.Locked.At
+			}
+		}
+	}
+	if doors != (core.Doors{}) {
+		s.Doors = core.Some(doors, at)
+	}
+	return nil
+}
+
+func normalizeWindows(raw []byte, s *core.Snapshot) error {
+	var v struct {
+		Data struct {
+			FrontLeftWindow  *cvValue `json:"frontLeftWindow"`
+			FrontRightWindow *cvValue `json:"frontRightWindow"`
+			RearLeftWindow   *cvValue `json:"rearLeftWindow"`
+			RearRightWindow  *cvValue `json:"rearRightWindow"`
+			Sunroof          *cvValue `json:"sunroof"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return err //nolint:wrapcheck // wrapped by Normalize
+	}
+	s.Covers = core.FieldWindows
+	d := v.Data
+	var at time.Time
+	w := core.Windows{
+		FrontLeft: opening(d.FrontLeftWindow, &at), FrontRight: opening(d.FrontRightWindow, &at),
+		RearLeft: opening(d.RearLeftWindow, &at), RearRight: opening(d.RearRightWindow, &at),
+		Sunroof: opening(d.Sunroof, &at),
+	}
+	if w != (core.Windows{}) {
+		s.Windows = core.Some(w, at)
+	}
+	return nil
 }
