@@ -238,6 +238,7 @@
     "error": "Les charges n'ont pas pu être chargées. Réessayez dans un instant.",
     "empty": "Aucune charge enregistrée pour l'instant.",
     "emptyPeriod": "Aucune charge sur cette période.",
+    "emptyPlace": "Aucune charge à ce lieu sur cette période.",
     "loadMore": "Afficher plus",
     "moreFailed": "La suite des charges n'a pas pu être chargée. Réessayez.",
     "end": "Il n'y a pas d'autre charge.",
@@ -512,7 +513,8 @@
         "summary": "Énergie chargée par lieu : {total} en tout, le plus pour {at} ({max}).",
         "none": "Aucune recharge d'énergie connue sur cette période.",
         "hint": "Une recharge compte au lieu de son coût : sans position, au lieu qui prend aussi celles-là, s'il y en a un.",
-        "reconstructed": "{n} recharge reconstituée comprise, comptée de la même façon. | {n} recharges reconstituées comprises, comptées de la même façon."
+        "reconstructed": "{n} recharge reconstituée comprise, comptée de la même façon. | {n} recharges reconstituées comprises, comptées de la même façon.",
+        "links": "Charges :"
       },
       "costByPlace": {
         "title": "Coût des recharges par lieu",
@@ -1693,5 +1695,12 @@
     "none": "Ce véhicule n'indique pas la version de son logiciel.",
     "loading": "Chargement des versions",
     "now": "Maintenant"
+  },
+  "placeFilter": {
+    "label": "Lieu",
+    "any": "Tous les lieux",
+    "outside": "Ailleurs",
+    "noPosition": "Sans position",
+    "deleted": "Un lieu supprimé"
   }
 }

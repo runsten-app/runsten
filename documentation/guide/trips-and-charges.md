@@ -8,6 +8,10 @@ The **Trips** and **Charges** tabs list the events of a period, by day, newest f
 
 <Screen view="trips" alt="The Trips tab: the trips of a period, by day, under their totals." />
 
+## Charges by place
+
+Beside the period, the **Charges** tab chooses a place: one of your places, **Elsewhere** (a position outside every place) or **No position**. The list, its totals, its chart and its CSV file then hold the charges of that place only: "at home, over the last three months, 412 kWh for €61.20 – €64.80". A charge without a position is at the place that takes those, if you marked one ([Places, tariffs and costs](./costs.md)), never a DC one. The place stays in the address of the page, with the period; in the statistics, selecting a place's bar opens the same list.
+
 ## Reading the times
 
 The car is read every few minutes, never continuously. So a time is the two readings around it:

@@ -2,16 +2,18 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import { ChargeInProgressSummary, ChargeSummary } from '@/entities/charge'
+import { chargeAt, ChargeInProgressSummary, ChargeSummary } from '@/entities/charge'
 import { collectorStoppedAfter } from '@/entities/vehicle'
 import { useChargeInProgress, useCharges } from '@/features/browse-charges'
 import { periodQuery } from '@/features/filter-period'
+import { placeQuery } from '@/features/filter-place'
 import { isApiError } from '@/shared/api'
 import { groupByDay, useFormat, useNow } from '@/shared/lib'
 
 // ChargeList is Urd's list of charges: newest first, by day, a page at a time. The charge
-// in progress, no event of the list, comes first, while the period reaches the present.
-const props = defineProps<{ vehicle: string; from?: string; to?: string }>()
+// in progress, no event of the list, comes first, while the period reaches the present,
+// and at the list's place when it has one: its place is computed as a charge's.
+const props = defineProps<{ vehicle: string; from?: string; to?: string; place?: string }>()
 const { t } = useI18n()
 const f = useFormat()
 const route = useRoute()
@@ -20,11 +22,13 @@ const { charges, isPending, error, hasMore, loadMore, isLoadingMore, loadMoreFai
   () => props.vehicle,
   () => props.from,
   () => props.to,
+  () => props.place,
 )
 const { charge: open } = useChargeInProgress(() => props.vehicle)
 const live = computed(() => {
   const c = open.value
-  return c && (!props.to || Date.parse(props.to) > Date.parse(c.start.after)) ? c : null
+  if (!c || (props.to && Date.parse(props.to) <= Date.parse(c.start.after))) return null
+  return !props.place || chargeAt(c, props.place) ? c : null
 })
 const stale = computed(
   () => !!live.value && now.value - Date.parse(live.value.read_at) > collectorStoppedAfter,
@@ -33,8 +37,8 @@ const stale = computed(
 // A charge that resumes is still listed as it ended until the collector derives it
 // again: the one in progress stands for it.
 const groups = computed(() => groupByDay(charges.value.filter((c) => c.id !== live.value?.id)))
-// The details keep the period, for the way back.
-const query = computed(() => periodQuery(route.query))
+// The details keep the period and the place, for the way back.
+const query = computed(() => ({ ...periodQuery(route.query), ...placeQuery(route.query) }))
 const filtered = computed(() => !!(props.from || props.to))
 
 const errorMessage = computed(() => {
@@ -61,7 +65,7 @@ const errorMessage = computed(() => {
   <v-alert v-if="error && !charges.length" type="error" variant="tonal">{{ errorMessage }}</v-alert>
   <v-progress-linear v-else-if="isPending" indeterminate :aria-label="t('charges.loading')" />
   <p v-else-if="!groups.length && !live" class="empty text-body-large text-medium-emphasis py-6">
-    {{ filtered ? t('charges.emptyPeriod') : t('charges.empty') }}
+    {{ place ? t('charges.emptyPlace') : filtered ? t('charges.emptyPeriod') : t('charges.empty') }}
   </p>
   <div v-else-if="groups.length" class="charge-list">
     <section v-for="g in groups" :key="g.day" class="day mb-4">

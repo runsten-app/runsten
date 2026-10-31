@@ -238,6 +238,7 @@
     "error": "Laddningarna kunde inte läsas in. Försök igen om en stund.",
     "empty": "Inga laddningar registrerade ännu.",
     "emptyPeriod": "Inga laddningar under denna period.",
+    "emptyPlace": "Inga laddningar på denna plats under denna period.",
     "loadMore": "Visa fler",
     "moreFailed": "Fler laddningar kunde inte läsas in. Försök igen.",
     "end": "Inga fler laddningar.",
@@ -512,7 +513,8 @@
         "summary": "Laddad energi per plats: {total} totalt, mest för {at} ({max}).",
         "none": "Ingen laddning med känd energi under perioden.",
         "hint": "En laddning räknas på platsen för dess kostnad: utan position på den plats som även tar sådana, om det finns en.",
-        "reconstructed": "{n} rekonstruerad laddning medräknad, på samma sätt. | {n} rekonstruerade laddningar medräknade, på samma sätt."
+        "reconstructed": "{n} rekonstruerad laddning medräknad, på samma sätt. | {n} rekonstruerade laddningar medräknade, på samma sätt.",
+        "links": "Laddningar:"
       },
       "costByPlace": {
         "title": "Laddningarnas kostnad per plats",
@@ -1693,5 +1695,12 @@
     "none": "Det här fordonet anger inte sin programvaruversion.",
     "loading": "Versionerna läses in",
     "now": "Nu"
+  },
+  "placeFilter": {
+    "label": "Plats",
+    "any": "Alla platser",
+    "outside": "Annat ställe",
+    "noPosition": "Utan position",
+    "deleted": "En borttagen plats"
   }
 }

@@ -238,6 +238,7 @@
     "error": "The charges could not be loaded. Try again in a moment.",
     "empty": "No charge recorded yet.",
     "emptyPeriod": "No charge in this period.",
+    "emptyPlace": "No charge at this place in this period.",
     "loadMore": "Load more",
     "moreFailed": "More charges could not be loaded. Try again.",
     "end": "No more charges.",
@@ -512,7 +513,8 @@
         "summary": "Energy charged by place: {total} in all, the most for {at} ({max}).",
         "none": "No charge with a known energy in this period.",
         "hint": "A charge counts at the place its cost takes: one without a position at the place that also takes those, if any.",
-        "reconstructed": "{n} reconstructed charge included, counted the same way. | {n} reconstructed charges included, counted the same way."
+        "reconstructed": "{n} reconstructed charge included, counted the same way. | {n} reconstructed charges included, counted the same way.",
+        "links": "Charges:"
       },
       "costByPlace": {
         "title": "Cost of charges by place",
@@ -1693,5 +1695,12 @@
     "none": "This vehicle does not tell the version of its software.",
     "loading": "Loading the versions",
     "now": "Now"
+  },
+  "placeFilter": {
+    "label": "Place",
+    "any": "All places",
+    "outside": "Elsewhere",
+    "noPosition": "No position",
+    "deleted": "A deleted place"
   }
 }

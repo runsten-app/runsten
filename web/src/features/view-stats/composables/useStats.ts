@@ -5,18 +5,21 @@ import { browserTimeZone } from '@/shared/lib'
 
 // useStats reads the statistics of a vehicle over a period (RFC 3339 instants, either
 // open), split by bucket when given, in the reader's time zone: the server splits days,
-// weeks and months in it, as the lists group their events by the reader's days.
+// weeks and months in it, as the lists group their events by the reader's days. place
+// counts the charges of one place only, as the list of the charges filtered by it.
 export function useStats(
   vehicle: MaybeRefOrGetter<string>,
   from: MaybeRefOrGetter<string | undefined>,
   to: MaybeRefOrGetter<string | undefined>,
   bucket?: MaybeRefOrGetter<Bucket | undefined>,
+  place?: MaybeRefOrGetter<string | undefined>,
 ) {
   const query = computed<StatsQuery>(() => ({
     from: toValue(from),
     to: toValue(to),
     tz: browserTimeZone(),
     bucket: toValue(bucket),
+    place: toValue(place),
   }))
   const q = useQuery({
     queryKey: computed(() => statsKeys.period(toValue(vehicle), query.value)),

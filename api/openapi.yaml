@@ -6086,6 +6086,16 @@ paths:
             maximum: 200
             minimum: 1
             type: integer
+        - description: "Keeps the charges of one group of the statistics' charges_by_place: a place's ID (the charges whose place is this one, as charges.place), outside (a position outside every place) or no_position (no position, and no place takes them). A place the account does not have keeps none. Without it, every charge."
+          explode: false
+          in: query
+          name: place
+          schema:
+            description: "Keeps the charges of one group of the statistics' charges_by_place: a place's ID (the charges whose place is this one, as charges.place), outside (a position outside every place) or no_position (no position, and no place takes them). A place the account does not have keeps none. Without it, every charge."
+            examples:
+              - outside
+            pattern: ^(outside|no_position|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$
+            type: string
       responses:
         "200":
           content:
@@ -6098,7 +6108,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_parameter`: `from`, `to`, `limit` or `cursor`; the message names the parameter."
+          description: "`invalid_parameter`: `from`, `to`, `limit`, `cursor` or `place`; the message names the parameter."
         "401":
           content:
             application/json:
@@ -6169,6 +6179,16 @@ paths:
               - "2026-10-01T00:00:00Z"
             format: date-time
             type: string
+        - description: "Keeps the charges of one group of the statistics' charges_by_place, as the list does with the same parameter: a place's ID, outside or no_position."
+          explode: false
+          in: query
+          name: place
+          schema:
+            description: "Keeps the charges of one group of the statistics' charges_by_place, as the list does with the same parameter: a place's ID, outside or no_position."
+            examples:
+              - outside
+            pattern: ^(outside|no_position|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$
+            type: string
       responses:
         "200":
           content:
@@ -6188,7 +6208,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_parameter`: `from` or `to`; the message names the parameter."
+          description: "`invalid_parameter`: `from`, `to` or `place`; the message names the parameter."
         "401":
           content:
             application/json:
@@ -7327,6 +7347,16 @@ paths:
               - week
               - month
             type: string
+        - description: "Counts the charges of one group of charges_by_place only, as the list of the charges does with the same parameter: a place's ID, outside or no_position. The orphaned entered costs, at no place, are left out; the trips, the parked intervals and the odometer stay those of every event."
+          explode: false
+          in: query
+          name: place
+          schema:
+            description: "Counts the charges of one group of charges_by_place only, as the list of the charges does with the same parameter: a place's ID, outside or no_position. The orphaned entered costs, at no place, are left out; the trips, the parked intervals and the odometer stay those of every event."
+            examples:
+              - outside
+            pattern: ^(outside|no_position|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$
+            type: string
       responses:
         "200":
           content:
@@ -7339,7 +7369,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_parameter`: `from`, `to`, `tz` or `bucket`, or more than 400 intervals; the message names the parameter."
+          description: "`invalid_parameter`: `from`, `to`, `tz`, `bucket` or `place`, or more than 400 intervals; the message names the parameter."
         "401":
           content:
             application/json:
