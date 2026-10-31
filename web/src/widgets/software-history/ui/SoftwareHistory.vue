@@ -22,6 +22,12 @@ const all = ref(false)
 const shown = computed(() => (all.value ? versions.value : versions.value.slice(0, few)))
 const folded = computed(() => !all.value && versions.value.length > few)
 
+// showMore reads the next page and shows it, with the versions folded before it.
+function showMore() {
+  all.value = true
+  return loadMore()
+}
+
 function installed(v: SoftwareVersion): string {
   const { after, before } = v.installed
   return after
@@ -54,7 +60,7 @@ function installed(v: SoftwareVersion): string {
         variant="tonal"
         class="more mt-3"
         :loading="isLoadingMore"
-        @click="loadMore()"
+        @click="showMore()"
       >
         {{ t('software.more') }}
       </v-btn>

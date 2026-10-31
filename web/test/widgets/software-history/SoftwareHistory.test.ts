@@ -59,6 +59,20 @@ describe('SoftwareHistory', () => {
     expect(w.find('.more').exists()).toBe(false)
   })
 
+  it('shows the next page read, past the latest three', async () => {
+    const page = (n: number, from: number) =>
+      [...versions.items, ...versions.items]
+        .slice(0, n)
+        .map((v, i) => ({ ...v, id: `${from + i}` }))
+    fetchSoftwareVersions
+      .mockResolvedValueOnce({ items: page(3, 0), next_cursor: 'next' })
+      .mockResolvedValueOnce({ items: page(3, 3), next_cursor: null })
+    const w = await mounted()
+    await w.find('.more').trigger('click')
+    await flushPromises()
+    expect(w.findAll('.version')).toHaveLength(6)
+  })
+
   it('says when the next page fails, keeping the versions read', async () => {
     const [first, second] = versions.items
     fetchSoftwareVersions
