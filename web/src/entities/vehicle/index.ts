@@ -52,4 +52,5 @@ export type {
   Vehicle,
 } from './model/Vehicle'
 export { default as ReadingItem } from './ui/ReadingItem.vue'
+export { default as OpeningsSummary } from './ui/OpeningsSummary.vue'
 export { default as ReadingProvenance } from './ui/ReadingProvenance.vue'

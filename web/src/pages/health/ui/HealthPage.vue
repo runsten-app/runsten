@@ -8,7 +8,9 @@ import {
   reportedFine,
   tyreTrouble,
 } from '@/entities/health'
+import { OpeningsSummary } from '@/entities/vehicle'
 import { useHealth, useHealthText } from '@/features/view-health'
+import { useVehicleState } from '@/features/watch-vehicle-state'
 import { useFormat, useNow } from '@/shared/lib'
 import { AppShell } from '@/widgets/app-shell'
 import { BatterySummary } from '@/widgets/battery-tiles'
@@ -26,13 +28,20 @@ const TyreChart = defineAsyncComponent(() =>
 // the battery's page, and the versions of its software when it tells them; then what it
 // last told of its tyres, its service and its warnings, and, folded, the tyres' pressures
 // over time. The battery's and the versions come first and stay whatever the vehicle told:
-// they are derived from the charges and the readings.
+// they are derived from the charges and the readings. The doors and windows end it, for a
+// source that tells them: read with the state, not the health, and never a warning (a
+// door open while parked is no fault).
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const f = useFormat()
 const now = useNow()
 const { health, isPending, error } = useHealth(() => props.vehicle)
 const text = useHealthText()
+const { state } = useVehicleState(() => props.vehicle)
+const openings = computed(() => {
+  const s = state.value
+  return s && (s.doors || s.windows) ? s : null
+})
 const known = computed(() => (health.value?.checked_at ? health.value : null))
 // The page's answer first, under its title: what needs attention, named, or nothing to
 // report in what the vehicle tells. Then how fresh it is.
@@ -83,6 +92,17 @@ const verdict = computed(() => {
         </v-expansion-panel>
       </v-expansion-panels>
     </template>
+    <v-card v-if="openings" class="tile mt-3" data-test="openings">
+      <v-card-title tag="h2">{{ t('state.openings.title') }}</v-card-title>
+      <v-card-text>
+        <OpeningsSummary
+          :doors="openings.doors"
+          :windows="openings.windows"
+          :now="now"
+          :connection="openings.connection"
+        />
+      </v-card-text>
+    </v-card>
   </AppShell>
 </template>
 

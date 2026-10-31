@@ -2,6 +2,8 @@ import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { HealthPage } from '@/pages/health'
 import battery from '@fixtures/battery.json'
+import state from '@fixtures/state.json'
+import openingsState from '@fixtures/state-openings.json'
 import health from '@fixtures/health.json'
 import unknown from '@fixtures/health-unknown.json'
 import versions from '@fixtures/software-versions.json'
@@ -15,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   fetchSoftwareVersions: vi.fn(),
   fetchTyres: vi.fn(),
   fetchVehicles: vi.fn(),
+  fetchVehicleState: vi.fn(),
   getBattery: vi.fn(),
 }))
 vi.mock('@/entities/health', async (original) => ({
@@ -30,6 +33,7 @@ vi.mock('@/entities/battery', async (original) => ({
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
   fetchVehicles: mocks.fetchVehicles,
+  fetchVehicleState: mocks.fetchVehicleState,
 }))
 
 beforeEach(() => {
@@ -39,6 +43,7 @@ beforeEach(() => {
   mocks.fetchTyres.mockResolvedValue(tyres)
   mocks.fetchVehicles.mockResolvedValue(vehicles.items)
   mocks.getBattery.mockResolvedValue(battery)
+  mocks.fetchVehicleState.mockResolvedValue(state)
 })
 
 const vehicle = vehicles.items[0]?.id ?? ''
@@ -52,6 +57,23 @@ async function mounted() {
 }
 
 describe('HealthPage', () => {
+  it('ends with the doors and windows of a vehicle that tells them, nothing otherwise', async () => {
+    let w = await mounted()
+    expect(w.find('[data-test="openings"]').exists()).toBe(false)
+    mocks.fetchVehicleState.mockResolvedValue(openingsState)
+    w = await mounted()
+    const tile = w.find('[data-test="openings"]')
+    expect(tile.find('h2').text()).toBe('Doors and windows')
+    expect(tile.find('.lock').text()).toBe('Unlocked')
+    expect(tile.findAll('.fact').map((f) => f.text())).toEqual([
+      'Open: rear left window',
+      'Ajar: front left door',
+      'Sentry Mode on',
+    ])
+    // Never a warning of the health: the verdict says nothing of them.
+    expect(w.find('.verdict').text()).not.toContain('door')
+  })
+
   it("lists the software's versions of a vehicle that tells them, none otherwise", async () => {
     let w = await mounted()
     expect(w.find('.software-history').exists()).toBe(false)
