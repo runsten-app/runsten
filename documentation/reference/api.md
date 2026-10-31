@@ -25,7 +25,8 @@ A request body is sent as `application/json`, but the files of an import, as `mu
 | Route | |
 |---|---|
 | `GET`, `POST`, `DELETE /api/v1/session` | the current session; sign in; sign out |
-| `GET /api/v1/vehicles`, `…/vehicles/{id}` | the vehicles, their model, the state of their connection (Volvo, Polestar or Tesla) and what the collector did on its latest pass |
+| `GET /api/v1/vehicles`, `…/vehicles/{id}` | the vehicles, their model, their sheet (colour, specifications, the name a Tesla's owner gave it), the state of their connection (Volvo, Polestar or Tesla) and what the collector did on its latest pass |
+| `GET /api/v1/vehicles/{id}/picture` | the vehicle's picture, relayed from its maker (a Volvo's), when its `sheet.picture` is true |
 | `GET /api/v1/vehicles/{id}/variants` | the catalog's variants of the vehicle's family (of its brand, for a Polestar of the Data Portal), the candidates of the recognition first |
 | `PUT /api/v1/vehicles/{id}/model` | choose the variant and the onboard charger (`null` for the recognition, and for a charger not stated) |
 | `GET /api/v1/vehicles/{id}/state` | the latest known values: SoC, range, odometer, position, charging, each with when it was read |

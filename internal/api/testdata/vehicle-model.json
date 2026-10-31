@@ -17,6 +17,7 @@
     "ac_max_kw": 11,
     "powertrain": "electric"
   },
+  "sheet": null,
   "connection": {
     "provider": "volvo",
     "status": "active",

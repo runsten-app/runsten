@@ -3437,6 +3437,123 @@ components:
       required:
         - currency
       type: object
+    Sheet:
+      additionalProperties: false
+      properties:
+        colour:
+          description: The exterior's colour, as the vendor names it (Powder Blue, Deep Blue).
+          minLength: 1
+          type:
+            - string
+            - "null"
+        drive:
+          description: "The driven wheels: fwd, the front ones; rwd, the rear ones; awd, all four."
+          oneOf:
+            - enum:
+                - fwd
+                - rwd
+                - awd
+              type: string
+            - type: "null"
+        engine_cc:
+          description: The combustion engine's displacement, in cm³; null for an electric vehicle.
+          format: int64
+          minimum: 1
+          type:
+            - integer
+            - "null"
+        first_registration:
+          description: The day the vehicle was first registered.
+          format: date
+          type:
+            - string
+            - "null"
+        gearbox:
+          oneOf:
+            - enum:
+                - automatic
+                - manual
+              type: string
+            - type: "null"
+        gross_weight_kg:
+          description: The most the vehicle may weigh, loaded (gross vehicle weight).
+          format: int64
+          minimum: 1
+          type:
+            - integer
+            - "null"
+        name:
+          description: The name the owner gave the vehicle in its vendor's app (Tesla); null for the others.
+          minLength: 1
+          type:
+            - string
+            - "null"
+        performance:
+          description: "A performance package (Tesla); false: none, or not told."
+          type: boolean
+        picture:
+          description: "Whether GET /vehicles/{vehicle}/picture gives a picture of the vehicle: its vendor links to one (Volvo)."
+          type: boolean
+        power_kw:
+          description: The maximum power of the motors, or of the engine and motors together.
+          exclusiveMinimum: 0
+          format: double
+          type:
+            - number
+            - "null"
+        roof_colour:
+          description: "The roof's, as the vendor names it (Tesla: Glass, Black)."
+          minLength: 1
+          type:
+            - string
+            - "null"
+        seats:
+          format: int64
+          minimum: 1
+          type:
+            - integer
+            - "null"
+        steering:
+          description: The side of the steering wheel.
+          oneOf:
+            - enum:
+                - left
+                - right
+              type: string
+            - type: "null"
+        third_row:
+          description: "A third row of seats (Tesla); false: none, or not told."
+          type: boolean
+        upholstery:
+          description: "The seats' upholstery, as the vendor names it, most often a code (Volvo: R310, CHARCOAL/LEAA/CHARCOAL)."
+          minLength: 1
+          type:
+            - string
+            - "null"
+        wheels:
+          description: "The rims, as the vendor names them, a code (Tesla: HelixV220Dark)."
+          minLength: 1
+          type:
+            - string
+            - "null"
+      required:
+        - name
+        - colour
+        - roof_colour
+        - wheels
+        - upholstery
+        - gearbox
+        - drive
+        - steering
+        - power_kw
+        - engine_cc
+        - gross_weight_kg
+        - seats
+        - third_row
+        - performance
+        - first_registration
+        - picture
+      type: object
     SoftwareUpdate:
       additionalProperties: false
       properties:
@@ -4299,6 +4416,11 @@ components:
         model:
           $ref: "#/components/schemas/Model"
           description: What the vehicle is, from its latest details.
+        sheet:
+          description: "What the vehicle is beyond its model, from its latest details: its colour, its specifications, its picture, the name its owner gave it. Each value is null when the source does not tell it; the sheet is null when it tells none (Polestar's Data Portal), and until the details are read."
+          oneOf:
+            - $ref: "#/components/schemas/Sheet"
+            - type: "null"
         unshared_at:
           description: "When Polestar's Data Portal answered that the owner no longer shares the vehicle with the credential: it is no longer read. Giving a credential that lists it again reads it again. null: shared, or a Volvo."
           format: date-time
@@ -4312,6 +4434,7 @@ components:
         - id
         - vin
         - model
+        - sheet
         - connection
         - market_refused_at
         - unshared_at
@@ -7124,6 +7247,87 @@ paths:
         - session: []
         - sessionSecure: []
       summary: Choose a vehicle's variant and onboard charger
+      tags:
+        - vehicles
+  /vehicles/{vehicle}/picture:
+    get:
+      description: "The vendor's picture of the vehicle from the outside, relayed by Runsten so that the browser calls no third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day. Only for a vehicle whose `sheet.picture` is true."
+      operationId: getVehiclePicture
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      responses:
+        "200":
+          content:
+            image/jpeg:
+              schema:
+                contentMediaType: application/octet-stream
+                format: binary
+                type: string
+            image/png:
+              schema:
+                contentMediaType: application/octet-stream
+                format: binary
+                type: string
+            image/webp:
+              schema:
+                contentMediaType: application/octet-stream
+                format: binary
+                type: string
+          description: The picture.
+          headers:
+            Cache-Control:
+              description: "private, max-age=86400: the browser keeps it a day."
+              required: true
+              schema:
+                type: string
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account, or no picture of it."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: the vendor's CDN did not give the picture."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: A vehicle's picture
       tags:
         - vehicles
   /vehicles/{vehicle}/series:

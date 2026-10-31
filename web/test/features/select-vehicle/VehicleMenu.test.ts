@@ -45,6 +45,28 @@ async function opened(path: string, vehicle = first.id) {
 }
 
 describe('VehicleMenu', () => {
+  it("shows each vehicle's picture beside its label, where it has one", async () => {
+    const { button, rows } = await opened(`/vehicles/${first.id}`)
+    expect(button.find('img').attributes('src')).toBe(`api/v1/vehicles/${first.id}/picture`)
+    expect(rows.map((a) => a.querySelector('img')?.getAttribute('src') ?? null)).toEqual([
+      `api/v1/vehicles/${first.id}/picture`,
+      null, // no details
+      null, // a picture the API does not relay
+      null,
+      null, // a Polestar: none
+    ])
+    // The others keep its place: every label starts at the same place.
+    expect(rows.map((a) => !!a.querySelector('.no-picture'))).toEqual([
+      false,
+      true,
+      true,
+      true,
+      true,
+    ])
+    // Its label stays its name: the picture is decorative.
+    expect(rows[0]?.querySelector('img')?.getAttribute('alt')).toBe('')
+  })
+
   it('names the vehicle, lists the vehicles by their label and leads to its settings', async () => {
     const { button, nav, rows, settings } = await opened(`/vehicles/${first.id}`)
     expect(button.text()).toBe('XC40 Recharge Twin · 2021')

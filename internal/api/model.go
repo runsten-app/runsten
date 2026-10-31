@@ -198,7 +198,7 @@ func (s *Server) vehicleOf(ctx context.Context, v Vehicle) (vehicleJSON, error) 
 	}
 	m := effectiveModel(s.Catalog, n, v)
 	return vehicleJSON{
-		ID: v.ID, VIN: v.VIN, Model: modelOf(m), Connection: s.connectionOf(v), MarketRefusedAt: timeOrNil(v.MarketRefusedAt),
+		ID: v.ID, VIN: v.VIN, Model: modelOf(m), Sheet: s.sheetFor(n), Connection: s.connectionOf(v), MarketRefusedAt: timeOrNil(v.MarketRefusedAt),
 		UnsharedAt: timeOrNil(v.UnsharedAt),
 		Collection: collectionOf(v),
 	}, nil

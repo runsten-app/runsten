@@ -4,6 +4,8 @@ export type Vehicle = components['schemas']['Vehicle']
 export type Connection = components['schemas']['Connection']
 export type State = components['schemas']['State']
 export type Model = components['schemas']['Model']
+// Sheet is what the vehicle is beyond its model, as its source tells it.
+export type Sheet = components['schemas']['Sheet']
 // VariantOption is a variant a vehicle may be, with where the catalog has its figures from.
 export type VariantOption = components['schemas']['VariantOption']
 export type SourceLevel = VariantOption['levels']['gross_kwh']

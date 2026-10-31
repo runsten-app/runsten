@@ -32,6 +32,9 @@ func (m models) Model(ctx context.Context, accountID, vehicleID string, c core.C
 	if n.ModelYear.OK {
 		out.Year = n.ModelYear.V
 	}
+	if n.Sheet.OK {
+		out.Name = n.Sheet.V.Name
+	}
 	if v, ok := capacities(m).effective(chosen, vin, n); ok {
 		out.Variant, out.Brand = v.Name, brands[v.Brand]
 	}

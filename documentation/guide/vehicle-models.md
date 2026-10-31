@@ -1,5 +1,5 @@
 ---
-description: "How Runsten recognizes the variant of your car, choosing it, the onboard charger and the net battery capacity."
+description: "How Runsten recognizes the variant of your car, choosing it, the onboard charger, its sheet and the net battery capacity."
 ---
 
 # Vehicle models
@@ -34,6 +34,16 @@ When the variant offers a 22 kW onboard charger as an option, state which one th
 
 - **A charger** applies at once: costs are computed on each reading.
 - **A variant** changes the energies, and with them consumptions and costs. The collector works out the vehicle's trips and charges again after its next reading (within 10 minutes while parked), keeping the entered costs.
+
+## Its sheet
+
+Below the model, the vehicle's settings show its **Sheet**: what the car's maker tells of it beyond its model, and only that. Nothing is shown for a value it does not tell.
+
+- **A Volvo**: its colour, its drive, its power, its first registration and its seats; under **Show more**, its gearbox, its gross weight, its engine displacement (a plug-in hybrid's), its upholstery (most often Volvo's code) and the side of its steering wheel. And its picture, which also shows beside its name in the menu and on its state.
+- **A Tesla**: the name you gave it in Tesla's app, its colour; under **Show more**, the side of its steering wheel, its wheels and roof as Tesla names them, a third row of seats and a performance package. The name is also what Runsten calls it, in the menu and in [Home Assistant](./mqtt.md).
+- **A Polestar** read through the Data Portal tells none of it: no sheet.
+
+Your browser never loads the picture from Volvo: Runsten fetches it from Volvo's servers, keeps it a day, and gives it to your browser itself.
 
 ## Net capacity
 

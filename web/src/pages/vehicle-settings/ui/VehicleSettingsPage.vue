@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { vehicleLabel } from '@/entities/vehicle'
+import { vehicleLabel, VehicleSheet } from '@/entities/vehicle'
 import { DeleteVehicle } from '@/features/delete-vehicle'
 import { VehicleModelForm } from '@/features/edit-vehicle-model'
 import { ImportList, ImportSources } from '@/features/manage-imports'
@@ -11,7 +11,8 @@ import { SubNav } from '@/shared/ui'
 import { AppShell } from '@/widgets/app-shell'
 
 // VehicleSettingsPage is one vehicle's, in two areas, each a route: the vehicle (the variant
-// and onboard charger the energies and costs rest on, then its deletion, last), and the
+// and onboard charger the energies and costs rest on, its sheet, then its deletion, last),
+// and the
 // history imported from other applications (what it holds, then how to add to it). What
 // the account shares (currency, places, tariffs) stays in the settings.
 const props = defineProps<{ vehicle: string; area: 'model' | 'history' }>()
@@ -64,6 +65,8 @@ const titleId = computed(() => `vehicle-settings-${props.area}-title`)
               <VehicleModelForm :vehicle="current" :label />
             </v-card-text>
           </v-card>
+          <!-- What the vehicle's source tells of it beyond its model; nothing when it tells none. -->
+          <VehicleSheet :vehicle="current" />
           <!-- Destructive, so last, on a tile of its own. -->
           <DeleteVehicle :vehicle :label />
         </div>

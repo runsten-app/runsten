@@ -27,8 +27,8 @@ var allowed = map[string][]string{
 	// The binaries wire the adapters together. Only runsten-simulator knows the simulator.
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/catalog", "internal/core",
-		"internal/derive", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/platform",
-		"internal/polestar", "internal/release", "internal/store", "internal/tesla", "internal/volvo", "internal/volvoportal",
+		"internal/derive", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
+		"internal/platform", "internal/polestar", "internal/release", "internal/store", "internal/tesla", "internal/volvo", "internal/volvoportal",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
@@ -78,7 +78,9 @@ var allowed = map[string][]string{
 	"internal/geocode/nominatim": {"net/http", "encoding/json", "internal/core"},
 	"internal/aximote":           {"net/http", "encoding/json"},
 	// The latest release on GitHub, compared with the one running.
-	"internal/release":     {"net/http", "encoding/json", "internal/platform/clock"},
+	"internal/release": {"net/http", "encoding/json", "internal/platform/clock"},
+	// The vendors' pictures of the vehicles, relayed to the browser.
+	"internal/picture":     {"net/http", "internal/platform/clock"},
 	"internal/volvoportal": nil,
 	// The only package that knows paho.
 	"internal/publish/mqtt": {
