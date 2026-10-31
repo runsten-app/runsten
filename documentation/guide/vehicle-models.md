@@ -14,7 +14,7 @@ The variant is worked out from what the manufacturer's API reports of the car an
 
 When several variants fit, or none, the vehicle has no variant until you choose one: its energies then rest on the capacity the car reports, if it reports one (a Volvo does, a Polestar or a Tesla does not).
 
-A Volvo tells its model, its model year, its fuel type and its battery's gross capacity: it is recognized from them.
+A Volvo tells its model, its model year, its fuel type and a capacity of its battery: it is recognized from them.
 
 A Polestar read through the Data Portal tells its model year (from its VIN), but neither its model nor its battery's capacity: several Polestar variants fit, and none is recognized. Choose yours: without a variant, its energies are unknown ([Your Polestar](./polestar.md#choose-its-variant)).
 
@@ -37,7 +37,7 @@ When the variant offers a 22 kW onboard charger as an option, state which one th
 
 ## Net capacity
 
-A car that reports its battery's capacity (a Volvo) reports the gross one. Runsten assumes, until a measurement confirms it, that the state of charge runs over the net (usable) capacity, and uses it when the catalog knows it. For an EX30 of 69 kWh gross, 64 net, energies are 7 % lower than on the gross capacity.
+A car that reports its battery's capacity (a Volvo) does not say which: Volvo's API has given the gross capacity, a pack's label or the net capacity. Runsten assumes, until a measurement confirms it, that the state of charge runs over the net (usable) capacity, and uses it when the catalog knows it. For an EX30 of 69 kWh gross, 64 net, energies are 7 % lower than on the gross capacity.
 
 ## Plug-in hybrids
 
