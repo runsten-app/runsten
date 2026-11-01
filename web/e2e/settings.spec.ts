@@ -141,11 +141,24 @@ test("Vehicle settings: a family the catalog lacks, from the bar's vehicle menu"
     'page',
   )
   const section = page.getByRole('region', { name: 'Vehicle', exact: true })
-  await expect(section.locator('dd')).toHaveText([/^[A-HJ-NPR-Z0-9]{17}$/, 'EX-SIM', '2026'])
+  await expect(section.locator('.vehicle-model .facts dd')).toHaveText([
+    /^[A-HJ-NPR-Z0-9]{17}$/,
+    'EX-SIM',
+    '2026',
+  ])
   await expect(section.locator('.none')).toHaveText(
     "Runsten's catalog has no variant of the EX-SIM: it lists the electric Volvo, Polestar and Tesla models, and the plug-in hybrid Volvos and the Polestar 1, only.",
   )
   await expect(section.getByRole('radio')).toHaveCount(0)
+  // Its sheet, the values its details tell, the rest folded; no picture from the simulator.
+  const sheet = section.getByRole('region', { name: 'Sheet' })
+  await expect(sheet.locator('dt').first()).toHaveText('Colour')
+  await expect(sheet.locator('dd').first()).toHaveText('Vapour Grey')
+  await expect(sheet.locator('img')).toHaveCount(0)
+  await expect(sheet.getByRole('button', { name: /^Show \d+ more$/ })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  )
   // The deletion last, on a tile of its own.
   await expect(section.getByRole('region', { name: 'Delete this vehicle' })).toBeVisible()
   await checkView(page, testInfo, 'vehicle-settings')
