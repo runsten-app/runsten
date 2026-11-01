@@ -51,6 +51,17 @@ func renderVehicleData(c *car, r vehicle.Report, st vehicle.State, now time.Time
 	vs := block("vehicle_state")
 	vs["odometer"] = round(st.OdometerKm/kmPerMile, 6)
 	vs["locked"] = st.Locked
+	// A left-hand drive car: the driver's side is the left.
+	for field, name := range map[string]string{
+		"df": "front_left_door", "pf": "front_right_door", "dr": "rear_left_door", "pr": "rear_right_door",
+		"ft": "hood", "rt": "tailgate", "fd_window": "front_left_window", "fp_window": "front_right_window",
+		"rd_window": "rear_left_window", "rp_window": "rear_right_window",
+	} {
+		vs[field] = 0
+		if st.IsOpen(name) {
+			vs[field] = 1
+		}
+	}
 	vs["is_user_present"] = st.Driving
 	// The sensors report while the car rolls: last seen at the end of the last drive.
 	seen := r.StatusAt.Unix()

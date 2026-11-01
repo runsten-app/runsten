@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"time"
 )
 
@@ -165,11 +166,14 @@ type Trip struct {
 
 // State is the vehicle's complete state at a given time.
 type State struct {
-	SoC            float64 // 0 to 100
-	OdometerKm     float64
-	Driving        bool
-	Position       Position
-	Locked         bool
+	SoC        float64 // 0 to 100
+	OdometerKm float64
+	Driving    bool
+	Position   Position
+	Locked     bool
+	// Open is what is left open, a bit per name of Openings() (comparable, as a State
+	// must be): nothing once a drive starts.
+	Open           uint16
 	PluggedIn      bool
 	Charging       ChargingStatus
 	ChargeType     ChargeType
@@ -187,6 +191,21 @@ type State struct {
 	TotalDriveTime        time.Duration // completed trips only
 	DistanceSinceChargeKm float64
 	EnergySinceChargeKWh  float64
+}
+
+// Openings returns the names of what a vehicle may leave open, in the order of the bits
+// of its State.Open.
+func Openings() []string {
+	return []string{
+		"front_left_door", "front_right_door", "rear_left_door", "rear_right_door", "hood", "tailgate", "tank_lid",
+		"front_left_window", "front_right_window", "rear_left_window", "rear_right_window", "sunroof",
+	}
+}
+
+// IsOpen tells whether the opening is left open.
+func (s State) IsOpen(name string) bool {
+	i := slices.Index(Openings(), name)
+	return i >= 0 && s.Open&(1<<i) != 0
 }
 
 // UploadPolicy groups the assumptions about upload frequency.
@@ -276,6 +295,7 @@ func (v *Vehicle) StartDrive(at time.Time) {
 	}
 	v.state.Driving = true
 	v.state.Locked = false
+	v.state.Open = 0
 	v.tripStart, v.lastDriveAt = at, at
 	v.tripStartOdo = v.state.OdometerKm
 	v.tripStartKWh = v.state.TotalEnergyKWh
@@ -352,6 +372,22 @@ func (v *Vehicle) EndDrive(at time.Time, dest Position) {
 	v.state.TotalDriveTime += v.state.LastTrip.Duration
 	v.uploadStatus(at)
 	v.uploadLocation(at)
+}
+
+// LeaveOpen leaves the parked vehicle unlocked or locked, and open what open names (of
+// Openings), until its next drive.
+func (v *Vehicle) LeaveOpen(at time.Time, unlocked bool, open []string) {
+	if v.state.Driving {
+		return
+	}
+	v.state.Locked = !unlocked
+	v.state.Open = 0
+	for _, name := range open {
+		if i := slices.Index(Openings(), name); i >= 0 {
+			v.state.Open |= 1 << i
+		}
+	}
+	v.uploadStatus(at)
 }
 
 // PlugIn plugs the vehicle in and starts charging up to targetSoC.

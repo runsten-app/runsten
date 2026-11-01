@@ -15,6 +15,7 @@ The **Health** tab shows the vehicle's latest health, and, folded, the tyres' pr
   - how long its installation took, from the first reading of the car installing it to the first reading of the version, when a reading saw it installing. A dash otherwise: the car was asleep or out of reach meanwhile, and the installation's time is not known, never shown as 0.
 - **Tyres**: each tyre's pressure, against the pressure the car recommends at its axle, and what the tyre pressure monitoring says of it: OK, low, very low, high, or a fault (of a sensor, or of the system).
 - **Service and warnings**, in one tile: whether the service is due (not yet, soon, due, overdue), and the time and the distance left until it; then the warnings: the brake fluid, the coolant, the oil, the washer fluid, the 12 V battery and each exterior light. The active ones are named; with none active, the tile says how many checks the car reported. A car that tells neither gets one sentence.
+- **Doors and windows**, last, for a car that tells them: whether it is locked and what is open, as on the vehicle's page. Never a warning: a door open while parked is no fault.
 - **Pressures over time**, folded under the tiles: opened, one chart per axle: the left and right tyres, and the recommended pressure, dashed, over 7 days, 30 days or 12 months. A pressure rises as the tyres warm up while driving, and falls in the cold. The line breaks where nothing was read.
 
 What a car does not report is said as such, never shown as fine.

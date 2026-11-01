@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"time"
 
 	"runsten/internal/simulator/vehicle"
@@ -88,9 +89,13 @@ type Step struct {
 	Charge *Charge `yaml:"charge"`
 }
 
-// Park keeps the vehicle parked for Duration.
+// Park keeps the vehicle parked for Duration. Unlocked leaves it unlocked, Open lists
+// what it leaves open (vehicle.Openings), until its next drive; without either, it stays
+// as the previous step left it, locked and closed after a drive.
 type Park struct {
 	Duration time.Duration `yaml:"duration"`
+	Unlocked bool          `yaml:"unlocked"`
+	Open     []string      `yaml:"open"`
 }
 
 // Drive moves the vehicle to To, over DistanceKm, in Duration. A plug-in hybrid's engine
@@ -222,6 +227,11 @@ func (s *Scenario) validateStep(st Step) error {
 	case st.Park != nil:
 		if st.Park.Duration <= 0 {
 			return errors.New("park.duration must be > 0")
+		}
+		for _, o := range st.Park.Open {
+			if !slices.Contains(vehicle.Openings(), o) {
+				return fmt.Errorf("park.open: unknown opening %q", o)
+			}
 		}
 	case st.Drive != nil:
 		if _, ok := s.Places[st.Drive.To]; !ok {

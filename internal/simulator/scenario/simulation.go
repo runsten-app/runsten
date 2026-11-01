@@ -157,6 +157,12 @@ func (s *Simulation) next() {
 }
 
 func (s *Simulation) park(p *Park, to time.Time) {
+	if !s.entered {
+		if p.Unlocked || len(p.Open) > 0 {
+			s.veh.LeaveOpen(s.now, p.Unlocked, p.Open)
+		}
+		s.entered = true
+	}
 	end := s.stepStart.Add(p.Duration)
 	if to.Before(end) {
 		s.now = to
