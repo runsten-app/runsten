@@ -502,9 +502,19 @@ func TestPublishOpenings(t *testing.T) {
 	}
 	eventually(t, "not yet", func() bool { return b.retained()[state+"left_open"] == "off" })
 
+	// The doors' history not read: the state still goes out, the warning stays as it was.
 	sts.openErr = errors.New("database down")
+	sts.current[vehicle] = core.Latest([]core.Record{{FetchedAt: t0, CheckedAt: t0, Snapshot: core.Snapshot{
+		Covers: core.FieldEngine | core.FieldDoors,
+		Engine: core.Some(core.EngineStopped, t0),
+		Doors:  core.Some(core.Doors{Locked: core.Some(true, t0), Tailgate: core.Some(core.Closed, t0)}, t0),
+	}}})
 	if err := p.Publish(context.Background(), account, vehicle); err == nil || !strings.Contains(err.Error(), vehicle) {
 		t.Errorf("publish with the doors not read: %v", err)
+	}
+	eventually(t, "state published", func() bool { return b.retained()[state+"locked"] == "locked" })
+	if got := b.retained()[state+"left_open"]; got != "off" {
+		t.Errorf("left_open = %q, want the previous off", got)
 	}
 }
 

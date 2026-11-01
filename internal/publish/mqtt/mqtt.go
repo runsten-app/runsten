@@ -248,15 +248,21 @@ func (p *Publisher) Publish(ctx context.Context, accountID, vehicleID string) er
 	m.Climate = cur.Snapshot.Covers&core.FieldClimate != 0
 	m.Openings = publish.Openings(cur.Snapshot)
 	now := p.clk.Now()
-	since, err := p.states.OpenSince(ctx, accountID, vehicleID, now.Add(-publish.LeftOpenAfter))
-	if err != nil {
-		return fmt.Errorf("doors of vehicle %s: %w", vehicleID, err)
+	// The doors' history and the health are read apart: a failure keeps what was
+	// published before, and never holds the state back.
+	prev := c.values[vehicleID]
+	values := publish.State(c.b, vehicleID, cur)
+	since, openErr := p.states.OpenSince(ctx, accountID, vehicleID, now.Add(-publish.LeftOpenAfter))
+	switch {
+	case openErr == nil:
+		values = append(values, publish.LeftOpenState(c.b, vehicleID, publish.LeftOpen(cur, since, now)))
+	case len(prev) > len(values):
+		values = append(values, prev[len(values)])
+	default:
+		values = append(values, publish.LeftOpenState(c.b, vehicleID, core.Value[bool]{}))
 	}
-	// The health is read apart: its failure keeps the health published before, and
-	// never holds the state back.
-	values := append(publish.State(c.b, vehicleID, cur), publish.LeftOpenState(c.b, vehicleID, publish.LeftOpen(cur, since, now)))
 	health, healthErr := p.states.Health(ctx, accountID, vehicleID, p.clk.Now())
-	switch prev := c.values[vehicleID]; {
+	switch {
 	case healthErr == nil:
 		values = append(values, publish.Health(c.b, vehicleID, health)...)
 	case len(prev) > len(values):
@@ -270,6 +276,9 @@ func (p *Publisher) Publish(ctx context.Context, accountID, vehicleID string) er
 	p.saveStatus(ctx, c)
 	if err != nil {
 		return fmt.Errorf("account %s: %w", accountID, err)
+	}
+	if openErr != nil {
+		return fmt.Errorf("doors of vehicle %s: %w", vehicleID, openErr)
 	}
 	if healthErr != nil {
 		return fmt.Errorf("health of vehicle %s: %w", vehicleID, healthErr)
