@@ -50,11 +50,20 @@ internal/
                        normalization into core.Snapshot (Normalizer, derive's for the source
                        `polestar`), and of the health into core.Health (health.go); one call per
                        method, no retry
+  polestarid/          the Polestar app's API read with the owner's Polestar ID (ADR 0042, unofficial,
+                       behind a flag): the sign-in (the authorization URL and the code pasted back,
+                       or the email and password through PingFederate's form), the refresh token
+                       rotated at every refresh, the GraphQL of mystar-v2 (the cars, their
+                       telematics); typed errors (APIError, Kind); fingerprint; normalization
+                       into core.Snapshot (Normalizer, derive's for the source `polestar_id`: no
+                       position, engine nor cable) and of the service into core.Health
   collector/           adaptive polling, each vehicle through its connection's provider; declares its own
                        API, Store, TokenSource, Observer, Deriver, Publisher and Source interfaces;
                        polestarsource/: the Source of the Polestar Data Portal, its client adapted;
                        teslasource/: the Source of Tesla's Owner API, its client adapted, the
-                       refresh token's rotation kept (declares its Store)
+                       refresh token's rotation kept (declares its Store); polestaridsource/: the
+                       Source of the Polestar ID, the refresh token kept at every refresh, the
+                       password signing in again when it is refused (declares its Store)
   oauth/               token lifecycle (Manager), pending flows (state, PKCE), enrollment; declares its Store
                        and Refresher
   aximote/             Aximote's public API client (vehicles, trips, refuels, the tracks' GeoJSON export),

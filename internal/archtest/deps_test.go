@@ -52,9 +52,10 @@ var allowed = map[string][]string{
 	// The collector's Source of the Polestar Data Portal: the client, adapted.
 	"internal/collector/polestarsource": {"internal/collector", "internal/core", "internal/polestar"},
 	// The collector's Source of Tesla's Owner API: the client, adapted.
-	"internal/collector/teslasource": {"internal/collector", "internal/core", "internal/tesla"},
-	"internal/derive":                {"internal/core"},
-	"internal/oauth":                 {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
+	"internal/collector/teslasource":      {"internal/collector", "internal/core", "internal/tesla"},
+	"internal/collector/polestaridsource": {"internal/collector", "internal/core", "internal/polestarid"},
+	"internal/derive":                     {"internal/core"},
+	"internal/oauth":                      {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
 	// It reads the catalog, pure data like core, to recognize the vehicles' variants, and
 	// the flags' declarations (never flags/eval: depguard).
 	"internal/api": {
@@ -75,6 +76,7 @@ var allowed = map[string][]string{
 	"internal/volvo":             {"net/http", "encoding/json", "golang.org/x/oauth2", "internal/core", "internal/oauth"},
 	"internal/polestar":          {"net/http", "encoding/json", "internal/core"},
 	"internal/tesla":             {"net/http", "encoding/json", "internal/core"},
+	"internal/polestarid":        {"net/http", "encoding/json", "internal/core"},
 	"internal/geocode/nominatim": {"net/http", "encoding/json", "internal/core"},
 	"internal/aximote":           {"net/http", "encoding/json"},
 	// The latest release on GitHub, compared with the one running.

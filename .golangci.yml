@@ -103,6 +103,8 @@ linters:
               desc: the collector declares its own Source, which collector/polestarsource adapts the Polestar client to
             - pkg: runsten/internal/tesla
               desc: the collector declares its own Source, which collector/teslasource adapts the Tesla client to
+            - pkg: runsten/internal/polestarid
+              desc: the collector declares its own Source, which collector/polestaridsource adapts the Polestar ID client to
         # The collector's Polestar source adapts the client: no transport, no storage.
         polestarsource-adapts:
           files: ["**/internal/collector/polestarsource/**", "!$test"]
@@ -123,6 +125,16 @@ linters:
               desc: storage belongs to store
             - pkg: runsten/internal/store
               desc: teslasource declares its own Store, which the store implements
+        # The collector's Polestar ID source adapts the client: no transport, no storage.
+        polestaridsource-adapts:
+          files: ["**/internal/collector/polestaridsource/**", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the transport belongs to the polestarid client
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: polestaridsource declares its own Store, which the store implements
         # The addresses' worker orchestrates: it knows neither the transport nor the database.
         geocode-without-adapters:
           files: ["**/internal/geocode/*.go", "!$test"]
@@ -264,6 +276,29 @@ linters:
               desc: each vendor's client stands alone
             - pkg: runsten/internal/oauth
               desc: the refresh token is the collector's to keep and rotate, not oauth's Manager's
+        # The Polestar ID client depends on neither storage nor the collector, nor on another
+        # vendor's client.
+        polestarid-is-a-client:
+          files: ["**/internal/polestarid/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: the client stores nothing
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/derive
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/api
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/catalog
+              desc: recognizing a variant is a reading of the API, not a normalization
+            - pkg: runsten/internal/volvo
+              desc: each vendor's client stands alone
+            - pkg: runsten/internal/polestar
+              desc: each vendor's client stands alone
+            - pkg: runsten/internal/oauth
+              desc: the refresh token is the collector's to keep and rotate, not oauth's Manager's
         # The domain depends on no adapter, and never sees a vendor format.
         core-is-pure:
           files: ["**/internal/core/**"]
@@ -281,6 +316,8 @@ linters:
             - pkg: runsten/internal/polestar
               desc: the domain knows no vendor
             - pkg: runsten/internal/tesla
+              desc: the domain knows no vendor
+            - pkg: runsten/internal/polestarid
               desc: the domain knows no vendor
             - pkg: runsten/internal/simulator
               desc: the domain knows nothing about the simulator
@@ -433,6 +470,8 @@ linters:
             - pkg: runsten/internal/polestar
               desc: api declares the interfaces it needs
             - pkg: runsten/internal/tesla
+              desc: api declares the interfaces it needs
+            - pkg: runsten/internal/polestarid
               desc: api declares the interfaces it needs
             - pkg: runsten/internal/collector
               desc: the API does not drive the collector
