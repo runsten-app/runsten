@@ -16,11 +16,15 @@ vi.mock('@/entities/session/extensions', () => ({
   },
 }))
 
-// The flag source.tesla, as the session gives it: on unless a test turns it off.
-const flag = vi.hoisted(() => ({ tesla: true }))
+// The flags, as the session gives them: source.tesla on and source.polestar-id off, their
+// defaults, unless a test turns them over.
+const flag = vi.hoisted(() => ({ tesla: true, polestarId: false }))
 vi.mock('@/features/view-flags', async () => {
   const { computed } = await import('vue')
-  return { useFlag: () => computed(() => flag.tesla) }
+  return {
+    useFlag: (name: string) =>
+      computed(() => (name === 'source.polestar-id' ? flag.polestarId : flag.tesla)),
+  }
 })
 
 const mocks = vi.hoisted(() => ({ fetchVehicles: vi.fn(), fetchConnection: vi.fn() }))
@@ -42,6 +46,7 @@ const selfHosted: ConnectionSettings = {
   api_key: null,
   polestar: null,
   tesla: null,
+  polestar_id: null,
 }
 // The hosted offer: no instance key, the account gives its own.
 const hosted: ConnectionSettings = {
@@ -52,6 +57,7 @@ const hosted: ConnectionSettings = {
   api_key: null,
   polestar: null,
   tesla: null,
+  polestar_id: null,
 }
 
 const items = vehicles.items as Vehicle[]
@@ -59,6 +65,7 @@ const plain = (s: string) => s.replace(/\s+/g, ' ').trim()
 
 beforeEach(() => {
   flag.tesla = true
+  flag.polestarId = false
   mocks.fetchVehicles.mockReset()
   mocks.fetchVehicles.mockResolvedValue(items)
   mocks.fetchConnection.mockReset()
@@ -156,6 +163,45 @@ describe('ConnectionPage', () => {
     expect(panel.text()).toContain('This instance has no Volvo application')
     expect(w.find('a[href="auth/volvo/start"]').exists()).toBe(false)
     expect(w.find('.api-key-form').exists()).toBe(false)
+  })
+
+  it('offers the Polestar ID in the Polestar tab while its flag is on', async () => {
+    flag.polestarId = true
+    const router = testRouter()
+    await router.push('/connection#polestar')
+    const { wrapper } = mountWith(ConnectionPage, { router })
+    await flushPromises()
+    const panel = wrapper.find('#connection-panel-polestar')
+    expect(panel.findAll('h2').map((h) => h.text())).toEqual([
+      'Polestar Data Portal',
+      'Polestar ID Beta',
+      'Vehicles',
+    ])
+    expect(panel.find('.polestar-id-form').exists()).toBe(true)
+  })
+
+  it('reads a Polestar of the Polestar ID in the Polestar tab, and tells it off', async () => {
+    const polestar = items.find((v) => v.connection.provider === 'polestar')
+    if (!polestar) throw new Error('fixture')
+    mocks.fetchVehicles.mockResolvedValue([
+      {
+        ...polestar,
+        id: 'polestar-id-1',
+        connection: { ...polestar.connection, provider: 'polestar_id', credential: 'refused' },
+      },
+    ])
+    const w = await page({ vehicle: 'polestar-id-1' })
+    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Polestar')
+    const panel = w.find('#connection-panel-polestar')
+    expect(panel.find('.polestar-id-off').text()).toContain(
+      'The Polestar ID is not offered on this instance',
+    )
+    expect(panel.find('.polestar-id-form').exists()).toBe(false)
+    const v = panel.find('.vehicle-collection')
+    expect(v.find('.state').text()).toBe('Not read: the Polestar ID refused the sign-in')
+    expect(facts(v.find('dl'))).toMatchObject({
+      'Next reading': 'None until the Polestar ID is connected again',
+    })
   })
 
   it('leaves the Tesla tab out while its flag is off', async () => {

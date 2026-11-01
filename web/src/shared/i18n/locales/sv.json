@@ -1218,7 +1218,10 @@
       "credentialMissingTesla": "Läses inte: ingen Tesla-token angiven",
       "unsharedTesla": "Läses inte: fordonet finns inte längre i Tesla-kontot",
       "pausedTesla": "Pausad av Tesla till {time}",
-      "quotaTesla": "Dagens anrop till Tesla förbrukade till {time}"
+      "quotaTesla": "Dagens anrop till Tesla förbrukade till {time}",
+      "credentialRefusedPolestarId": "Läses inte: Polestar ID nekade inloggningen",
+      "credentialMissingPolestarId": "Läses inte: inget Polestar ID anslutet",
+      "unsharedPolestarId": "Läses inte: bilen finns inte längre i Polestar ID"
     },
     "notice": {
       "reauth": {
@@ -1247,7 +1250,11 @@
       "credentialMissingTesla": "Runsten läser den här Teslan med en uppdateringstoken från ditt Tesla-konto, som har tagits bort: ange en ny på anslutningssidan.",
       "unsharedTesla": "Ditt Tesla-konto listar inte längre fordonet: sålt, eller borttaget från kontot. Kommer det tillbaka, ange token igen på anslutningssidan: fordonet läses igen.",
       "pausedTesla": "Tesla begränsade antalet anrop. Läsningen återupptas av sig själv.",
-      "quotaTesla": "Runsten gör högst 3 000 anrop om dagen till Tesla per token, för att hålla sig från dess opublicerade gränser: de är förbrukade. Läsningen återupptas av sig själv."
+      "quotaTesla": "Runsten gör högst 3 000 anrop om dagen till Tesla per token, för att hålla sig från dess opublicerade gränser: de är förbrukade. Läsningen återupptas av sig själv.",
+      "credentialRefusedPolestarId": "Polestar ID nekade Runstens inloggning för den här bilen: sessionen upphörde eller lösenordet ändrades. Anslut ditt Polestar ID igen på anslutningssidan: det som lästs finns kvar.",
+      "credentialMissingPolestarId": "Runsten läser den här Polestar-bilen med ditt Polestar ID, som togs bort: anslut det igen på anslutningssidan.",
+      "unsharedPolestarId": "Ditt Polestar ID listar inte längre den här bilen: såld eller borttagen från kontot. Om den kommer tillbaka, anslut Polestar ID igen på anslutningssidan: bilen läses igen.",
+      "quotaPolestarId": "Runsten gör högst 2 000 anrop per dag till Polestar-appens API per Polestar ID, för att hålla sig undan dess opublicerade gränser: de är förbrukade. Läsningen återupptas av sig själv."
     },
     "facts": {
       "mode": "Läsläge",
@@ -1267,14 +1274,17 @@
       "noneDueUnshared": "Ingen: fordonet delas inte längre med uppgifterna",
       "noneDueUnsharedTesla": "Ingen: fordonet finns inte längre i Tesla-kontot",
       "noneDueNotConfigured": "Ingen förrän Volvo är konfigurerat",
-      "noneDueToken": "Ingen förrän en Tesla-token anges"
+      "noneDueToken": "Ingen förrän en Tesla-token anges",
+      "noneDuePolestarId": "Ingen förrän Polestar ID anslutits igen",
+      "noneDueUnsharedPolestarId": "Ingen: bilen finns inte längre i Polestar ID"
     },
     "api": {
       "connectedVehicle": "fordonsdata",
       "energy": "batteri och laddning",
       "location": "position",
       "polestar": "Polestars Data Portal",
-      "tesla": "Teslas Owner API"
+      "tesla": "Teslas Owner API",
+      "polestarId": "Polestar-appens API"
     },
     "failure": {
       "quota": "Kvot nådd",
@@ -1296,7 +1306,8 @@
       "notFoundTesla": "Fordonet okänt för Tesla",
       "unavailableTesla": "Tesla nås inte",
       "tokenTesla": "Ingen token från Tesla",
-      "credentialRefusedTesla": "Tesla-token avvisad"
+      "credentialRefusedTesla": "Tesla-token avvisad",
+      "credentialRefusedPolestarId": "Polestar ID nekat"
     },
     "key": {
       "title": "Volvo-nyckel"
@@ -1318,6 +1329,10 @@
     "tesla": {
       "title": "Tesla-konto",
       "off": "Tesla erbjuds inte på den här instansen: dina Tesla-fordon läses inte längre. Det som lästs finns kvar och din token sparas: de läses igen när Tesla erbjuds."
+    },
+    "polestarId": {
+      "title": "Polestar ID",
+      "off": "Polestar ID erbjuds inte på den här instansen: dina Polestar-bilar som lästs med det läses inte längre. Det som lästs finns kvar och din anslutning sparas: de läses igen när det erbjuds."
     }
   },
   "apiKey": {
@@ -1766,5 +1781,74 @@
     "outside": "Annat ställe",
     "noPosition": "Utan position",
     "deleted": "En borttagen plats"
+  },
+  "polestarId": {
+    "intro": "För en Polestar som Data Portal inte läser (utanför EU och EES) kan Runsten läsa Polestar-appens API med ditt Polestar ID. Den läser batterinivån, räckvidden, laddstatusen, vägmätaren och servicen; inte positionen: resor har inga platser och laddningar ingen platstaxa.",
+    "beta": "I beta. Polestar-appens API är inte officiellt: Polestar kan ändra eller stänga det utan förvarning, och ditt Polestar-konto bär risken. Endast för din egen instans.",
+    "guide": "Läs guiden",
+    "newTab": "(öppnas i en ny flik)",
+    "refused": {
+      "title": "Ditt Polestar ID nekades",
+      "body": "Polestar ID nekade Runstens inloggning {time}: sessionen upphörde eller lösenordet ändrades. Dina Polestar-bilar läses inte förrän du ansluter igen; det som lästs finns kvar."
+    },
+    "mode": "Anslutet med",
+    "setAt": "Anslutet",
+    "modes": {
+      "legend": "Hur ska Runsten ansluta?",
+      "tokenChoice": "Logga in på Polestars sida (rekommenderas): Runsten sparar inget lösenord",
+      "passwordChoice": "E-post och lösenord: Runsten sparar dem för att logga in igen",
+      "token": "En inloggning på Polestars sida",
+      "password": "E-post och lösenord"
+    },
+    "reconnect": "Anslut igen",
+    "delete": {
+      "button": "Ta bort Polestar ID",
+      "title": "Ta bort ditt Polestar ID?",
+      "text": "Dina Polestar-bilar som lästs med det finns kvar med sin historik, men läses inte förrän du ansluter igen. Ett sparat lösenord raderas.",
+      "error": "Polestar ID kunde inte tas bort. Försök igen om en stund.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    },
+    "steps": {
+      "title": "Logga in på Polestars sida",
+      "devtools": "Öppna webbläsarens utvecklarverktyg på en dator (F12, eller högerklicka, Inspektera) på fliken Nätverk och kryssa i Bevara logg.",
+      "open": "Öppna Polestars inloggningssida i samma fönster: länken gäller i 10 minuter.",
+      "start": "Hämta inloggningslänken",
+      "page": "Polestars inloggningssida",
+      "signIn": "Logga in med ditt Polestar ID. polestar.com visar sedan en felsida: det är väntat, koden är Runstens.",
+      "copy": "Hitta begäran till sign-in-callback i nätverksloggen och kopiera hela dess adress (https://www.polestar.com/sign-in-callback?code=…), klistra sedan in den nedan."
+    },
+    "callback": "Adressen till sign-in-callback",
+    "tokenHelp": "Runsten byter dess kod och sparar bara den refresh token som Polestar ID ger, förseglad. Att logga ut från ditt Polestar ID överallt återkallar den.",
+    "passwordWarning": "Runsten sparar ditt Polestar ID:s e-post och lösenord, förseglade, för att logga in igen när Polestar avslutar sessionen. Polestars villkor förbjuder att lämna dem till tredje part: ge dem bara till en instans du själv driver.",
+    "email": "Polestar ID:s e-post",
+    "password": "Polestar ID:s lösenord",
+    "dataPortal": "En Polestar som Data Portal redan läser stannar kvar där.",
+    "save": "Anslut",
+    "cancel": "Avbryt",
+    "saved": "Polestar ID anslutet: Runsten läser dess bilar från nästa omgång.",
+    "deleted": "Polestar ID borttaget.",
+    "error": {
+      "summary": "Polestar ID anslöts inte",
+      "start": "Hämta först inloggningslänken och logga sedan in på Polestars sida.",
+      "callbackRequired": "Klistra in adressen till sign-in-callback.",
+      "noCode": "Adressen innehåller ingen kod: kopiera hela adressen till begäran sign-in-callback.",
+      "emailRequired": "Ange ditt Polestar ID:s e-post.",
+      "email": "Det här är ingen e-postadress.",
+      "passwordRequired": "Ange ditt Polestar ID:s lösenord.",
+      "tooLong": "Högst {max} tecken.",
+      "codeRefused": "Polestar ID nekade koden: den kan redan ha använts. Hämta en ny inloggningslänk och logga in igen.",
+      "passwordRefused": "Polestar ID nekade e-postadressen eller lösenordet.",
+      "expired": "Inloggningen har gått ut eller redan använts: hämta en ny inloggningslänk och logga in igen.",
+      "invalidBody": "Värdena nekades: kontrollera dem.",
+      "noVehicle": "Det här Polestar ID har ingen bil: inget anslöts.",
+      "tooManyVehicles": "Med det här Polestar ID:s bilar skulle ditt konto ha fler fordon än det får: inget anslöts.",
+      "notAdmitted": "Ditt konto måste först ta ett steg, till exempel godkänna villkor: ladda om sidan. Inget anslöts.",
+      "notOffered": "Polestar ID erbjuds inte på den här instansen.",
+      "polestarUnavailable": "Polestar ID svarade inte: inget anslöts. Försök igen om en stund.",
+      "tooManyPending": "För många inloggningar väntar på den här instansen. Försök igen om några minuter.",
+      "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
+      "internal": "Polestar ID kunde inte anslutas. Försök igen om en stund."
+    }
   }
 }

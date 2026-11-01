@@ -1,5 +1,9 @@
 import { api, unwrap } from '@/shared/api'
-import type { ConnectionSettings, PolestarCredentialUpdate } from '../model/Connection'
+import type {
+  ConnectionSettings,
+  PolestarCredentialUpdate,
+  PolestarIdAuthorization,
+} from '../model/Connection'
 
 export function fetchConnection(): Promise<ConnectionSettings> {
   return unwrap(api.GET('/connection'))
@@ -27,4 +31,23 @@ export function setTeslaToken(refreshToken: string): Promise<ConnectionSettings>
 
 export async function deleteTeslaToken(): Promise<void> {
   await unwrap(api.DELETE('/connection/tesla'))
+}
+
+export function startPolestarIdSignIn(): Promise<PolestarIdAuthorization> {
+  return unwrap(api.POST('/connection/polestar-id/authorization'))
+}
+
+export function setPolestarIdCode(state: string, callback: string): Promise<ConnectionSettings> {
+  return unwrap(api.PUT('/connection/polestar-id/code', { body: { state, callback } }))
+}
+
+export function setPolestarIdPassword(
+  email: string,
+  password: string,
+): Promise<ConnectionSettings> {
+  return unwrap(api.PUT('/connection/polestar-id/password', { body: { email, password } }))
+}
+
+export async function deletePolestarId(): Promise<void> {
+  await unwrap(api.DELETE('/connection/polestar-id'))
 }

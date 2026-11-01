@@ -17,12 +17,15 @@ describe('useCollectionText', () => {
     expect(text.failure('not_found', 'tesla')).toBe('Vehicle unknown to Tesla')
     expect(text.failure('credential_refused', 'tesla')).toBe('Tesla refresh token refused')
     expect(text.failure('api_closed', 'tesla')).toBe('API closed to the account')
+    expect(text.failure('credential_refused', 'polestar_id')).toBe('Polestar ID refused')
+    expect(text.failure('unavailable', 'polestar_id')).toBe('Polestar unreachable')
   })
 
   it("names the Data Portal's API", () => {
     const { result: text } = withSetup(useCollectionText)
     expect(text.api('polestar')).toBe('Polestar Data Portal')
     expect(text.api('tesla')).toBe('Tesla Owner API')
+    expect(text.api('polestar_id')).toBe('Polestar app API')
     expect(text.api('elsewhere')).toBe('elsewhere')
   })
 })

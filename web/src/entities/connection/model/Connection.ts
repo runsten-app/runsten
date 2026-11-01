@@ -12,3 +12,8 @@ export type PolestarCredential = components['schemas']['PolestarCredential']
 export type PolestarCredentialUpdate = components['schemas']['PolestarCredentialUpdate']
 // TeslaToken is what the user is shown again of their Tesla refresh token.
 export type TeslaToken = components['schemas']['TeslaToken']
+// PolestarId is what the user is shown again of their Polestar ID: its mode, never the
+// token, the email nor the password; PolestarIdAuthorization a sign-in started on
+// Polestar's page, its address and state.
+export type PolestarId = components['schemas']['PolestarID']
+export type PolestarIdAuthorization = components['schemas']['PolestarIDAuthorization']

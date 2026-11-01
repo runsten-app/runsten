@@ -4,12 +4,17 @@ import { useFormat } from '@/shared/lib'
 
 // useCollectionText tells the user how a vehicle is read, in their words: the vendor's
 // API names and the collector's kinds of failure are written out, each key in full. The
-// vendor is the vehicle's connection's: Volvo's API, Polestar's Data Portal, or Tesla's
-// Owner API.
+// vendor is the vehicle's connection's: Volvo's API, Polestar's Data Portal, Tesla's
+// Owner API, or the Polestar app's API, read with the Polestar ID.
 type Provider = Connection['provider']
 
-// byProvider picks the text of the provider: Volvo's for any other.
-function byProvider<T>(provider: Provider, texts: { volvo: T; polestar: T; tesla: T }): T {
+// byProvider picks the text of the provider: Volvo's for any other; the Data Portal's for
+// the Polestar ID, unless it has its own.
+function byProvider<T>(
+  provider: Provider,
+  texts: { volvo: T; polestar: T; tesla: T; polestarId?: T },
+): T {
+  if (provider === 'polestar_id') return texts.polestarId ?? texts.polestar
   return provider === 'polestar' || provider === 'tesla' ? texts[provider] : texts.volvo
 }
 
@@ -33,6 +38,8 @@ export function useCollectionText() {
         return t('connection.api.polestar')
       case 'tesla':
         return t('connection.api.tesla')
+      case 'polestar_id':
+        return t('connection.api.polestarId')
       default:
         return name
     }
@@ -64,6 +71,7 @@ export function useCollectionText() {
         volvo: t('connection.failure.credentialRefused'),
         polestar: t('connection.failure.credentialRefused'),
         tesla: t('connection.failure.credentialRefusedTesla'),
+        polestarId: t('connection.failure.credentialRefusedPolestarId'),
       }),
       unshared: t('connection.failure.unshared'),
       not_granted: t('connection.failure.notGranted'),
@@ -90,17 +98,20 @@ export function useCollectionText() {
               volvo: t('connection.state.credentialRefused'),
               polestar: t('connection.state.credentialRefused'),
               tesla: t('connection.state.credentialRefusedTesla'),
+              polestarId: t('connection.state.credentialRefusedPolestarId'),
             })
           : byProvider(provider, {
               volvo: t('connection.state.credentialMissing'),
               polestar: t('connection.state.credentialMissing'),
               tesla: t('connection.state.credentialMissingTesla'),
+              polestarId: t('connection.state.credentialMissingPolestarId'),
             })
       case 'unshared':
         return byProvider(provider, {
           volvo: t('connection.state.unshared'),
           polestar: t('connection.state.unshared'),
           tesla: t('connection.state.unsharedTesla'),
+          polestarId: t('connection.state.unsharedPolestarId'),
         })
       case 'notGranted':
         return t('connection.state.notGranted')
@@ -118,8 +129,8 @@ export function useCollectionText() {
         })
       case 'quota':
         // The Data Portal's quota is the credential's, over every domain: one API; the
-        // Owner API's, the refresh token's.
-        if (provider === 'polestar' || provider === 'tesla')
+        // Owner API's, the refresh token's; the Polestar app's, the Polestar ID's.
+        if (provider !== 'volvo')
           return byProvider(provider, {
             volvo: t('connection.state.quota', { time: f.dateTime(s.until, now) }),
             polestar: t('connection.state.quotaPolestar', { time: f.dateTime(s.until, now) }),
