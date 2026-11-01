@@ -28,12 +28,13 @@ var allowed = map[string][]string{
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/catalog", "internal/core",
 		"internal/derive", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
-		"internal/platform", "internal/polestar", "internal/release", "internal/store", "internal/tesla", "internal/volvo", "internal/volvoportal",
+		"internal/platform", "internal/polestar", "internal/polestarid", "internal/release", "internal/store", "internal/tesla",
+		"internal/volvo", "internal/volvoportal",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
-		"internal/flags", "internal/oauth", "internal/platform", "internal/polestar", "internal/publish", "internal/store",
-		"internal/tesla", "internal/volvo",
+		"internal/flags", "internal/oauth", "internal/platform", "internal/polestar", "internal/polestarid", "internal/publish",
+		"internal/store", "internal/tesla", "internal/volvo",
 	},
 	"cmd/runsten-simulator": {"net/http", "internal/platform", "internal/simulator"},
 	"cmd/runsten-web":       {"net/http", "internal/platform", "internal/web"},

@@ -17,6 +17,9 @@ type Name string
 const (
 	// SourceTesla: a Tesla is read through the Owner API, with its owner's tokens.
 	SourceTesla Name = "source.tesla"
+	// SourcePolestarID: a Polestar is read through the Polestar app's API, with its
+	// owner's Polestar ID (ADR 0042).
+	SourcePolestarID Name = "source.polestar-id"
 )
 
 // Flag is a flag's declaration.
@@ -39,6 +42,13 @@ func All() []Flag {
 			Purpose: "Tesla as a source: its connection, its page and its reads. On by default; an instance may " +
 				"turn it off, Tesla's Owner API being unofficial.",
 			Remove: "when every instance offers Tesla, or reads it through the Fleet API instead",
+		},
+		{
+			Name: SourcePolestarID, Default: false, Web: true,
+			Purpose: "The Polestar ID as a source, for the Polestars the Data Portal does not read (outside the EU/EEA): " +
+				"its connection and its reads. Off by default: the Polestar app's API is unofficial, and many accounts " +
+				"read from one instance's addresses could have them blocked; a self-hosted instance turns it on.",
+			Remove: "when Polestar opens an official API to these cars, or the source is offered everywhere",
 		},
 	}
 }

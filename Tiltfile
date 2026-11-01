@@ -3,7 +3,8 @@
 # the simulated Volvo ID's connection and Polestar credential, and an MQTT broker
 # (Mosquitto) the collector publishes to. `tilt up`, then http://localhost:10350; another
 # scenario: `tilt up -- --scenario=missed-trip` (errand,ex30: two vehicles; commute,polestar2:
-# a Volvo and a Polestar, read with the simulator's Polestar credential), or `tilt args
+# a Volvo and a Polestar, read with the simulator's Polestar credential; polestar4-id: a
+# Polestar read through the simulator's Polestar ID), or `tilt args
 # -- --scenario=ex30` while it runs. Ctrl-C stops them all (tilt down has nothing to remove);
 # PostgreSQL (task db-up) keeps its data, task db-down removes it. Needs curl, and ports
 # 8080, 8081, 8090, 5173 and 1883 free (not with task compose-sim running).

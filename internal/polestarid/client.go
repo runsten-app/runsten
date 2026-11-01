@@ -96,10 +96,10 @@ func challenge(verifier string) string {
 	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
 
-func (c *Client) authorizeParams(verifier, state string) url.Values {
+func (c *Client) authorizeParams(challenge, state string) url.Values {
 	return url.Values{
 		"client_id": {ClientID}, "redirect_uri": {RedirectURI}, "response_type": {"code"},
-		"scope": {scopes}, "state": {state}, "code_challenge": {challenge(verifier)},
+		"scope": {scopes}, "state": {state}, "code_challenge": {challenge},
 		"code_challenge_method": {"S256"}, "response_mode": {"query"},
 	}
 }
@@ -107,7 +107,12 @@ func (c *Client) authorizeParams(verifier, state string) url.Values {
 // AuthorizeURL is the sign-in page the owner opens: after it, polestar.com's
 // sign-in-callback receives a code for verifier, which the owner pastes back (CodeOf).
 func (c *Client) AuthorizeURL(verifier, state string) string {
-	return c.auth + "/as/authorization.oauth2?" + c.authorizeParams(verifier, state).Encode()
+	return c.AuthorizeURLOf(challenge(verifier), state)
+}
+
+// AuthorizeURLOf is AuthorizeURL for the S256 challenge of a verifier kept elsewhere.
+func (c *Client) AuthorizeURLOf(challenge, state string) string {
+	return c.auth + "/as/authorization.oauth2?" + c.authorizeParams(challenge, state).Encode()
 }
 
 // ErrNoCode is CodeOf's error when the address pasted holds no code.
@@ -199,7 +204,7 @@ func (c *Client) SignIn(ctx context.Context, email, password string) (Tokens, er
 	hc.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 
 	verifier := NewVerifier()
-	params := c.authorizeParams(verifier, NewVerifier())
+	params := c.authorizeParams(challenge(verifier), NewVerifier())
 	page, err := c.send(ctx, &hc, http.MethodGet, c.auth+"/as/authorization.oauth2?"+params.Encode(), nil)
 	if err != nil {
 		return Tokens{}, err

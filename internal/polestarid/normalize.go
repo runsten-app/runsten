@@ -31,6 +31,9 @@ func (Normalizer) HealthKinds() []core.Kind { return kinds(Telematics) }
 // range.
 func (Normalizer) EnergyKinds() []core.Kind { return kinds(Telematics) }
 
+// StateKinds returns none: the API tells neither the doors nor the windows.
+func (Normalizer) StateKinds() []core.Kind { return nil }
+
 // Normalize reads a stored response of kind k.
 func (Normalizer) Normalize(k core.Kind, raw []byte) (core.Snapshot, error) {
 	if k.Source != Source {

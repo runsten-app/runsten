@@ -272,6 +272,12 @@ type Config struct {
 	// checks a new one by listing its vehicles.
 	Tesla         TeslaTokens
 	TeslaVehicles TeslaVehicles
+	// PolestarID keeps the account's Polestar ID, PolestarIDAccounts signs in to it and
+	// lists its cars, and PolestarIDFlows keeps the PKCE verifiers of the sign-ins started
+	// on Polestar's page.
+	PolestarID         PolestarIDCredentials
+	PolestarIDAccounts PolestarIDAccounts
+	PolestarIDFlows    *oauth.Flows
 	// MaxVehicles caps the vehicles of an account, set by an extension; 0: no cap. A
 	// Volvo ID, a key or a Polestar credential that gives access to more is refused,
 	// nothing recorded.
@@ -356,6 +362,7 @@ func New(cfg Config) *Server {
 	s.registerConnection(s.api)
 	s.registerPolestar(s.api)
 	s.registerTesla(s.api)
+	s.registerPolestarID(s.api)
 	s.registerAccount(s.api)
 	s.registerTokens(s.api)
 	s.registerMQTT(s.api)

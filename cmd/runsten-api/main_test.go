@@ -17,6 +17,7 @@ import (
 	"runsten/internal/flags"
 	"runsten/internal/platform/health"
 	"runsten/internal/polestar"
+	"runsten/internal/polestarid"
 	"runsten/internal/volvo"
 )
 
@@ -39,6 +40,7 @@ func TestLoadConfigDefaults(t *testing.T) {
 	}
 	if cfg.addr != "127.0.0.1:8081" || cfg.baseURL != volvo.DefaultBaseURL || cfg.app.BaseURL != volvo.DefaultAuthURL ||
 		cfg.aximoteURL != "https://api.aximote.com" || cfg.polestarURL != polestar.DefaultBaseURL ||
+		cfg.polestarID != (polestarid.Hosts{Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL}) ||
 		!slices.Equal(cfg.app.Scopes, volvo.DefaultScopes()) || cfg.app.ClientID != "id" || cfg.app.ClientSecret != "secret" ||
 		cfg.logLevel != slog.LevelInfo || cfg.geocoder != nil || cfg.geocode.Interval != time.Second || !cfg.privateBrokers ||
 		cfg.appURL != "" || !cfg.secureCookies || cfg.updateCheck || len(cfg.flags) != 0 || cfg.unknownFlags != nil {
@@ -56,7 +58,8 @@ func TestLoadConfigOverrides(t *testing.T) {
 		"RUNSTEN_GEOCODER_INTERVAL": "2s", "RUNSTEN_HEALTH_TOKEN": strings.Repeat("h", minHealthToken),
 		"RUNSTEN_MQTT_PRIVATE_BROKERS": "false", "RUNSTEN_AXIMOTE_BASE_URL": "http://localhost:8080",
 		"RUNSTEN_POLESTAR_BASE_URL": "http://localhost:8080/eu-north-1/data-portal/m2m", "RUNSTEN_UPDATE_CHECK": "true",
-		"RUNSTEN_FLAGS": "source.tesla=false, removed.flag=true",
+		"RUNSTEN_FLAGS": "source.tesla=false, removed.flag=true", "RUNSTEN_POLESTAR_ID_AUTH_URL": "http://localhost:8080/polestar-id",
+		"RUNSTEN_POLESTAR_ID_API_URL": "http://localhost:8080/polestar-id/eu-north-1/mystar-v2",
 	} {
 		m[k] = v
 	}
@@ -70,7 +73,8 @@ func TestLoadConfigOverrides(t *testing.T) {
 		cfg.healthToken != strings.Repeat("h", minHealthToken) || cfg.privateBrokers || cfg.aximoteURL != "http://localhost:8080" ||
 		cfg.polestarURL != "http://localhost:8080/eu-north-1/data-portal/m2m" || cfg.secureCookies ||
 		cfg.app.RedirectURI != "http://127.0.0.1:8081/auth/volvo/callback" || !cfg.updateCheck ||
-		!maps.Equal(cfg.flags, map[flags.Name]bool{flags.SourceTesla: false}) || !slices.Equal(cfg.unknownFlags, []string{"removed.flag"}) {
+		!maps.Equal(cfg.flags, map[flags.Name]bool{flags.SourceTesla: false}) || !slices.Equal(cfg.unknownFlags, []string{"removed.flag"}) ||
+		cfg.polestarID != (polestarid.Hosts{Auth: "http://localhost:8080/polestar-id", API: "http://localhost:8080/polestar-id/eu-north-1/mystar-v2"}) {
 		t.Errorf("config = %+v", cfg)
 	}
 }

@@ -19,6 +19,7 @@ Then restart the stack (`docker compose up -d`): `runsten-api` and `runsten-coll
 | Flag | Default | What it turns over |
 |---|---|---|
 | `source.tesla` | on | Tesla as a source, when it ships: its connection, its page and its reads. Until then, it changes nothing. |
+| `source.polestar-id` | off | The Polestar ID as a source, for a Polestar the Data Portal does not read (outside the EU and the EEA): its connection and its reads, through the Polestar app's unofficial API ([Your Polestar, with the Polestar ID](../guide/polestar-id.md)). Turn it on for your own instance only. |
 
 The [release notes](https://github.com/runsten-app/runsten/releases) tell when a release adds or removes one.
 

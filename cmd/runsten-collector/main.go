@@ -1,5 +1,5 @@
-// Command runsten-collector polls the Volvo API, the Polestar Data Portal and Tesla's
-// Owner API for the vehicles of every account, stores the raw responses in PostgreSQL and derives trips
+// Command runsten-collector polls the Volvo API, the Polestar Data Portal, Tesla's Owner
+// API and the Polestar app's API for the vehicles of every account, stores the raw responses in PostgreSQL and derives trips
 // and charges from them.
 //
 // Usage:
@@ -41,6 +41,13 @@
 //	                            serving its paths (the simulator, a proxy) may stand in
 //	RUNSTEN_TESLA_AUTH_URL      Tesla's authentication address, whose /token refreshes
 //	                            the tokens (default https://auth.tesla.com/oauth2/v3)
+//	RUNSTEN_POLESTAR_ID_AUTH_URL
+//	                            the Polestar ID, which refreshes the tokens of the
+//	                            connections with one (default
+//	                            https://polestarid.eu.polestar.com)
+//	RUNSTEN_POLESTAR_ID_API_URL the Polestar app's API, which reads their cars when the
+//	                            flag source.polestar-id is on (default
+//	                            https://pc-api.polestar.com/eu-north-1/mystar-v2)
 //	RUNSTEN_TOKEN_MARGIN        refresh an access token this long before it expires
 //	                            (default 2m)
 //	RUNSTEN_TOKEN_KEEPALIVE     refresh an idle connection whose refresh token is older
@@ -48,7 +55,8 @@
 //	RUNSTEN_POLL_TICK           pass frequency (default 10s)
 //	RUNSTEN_POLL_PARKED         parked vehicle interval (default 10m). The intervals
 //	                            below are Volvo's and Polestar's: a Tesla is read at its
-//	                            own, and left to sleep (teslasource)
+//	                            own, and left to sleep (teslasource), a Polestar of the
+//	                            Polestar ID at its own (polestaridsource)
 //	RUNSTEN_POLL_ACTIVE         driving or charging interval (default 1m)
 //	RUNSTEN_POLL_RARE           location, odometer, diagnostics… (default 1h)
 //	RUNSTEN_POLL_DETAILS        vehicle details (default 24h)
@@ -98,6 +106,7 @@ import (
 
 	"runsten/internal/catalog"
 	"runsten/internal/collector"
+	"runsten/internal/collector/polestaridsource"
 	"runsten/internal/collector/polestarsource"
 	"runsten/internal/collector/teslasource"
 	"runsten/internal/core"
@@ -111,6 +120,7 @@ import (
 	"runsten/internal/platform/httpserver"
 	"runsten/internal/platform/secretbox"
 	"runsten/internal/polestar"
+	"runsten/internal/polestarid"
 	"runsten/internal/publish/mqtt"
 	"runsten/internal/store"
 	"runsten/internal/tesla"
@@ -125,6 +135,7 @@ type config struct {
 	authURL      string
 	polestarURL  string
 	tesla        tesla.Hosts
+	polestarID   polestarid.Hosts
 	clientID     string
 	clientSecret string
 	accessToken  string
@@ -235,7 +246,7 @@ func run(args []string) error {
 	if err != nil {
 		return fmt.Errorf("catalog: %w", err)
 	}
-	norm := derive.Sources(volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{})
+	norm := derive.Sources(volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{})
 	deriver := derive.New(st, norm, core.DefaultParams(), capacities{catalog: cat, vehicle: vehicleOf(st)}, log)
 	if cmd == rebuild {
 		return rebuildAll(ctx, st, deriver, log)
@@ -317,6 +328,7 @@ func run(args []string) error {
 	cfg.quota.NoInstanceKey = cfg.apiKey == ""
 	log.Info("collector started", "version", version, "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
 		"polestar_base_url", cfg.polestarURL, "tesla_api_url", cfg.tesla.API, "tesla_auth_url", cfg.tesla.Auth,
+		"polestar_id_auth_url", cfg.polestarID.Auth, "polestar_id_api_url", cfg.polestarID.API,
 		"daily_quota", cfg.quota.Daily, "quota_per_user", cfg.quota.PerUser, "instance_key", cfg.apiKey != "",
 		"mqtt_private_brokers", cfg.privateBrokers)
 	der := variants{
@@ -334,6 +346,12 @@ func run(args []string) error {
 	// and their history stay, read again once it is on.
 	c.SetGate(tesla.Source, func(ctx context.Context, account string) bool {
 		return features.Enabled(ctx, flags.SourceTesla, account)
+	})
+	c.AddSource(polestaridsource.New(polestarid.NewClient(cfg.polestarID, hc), polestarIDStore{st}), st)
+	// The same for the Polestar ID, off by default: its unofficial API is the instance's
+	// choice (ADR 0042).
+	c.SetGate(polestarid.Source, func(ctx context.Context, account string) bool {
+		return features.Enabled(ctx, flags.SourcePolestarID, account)
 	})
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
@@ -365,6 +383,21 @@ func polestarCredential(st *store.Store) func(ctx context.Context, accountID, co
 		}
 		return polestar.Credential{ClientID: c.ClientID, ClientSecret: c.ClientSecret, AccountID: c.AccountID}, nil
 	}
+}
+
+// polestarIDStore keeps the Polestar ID connections' credentials in the store.
+type polestarIDStore struct{ st *store.Store }
+
+func (p polestarIDStore) PolestarIDCredential(ctx context.Context, accountID, connectionID string) (polestaridsource.Credential, error) {
+	c, setAt, err := p.st.PolestarIDCredential(ctx, accountID, connectionID)
+	if err != nil {
+		return polestaridsource.Credential{}, fmt.Errorf("polestar id credential: %w", err)
+	}
+	return polestaridsource.Credential{Refresh: c.Refresh, Email: c.Email, Password: c.Password, SetAt: setAt}, nil
+}
+
+func (p polestarIDStore) RotatePolestarIDToken(ctx context.Context, accountID, connectionID string, setAt time.Time, token string) error {
+	return p.st.RotatePolestarIDToken(ctx, accountID, connectionID, setAt, token) //nolint:wrapcheck // the store's, with its context
 }
 
 // extensions is what registerExtensions gets: the premium build's modules set the
@@ -401,6 +434,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		authURL:     volvo.DefaultAuthURL,
 		polestarURL: polestar.DefaultBaseURL,
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
+		polestarID:  polestarid.Hosts{Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL},
 		tokens:      oauth.DefaultParams(),
 		tick:        10 * time.Second,
 		intervals:   collector.DefaultIntervals(),
@@ -462,6 +496,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.authURL, "RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL,
 		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
+		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
 	} {
 		if v := getenv(name); v != "" {
 			if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {

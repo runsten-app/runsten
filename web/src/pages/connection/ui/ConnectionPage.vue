@@ -7,6 +7,7 @@ import { limitsPage } from '@/entities/session'
 import { collectionState, needsAttention, vehicleLabels, type Vehicle } from '@/entities/vehicle'
 import { ApiKeyForm, useConnectionSettings } from '@/features/manage-api-key'
 import { PolestarForm, renewalDue } from '@/features/manage-polestar'
+import { PolestarIdForm } from '@/features/manage-polestar-id'
 import { TeslaForm } from '@/features/manage-tesla'
 import { useFlag } from '@/features/view-flags'
 import { useLimits } from '@/features/view-limits'
@@ -38,7 +39,9 @@ import VehicleCollection from './VehicleCollection.vue'
 // On an instance without a Volvo application, Volvo's tab is left out, unless the account
 // has Volvos from before: it then says why they are not read. Tesla's is there only while
 // the flag source.tesla is on for the account, unless it has Teslas from before: it then
-// says why they are not read.
+// says why they are not read. Polestar's holds the Data Portal, and the Polestar ID while
+// the flag source.polestar-id is on for the account (off by default: an unofficial API, the
+// instance's choice), or the account has Polestars read with it from before.
 const props = defineProps<{ vehicle?: string; outcome?: string }>()
 const { t } = useI18n()
 const { unread } = useLimits()
@@ -94,8 +97,18 @@ const brandLabels = computed<Record<Brand, string>>(() => ({
   polestar: t('connection.brand.polestar'),
   tesla: t('connection.brand.tesla'),
 }))
-const ofBrand = (b: Brand) => (vehicles.value ?? []).filter((v) => v.connection.provider === b)
+// A Polestar read with the Polestar ID is a Polestar's: one tab.
+const brandOf = (p?: Vehicle['connection']['provider']) => (p === 'polestar_id' ? 'polestar' : p)
+const ofBrand = (b: Brand) =>
+  (vehicles.value ?? []).filter((v) => brandOf(v.connection.provider) === b)
 const teslaOn = useFlag('source.tesla')
+const polestarIdOn = useFlag('source.polestar-id')
+const polestarIdShown = computed(
+  () =>
+    polestarIdOn.value ||
+    !!settings.value?.polestar_id ||
+    (vehicles.value ?? []).some((v) => v.connection.provider === 'polestar_id'),
+)
 const shown = computed(() =>
   brands.filter((b) =>
     b === 'volvo'
@@ -111,7 +124,7 @@ const tab = computed<Brand>({
     if (props.outcome && asBrand('volvo')) return 'volvo'
     const from = vehicles.value?.find((v) => v.id === props.vehicle)
     return (
-      asBrand(from?.connection.provider) ??
+      asBrand(brandOf(from?.connection.provider)) ??
       shown.value.find((b) => ofBrand(b).length) ??
       shown.value[0] ??
       'polestar'
@@ -331,16 +344,30 @@ const alerted = computed(
               </dl>
             </section>
           </template>
-          <section
-            v-else-if="b === 'polestar'"
-            class="mb-8"
-            aria-labelledby="connection-polestar-title"
-          >
-            <h2 id="connection-polestar-title" class="text-title-large mb-3">
-              {{ t('connection.polestar.title') }}
-            </h2>
-            <PolestarForm :connection="settings" />
-          </section>
+          <template v-else-if="b === 'polestar'">
+            <section class="mb-8" aria-labelledby="connection-polestar-title">
+              <h2 id="connection-polestar-title" class="text-title-large mb-3">
+                {{ t('connection.polestar.title') }}
+              </h2>
+              <PolestarForm :connection="settings" />
+            </section>
+            <section
+              v-if="polestarIdShown"
+              class="mb-8 polestar-id"
+              aria-labelledby="connection-polestar-id-title"
+            >
+              <h2 id="connection-polestar-id-title" class="text-title-large mb-3">
+                {{ t('connection.polestarId.title') }}
+                <v-chip size="x-small" variant="tonal" color="primary" class="ms-2 beta">
+                  {{ t('connection.polestar.beta') }}
+                </v-chip>
+              </h2>
+              <PolestarIdForm v-if="polestarIdOn" :connection="settings" />
+              <p v-else class="text-body-medium polestar-id-off">
+                {{ t('connection.polestarId.off') }}
+              </p>
+            </section>
+          </template>
           <section v-else class="mb-8" aria-labelledby="connection-tesla-title">
             <h2 id="connection-tesla-title" class="text-title-large mb-3">
               {{ t('connection.tesla.title') }}

@@ -146,6 +146,7 @@ const (
 	codeBrokerRefused        errorCode = "broker_refused"
 	codeTokenRefused         errorCode = "token_refused" //nolint:gosec // an error code, not a credential
 	codeSourceUnavailable    errorCode = "source_unavailable"
+	codeAuthorizationExpired errorCode = "authorization_expired"
 	codeImportActive         errorCode = "import_active"
 	codeInvalidFile          errorCode = "invalid_file"
 	codeInsufficientScope    errorCode = "insufficient_scope"
@@ -158,7 +159,7 @@ func (errorCode) Schema(huma.Registry) *huma.Schema {
 	return enumSchema(codeInvalidParameter, codeInvalidBody, codeUnauthorized, codeInvalidCredentials,
 		codeCrossOrigin, codeNotFound, codeMethodNotAllowed, codeUnsupportedMediaType, codeTooManyAttempts,
 		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeImportedCharge, codeAPIKeyRefused, codeCredentialRefused, codeAPIClosed, codeNoVehicle, codeNotVolvo, codeInstanceKey, codeVolvoNotConfigured, codeTooManyVehicles, codeNotAdmitted, codeFeatureUnavailable,
-		codeBrokerRefused, codeTokenRefused, codeSourceUnavailable, codeImportActive, codeInvalidFile, codeInsufficientScope, codeRateLimited,
+		codeBrokerRefused, codeTokenRefused, codeSourceUnavailable, codeAuthorizationExpired, codeImportActive, codeInvalidFile, codeInsufficientScope, codeRateLimited,
 		codeInternal)
 }
 

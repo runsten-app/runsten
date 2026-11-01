@@ -1228,7 +1228,10 @@
       "credentialMissingTesla": "Not read: no Tesla refresh token given",
       "unsharedTesla": "Not read: the vehicle is no longer in the Tesla account",
       "pausedTesla": "Paused by Tesla until {time}",
-      "quotaTesla": "Daily calls to Tesla reached until {time}"
+      "quotaTesla": "Daily calls to Tesla reached until {time}",
+      "credentialRefusedPolestarId": "Not read: the Polestar ID refused the sign-in",
+      "credentialMissingPolestarId": "Not read: no Polestar ID connected",
+      "unsharedPolestarId": "Not read: the car is no longer in the Polestar ID"
     },
     "notice": {
       "reauth": {
@@ -1257,7 +1260,11 @@
       "credentialMissingTesla": "Runsten reads this Tesla with a refresh token of your Tesla account, which was removed: give a new one on the connection page.",
       "unsharedTesla": "Your Tesla account no longer lists this vehicle: sold, or removed from the account. Should it come back, give the refresh token again on the connection page: the vehicle is read again.",
       "pausedTesla": "Tesla limited the number of calls. Reading resumes by itself.",
-      "quotaTesla": "Runsten makes at most 3,000 calls a day to Tesla per refresh token, to stay clear of its unpublished limits: they are used up. Reading resumes by itself."
+      "quotaTesla": "Runsten makes at most 3,000 calls a day to Tesla per refresh token, to stay clear of its unpublished limits: they are used up. Reading resumes by itself.",
+      "credentialRefusedPolestarId": "The Polestar ID refused Runsten's sign-in for this car: the session ended, or the password changed. Connect your Polestar ID again on the connection page: what was read stays.",
+      "credentialMissingPolestarId": "Runsten reads this Polestar with your Polestar ID, which was removed: connect it again on the connection page.",
+      "unsharedPolestarId": "Your Polestar ID no longer lists this car: sold, or removed from the account. Should it come back, connect the Polestar ID again on the connection page: the car is read again.",
+      "quotaPolestarId": "Runsten makes at most 2,000 calls a day to the Polestar app's API per Polestar ID, to stay clear of its unpublished limits: they are used up. Reading resumes by itself."
     },
     "facts": {
       "mode": "Polling mode",
@@ -1277,14 +1284,17 @@
       "noneDueUnshared": "None: the vehicle is no longer shared with the credential",
       "noneDueUnsharedTesla": "None: the vehicle is no longer in the Tesla account",
       "noneDueNotConfigured": "None until Volvo is configured",
-      "noneDueToken": "None until a Tesla refresh token is given"
+      "noneDueToken": "None until a Tesla refresh token is given",
+      "noneDuePolestarId": "None until the Polestar ID is connected again",
+      "noneDueUnsharedPolestarId": "None: the car is no longer in the Polestar ID"
     },
     "api": {
       "connectedVehicle": "vehicle data",
       "energy": "battery and charging",
       "location": "position",
       "polestar": "Polestar Data Portal",
-      "tesla": "Tesla Owner API"
+      "tesla": "Tesla Owner API",
+      "polestarId": "Polestar app API"
     },
     "failure": {
       "quota": "Quota reached",
@@ -1306,7 +1316,8 @@
       "notFoundTesla": "Vehicle unknown to Tesla",
       "unavailableTesla": "Tesla unreachable",
       "tokenTesla": "No token from Tesla",
-      "credentialRefusedTesla": "Tesla refresh token refused"
+      "credentialRefusedTesla": "Tesla refresh token refused",
+      "credentialRefusedPolestarId": "Polestar ID refused"
     },
     "key": {
       "title": "Volvo key"
@@ -1328,6 +1339,10 @@
     "tesla": {
       "title": "Tesla account",
       "off": "Tesla is not offered on this instance: your Teslas are no longer read. What was read stays, and your token is kept: they are read again once it is offered."
+    },
+    "polestarId": {
+      "title": "Polestar ID",
+      "off": "The Polestar ID is not offered on this instance: your Polestars read with it are no longer read. What was read stays, and your connection is kept: they are read again once it is offered."
     }
   },
   "apiKey": {
@@ -1776,5 +1791,74 @@
     "outside": "Elsewhere",
     "noPosition": "No position",
     "deleted": "A deleted place"
+  },
+  "polestarId": {
+    "intro": "For a Polestar the Data Portal does not read (outside the EU and the EEA), Runsten can read the Polestar app's API with your Polestar ID. It reads the battery level, the range, the charging status, the odometer and the service; not the position: trips have no places, charges no place's tariff.",
+    "beta": "In beta. The Polestar app's API is not official: Polestar may change or close it without notice, and your Polestar account carries the risk. For your own instance only.",
+    "guide": "Read the guide",
+    "newTab": "(opens in a new tab)",
+    "refused": {
+      "title": "Your Polestar ID was refused",
+      "body": "The Polestar ID refused Runsten's sign-in on {time}: the session ended, or the password changed. Your Polestars are not read until you connect again; what was read stays."
+    },
+    "mode": "Connected with",
+    "setAt": "Connected",
+    "modes": {
+      "legend": "How should Runsten connect?",
+      "tokenChoice": "Sign in on Polestar's page (recommended): Runsten keeps no password",
+      "passwordChoice": "Email and password: Runsten keeps them to sign in again",
+      "token": "A sign-in on Polestar's page",
+      "password": "Email and password"
+    },
+    "reconnect": "Connect again",
+    "delete": {
+      "button": "Remove the Polestar ID",
+      "title": "Remove your Polestar ID?",
+      "text": "Your Polestars read with it stay, with their history, but are no longer read until you connect again. A password kept is erased.",
+      "error": "The Polestar ID could not be removed. Try again in a moment.",
+      "cancel": "Cancel",
+      "confirm": "Remove"
+    },
+    "steps": {
+      "title": "Sign in on Polestar's page",
+      "devtools": "In that new tab, before signing in, open the browser's developer tools (F12, or right-click, Inspect) on the Network tab, and tick Preserve log: they only record the tab they are opened in.",
+      "open": "On a computer, open Polestar's sign-in page: it opens in a new tab, and the link is valid 10 minutes.",
+      "start": "Get the sign-in link",
+      "page": "Polestar's sign-in page",
+      "signIn": "Sign in with your Polestar ID. polestar.com then shows an error page: that is expected, the code is Runsten's.",
+      "copy": "In the network log, find the request to sign-in-callback and copy its whole address (https://www.polestar.com/sign-in-callback?code=…), then paste it below, back in this tab."
+    },
+    "callback": "Address of the sign-in-callback",
+    "tokenHelp": "Runsten exchanges its code and keeps only the refresh token the Polestar ID gives, sealed. Signing out of your Polestar ID everywhere revokes it.",
+    "passwordWarning": "Runsten keeps your Polestar ID's email and password, sealed, to sign in again when Polestar ends the session. Polestar's terms forbid revealing your password to a third party: give it only to an instance you run yourself.",
+    "email": "Polestar ID email",
+    "password": "Polestar ID password",
+    "dataPortal": "A Polestar the Data Portal already reads stays with it.",
+    "save": "Connect",
+    "cancel": "Cancel",
+    "saved": "Polestar ID connected: Runsten reads its cars from its next pass.",
+    "deleted": "Polestar ID removed.",
+    "error": {
+      "summary": "The Polestar ID was not connected",
+      "start": "Get the sign-in link first, then sign in on Polestar's page.",
+      "callbackRequired": "Paste the address of the sign-in-callback.",
+      "noCode": "This address holds no code: copy the whole address of the sign-in-callback request.",
+      "emailRequired": "Enter your Polestar ID's email.",
+      "email": "This is not an email address.",
+      "passwordRequired": "Enter your Polestar ID's password.",
+      "tooLong": "At most {max} characters.",
+      "codeRefused": "The Polestar ID refused this code: it may have been used already. Get a new sign-in link and sign in again.",
+      "passwordRefused": "The Polestar ID refused this email or password.",
+      "expired": "This sign-in expired or was already used: get a new sign-in link and sign in again.",
+      "invalidBody": "These values were refused: check them.",
+      "noVehicle": "This Polestar ID has no car: nothing was connected.",
+      "tooManyVehicles": "With this Polestar ID's cars, your account would have more vehicles than it may: nothing was connected.",
+      "notAdmitted": "Your account must take a step first, such as accepting terms: reload the page. Nothing was connected.",
+      "notOffered": "The Polestar ID is not offered on this instance.",
+      "polestarUnavailable": "The Polestar ID did not answer: nothing was connected. Try again in a moment.",
+      "tooManyPending": "Too many sign-ins are pending on this instance. Try again in a few minutes.",
+      "unavailable": "Runsten could not be reached. Try again in a moment.",
+      "internal": "The Polestar ID could not be connected. Try again in a moment."
+    }
   }
 }

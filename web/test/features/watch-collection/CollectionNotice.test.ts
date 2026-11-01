@@ -278,6 +278,55 @@ describe('CollectionNotice', () => {
     expect(alert.text()).toContain(body)
   })
 
+  // polestarId is the Polestar of the fixtures read with the Polestar ID.
+  function polestarId(
+    patch: Partial<Vehicle> = {},
+    collection = {},
+    credential: Vehicle['connection']['credential'] = 'set',
+  ): Vehicle | undefined {
+    const v = shared(collection)
+    return (
+      v && { ...v, connection: { ...v.connection, provider: 'polestar_id', credential }, ...patch }
+    )
+  }
+
+  it.each<[string, Vehicle | undefined, string, string]>([
+    [
+      'its sign-in refused',
+      polestarId({}, {}, 'refused'),
+      'Not read: the Polestar ID refused the sign-in',
+      'Connect your Polestar ID again',
+    ],
+    [
+      'its connection removed',
+      polestarId({}, {}, 'missing'),
+      'Not read: no Polestar ID connected',
+      'which was removed',
+    ],
+    [
+      'no longer in the account',
+      polestarId({ unshared_at: '2026-09-28T07:00:00Z' }),
+      'Not read: the car is no longer in the Polestar ID',
+      'Your Polestar ID no longer lists this car',
+    ],
+    [
+      'its calls of the day used up',
+      polestarId({}, { quota: [{ api: 'polestar_id', until: '2026-09-28T09:00:00Z' }] }),
+      'Polestar quota reached until 09:00',
+      "at most 2,000 calls a day to the Polestar app's API",
+    ],
+    [
+      'a pause',
+      polestarId({}, { paused_until: '2026-09-28T07:30:00Z' }),
+      'Paused by Polestar until 07:30',
+      'Polestar limited the number of calls.',
+    ],
+  ])('tells a Polestar of the Polestar ID %s', async (_, v, title, body) => {
+    const alert = await notice(v)
+    expect(plain(alert.find('.v-alert-title').text())).toBe(title)
+    expect(alert.text()).toContain(body)
+  })
+
   it('says nothing before the vehicle is read', async () => {
     fetchVehicle.mockReturnValue(new Promise(() => {}))
     const { wrapper } = mountWith(CollectionNotice, { props: { vehicle: 'v' } })

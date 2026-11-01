@@ -143,7 +143,7 @@ func (s *Store) deleteCredential(ctx context.Context, accountID, provider string
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		_, err := tx.Exec(ctx, `
 			UPDATE connections SET credential = NULL, credential_set_at = NULL, credential_last4 = NULL,
-				credential_refused_at = NULL, updated_at = now()
+				credential_mode = NULL, credential_refused_at = NULL, updated_at = now()
 			WHERE provider = $1 AND credential IS NOT NULL`, provider)
 		return err //nolint:wrapcheck // wrapped by inAccount
 	})
