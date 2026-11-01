@@ -1830,7 +1830,7 @@
     },
     "callback": "Adressen till sign-in-callback",
     "tokenHelp": "Runsten byter dess kod och sparar bara den refresh token som Polestar ID ger, förseglad. Att logga ut från ditt Polestar ID överallt återkallar den.",
-    "passwordWarning": "Runsten sparar ditt Polestar ID:s e-post och lösenord, förseglade, för att logga in igen när Polestar avslutar sessionen. Polestars villkor förbjuder att lämna dem till tredje part: ge dem bara till en instans du själv driver.",
+    "passwordWarning": "Runsten sparar ditt Polestar ID:s e-post och lösenord, förseglade, för att logga in igen när Polestar avslutar sessionen. Polestars villkor förbjuder att avslöja ditt lösenord för tredje part: ge det bara till en instans du själv driver.",
     "email": "Polestar ID:s e-post",
     "password": "Polestar ID:s lösenord",
     "dataPortal": "En Polestar som Data Portal redan läser stannar kvar där.",

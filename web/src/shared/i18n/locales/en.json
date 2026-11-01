@@ -1830,7 +1830,7 @@
     },
     "callback": "Address of the sign-in-callback",
     "tokenHelp": "Runsten exchanges its code and keeps only the refresh token the Polestar ID gives, sealed. Signing out of your Polestar ID everywhere revokes it.",
-    "passwordWarning": "Runsten keeps your Polestar ID's email and password, sealed, to sign in again when Polestar ends the session. Polestar's terms forbid giving them to a third party: give them only to an instance you run yourself.",
+    "passwordWarning": "Runsten keeps your Polestar ID's email and password, sealed, to sign in again when Polestar ends the session. Polestar's terms forbid revealing your password to a third party: give it only to an instance you run yourself.",
     "email": "Polestar ID email",
     "password": "Polestar ID password",
     "dataPortal": "A Polestar the Data Portal already reads stays with it.",

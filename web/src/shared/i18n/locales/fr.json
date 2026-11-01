@@ -1830,7 +1830,7 @@
     },
     "callback": "Adresse du sign-in-callback",
     "tokenHelp": "Runsten échange son code et ne garde que le refresh token que donne le Polestar ID, scellé. Se déconnecter de son Polestar ID partout le révoque.",
-    "passwordWarning": "Runsten garde l'e-mail et le mot de passe de votre Polestar ID, scellés, pour se reconnecter quand Polestar met fin à la session. Les conditions de Polestar interdisent de les confier à un tiers : ne les donnez qu'à une instance que vous hébergez vous-même.",
+    "passwordWarning": "Runsten garde l'e-mail et le mot de passe de votre Polestar ID, scellés, pour se reconnecter quand Polestar met fin à la session. Les conditions de Polestar interdisent de révéler votre mot de passe à un tiers : ne le donnez qu'à une instance que vous hébergez vous-même.",
     "email": "E-mail du Polestar ID",
     "password": "Mot de passe du Polestar ID",
     "dataPortal": "Une Polestar que le Data Portal lit déjà reste avec lui.",
