@@ -122,12 +122,17 @@ const electricity = computed(() => {
   if (c.phases) parts.push(t('state.charging.phases', { n: c.phases.value }, c.phases.value))
   return parts.join(' × ')
 })
+// Whether a charge runs: its status says so, or without a status (status and power are
+// read apart), a power above zero; a zero one says nothing.
+const charging = computed(() => {
+  const c = state.value?.charging
+  return c?.status ? c.status.value === 'charging' : (c?.power_w?.value ?? 0) > 0
+})
 // When the car expects the charge to end, from its own time of the estimate: full, or at
 // its target, as it says. Only while it charges: a Volvo tells it idle too.
 const timeLeft = computed(() => {
-  const c = state.value?.charging
-  const r = c?.time_left
-  if (!r || c?.status?.value !== 'charging') return null
+  const r = state.value?.charging.time_left
+  if (!r || !charging.value) return null
   const end = Date.parse(r.reported_at ?? r.fetched_at) + r.value.duration_s * 1000
   return {
     reading: r,
@@ -219,13 +224,9 @@ const batteryHeating = computed(() => !!state.value?.climate.battery_heater?.val
 // A charge that needs looking at gets its own tile, its figures large; otherwise (idle,
 // done, scheduled, unknown) one line under the battery's bar says it. The engine is not
 // shown: the mode's pill above says it, read from it.
-// Without a status (status and power are read apart), a power above zero says a charge
-// runs; a zero one says nothing.
 const chargeActive = computed(() => {
-  const c = state.value?.charging
-  const s = c?.status?.value
-  if (s === 'charging' || s === 'discharging' || s === 'error') return true
-  return !c?.status && (c?.power_w?.value ?? 0) > 0
+  const s = state.value?.charging.status?.value
+  return charging.value || s === 'discharging' || s === 'error'
 })
 const chargeTitle = useId()
 // The line's facts. The target is the bar's, unless no state of charge draws one.

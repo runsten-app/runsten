@@ -175,6 +175,11 @@ describe('VehicleState', () => {
     expect(idle.find('.time-left').exists()).toBe(false)
   })
 
+  it('says when a charge ends where only its power says it runs', async () => {
+    const w = await mounted(details({ status: null }))
+    expect(reading(w, 'Target reached at').value).toBe('20:37')
+  })
+
   it.each(['done', 'idle', 'scheduled'])(
     'says a charge %s in one line under the battery',
     async (value) => {
