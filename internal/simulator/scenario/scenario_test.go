@@ -67,6 +67,8 @@ func TestParseRejectsInvalidScenarios(t *testing.T) {
 		{"unknown brand", [2]string{"vin: ", "brand: rivian\nvin: "}, "brand"},
 		{"refused polestar", [2]string{"vin: ", "brand: polestar\nmarketRefused: true\nvin: "}, "marketRefused"},
 		{"refused tesla", [2]string{"vin: ", "brand: tesla\nmarketRefused: true\nvin: "}, "marketRefused"},
+		{"polestar_id of a volvo", [2]string{"vin: ", "source: polestar_id\nvin: "}, "source"},
+		{"unknown source", [2]string{"vin: ", "brand: polestar\nsource: portal\nvin: "}, "source"},
 		{"unknown powertrain", [2]string{"soc: 60", "soc: 60\n  powertrain: diesel"}, "vehicle.powertrain"},
 		{"hybrid tesla", [2]string{"vin: YV1SMLT0000DT0001\nstart: 2026-09-28T05:00:00Z\nvehicle:\n", "brand: tesla\nvin: YV1SMLT0000DT0001\nstart: 2026-09-28T05:00:00Z\nvehicle:\n  powertrain: plugin_hybrid\n"}, "vehicle.powertrain"},
 		{"hold SoC of an electric car", [2]string{"soc: 60", "soc: 60\n  holdSoc: 2"}, "vehicle.holdSoc"},
