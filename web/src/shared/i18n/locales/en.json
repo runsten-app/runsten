@@ -83,7 +83,11 @@
       "type": "Type",
       "cable": "Cable",
       "target": "Target",
-      "follow": "Follow the charge in progress"
+      "follow": "Follow the charge in progress",
+      "fullAt": "Full at",
+      "targetAt": "Target reached at",
+      "phases": "{n} phase | {n} phases",
+      "limit": "Current limit"
     },
     "vehicle": "Vehicle",
     "odometer": "Odometer",
@@ -224,6 +228,10 @@
     "end": "No more trips.",
     "csv": "Download CSV"
   },
+  "readingsCsv": {
+    "download": "Download every reading (CSV)",
+    "tooLong": "Every reading: choose 31 days at most."
+  },
   "trip": {
     "title": "Trip",
     "loading": "Loading the trip",
@@ -289,6 +297,8 @@
     "type": "Type",
     "soc": "State of charge",
     "target": "Target",
+    "maxCurrent": "Highest current",
+    "phases": "Phases",
     "energy": "Energy",
     "energySoc": "Energy (from state of charge)",
     "energyPower": "Energy (from charging power)",

@@ -559,6 +559,29 @@ func TestCurrent(t *testing.T) {
 	}
 }
 
+// TestOpenSince: parked at home unlocked, its tailgate open, the vehicle stands open from
+// a reading after its arrival on; the doors are read every rare interval, the engine
+// every parked one, so the run starts within an hour of it. Locked and closed, never.
+func TestOpenSince(t *testing.T) {
+	_, d, day := play(t, "left-open.yaml", 5*time.Hour)
+	arrived := day.Add(time.Hour + 12*time.Minute + 20*time.Minute + 12*time.Minute)
+	now := day.Add(5 * time.Hour)
+	since, err := d.OpenSince(context.Background(), "a", "v", now.Add(-10*time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if since.Before(arrived) || since.After(arrived.Add(time.Hour+10*time.Minute)) {
+		t.Errorf("open since %s, want within an hour of %s", since, arrived)
+	}
+	_, d, day = play(t, "commute.yaml", 23*time.Hour)
+	if since, err := d.OpenSince(context.Background(), "a", "v", day.Add(23*time.Hour-10*time.Minute)); err != nil || !since.IsZero() {
+		t.Errorf("commute: open since %s, %v; want never", since, err)
+	}
+	if _, err := New(&scriptedStore{snapErr: errors.New("boom")}, volvo.Normalizer{}, core.DefaultParams(), nil, quiet).OpenSince(context.Background(), "a", "v", day); err == nil {
+		t.Error("store error ignored")
+	}
+}
+
 // TestEX30CapacityEstimate: the EX30's SoC runs over its usable 64 kWh, and the power
 // it reports is the one entering the battery: the power estimate of its AC charge
 // comes back at the usable capacity, within the rounding of an integer SoC at both

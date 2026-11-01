@@ -4,7 +4,7 @@ description: "Read the trips and charges of your car in Runsten: times as ranges
 
 # Trips and charges
 
-The **Trips** and **Charges** tabs list the events of a period, by day, newest first, under a line of totals: "3 trips started in the period · 73 km · 18.8 kWh/100 km (estimated)". The period stays in the address of the page: a link to it opens the same list.
+The **Trips** and **Charges** tabs list the events of a period, by day, newest first, under a line of totals: "3 trips started in the period · 73 km · 18.8 kWh/100 km (estimated)". The period stays in the address of the page: a link to it opens the same list. Above each list, its CSV files: the events of the period, and every value the car reported over it ([Exporting your data](./exporting.md)).
 
 <Screen view="trips" alt="The Trips tab: the trips of a period, by day, under their totals." />
 
@@ -42,7 +42,7 @@ A Tesla also measures the energy that goes into its battery during a charge: the
 
 <Screen view="charge" alt="A charge at home: its energy, its place and its cost." />
 
-A charge shows its type (AC or DC), its energy, its place (or "Outside any place") and, once a currency is chosen, its cost. See [Places, tariffs and costs](./costs.md).
+A charge shows its type (AC or DC), its energy, its place (or "Outside any place") and, once a currency is chosen, its cost. For a car that tells its current (a Tesla on AC, a Polestar), it shows the highest current read during the charge and, for a Tesla, the phases it drew on: a charge on three phases from one on a single phase. A Volvo tells neither. See [Places, tariffs and costs](./costs.md).
 
 ## A charge in progress
 

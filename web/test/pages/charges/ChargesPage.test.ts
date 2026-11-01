@@ -129,5 +129,6 @@ describe('ChargesPage', () => {
     await flushPromises()
     expect(wrapper.findAll('.charge-summary')).toHaveLength(2)
     expect(wrapper.find('.csv-download').exists()).toBe(false)
+    expect(wrapper.find('.readings-download').exists()).toBe(false)
   })
 })

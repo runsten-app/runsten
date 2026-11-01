@@ -185,8 +185,8 @@ func TestImportedEventsJSON(t *testing.T) {
 	t.Run("as CSV", func(t *testing.T) {
 		_, body := get(t, noFollow(), base+"/charges.csv", c)
 		lines := strings.Split(strings.TrimSpace(body), "\r\n")
-		if !strings.HasSuffix(lines[0], ",average_power_kw,imported,sources") || len(lines) != 4 ||
-			!strings.HasPrefix(lines[1], "aximote:charge-311,false,") || !strings.HasSuffix(lines[1], ",4.2,true,aximote") ||
+		if !strings.HasSuffix(lines[0], ",average_power_kw,max_current_a,phases,imported,sources") || len(lines) != 4 ||
+			!strings.HasPrefix(lines[1], "aximote:charge-311,false,") || !strings.HasSuffix(lines[1], ",4.2,,,true,aximote") ||
 			!strings.HasSuffix(lines[2], ",,false,volvo") {
 			t.Errorf("charges.csv:\n%s", body)
 		}

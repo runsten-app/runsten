@@ -57,7 +57,7 @@ components:
             - string
             - "null"
         unavailable:
-          description: "The functions the account does not have. costs: the charges' costs, null in the charges and the statistics, and their entry refused (feature_unavailable). stats: the statistics split into intervals, refused (feature_unavailable); a period's totals stay. csv: the trips and charges as CSV files, refused (feature_unavailable); the account's full export stays. mqtt: an MQTT broker, whose setting is refused (feature_unavailable); one set before stays, and nothing is published to it."
+          description: "The functions the account does not have. costs: the charges' costs, null in the charges and the statistics, and their entry refused (feature_unavailable). stats: the statistics split into intervals, refused (feature_unavailable); a period's totals stay. csv: the trips, the charges and the readings as CSV files, refused (feature_unavailable); the account's full export stays. mqtt: an MQTT broker, whose setting is refused (feature_unavailable); one set before stays, and nothing is published to it."
           items:
             enum:
               - costs
@@ -573,6 +573,20 @@ components:
         imported:
           description: "The event was imported from another application, which cut it from its own readings: it is not derived from Runsten's, and its times are the application's own, start.after equal to start.before, end.after to end.before. Only events before the vehicle's first reading are imported."
           type: boolean
+        max_current_a:
+          description: "The highest current the vehicle measured over the charge, in A, as the state's current_a. null for a vehicle that does not tell it (Volvo), a Tesla on DC, an imported or reconstructed charge, and a charge derived before Runsten kept it: a rebuild of the derived data gives it."
+          exclusiveMinimum: 0
+          format: double
+          type:
+            - number
+            - "null"
+        phases:
+          description: "The AC phases the charge drew on: those of its latest reading with a current, an assumption that it drew on as many throughout. null as max_current_a, and for a vehicle that tells no phases (Polestar)."
+          format: int64
+          minimum: 1
+          type:
+            - integer
+            - "null"
         place:
           description: "The place of the charge: the nearest one whose circle holds its position; without a position, the place that takes such charges, unless the charge is DC. null elsewhere."
           oneOf:
@@ -622,6 +636,8 @@ components:
         - energy_power_kwh
         - energy_measured_kwh
         - average_power_kw
+        - max_current_a
+        - phases
         - position
         - place
         - address
@@ -697,6 +713,20 @@ components:
           examples:
             - "2026-09-28T18:30:00.000000Z"
           type: string
+        max_current_a:
+          description: The highest current so far, as a charge's.
+          exclusiveMinimum: 0
+          format: double
+          type:
+            - number
+            - "null"
+        phases:
+          description: The AC phases of the latest reading with a current, as a charge's.
+          format: int64
+          minimum: 1
+          type:
+            - integer
+            - "null"
         place:
           description: As a charge's.
           oneOf:
@@ -766,6 +796,8 @@ components:
         - energy_soc_kwh
         - energy_power_kwh
         - energy_measured_kwh
+        - max_current_a
+        - phases
         - position
         - place
         - address
@@ -876,6 +908,35 @@ components:
         - cost_unknown
         - cost_entered
       type: object
+    Charger:
+      additionalProperties: false
+      properties:
+        brand:
+          description: The fast charger's brand, on DC; null when the vehicle does not name it.
+          examples:
+            - Tesla
+          type:
+            - string
+            - "null"
+        cable:
+          description: The cable connected, as the vehicle names it; null when it does not.
+          examples:
+            - IEC
+          type:
+            - string
+            - "null"
+        type:
+          description: The fast charger's type, on DC; null when the vehicle does not name it.
+          examples:
+            - Supercharger
+          type:
+            - string
+            - "null"
+      required:
+        - brand
+        - type
+        - cable
+      type: object
     ChargesByPlace:
       additionalProperties: false
       properties:
@@ -946,6 +1007,26 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ReadingCable"
             - type: "null"
+        charger:
+          description: The station and the cable, as the vehicle names them, for a vehicle that tells them (Tesla).
+          oneOf:
+            - $ref: "#/components/schemas/ReadingCharger"
+            - type: "null"
+        current_a:
+          description: "The charge's current, in A, as the vehicle measures it: a Tesla's on AC only, on the grid's side; a Polestar's while it charges, the battery's side on DC as far as is known. null when the vehicle does not tell it (Volvo), or nothing flows."
+          oneOf:
+            - $ref: "#/components/schemas/ReadingFloat64"
+            - type: "null"
+        current_limit_a:
+          description: The current the owner lets the vehicle draw on AC, in A.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingFloat64"
+            - type: "null"
+        phases:
+          description: The AC phases the charge draws on, for a vehicle that tells them (Tesla).
+          oneOf:
+            - $ref: "#/components/schemas/ReadingInt"
+            - type: "null"
         power_w:
           description: Charging power, in W.
           oneOf:
@@ -961,10 +1042,20 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ReadingFloat64"
             - type: "null"
+        time_left:
+          description: "How long the vehicle expects the charge to run, from reported_at (else fetched_at). null when it says none is left, or does not tell it. A Volvo may tell it while no charge runs: the time a charge would take."
+          oneOf:
+            - $ref: "#/components/schemas/ReadingTimeLeft"
+            - type: "null"
         type:
           description: none when the vehicle says no charge runs.
           oneOf:
             - $ref: "#/components/schemas/ReadingCurrentChargeType"
+            - type: "null"
+        voltage_v:
+          description: The charge's voltage, in V, as current_a.
+          oneOf:
+            - $ref: "#/components/schemas/ReadingFloat64"
             - type: "null"
       required:
         - status
@@ -972,6 +1063,12 @@ components:
         - type
         - power_w
         - target_soc_pct
+        - current_a
+        - voltage_v
+        - phases
+        - current_limit_a
+        - time_left
+        - charger
       type: object
     ChargingNow:
       additionalProperties: false
@@ -3168,6 +3265,34 @@ components:
         - fetched_at
         - checked_at
       type: object
+    ReadingCharger:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The last reading of the same value, unchanged.
+          format: date-time
+          pattern: Z$
+          type: string
+        fetched_at:
+          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
+          format: date-time
+          pattern: Z$
+          type: string
+        reported_at:
+          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        value:
+          $ref: "#/components/schemas/Charger"
+      required:
+        - value
+        - reported_at
+        - fetched_at
+        - checked_at
+      type: object
     ReadingChargingStatus:
       additionalProperties: false
       properties:
@@ -3323,6 +3448,35 @@ components:
         - fetched_at
         - checked_at
       type: object
+    ReadingInt:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The last reading of the same value, unchanged.
+          format: date-time
+          pattern: Z$
+          type: string
+        fetched_at:
+          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
+          format: date-time
+          pattern: Z$
+          type: string
+        reported_at:
+          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        value:
+          format: int64
+          type: integer
+      required:
+        - value
+        - reported_at
+        - fetched_at
+        - checked_at
+      type: object
     ReadingPosition:
       additionalProperties: false
       properties:
@@ -3433,6 +3587,34 @@ components:
             - "null"
         value:
           type: string
+      required:
+        - value
+        - reported_at
+        - fetched_at
+        - checked_at
+      type: object
+    ReadingTimeLeft:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: The last reading of the same value, unchanged.
+          format: date-time
+          pattern: Z$
+          type: string
+        fetched_at:
+          description: The first reading of this value. The value held at fetched_at and again at checked_at; nothing is known in between, nor after.
+          format: date-time
+          pattern: Z$
+          type: string
+        reported_at:
+          description: The vehicle's own timestamp of the value; null when the vehicle gives none.
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        value:
+          $ref: "#/components/schemas/TimeLeft"
       required:
         - value
         - reported_at
@@ -4096,6 +4278,24 @@ components:
           type: string
       required:
         - refresh_token
+      type: object
+    TimeLeft:
+      additionalProperties: false
+      properties:
+        duration_s:
+          description: The time left, in seconds.
+          format: int64
+          minimum: 1
+          type: integer
+        to:
+          description: "What the charge runs to, as the vehicle says: full, or its target (target_soc_pct). A Tesla's is taken as its target, its charge limit, though it names it full."
+          enum:
+            - full
+            - target
+          type: string
+      required:
+        - duration_s
+        - to
       type: object
     Track:
       additionalProperties: false
@@ -7832,6 +8032,104 @@ paths:
         - sessionSecure: []
         - accessToken: []
       summary: A vehicle's picture
+      tags:
+        - vehicles
+  /vehicles/{vehicle}/readings.csv:
+    get:
+      description: "The responses the providers gave for the vehicle within the period, as stored (a response identical to the previous one of its endpoint is not stored again), as a CSV file (RFC 4180, UTF-8, a header row) for a spreadsheet: one row per value, oldest first, with fetched_at (RFC 3339 in UTC), the source (volvo, polestar, tesla), the endpoint and the field, the path of the value in the response (data.frontLeftDoor.value, an array's elements as [0]), and the value as the provider gave it: a null is an empty cell, an empty object or array {} or []. The fields are the providers' own, which may change without notice. What is secret or not the vehicle's (Tesla's tokens and account identifiers) is left out. A text that would begin with `=`, `+`, `-` or `@` is prefixed with `'`, so that no spreadsheet takes it for a formula. The file is written as it is read: a failure midway cuts it short."
+      operationId: readingsCSV
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+        - description: Keeps the responses fetched at or after this time.
+          explode: false
+          in: query
+          name: from
+          required: true
+          schema:
+            description: Keeps the responses fetched at or after this time.
+            examples:
+              - "2026-09-28T00:00:00Z"
+            format: date-time
+            type: string
+        - description: "Keeps the responses fetched before this time: at most 31 days after from."
+          explode: false
+          in: query
+          name: to
+          required: true
+          schema:
+            description: "Keeps the responses fetched before this time: at most 31 days after from."
+            examples:
+              - "2026-09-29T00:00:00Z"
+            format: date-time
+            type: string
+      responses:
+        "200":
+          content:
+            text/csv:
+              schema:
+                description: The header row, then a row per value.
+                type: string
+          description: The CSV file, as an attachment (Content-Disposition), named after the day.
+          headers:
+            Content-Disposition:
+              description: attachment, with a file name such as runsten-readings-2026-10-01.csv.
+              required: true
+              schema:
+                type: string
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_parameter`: `from` or `to`, missing, in the wrong order or more than 31 days apart; the message names the parameter."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: the account's offer does not include this function (`limits.unavailable` of the session)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: Every value a vehicle reported, as CSV
       tags:
         - vehicles
   /vehicles/{vehicle}/series:

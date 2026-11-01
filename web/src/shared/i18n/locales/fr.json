@@ -83,7 +83,11 @@
       "type": "Type",
       "cable": "Câble",
       "target": "Cible",
-      "follow": "Suivre la charge en cours"
+      "follow": "Suivre la charge en cours",
+      "fullAt": "Pleine à",
+      "targetAt": "Cible atteinte à",
+      "phases": "{n} phase | {n} phases",
+      "limit": "Limite de courant"
     },
     "vehicle": "Véhicule",
     "odometer": "Odomètre",
@@ -224,6 +228,10 @@
     "end": "Il n'y a pas d'autre trajet.",
     "csv": "Télécharger en CSV"
   },
+  "readingsCsv": {
+    "download": "Télécharger tous les relevés (CSV)",
+    "tooLong": "Tous les relevés : choisissez 31 jours au plus."
+  },
   "trip": {
     "title": "Trajet",
     "loading": "Chargement du trajet",
@@ -289,6 +297,8 @@
     "type": "Type",
     "soc": "État de charge",
     "target": "Cible",
+    "maxCurrent": "Courant maximal",
+    "phases": "Phases",
     "energy": "Énergie",
     "energySoc": "Énergie (d'après l'état de charge)",
     "energyPower": "Énergie (d'après la puissance de charge)",

@@ -58,10 +58,12 @@ type Store interface {
 	PublishCredentials(ctx context.Context, accountID string) (map[string]publish.Credential, error)
 }
 
-// States reads a vehicle's current state, as GET /vehicles/{id}/state does, and its
-// health, as GET /vehicles/{id}/health.
+// States reads a vehicle's current state, as GET /vehicles/{id}/state does, since when
+// it stands parked and open (derive.Deriver.OpenSince), and its health, as GET
+// /vehicles/{id}/health.
 type States interface {
 	Current(ctx context.Context, accountID, vehicleID string, at time.Time) (core.Current, error)
+	OpenSince(ctx context.Context, accountID, vehicleID string, from time.Time) (time.Time, error)
 	Health(ctx context.Context, accountID, vehicleID string, at time.Time) (core.CurrentHealth, error)
 }
 
@@ -244,11 +246,23 @@ func (p *Publisher) Publish(ctx context.Context, accountID, vehicleID string) er
 		return fmt.Errorf("model of vehicle %s: %w", vehicleID, err)
 	}
 	m.Climate = cur.Snapshot.Covers&core.FieldClimate != 0
-	// The health is read apart: its failure keeps the health published before, and
-	// never holds the state back.
+	m.Openings = publish.Openings(cur.Snapshot)
+	now := p.clk.Now()
+	// The doors' history and the health are read apart: a failure keeps what was
+	// published before, and never holds the state back.
+	prev := c.values[vehicleID]
 	values := publish.State(c.b, vehicleID, cur)
+	since, openErr := p.states.OpenSince(ctx, accountID, vehicleID, now.Add(-publish.LeftOpenAfter))
+	switch {
+	case openErr == nil:
+		values = append(values, publish.LeftOpenState(c.b, vehicleID, publish.LeftOpen(cur, since, now)))
+	case len(prev) > len(values):
+		values = append(values, prev[len(values)])
+	default:
+		values = append(values, publish.LeftOpenState(c.b, vehicleID, core.Value[bool]{}))
+	}
 	health, healthErr := p.states.Health(ctx, accountID, vehicleID, p.clk.Now())
-	switch prev := c.values[vehicleID]; {
+	switch {
 	case healthErr == nil:
 		values = append(values, publish.Health(c.b, vehicleID, health)...)
 	case len(prev) > len(values):
@@ -262,6 +276,9 @@ func (p *Publisher) Publish(ctx context.Context, accountID, vehicleID string) er
 	p.saveStatus(ctx, c)
 	if err != nil {
 		return fmt.Errorf("account %s: %w", accountID, err)
+	}
+	if openErr != nil {
+		return fmt.Errorf("doors of vehicle %s: %w", vehicleID, openErr)
 	}
 	if healthErr != nil {
 		return fmt.Errorf("health of vehicle %s: %w", vehicleID, healthErr)

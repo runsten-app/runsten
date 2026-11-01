@@ -33,7 +33,7 @@ func TestState(t *testing.T) {
 	full := core.Snapshot{
 		Covers: core.FieldEngine | core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
 			core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldOdometer | core.FieldPosition |
-			core.FieldClimate,
+			core.FieldClimate | core.FieldDoors | core.FieldWindows,
 		Engine:     core.Some(core.EngineStopped, t0),
 		SoC:        core.Some(80.0, t0),
 		RangeKm:    core.Some(312.5, t0),
@@ -48,6 +48,12 @@ func TestState(t *testing.T) {
 		OutsideTempC: core.Some(-3.5, t0),
 		CabinTempC:   core.Some(19.0, t0),
 		Climate:      core.Some(core.Climate{On: core.Some(true, t0), BatteryHeater: core.Some(false, t0)}, t0),
+		// Locked, the tailgate open and a window ajar, the others untold.
+		Doors: core.Some(core.Doors{
+			Locked: core.Some(true, t0), FrontLeft: core.Some(core.Closed, t0), Tailgate: core.Some(core.Open, t0),
+			Sentry: core.Some(true, t0),
+		}, t0),
+		Windows: core.Some(core.Windows{FrontLeft: core.Some(core.Ajar, t0)}, t0),
 	}
 	climate := map[string]string{
 		"outside_temp_c": "-3.5", "cabin_temp_c": "19", "climate": "on", "preconditioning": "", "battery_heater": "off",
@@ -60,6 +66,17 @@ func TestState(t *testing.T) {
 			m[k] = v
 		}
 		return m
+	}
+	untold := map[string]string{
+		"locked": "", "door_front_left": "", "door_front_right": "", "door_rear_left": "", "door_rear_right": "",
+		"hood": "", "tailgate": "", "tank_lid": "", "window_front_left": "", "window_front_right": "",
+		"window_rear_left": "", "window_rear_right": "", "sunroof": "", "sentry": "", "openings_read_at": "",
+	}
+	openings := func(readAt string) map[string]string {
+		return with(with(map[string]string{}, untold), map[string]string{
+			"locked": "locked", "door_front_left": "closed", "tailgate": "open", "window_front_left": "ajar",
+			"sentry": "on", "openings_read_at": readAt,
+		})
 	}
 	tests := []struct {
 		name    string
@@ -76,7 +93,7 @@ func TestState(t *testing.T) {
 				"charge_type": "AC", "charging_power_kw": "11.04", "target_soc": "90", "odometer_km": "12345",
 				"engine": "stopped", "location": `{"latitude":59.3293,"longitude":18.0686}`,
 				"read_at": "2026-10-04T08:05:00Z",
-			}, climate),
+			}, with(climate, openings("2026-10-04T08:05:00Z"))),
 		},
 		{
 			name:    "location not published: emptied",
@@ -86,7 +103,7 @@ func TestState(t *testing.T) {
 				"battery_level": "80", "range_km": "312.5", "charging_status": "charging", "plug": "connected",
 				"charge_type": "AC", "charging_power_kw": "11.04", "target_soc": "90", "odometer_km": "12345",
 				"engine": "stopped", "location": "", "read_at": "2026-10-04T08:00:00Z",
-			}, climate),
+			}, with(climate, openings("2026-10-04T08:00:00Z"))),
 		},
 		{
 			name: "unknown values are empty, never zero",
@@ -98,7 +115,7 @@ func TestState(t *testing.T) {
 				"battery_level": "0", "range_km": "", "charging_status": "", "plug": "", "charge_type": "",
 				"charging_power_kw": "", "target_soc": "", "odometer_km": "", "engine": "", "location": "",
 				"read_at": "2026-10-04T08:00:00Z",
-			}, none),
+			}, with(none, untold)),
 		},
 		{
 			name: "nothing read",
@@ -106,7 +123,7 @@ func TestState(t *testing.T) {
 			want: with(map[string]string{
 				"battery_level": "", "range_km": "", "charging_status": "", "plug": "", "charge_type": "",
 				"charging_power_kw": "", "target_soc": "", "odometer_km": "", "engine": "", "location": "", "read_at": "",
-			}, none),
+			}, with(none, untold)),
 		},
 	}
 	for _, tt := range tests {
@@ -138,7 +155,10 @@ func TestStateOrder(t *testing.T) {
 		base + "battery_level", base + "range_km", base + "charging_status", base + "plug", base + "charge_type",
 		base + "charging_power_kw", base + "target_soc", base + "odometer_km", base + "engine", base + "location",
 		base + "read_at", base + "outside_temp_c", base + "cabin_temp_c", base + "climate", base + "preconditioning",
-		base + "battery_heater",
+		base + "battery_heater", base + "locked", base + "door_front_left", base + "door_front_right",
+		base + "door_rear_left", base + "door_rear_right", base + "hood", base + "tailgate", base + "tank_lid",
+		base + "window_front_left", base + "window_front_right", base + "window_rear_left", base + "window_rear_right",
+		base + "sunroof", base + "sentry", base + "openings_read_at",
 	}
 	if !slices.Equal(topics, want) {
 		t.Errorf("topics = %v", topics)
@@ -170,5 +190,42 @@ func TestClientIdentifier(t *testing.T) {
 		if got := tt.b.ClientIdentifier(); got != tt.want || len(got) > 23 {
 			t.Errorf("ClientIdentifier(%+v) = %q, want %q", tt.b, got, tt.want)
 		}
+	}
+}
+
+// TestLeftOpen: left open once parked and open for LeftOpenAfter, by the readings;
+// unknown for a vehicle that tells neither its doors nor its windows.
+func TestLeftOpen(t *testing.T) {
+	at := time.Date(2026, 10, 4, 8, 0, 0, 0, time.UTC)
+	doors := core.Latest([]core.Record{{FetchedAt: at, CheckedAt: at, Snapshot: core.Snapshot{
+		Covers: core.FieldDoors, Doors: core.Some(core.Doors{Locked: core.Some(false, at)}, at),
+	}}})
+	for _, tt := range []struct {
+		name  string
+		c     core.Current
+		since time.Time
+		want  core.Value[bool]
+	}{
+		{"neither doors nor windows told", core.Latest(nil), at.Add(-time.Hour), core.Value[bool]{}},
+		{"not open", doors, time.Time{}, core.Value[bool]{V: false, OK: true}},
+		{"open for less", doors, at.Add(-LeftOpenAfter + time.Second), core.Value[bool]{V: false, OK: true}},
+		{"open for long enough", doors, at.Add(-LeftOpenAfter), core.Value[bool]{V: true, OK: true}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := LeftOpen(tt.c, tt.since, at)
+			if got != tt.want {
+				t.Errorf("LeftOpen = %+v, want %+v", got, tt.want)
+			}
+			want := map[bool]string{true: "on", false: "off"}[got.V]
+			if !got.OK {
+				want = ""
+			}
+			if m := LeftOpenState(broker(true), vehicle, got); m.Payload != want || !m.Retained || m.Topic != "runsten/vehicles/"+vehicle+"/left_open" {
+				t.Errorf("message = %+v", m)
+			}
+		})
+	}
+	if got := Openings(doors.Snapshot); got != 1 || !got.Has("locked") || got.Has("tailgate") || got.Has("unknown") {
+		t.Errorf("Openings = %v, want the lock alone", got)
 	}
 }

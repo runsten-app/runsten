@@ -227,12 +227,18 @@ func (s *memStore) set(b publish.Broker) {
 type states struct {
 	current   map[string]core.Current
 	health    map[string]core.CurrentHealth
+	openSince map[string]time.Time
 	err       error
 	healthErr error
+	openErr   error
 }
 
 func (s *states) Current(_ context.Context, _, vehicleID string, _ time.Time) (core.Current, error) {
 	return s.current[vehicleID], s.err
+}
+
+func (s *states) OpenSince(_ context.Context, _, vehicleID string, _ time.Time) (time.Time, error) {
+	return s.openSince[vehicleID], s.openErr
 }
 
 func (s *states) Health(_ context.Context, _, vehicleID string, _ time.Time) (core.CurrentHealth, error) {
@@ -330,9 +336,10 @@ func TestPublish(t *testing.T) {
 	if w := cl.Properties.Will; w.TopicName != "runsten/status" || string(w.Payload) != "offline" || !w.Retain || w.Qos != 1 {
 		t.Errorf("testament = %+v", w)
 	}
-	// online, and the 16 values of the state and the 15 of the health, the unknown ones empty
-	if n := len(b.takeAtLeast(t, 32)); n != 32 {
-		t.Errorf("%d messages on connection, want 32", n)
+	// online, and the 32 values of the state, the doors' included, and the 15 of the
+	// health, the unknown ones empty
+	if n := len(b.takeAtLeast(t, 48)); n != 48 {
+		t.Errorf("%d messages on connection, want 48", n)
 	}
 
 	// Only the value that changed.
@@ -358,7 +365,7 @@ func TestPublish(t *testing.T) {
 	eventually(t, "reconnected", func() bool {
 		synced(t, p, nil)
 		again = append(again, b.take()...)
-		return len(again) >= 32
+		return len(again) >= 48
 	})
 	if s := st.statusOf(); s.Failure != publish.FailUnreachable || s.ConnectedAt.Before(connectedAt) {
 		t.Errorf("status after a loss = %+v", s)
@@ -448,6 +455,66 @@ func TestPublishDiscovery(t *testing.T) {
 	})
 	if len(p.conns[account].removed) != 0 {
 		t.Errorf("removals left: %v", p.conns[account].removed)
+	}
+}
+
+// TestPublishOpenings: a vehicle that tells its doors has the entities of those it
+// tells, and of the warning of a vehicle left open, which is on once it has stood parked
+// and open for LeftOpenAfter.
+func TestPublishOpenings(t *testing.T) {
+	b := startBroker(t, nil, nil)
+	st := newStore(brokerAt("mqtt://" + b.addr))
+	open := core.Latest([]core.Record{{FetchedAt: t0, CheckedAt: t0, Snapshot: core.Snapshot{
+		Covers: core.FieldEngine | core.FieldDoors,
+		Engine: core.Some(core.EngineStopped, t0),
+		Doors: core.Some(core.Doors{
+			Locked: core.Some(false, t0), FrontLeft: core.Some(core.Closed, t0), Tailgate: core.Some(core.Ajar, t0),
+		}, t0),
+	}}})
+	sts := &states{
+		current:   map[string]core.Current{vehicle: open},
+		openSince: map[string]time.Time{vehicle: t0.Add(-publish.LeftOpenAfter)},
+	}
+	p := New(st, sts, models{vehicle: ex30}, clock.NewManual(t0), false, quiet)
+	defer p.Close()
+	connected(t, p, st)
+	if err := p.Publish(context.Background(), account, vehicle); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "left open", func() bool { return b.retained()[state+"left_open"] == "on" })
+	want := map[string]string{
+		"locked": "unlocked", "door_front_left": "closed", "tailgate": "ajar", "door_rear_left": "",
+		"openings_read_at": "2026-10-04T08:00:00Z",
+	}
+	for topic, v := range want {
+		if got := b.retained()[state+topic]; got != v {
+			t.Errorf("%s = %q, want %q", topic, got, v)
+		}
+	}
+	// The 27 of every vehicle, the 3 it tells, the warning and the doors' reading.
+	if n := len(b.retainedUnder("homeassistant/#")); n != 32 {
+		t.Errorf("%d configurations, want 32", n)
+	}
+
+	sts.openSince[vehicle] = t0.Add(-publish.LeftOpenAfter + time.Second)
+	if err := p.Publish(context.Background(), account, vehicle); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "not yet", func() bool { return b.retained()[state+"left_open"] == "off" })
+
+	// The doors' history not read: the state still goes out, the warning stays as it was.
+	sts.openErr = errors.New("database down")
+	sts.current[vehicle] = core.Latest([]core.Record{{FetchedAt: t0, CheckedAt: t0, Snapshot: core.Snapshot{
+		Covers: core.FieldEngine | core.FieldDoors,
+		Engine: core.Some(core.EngineStopped, t0),
+		Doors:  core.Some(core.Doors{Locked: core.Some(true, t0), Tailgate: core.Some(core.Closed, t0)}, t0),
+	}}})
+	if err := p.Publish(context.Background(), account, vehicle); err == nil || !strings.Contains(err.Error(), vehicle) {
+		t.Errorf("publish with the doors not read: %v", err)
+	}
+	eventually(t, "state published", func() bool { return b.retained()[state+"locked"] == "locked" })
+	if got := b.retained()[state+"left_open"]; got != "off" {
+		t.Errorf("left_open = %q, want the previous off", got)
 	}
 }
 

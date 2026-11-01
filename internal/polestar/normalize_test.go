@@ -27,7 +27,7 @@ func fixture(t *testing.T, name string) []byte {
 }
 
 const batteryFields = core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
-	core.FieldChargeType | core.FieldPower | core.FieldConsumption
+	core.FieldChargeType | core.FieldPower | core.FieldConsumption | core.FieldChargeDetails
 
 // TestNormalizeFixtures: the real responses of a Polestar 2, parked and unplugged.
 func TestNormalizeFixtures(t *testing.T) {
@@ -113,10 +113,12 @@ func TestNormalizeAbsences(t *testing.T) {
 	}{
 		{"empty battery", Battery, ``, core.Snapshot{Covers: batteryFields}},
 		{
-			"charging, power reported", Battery, ts + `,"chargingStatusV2":"CHARGING_STATUS_V2_CHARGING","chargingType":"CHARGING_TYPE_AC","chargingPowerWatts":7400`,
+			"charging, power reported", Battery, ts + `,"chargingStatusV2":"CHARGING_STATUS_V2_CHARGING","chargingType":"CHARGING_TYPE_AC","chargingPowerWatts":7400,
+			"chargingCurrentAmps":10.7,"chargingVoltageVolts":230,"estimatedChargingTimeToFullMinutes":95`,
 			core.Snapshot{
 				Covers: batteryFields, Charging: core.Some(core.ChargingActive, at), ChargeType: core.Some(core.AC, at),
-				PowerW: core.Some(7400.0, at),
+				PowerW: core.Some(7400.0, at), CurrentA: core.Some(10.7, at), VoltageV: core.Some(230.0, at),
+				TimeLeft: core.Some(core.TimeLeft{Duration: 95 * time.Minute, To: core.ToFull}, at),
 			},
 		},
 		{

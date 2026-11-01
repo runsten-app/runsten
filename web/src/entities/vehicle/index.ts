@@ -4,6 +4,7 @@ export {
   fetchVehicle,
   fetchVehicles,
   fetchVehicleState,
+  readingsCsvPath,
   setVehicleModel,
   vehiclePicturePath,
 } from './api/vehicleApi'

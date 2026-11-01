@@ -207,7 +207,12 @@ type Config struct {
 	Reader       Reader
 	States       States
 	Readings     Readings
-	Health       VehicleHealth
+	// Responses are the providers' responses as stored, and PrivateFields, by source,
+	// the paths of their fields the readings' CSV file leaves out (as
+	// response.tokens): a source without an entry is left out whole.
+	Responses     Responses
+	PrivateFields map[string][]string
+	Health        VehicleHealth
 	// Charging gives the vehicles' charges in progress.
 	Charging Charging
 	Settings Settings
@@ -339,6 +344,7 @@ func New(cfg Config) *Server {
 	s.registerSession(s.api)
 	s.registerReads(s.api)
 	s.registerCSV(s.api)
+	s.registerReadings(s.api)
 	s.registerImports(s.api)
 	s.registerImportJobs(s.api)
 	s.registerFileImports(s.api)

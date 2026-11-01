@@ -87,6 +87,10 @@ describe('TripsPage', () => {
     expect(wrapper.find('a.csv-download').attributes('href')).toBe(
       `api/v1/vehicles/${vehicle}/trips.csv?from=2026-09-01T00%3A00%3A00.000Z&to=2026-10-01T00%3A00%3A00.000Z`,
     )
+    // And every reading of the period, a month.
+    expect(wrapper.find('a.readings-download').attributes('href')).toBe(
+      `api/v1/vehicles/${vehicle}/readings.csv?from=2026-09-01T00%3A00%3A00.000Z&to=2026-10-01T00%3A00%3A00.000Z`,
+    )
   })
 
   it('reads them again when the period changes the URL', async () => {
@@ -115,6 +119,7 @@ describe('TripsPage', () => {
     expect(wrapper.text()).toContain('The end comes before the start.')
     expect(wrapper.find('.trip-list').exists()).toBe(false)
     expect(wrapper.find('.csv-download').exists()).toBe(false)
+    expect(wrapper.find('.readings-download').exists()).toBe(false)
   })
 
   it('leads to the charges with the same period', async () => {

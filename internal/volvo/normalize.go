@@ -205,6 +205,10 @@ func watts(v float64, unit string) (float64, bool) {
 	return 0, false
 }
 
+func amperes(v float64, unit string) (float64, bool) { return v, unit == "ampere" || unit == "A" }
+
+func minutes(v float64, unit string) (float64, bool) { return v, unit == "minutes" || unit == "min" }
+
 func kWhPer100km(v float64, unit string) (float64, bool) { return v, unit == "kWh/100km" }
 
 func normalizeEngine(raw []byte, s *core.Snapshot) error {
@@ -235,12 +239,14 @@ func normalizeEnergy(raw []byte, s *core.Snapshot) error {
 		ChargingType             *energyValue `json:"chargingType"`
 		ChargingPower            *energyValue `json:"chargingPower"`
 		TargetBatteryChargeLevel *energyValue `json:"targetBatteryChargeLevel"`
+		TimeToTarget             *energyValue `json:"estimatedChargingTimeToTargetBatteryChargeLevel"`
+		ChargingCurrentLimit     *energyValue `json:"chargingCurrentLimit"`
 	}
 	if err := json.Unmarshal(raw, &v); err != nil {
 		return err //nolint:wrapcheck // wrapped by Normalize
 	}
 	s.Covers = core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
-		core.FieldChargeType | core.FieldPower | core.FieldTargetSoC
+		core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldChargeDetails
 	s.SoC = v.BatteryChargeLevel.number(percent)
 	s.RangeKm = v.ElectricRange.number(km)
 	s.Connection = energyEnum(v.ChargerConnectionStatus, map[string]core.Connection{
@@ -255,6 +261,11 @@ func normalizeEnergy(raw []byte, s *core.Snapshot) error {
 	})
 	s.PowerW = v.ChargingPower.number(watts)
 	s.TargetSoC = v.TargetBatteryChargeLevel.number(percent)
+	s.CurrentLimitA = v.ChargingCurrentLimit.number(amperes)
+	// Zero out of a charge: no time left to tell.
+	if m := v.TimeToTarget.number(minutes); m.OK && m.V > 0 {
+		s.TimeLeft = core.Some(core.TimeLeft{Duration: time.Duration(m.V * float64(time.Minute)), To: core.ToTarget}, m.At)
+	}
 	return nil
 }
 

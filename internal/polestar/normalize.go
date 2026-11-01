@@ -168,6 +168,9 @@ func normalizeBattery(raw []byte, s *core.Snapshot) error {
 			ChargingType            string   `json:"chargingType"`
 			PowerW                  *float64 `json:"chargingPowerWatts"`
 			Consumption             *float64 `json:"averageEnergyConsumptionKwhPer100Km"`
+			CurrentA                *float64 `json:"chargingCurrentAmps"`
+			VoltageV                *float64 `json:"chargingVoltageVolts"`
+			MinutesToFull           *float64 `json:"estimatedChargingTimeToFullMinutes"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(raw, &v); err != nil {
@@ -175,7 +178,7 @@ func normalizeBattery(raw []byte, s *core.Snapshot) error {
 	}
 	d, at := v.Data, v.Data.Timestamp.instant()
 	s.Covers = core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
-		core.FieldChargeType | core.FieldPower | core.FieldConsumption
+		core.FieldChargeType | core.FieldPower | core.FieldConsumption | core.FieldChargeDetails
 	s.SoC = number(d.SoC, at)
 	s.RangeKm = number(d.RangeKm, at)
 	s.Connection = enum(d.ChargerConnectionStatus, "CHARGER_CONNECTION_STATUS_", at, map[string]core.Connection{
@@ -193,6 +196,14 @@ func normalizeBattery(raw []byte, s *core.Snapshot) error {
 		s.PowerW = core.Some(0.0, at)
 	}
 	s.ConsumptionKWhPer100km = number(d.Consumption, at)
+	// Reported only while charging, a zero left out: absent otherwise, as nothing flows.
+	// Assumption: the battery's side on DC, the grid's on AC; the phases are not told.
+	s.CurrentA, s.VoltageV = number(d.CurrentA, at), number(d.VoltageV, at)
+	// Read at 0 out of a charge. Said as told: to full, which the real car may count to
+	// its target as well.
+	if m := d.MinutesToFull; m != nil && *m > 0 {
+		s.TimeLeft = core.Some(core.TimeLeft{Duration: time.Duration(*m * float64(time.Minute)), To: core.ToFull}, at)
+	}
 	model(d.VIN, s)
 	return nil
 }

@@ -61,7 +61,7 @@ function facts(w: Wrapper, card: string) {
 const costNotes = (w: Wrapper) => w.findAll('.cost-note').map((n) => plain(n.text()))
 
 describe('ChargeDetails', () => {
-  it('shows the bounds, the duration, the type and the target', async () => {
+  it('shows the bounds, the duration, the type, the target and the current', async () => {
     const w = await mounted(charge)
     expect(w.find('h1').text()).toBe('Charge')
     expect(facts(w, 'when')).toEqual({
@@ -73,9 +73,16 @@ describe('ChargeDetails', () => {
       Type: 'AC',
       'State of charge': '47% → 80%',
       Target: '80%',
+      'Highest current': '16 A',
+      Phases: '3',
     })
     expect(facts(w, 'position')).toEqual({ Coordinates: '45.76400, 4.83570' })
     expect(w.find('.position a').attributes('href')).toContain('openstreetmap.org')
+  })
+
+  it('says no current for a car that tells none', async () => {
+    const w = await mounted({ ...charge, max_current_a: null, phases: null })
+    expect(Object.keys(facts(w, 'figures'))).toEqual(['Type', 'State of charge', 'Target'])
   })
 
   it('gives the address of the position, where the geocoder found one', async () => {

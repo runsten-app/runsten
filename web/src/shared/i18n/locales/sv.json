@@ -83,7 +83,11 @@
       "type": "Typ",
       "cable": "Kabel",
       "target": "Mål",
-      "follow": "Följ den pågående laddningen"
+      "follow": "Följ den pågående laddningen",
+      "fullAt": "Full kl.",
+      "targetAt": "Målnivå nås kl.",
+      "phases": "{n} fas | {n} faser",
+      "limit": "Strömgräns"
     },
     "vehicle": "Fordon",
     "odometer": "Mätarställning",
@@ -224,6 +228,10 @@
     "end": "Inga fler resor.",
     "csv": "Ladda ner CSV"
   },
+  "readingsCsv": {
+    "download": "Ladda ner alla avläsningar (CSV)",
+    "tooLong": "Alla avläsningar: välj högst 31 dagar."
+  },
   "trip": {
     "title": "Resa",
     "loading": "Läser in resan",
@@ -289,6 +297,8 @@
     "type": "Typ",
     "soc": "Laddningsnivå",
     "target": "Mål",
+    "maxCurrent": "Högsta ström",
+    "phases": "Faser",
     "energy": "Energi",
     "energySoc": "Energi (från laddningsnivån)",
     "energyPower": "Energi (från laddningseffekten)",

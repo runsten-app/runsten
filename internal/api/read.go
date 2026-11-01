@@ -343,6 +343,45 @@ type chargingJSON struct {
 	Type         null[reading[currentChargeTypeJSON]] `json:"type" doc:"none when the vehicle says no charge runs."`
 	PowerW       null[reading[float64]]               `json:"power_w" doc:"Charging power, in W."`
 	TargetSoCPct null[reading[float64]]               `json:"target_soc_pct" doc:"Target state of charge, in %."`
+	CurrentA     null[reading[float64]]               `json:"current_a" doc:"The charge's current, in A, as the vehicle measures it: a Tesla's on AC only, on the grid's side; a Polestar's while it charges, the battery's side on DC as far as is known. null when the vehicle does not tell it (Volvo), or nothing flows."`
+	VoltageV     null[reading[float64]]               `json:"voltage_v" doc:"The charge's voltage, in V, as current_a."`
+	Phases       null[reading[int]]                   `json:"phases" doc:"The AC phases the charge draws on, for a vehicle that tells them (Tesla)."`
+	// The limit is a setting: it holds whether a charge runs or not.
+	CurrentLimitA null[reading[float64]]      `json:"current_limit_a" doc:"The current the owner lets the vehicle draw on AC, in A."`
+	TimeLeft      null[reading[timeLeftJSON]] `json:"time_left" doc:"How long the vehicle expects the charge to run, from reported_at (else fetched_at). null when it says none is left, or does not tell it. A Volvo may tell it while no charge runs: the time a charge would take."`
+	Charger       null[reading[chargerJSON]]  `json:"charger" doc:"The station and the cable, as the vehicle names them, for a vehicle that tells them (Tesla)."`
+}
+
+type chargeEndJSON string
+
+// Schema lists what a charge's time left runs to.
+func (chargeEndJSON) Schema(huma.Registry) *huma.Schema {
+	return enumSchema(core.ToFull, core.ToTarget)
+}
+
+type timeLeftJSON struct {
+	DurationS int64         `json:"duration_s" minimum:"1" doc:"The time left, in seconds."`
+	To        chargeEndJSON `json:"to" doc:"What the charge runs to, as the vehicle says: full, or its target (target_soc_pct). A Tesla's is taken as its target, its charge limit, though it names it full."`
+}
+
+func timeLeftOf(t core.TimeLeft) timeLeftJSON {
+	return timeLeftJSON{DurationS: max(1, int64(t.Duration.Round(time.Second)/time.Second)), To: chargeEndJSON(t.To)}
+}
+
+type chargerJSON struct {
+	Brand *string `json:"brand" doc:"The fast charger's brand, on DC; null when the vehicle does not name it." example:"Tesla"`
+	Type  *string `json:"type" doc:"The fast charger's type, on DC; null when the vehicle does not name it." example:"Supercharger"`
+	Cable *string `json:"cable" doc:"The cable connected, as the vehicle names it; null when it does not." example:"IEC"`
+}
+
+func chargerOf(c core.Charger) chargerJSON {
+	word := func(s string) *string {
+		if s == "" {
+			return nil
+		}
+		return &s
+	}
+	return chargerJSON{Brand: word(c.Brand), Type: word(c.Type), Cable: word(c.Cable)}
 }
 
 type climateJSON struct {
@@ -413,11 +452,17 @@ func (s *Server) getState(ctx context.Context, in *vehicleInput) (*body[stateJSO
 		Position:           readingOf(c, core.FieldPosition, n.Position, positionOf),
 		BatteryCapacityKWh: readingOf(c, core.FieldCapacity, n.CapacityKWh, same),
 		Charging: chargingJSON{
-			Status:       readingOf(c, core.FieldCharging, n.Charging, text[core.ChargingStatus, chargingStatusJSON]),
-			Cable:        readingOf(c, core.FieldConnection, n.Connection, text[core.Connection, cableJSON]),
-			Type:         readingOf(c, core.FieldChargeType, n.ChargeType, text[core.ChargeType, currentChargeTypeJSON]),
-			PowerW:       readingOf(c, core.FieldPower, n.PowerW, same),
-			TargetSoCPct: readingOf(c, core.FieldTargetSoC, n.TargetSoC, same),
+			Status:        readingOf(c, core.FieldCharging, n.Charging, text[core.ChargingStatus, chargingStatusJSON]),
+			Cable:         readingOf(c, core.FieldConnection, n.Connection, text[core.Connection, cableJSON]),
+			Type:          readingOf(c, core.FieldChargeType, n.ChargeType, text[core.ChargeType, currentChargeTypeJSON]),
+			PowerW:        readingOf(c, core.FieldPower, n.PowerW, same),
+			TargetSoCPct:  readingOf(c, core.FieldTargetSoC, n.TargetSoC, same),
+			CurrentA:      readingOf(c, core.FieldChargeDetails, n.CurrentA, same),
+			VoltageV:      readingOf(c, core.FieldChargeDetails, n.VoltageV, same),
+			Phases:        readingOf(c, core.FieldChargeDetails, n.Phases, same),
+			CurrentLimitA: readingOf(c, core.FieldChargeDetails, n.CurrentLimitA, same),
+			TimeLeft:      readingOf(c, core.FieldChargeDetails, n.TimeLeft, timeLeftOf),
+			Charger:       readingOf(c, core.FieldChargeDetails, n.Charger, chargerOf),
 		},
 		Climate:        climateOf(c),
 		Doors:          readingOf(c, core.FieldDoors, n.Doors, doorsOf),
@@ -556,6 +601,8 @@ type chargeJSON struct {
 	EnergyPowerKWh    *float64             `json:"energy_power_kwh" doc:"The other estimate: the charging power integrated over the observed readings. null without observed power readings, as for a reconstructed charge. For an imported charge, the energy the application gives, a measured flow rather than a change of the state of charge."`
 	EnergyMeasuredKWh *float64             `json:"energy_measured_kwh" doc:"The energy the vehicle measured into its battery over the charge, from its own counter (a Tesla's): a measurement, which the cost rests on when there is one. null for a vehicle without a counter (Volvo, Polestar), an imported or reconstructed charge, and a charge derived before Runsten kept it: a rebuild of the derived data gives it."`
 	AveragePowerKW    *float64             `json:"average_power_kw" minimum:"0" doc:"An imported charge's average power, as the application gives it; null for a derived charge, which tells its power in its readings (GET /vehicles/{vehicle}/series)."`
+	MaxCurrentA       *float64             `json:"max_current_a" exclusiveMinimum:"0" doc:"The highest current the vehicle measured over the charge, in A, as the state's current_a. null for a vehicle that does not tell it (Volvo), a Tesla on DC, an imported or reconstructed charge, and a charge derived before Runsten kept it: a rebuild of the derived data gives it."`
+	Phases            *int                 `json:"phases" minimum:"1" doc:"The AC phases the charge drew on: those of its latest reading with a current, an assumption that it drew on as many throughout. null as max_current_a, and for a vehicle that tells no phases (Polestar)."`
 	CapacityFields
 	Position null[positionJSON] `json:"position"`
 	Place    null[placeRefJSON] `json:"place" doc:"The place of the charge: the nearest one whose circle holds its position; without a position, the place that takes such charges, unless the charge is DC. null elsewhere."`
@@ -573,11 +620,12 @@ func chargeOf(c core.Charge, places []core.Place, cost core.Value[core.Cost], bo
 		EnergySoCKWh: opt(c.EnergySoCKWh, same), EnergyPowerKWh: opt(c.EnergyPowerKWh, same),
 		EnergyMeasuredKWh: opt(c.EnergyMeasuredKWh, same),
 		AveragePowerKW:    opt(c.AveragePowerKW, same),
-		CapacityFields:    capacityOf(c.Capacity),
-		Position:          nullOf(c.Position, positionOf),
-		Address:           addressOr(book.of(c.Position), ref, c.Import.V.StartAddress),
-		Place:             ref,
-		Cost:              nullOf(cost, costOf),
+		MaxCurrentA:       opt(c.MaxCurrentA, same), Phases: opt(c.Phases, same),
+		CapacityFields: capacityOf(c.Capacity),
+		Position:       nullOf(c.Position, positionOf),
+		Address:        addressOr(book.of(c.Position), ref, c.Import.V.StartAddress),
+		Place:          ref,
+		Cost:           nullOf(cost, costOf),
 	}
 }
 

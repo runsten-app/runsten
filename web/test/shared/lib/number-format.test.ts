@@ -26,6 +26,8 @@ describe('formatQuantity', () => {
     [-3.5, 'celsius', 'en-GB', '-3.5°C'],
     [19.25, 'celsius', 'fr-FR', '19,3 °C'],
     [16, 'celsius', 'sv-SE', '16 °C'],
+    [10.66, 'ampere', 'fr-FR', '10,7 A'],
+    [229.4, 'volt', 'en-GB', '229 V'],
     [null, 'km', 'en-GB', null],
     [null, 'percent', 'fr-FR', null],
   ])('%s %s in %s → %s', (value, unit, locale, want) => {
