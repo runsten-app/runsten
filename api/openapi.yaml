@@ -57,7 +57,7 @@ components:
             - string
             - "null"
         unavailable:
-          description: "The functions the account does not have. costs: the charges' costs, null in the charges and the statistics, and their entry refused (feature_unavailable). stats: the statistics split into intervals, refused (feature_unavailable); a period's totals stay. csv: the trips and charges as CSV files, refused (feature_unavailable); the account's full export stays. mqtt: an MQTT broker, whose setting is refused (feature_unavailable); one set before stays, and nothing is published to it."
+          description: "The functions the account does not have. costs: the charges' costs, null in the charges and the statistics, and their entry refused (feature_unavailable). stats: the statistics split into intervals, refused (feature_unavailable); a period's totals stay. csv: the trips, the charges and the readings as CSV files, refused (feature_unavailable); the account's full export stays. mqtt: an MQTT broker, whose setting is refused (feature_unavailable); one set before stays, and nothing is published to it."
           items:
             enum:
               - costs
@@ -7738,6 +7738,104 @@ paths:
         - sessionSecure: []
         - accessToken: []
       summary: A vehicle's picture
+      tags:
+        - vehicles
+  /vehicles/{vehicle}/readings.csv:
+    get:
+      description: "The responses the providers gave for the vehicle within the period, as stored (a response identical to the previous one of its endpoint is not stored again), as a CSV file (RFC 4180, UTF-8, a header row) for a spreadsheet: one row per value, oldest first, with fetched_at (RFC 3339 in UTC), the source (volvo, polestar, tesla), the endpoint and the field, the path of the value in the response (data.frontLeftDoor.value, an array's elements as [0]), and the value as the provider gave it: a null is an empty cell, an empty object or array {} or []. The fields are the providers' own, which may change without notice. What is secret or not the vehicle's (Tesla's tokens and account identifiers) is left out. A text that would begin with `=`, `+`, `-` or `@` is prefixed with `'`, so that no spreadsheet takes it for a formula. The file is written as it is read: a failure midway cuts it short."
+      operationId: readingsCSV
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+        - description: Keeps the responses fetched at or after this time.
+          explode: false
+          in: query
+          name: from
+          required: true
+          schema:
+            description: Keeps the responses fetched at or after this time.
+            examples:
+              - "2026-09-28T00:00:00Z"
+            format: date-time
+            type: string
+        - description: "Keeps the responses fetched before this time: at most 31 days after from."
+          explode: false
+          in: query
+          name: to
+          required: true
+          schema:
+            description: "Keeps the responses fetched before this time: at most 31 days after from."
+            examples:
+              - "2026-09-29T00:00:00Z"
+            format: date-time
+            type: string
+      responses:
+        "200":
+          content:
+            text/csv:
+              schema:
+                description: The header row, then a row per value.
+                type: string
+          description: The CSV file, as an attachment (Content-Disposition), named after the day.
+          headers:
+            Content-Disposition:
+              description: attachment, with a file name such as runsten-readings-2026-10-01.csv.
+              required: true
+              schema:
+                type: string
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_parameter`: `from` or `to`, missing, in the wrong order or more than 31 days apart; the message names the parameter."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: the account's offer does not include this function (`limits.unavailable` of the session)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: Every value a vehicle reported, as CSV
       tags:
         - vehicles
   /vehicles/{vehicle}/series:

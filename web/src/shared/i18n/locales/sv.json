@@ -228,6 +228,10 @@
     "end": "Inga fler resor.",
     "csv": "Ladda ner CSV"
   },
+  "readingsCsv": {
+    "download": "Ladda ner alla avläsningar (CSV)",
+    "tooLong": "Alla avläsningar: välj högst 31 dagar."
+  },
   "trip": {
     "title": "Resa",
     "loading": "Läser in resan",

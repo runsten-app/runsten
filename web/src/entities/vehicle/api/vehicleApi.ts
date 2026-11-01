@@ -34,3 +34,9 @@ export async function deleteVehicle(vehicle: string): Promise<void> {
 export function vehiclePicturePath(vehicle: string): string {
   return downloadPath(`/vehicles/${encodeURIComponent(vehicle)}/picture`)
 }
+
+// readingsCsvPath is where the browser downloads every value the vehicle reported within
+// a period, as a CSV file.
+export function readingsCsvPath(vehicle: string, query: { from: string; to: string }): string {
+  return downloadPath(`/vehicles/${encodeURIComponent(vehicle)}/readings.csv`, query)
+}

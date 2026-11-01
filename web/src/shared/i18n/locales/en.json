@@ -228,6 +228,10 @@
     "end": "No more trips.",
     "csv": "Download CSV"
   },
+  "readingsCsv": {
+    "download": "Download every reading (CSV)",
+    "tooLong": "Every reading: choose 31 days at most."
+  },
   "trip": {
     "title": "Trip",
     "loading": "Loading the trip",
