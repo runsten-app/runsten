@@ -170,6 +170,18 @@ func (d *Deriver) Current(ctx context.Context, accountID, vehicleID string, at t
 	return core.Latest(records), nil
 }
 
+// OpenSince returns since when the vehicle stands parked and open (core.OpenSince), from
+// the snapshots fetched after from and the latest before it of each endpoint: a run that
+// started before from is said to start at the latest reading before it, which is enough
+// to tell that it lasts since from.
+func (d *Deriver) OpenSince(ctx context.Context, accountID, vehicleID string, from time.Time) (time.Time, error) {
+	snaps, err := d.st.SnapshotsSince(ctx, accountID, vehicleID, from, append(d.norm.Kinds(), d.norm.StateKinds()...))
+	if err != nil {
+		return time.Time{}, fmt.Errorf("snapshots: %w", err)
+	}
+	return core.OpenSince(d.normalize(vehicleID, snaps)), nil
+}
+
 // InProgress returns the charge still open at the vehicle's latest reading, if any: the
 // derivation replayed from the vehicle's cursor, as Update would, nothing saved. net is
 // the vehicle's net capacity, as Capacities would give it; nil when it is unknown.
