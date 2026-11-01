@@ -102,7 +102,7 @@ func Availability(prefix string, online bool) Message {
 }
 
 // State is the vehicle's current state, one retained message per value, in the order
-// of the contract. An unknown value is an empty message, which removes the previous
+// of the contract, the doors and windows last. An unknown value is an empty message, which removes the previous
 // one: unknown is never a zero. The location is left empty unless the broker
 // publishes it, so that turning it off removes the one published before.
 func State(b Broker, vehicleID string, c core.Current) []Message {
@@ -134,6 +134,10 @@ func State(b Broker, vehicleID string, c core.Current) []Message {
 		{"preconditioning", running(n.Climate, func(c core.Climate) core.Value[bool] { return c.Preconditioning })},
 		{"battery_heater", running(n.Climate, func(c core.Climate) core.Value[bool] { return c.BatteryHeater })},
 	}
+	for _, p := range parts() {
+		values = append(values, struct{ name, payload string }{p.topic, text(p.value(n), str[string])})
+	}
+	values = append(values, struct{ name, payload string }{"openings_read_at", openingsReadAt(c)})
 	msgs := make([]Message, len(values))
 	for i, v := range values {
 		msgs[i] = Message{Topic: base + v.name, Payload: v.payload, Retained: true}

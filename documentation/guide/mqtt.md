@@ -62,6 +62,12 @@ Under `<prefix>/vehicles/<vehicle id>/`, where the prefix is `runsten` by defaul
 | `credential_expires_at` | a Polestar's only: when its credential expires at the latest, in RFC 3339, UTC; empty without one |
 | `outside_temp_c`, `cabin_temp_c` | a Tesla's only: the temperature outside and in the cabin, in °C |
 | `climate`, `preconditioning`, `battery_heater` | a Tesla's only: `on` or `off`, whether the climate runs, the car preconditions, or heats its battery |
+| `locked` | `locked` or `unlocked` |
+| `door_front_left`, `door_front_right`, `door_rear_left`, `door_rear_right`, `hood`, `tailgate`, `tank_lid` | `closed`, `ajar` (not fully shut) or `open` |
+| `window_front_left`, `window_front_right`, `window_rear_left`, `window_rear_right`, `sunroof` | `closed`, `ajar` (open a crack) or `open` |
+| `sentry` | a Tesla's only: `on` or `off`, whether Sentry Mode watches the car |
+| `openings_read_at` | when the car last told its doors and windows, in RFC 3339, UTC: a Volvo and a Polestar tell them once an hour |
+| `left_open` | `on` once the car has stood parked and open (unlocked, or a door, the hood, the tailgate, a window or the sunroof open or ajar) for 10 minutes, by its readings; `off` otherwise |
 
 - Numbers are written with a point, as short as they read: `80`, `312.5`, `11.04`.
 - **An unknown value is an empty message**, which removes the previous one: unknown is never zero.
@@ -104,6 +110,15 @@ With discovery on, each vehicle is a device named after the name you gave a Tesl
 | Credential expiry | sensor, timestamp, diagnostic (a Polestar's only) | `credential_expires_at` |
 | Outside temperature, Cabin temperature | sensor, temperature, °C (a Tesla's only) | `outside_temp_c`, `cabin_temp_c` |
 | Climate, Preconditioning, Battery heater | binary sensor, running (a Tesla's only) | `climate`, `preconditioning`, `battery_heater` |
+| Lock | binary sensor, lock: on unlocked | `locked` |
+| Door front left, front right, rear left, rear right | binary sensor, door: on open or ajar | `door_…` |
+| Hood, Tailgate, Tank lid | binary sensor, opening | `hood`, `tailgate`, `tank_lid` |
+| Window front left, front right, rear left, rear right, Sunroof | binary sensor, window | `window_…`, `sunroof` |
+| Sentry Mode | binary sensor (a Tesla's only) | `sentry` |
+| Left open | binary sensor, problem | `left_open` |
+| Doors last read | sensor, timestamp, diagnostic | `openings_read_at` |
+
+The doors, windows and lock are entities only for what the car tells: a Tesla tells neither its tank lid nor its sunroof, a Polestar no sunroof, and the right and left doors of a Tesla only once Runsten knows its driver's side. The lock is a sensor: Runsten does not lock the car.
 
 The **Credential** entity turns on two weeks before the Polestar credential expires, and stays on until another is given: an automation can notify your phone, without opening Runsten. For instance:
 
@@ -122,6 +137,24 @@ automation:
             {% set expiry = states('sensor.polestar_3_2025_credential_expiry') | as_datetime(none) %}
             Create a new credential on Polestar's Data Portal and give it to Runsten{{
             ' before ' ~ (expiry | as_local).strftime('%d %B') if expiry else '' }}.
+```
+
+The **Left open** entity turns on once the car has stood parked and open for 10 minutes: unlocked, or a door, the hood, the tailgate, a window or the sunroof open or ajar (not the tank lid, which may be an electric car's charge port). A Volvo and a Polestar tell their doors once an hour: it may turn on up to an hour late, and the message can say how old the reading is. For instance:
+
+```yaml
+automation:
+  - alias: Car left open
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.ex30_2025_left_open
+        to: "on"
+    actions:
+      - action: notify.mobile_app_my_phone
+        data:
+          title: Car left open
+          message: >-
+            {% set read = states('sensor.ex30_2025_doors_last_read') | as_datetime(none) %}
+            The EX30 is parked and open{{ ', as read at ' ~ (read | as_local).strftime('%H:%M') if read else '' }}.
 ```
 
 The entity IDs follow the device's name: check them in Home Assistant.

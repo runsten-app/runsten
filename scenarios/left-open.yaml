@@ -1,0 +1,24 @@
+# Home, then an errand: parked unlocked with the tailgate open, as the shopping is
+# carried in, then left so. For the doors and windows, and the warning of a car left
+# open. Fictitious coordinates (Lyon).
+vin: YV1SMLT0000DT0007
+start: 2026-09-28T00:00:00Z
+vehicle:
+  profile: bev-generic
+  model: EX-SIM
+  modelYear: 2026
+  batteryKWh: 80
+  consumptionKWhPer100km: 18
+  soc: 70
+  targetSoc: 80
+  odometerKm: 8200
+  place: home
+places:
+  home: { lat: 45.7640, lon: 4.8357 }
+  shop: { lat: 45.7578, lon: 4.8320 }
+steps:
+  - park: { duration: 1h }
+  - drive: { to: shop, distanceKm: 4, duration: 12m }
+  - park: { duration: 20m }
+  - drive: { to: home, distanceKm: 4, duration: 12m }
+  - park: { duration: 6h, unlocked: true, open: [tailgate] }
