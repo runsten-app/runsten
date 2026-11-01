@@ -69,3 +69,15 @@ func TestTheFingerprintLeavesTheTimestampsOut(t *testing.T) {
 		t.Error("the fingerprint must ignore the timestamps, and only them")
 	}
 }
+
+// The model is the cars' list's: a telematics covering it would clear the family.
+func TestTheTelematicsLeaveTheModelAlone(t *testing.T) {
+	raw := `{"data":{"carTelematicsV2":{"battery":[{"vin":"LPSYCZRE5RL000014","chargingStatusV2":"CHARGING_STATUS_V2_IDLE","batteryChargeLevelPercentage":50}],"odometer":[],"health":[]}}}`
+	s, err := Normalize(Telematics, []byte(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.Covers&core.FieldModel != 0 {
+		t.Errorf("covers %b: the model is not the telematics'", s.Covers)
+	}
+}

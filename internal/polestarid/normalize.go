@@ -143,6 +143,9 @@ var chargingStatuses = map[string]core.ChargingStatus{
 	"ERROR":                 core.ChargingError,
 }
 
+// normalizeTelematics reads the battery and the odometer. Not the model: covering it
+// covers the family too, which the telematics do not tell and the cars' list does; the
+// model is the cars' list's alone.
 func normalizeTelematics(raw []byte, s *core.Snapshot) error {
 	var v telematics
 	if err := json.Unmarshal(raw, &v); err != nil {
@@ -159,14 +162,6 @@ func normalizeTelematics(raw []byte, s *core.Snapshot) error {
 			if c, ok := chargingStatuses[name]; ok {
 				s.Charging = core.Some(c, at)
 			}
-		}
-		if len(b.VIN) == 17 {
-			s.Covers |= core.FieldModel
-			s.Brand = core.Some(Brand, time.Time{})
-			if y, ok := modelYear(b.VIN); ok {
-				s.ModelYear = core.Some(y, time.Time{})
-			}
-			s.Powertrain = core.Some(core.Electric, time.Time{})
 		}
 	}
 	if len(t.Odometer) > 0 {
