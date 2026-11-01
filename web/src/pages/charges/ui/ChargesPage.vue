@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { CsvDownload } from '@/features/export-events'
+import { CsvDownload, ReadingsDownload } from '@/features/export-events'
 import { PeriodPicker, usePeriod } from '@/features/filter-period'
 import { PlaceSelect, usePlaceFilter } from '@/features/filter-place'
 import { HistoryLimitNotice, useLimits } from '@/features/view-limits'
@@ -25,14 +25,12 @@ const { lacks } = useLimits()
   <AppShell :vehicle="vehicle">
     <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-4">
       <h1 class="text-headline-small">{{ t('charges.title') }}</h1>
-      <CsvDownload
-        v-if="period.valid && !lacks('csv')"
-        kind="charges"
-        :vehicle="vehicle"
-        :from="period.from"
-        :to="period.to"
-        :place
-      />
+      <!-- Every value the vehicle reported is no list of its own: its file sits with
+           the lists' ones. -->
+      <div v-if="period.valid && !lacks('csv')" class="d-flex flex-wrap align-center ga-2">
+        <CsvDownload kind="charges" :vehicle="vehicle" :from="period.from" :to="period.to" :place />
+        <ReadingsDownload :vehicle="vehicle" :from="period.from" :to="period.to" />
+      </div>
     </div>
     <HistoryLimitNotice />
     <!-- The scope, the period first, then the place. -->

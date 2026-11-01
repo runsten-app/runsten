@@ -228,6 +228,10 @@
     "end": "Il n'y a pas d'autre trajet.",
     "csv": "Télécharger en CSV"
   },
+  "readingsCsv": {
+    "download": "Télécharger tous les relevés (CSV)",
+    "tooLong": "Tous les relevés : choisissez 31 jours au plus."
+  },
   "trip": {
     "title": "Trajet",
     "loading": "Chargement du trajet",
