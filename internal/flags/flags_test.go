@@ -27,6 +27,9 @@ func TestDeclarations(t *testing.T) {
 	if f, ok := Of(SourceTesla); !ok || !f.Default || !f.Web {
 		t.Errorf("Of(SourceTesla) = %+v, %v", f, ok)
 	}
+	if f, ok := Of(SourcePolestarID); !ok || f.Default || !f.Web {
+		t.Errorf("Of(SourcePolestarID) = %+v, %v", f, ok)
+	}
 	if _, ok := Of("source.unknown"); ok {
 		t.Error("Of an undeclared name")
 	}
