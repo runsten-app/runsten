@@ -208,15 +208,18 @@ type env struct {
 	store    *enrollStore
 	polestar *memPolestar
 	tesla    *memTesla
-	reader   *memReader
-	settings *memSettings
-	brokers  *memBrokers
-	jobs     *memImportJobs
-	aximote  *fakeAximote
-	files    *fakeFileImports
-	pictures *fakePictures
-	flows    *oauth.Flows
-	server   *Server
+	// polestarID keeps the Polestar ID, polestarIDs signs in to it.
+	polestarID  *memPolestarID
+	polestarIDs *fakePolestarID
+	reader      *memReader
+	settings    *memSettings
+	brokers     *memBrokers
+	jobs        *memImportJobs
+	aximote     *fakeAximote
+	files       *fakeFileImports
+	pictures    *fakePictures
+	flows       *oauth.Flows
+	server      *Server
 }
 
 // newEnv starts runsten-api against the simulator, with the redirect URI registered
@@ -230,7 +233,7 @@ func newEnv(t *testing.T, maxFlows int) *env {
 // the simulator accepts (nil: any).
 func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []string) *env {
 	t.Helper()
-	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}}
+	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}}
 	e.reader = newMemReader(e.settings)
 	var handler http.Handler
 	e.api = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { handler.ServeHTTP(w, r) }))
@@ -270,6 +273,7 @@ func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []strin
 		Keys: e.store, Tokens: e.store, InstanceKey: instanceKey != "", ClientID: cfg.ClientID,
 		Polestar: e.polestar, PolestarVehicles: polestarSim(t, e.clk, polestarVIN),
 		Tesla: e.tesla, TeslaVehicles: teslaSim(t, e.clk, teslaVIN).client,
+		PolestarID: e.polestarID, PolestarIDAccounts: e.polestarIDs, PolestarIDFlows: oauth.NewFlows(e.clk, flowTTL, maxFlows),
 		InstanceKeyLast4: instanceKey[max(0, len(instanceKey)-4):], Brokers: e.brokers, ImportJobs: e.jobs, Aximote: e.aximote, FileImports: e.files,
 		Pictures: e.pictures, Params: core.DefaultParams(), CostParams: core.DefaultCostParams(), CapacityParams: core.DefaultCapacityParams(),
 		Catalog: mustCatalog(t), Clock: e.clk, Log: quiet,

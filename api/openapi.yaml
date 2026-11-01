@@ -1146,7 +1146,7 @@ components:
             - string
             - "null"
         credential:
-          description: "The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla). null for a Volvo connection."
+          description: "The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account; a Polestar ID's session ended, or its password refused); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla, /connection/polestar-id/code or /password). null for a Volvo connection."
           oneOf:
             - enum:
                 - set
@@ -1155,11 +1155,12 @@ components:
               type: string
             - type: "null"
         provider:
-          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API."
+          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API."
           enum:
             - volvo
             - polestar
             - tesla
+            - polestar_id
           type: string
         reauth_at:
           description: When the grant was found lost; null while active.
@@ -1221,6 +1222,11 @@ components:
           oneOf:
             - $ref: "#/components/schemas/PolestarCredential"
             - type: "null"
+        polestar_id:
+          description: "The account's Polestar ID, which reads its Polestars through the Polestar app's API where the Data Portal does not (the flag source.polestar-id); null: none."
+          oneOf:
+            - $ref: "#/components/schemas/PolestarID"
+            - type: "null"
         tesla:
           description: "The account's refresh token of Tesla's Owner API, which reads its Tesla vehicles; null: none."
           oneOf:
@@ -1237,6 +1243,7 @@ components:
         - api_key
         - polestar
         - tesla
+        - polestar_id
       type: object
     Cost:
       additionalProperties: false
@@ -1613,6 +1620,7 @@ components:
             - broker_refused
             - token_refused
             - source_unavailable
+            - authorization_expired
             - import_active
             - invalid_file
             - insufficient_scope
@@ -2867,6 +2875,86 @@ components:
         - client_secret
         - account_id
       type: object
+    PolestarID:
+      additionalProperties: false
+      properties:
+        last4:
+          description: "The last four characters of the refresh token the connection gave, to tell it apart: the Polestar ID gives a new one at every refresh, none is returned."
+          type: string
+        mode:
+          description: "How Runsten connects: token, with the refresh token of a sign-in on Polestar's page; password, with the email and password, kept to sign in again."
+          enum:
+            - token
+            - password
+          type: string
+        refused_at:
+          description: "When the Polestar ID refused the connection (the session ended, the password changed): its vehicles are not read until the owner connects again. null: not refused."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        set_at:
+          description: When the owner connected.
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - mode
+        - last4
+        - set_at
+        - refused_at
+      type: object
+    PolestarIDAuthorization:
+      additionalProperties: false
+      properties:
+        state:
+          description: The authorization's state, to send back with the address pasted, within 10 minutes.
+          minLength: 1
+          type: string
+        url:
+          description: "Polestar's sign-in page, to open in a browser: once signed in, polestar.com's page shows an error, but the address it was sent to holds the code to paste back."
+          format: uri
+          type: string
+      required:
+        - url
+        - state
+      type: object
+    PolestarIDCode:
+      additionalProperties: false
+      properties:
+        callback:
+          description: The address polestar.com's sign-in-callback was given after the sign-in (https://www.polestar.com/sign-in-callback?code=…), or its code alone.
+          maxLength: 4096
+          minLength: 1
+          type: string
+        state:
+          description: The state POST /connection/polestar-id/authorization gave.
+          maxLength: 256
+          minLength: 1
+          type: string
+      required:
+        - state
+        - callback
+      type: object
+    PolestarIDPassword:
+      additionalProperties: false
+      properties:
+        email:
+          description: The Polestar ID's email.
+          maxLength: 320
+          minLength: 3
+          pattern: ^[^\s@]+@[^\s@]+$
+          type: string
+        password:
+          description: Its password, kept sealed to sign in again. It is never returned.
+          maxLength: 1024
+          minLength: 1
+          type: string
+      required:
+        - email
+        - password
+      type: object
     Position:
       additionalProperties: false
       properties:
@@ -3516,11 +3604,15 @@ components:
           additionalProperties: false
           description: "The feature flags the web interface reads, evaluated for the session's account: a function shipped off or on, which the instance, or the account, turns over. Made to go: a flag is removed once on everywhere."
           properties:
+            source.polestar-id:
+              description: "The Polestar ID as a source, for the Polestars the Data Portal does not read (outside the EU/EEA): its connection and its reads. Off by default: the Polestar app's API is unofficial, and many accounts read from one instance's addresses could have them blocked; a self-hosted instance turns it on."
+              type: boolean
             source.tesla:
               description: "Tesla as a source: its connection, its page and its reads. On by default; an instance may turn it off, Tesla's Owner API being unofficial."
               type: boolean
           required:
             - source.tesla
+            - source.polestar-id
           type: object
         limits:
           description: "What the account's offer hides, as of now; null: nothing, the whole history is shown. Only an instance that limits its accounts sets it."
@@ -4971,7 +5063,7 @@ paths:
         - costs
   /connection:
     get:
-      description: Whether a Volvo ID is connected, the application key its vehicles are read with, the credential of Polestar's Data Portal, and the refresh token of Tesla's Owner API.
+      description: Whether a Volvo ID is connected, the application key its vehicles are read with, the credential of Polestar's Data Portal, the refresh token of Tesla's Owner API, and the Polestar ID.
       operationId: getConnection
       responses:
         "200":
@@ -5194,6 +5286,208 @@ paths:
         - session: []
         - sessionSecure: []
       summary: Give the account's Polestar credential
+      tags:
+        - connection
+  /connection/polestar-id:
+    delete:
+      description: The refresh token is erased, and the email and password with it. The cars stay, with their history, and are no longer read until the owner connects again.
+      operationId: deletePolestarID
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Remove the account's Polestar ID
+      tags:
+        - connection
+  /connection/polestar-id/authorization:
+    post:
+      description: "The address of Polestar's sign-in page, for the token mode: its PKCE verifier is kept by Runsten, for 10 minutes. Once signed in, polestar.com's sign-in-callback page fails, the code being Runsten's: the owner pastes the address it was given back (PUT /connection/polestar-id/code)."
+      operationId: postPolestarIDAuthorization
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolestarIDAuthorization"
+          description: The sign-in page.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: the Polestar ID is not offered to the account (the flag `source.polestar-id`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: too many sign-ins are pending on the instance."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Start a sign-in to the Polestar ID
+      tags:
+        - connection
+  /connection/polestar-id/code:
+    put:
+      description: The code of the address pasted back is exchanged for the tokens, with the verifier of the sign-in its state names, which is spent. The account's cars are then listed, and added to it, but those another connection of the account reads (Polestar's Data Portal). Only the refresh token is kept, never returned; it replaces a previous connection, of either mode.
+      operationId: putPolestarIDCode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolestarIDCode"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionSettings"
+          description: The connection.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `authorization_expired`: the sign-in expired, was already used, or is not the address's. `credential_refused`: the Polestar ID refused the code."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: the Polestar ID is not offered to the account (the flag `source.polestar-id`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`no_vehicle`: the Polestar ID has no car. `too_many_vehicles`: the account would have more vehicles than the instance lets it have. Nothing is stored."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: the Polestar ID did not answer; nothing is stored."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Connect the account's Polestar ID with the code of a sign-in
+      tags:
+        - connection
+  /connection/polestar-id/password:
+    put:
+      description: Runsten signs in as the Polestar app does, then lists the account's cars and adds them, but those another connection of the account reads (Polestar's Data Portal). The email and password are kept, sealed, to sign in again when the Polestar ID ends the session; they travel in the body only, and are never returned. It replaces a previous connection, of either mode.
+      operationId: putPolestarIDPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PolestarIDPassword"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionSettings"
+          description: The connection.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `credential_refused`: the Polestar ID refused the email or the password."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: the Polestar ID is not offered to the account (the flag `source.polestar-id`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`no_vehicle`: the Polestar ID has no car. `too_many_vehicles`: the account would have more vehicles than the instance lets it have. Nothing is stored."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: the Polestar ID did not answer; nothing is stored."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Connect the account's Polestar ID with its email and password
       tags:
         - connection
   /connection/tesla:

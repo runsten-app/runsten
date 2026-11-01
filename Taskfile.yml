@@ -37,7 +37,8 @@ vars:
   MQTT_PORT: 1883
 
   # SCENARIO=errand,ex30: one vehicle per scenario, under one Volvo ID; commute,polestar2:
-  # a Volvo and a Polestar, under the Polestar credential below.
+  # a Volvo and a Polestar, under the Polestar credential below; polestar4-id: a Polestar
+  # read through the Polestar ID.
   SCENARIO: commute
   SIM_SCENARIOS: '{{range $i, $s := splitList "," .SCENARIO}}{{if $i}},{{end}}scenarios/{{$s}}.yaml{{end}}'
 
@@ -47,7 +48,8 @@ vars:
 
   # Development wiring to the simulator: its Volvo API and Volvo ID on :8080, and its
   # development application (client runsten-dev); its Polestar Data Portal under
-  # /eu-north-1/data-portal/m2m; Tesla's Owner API, its token under /oauth2/v3.
+  # /eu-north-1/data-portal/m2m; Tesla's Owner API, its token under /oauth2/v3; the
+  # Polestar ID and the Polestar app's API under /polestar-id, its flag on.
   # Development-only encryption key (32 zero bytes).
   DEV_ENV: >-
     RUNSTEN_DATABASE_URL="{{.DB_DEV}}"
@@ -56,6 +58,14 @@ vars:
     RUNSTEN_VOLVO_CLIENT_ID=runsten-dev RUNSTEN_VOLVO_CLIENT_SECRET=runsten-dev-secret
     RUNSTEN_POLESTAR_BASE_URL=http://localhost:8080/eu-north-1/data-portal/m2m
     RUNSTEN_TESLA_API_URL=http://localhost:8080 RUNSTEN_TESLA_AUTH_URL=http://localhost:8080/oauth2/v3
+    RUNSTEN_POLESTAR_ID_AUTH_URL=http://localhost:8080/polestar-id
+    RUNSTEN_POLESTAR_ID_API_URL=http://localhost:8080/polestar-id/eu-north-1/mystar-v2
+    RUNSTEN_FLAGS=source.polestar-id=true
+
+  # The simulator's Polestar ID (polestaridapi.DevEmail and DevPassword), development
+  # only, as the body of PUT /api/v1/connection/polestar-id/password.
+  DEV_POLESTAR_ID: >-
+    {"email":"owner@example.com","password":"runsten-dev"}
 
   # The simulator's Polestar credential (polestarapi.DevCredential), development only, as
   # the body of PUT /api/v1/connection/polestar.
@@ -351,10 +361,10 @@ tasks:
   # browser to http://simulator:8080: curl reaches it through its published port. Then
   # gives the simulator's Polestar credential, which reads the scenarios of brand
   # polestar, and a new refresh token of its Tesla account (one is used up by each
-  # check), which reads those of brand tesla. A scenario without one of the brands
-  # connects the others only.
+  # check), which reads those of brand tesla, and its Polestar ID, which reads those of
+  # source polestar_id. A scenario without one of them connects the others only.
   connect-sim:
-    desc: Sign in as the development user, connect the simulated Volvo ID as a browser would (curl), and give the simulated Polestar credential and Tesla refresh token
+    desc: Sign in as the development user, connect the simulated Volvo ID as a browser would (curl), and give the simulated Polestar credential, Tesla refresh token and Polestar ID
     silent: true
     cmds:
       - |
@@ -384,6 +394,14 @@ tasks:
           200) echo "Tesla refresh token set"; connected=1 ;;
           409) echo "Tesla refresh token: no Tesla in the scenario" ;;
           *) echo "Tesla refresh token refused: HTTP $status" >&2; exit 1 ;;
+        esac
+        status=$(curl -sS -b "$jar" -X PUT -H 'Content-Type: application/json' -o /dev/null -w '%{http_code}' \
+          -d '{{.DEV_POLESTAR_ID}}' http://127.0.0.1:8081/api/v1/connection/polestar-id/password) || exit 1
+        case "$status" in
+          200) echo "Polestar ID connected"; connected=1 ;;
+          409) echo "Polestar ID: no Polestar of the Polestar ID in the scenario" ;;
+          403) echo "Polestar ID: not offered (the flag source.polestar-id is off)" ;;
+          *) echo "Polestar ID refused: HTTP $status" >&2; exit 1 ;;
         esac
         [ "$connected" = 1 ] || { echo "no vehicle connected" >&2; exit 1; }
 

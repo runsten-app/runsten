@@ -73,6 +73,7 @@ type connectionSettingsJSON struct {
 	APIKey      null[apiKeyJSON]             `json:"api_key" doc:"The account's own application key; null: none. Not used while instance_key is true."`
 	Polestar    null[polestarCredentialJSON] `json:"polestar" doc:"The account's credential of Polestar's Data Portal, which reads its Polestar vehicles; null: none."`
 	Tesla       null[teslaTokenJSON]         `json:"tesla" doc:"The account's refresh token of Tesla's Owner API, which reads its Tesla vehicles; null: none."`
+	PolestarID  null[polestarIDJSON]         `json:"polestar_id" doc:"The account's Polestar ID, which reads its Polestars through the Polestar app's API where the Data Portal does not (the flag source.polestar-id); null: none."`
 }
 
 type apiKeyUpdateJSON struct {
@@ -111,6 +112,11 @@ func (s *Server) connectionSettings(ctx context.Context, account string) (connec
 		return connectionSettingsJSON{}, s.internal("Tesla connection not read", err)
 	}
 	out.Tesla = teslaOf(tc)
+	pc, err := s.PolestarID.PolestarIDConnection(ctx, account)
+	if err != nil {
+		return connectionSettingsJSON{}, s.internal("Polestar ID connection not read", err)
+	}
+	out.PolestarID = polestarIDOf(pc)
 	return out, nil
 }
 
@@ -214,7 +220,7 @@ func (s *Server) registerConnection(api huma.API) {
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "getConnection", Method: http.MethodGet, Path: "/connection", Tags: []string{"connection"},
 		Summary:     "The account's connections to Volvo, Polestar and Tesla",
-		Description: "Whether a Volvo ID is connected, the application key its vehicles are read with, the credential of Polestar's Data Portal, and the refresh token of Tesla's Owner API.",
+		Description: "Whether a Volvo ID is connected, the application key its vehicles are read with, the credential of Polestar's Data Portal, the refresh token of Tesla's Owner API, and the Polestar ID.",
 	}, "The connection.", map[int]string{http.StatusUnauthorized: errUnauthorized, http.StatusInternalServerError: errInternal}),
 		s.getConnection)
 	huma.Register(api, s.operation(huma.Operation{

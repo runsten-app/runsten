@@ -72,6 +72,11 @@
 //	                             it is stored (default https://owner-api.teslamotors.com)
 //	RUNSTEN_TESLA_AUTH_URL       Tesla's authentication, whose /token refreshes it
 //	                             (default https://auth.tesla.com/oauth2/v3)
+//	RUNSTEN_POLESTAR_ID_AUTH_URL the Polestar ID, which signs the owner in when the flag
+//	                             source.polestar-id is on (default
+//	                             https://polestarid.eu.polestar.com)
+//	RUNSTEN_POLESTAR_ID_API_URL  the Polestar app's API, which lists the owner's cars
+//	                             (default https://pc-api.polestar.com/eu-north-1/mystar-v2)
 //	RUNSTEN_AXIMOTE_BASE_URL     Aximote's public API, which the imports of a vehicle's
 //	                             history read with the user's token (default
 //	                             https://api.aximote.com)
@@ -124,6 +129,7 @@ import (
 	"runsten/internal/platform/httpserver"
 	"runsten/internal/platform/secretbox"
 	"runsten/internal/polestar"
+	"runsten/internal/polestarid"
 	"runsten/internal/release"
 	"runsten/internal/store"
 	"runsten/internal/tesla"
@@ -163,6 +169,7 @@ type config struct {
 	aximoteURL  string
 	polestarURL string
 	tesla       tesla.Hosts
+	polestarID  polestarid.Hosts
 	app         volvo.AuthConfig
 	appURL      string
 	// secureCookies: the address users open is https.
@@ -261,7 +268,7 @@ func run(args []string) error {
 	if cfg.geocoder != nil {
 		addresses = st
 	}
-	deriver := derive.New(st, derive.Sources(volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}), core.DefaultParams(), nil, log)
+	deriver := derive.New(st, derive.Sources(volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{}), core.DefaultParams(), nil, log)
 	ax := aximote.NewClient(cfg.aximoteURL, hc)
 	// Only when asked is GitHub read: nothing leaves for it otherwise.
 	var releases api.Releases
@@ -304,15 +311,18 @@ func run(args []string) error {
 		Keys:       st,
 		// A new application key is checked by listing the vehicles, with a token
 		// refreshed here if needed, under the same row lock as the collector's.
-		Tokens:           oauth.NewManager(st, authorizer, clock.Real{}, oauth.DefaultParams(), log),
-		Polestar:         st,
-		PolestarVehicles: polestarVehicles{polestar.NewClient(cfg.polestarURL, hc)},
-		Tesla:            st,
-		TeslaVehicles:    teslaVehicles{tesla.NewClient(cfg.tesla, hc)},
-		InstanceKey:      cfg.apiKey != "",
-		InstanceKeyLast4: cfg.apiKey[max(0, len(cfg.apiKey)-4):],
-		ClientID:         cfg.app.ClientID,
-		Brokers:          st,
+		Tokens:             oauth.NewManager(st, authorizer, clock.Real{}, oauth.DefaultParams(), log),
+		Polestar:           st,
+		PolestarVehicles:   polestarVehicles{polestar.NewClient(cfg.polestarURL, hc)},
+		Tesla:              st,
+		TeslaVehicles:      teslaVehicles{tesla.NewClient(cfg.tesla, hc)},
+		PolestarID:         st,
+		PolestarIDAccounts: polestarIDAccounts{polestarid.NewClient(cfg.polestarID, hc)},
+		PolestarIDFlows:    oauth.NewFlows(clock.Real{}, flowTTL, maxPending),
+		InstanceKey:        cfg.apiKey != "",
+		InstanceKeyLast4:   cfg.apiKey[max(0, len(cfg.apiKey)-4):],
+		ClientID:           cfg.app.ClientID,
+		Brokers:            st,
 		// The collector checks the addresses again when it connects.
 		PublicBrokersOnly: !cfg.privateBrokers,
 		Clock:             clock.Real{},
@@ -483,6 +493,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		aximoteURL:  aximote.DefaultBaseURL,
 		polestarURL: polestar.DefaultBaseURL,
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
+		polestarID:  polestarid.Hosts{Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL},
 		app:         volvo.AuthConfig{BaseURL: volvo.DefaultAuthURL, Scopes: volvo.DefaultScopes()},
 		addr:        defaultAddr,
 		logLevel:    slog.LevelInfo,
@@ -513,6 +524,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.app.BaseURL, "RUNSTEN_AXIMOTE_BASE_URL": &cfg.aximoteURL,
 		"RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL, "RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
+		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
 	} {
 		if v := getenv(name); v != "" {
 			if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
@@ -694,6 +706,43 @@ func (t teslaVehicles) TeslaVehicles(ctx context.Context, refreshToken string) (
 		vins[i] = p.VIN
 	}
 	return vins, tok.Refresh, nil
+}
+
+// polestarIDAccounts signs in to the Polestar ID for the API, then lists the cars with
+// the access given.
+type polestarIDAccounts struct{ c *polestarid.Client }
+
+func (p polestarIDAccounts) AuthorizeURL(challenge, state string) string {
+	return p.c.AuthorizeURLOf(challenge, state)
+}
+
+func (polestarIDAccounts) CodeOf(pasted string) (string, string, error) {
+	return polestarid.CodeOf(pasted) //nolint:wrapcheck // the client's, with its context
+}
+
+func (p polestarIDAccounts) Exchange(ctx context.Context, code, verifier string) (api.PolestarIDCars, error) {
+	tok, err := p.c.Exchange(ctx, code, verifier)
+	return p.cars(ctx, tok, err)
+}
+
+func (p polestarIDAccounts) SignIn(ctx context.Context, email, password string) (api.PolestarIDCars, error) {
+	tok, err := p.c.SignIn(ctx, email, password)
+	return p.cars(ctx, tok, err)
+}
+
+func (p polestarIDAccounts) cars(ctx context.Context, tok polestarid.Tokens, err error) (api.PolestarIDCars, error) {
+	if err != nil {
+		return api.PolestarIDCars{}, err //nolint:wrapcheck // the client's, with its context
+	}
+	cars, err := p.c.Cars(ctx, tok.Access)
+	if err != nil {
+		return api.PolestarIDCars{}, err //nolint:wrapcheck // the client's, with its context
+	}
+	out := api.PolestarIDCars{Refresh: tok.Refresh, VINs: make([]string, len(cars))}
+	for i, c := range cars {
+		out.VINs[i] = c.VIN
+	}
+	return out, nil
 }
 
 // aximoteVehicles lists an Aximote account's vehicles for the API.
