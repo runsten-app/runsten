@@ -65,7 +65,7 @@ func TestNormalizeFixture(t *testing.T) {
 	at := time.UnixMilli(1793032171549).UTC()
 	want := core.Snapshot{
 		Covers: chargeFields | core.FieldEngine | core.FieldPosition | core.FieldOdometer | core.FieldModel |
-			core.FieldSoftware | core.FieldClimate | core.FieldDoors | core.FieldWindows,
+			core.FieldSoftware | core.FieldClimate | core.FieldDoors | core.FieldWindows | core.FieldSheet,
 		Engine:     core.Some(core.EngineStopped, at), // shift_state null
 		SoC:        core.Some(69.0, at),
 		UsableSoC:  core.Some(68.0, at),
@@ -109,6 +109,10 @@ func TestNormalizeFixture(t *testing.T) {
 		Windows: core.Some(core.Windows{
 			FrontLeft: core.Some(core.Closed, at), FrontRight: core.Some(core.Closed, at),
 			RearLeft: core.Some(core.Closed, at), RearRight: core.Some(core.Closed, at),
+		}, at),
+		// RoofColorGlass, Base and None as Tesla writes them; rhd false.
+		Sheet: core.Some(core.Sheet{
+			Name: "Demo", Colour: "Deep Blue", RoofColour: "Glass", Wheels: "HelixV220Dark", Steering: core.LeftHand,
 		}, at),
 	}
 	n := Normalizer{}
@@ -300,13 +304,62 @@ func TestNormalizeModel(t *testing.T) {
 			t.Fatal(err)
 		}
 		want := core.Snapshot{
-			Covers: core.FieldModel, Brand: core.Some(Brand, none), Family: tc.family, ModelYear: tc.year,
+			Covers: core.FieldModel | core.FieldSheet, Brand: core.Some(Brand, none), Family: tc.family, ModelYear: tc.year,
 			Powertrain: core.Some(core.Electric, none),
 		}
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("%s %s:\ngot  %+v\nwant %+v", tc.vin, tc.carType, got, want)
 		}
 	}
+}
+
+func TestNormalizeSheet(t *testing.T) {
+	at := time.UnixMilli(1793032171549).UTC()
+	for _, tc := range []struct {
+		name, config, state string
+		want                core.Value[core.Sheet]
+	}{
+		{
+			"every value", `"exterior_color": "MidnightSilver", "roof_color": "RoofColorBlack", "wheel_type": "Induction20",
+			"rhd": true, "performance_package": "Performance", "third_row_seats": "FuturisFoldFlat"`, `"vehicle_name": " Blixt "`,
+			core.Some(core.Sheet{
+				Name: "Blixt", Colour: "Midnight Silver", RoofColour: "Black", Wheels: "Induction20",
+				Steering: core.RightHand, Performance: true, ThirdRow: true,
+			}, at),
+		},
+		{
+			"Tesla's words for none", `"exterior_color": "", "roof_color": "None", "wheel_type": "<invalid>",
+			"performance_package": "Base", "third_row_seats": "None"`, `"vehicle_name": ""`,
+			core.Value[core.Sheet]{},
+		},
+		{"nulls", `"exterior_color": null, "rhd": null`, `"vehicle_name": null`, core.Value[core.Sheet]{}},
+		{"the name alone", ``, `"vehicle_name": "Blixt"`, core.Some(core.Sheet{Name: "Blixt"}, at)},
+		{"without the state", `"rhd": false`, ``, core.Some(core.Sheet{Steering: core.LeftHand}, at)},
+	} {
+		raw := `{"response": {"vehicle_config": {` + tc.config + sep(tc.config) + `"timestamp": 1793032171549}`
+		if tc.state != "" {
+			raw += `, "vehicle_state": {` + tc.state + `}`
+		}
+		got, err := Normalize(VehicleData, []byte(raw+`}}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Covers&core.FieldSheet == 0 || !reflect.DeepEqual(got.Sheet, tc.want) {
+			t.Errorf("%s: got %+v, want %+v", tc.name, got.Sheet, tc.want)
+		}
+	}
+	// No configuration: no sheet, even with the name.
+	got, err := Normalize(VehicleData, []byte(`{"response": {"vehicle_state": {"vehicle_name": "Blixt"}}}`))
+	if err != nil || got.Covers&core.FieldSheet != 0 || got.Sheet.OK {
+		t.Errorf("without the configuration: %+v, %v", got.Sheet, err)
+	}
+}
+
+func sep(s string) string {
+	if s == "" {
+		return ""
+	}
+	return ", "
 }
 
 func TestFingerprint(t *testing.T) {

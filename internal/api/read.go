@@ -129,10 +129,11 @@ type connectionJSON struct {
 }
 
 type vehicleJSON struct {
-	ID         string         `json:"id" format:"uuid"`
-	VIN        string         `json:"vin"`
-	Model      modelJSON      `json:"model" doc:"What the vehicle is, from its latest details."`
-	Connection connectionJSON `json:"connection" doc:"The state of the provider connection (Volvo ID) that reads the vehicle."`
+	ID         string          `json:"id" format:"uuid"`
+	VIN        string          `json:"vin"`
+	Model      modelJSON       `json:"model" doc:"What the vehicle is, from its latest details."`
+	Sheet      null[sheetJSON] `json:"sheet" doc:"What the vehicle is beyond its model, from its latest details: its colour, its specifications, its picture, the name its owner gave it. Each value is null when the source does not tell it; the sheet is null when it tells none (Polestar's Data Portal), and until the details are read."`
+	Connection connectionJSON  `json:"connection" doc:"The state of the provider connection (Volvo ID) that reads the vehicle."`
 	// Market refused: a fact of the vehicle, apart from its connection and from the
 	// collector's latest pass.
 	MarketRefusedAt *time.Time           `json:"market_refused_at" pattern:"Z$" doc:"When the vendor's API refused the vehicle's market: the API does not serve the market it was sold in, nothing of it can be read, and it is no longer read. Connecting the Volvo ID again tries it again. null: served."`

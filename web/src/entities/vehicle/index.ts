@@ -5,6 +5,7 @@ export {
   fetchVehicles,
   fetchVehicleState,
   setVehicleModel,
+  vehiclePicturePath,
 } from './api/vehicleApi'
 export {
   collectionState,
@@ -43,6 +44,7 @@ export type {
   Engine,
   Model,
   ModelChoice,
+  Sheet,
   Reading,
   Sleep,
   SoftwareUpdate,
@@ -55,3 +57,5 @@ export type {
 export { default as ReadingItem } from './ui/ReadingItem.vue'
 export { default as OpeningsSummary } from './ui/OpeningsSummary.vue'
 export { default as ReadingProvenance } from './ui/ReadingProvenance.vue'
+export { default as VehiclePicture } from './ui/VehiclePicture.vue'
+export { default as VehicleSheet } from './ui/VehicleSheet.vue'

@@ -19,6 +19,24 @@
         "ac_max_kw": null,
         "powertrain": "electric"
       },
+      "sheet": {
+        "name": null,
+        "colour": "Jupiter",
+        "roof_colour": null,
+        "wheels": null,
+        "upholstery": null,
+        "gearbox": "automatic",
+        "drive": "rwd",
+        "steering": "left",
+        "power_kw": 185,
+        "engine_cc": null,
+        "gross_weight_kg": 2520,
+        "seats": 5,
+        "third_row": false,
+        "performance": false,
+        "first_registration": "2021-03-15",
+        "picture": true
+      },
       "connection": {
         "provider": "volvo",
         "status": "active",
@@ -66,6 +84,7 @@
         "ac_max_kw": null,
         "powertrain": null
       },
+      "sheet": null,
       "connection": {
         "provider": "volvo",
         "status": "reauth_required",
@@ -112,6 +131,24 @@
         "ac_max_kw": 11,
         "powertrain": "electric"
       },
+      "sheet": {
+        "name": null,
+        "colour": "Moss Yellow",
+        "roof_colour": null,
+        "wheels": null,
+        "upholstery": null,
+        "gearbox": null,
+        "drive": null,
+        "steering": null,
+        "power_kw": null,
+        "engine_cc": null,
+        "gross_weight_kg": null,
+        "seats": null,
+        "third_row": false,
+        "performance": false,
+        "first_registration": null,
+        "picture": false
+      },
       "connection": {
         "provider": "volvo",
         "status": "active",
@@ -137,6 +174,7 @@
         "ac_max_kw": null,
         "powertrain": null
       },
+      "sheet": null,
       "connection": {
         "provider": "volvo",
         "status": "active",
@@ -183,6 +221,7 @@
         "ac_max_kw": null,
         "powertrain": "electric"
       },
+      "sheet": null,
       "connection": {
         "provider": "polestar",
         "status": "active",

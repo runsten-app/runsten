@@ -1,4 +1,4 @@
-import { api, unwrap } from '@/shared/api'
+import { api, downloadPath, unwrap } from '@/shared/api'
 import type { ModelChoice, State, VariantOption, Vehicle } from '../model/Vehicle'
 
 export async function fetchVehicles(): Promise<Vehicle[]> {
@@ -27,4 +27,10 @@ export function setVehicleModel(vehicle: string, choice: ModelChoice): Promise<V
 // deleteVehicle deletes the vehicle with its whole history; its connection stays.
 export async function deleteVehicle(vehicle: string): Promise<void> {
   await unwrap(api.DELETE('/vehicles/{vehicle}', { params: { path: { vehicle } } }))
+}
+
+// vehiclePicturePath is where the browser loads the vehicle's picture: the API relays it,
+// so that the browser calls no third party.
+export function vehiclePicturePath(vehicle: string): string {
+  return downloadPath(`/vehicles/${encodeURIComponent(vehicle)}/picture`)
 }

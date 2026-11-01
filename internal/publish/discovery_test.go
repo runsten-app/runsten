@@ -26,6 +26,7 @@ func TestLabels(t *testing.T) {
 		{"variant and year", map[string]Model{a: ex30}, map[string]string{a: "EX30 Single Motor Extended Range · 2025"}},
 		{"family alone", map[string]Model{a: {Family: "XC40"}}, map[string]string{a: "XC40"}},
 		{"nothing read yet", map[string]Model{a: {}}, map[string]string{a: "Volvo 0b7e6a"}},
+		{"the owner's name", map[string]Model{a: {Name: "Blixt", Family: "Model Y", Year: 2021}}, map[string]string{a: "Blixt"}},
 		{
 			"two alike, one apart",
 			map[string]Model{a: ex30, b: ex30, c: {Family: "XC40", Year: 2023}},
