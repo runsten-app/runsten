@@ -130,6 +130,8 @@ const (
 	FieldSoftware
 	// FieldClimate covers OutsideTempC, CabinTempC and Climate, told in the same block.
 	FieldClimate
+	// FieldSheet covers Sheet: what the vehicle is, told by the details' response.
+	FieldSheet
 
 	fieldCount = iota
 )
@@ -191,6 +193,10 @@ type Snapshot struct {
 	OutsideTempC Value[float64]
 	CabinTempC   Value[float64]
 	Climate      Value[Climate]
+
+	// Sheet is what the vehicle is beyond its model: its colour, its specifications, its
+	// picture, the name its owner gave it; absent when the source tells none of it.
+	Sheet Value[Sheet]
 }
 
 // Climate is what of the vehicle's climate runs. Each is absent when the source does not
@@ -203,6 +209,60 @@ type Climate struct {
 	Preconditioning Value[bool]
 	// BatteryHeater is the battery being heated.
 	BatteryHeater Value[bool]
+}
+
+// Gearbox is the vehicle's transmission.
+type Gearbox string
+
+// Gearboxes.
+const (
+	Automatic Gearbox = "automatic"
+	Manual    Gearbox = "manual"
+)
+
+// Drive is which wheels the motors or the engine drive.
+type Drive string
+
+// Drives.
+const (
+	FrontWheelDrive Drive = "fwd"
+	RearWheelDrive  Drive = "rwd"
+	AllWheelDrive   Drive = "awd"
+)
+
+// Steering is the side of the steering wheel.
+type Steering string
+
+// Steering sides.
+const (
+	LeftHand  Steering = "left"
+	RightHand Steering = "right"
+)
+
+// Sheet is what a source tells of the vehicle itself, values that hardly ever change. A
+// zero value is one it does not tell.
+type Sheet struct {
+	// Name is the one the owner gave the vehicle in its vendor's app (Tesla's).
+	Name string
+	// Colour is the exterior's, RoofColour the roof's when it differs, Wheels the rims',
+	// Upholstery the seats'; as the vendor names them, often a code.
+	Colour, RoofColour, Wheels, Upholstery string
+	Gearbox                                Gearbox
+	Drive                                  Drive
+	Steering                               Steering
+	// PowerKW is the maximum power of the motors, or of the engine and motors.
+	PowerKW float64
+	// EngineCC is the combustion engine's displacement, in cm³.
+	EngineCC int
+	// GrossWeightKg is the maximum the vehicle may weigh, loaded.
+	GrossWeightKg int
+	Seats         int
+	// ThirdRow is a third row of seats; Performance a performance package.
+	ThirdRow, Performance bool
+	// FirstRegistration is the day of the first registration, YYYY-MM-DD.
+	FirstRegistration string
+	// Picture is the URL of the vendor's picture of the vehicle, from the outside.
+	Picture string
 }
 
 // UpdateStatus is where an update of the vehicle's software stands.
@@ -299,6 +359,9 @@ func (s *Snapshot) merge(o Snapshot) {
 	}
 	if set(FieldClimate) {
 		s.OutsideTempC, s.CabinTempC, s.Climate = o.OutsideTempC, o.CabinTempC, o.Climate
+	}
+	if set(FieldSheet) {
+		s.Sheet = o.Sheet
 	}
 }
 

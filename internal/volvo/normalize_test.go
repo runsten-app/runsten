@@ -43,11 +43,20 @@ func TestNormalizeFixtures(t *testing.T) {
 		// The Demo car, a diesel V60 II: its capacity is read, but it is no battery
 		// electric vehicle, which keeps its variant from being recognized.
 		{Details, "cv-vehicle.json", core.Snapshot{
-			Covers:      core.FieldCapacity | core.FieldModel,
+			Covers:      core.FieldCapacity | core.FieldModel | core.FieldSheet,
 			CapacityKWh: core.Some(78.0, time.Time{}),
 			Family:      core.Some("V60 II", time.Time{}),
 			ModelYear:   core.Some(2019, time.Time{}),
 			Powertrain:  core.Some(core.OtherPowertrain, time.Time{}),
+			// The demo car's response had no specifications: theirs are a real V60 Cross
+			// Country's, of the same year and engine, but its displacement, which the
+			// simulator's electric cars do not tell (TestShapeMatchesRealAPI).
+			Sheet: core.Some(core.Sheet{
+				Colour: "SAVILE GREY", Upholstery: "CHARCOAL/LEAC/CHARC", Gearbox: core.Automatic,
+				Drive: core.AllWheelDrive, Steering: core.LeftHand, PowerKW: 140, GrossWeightKg: 2400,
+				Seats: 5, FirstRegistration: "2019-05-21",
+				Picture: "https://cas.volvocars.com/image/vbsnext-v4/exterior/MY19_1817/225/A8/13/49200/R131/_/TP02/_/_/TM02/JT02_f13/SR02/_/_/JB0C/T206/default.png?market=us&client=connected-vehicle-api&w=1920&bg=00000000&angle=0&fallback",
+			}, time.Time{}),
 		}},
 		{EnergyState, "energy-v2-state.json", core.Snapshot{
 			Covers: core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
@@ -130,7 +139,7 @@ func TestNormalizeAbsences(t *testing.T) {
 			"no coordinates", Location, `{"data":{"geometry":{"coordinates":[null,45]},"properties":{}}}`,
 			core.Snapshot{Covers: core.FieldPosition},
 		},
-		{"no details", Details, `{"data":{"batteryCapacityKWH":null}}`, core.Snapshot{Covers: core.FieldCapacity | core.FieldModel}},
+		{"no details", Details, `{"data":{"batteryCapacityKWH":null}}`, core.Snapshot{Covers: core.FieldCapacity | core.FieldModel | core.FieldSheet}},
 		{
 			"kW", EnergyState, `{"chargingPower":{"status":"OK","value":7.4,"unit":"kW","updatedAt":"x"}}`,
 			core.Snapshot{
@@ -191,6 +200,28 @@ func TestNormalizeDetails(t *testing.T) {
 		{"unreadable", `"modelYear":"2024","fuelType":1,"descriptions":{"model":40}`, core.Snapshot{}},
 		{"invalid year", `"modelYear":0`, core.Snapshot{}},
 		{"fractional year", `"modelYear":2024.5`, core.Snapshot{}},
+		{
+			"sheet", `"externalColour":" Powder Blue ","gearbox":"AUTOMATIC","descriptions":{"steering":"LEFT","upholstery":"R310"},
+			"specifications":{"driveType":"RWD","enginePowerKw":200.0,"grossWeightKg":2210,"numberOfSeats":5,
+			"firstRegistrationDate":"2025-12-10T00:00:00"},"images":{"exteriorImageUrl":"https://wizz.volvocars.com/x.png"}`,
+			core.Snapshot{Sheet: core.Some(core.Sheet{
+				Colour: "Powder Blue", Upholstery: "R310", Gearbox: core.Automatic, Drive: core.RearWheelDrive,
+				Steering: core.LeftHand, PowerKW: 200, GrossWeightKg: 2210, Seats: 5, FirstRegistration: "2025-12-10",
+				Picture: "https://wizz.volvocars.com/x.png",
+			}, none)},
+		},
+		{"an engine", `"specifications":{"driveType":"FWD","enginePowerKw":251.0,"engineCapacityCc":1969}`, core.Snapshot{
+			Sheet: core.Some(core.Sheet{Drive: core.FrontWheelDrive, PowerKW: 251, EngineCC: 1969}, none),
+		}},
+		{"a date alone", `"specifications":{"firstRegistrationDate":"2021-01-05"}`, core.Snapshot{
+			Sheet: core.Some(core.Sheet{FirstRegistration: "2021-01-05"}, none),
+		}},
+		{
+			"unknown words and values", `"gearbox":"CVT","descriptions":{"steering":"CENTRE"},"specifications":{"driveType":"4WD",
+			"enginePowerKw":0,"grossWeightKg":-1,"numberOfSeats":4.5,"engineCapacityCc":"1969","firstRegistrationDate":"05/01/2021"}`,
+			core.Snapshot{},
+		},
+		{"no specifications", `"specifications":null,"images":null,"externalColour":""`, core.Snapshot{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -198,7 +229,7 @@ func TestNormalizeDetails(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			tt.want.Covers = core.FieldCapacity | core.FieldModel
+			tt.want.Covers = core.FieldCapacity | core.FieldModel | core.FieldSheet
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("got  %+v\nwant %+v", got, tt.want)
 			}

@@ -1,10 +1,12 @@
 import type { Vehicle } from './Vehicle'
 
-type Labelled = Pick<Vehicle, 'id' | 'vin' | 'model'>
+type Labelled = Pick<Vehicle, 'id' | 'vin' | 'model' | 'sheet'>
 
-// vehicleLabel names a vehicle as its driver knows it: its recognized variant, else its
-// family, with the model year when known; the VIN until the details are read.
-export function vehicleLabel(v: Pick<Vehicle, 'vin' | 'model'>): string {
+// vehicleLabel names a vehicle as its driver knows it: the name they gave it in its
+// vendor's app (a Tesla's), else its recognized variant, else its family, with the model
+// year when known; the VIN until the details are read.
+export function vehicleLabel(v: Pick<Vehicle, 'vin' | 'model' | 'sheet'>): string {
+  if (v.sheet?.name) return v.sheet.name
   const name = v.model.variant?.name ?? v.model.family
   if (name === null) return v.vin
   return v.model.model_year === null ? name : `${name} · ${v.model.model_year}`

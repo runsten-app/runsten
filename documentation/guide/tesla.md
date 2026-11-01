@@ -73,6 +73,10 @@ The Owner API gives the car's model (Model 3, Model Y, Model S, Model X), its tr
 - Often several fit: Tesla changed packs within a year (LG or Panasonic cells, CATL or BYD), and the 2024 Model 3 and 2025 Model Y report badges not known yet. In the vehicle's settings (the menu of its name in the bar), choose yours: without a variant, the trips have no energy, and the charges only the one the car measured.
 - The Model S and Model X, and the North American variants, are not in the catalogue yet.
 
+## Its name
+
+Runsten calls the car by the name you gave it in Tesla's app, in the menu and in [Home Assistant](./mqtt.md), rather than by its model. Its [sheet](./vehicle-models.md#its-sheet), in the vehicle's settings, tells its colour, its wheels and its roof as Tesla names them.
+
 ## When it is not read
 
 The vehicle's pages warn when nothing new is read of it; the Connection page says why:

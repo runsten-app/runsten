@@ -24,6 +24,7 @@ import {
   type Mode,
   type Reading,
   type Sleep,
+  VehiclePicture,
 } from '@/entities/vehicle'
 import { useChargeInProgress } from '@/features/browse-charges'
 import { useVehicle } from '@/features/select-vehicle'
@@ -499,6 +500,8 @@ const update = computed(() => {
         <v-card class="tile h-100">
           <v-card-title tag="h2">{{ t('state.vehicle') }}</v-card-title>
           <v-card-text class="tile-body">
+            <!-- The vendor's picture, when it gives one (a Volvo's). -->
+            <VehiclePicture v-if="current" :vehicle="current" size="large" class="mb-2" />
             <dl class="fields">
               <ReadingItem
                 :label="t('state.odometer')"

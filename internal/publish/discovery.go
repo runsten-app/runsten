@@ -22,6 +22,9 @@ import (
 // Model is what a vehicle is taken to be, for its device: the variant in effect from
 // the catalog, else the family the vendor reports. Empty fields are unknown.
 type Model struct {
+	// Name is the one its owner gave the vehicle in its vendor's app (Tesla's): it names
+	// the device alone.
+	Name    string
 	Variant string // the variant's name
 	Family  string
 	Brand   string // as written: Volvo, Polestar
@@ -35,7 +38,8 @@ type Model struct {
 const idDigits = 6
 
 // Labels names the vehicles of an account, by ID, as the web interface does, but never
-// by their VIN: the variant, else the family, with the model year; before the details
+// by their VIN: the name its owner gave it, else the variant or the family, with the
+// model year; before the details
 // are read, Volvo and the first characters of its ID. Two that read alike end with the
 // first characters of their ID.
 func Labels(models map[string]Model) map[string]string {
@@ -55,6 +59,9 @@ func Labels(models map[string]Model) map[string]string {
 }
 
 func label(id string, m Model) string {
+	if m.Name != "" {
+		return m.Name
+	}
 	name := m.name()
 	if name == "" {
 		return "Volvo " + short(id)

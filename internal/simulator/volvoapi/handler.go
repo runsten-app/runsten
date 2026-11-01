@@ -4,6 +4,7 @@
 package volvoapi
 
 import (
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -139,18 +140,29 @@ func (h *Handler) vehicles(w http.ResponseWriter, _ *http.Request) {
 
 func renderDetails(vin string, r vehicle.Report) any {
 	fuel := "ELECTRIC"
+	// The specifications of a real EX30 of a single motor and of a V60 T6 (2026-10).
+	specs := map[string]any{
+		"driveType": "RWD", "enginePowerKw": 200.0, "grossWeightKg": 2210, "numberOfSeats": 5,
+	}
 	if r.Spec.PlugInHybrid {
 		fuel = "PETROL/ELECTRIC" // as two real V60s
+		specs = map[string]any{
+			"driveType": "FWD", "enginePowerKw": 251.0, "grossWeightKg": 2550, "numberOfSeats": 5, "engineCapacityCc": 1969,
+		}
 	}
+	// Registered in the September before its model year, as most are.
+	specs["firstRegistrationDate"] = fmt.Sprintf("%04d-09-15T00:00:00", r.Spec.ModelYear-1)
 	return map[string]any{
 		"vin":                vin,
 		"modelYear":          r.Spec.ModelYear,
 		"gearbox":            "AUTOMATIC",
 		"fuelType":           fuel,
-		"externalColour":     "SIMULATED",
+		"externalColour":     "Vapour Grey",
 		"batteryCapacityKWH": r.Spec.BatteryKWh,
-		"images":             map[string]string{"exteriorImageUrl": "", "internalImageUrl": ""},
-		"descriptions":       map[string]string{"model": r.Spec.Model, "steering": "LEFT", "upholstery": "SIMULATED"},
+		"specifications":     specs,
+		// No picture: the real ones are on Volvo's CDN, which the simulator does not stand in for.
+		"images":       map[string]string{"exteriorImageUrl": "", "internalImageUrl": ""},
+		"descriptions": map[string]string{"model": r.Spec.Model, "steering": "LEFT", "upholstery": "R310"},
 	}
 }
 

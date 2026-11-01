@@ -315,8 +315,15 @@ func normalizeDetails(raw []byte, s *core.Snapshot) error {
 	if err := json.Unmarshal(raw, &v); err != nil {
 		return err //nolint:wrapcheck // wrapped by Normalize
 	}
+	sheet, err := detailsSheet(raw)
+	if err != nil {
+		return err
+	}
 	// No timestamp on vehicle details.
-	s.Covers = core.FieldCapacity | core.FieldModel
+	s.Covers = core.FieldCapacity | core.FieldModel | core.FieldSheet
+	if sheet != (core.Sheet{}) {
+		s.Sheet = core.Some(sheet, time.Time{})
+	}
 	if n, ok := number(v.Data.BatteryCapacityKWH); ok && n > 0 {
 		s.CapacityKWh = core.Some(n, time.Time{})
 	}
@@ -330,6 +337,96 @@ func normalizeDetails(raw []byte, s *core.Snapshot) error {
 		s.Powertrain = core.Some(powertrain(f), time.Time{})
 	}
 	return nil
+}
+
+// The words of the details' sheet; any other is left out.
+var (
+	gearboxes = map[string]core.Gearbox{"AUTOMATIC": core.Automatic, "MANUAL": core.Manual}
+	drives    = map[string]core.Drive{
+		"FWD": core.FrontWheelDrive, "RWD": core.RearWheelDrive, "AWD": core.AllWheelDrive,
+	}
+	steerings = map[string]core.Steering{"LEFT": core.LeftHand, "RIGHT": core.RightHand}
+)
+
+// detailsSheet reads what the details tell of the vehicle beyond its model. Observed on
+// the vehicles of 2026-10: driveType FWD, RWD or AWD; firstRegistrationDate a local
+// date-time without a zone (2025-12-10T00:00:00), its day taken; engineCapacityCc only
+// for an engine; specifications missing altogether on some vehicles. MANUAL and RIGHT
+// are assumptions, never seen.
+func detailsSheet(raw []byte) (core.Sheet, error) {
+	var v struct {
+		Data struct {
+			ExternalColour json.RawMessage `json:"externalColour"`
+			Gearbox        json.RawMessage `json:"gearbox"`
+			Descriptions   struct {
+				Steering   json.RawMessage `json:"steering"`
+				Upholstery json.RawMessage `json:"upholstery"`
+			} `json:"descriptions"`
+			Specifications struct {
+				DriveType             json.RawMessage `json:"driveType"`
+				EnginePowerKw         json.RawMessage `json:"enginePowerKw"`
+				EngineCapacityCc      json.RawMessage `json:"engineCapacityCc"`
+				FirstRegistrationDate json.RawMessage `json:"firstRegistrationDate"`
+				GrossWeightKg         json.RawMessage `json:"grossWeightKg"`
+				NumberOfSeats         json.RawMessage `json:"numberOfSeats"`
+			} `json:"specifications"`
+			Images struct {
+				Exterior json.RawMessage `json:"exteriorImageUrl"`
+			} `json:"images"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return core.Sheet{}, err //nolint:wrapcheck // wrapped by Normalize
+	}
+	d, spec := v.Data, v.Data.Specifications
+	str := func(raw json.RawMessage) string {
+		t, _ := text(raw)
+		return strings.TrimSpace(t)
+	}
+	sheet := core.Sheet{
+		Colour:        str(d.ExternalColour),
+		Upholstery:    str(d.Descriptions.Upholstery),
+		Gearbox:       word(d.Gearbox, gearboxes),
+		Drive:         word(spec.DriveType, drives),
+		Steering:      word(d.Descriptions.Steering, steerings),
+		PowerKW:       positive(spec.EnginePowerKw),
+		EngineCC:      whole(spec.EngineCapacityCc),
+		GrossWeightKg: whole(spec.GrossWeightKg),
+		Seats:         whole(spec.NumberOfSeats),
+		Picture:       str(d.Images.Exterior),
+	}
+	if t, err := time.Parse("2006-01-02", firstN(str(spec.FirstRegistrationDate), len("2006-01-02"))); err == nil {
+		sheet.FirstRegistration = t.Format(time.DateOnly)
+	}
+	return sheet, nil
+}
+
+func word[T ~string](raw json.RawMessage, words map[string]T) T {
+	t, _ := text(raw)
+	return words[t]
+}
+
+// positive reads a number above zero; 0 otherwise.
+func positive(raw json.RawMessage) float64 {
+	if n, ok := number(raw); ok && n > 0 {
+		return n
+	}
+	return 0
+}
+
+// whole reads a whole number above zero; 0 otherwise.
+func whole(raw json.RawMessage) int {
+	if n := positive(raw); n == math.Trunc(n) && n < math.MaxInt32 {
+		return int(n)
+	}
+	return 0
+}
+
+func firstN(s string, n int) string {
+	if len(s) < n {
+		return s
+	}
+	return s[:n]
 }
 
 // powertrain reads fuelType. The EX30 reports NONE, as if it had no fuel. A plug-in

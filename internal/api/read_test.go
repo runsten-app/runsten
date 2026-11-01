@@ -537,9 +537,11 @@ func fixtures(m *memReader) {
 		{FetchedAt: h(17, 30), CheckedAt: h(18, 30), Snapshot: core.Snapshot{Covers: core.FieldPosition, Position: core.Some(home, h(17, 25))}},
 		// Details come without a vehicle timestamp: an XC40 of 2021, whose capacity
 		// recognizes its variant.
-		{FetchedAt: h(5, 0), CheckedAt: h(5, 0), Snapshot: details("XC40", 2021, 78.012, true)},
+		{FetchedAt: h(5, 0), CheckedAt: h(5, 0), Snapshot: withSheet(details("XC40", 2021, 78.012, true), xc40Sheet)},
 	}
-	m.current[chosen] = []core.Record{{FetchedAt: h(5, 0), CheckedAt: h(5, 0), Snapshot: details("EX30", 2024, 69.0, true)}}
+	// Its picture on a host the relay does not serve: none given.
+	ex30 := withSheet(details("EX30", 2024, 69.0, true), core.Sheet{Colour: "Moss Yellow", Picture: "https://example.com/ex30.png"})
+	m.current[chosen] = []core.Record{{FetchedAt: h(5, 0), CheckedAt: h(5, 0), Snapshot: ex30}}
 	m.current[shared] = []core.Record{{FetchedAt: h(5, 0), CheckedAt: h(5, 0), Snapshot: polestarDetails(2024)}}
 }
 
@@ -554,6 +556,21 @@ func details(family string, year int, kwh float64, electric bool) core.Snapshot 
 		Covers: core.FieldCapacity | core.FieldModel, CapacityKWh: some(kwh),
 		Family: some(family), ModelYear: some(year), Powertrain: some(pt),
 	}
+}
+
+// xc40Sheet is what a Volvo's details tell of it, as an XC40 of 2024 in production.
+var xc40Sheet = core.Sheet{
+	Colour: "Jupiter", Gearbox: core.Automatic, Drive: core.RearWheelDrive, Steering: core.LeftHand, PowerKW: 185,
+	GrossWeightKg: 2520, Seats: 5, FirstRegistration: "2021-03-15", Picture: xc40Picture,
+}
+
+const xc40Picture = "https://cas.volvocars.com/image/dynamic/MY21_2017/x.png?market=se&w=1920"
+
+// withSheet adds a sheet to details.
+func withSheet(s core.Snapshot, sh core.Sheet) core.Snapshot {
+	s.Covers |= core.FieldSheet
+	s.Sheet = some(sh)
+	return s
 }
 
 // polestarDetails is what the Data Portal tells of a Polestar's model, from its VIN: the
@@ -617,7 +634,7 @@ func TestVehiclesJSON(t *testing.T) {
 	// No vehicle yet: an empty list, not null.
 	_, body = get(t, noFollow(), e.api.URL+"/api/v1/vehicles", e.session(t, "other"))
 	if body != `{"items":[{"id":"`+foreign+`","vin":"YV1SMLT0000DT0003",`+
-		`"model":{"family":null,"model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null,"powertrain":null},"connection":{"provider":"volvo","status":"active","api_key":"instance","credential":null,"authorized_at":null,"refreshed_at":null,"reauth_at":null,"reauth_reason":null},`+
+		`"model":{"family":null,"model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null,"powertrain":null},"sheet":null,"connection":{"provider":"volvo","status":"active","api_key":"instance","credential":null,"authorized_at":null,"refreshed_at":null,"reauth_at":null,"reauth_reason":null},`+
 		`"market_refused_at":null,"unshared_at":null,"collection":null}]}`+"\n" {
 		t.Errorf("other account: %s", body)
 	}

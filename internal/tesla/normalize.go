@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 
 	"runsten/internal/core"
 )
@@ -110,6 +111,8 @@ type vehicleState struct {
 	// The software's version, then its build hash: 2025.32.3 abcdef123456.
 	CarVersion     *string         `json:"car_version"`
 	SoftwareUpdate *softwareUpdate `json:"software_update"`
+	// The name the owner gave the car in Tesla's app.
+	VehicleName *string `json:"vehicle_name"`
 
 	PressureFL *float64 `json:"tpms_pressure_fl"` // bar
 	PressureFR *float64 `json:"tpms_pressure_fr"`
@@ -146,8 +149,18 @@ type softwareUpdate struct {
 }
 
 type vehicleConfig struct {
+	Timestamp   *int64  `json:"timestamp"`
 	CarType     *string `json:"car_type"`
 	TrimBadging *string `json:"trim_badging"`
+
+	// The sheet's: DeepBlue, HelixV220Dark, RoofColorGlass, Base, None, as read on a
+	// Model Y.
+	ExteriorColor      *string `json:"exterior_color"`
+	WheelType          *string `json:"wheel_type"`
+	RoofColor          *string `json:"roof_color"`
+	RHD                *bool   `json:"rhd"`
+	PerformancePackage *string `json:"performance_package"`
+	ThirdRowSeats      *string `json:"third_row_seats"`
 }
 
 func parseVehicleData(raw []byte) (vehicleData, error) {
@@ -212,8 +225,65 @@ func Normalize(e Endpoint, raw []byte) (core.Snapshot, error) {
 	}
 	if r.VehicleConfig != nil {
 		model(r.VIN, r.VehicleConfig, &s)
+		sheet(r.VehicleConfig, r.VehicleState, &s)
 	}
 	return s, nil
+}
+
+// sheet reads what the car is from its configuration, and the name its owner gave it from
+// its state, dated by the configuration. Tesla's words for none (None, an empty string,
+// <invalid>) are absent. Assumption: a performance package other than Base is one, and
+// a third row other than None is one; only Base and None were read.
+func sheet(c *vehicleConfig, vs *vehicleState, s *core.Snapshot) {
+	s.Covers |= core.FieldSheet
+	word := func(p *string) string {
+		if p == nil {
+			return ""
+		}
+		switch w := strings.TrimSpace(*p); w {
+		case "None", "<invalid>":
+			return ""
+		default:
+			return w
+		}
+	}
+	sh := core.Sheet{
+		Colour:      spaced(word(c.ExteriorColor)),
+		RoofColour:  spaced(word(c.RoofColor)),
+		Wheels:      word(c.WheelType),
+		Performance: word(c.PerformancePackage) != "" && word(c.PerformancePackage) != "Base",
+		ThirdRow:    word(c.ThirdRowSeats) != "",
+	}
+	// RoofColorGlass: the colour without its prefix.
+	if r, ok := strings.CutPrefix(sh.RoofColour, "Roof Color "); ok {
+		sh.RoofColour = r
+	}
+	if c.RHD != nil {
+		sh.Steering = core.LeftHand
+		if *c.RHD {
+			sh.Steering = core.RightHand
+		}
+	}
+	if vs != nil {
+		sh.Name = word(vs.VehicleName)
+	}
+	if sh != (core.Sheet{}) {
+		s.Sheet = core.Some(sh, millis(c.Timestamp))
+	}
+}
+
+// spaced writes Tesla's camel case in words: DeepBlue is Deep Blue.
+func spaced(w string) string {
+	var b strings.Builder
+	prev := ' '
+	for _, r := range w {
+		if unicode.IsUpper(r) && !unicode.IsUpper(prev) && prev != ' ' {
+			b.WriteByte(' ')
+		}
+		b.WriteRune(r)
+		prev = r
+	}
+	return b.String()
 }
 
 // millis returns the instant of a block's timestamp; zero if missing.

@@ -16,8 +16,11 @@ const unknown: Model = {
 const ex30: Model = { ...unknown, family: 'EX30', model_year: 2024 }
 
 function car(id: string, vin: string, model: Model) {
-  return { id, vin, model }
+  return { id, vin, model, sheet: null }
 }
+
+// sheet is a Volvo's, which tells no name.
+const named = (vehicles.items[0] as Vehicle).sheet
 
 describe('vehicleLabel', () => {
   it.each<[string, Model, string]>([
@@ -26,7 +29,16 @@ describe('vehicleLabel', () => {
     ['the family alone', { ...ex30, model_year: null }, 'EX30'],
     ['the VIN before the details are read', reauth.model as Model, 'YV1SMLT0000DT0002'],
   ])('names %s', (_, model, want) => {
-    expect(vehicleLabel({ vin: 'YV1SMLT0000DT0002', model })).toBe(want)
+    expect(vehicleLabel({ vin: 'YV1SMLT0000DT0002', model, sheet: null })).toBe(want)
+  })
+
+  it('names a vehicle by the name its owner gave it, over its model', () => {
+    const sheet = named && { ...named, name: 'Blixt' }
+    expect(vehicleLabel({ vin: 'LRWYGCEK1MC000001', model: ex30, sheet })).toBe('Blixt')
+    // A sheet without a name changes nothing.
+    expect(vehicleLabel({ vin: 'LRWYGCEK1MC000001', model: ex30, sheet: named })).toBe(
+      'EX30 · 2024',
+    )
   })
 })
 
@@ -40,6 +52,15 @@ describe('vehicleLabels', () => {
       'YV1SMLT0000DT0005', // its market not served: never read
       'Polestar 2 Long Range Dual Motor / Performance · 2024', // a Polestar: the family of the variant chosen
     ])
+  })
+
+  it('ends two vehicles named alike with their serial number', () => {
+    const sheet = named && { ...named, name: 'Blixt' }
+    const labels = vehicleLabels([
+      { ...car('a', 'LRWYGCEK1MC000001', ex30), sheet },
+      { ...car('b', 'LRWYGCEK1MC000002', ex30), sheet },
+    ])
+    expect(Object.fromEntries(labels)).toEqual({ a: 'Blixt · 000001', b: 'Blixt · 000002' })
   })
 
   it('ends two alike labels with their serial number', () => {
