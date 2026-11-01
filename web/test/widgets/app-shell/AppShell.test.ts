@@ -1,6 +1,6 @@
 import { enableAutoUnmount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { h } from 'vue'
+import { h, ref } from 'vue'
 import { AppShell } from '@/widgets/app-shell'
 import health from '@fixtures/health.json'
 import unknown from '@fixtures/health-unknown.json'
@@ -30,10 +30,15 @@ vi.mock('@/entities/connection', async (original) => ({
 }))
 
 // The extensions' notices and menu items: none in the public build, some in a test.
-const { notices, items } = vi.hoisted(() => ({ notices: [] as unknown[], items: [] as unknown[] }))
+const { notices, items, attentions } = vi.hoisted(() => ({
+  notices: [] as unknown[],
+  items: [] as unknown[],
+  attentions: [] as unknown[],
+}))
 vi.mock('@/widgets/app-shell/extensions', () => ({
   extensionNotices: notices,
   extensionMenuItems: items,
+  extensionAttention: attentions,
 }))
 
 const display = vi.hoisted(() => ({ xs: false }))
@@ -49,6 +54,7 @@ enableAutoUnmount(afterEach)
 beforeEach(() => {
   notices.length = 0
   items.length = 0
+  attentions.length = 0
   display.xs = false
   fetchVehicle.mockReset()
   fetchVehicle.mockResolvedValue(vehicles.items[0])
@@ -163,6 +169,27 @@ describe('AppShell', () => {
     // Each in a listitem of its own, as the menu's rows.
     expect(link?.parentElement?.getAttribute('role')).toBe('listitem')
     expect(link?.parentElement?.previousElementSibling?.querySelector('.connection')).not.toBeNull()
+  })
+
+  it('puts a dot on the menu when an extension asks, not on the connection', async () => {
+    fetchVehicles.mockResolvedValue([vehicles.items[2]])
+    attentions.push(
+      () => ref(undefined),
+      () => ref('Something new'),
+    )
+    const { wrapper } = await shell({}, '/', 'connection')
+    const description = wrapper.find('button.user-menu').attributes('aria-describedby')
+    expect(document.getElementById(String(description))?.textContent).toBe('Something new')
+    expect(document.querySelector('a.connection .attention-dot')).toBeNull()
+  })
+
+  it("tells the connection's attention before an extension's", async () => {
+    attentions.push(() => ref('Something new'))
+    const { wrapper } = await shell({}, '/', 'connection')
+    const description = wrapper.find('button.user-menu').attributes('aria-describedby')
+    expect(document.getElementById(String(description))?.textContent).toBe(
+      'The connection needs your attention',
+    )
   })
 
   // The pages under a vehicle rely on the bar to name it, the account's keep it.

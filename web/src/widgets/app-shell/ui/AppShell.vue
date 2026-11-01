@@ -28,7 +28,7 @@ import { useLimits } from '@/features/view-limits'
 import { CollectionNotice, useCollections } from '@/features/watch-collection'
 import { useNow } from '@/shared/lib'
 import { AttentionDot } from '@/shared/ui'
-import { extensionMenuItems, extensionNotices } from '../extensions'
+import { extensionAttention, extensionMenuItems, extensionNotices } from '../extensions'
 
 // With a vehicle, the bar leads to its state (Verdandi) and its health, its battery's
 // included, its trips and its charges (Urd), and their statistics. Tabs on every screen: a single navigation stays at
@@ -91,13 +91,18 @@ const shown = computed(() => {
 const { connection: connectionSettings } = useConnectionSettings()
 // A vehicle the offer leaves unread is no failure: its notice tells it, on its pages.
 const now = useNow()
-const attention = computed(() =>
+const connectionAttention = computed(() =>
   vehicles.value?.some((v) => {
     const s = collectionState(v, now.value, unread(v.id))
     return s.kind !== 'unread' && needsAttention(s)
   }) || renewalDue(connectionSettings.value?.polestar, now.value)
     ? t('connection.attention')
     : undefined,
+)
+// The menu's dot tells the connection first, else the first extension that asks.
+const extensionAttentions = extensionAttention.map((use) => use())
+const attention = computed(
+  () => connectionAttention.value ?? extensionAttentions.find((a) => a.value)?.value,
 )
 // The health is read on a vehicle's pages only: beyond them, the tabs are not shown.
 const { health } = useHealth(
@@ -183,8 +188,8 @@ const helpKey = '?'
             :title="t('connection.open')"
             class="connection"
           >
-            <template v-if="attention" #append>
-              <AttentionDot :label="attention" />
+            <template v-if="connectionAttention" #append>
+              <AttentionDot :label="connectionAttention" />
             </template>
           </v-list-item>
         </div>
