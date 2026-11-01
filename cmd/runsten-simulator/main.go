@@ -3,7 +3,10 @@
 // brand polestar, with the credential polestarapi.DevCredential), Tesla's Owner API
 // (under teslaapi.APIPrefix, its token under teslaapi.AuthPrefix and its faults under
 // teslaapi.ControlPrefix, for the scenarios of brand tesla, with the refresh token
-// teslaapi.DevRefreshToken), and Aximote's public
+// teslaapi.DevRefreshToken), the Polestar app's API read with the Polestar ID (under
+// polestaridapi.Prefix, its faults under polestaridapi.ControlPrefix, for the scenarios of
+// brand polestar with source polestar_id, signed in as polestaridapi.DevEmail), and
+// Aximote's public
 // API for the imports (/api/public/v1/, its token
 // aximoteapi.DevToken): an electric car with the first scenario's VIN, whose history
 // ends a month before the simulator started.
@@ -43,6 +46,8 @@
 //	SIM_TESLA_SLEEP_AFTER   how long a Tesla neither driving, charging nor read falls asleep
 //	                        after its last activity (default 10m, 0 = never)
 //	SIM_TESLA_TOKEN_TTL     lifetime of the Tesla access tokens issued (default 8h)
+//	SIM_POLESTAR_ID_TOKEN_TTL  lifetime of the Polestar ID's access tokens issued (default
+//	                        300s, the real one's)
 //	SIM_LOG_LEVEL           debug, info, warn, error (default info)
 //
 // SIM_DAILY_QUOTA and SIM_RATE_PER_MINUTE also set the Polestar credential's limits.
@@ -79,6 +84,7 @@ import (
 	"runsten/internal/simulator/control"
 	"runsten/internal/simulator/pgledger"
 	"runsten/internal/simulator/polestarapi"
+	"runsten/internal/simulator/polestaridapi"
 	"runsten/internal/simulator/scenario"
 	"runsten/internal/simulator/teslaapi"
 	"runsten/internal/simulator/vehicle"
@@ -105,6 +111,7 @@ type config struct {
 	polestarCredTTL  time.Duration
 	polestarBehavior polestarapi.Behavior
 	tesla            teslaapi.Behavior
+	polestarID       polestaridapi.Behavior
 }
 
 func main() {
@@ -126,16 +133,19 @@ func run() error {
 		return err
 	}
 	var (
-		srcs     []volvoapi.Source
-		polestar []polestarapi.Source
-		tesla    []teslaapi.Source
+		srcs       []volvoapi.Source
+		polestar   []polestarapi.Source
+		polestarID []polestaridapi.Source
+		tesla      []teslaapi.Source
 	)
 	vins := make([]string, 0, len(scs))
 	for _, sim := range fleet.Simulations() {
-		switch sim.Brand() {
-		case scenario.BrandPolestar:
+		switch {
+		case sim.Brand() == scenario.BrandPolestar && sim.Source() == scenario.SourcePolestarID:
+			polestarID = append(polestarID, sim)
+		case sim.Brand() == scenario.BrandPolestar:
 			polestar = append(polestar, sim)
-		case scenario.BrandTesla:
+		case sim.Brand() == scenario.BrandTesla:
 			tesla = append(tesla, sim)
 		default:
 			srcs = append(srcs, sim)
@@ -170,6 +180,10 @@ func run() error {
 	for _, prefix := range []string{teslaapi.APIPrefix, teslaapi.AuthPrefix, teslaapi.ControlPrefix} {
 		mux.Handle(prefix, th)
 	}
+	pid := polestaridapi.NewHandler(polestarID, clk, cfg.polestarID)
+	for _, prefix := range []string{polestaridapi.Prefix, polestaridapi.ControlPrefix} {
+		mux.Handle(prefix, pid)
+	}
 	mux.Handle("/", volvoapi.NewHandler(srcs, clk, limits, faults, auth))
 
 	log.Info("simulation ready", "vins", vins, "start", fleet.Start(), "speed", cfg.speed,
@@ -180,7 +194,8 @@ func run() error {
 		"grants_kept", auth.Ledger != nil, "grants_restored", len(auth.Issued.Grants),
 		"polestar_vehicles", len(polestar), "polestar_client_id", cfg.polestar.ClientID,
 		"polestar_credential_ttl", psLimits.CredentialTTL.String(), "polestar_parked_upload", cfg.polestarBehavior.ParkedUpload.String(),
-		"tesla_vehicles", len(tesla), "tesla_sleep_after", cfg.tesla.SleepAfter.String(), "tesla_token_ttl", cfg.tesla.TokenTTL.String())
+		"tesla_vehicles", len(tesla), "tesla_sleep_after", cfg.tesla.SleepAfter.String(), "tesla_token_ttl", cfg.tesla.TokenTTL.String(),
+		"polestar_id_vehicles", len(polestarID), "polestar_id_token_ttl", cfg.polestarID.AccessTokenTTL.String())
 
 	if err := httpserver.Run(ctx, httpserver.New(cfg.addr, httpserver.LogRequests(log, mux), log), log); err != nil {
 		return fmt.Errorf("server: %w", err)
@@ -217,6 +232,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		polestar:         polestarapi.DevCredential(),
 		polestarBehavior: polestarapi.DefaultBehavior(),
 		tesla:            teslaapi.DefaultBehavior(),
+		polestarID:       polestaridapi.DefaultBehavior(),
 	}
 	var errs []error
 	if v := getenv("SIM_ADDR"); v != "" {
@@ -326,6 +342,13 @@ func loadConfig(getenv func(string) string) (config, error) {
 			errs = append(errs, fmt.Errorf("SIM_TESLA_TOKEN_TTL %q: duration > 0 expected", v))
 		}
 		cfg.tesla.TokenTTL = d
+	}
+	if v := getenv("SIM_POLESTAR_ID_TOKEN_TTL"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil || d <= 0 {
+			errs = append(errs, fmt.Errorf("SIM_POLESTAR_ID_TOKEN_TTL %q: duration > 0 expected", v))
+		}
+		cfg.polestarID.AccessTokenTTL = d
 	}
 	if v := getenv("SIM_LOG_LEVEL"); v != "" {
 		if err := cfg.logLevel.UnmarshalText([]byte(v)); err != nil {

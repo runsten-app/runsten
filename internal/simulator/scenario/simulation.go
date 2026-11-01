@@ -89,6 +89,10 @@ func (s *Simulation) Brand() string {
 	return s.sc.Brand
 }
 
+// Source returns the API a Polestar is served on: empty for the Data Portal's,
+// SourcePolestarID for the Polestar app's.
+func (s *Simulation) Source() string { return s.sc.Source }
+
 // MarketRefused reports whether the API does not serve the vehicle's market.
 func (s *Simulation) MarketRefused() bool { return s.sc.MarketRefused }
 
