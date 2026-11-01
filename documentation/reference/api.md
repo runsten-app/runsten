@@ -32,6 +32,8 @@ A request body is sent as `application/json`, but the files of an import, as `mu
 | `GET /api/v1/vehicles/{id}/state` | the latest known values: SoC, range, odometer, position, charging, each with when it was read |
 | `GET /api/v1/vehicles/{id}/trips`, `…/charges` | newest first, by pages (`limit`, `cursor`), within a period (`from`, `to`) |
 | `GET /api/v1/vehicles/{id}/trips/{trip}`, `…/charges/{charge}` | one trip or charge |
+| `GET /api/v1/vehicles/{id}/trips.csv`, `…/charges.csv` | the trips or charges of a period (`from`, `to`; the charges of a `place`) as a CSV file, oldest first |
+| `GET /api/v1/vehicles/{id}/readings.csv` | every value the vehicle reported within a period (`from`, `to`, both required, a month at most) as a CSV file, one row per value: `fetched_at`, `source`, `endpoint`, `field`, `value` ([Exporting your data](../guide/exporting.md#every-reading)) |
 | `GET /api/v1/vehicles/{id}/charging` | the charge in progress, `null` when none: what it added so far, its power, its cost so far, and `read_at`, its latest reading; not an event of the list, which has it under the same `id` once over |
 | `GET /api/v1/vehicles/{id}/trips/{trip}/track` | the track of an imported trip, a GeoJSON `LineString`; `404` for a trip without one |
 | `PUT`, `DELETE /api/v1/vehicles/{id}/charges/{charge}/cost` | enter what a charge cost; delete it |
