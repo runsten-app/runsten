@@ -1821,12 +1821,12 @@
     },
     "steps": {
       "title": "Logga in på Polestars sida",
-      "devtools": "Öppna webbläsarens utvecklarverktyg på en dator (F12, eller högerklicka, Inspektera) på fliken Nätverk och kryssa i Bevara logg.",
-      "open": "Öppna Polestars inloggningssida i samma fönster: länken gäller i 10 minuter.",
+      "devtools": "Öppna webbläsarens utvecklarverktyg i den nya fliken innan du loggar in (F12, eller högerklicka, Inspektera) på fliken Nätverk och kryssa i Bevara logg: de registrerar bara fliken de öppnas i.",
+      "open": "Öppna Polestars inloggningssida på en dator: den öppnas i en ny flik, och länken gäller i 10 minuter.",
       "start": "Hämta inloggningslänken",
       "page": "Polestars inloggningssida",
       "signIn": "Logga in med ditt Polestar ID. polestar.com visar sedan en felsida: det är väntat, koden är Runstens.",
-      "copy": "Hitta begäran till sign-in-callback i nätverksloggen och kopiera hela dess adress (https://www.polestar.com/sign-in-callback?code=…), klistra sedan in den nedan."
+      "copy": "Hitta begäran till sign-in-callback i nätverksloggen och kopiera hela dess adress (https://www.polestar.com/sign-in-callback?code=…), klistra sedan in den nedan, tillbaka i den här fliken."
     },
     "callback": "Adressen till sign-in-callback",
     "tokenHelp": "Runsten byter dess kod och sparar bara den refresh token som Polestar ID ger, förseglad. Att logga ut från ditt Polestar ID överallt återkallar den.",

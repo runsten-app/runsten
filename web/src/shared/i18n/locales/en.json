@@ -1821,12 +1821,12 @@
     },
     "steps": {
       "title": "Sign in on Polestar's page",
-      "devtools": "On a computer, open your browser's developer tools (F12, or right-click, Inspect) on the Network tab, and tick Preserve log.",
-      "open": "Open Polestar's sign-in page, in the same window: the link is valid 10 minutes.",
+      "devtools": "In that new tab, before signing in, open the browser's developer tools (F12, or right-click, Inspect) on the Network tab, and tick Preserve log: they only record the tab they are opened in.",
+      "open": "On a computer, open Polestar's sign-in page: it opens in a new tab, and the link is valid 10 minutes.",
       "start": "Get the sign-in link",
       "page": "Polestar's sign-in page",
       "signIn": "Sign in with your Polestar ID. polestar.com then shows an error page: that is expected, the code is Runsten's.",
-      "copy": "In the network log, find the request to sign-in-callback and copy its whole address (https://www.polestar.com/sign-in-callback?code=…), then paste it below."
+      "copy": "In the network log, find the request to sign-in-callback and copy its whole address (https://www.polestar.com/sign-in-callback?code=…), then paste it below, back in this tab."
     },
     "callback": "Address of the sign-in-callback",
     "tokenHelp": "Runsten exchanges its code and keeps only the refresh token the Polestar ID gives, sealed. Signing out of your Polestar ID everywhere revokes it.",

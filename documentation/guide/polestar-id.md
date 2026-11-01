@@ -29,10 +29,12 @@ Runsten reads the car every 5 minutes, every minute while it charges, and makes 
 
 ## Turn it on
 
-On a self-hosted instance, in `.env`:
+On a self-hosted instance, in `.env`, add `source.polestar-id=true` to `RUNSTEN_FLAGS`, beside the flags it may already have, separated by commas:
 
 ```sh
 RUNSTEN_FLAGS=source.polestar-id=true
+# or, with another flag already set:
+RUNSTEN_FLAGS=source.tesla=false,source.polestar-id=true
 ```
 
 then restart the stack (`docker compose up -d`). See [Feature flags](../self-hosting/flags.md). The **Connection** page then shows, in the Polestar tab, a **Polestar ID** section under the Data Portal's.
@@ -45,11 +47,11 @@ On the **Connection** page (in the menu under your name), in the **Polestar** ta
 
 Runsten keeps no password: only the refresh token the sign-in gives. Polestar's sign-in only sends back to polestar.com, not to your instance: you bring the code back by hand.
 
-1. On a computer, open your browser's developer tools (F12, or right-click and **Inspect**) on the **Network** tab, and tick **Preserve log**.
-2. In Runsten, **Get the sign-in link**, then open **Polestar's sign-in page**, in the same window as the developer tools. The link is valid 10 minutes.
+1. On a computer, in Runsten, **Get the sign-in link**, then open **Polestar's sign-in page**: it opens in a new tab. The link is valid 10 minutes.
+2. In that new tab, before signing in, open the browser's developer tools (F12, or right-click and **Inspect**) on the **Network** tab, and tick **Preserve log**: the developer tools only record the tab they are opened in.
 3. Sign in with your Polestar ID. polestar.com then shows an error page: that is expected, the code is Runsten's, not polestar.com's.
 4. In the network log, find the request to `sign-in-callback` (filter on it), and copy its whole address: `https://www.polestar.com/sign-in-callback?code=…&state=…`.
-5. Paste it in Runsten, then **Connect**.
+5. Back in Runsten's tab, paste it, then **Connect**.
 
 A code is used once: should Runsten refuse it, get a new link and sign in again.
 

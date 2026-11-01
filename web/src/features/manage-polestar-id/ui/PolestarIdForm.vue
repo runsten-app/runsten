@@ -342,7 +342,6 @@ const guide = new URL('https://runsten.app/docs/guide/polestar-id')
       <template v-if="mode === 'token'">
         <h3 class="text-title-medium mb-2">{{ t('polestarId.steps.title') }}</h3>
         <ol class="steps text-body-medium mb-4">
-          <li>{{ t('polestarId.steps.devtools') }}</li>
           <li>
             <p class="mb-2">{{ t('polestarId.steps.open') }}</p>
             <a
@@ -370,6 +369,7 @@ const guide = new URL('https://runsten.app/docs/guide/polestar-id')
               {{ signInError }}
             </p>
           </li>
+          <li>{{ t('polestarId.steps.devtools') }}</li>
           <li>{{ t('polestarId.steps.signIn') }}</li>
           <li>{{ t('polestarId.steps.copy') }}</li>
         </ol>

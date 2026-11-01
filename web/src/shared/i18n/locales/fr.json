@@ -1821,12 +1821,12 @@
     },
     "steps": {
       "title": "Se connecter sur la page de Polestar",
-      "devtools": "Sur un ordinateur, ouvrez les outils de développement du navigateur (F12, ou clic droit, Inspecter) sur l'onglet Réseau, et cochez Conserver le journal.",
-      "open": "Ouvrez la page de connexion de Polestar, dans la même fenêtre : le lien vaut 10 minutes.",
+      "devtools": "Dans ce nouvel onglet, avant de vous connecter, ouvrez les outils de développement du navigateur (F12, ou clic droit, Inspecter) sur l'onglet Réseau, et cochez Conserver le journal : ils n'enregistrent que l'onglet où ils sont ouverts.",
+      "open": "Sur un ordinateur, ouvrez la page de connexion de Polestar : elle s'ouvre dans un nouvel onglet, et le lien vaut 10 minutes.",
       "start": "Obtenir le lien de connexion",
       "page": "Page de connexion de Polestar",
       "signIn": "Connectez-vous avec votre Polestar ID. polestar.com affiche ensuite une page d'erreur : c'est normal, le code est celui de Runsten.",
-      "copy": "Dans le journal réseau, trouvez la requête vers sign-in-callback et copiez son adresse entière (https://www.polestar.com/sign-in-callback?code=…), puis collez-la ci-dessous."
+      "copy": "Dans le journal réseau, trouvez la requête vers sign-in-callback et copiez son adresse entière (https://www.polestar.com/sign-in-callback?code=…), puis collez-la ci-dessous, de retour dans cet onglet."
     },
     "callback": "Adresse du sign-in-callback",
     "tokenHelp": "Runsten échange son code et ne garde que le refresh token que donne le Polestar ID, scellé. Se déconnecter de son Polestar ID partout le révoque.",
