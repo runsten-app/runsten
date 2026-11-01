@@ -46,6 +46,12 @@ func TestNormalizeOpenings(t *testing.T) {
 		s.Doors.V.FrontLeft.OK || s.Windows.V.FrontRight.V != core.Open {
 		t.Errorf("right-hand drive: %+v %+v", s.Doors, s.Windows)
 	}
+	// Without rhd, the side of each door and window is unknown: absent; the lock and the
+	// trunks are not a side's.
+	s = read(t, `"locked": true, "df": 1, "ft": 0, "fd_window": 1`, ``)
+	if want := core.Some(core.Doors{Locked: core.Some(true, at), Hood: core.Some(core.Closed, at)}, at); !reflect.DeepEqual(s.Doors, want) || s.Windows.OK {
+		t.Errorf("rhd unknown: %+v %+v", s.Doors, s.Windows)
+	}
 	s = read(t, `"odometer": 1`, ``)
 	if s.Covers&(core.FieldDoors|core.FieldWindows) != core.FieldDoors|core.FieldWindows || s.Doors.OK || s.Windows.OK {
 		t.Errorf("none told: %+v", s)

@@ -463,7 +463,7 @@ func modelYear(vin string) (int, bool) {
 }
 
 // normalizeOpenings reads the locks, the doors and the windows. The driver's side is the
-// left unless the configuration tells a right-hand drive.
+// left, or the right where the configuration tells a right-hand drive.
 func normalizeOpenings(vs *vehicleState, cfg *vehicleConfig, s *core.Snapshot) {
 	at := millis(vs.Timestamp)
 	open := func(v *int) core.Value[core.Opening] {
@@ -481,9 +481,13 @@ func normalizeOpenings(vs *vehicleState, cfg *vehicleConfig, s *core.Snapshot) {
 		}
 		return core.Some(*b, at)
 	}
-	rhd := cfg != nil && cfg.RHD != nil && *cfg.RHD
+	// Without the configuration's rhd, the driver's side is unknown: the doors and windows
+	// of a side are left absent rather than put on the left of a right-hand drive car.
 	sides := func(driver, passenger *int) (left, right core.Value[core.Opening]) {
-		if rhd {
+		switch {
+		case cfg == nil || cfg.RHD == nil:
+			return core.Value[core.Opening]{}, core.Value[core.Opening]{}
+		case *cfg.RHD:
 			return open(passenger), open(driver)
 		}
 		return open(driver), open(passenger)
