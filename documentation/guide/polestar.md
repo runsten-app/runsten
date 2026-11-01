@@ -6,6 +6,8 @@ description: "Read a Polestar with Runsten: create your credential on Polestar's
 
 Runsten reads a Polestar through **Polestar's Data Portal**: the access to their car's data that the EU Data Act gives its owners. On the portal, you create a credential of your own, and give its three values to Runsten. Runsten never asks for your Polestar ID or its password. A self-hosted instance needs no Volvo application to read a Polestar.
 
+The Data Portal only serves the cars of the EU and the EEA. For a Polestar elsewhere, a self-hosted instance can read the Polestar app's API with your Polestar ID instead: [Your Polestar, with the Polestar ID](./polestar-id.md) (beta).
+
 ## Create your credential
 
 1. Sign in with your Polestar ID on [Polestar's Data Portal](https://data-portal.polestar.com/).
