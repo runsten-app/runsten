@@ -65,6 +65,10 @@ The vehicle's page gives the version of the car's software, and the update waiti
 
 The vehicle's page gives the temperature the car measures outside and in its cabin, saying when the climate runs or the car preconditions, and when it heats its battery. Each trip gives the average outside temperature of the readings Runsten took while it ran, in its details and in the trips' CSV file: a consumption in winter reads against it. With [MQTT](./mqtt.md), Home Assistant gets the temperatures and the climate as entities of the car. A trip Runsten did not see (found from the odometer) has none, nor do the trips recorded before Runsten kept it, until the instance rebuilds its trips and charges ([Updating](../self-hosting/updating.md#update-notes)). A Volvo or a Polestar tells no temperature Runsten reads: their pages show none.
 
+## Its doors and windows
+
+The vehicle's page says whether the car is locked, which doors, trunks and windows are open, and whether Sentry Mode is on, from the same readings as the rest. A window open a crack counts as open: Tesla does not tell it apart. Runsten never reads its charge port's door, nor a sunroof.
+
 ## Its variant
 
 The Owner API gives the car's model (Model 3, Model Y, Model S, Model X), its trim badge (`74d` for a Long Range Dual Motor, `p74d` for a Performance, `50` for a Standard Range or Rear-Wheel Drive), and Runsten reads its model year from the VIN; it gives no battery capacity: the vehicle's page shows the usable capacity of its variant instead. Runsten's catalogue has the European Model 3 and Model Y ([Vehicle models](./vehicle-models.md)):

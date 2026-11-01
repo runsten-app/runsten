@@ -167,6 +167,30 @@ func TestEndDriveReportsLocationAndTrip(t *testing.T) {
 	}
 }
 
+// TestLeaveOpen: parked, the vehicle is left unlocked with a window open, uploaded at
+// once; its next drive closes it, and the drive's end locks it.
+func TestLeaveOpen(t *testing.T) {
+	v := newVehicle(t, 50)
+	at := t0.Add(time.Minute)
+	v.LeaveOpen(at, true, []string{"rear_left_window", "nowhere"})
+	r := v.Report()
+	if !r.StatusAt.Equal(at) || r.Status.Locked || !r.Status.IsOpen("rear_left_window") || r.Status.IsOpen("tailgate") {
+		t.Fatalf("left open: %+v at %v", r.Status, r.StatusAt)
+	}
+	v.StartDrive(t0.Add(time.Hour))
+	if s := v.State(); s.Open != 0 || s.Locked {
+		t.Errorf("driving: %+v", s)
+	}
+	v.LeaveOpen(t0.Add(time.Hour+time.Minute), false, []string{"tailgate"})
+	if v.State().IsOpen("tailgate") {
+		t.Error("left open while driving")
+	}
+	v.EndDrive(t0.Add(2*time.Hour), work)
+	if s := v.State(); !s.Locked || s.Open != 0 {
+		t.Errorf("after the drive: %+v", s)
+	}
+}
+
 func TestDriveIgnoredWhenParked(t *testing.T) {
 	v := newVehicle(t, 50)
 	v.Drive(t0.Add(time.Minute), 10)

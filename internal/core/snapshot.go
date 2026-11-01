@@ -130,6 +130,11 @@ const (
 	FieldSoftware
 	// FieldClimate covers OutsideTempC, CabinTempC and Climate, told in the same block.
 	FieldClimate
+	// FieldDoors covers Doors: the doors, the hood, the tailgate, the tank lid and the
+	// locks, which every source tells together.
+	FieldDoors
+	// FieldWindows covers Windows: a Volvo tells them apart from the doors.
+	FieldWindows
 	// FieldSheet covers Sheet: what the vehicle is, told by the details' response.
 	FieldSheet
 
@@ -194,6 +199,10 @@ type Snapshot struct {
 	CabinTempC   Value[float64]
 	Climate      Value[Climate]
 
+	// Doors and Windows are what of the vehicle is open, and whether it is locked; absent
+	// when the source tells none of it.
+	Doors   Value[Doors]
+	Windows Value[Windows]
 	// Sheet is what the vehicle is beyond its model: its colour, its specifications, its
 	// picture, the name its owner gave it; absent when the source tells none of it.
 	Sheet Value[Sheet]
@@ -209,6 +218,38 @@ type Climate struct {
 	Preconditioning Value[bool]
 	// BatteryHeater is the battery being heated.
 	BatteryHeater Value[bool]
+}
+
+// Opening is whether a door, a window or a lid is open.
+type Opening string
+
+// Openings.
+const (
+	Closed Opening = "closed"
+	// Ajar is a door not fully shut, or a window left open a crack.
+	Ajar Opening = "ajar"
+	Open Opening = "open"
+)
+
+// Doors is what a source tells of the doors and the locks. Each is absent when it does
+// not tell it.
+type Doors struct {
+	// Locked is the central lock.
+	Locked                                     Value[bool]
+	FrontLeft, FrontRight, RearLeft, RearRight Value[Opening]
+	// Hood is the front lid, a front trunk's on an electric car; Tailgate the rear one.
+	Hood, Tailgate Value[Opening]
+	// TankLid is the fuel filler's lid.
+	TankLid Value[Opening]
+	// Sentry is the vehicle watching its surroundings with its cameras while parked
+	// (Tesla's Sentry Mode).
+	Sentry Value[bool]
+}
+
+// Windows is what a source tells of the windows. Each is absent when it does not tell it.
+type Windows struct {
+	FrontLeft, FrontRight, RearLeft, RearRight Value[Opening]
+	Sunroof                                    Value[Opening]
 }
 
 // Gearbox is the vehicle's transmission.
@@ -359,6 +400,12 @@ func (s *Snapshot) merge(o Snapshot) {
 	}
 	if set(FieldClimate) {
 		s.OutsideTempC, s.CabinTempC, s.Climate = o.OutsideTempC, o.CabinTempC, o.Climate
+	}
+	if set(FieldDoors) {
+		s.Doors = o.Doors
+	}
+	if set(FieldWindows) {
+		s.Windows = o.Windows
 	}
 	if set(FieldSheet) {
 		s.Sheet = o.Sheet

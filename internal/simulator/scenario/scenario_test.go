@@ -57,6 +57,7 @@ func TestParseRejectsInvalidScenarios(t *testing.T) {
 		{"unknown starting place", [2]string{"place: home", "place: moon"}, "starting place"},
 		{"unknown destination", [2]string{"to: work", "to: moon"}, "drive.to"},
 		{"zero duration", [2]string{"duration: 1h }\n  - drive", "duration: 0s }\n  - drive"}, "park.duration"},
+		{"unknown opening", [2]string{"- park: { duration: 1h }\n  - charge", "- park: { duration: 1h, open: [boot] }\n  - charge"}, "park.open"},
 		{"zero distance", [2]string{"distanceKm: 40", "distanceKm: 0"}, "drive.distanceKm"},
 		{"invalid charge type", [2]string{"type: AC", "type: XX"}, "charge.type"},
 		{"zero power", [2]string{"powerKW: 8", "powerKW: 0"}, "charge.powerKW"},
@@ -82,6 +83,20 @@ func TestParseRejectsInvalidScenarios(t *testing.T) {
 				t.Fatalf("err = %v, want containing %q", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+// TestParkLeftOpen: a park step leaves the vehicle unlocked, a window open, from its
+// start; the next drive closes it.
+func TestParkLeftOpen(t *testing.T) {
+	src := strings.Replace(commute, "- park: { duration: 1h }\n  - charge", "- park: { duration: 1h, unlocked: true, open: [front_left_window] }\n  - charge", 1)
+	at := start.Add(1*time.Hour + 41*time.Minute) // parked at work
+	if s := mustSimulation(t, src).StateAt(at); s.Locked || !s.IsOpen("front_left_window") {
+		t.Errorf("left open: %+v", s)
+	}
+	// Without it, the drive's end left it locked and closed.
+	if s := mustSimulation(t, commute).StateAt(at); !s.Locked || s.Open != 0 {
+		t.Errorf("closed: %+v", s)
 	}
 }
 

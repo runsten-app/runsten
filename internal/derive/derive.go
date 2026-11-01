@@ -48,6 +48,11 @@ type Normalizer interface {
 	// EnergyKinds returns those holding the energy state: the state of charge, the range
 	// and the charging power.
 	EnergyKinds() []core.Kind
+	// StateKinds returns the kinds of response the current state reads beyond Kinds,
+	// which the derivation leaves out: each of their responses would be one more reading
+	// that may reveal an event, and move its detection on a rebuild (the doors and
+	// windows a source tells apart).
+	StateKinds() []core.Kind
 	// Normalize reads a stored response of kind k.
 	Normalize(k core.Kind, raw []byte) (core.Snapshot, error)
 	// HealthKinds returns the kinds of response holding the vehicle's health: its tyres,
@@ -81,6 +86,8 @@ type sources struct {
 func (s sources) Kinds() []core.Kind { return s.kinds(Normalizer.Kinds) }
 
 func (s sources) EnergyKinds() []core.Kind { return s.kinds(Normalizer.EnergyKinds) }
+
+func (s sources) StateKinds() []core.Kind { return s.kinds(Normalizer.StateKinds) }
 
 func (s sources) HealthKinds() []core.Kind { return s.kinds(Normalizer.HealthKinds) }
 
@@ -153,10 +160,11 @@ func (d *Deriver) Rebuild(ctx context.Context, accountID, vehicleID string) (cor
 // Current returns the vehicle's latest known values, from the latest snapshot of each
 // endpoint fetched at or before at.
 func (d *Deriver) Current(ctx context.Context, accountID, vehicleID string, at time.Time) (core.Current, error) {
-	records, err := d.records(ctx, accountID, vehicleID, at)
+	snaps, err := d.st.SnapshotsSince(ctx, accountID, vehicleID, at, append(d.norm.Kinds(), d.norm.StateKinds()...))
 	if err != nil {
-		return core.Current{}, err
+		return core.Current{}, fmt.Errorf("snapshots: %w", err)
 	}
+	records := d.normalize(vehicleID, snaps)
 	// Those fetched after at are returned too: at is in the past.
 	records = slices.DeleteFunc(records, func(r core.Record) bool { return r.FetchedAt.After(at) })
 	return core.Latest(records), nil
