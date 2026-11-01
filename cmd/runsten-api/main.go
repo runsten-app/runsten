@@ -287,6 +287,10 @@ func run(args []string) error {
 		FileImports: fileImports{importer.NewFiles(st, clock.Real{})},
 		Accounts:    st,
 		Flags:       features,
+		// The readings' CSV file: the responses as stored, each source's private fields
+		// left out.
+		Responses:     st,
+		PrivateFields: privateFields(),
 		// It reads the current state, the readings and the health, and replays the derivation
 		// for the charge in progress, with the net capacity the API gives it: it saves nothing,
 		// and needs no capacity of its own.

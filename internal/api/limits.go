@@ -14,7 +14,7 @@ import (
 // rather than show lists cut short without a reason.
 type accountLimitsJSON struct {
 	HistoryFrom    *time.Time    `json:"history_from" pattern:"Z$" doc:"The trips and charges that ended before it are neither listed nor counted in the statistics: they are kept, and shown again once the limit is lifted. null: none is hidden."`
-	Unavailable    []featureJSON `json:"unavailable" nullable:"false" doc:"The functions the account does not have. costs: the charges' costs, null in the charges and the statistics, and their entry refused (feature_unavailable). stats: the statistics split into intervals, refused (feature_unavailable); a period's totals stay. csv: the trips and charges as CSV files, refused (feature_unavailable); the account's full export stays. mqtt: an MQTT broker, whose setting is refused (feature_unavailable); one set before stays, and nothing is published to it."`
+	Unavailable    []featureJSON `json:"unavailable" nullable:"false" doc:"The functions the account does not have. costs: the charges' costs, null in the charges and the statistics, and their entry refused (feature_unavailable). stats: the statistics split into intervals, refused (feature_unavailable); a period's totals stay. csv: the trips, the charges and the readings as CSV files, refused (feature_unavailable); the account's full export stays. mqtt: an MQTT broker, whose setting is refused (feature_unavailable); one set before stays, and nothing is published to it."`
 	UnreadVehicles []string      `json:"unread_vehicles" nullable:"false" format:"uuid" doc:"The account's vehicles the collector does not read: what was read of them stays, and is shown, but nothing new is, until the limit is lifted."`
 }
 
