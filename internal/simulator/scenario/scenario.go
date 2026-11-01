@@ -19,7 +19,11 @@ type Scenario struct {
 	// Brand is the vehicle's maker, which says the API that serves it: volvo (the
 	// default, the Volvo Cars API), polestar (the Polestar Data Portal's) or tesla (the
 	// Owner API).
-	Brand   string           `yaml:"brand"`
+	Brand string `yaml:"brand"`
+	// Source is the API a Polestar is served on: empty, the Data Portal's; polestar_id,
+	// the Polestar app's, read with the Polestar ID (polestaridapi). For brand polestar
+	// only.
+	Source  string           `yaml:"source"`
 	VIN     string           `yaml:"vin"`
 	Start   time.Time        `yaml:"start"`
 	Vehicle VehicleConfig    `yaml:"vehicle"`
@@ -126,6 +130,10 @@ const (
 	BrandTesla    = "tesla"
 )
 
+// SourcePolestarID serves a Polestar on the Polestar app's API rather than the Data
+// Portal's.
+const SourcePolestarID = "polestar_id"
+
 var vinPattern = regexp.MustCompile(`^[A-HJ-NPR-Z0-9]{17}$`)
 
 // Parse reads and validates a YAML scenario. Unknown fields are rejected.
@@ -147,6 +155,9 @@ func (s *Scenario) Validate() error {
 	var errs []error
 	if s.Brand != "" && s.Brand != BrandVolvo && s.Brand != BrandPolestar && s.Brand != BrandTesla {
 		errs = append(errs, fmt.Errorf("brand %q: volvo, polestar or tesla expected", s.Brand))
+	}
+	if s.Source != "" && (s.Source != SourcePolestarID || s.Brand != BrandPolestar) {
+		errs = append(errs, fmt.Errorf("source %q: polestar_id, for brand polestar only", s.Source))
 	}
 	if s.Brand != "" && s.Brand != BrandVolvo && s.MarketRefused {
 		errs = append(errs, fmt.Errorf("marketRefused: a Volvo API refusal, not for a %s", s.Brand))

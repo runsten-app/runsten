@@ -34,8 +34,8 @@ cmd/
   runsten-collector/   collector binary (poll loop, `connect`, `rebuild` and `healthcheck` subcommands,
                        debug page, health endpoint, the MQTT publisher); capacity.go: derive.Capacities
                        from the catalog; model.go: what a vehicle is for Home Assistant, from the catalog
-  runsten-simulator/   fake Volvo API and Volvo ID backend, Polestar Data Portal and Tesla Owner API,
-                       driven by a scenario
+  runsten-simulator/   fake Volvo API and Volvo ID backend, Polestar Data Portal, Tesla Owner API and
+                       the Polestar app's API with its Polestar ID, driven by a scenario
   runsten-web/         serves the front end's build and relays /api/, /auth/ and the OAuth metadata
                        (/.well-known/oauth-*) to runsten-api;
                        `healthcheck` subcommand
@@ -122,6 +122,11 @@ internal/
     teslaapi/          HTTP handler mimicking Tesla's Owner API (/api/1/) and its token (/oauth2/v3/token):
                        rotated refresh tokens, the car's sleep, a 429, a closed Owner API and a revocation
                        on demand (/sim/tesla/)
+    polestaridapi/     HTTP handler mimicking the Polestar app's API (ADR 0042), under /polestar-id/:
+                       the Polestar ID's sign-in (its form, ERR001, the code with PKCE, which a
+                       failed exchange does not spend, refresh tokens rotated, access tokens of
+                       300 s) and the GraphQL of mystar-v2 (getConsumerCarsV2, carTelematicsV2);
+                       a revocation on demand (/sim/polestar-id/); a scenario's source: polestar_id
     aximoteapi/        HTTP handler mimicking Aximote's public API (/api/public/v1/): fixed data (Default),
                        pages, a 429 and a revoked token on demand
     control/           GET /sim/status endpoint
@@ -129,7 +134,8 @@ internal/
 documentation/         user documentation (Markdown, English; sidebar.json its outline), published on the
                        public site, which copies it at build time; screenshots are the site's (<Screen>)
 scenarios/             YAML scenarios (commute day, missed trip, long DC trip, quota exhausted, token lifecycle,
-                       errand with a DC charge for compose-test, a plug-in hybrid)
+                       errand with a DC charge for compose-test, a plug-in hybrid, a Polestar 4 read
+                       through the Polestar ID)
 testdata/              recorded Volvo API responses used as fixtures
 web/                   the front end (see "Front end" below)
   src/                 app, pages, widgets, features, entities, shared: Feature-Sliced Design layers

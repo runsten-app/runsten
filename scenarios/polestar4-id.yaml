@@ -1,0 +1,43 @@
+# A Polestar 4 outside the EU/EEA, which the Data Portal does not serve: read through the
+# Polestar app's API with the owner's Polestar ID (source polestar_id, ADR 0042), signed in
+# as polestaridapi.DevEmail. A Polestar 4 Long Range Single Motor of 2024: a commute, an
+# evening AC charge at home, then a DC charge on the way to the lake.
+#
+# What the API gives is poorer than the Data Portal's: the battery (SoC, range, charging
+# or not), the odometer and the service, but no position, no engine and no cable: trips
+# come from the odometer, charges from the SoC and the charging status.
+#
+# The VIN is fictitious: LPS, the WMI of Polestar, and R, model year 2024, at the tenth
+# position. Fictitious coordinates (Zürich).
+brand: polestar
+source: polestar_id
+vin: LPSYCZRE5RL000014
+start: 2026-09-28T05:00:00Z
+vehicle:
+  profile: bev-generic
+  model: Polestar 4
+  modelYear: 2024
+  batteryKWh: 100
+  usableKWh: 94
+  consumptionKWhPer100km: 19
+  chargingCurrentLimitA: 16
+  soc: 66
+  targetSoc: 80
+  odometerKm: 9800
+  place: home
+places:
+  home: { lat: 47.3769, lon: 8.5417 }
+  work: { lat: 47.3990, lon: 8.5480 }
+  fastcharger: { lat: 47.2980, lon: 8.5600 }
+  lake: { lat: 47.0500, lon: 8.3100 }
+steps:
+  - park: { duration: 2h }
+  - drive: { to: work, distanceKm: 6, duration: 20m }
+  - park: { duration: 9h }
+  - drive: { to: home, distanceKm: 6, duration: 25m }
+  - charge: { type: AC, powerKW: 11, untilSoc: 90 }
+  - park: { duration: 10h }
+  - drive: { to: fastcharger, distanceKm: 14, duration: 20m }
+  - charge: { type: DC, powerKW: 200, untilSoc: 80 }
+  - drive: { to: lake, distanceKm: 45, duration: 45m }
+  - park: { duration: 2h }
