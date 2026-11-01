@@ -2046,3 +2046,125 @@ func TestTripOutsideTemp(t *testing.T) {
 		})
 	}
 }
+
+// amps is a reading of a charge's details: its current and phases (phases 0: not
+// told), recorded by the vehicle at ts.
+func amps(current float64, phases int, ts time.Time) Snapshot {
+	s := Snapshot{Covers: FieldChargeDetails, CurrentA: Some(current, ts), VoltageV: Some(230.0, ts)}
+	if phases > 0 {
+		s.Phases = Some(phases, ts)
+	}
+	return s
+}
+
+// A charge keeps the highest current of the responses fetched from its first reading
+// seen charging to its end, and the phases of the latest one with a current: each response
+// once, at its fetch, never one before the charge or after its end, nor a current of zero.
+func TestChargeCurrent(t *testing.T) {
+	// withDetails is a Tesla's charge_state: the energy state and its details in one
+	// response.
+	withDetails := func(s Snapshot, current float64, phases int) Snapshot {
+		d := amps(current, phases, time.Time{})
+		s.Covers |= d.Covers
+		s.CurrentA, s.VoltageV, s.Phases = d.CurrentA, d.VoltageV, d.Phases
+		return s
+	}
+	base := []Record{
+		rec(0, 0, capacity(80)),
+		rec(0, 0, engine(EngineStopped)),
+		rec(0, 10, nrg(50, ChargingIdle)),
+		rec(20, 30, charging(51, 7000, AC)),
+		rec(40, 40, charging(60, 7000, AC)),
+		rec(50, 50, nrg(70, ChargingDone)),
+	}
+	with := func(rs ...Record) []Record { return append(slices.Clone(base), rs...) }
+	noTimestamps := DefaultParams()
+	noTimestamps.VehicleTimestamps = false
+	type want struct {
+		current Value[float64]
+		phases  Value[int]
+	}
+	phases := func(n int) Value[int] { return Value[int]{V: n, OK: true} }
+	tests := []struct {
+		name    string
+		records []Record
+		p       Params
+		want    want
+	}{
+		{
+			name: "details read apart, fetched with the start and out of order",
+			records: with(
+				rec(0, 25, amps(32, 3, m(0))),   // fetched before the charge, confirmed during it
+				rec(20, 20, amps(10, 1, m(20))), // fetched with the reading that starts it
+				rec(30, 45, amps(16, 3, m(10))), // recorded before the previous one
+				rec(45, 45, amps(0, 0, m(45))),  // paused: no current
+				rec(60, 60, amps(40, 3, m(60))), // after its end
+			),
+			p:    DefaultParams(),
+			want: want{val(16), phases(3)},
+		},
+		{
+			name: "the phases of the latest reading with a current",
+			records: with(
+				rec(20, 20, amps(16, 3, time.Time{})),
+				rec(40, 40, amps(10, 1, time.Time{})),
+			),
+			p:    DefaultParams(),
+			want: want{val(16), phases(1)},
+		},
+		{
+			name:    "a DC charge tells a current without phases",
+			records: with(rec(40, 40, amps(300, 0, time.Time{}))),
+			p:       DefaultParams(),
+			want:    want{current: val(300)},
+		},
+		{
+			name: "one response tells the energy state and its details",
+			records: []Record{
+				rec(0, 0, capacity(80)),
+				rec(0, 10, withDetails(nrg(50, ChargingIdle), 0, 0)),
+				rec(20, 30, withDetails(charging(51, 7000, AC), 16, 3)),
+				rec(40, 40, withDetails(charging(60, 11000, AC), 15, 3)),
+				rec(50, 50, withDetails(nrg(70, ChargingDone), 0, 0)),
+			},
+			p:    noTimestamps,
+			want: want{val(16), phases(3)},
+		},
+		{
+			name:    "a vehicle that tells none",
+			records: base,
+			p:       DefaultParams(),
+		},
+		{
+			name: "a reconstructed charge has none",
+			records: []Record{
+				rec(0, 10, nrg(50, ChargingIdle)),
+				rec(10, 10, amps(16, 3, time.Time{})),
+				rec(20, 20, nrg(60, ChargingIdle)),
+			},
+			p: DefaultParams(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			full := Derive(tt.records, Cursor{}, tt.p, nil)
+			if len(full.Charges) != 1 {
+				t.Fatalf("charges %+v", full.Charges)
+			}
+			c := full.Charges[0]
+			if c.MaxCurrentA != tt.want.current || c.Phases != tt.want.phases {
+				t.Errorf("current %+v, phases %+v, want %+v", c.MaxCurrentA, c.Phases, tt.want)
+			}
+			_, charges := deriveIncrementally(tt.records, tt.p)
+			if !reflect.DeepEqual(charges, full.Charges) {
+				t.Errorf("incremental:\n%+v\nfull:\n%+v", charges, full.Charges)
+			}
+		})
+	}
+
+	// The charge in progress has them so far.
+	res := Derive(append(slices.Clone(base[:5]), rec(20, 20, amps(16, 3, time.Time{}))), Cursor{}, DefaultParams(), nil)
+	if !res.InProgress.OK || res.InProgress.V.MaxCurrentA != val(16) || res.InProgress.V.Phases != phases(3) {
+		t.Errorf("in progress %+v", res.InProgress)
+	}
+}
