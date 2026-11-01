@@ -112,6 +112,30 @@ const power = computed(() => {
   return p ? { reading: p, value: quantity(p, 'kW', kilowatts) } : null
 })
 
+// What flows, said under the power: current × voltage × phases, as far as the car tells
+// them, only while a current flows (a Tesla on DC tells none).
+const electricity = computed(() => {
+  const c = state.value?.charging
+  if (!c?.current_a || c.current_a.value <= 0) return null
+  const parts = [f.quantity(c.current_a.value, 'ampere')]
+  if (c.voltage_v) parts.push(f.quantity(c.voltage_v.value, 'volt'))
+  if (c.phases) parts.push(t('state.charging.phases', { n: c.phases.value }, c.phases.value))
+  return parts.join(' × ')
+})
+// When the car expects the charge to end, from its own time of the estimate: full, or at
+// its target, as it says. Only while it charges: a Volvo tells it idle too.
+const timeLeft = computed(() => {
+  const c = state.value?.charging
+  const r = c?.time_left
+  if (!r || c?.status?.value !== 'charging') return null
+  const end = Date.parse(r.reported_at ?? r.fetched_at) + r.value.duration_s * 1000
+  return {
+    reading: r,
+    label: r.value.to === 'full' ? t('state.charging.fullAt') : t('state.charging.targetAt'),
+    value: f.dateTime(new Date(end).toISOString(), now.value),
+  }
+})
+
 function quantity(r: Reading<number> | null, unit: Unit, convert = (v: number) => v) {
   return r ? f.quantity(convert(r.value), unit) : null
 }
@@ -452,6 +476,18 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"
+              >
+                <span v-if="electricity" class="electricity d-block mt-1">{{ electricity }}</span>
+              </ReadingItem>
+              <ReadingItem
+                v-if="timeLeft"
+                :label="timeLeft.label"
+                :reading="timeLeft.reading"
+                :value="timeLeft.value"
+                :now="now"
+                :connection="connection"
+                :tile="chargingTile"
+                class="time-left"
               />
               <ReadingItem
                 :label="t('state.charging.type')"
@@ -477,6 +513,18 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"
+              />
+              <!-- A setting the owner made (a Tesla's, some Volvos'), said only when told. -->
+              <ReadingItem
+                v-if="state.charging.current_limit_a"
+                :label="t('state.charging.limit')"
+                :reading="state.charging.current_limit_a"
+                :value="quantity(state.charging.current_limit_a, 'ampere')"
+                :now="now"
+                :connection="connection"
+                :tile="chargingTile"
+                size="small"
+                class="current-limit"
               />
             </dl>
             <router-link
@@ -676,7 +724,8 @@ const update = computed(() => {
   font-size: 0.75rem;
   color: rgb(var(--v-theme-text-secondary));
 }
-.climate-running {
+.climate-running,
+.electricity {
   font-size: 0.75rem;
   color: rgb(var(--v-theme-text-secondary));
 }

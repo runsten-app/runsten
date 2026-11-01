@@ -52,6 +52,13 @@ function facts(w: Wrapper, card: string) {
 }
 
 describe('ChargeInProgressDetails', () => {
+  it('shows the highest current so far and the phases, for a car that tells them', async () => {
+    const w = await mounted('2026-09-28T23:13:00Z', { ...open, max_current_a: 16, phases: 3 })
+    expect(facts(w, 'figures')).toMatchObject({ 'Highest current': '16 A', Phases: '3' })
+    const none = await mounted('2026-09-28T23:13:00Z')
+    expect(facts(none, 'figures')).not.toHaveProperty('Phases')
+  })
+
   it('shows what the charge added so far, its power and its cost so far', async () => {
     const w = await mounted('2026-09-28T23:13:00Z')
     expect(w.find('h1').text()).toBe('Charge in progress')

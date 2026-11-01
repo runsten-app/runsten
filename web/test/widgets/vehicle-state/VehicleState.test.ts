@@ -125,6 +125,56 @@ describe('VehicleState', () => {
     expect(plain(w.find('.under-bar .target').text())).toBe('Target 80%')
   })
 
+  // The details a car tells of its charge, read with the power.
+  const details = (more: object) => {
+    const at = state.charging.power_w
+    return {
+      ...state,
+      charging: {
+        ...state.charging,
+        current_a: { ...at, value: 16 },
+        voltage_v: { ...at, value: 229 },
+        phases: { ...at, value: 3 },
+        current_limit_a: { ...at, value: 16 },
+        time_left: { ...at, value: { duration_s: 5700, to: 'target' } },
+        ...more,
+      },
+    }
+  }
+
+  it('says what flows, when the charge ends and the limit, as the car tells them', async () => {
+    const w = await mounted(details({}))
+    expect(plain(w.find('.electricity').text())).toBe('16 A × 229 V × 3 phases')
+    // From the car's own time of the estimate, 19:02.
+    expect(reading(w, 'Target reached at').value).toBe('20:37')
+    expect(reading(w, 'Current limit').value).toBe('16 A')
+  })
+
+  it('says a charge full as the car does, and only what it tells', async () => {
+    const at = state.charging.power_w
+    const w = await mounted(
+      details({
+        voltage_v: null,
+        phases: null,
+        current_limit_a: null,
+        time_left: { ...at, value: { duration_s: 600, to: 'full' } },
+      }),
+    )
+    expect(plain(w.find('.electricity').text())).toBe('16 A')
+    expect(reading(w, 'Full at').value).toBe('19:12')
+    expect(() => reading(w, 'Current limit')).toThrow()
+  })
+
+  it('says nothing of a current that does not flow, nor a time left out of a charge', async () => {
+    const at = state.charging.power_w
+    const w = await mounted(details({ current_a: { ...at, value: 0 } }))
+    expect(w.find('.electricity').exists()).toBe(false)
+    const idle = await mounted(
+      details({ status: { ...state.charging.status, value: 'discharging' } }),
+    )
+    expect(idle.find('.time-left').exists()).toBe(false)
+  })
+
   it.each(['done', 'idle', 'scheduled'])(
     'says a charge %s in one line under the battery',
     async (value) => {
