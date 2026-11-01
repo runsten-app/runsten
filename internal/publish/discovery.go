@@ -32,6 +32,10 @@ type Model struct {
 	// Climate: the vehicle tells its temperatures and climate (a Tesla); their entities
 	// are configured only then.
 	Climate bool
+	// Openings are the topics of the lock, the doors, the windows and Sentry Mode the
+	// vehicle tells (Openings): each one's entity is configured only then, and the
+	// warning of a vehicle left open with any of them.
+	Openings OpeningSet
 }
 
 // idDigits of a vehicle's ID tell it apart where nothing else does.
@@ -94,6 +98,11 @@ type entity struct {
 	// climate: an entity of the climate, configured only for a vehicle that tells it
 	// (Model.Climate).
 	climate bool
+	// opening: the topic of the lock, the door, the window or Sentry Mode the entity
+	// reads, configured only for a vehicle that tells it (Model.Openings); openings: an
+	// entity of all of them, configured for a vehicle that tells any.
+	opening  string
+	openings bool
 }
 
 // unknown is a value template that takes an empty payload for unknown.
@@ -146,7 +155,11 @@ func entities() []entity {
 		e.climate = true
 		return e
 	}
-	return []entity{
+	leftOpen := binary("left_open", "Left open", "left_open", "problem", onOff(On, Off))
+	leftOpen.openings = true
+	openingsReadAt := sensor("openings_read_at", "Doors last read", "openings_read_at", "timestamp", "", "")
+	openingsReadAt.config.EntityCategory, openingsReadAt.openings = "diagnostic", true
+	es := []entity{
 		sensor("battery_level", "Battery", "battery_level", "battery", "%", "measurement"),
 		sensor("range", "Range", "range_km", "distance", "km", "measurement"),
 		enum("charging_status", "Charging status", "charging_status", values(
@@ -185,12 +198,21 @@ func entities() []entity {
 		climate(binary("climate", "Climate", "climate", "running", onOff(On, Off))),
 		climate(binary("preconditioning", "Preconditioning", "preconditioning", "running", onOff(On, Off))),
 		climate(binary("battery_heater", "Battery heater", "battery_heater", "running", onOff(On, Off))),
+		leftOpen,
+		openingsReadAt,
 		// Its position from the attributes of the location's JSON; an empty location
 		// makes it unknown.
 		{component: "device_tracker", object: "location", name: "Location", topic: "location", config: config{
 			SourceType: "gps", JSONAttributesTemplate: `{{ value if value != '' else '{"latitude": null, "longitude": null}' }}`,
 		}},
 	}
+	// The lock, the doors, the windows and Sentry Mode, each where the vehicle tells it.
+	for _, p := range parts() {
+		e := binary(p.topic, p.name, p.topic, p.deviceClass, p.template)
+		e.opening = p.topic
+		es = append(es, e)
+	}
+	return es
 }
 
 func values[T ~string](vs ...T) []string {
@@ -245,7 +267,8 @@ func discoveryTopic(b Broker, vehicleID string, e entity) string {
 // Discovery is the configuration of each entity of the vehicle, retained, named label
 // (Labels). Without the location published, the device tracker's is empty: it removes
 // the one published before; so are the credential's, for a vehicle read without one
-// (credential false), and the climate's, for a vehicle that does not tell it.
+// (credential false), the climate's, for a vehicle that does not tell it, and those of
+// each opening it does not tell.
 func Discovery(b Broker, vehicleID, label string, m Model, credential bool) []Message {
 	base := b.TopicPrefix + "/vehicles/" + vehicleID + "/"
 	dev := device{Identifiers: []string{"runsten_" + vehicleID}, Name: label, Manufacturer: m.Brand, Model: m.name()}
@@ -253,7 +276,8 @@ func Discovery(b Broker, vehicleID, label string, m Model, credential bool) []Me
 	msgs := make([]Message, 0, len(es))
 	for _, e := range es {
 		msg := Message{Topic: discoveryTopic(b, vehicleID, e), Retained: true}
-		if (e.component != "device_tracker" || b.PublishLocation) && (!e.credential || credential) && (!e.climate || m.Climate) {
+		if (e.component != "device_tracker" || b.PublishLocation) && (!e.credential || credential) && (!e.climate || m.Climate) &&
+			(e.opening == "" || m.Openings.Has(e.opening)) && (!e.openings || m.Openings != 0) {
 			c := e.config
 			c.Name, c.UniqueID = e.name, "runsten_"+vehicleID+"_"+e.object
 			if e.component == "device_tracker" {
@@ -292,7 +316,8 @@ func RemoveDiscovery(b Broker, vehicleID string) []Message {
 // RemoveState empties the vehicle's state topics, its health's and its credential's
 // included: the broker keeps none of its values.
 func RemoveState(b Broker, vehicleID string) []Message {
-	msgs := append(State(b, vehicleID, core.Current{}), Health(b, vehicleID, core.CurrentHealth{})...)
+	msgs := append(State(b, vehicleID, core.Current{}), LeftOpenState(b, vehicleID, core.Value[bool]{}))
+	msgs = append(msgs, Health(b, vehicleID, core.CurrentHealth{})...)
 	for i := range msgs {
 		msgs[i].Payload = ""
 	}

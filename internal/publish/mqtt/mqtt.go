@@ -58,10 +58,12 @@ type Store interface {
 	PublishCredentials(ctx context.Context, accountID string) (map[string]publish.Credential, error)
 }
 
-// States reads a vehicle's current state, as GET /vehicles/{id}/state does, and its
-// health, as GET /vehicles/{id}/health.
+// States reads a vehicle's current state, as GET /vehicles/{id}/state does, since when
+// it stands parked and open (derive.Deriver.OpenSince), and its health, as GET
+// /vehicles/{id}/health.
 type States interface {
 	Current(ctx context.Context, accountID, vehicleID string, at time.Time) (core.Current, error)
+	OpenSince(ctx context.Context, accountID, vehicleID string, from time.Time) (time.Time, error)
 	Health(ctx context.Context, accountID, vehicleID string, at time.Time) (core.CurrentHealth, error)
 }
 
@@ -244,9 +246,15 @@ func (p *Publisher) Publish(ctx context.Context, accountID, vehicleID string) er
 		return fmt.Errorf("model of vehicle %s: %w", vehicleID, err)
 	}
 	m.Climate = cur.Snapshot.Covers&core.FieldClimate != 0
+	m.Openings = publish.Openings(cur.Snapshot)
+	now := p.clk.Now()
+	since, err := p.states.OpenSince(ctx, accountID, vehicleID, now.Add(-publish.LeftOpenAfter))
+	if err != nil {
+		return fmt.Errorf("doors of vehicle %s: %w", vehicleID, err)
+	}
 	// The health is read apart: its failure keeps the health published before, and
 	// never holds the state back.
-	values := publish.State(c.b, vehicleID, cur)
+	values := append(publish.State(c.b, vehicleID, cur), publish.LeftOpenState(c.b, vehicleID, publish.LeftOpen(cur, since, now)))
 	health, healthErr := p.states.Health(ctx, accountID, vehicleID, p.clk.Now())
 	switch prev := c.values[vehicleID]; {
 	case healthErr == nil:
