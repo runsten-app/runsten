@@ -24,6 +24,8 @@
       "energy_power_kwh": 25.3,
       "energy_measured_kwh": null,
       "average_power_kw": null,
+      "max_current_a": 16,
+      "phases": 3,
       "capacity_kwh": 80,
       "capacity_source": "api",
       "position": {
@@ -69,6 +71,8 @@
       "energy_power_kwh": null,
       "energy_measured_kwh": null,
       "average_power_kw": null,
+      "max_current_a": null,
+      "phases": null,
       "capacity_kwh": 80,
       "capacity_source": "api",
       "position": null,
