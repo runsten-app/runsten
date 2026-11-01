@@ -132,7 +132,7 @@ var chargesHeader = []string{
 	"type", "start_soc_pct", "end_soc_pct", "target_soc_pct", "energy_soc_kwh", "energy_power_kwh",
 	"energy_measured_kwh", "capacity_kwh", "capacity_source", "lat", "lon", "place", "address",
 	"cost_currency", "cost_min", "cost_max", "cost_source", "cost_energy_kwh", "cost_efficiency", "cost_note",
-	"average_power_kw", "imported", "sources",
+	"average_power_kw", "max_current_a", "phases", "imported", "sources",
 }
 
 func (s *Server) chargesCSV(ctx context.Context, in *chargesCSVInput) (*csvOutput, error) {
@@ -162,7 +162,7 @@ func (s *Server) chargesCSV(ctx context.Context, in *chargesCSVInput) (*csvOutpu
 			num(j.EnergyMeasuredKWh),
 		}, capacityCells(j.CapacityFields), positionCells(j.Position, j.Place, j.Address),
 			costCells(j.Cost, priced.Currency.V.MinorDigits),
-			[]string{num(j.AveragePowerKW)}, provenanceCells(j.EventFields))
+			[]string{num(j.AveragePowerKW), num(j.MaxCurrentA), count(j.Phases)}, provenanceCells(j.EventFields))
 	}
 	return s.csvFile("charges", chargesHeader, rows)
 }
@@ -218,6 +218,13 @@ func num(v *float64) string {
 		return ""
 	}
 	return strconv.FormatFloat(*v, 'f', -1, 64)
+}
+
+func count(v *int) string {
+	if v == nil {
+		return ""
+	}
+	return strconv.Itoa(*v)
 }
 
 func textCell(v *string) string {

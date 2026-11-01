@@ -22,7 +22,13 @@
     "cable": null,
     "type": null,
     "power_w": null,
-    "target_soc_pct": null
+    "target_soc_pct": null,
+    "current_a": null,
+    "voltage_v": null,
+    "phases": null,
+    "current_limit_a": null,
+    "time_left": null,
+    "charger": null
   },
   "climate": {
     "outside_temp_c": null,

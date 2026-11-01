@@ -107,6 +107,12 @@ type Charge struct {
 	// the one that gave EndSoC or ended the charge.
 	Capacity Value[Capacity]
 	Position Value[Position]
+	// MaxCurrentA is the highest current the vehicle measured over the charge, and Phases
+	// the AC phases it drew on at the last reading with a current: a 3-phase charge from a
+	// 1-phase one. Absent for a vehicle that does not tell them (Volvo), and a reconstructed
+	// or imported charge.
+	MaxCurrentA Value[float64]
+	Phases      Value[int]
 
 	// An imported charge's own figures: its average power, and what the source says it
 	// cost.

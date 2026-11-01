@@ -60,7 +60,7 @@ func TestNormalizeFixtures(t *testing.T) {
 		}},
 		{EnergyState, "energy-v2-state.json", core.Snapshot{
 			Covers: core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
-				core.FieldChargeType | core.FieldPower | core.FieldTargetSoC,
+				core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldChargeDetails,
 			SoC:        core.Some(50.0, energyAt),
 			RangeKm:    core.Some(180.0, energyAt),
 			Charging:   core.Some(core.ChargingIdle, energyAt),
@@ -68,6 +68,9 @@ func TestNormalizeFixtures(t *testing.T) {
 			ChargeType: core.Some(core.AC, energyAt),
 			PowerW:     core.Some(1600.0, energyAt),
 			TargetSoC:  core.Some(85.0, energyAt),
+			// Idle, yet told: the time it would take.
+			TimeLeft:      core.Some(core.TimeLeft{Duration: 2 * time.Hour, To: core.ToTarget}, energyAt),
+			CurrentLimitA: core.Some(32.0, energyAt),
 		}},
 		// The Demo car's, locked, a window open.
 		{Doors, "cv-doors.json", func() core.Snapshot {
@@ -144,10 +147,11 @@ func TestNormalizeAbsences(t *testing.T) {
 			"chargingType":{"status":"OK","value":"NONE","updatedAt":"2026-09-28T06:00:00Z"},
 			"chargingPower":{"status":"ERROR","code":"PROPERTY_NOT_FOUND","message":"Property not found"},
 			"chargingCurrentLimit":{"status":"ERROR","code":"NOT_SUPPORTED","message":"x"},
+			"estimatedChargingTimeToTargetBatteryChargeLevel":{"status":"OK","value":0,"unit":"minutes","updatedAt":"2026-09-28T06:00:00Z"},
 			"targetBatteryChargeLevel":{"status":"OK","value":null,"unit":"percentage","updatedAt":"2026-09-28T06:00:00Z"}}`,
 			core.Snapshot{
 				Covers: core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
-					core.FieldChargeType | core.FieldPower | core.FieldTargetSoC,
+					core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldChargeDetails,
 				SoC:        core.Some(0.0, ts("2026-09-28T06:00:00Z")), // a real 0 %, not an absence
 				RangeKm:    core.Some(160.9344, ts("2026-09-28T06:00:00Z")),
 				ChargeType: core.Some(core.NoCharge, ts("2026-09-28T06:00:00Z")), // told, not unknown
@@ -162,7 +166,7 @@ func TestNormalizeAbsences(t *testing.T) {
 			"kW", EnergyState, `{"chargingPower":{"status":"OK","value":7.4,"unit":"kW","updatedAt":"x"}}`,
 			core.Snapshot{
 				Covers: core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
-					core.FieldChargeType | core.FieldPower | core.FieldTargetSoC,
+					core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldChargeDetails,
 				PowerW: core.Some(7400.0, time.Time{}),
 			},
 		},
