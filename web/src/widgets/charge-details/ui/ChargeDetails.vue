@@ -157,6 +157,17 @@ const costNotes = computed(() => {
                 :label="t('charge.target')"
                 :value="f.quantity(charge.target_soc_pct, 'percent')"
               />
+              <!-- Only for a car that tells them (a Tesla's AC charge, a Polestar's). -->
+              <FactItem
+                v-if="charge.max_current_a !== null"
+                :label="t('charge.maxCurrent')"
+                :value="f.quantity(charge.max_current_a, 'ampere')"
+              />
+              <FactItem
+                v-if="charge.phases !== null"
+                :label="t('charge.phases')"
+                :value="f.number(charge.phases)"
+              />
             </dl>
           </v-card-text>
         </v-card>

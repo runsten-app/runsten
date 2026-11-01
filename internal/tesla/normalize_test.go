@@ -18,7 +18,7 @@ func miles(v float64) float64 { return v * kmPerMile }
 func bar(v float64) float64 { return v * kPaPerBar }
 
 const chargeFields = core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
-	core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldEnergyAdded
+	core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldEnergyAdded | core.FieldChargeDetails
 
 // TestNormalizeOpenings: any value but 0 is open, the driver's side is the left but on a
 // right-hand drive car, and a block without any of them covers them all the same.
@@ -78,7 +78,11 @@ func TestNormalizeFixture(t *testing.T) {
 		TargetSoC:  core.Some(69.0, at),
 		// The session's: it holds after the charge.
 		EnergyAddedKWh: core.Some(5.9, at),
-		OdometerKm:     core.Some(miles(39620.727469), at),
+		// charger_voltage reads 2 V, not charging: no current, voltage nor phases; the
+		// brand, Tesla, is not a fast charger's.
+		CurrentLimitA: core.Some(13.0, at),
+		Charger:       core.Some(core.Charger{Cable: "IEC"}, at),
+		OdometerKm:    core.Some(miles(39620.727469), at),
 		// The latest fix, before the response.
 		Position:   core.Some(core.Position{Lat: 50.8467, Lon: 4.3525}, time.Unix(1793032115, 0)),
 		Brand:      core.Some(Brand, none),
@@ -182,6 +186,7 @@ func TestNormalizeCharge(t *testing.T) {
 			Charging: core.Some(core.ChargingActive, at), Connection: core.Some(core.Connected, at),
 			ChargeType: core.Some(core.DC, at), PowerW: core.Some(120000.0, at),
 			SoC: core.Some(30.0, at), UsableSoC: core.Some(29.0, at), TargetSoC: core.Some(80.0, at), EnergyAddedKWh: core.Some(12.34, at),
+			Charger: core.Some(core.Charger{Type: "Supercharger"}, at),
 		}},
 		{
 			"AC starting", `{"charging_state": "Starting", "fast_charger_present": false, "fast_charger_type": "MCSingleWireCAN"}`,
@@ -190,6 +195,23 @@ func TestNormalizeCharge(t *testing.T) {
 				ChargeType: core.Some(core.AC, at),
 			},
 		},
+		{"DC on a CCS station", `{"charging_state": "Charging", "fast_charger_present": true, "fast_charger_type": "Combo",
+			"fast_charger_brand": "<invalid>", "conn_charge_cable": "IEC", "charger_voltage": 2, "charger_actual_current": 0,
+			"charger_phases": null, "minutes_to_full_charge": 25}`, core.Snapshot{
+			Charging: core.Some(core.ChargingActive, at), Connection: core.Some(core.Connected, at),
+			ChargeType: core.Some(core.DC, at),
+			TimeLeft:   core.Some(core.TimeLeft{Duration: 25 * time.Minute, To: core.ToTarget}, at),
+			Charger:    core.Some(core.Charger{Type: "Combo", Cable: "IEC"}, at),
+		}},
+		{"AC on three phases", `{"charging_state": "Charging", "fast_charger_present": false, "fast_charger_brand": "Tesla",
+			"fast_charger_type": "MCSingleWireCAN", "charger_voltage": 229, "charger_actual_current": 16, "charger_phases": 3,
+			"charge_current_request": 16, "minutes_to_full_charge": 95}`, core.Snapshot{
+			Charging: core.Some(core.ChargingActive, at), Connection: core.Some(core.Connected, at),
+			ChargeType: core.Some(core.AC, at),
+			CurrentA:   core.Some(16.0, at), VoltageV: core.Some(229.0, at), Phases: core.Some(3, at),
+			CurrentLimitA: core.Some(16.0, at),
+			TimeLeft:      core.Some(core.TimeLeft{Duration: 95 * time.Minute, To: core.ToTarget}, at),
+		}},
 		{"charging, no word of the charger", `{"charging_state": "Charging"}`, core.Snapshot{
 			Charging: core.Some(core.ChargingActive, at), Connection: core.Some(core.Connected, at),
 		}},

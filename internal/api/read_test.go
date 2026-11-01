@@ -515,7 +515,7 @@ func fixtures(m *memReader) {
 			Sources: fromVolvo,
 			Type:    some(core.AC), StartSoC: some(47.0), EndSoC: some(80.0), TargetSoC: some(80.0),
 			EnergySoCKWh: some(26.4), EnergyPowerKWh: some(25.3), Position: some(home),
-			Capacity: fromAPI,
+			Capacity: fromAPI, MaxCurrentA: some(16.0), Phases: some(3),
 		},
 		{
 			DetectedAt: h(4, 0), Reconstructed: true, Sources: fromVolvo,

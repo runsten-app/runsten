@@ -1,0 +1,82 @@
+{
+  "vehicle_id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a01",
+  "connection": {
+    "provider": "volvo",
+    "status": "active",
+    "api_key": "instance",
+    "credential": null,
+    "authorized_at": "2026-09-28T05:00:00Z",
+    "refreshed_at": "2026-09-28T06:00:00Z",
+    "reauth_at": null,
+    "reauth_reason": null
+  },
+  "checked_at": "2026-09-28T05:30:00Z",
+  "engine": null,
+  "soc_pct": null,
+  "range_km": null,
+  "odometer_km": null,
+  "position": null,
+  "battery_capacity_kwh": null,
+  "charging": {
+    "status": null,
+    "cable": null,
+    "type": null,
+    "power_w": null,
+    "target_soc_pct": null,
+    "current_a": {
+      "value": 16,
+      "reported_at": "2026-09-28T04:00:00Z",
+      "fetched_at": "2026-09-28T05:00:00Z",
+      "checked_at": "2026-09-28T05:30:00Z"
+    },
+    "voltage_v": {
+      "value": 229,
+      "reported_at": "2026-09-28T04:00:00Z",
+      "fetched_at": "2026-09-28T05:00:00Z",
+      "checked_at": "2026-09-28T05:30:00Z"
+    },
+    "phases": {
+      "value": 3,
+      "reported_at": "2026-09-28T04:00:00Z",
+      "fetched_at": "2026-09-28T05:00:00Z",
+      "checked_at": "2026-09-28T05:30:00Z"
+    },
+    "current_limit_a": {
+      "value": 16,
+      "reported_at": "2026-09-28T04:00:00Z",
+      "fetched_at": "2026-09-28T05:00:00Z",
+      "checked_at": "2026-09-28T05:30:00Z"
+    },
+    "time_left": {
+      "value": {
+        "duration_s": 5700,
+        "to": "target"
+      },
+      "reported_at": "2026-09-28T04:00:00Z",
+      "fetched_at": "2026-09-28T05:00:00Z",
+      "checked_at": "2026-09-28T05:30:00Z"
+    },
+    "charger": {
+      "value": {
+        "brand": null,
+        "type": null,
+        "cable": "IEC"
+      },
+      "reported_at": "2026-09-28T04:00:00Z",
+      "fetched_at": "2026-09-28T05:00:00Z",
+      "checked_at": "2026-09-28T05:30:00Z"
+    }
+  },
+  "climate": {
+    "outside_temp_c": null,
+    "cabin_temp_c": null,
+    "on": null,
+    "preconditioning": null,
+    "battery_heater": null
+  },
+  "software": null,
+  "software_update": null,
+  "doors": null,
+  "windows": null,
+  "sleep": null
+}

@@ -126,6 +126,9 @@ const (
 	// FieldSleep covers Sleep: no other value depends on it.
 	FieldSleep
 	FieldEnergyAdded
+	// FieldChargeDetails covers CurrentA, VoltageV, Phases, TimeLeft, CurrentLimitA and
+	// Charger: what a source tells of a charge beyond its power, in the same block.
+	FieldChargeDetails
 	// FieldSoftware covers Software and SoftwareUpdate, told in the same block.
 	FieldSoftware
 	// FieldClimate covers OutsideTempC, CabinTempC and Climate, told in the same block.
@@ -173,6 +176,18 @@ type Snapshot struct {
 	// again from zero with the next session.
 	EnergyAddedKWh Value[float64]
 
+	// CurrentA and VoltageV are the charge's current and voltage, as the vehicle measures
+	// them: an AC charge's on the grid's side for a Tesla; Phases the AC phases it draws
+	// on. CurrentLimitA is the current the owner let the vehicle draw, on AC.
+	CurrentA      Value[float64]
+	VoltageV      Value[float64]
+	Phases        Value[int]
+	CurrentLimitA Value[float64]
+	// TimeLeft is how long the vehicle expects the charge to run, and to what.
+	TimeLeft Value[TimeLeft]
+	// Charger is the charging station and the cable, as the vehicle names them (Tesla).
+	Charger Value[Charger]
+
 	// Brand is the maker (volvo, polestar), when the source tells it; Family the model as
 	// the vendor names it (XC40, EX30), without its powertrain or battery.
 	Brand     Value[string]
@@ -206,6 +221,30 @@ type Snapshot struct {
 	// Sheet is what the vehicle is beyond its model: its colour, its specifications, its
 	// picture, the name its owner gave it; absent when the source tells none of it.
 	Sheet Value[Sheet]
+}
+
+// ChargeEnd is what a charge's time left runs to.
+type ChargeEnd string
+
+// Charge ends.
+const (
+	ToFull   ChargeEnd = "full"
+	ToTarget ChargeEnd = "target"
+)
+
+// TimeLeft is how long a charge has to run, as the vehicle estimates it.
+type TimeLeft struct {
+	Duration time.Duration
+	// To is what the vehicle says the charge runs to: full, or its target.
+	To ChargeEnd
+}
+
+// Charger is what a vehicle tells of the station and the cable of a charge, as it names
+// them; each empty when it does not tell it.
+type Charger struct {
+	// Brand and Type are the fast charger's (DC).
+	Brand, Type string
+	Cable       string
 }
 
 // Climate is what of the vehicle's climate runs. Each is absent when the source does not
@@ -394,6 +433,10 @@ func (s *Snapshot) merge(o Snapshot) {
 	}
 	if set(FieldEnergyAdded) {
 		s.EnergyAddedKWh = o.EnergyAddedKWh
+	}
+	if set(FieldChargeDetails) {
+		s.CurrentA, s.VoltageV, s.Phases, s.CurrentLimitA = o.CurrentA, o.VoltageV, o.Phases, o.CurrentLimitA
+		s.TimeLeft, s.Charger = o.TimeLeft, o.Charger
 	}
 	if set(FieldSoftware) {
 		s.Software, s.SoftwareUpdate = o.Software, o.SoftwareUpdate

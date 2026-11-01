@@ -87,6 +87,16 @@ type chargeState struct {
 	ChargerPower       *float64 `json:"charger_power"` // kW, whole
 	ChargeLimitSoC     *float64 `json:"charge_limit_soc"`
 	EnergyAdded        *float64 `json:"charge_energy_added"` // kWh, this session's
+	// The AC charger's: on DC they stay near zero (a voltage of 2 V read plugged in, not
+	// charging), and the phases null.
+	ActualCurrent *float64 `json:"charger_actual_current"` // A
+	Voltage       *float64 `json:"charger_voltage"`        // V
+	Phases        *int     `json:"charger_phases"`
+	CurrentLimit  *float64 `json:"charge_current_request"` // A, the owner's
+	MinutesToFull *float64 `json:"minutes_to_full_charge"`
+	ChargerBrand  *string  `json:"fast_charger_brand"`
+	ChargerType   *string  `json:"fast_charger_type"`
+	Cable         *string  `json:"conn_charge_cable"`
 }
 
 // climateState is what the normalization reads of the climate. Assumption: temperatures
@@ -354,6 +364,7 @@ func normalizeCharge(c *chargeState, s *core.Snapshot) {
 	at := millis(c.Timestamp)
 	s.Covers |= core.FieldSoC | core.FieldRange | core.FieldCharging | core.FieldConnection |
 		core.FieldChargeType | core.FieldPower | core.FieldTargetSoC | core.FieldEnergyAdded
+	chargeDetails(c, at, s)
 	s.SoC = number(c.BatteryLevel, at)
 	s.UsableSoC = number(c.UsableLevel, at)
 	s.EnergyAddedKWh = number(c.EnergyAdded, at)
@@ -382,6 +393,48 @@ func normalizeCharge(c *chargeState, s *core.Snapshot) {
 		// fast_charger_type is no guide: it reads MCSingleWireCAN on an AC station.
 		s.ChargeType = core.Some(core.AC, at)
 	}
+}
+
+// minChargerVoltage is the AC voltage below which the charger draws nothing: plugged in
+// and not charging, the car reads 2 V.
+const minChargerVoltage = 50
+
+// chargeDetails reads the charge's current, voltage and phases (the AC charger's), the
+// owner's current limit, the time left, and the station and cable. Assumption:
+// minutes_to_full_charge is the time to the charge limit, what the app shows as left, not
+// to 100 %.
+func chargeDetails(c *chargeState, at time.Time, s *core.Snapshot) {
+	s.Covers |= core.FieldChargeDetails
+	if c.Voltage != nil && *c.Voltage >= minChargerVoltage {
+		s.VoltageV = number(c.Voltage, at)
+		s.CurrentA = number(c.ActualCurrent, at)
+		if c.Phases != nil && *c.Phases > 0 {
+			s.Phases = core.Some(*c.Phases, at)
+		}
+	}
+	s.CurrentLimitA = number(c.CurrentLimit, at)
+	if m := c.MinutesToFull; m != nil && *m > 0 {
+		s.TimeLeft = core.Some(core.TimeLeft{
+			Duration: time.Duration(*m * float64(time.Minute)), To: core.ToTarget,
+		}, at)
+	}
+	ch := core.Charger{Brand: word(c.ChargerBrand), Type: word(c.ChargerType), Cable: word(c.Cable)}
+	if c.FastChargerPresent == nil || !*c.FastChargerPresent {
+		// Read on an AC station too (MCSingleWireCAN): only a fast charger's are its own.
+		ch.Brand, ch.Type = "", ""
+	}
+	if ch != (core.Charger{}) {
+		s.Charger = core.Some(ch, at)
+	}
+}
+
+// word is a value the car names, empty when it names none: <invalid> on a charger it does
+// not know, as on a CCS station.
+func word(v *string) string {
+	if v == nil || *v == "<invalid>" {
+		return ""
+	}
+	return *v
 }
 
 // updateStatuses maps software_update.status. Assumption: the words the community lists,

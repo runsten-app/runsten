@@ -164,6 +164,9 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 	for i := range d.res.Charges {
 		c := &d.res.Charges[i]
 		c.Sources = sourcesIn(ps, c.Start.Before, later(c.End.Before, c.DetectedAt))
+		if !c.Reconstructed {
+			c.MaxCurrentA, c.Phases = chargeCurrent(ps, c.Start.Before, c.End.Before)
+		}
 	}
 	return d.res
 }
@@ -220,6 +223,27 @@ func outsideTemp(ps []point, from, to time.Time) Value[float64] {
 		return Value[float64]{}
 	}
 	return Value[float64]{V: sum / float64(n), OK: true}
+}
+
+// chargeCurrent returns the highest current of the responses fetched within [from, to],
+// and the phases of the latest one with a current: a charge's, from its first reading
+// seen charging, after the cursor's settled time as every reading an incremental
+// derivation replays, to its end. A current of zero (a Tesla on DC, whose AC side draws
+// nothing; a charge paused) tells neither. Assumption: the phases of a charge are those
+// of its last reading, the vehicle drawing on as many from its start.
+func chargeCurrent(ps []point, from, to time.Time) (current Value[float64], phases Value[int]) {
+	for i := sort.Search(len(ps), func(i int) bool { return !ps[i].at.Before(from) }); i < len(ps) && !ps[i].at.After(to); i++ {
+		s := ps[i].snap
+		if ps[i].confirm || s.Covers&FieldChargeDetails == 0 || !s.CurrentA.OK || s.CurrentA.V <= 0 {
+			continue
+		}
+		// Undated, as a maximum is: one fact of the charge.
+		if !current.OK || s.CurrentA.V > current.V {
+			current = Value[float64]{V: s.CurrentA.V, OK: true}
+		}
+		phases = Value[int]{V: s.Phases.V, OK: s.Phases.OK}
+	}
+	return current, phases
 }
 
 // point is a reading: a record at its FetchedAt, or again, unchanged, at its CheckedAt.

@@ -38,6 +38,8 @@ type chargeInProgressJSON struct {
 	EnergySoCKWh      *float64             `json:"energy_soc_kwh" doc:"The energy added so far, one of two estimates: ΔSoC × capacity_kwh, from start_soc_pct to soc_pct."`
 	EnergyPowerKWh    *float64             `json:"energy_power_kwh" doc:"The other estimate: the charging power integrated over the readings so far."`
 	EnergyMeasuredKWh *float64             `json:"energy_measured_kwh" doc:"The energy the vehicle measured into its battery so far, from its own counter (a Tesla's); null for a vehicle without one."`
+	MaxCurrentA       *float64             `json:"max_current_a" exclusiveMinimum:"0" doc:"The highest current so far, as a charge's."`
+	Phases            *int                 `json:"phases" minimum:"1" doc:"The AC phases of the latest reading with a current, as a charge's."`
 	CapacityFields
 	Position null[positionJSON] `json:"position"`
 	Place    null[placeRefJSON] `json:"place" doc:"As a charge's."`
@@ -91,11 +93,12 @@ func (s *Server) getCharging(ctx context.Context, in *vehicleInput) (*body[charg
 		PowerW:       opt(c.PowerW, same),
 		EnergySoCKWh: opt(c.EnergySoCKWh, same), EnergyPowerKWh: opt(c.EnergyPowerKWh, same),
 		EnergyMeasuredKWh: opt(c.EnergyMeasuredKWh, same),
-		CapacityFields:    capacityOf(c.Capacity),
-		Position:          nullOf(c.Position, positionOf),
-		Place:             ref,
-		Address:           addressOr(book.of(c.Position), ref, ""),
-		Cost:              nullOf(cost, costOf),
+		MaxCurrentA:       opt(c.MaxCurrentA, same), Phases: opt(c.Phases, same),
+		CapacityFields: capacityOf(c.Capacity),
+		Position:       nullOf(c.Position, positionOf),
+		Place:          ref,
+		Address:        addressOr(book.of(c.Position), ref, ""),
+		Cost:           nullOf(cost, costOf),
 	})}), nil
 }
 

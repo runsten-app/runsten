@@ -455,5 +455,6 @@ func (d *detector) inProgress(ps []point) ChargeInProgress {
 	cb.energies(&c)
 	c.Position = s.Position
 	c.Sources = sourcesIn(ps, c.Start.Before, readAt)
+	c.MaxCurrentA, c.Phases = chargeCurrent(ps, c.Start.Before, readAt)
 	return ChargeInProgress{Charge: c, PowerW: s.PowerW}
 }

@@ -265,6 +265,7 @@ var goldenRequests = map[string]string{
 	"state-software.json":           "GET /api/v1/vehicles/" + car + "/state",
 	"state-climate.json":            "GET /api/v1/vehicles/" + car + "/state",
 	"state-openings.json":           "GET /api/v1/vehicles/" + car + "/state",
+	"state-charge-details.json":     "GET /api/v1/vehicles/" + car + "/state",
 	"battery-api-capacity.json":     "GET /api/v1/vehicles/" + car + "/battery",
 	"series.json":                   "GET /api/v1/vehicles/" + car + "/series",
 	"health.json":                   "GET /api/v1/vehicles/" + car + "/health",

@@ -80,7 +80,13 @@
       "reported_at": "2026-09-28T19:02:00Z",
       "fetched_at": "2026-09-28T19:03:00Z",
       "checked_at": "2026-09-28T19:03:00Z"
-    }
+    },
+    "current_a": null,
+    "voltage_v": null,
+    "phases": null,
+    "current_limit_a": null,
+    "time_left": null,
+    "charger": null
   },
   "climate": {
     "outside_temp_c": null,

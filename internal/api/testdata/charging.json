@@ -19,6 +19,8 @@
     "energy_soc_kwh": 9.6,
     "energy_power_kwh": 9.1,
     "energy_measured_kwh": null,
+    "max_current_a": null,
+    "phases": null,
     "capacity_kwh": 80,
     "capacity_source": "api",
     "position": {
