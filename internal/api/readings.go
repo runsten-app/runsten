@@ -113,8 +113,9 @@ func (s *Server) writeReadings(w *csv.Writer, r Response) error {
 		return nil
 	}
 	at := instant(r.FetchedAt)
+	// The field is the provider's keys: one may begin with a formula's sign as a value may.
 	err := leaves(r.Payload, private, func(field, value string) error {
-		return w.Write([]string{at, r.Source, r.Endpoint, field, value}) //nolint:wrapcheck // the response's writer
+		return w.Write([]string{at, r.Source, r.Endpoint, cell(field), value}) //nolint:wrapcheck // the response's writer
 	})
 	if err != nil {
 		return fmt.Errorf("%s %s at %s: %w", r.Source, r.Endpoint, at, err)

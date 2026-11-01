@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/csv"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -228,5 +229,23 @@ func TestLeaves(t *testing.T) {
 	})
 	if err != nil || strings.Join(got, " ") != "[1]=x [2]=[]" {
 		t.Errorf("leaves: %v, %v", got, err)
+	}
+}
+
+// TestReadingsFieldCell: a field whose first key begins with a formula's sign is kept a
+// text, as a value is.
+func TestReadingsFieldCell(t *testing.T) {
+	s := &Server{Config: Config{PrivateFields: map[string][]string{"volvo": {}}}}
+	var b strings.Builder
+	w := csv.NewWriter(&b)
+	err := s.writeReadings(w, Response{
+		Source: "volvo", Endpoint: "x", FetchedAt: h(7, 0),
+		Payload: []byte(`{"=cmd":{"a":1},"@b":2,"-c":3,"d":"+4"}`),
+	})
+	w.Flush()
+	want := "2026-09-28T07:00:00Z,volvo,x,'-c,3\n" + "2026-09-28T07:00:00Z,volvo,x,'=cmd.a,1\n" +
+		"2026-09-28T07:00:00Z,volvo,x,'@b,2\n" + "2026-09-28T07:00:00Z,volvo,x,d,'+4\n"
+	if err != nil || b.String() != want {
+		t.Errorf("rows: %v\n%s\nwant:\n%s", err, b.String(), want)
 	}
 }
