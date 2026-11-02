@@ -154,7 +154,7 @@ describe('ChartFrame', () => {
 
   // Spans behind the series: faint where an event may have been, again where it surely
   // was, clipped to the chart's area; in the legend after the series, once per label.
-  it('fills the bands behind the series, and names them in the legend', () => {
+  it('draws the bands in a strip under the plot, named where they fit, and in the legend', () => {
     const w = mounted({
       kind: 'line',
       formatX: String,
@@ -167,32 +167,84 @@ describe('ChartFrame', () => {
     expect(w.findAll('.legend li').map((l) => l.text())).toEqual(['State of charge', 'Driving'])
     expect(w.find('.legend .mark--span').exists()).toBe(true)
     const [spans] = w.findComponent({ name: 'Line' }).props('plugins') as {
-      beforeDatasetsDraw: (chart: unknown) => void
+      afterDatasetsDraw: (chart: unknown) => void
     }[]
     const rects: number[][] = []
     const alphas: number[] = []
+    const names: (string | number)[][] = []
     const ctx = {
       save: () => undefined,
       restore: () => undefined,
       fillStyle: '',
+      font: '',
+      textAlign: '',
+      textBaseline: '',
       globalAlpha: 1,
       fillRect(...r: number[]) {
         rects.push(r)
         alphas.push(this.globalAlpha)
       },
+      measureText: (t: string) => ({ width: t.length }),
+      fillText: (t: string, x: number, y: number) => names.push([t, x, y]),
     }
-    spans?.beforeDatasetsDraw({
+    spans?.afterDatasetsDraw({
       scales: { x: { getPixelForValue: (v: number) => v } },
-      chartArea: { left: 0, right: 100, top: 5, height: 50 },
+      chartArea: { left: 0, right: 100, bottom: 55 },
       ctx,
     })
-    // Clipped at the left, the sure part over it, and a pixel for an instant.
+    // Under the plot: clipped at the left, the sure part over it, and a pixel for an
+    // instant.
     expect(rects).toEqual([
-      [0, 5, 40, 50],
-      [10, 5, 20, 50],
-      [60, 5, 1, 50],
+      [0, 61, 40, 20],
+      [10, 61, 20, 20],
+      [60, 61, 1, 20],
     ])
-    expect(alphas).toEqual([0.14, 0.14, 0.14])
+    expect(alphas).toEqual([0.4, 1, 0.4])
+    // Named in the middle of its sure part; a pixel has no room for a name.
+    expect(names).toEqual([['Driving', 20, 71]])
+  })
+
+  it('tells the band under the pointer in the strip, even one of a pixel', async () => {
+    const w = mounted({
+      kind: 'line',
+      formatX: String,
+      series: [{ label: 'State of charge', data: [{ x: 0, y: 50 }], color: '#1d5b8f' }],
+      bands: [
+        { label: 'Parked', color: '#cccccc', from: 0, to: 100, detail: ['all day'] },
+        { label: 'Driving', color: '#aa0000', from: 60, to: 60, detail: ['1 Nov', '10:00'] },
+      ],
+    })
+    const [spans] = w.findComponent({ name: 'Line' }).props('plugins') as {
+      afterEvent: (chart: unknown, args: { event: unknown }) => void
+    }[]
+    const chart = {
+      scales: { x: { getPixelForValue: (v: number) => v } },
+      chartArea: { left: 0, right: 100, bottom: 55 },
+      width: 100,
+    }
+    const at = (type: string, x: number | null, y: number | null) =>
+      spans?.afterEvent(chart, { event: { type, x, y } })
+    // Within 3 pixels of the instant, in the strip (61 to 81): the trip drawn over parked.
+    at('mousemove', 62, 70)
+    await w.vm.$nextTick()
+    expect(w.find('.tip').text()).toBe('Driving1 Nov10:00')
+    expect(w.find('.tip').classes()).toContain('tip--left')
+    at('mousemove', 20, 70)
+    await w.vm.$nextTick()
+    expect(w.find('.tip').text()).toBe('Parkedall day')
+    // A screen reader, which has no pointer, is given the same in a list.
+    expect(w.findAll('.d-sr-only li').map((l) => l.text())).toEqual([
+      'Parked, all day',
+      'Driving, 1 Nov, 10:00',
+    ])
+    // Over the plot, or gone: no tip.
+    at('mousemove', 20, 30)
+    await w.vm.$nextTick()
+    expect(w.find('.tip').exists()).toBe(false)
+    at('mousemove', 20, 70)
+    at('mouseout', null, null)
+    await w.vm.$nextTick()
+    expect(w.find('.tip').exists()).toBe(false)
   })
 
   it('draws a series on the right axis, in its own format', () => {

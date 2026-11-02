@@ -23,17 +23,24 @@ export type Series = {
   // How the table for screen readers and the tooltip show this series' figures, when
   // they are not the chart's values (a count, another unit).
   format?: (v: number | null) => string
+  // area: the line filled down to the axis, faintly (a level read over time).
+  area?: boolean
   // right: drawn against the chart's second axis, on the right (a state of charge beside
   // a power).
   right?: boolean
 }
 
-// Band is a span of the x axis drawn behind the series, full height (a trip, a charge):
-// faint where it may have been, stronger where it surely was. Bands of one label share
-// their color and their entry in the legend.
+// Band is a span of the x axis drawn in a strip under the plot, named inside where it
+// has room (a trip, a charge, parked): faint where it may have been, solid where it
+// surely was. Later bands are drawn over earlier ones. Bands of one label share their
+// color and their entry in the legend.
 export type Band = {
   label: string
   color: string
+  // The color of its name, over the band's; the theme's on-primary without it.
+  ink?: string
+  // What the pointer over it tells under its name, a line each (its day, times, duration).
+  detail?: string[]
   from: number
   to: number
   // The part it surely covers; none when nothing is sure (an event never seen).

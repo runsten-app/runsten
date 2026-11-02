@@ -781,20 +781,33 @@
     }
   },
   "timeline": {
-    "title": "Niveau de charge, 7 derniers jours",
+    "title": "Niveau de charge",
     "soc": "Niveau de charge",
     "driving": "Conduite",
     "charging": "Recharge",
-    "hint": "Bandes : trajets et recharges, plus marquées là où ils ont eu lieu à coup sûr. La ligne s'interrompt là où rien n'a été lu.",
-    "summary": "Sur les 7 derniers jours, de {first} à {last}, entre {min} et {max} ; {trips} et {charges}.",
-    "none": "Rien n'a été lu ces 7 derniers jours.",
+    "parked": "Garé",
+    "hint": "Sous la courbe, ce que faisait le véhicule : plus pâle là où ce n'est pas sûr, vide là où rien n'a été lu.",
+    "summary": "{over}, de {first} à {last}, entre {min} et {max} ; {trips} et {charges}.",
+    "over": {
+      "day": "Sur les dernières 24 heures",
+      "week": "Sur les 7 derniers jours"
+    },
+    "none": {
+      "day": "Rien n'a été lu ces dernières 24 heures.",
+      "week": "Rien n'a été lu ces 7 derniers jours."
+    },
     "tripCount": "aucun trajet | {n} trajet | {n} trajets",
     "chargeCount": "aucune recharge | {n} recharge | {n} recharges",
     "day": "Jour",
     "low": "Niveau de charge le plus bas",
     "high": "Niveau de charge le plus haut",
     "trips": "Trajets commencés",
-    "charges": "Recharges commencées"
+    "charges": "Recharges commencées",
+    "window": {
+      "label": "Période affichée",
+      "day": "24 h",
+      "week": "7 j"
+    }
   },
   "recent": {
     "title": "30 derniers jours",

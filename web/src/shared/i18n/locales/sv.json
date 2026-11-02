@@ -781,20 +781,33 @@
     }
   },
   "timeline": {
-    "title": "Laddningsnivå, senaste 7 dagarna",
+    "title": "Laddningsnivå",
     "soc": "Laddningsnivå",
     "driving": "Körning",
     "charging": "Laddning",
-    "hint": "Band: resor och laddningar, starkare där de säkert skedde. Linjen bryts där inget lästes.",
-    "summary": "Under de senaste 7 dagarna, från {first} till {last}, mellan {min} och {max}; {trips} och {charges}.",
-    "none": "Inget lästes under de senaste 7 dagarna.",
+    "parked": "Parkerad",
+    "hint": "Under linjen, vad fordonet gjorde: blekare där det inte är säkert, tomt där inget lästes.",
+    "summary": "{over}, från {first} till {last}, mellan {min} och {max}; {trips} och {charges}.",
+    "over": {
+      "day": "Under de senaste 24 timmarna",
+      "week": "Under de senaste 7 dagarna"
+    },
+    "none": {
+      "day": "Inget lästes under de senaste 24 timmarna.",
+      "week": "Inget lästes under de senaste 7 dagarna."
+    },
     "tripCount": "ingen resa | {n} resa | {n} resor",
     "chargeCount": "ingen laddning | {n} laddning | {n} laddningar",
     "day": "Dag",
     "low": "Lägsta laddningsnivå",
     "high": "Högsta laddningsnivå",
     "trips": "Påbörjade resor",
-    "charges": "Påbörjade laddningar"
+    "charges": "Påbörjade laddningar",
+    "window": {
+      "label": "Visad period",
+      "day": "24 h",
+      "week": "7 d"
+    }
   },
   "recent": {
     "title": "Senaste 30 dagarna",
