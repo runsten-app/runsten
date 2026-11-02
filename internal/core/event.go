@@ -113,6 +113,11 @@ type Charge struct {
 	// or imported charge.
 	MaxCurrentA Value[float64]
 	Phases      Value[int]
+	// OutsideTempC is the mean of the outside temperatures the responses fetched while
+	// the charge ran tell (outsideTemp), in °C: the vehicle's own, which in a garage is
+	// not the weather. Absent for a reconstructed or imported charge, and one of a
+	// vehicle that tells none.
+	OutsideTempC Value[float64]
 
 	// An imported charge's own figures: its average power, and what the source says it
 	// cost.
