@@ -119,6 +119,17 @@ describe('SocTimeline', () => {
     )
   })
 
+  it('says parked only maybe while a page of the events could not be read', async () => {
+    mocks.fetchTrips.mockImplementation((_v: string, q: { cursor?: string }) =>
+      q.cursor ? Promise.reject(new Error('down')) : Promise.resolve(trips1),
+    )
+    const w = await mounted()
+    const bands = w.findComponent({ name: 'ChartFrame' }).props('bands') as Band[]
+    const parked = bands.filter((b) => b.label === 'Parked')
+    expect(parked).not.toHaveLength(0)
+    expect(parked.every((b) => b.sure === undefined)).toBe(true)
+  })
+
   it("tells each day's lowest and highest state of charge, and its events", async () => {
     const w = await mounted(true)
     const rows = w.findAll('tbody tr').map((r) => r.findAll('th, td').map((c) => plain(c.text())))
