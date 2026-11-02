@@ -10,12 +10,13 @@ import { ChartFrame, type Series } from '@/shared/ui/chart'
 import type { Stats } from '@/entities/stats'
 
 type TemperatureBand = Stats['trips_by_temperature']['bands'][number]
+type ChargeBandType = Stats['charges_by_temperature']['bands'][number]['ac']
 
 // StatsDistributions draws how the period's trips and charges spread, whatever its
 // split: the trips by distance and what each band consumed, what they consumed by
-// outside temperature, the charges by the state of
-// charge they started and ended at, and where they took place, with what they cost
-// there. A band holds events of the whole period: a press on a place, or its link above
+// outside temperature, the loss while parked and the charging power by outside
+// temperature, the charges by the state of charge they started and ended at, and where
+// they took place, with what they cost there. A band holds events of the whole period: a press on a place, or its link above
 // the chart (the keyboard's way), leads to the list of its charges over the same period,
 // the list filtering by place; on another band, no list filters by it, nowhere. The view keeps those of driving, of charging or of the
 // costs.
@@ -97,14 +98,19 @@ const byDistanceConsumption = computed(() => {
   return { series, summary, empty: known.length ? undefined : summary }
 })
 
-// The bands of outside temperature, 5 °C each, from the coldest holding a trip to the
-// warmest: none for a vehicle that tells no temperature, and then no chart.
+// The bands of outside temperature, 5 °C each, from the coldest holding a trip (an
+// interval, a charge) to the warmest: none for a vehicle that tells no temperature, and
+// then no chart.
+const temperatureLabel = (b: { min_c: number; max_c: number }) =>
+  t('stats.band.between', { min: f.number(b.min_c), max: f.quantity(b.max_c, 'celsius') })
 const tempBands = computed(() => stats.value?.trips_by_temperature.bands ?? [])
-const tempLabels = computed(() =>
-  tempBands.value.map((b) =>
-    t('stats.band.between', { min: f.number(b.min_c), max: f.quantity(b.max_c, 'celsius') }),
-  ),
-)
+const tempLabels = computed(() => tempBands.value.map(temperatureLabel))
+const parkedBands = computed(() => stats.value?.parked_by_temperature.bands ?? [])
+const parkedLabels = computed(() => parkedBands.value.map(temperatureLabel))
+const chargeBands = computed(() => stats.value?.charges_by_temperature.bands ?? [])
+const chargeLabels = computed(() => chargeBands.value.map(temperatureLabel))
+// share shows a share of 0 to 1 as a percentage.
+const share = (v: number | null) => f.quantity(v === null ? null : v * 100, 'percent')
 
 // byTemperature is what the trips of each band consumed. Their number, distance and
 // average speed (a range, as the durations: a winter in town and a summer on the
@@ -177,6 +183,158 @@ const byTemperature = computed(() => {
   ].join(' ')
   const empty = known.length ? undefined : summary
   return { series, tableSeries, details, summary, hint, empty }
+})
+
+// parkedByTemperature is the state of charge lost per day while parked in each band: the
+// cold keeps a battery warm, the heat cools it. The power lost needs the battery's
+// capacity, and the time asleep a vehicle that tells it: the tooltip and the table give
+// them where known, the bars the loss, known wherever the state of charge is.
+const parkedByTemperature = computed(() => {
+  const perDay = (v: number | null) =>
+    v === null ? f.unknown() : t('stats.tile.perDay', { value: f.quantity(v, 'percent', 1) })
+  const lossSeries: Series = {
+    label: t('stats.chart.parkedByTemperature.loss'),
+    data: parkedBands.value.map((b) => b.soc_loss_pct_per_day),
+    color: color('chart-1'),
+  }
+  const tableSeries: Series[] = [
+    lossSeries,
+    {
+      label: t('stats.chart.parkedByTemperature.power'),
+      data: parkedBands.value.map((b) => b.power_w),
+      color: color('chart-1'),
+      format: (v) => f.quantity(v, 'W'),
+    },
+    {
+      label: t('stats.chart.parkedByTemperature.asleep'),
+      data: parkedBands.value.map((b) => b.asleep_share),
+      color: color('chart-1'),
+      format: share,
+    },
+    {
+      label: t('stats.chart.parkedByTemperature.intervals'),
+      data: parkedBands.value.map((b) => b.intervals),
+      color: color('chart-1'),
+      format: count,
+    },
+  ]
+  const details = (i: number) => {
+    const b = parkedBands.value[i]
+    if (!b) return []
+    return [
+      `${t('stats.chart.parkedByTemperature.power')}: ${f.quantity(b.power_w, 'W')}`,
+      `${t('stats.chart.parkedByTemperature.asleep')}: ${share(b.asleep_share)}`,
+      `${t('stats.chart.parkedByTemperature.intervals')}: ${count(b.intervals)}`,
+    ]
+  }
+  const known = parkedBands.value.flatMap((b, i) =>
+    b.soc_loss_pct_per_day === null
+      ? []
+      : [
+          t('stats.chart.parkedByTemperature.item', {
+            band: parkedLabels.value[i] ?? '',
+            value: perDay(b.soc_loss_pct_per_day),
+          }),
+        ],
+  )
+  const summary = known.length
+    ? t('stats.chart.parkedByTemperature.summary', { list: known.join('; ') })
+    : t('stats.chart.parkedByTemperature.none')
+  const leftOut = stats.value?.parked_by_temperature.left_out ?? 0
+  const hint = [
+    t('stats.chart.parkedByTemperature.hint'),
+    ...(leftOut ? [t('stats.chart.parkedByTemperature.leftOut', leftOut)] : []),
+  ].join(' ')
+  const empty = known.length ? undefined : summary
+  return { series: [lossSeries], tableSeries, details, summary, hint, perDay, empty }
+})
+
+// chargesByTemperature is the mean power of the AC and the DC charges of each band: the
+// cold slows a charge, a battery to warm first. A power is known by bounds, as the
+// durations; the bars are the lower one, the tooltip adds the upper, the table both.
+const chargesByTemperature = computed(() => {
+  const kw = (v: number | null) => f.quantity(v, 'kW')
+  const power = (b: ChargeBandType) =>
+    b.power_kw ? f.quantityRange(b.power_kw.min, b.power_kw.max, 'kW') : f.unknown()
+  const types = [
+    { type: 'ac', label: t('stats.chart.chargesByTemperature.ac'), color: color('chart-1') },
+    { type: 'dc', label: t('stats.chart.chargesByTemperature.dc'), color: color('chart-2') },
+  ] as const
+  const series: Series[] = types.map((ty) => ({
+    label: t('stats.chart.chargesByTemperature.lowest', { type: ty.label }),
+    data: chargeBands.value.map((b) => b[ty.type].power_kw?.min ?? null),
+    color: ty.color,
+  }))
+  const tableSeries: Series[] = types.flatMap((ty) => [
+    {
+      label: t('stats.chart.chargesByTemperature.lowest', { type: ty.label }),
+      data: chargeBands.value.map((b) => b[ty.type].power_kw?.min ?? null),
+      color: ty.color,
+      format: kw,
+    },
+    {
+      label: t('stats.chart.chargesByTemperature.highest', { type: ty.label }),
+      data: chargeBands.value.map((b) => b[ty.type].power_kw?.max ?? null),
+      color: ty.color,
+      format: kw,
+    },
+    {
+      label: t('stats.chart.chargesByTemperature.charges', { type: ty.label }),
+      data: chargeBands.value.map((b) => b[ty.type].count),
+      color: ty.color,
+      format: count,
+    },
+  ])
+  const details = (i: number) => {
+    const b = chargeBands.value[i]
+    if (!b) return []
+    // A type without a charge in the band says nothing; one whose power is unknown says
+    // so, apart from a known lower bound without an upper one.
+    return types.flatMap((ty) => {
+      const { count: n, power_kw: p } = b[ty.type]
+      if (n === 0) return []
+      const charges = t('stats.chart.chargesByTemperature.chargeCount', n)
+      if (!p)
+        return t('stats.chart.chargesByTemperature.detailUnknown', { type: ty.label, charges })
+      if (p.max === null)
+        return t('stats.chart.chargesByTemperature.detailOpen', { type: ty.label, charges })
+      return t('stats.chart.chargesByTemperature.detail', {
+        type: ty.label,
+        power: kw(p.max),
+        charges,
+      })
+    })
+  }
+  const known = chargeBands.value.flatMap((b, i) =>
+    types.flatMap((ty) =>
+      b[ty.type].power_kw
+        ? [
+            t('stats.chart.chargesByTemperature.item', {
+              band: chargeLabels.value[i] ?? '',
+              type: ty.label,
+              power: power(b[ty.type]),
+            }),
+          ]
+        : [],
+    ),
+  )
+  const summary = known.length
+    ? t('stats.chart.chargesByTemperature.summary', { list: known.join('; ') })
+    : t('stats.chart.chargesByTemperature.none')
+  const leftOut = stats.value?.charges_by_temperature.left_out ?? 0
+  const hint = [
+    t('stats.chart.chargesByTemperature.hint'),
+    ...(leftOut ? [t('stats.chart.chargesByTemperature.leftOut', leftOut)] : []),
+  ].join(' ')
+  return {
+    series,
+    tableSeries,
+    details,
+    summary,
+    hint,
+    kw,
+    empty: known.length ? undefined : summary,
+  }
 })
 
 // The bands of the state of charge: ten points each, the last one holding 100 %.
@@ -400,6 +558,40 @@ const costByPlace = computed(() => {
       unit="kWh/100 km"
       :interval-header="t('stats.chart.byTemperature.header')"
       :format="(v) => f.quantity(v, 'kWhPer100km')"
+      :selectable="false"
+    />
+    <ChartFrame
+      v-if="view === 'charging' && parkedBands.length"
+      class="parked-by-temperature"
+      :hint="parkedByTemperature.hint"
+      kind="bar"
+      :title="t('stats.chart.parkedByTemperature.title')"
+      :summary="parkedByTemperature.summary"
+      :empty="parkedByTemperature.empty"
+      :labels="parkedLabels"
+      :series="parkedByTemperature.series"
+      :table-series="parkedByTemperature.tableSeries"
+      :details="parkedByTemperature.details"
+      :unit="t('stats.chart.parked.unit')"
+      :interval-header="t('stats.chart.byTemperature.header')"
+      :format="parkedByTemperature.perDay"
+      :selectable="false"
+    />
+    <ChartFrame
+      v-if="view === 'charging' && chargeBands.length"
+      class="charges-by-temperature"
+      :hint="chargesByTemperature.hint"
+      kind="bar"
+      :title="t('stats.chart.chargesByTemperature.title')"
+      :summary="chargesByTemperature.summary"
+      :empty="chargesByTemperature.empty"
+      :labels="chargeLabels"
+      :series="chargesByTemperature.series"
+      :table-series="chargesByTemperature.tableSeries"
+      :details="chargesByTemperature.details"
+      unit="kW"
+      :interval-header="t('stats.chart.byTemperature.header')"
+      :format="chargesByTemperature.kw"
       :selectable="false"
     />
     <ChartFrame

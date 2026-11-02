@@ -114,6 +114,16 @@ type ParkedStats struct {
 	// SoCLossPctPerDay is SoCLossPct over the time of the intervals with a known loss:
 	// unknown without such time.
 	SoCLossPctPerDay Value[float64]
+	// PowerW is the mean power lost, in W: the energy of the SoC lost (the loss × the
+	// battery capacity of the event before, else after) over the time of the intervals
+	// whose loss and capacity are both known. Unknown without such time.
+	PowerW Value[float64]
+	// SleepRead is the part of Time the readings told the vehicle's sleep state over
+	// (SleepSpans), and Asleep the part of it they told it asleep or out of reach: none
+	// for a source that does not tell it.
+	SleepRead, Asleep time.Duration
+	// AsleepShare is Asleep over SleepRead: unknown without SleepRead.
+	AsleepShare Value[float64]
 }
 
 // OdometerStats is the odometer at both ends of a period or an interval, as the events
@@ -177,11 +187,25 @@ const (
 	MaxTemperatureC = 70
 )
 
-// Speed is an average speed known by bounds, in km/h: the distance over the most and
-// the least time the trips' bounds allow. Max is unknown when they allow no time at all.
-type Speed struct {
+// Rate is an average known by bounds: a quantity over the most and the least time the
+// events' bounds allow, a speed in km/h or a power in kW. Max is unknown when they allow
+// no time at all.
+type Rate struct {
 	Min float64
 	Max Value[float64]
+}
+
+// rate is q over the time of span, per hour: unknown when span allows no time, or q is
+// negative. A known q of 0 is a rate of 0, not an unknown one.
+func rate(q float64, span Span) Value[Rate] {
+	if q < 0 || span.Max <= 0 {
+		return Value[Rate]{}
+	}
+	r := Rate{Min: q / span.Max.Hours()}
+	if span.Min > 0 {
+		r.Max = Value[float64]{V: q / span.Min.Hours(), OK: true}
+	}
+	return Value[Rate]{V: r, OK: true}
 }
 
 // TemperatureBand sums the trips whose outside temperature lies in [MinC, MinC +
@@ -193,9 +217,8 @@ type TemperatureBand struct {
 	DistanceUnknown int
 	// ConsumptionKWhPer100km is an average, as TripStats'.
 	ConsumptionKWhPer100km Value[float64]
-	// Speed covers the trips whose distance is known: unknown without one of positive
-	// distance.
-	Speed Value[Speed]
+	// Speed covers the trips whose distance is known, in km/h: unknown without one.
+	Speed Value[Rate]
 }
 
 // TripsByTemperature spreads the observed trips of a period over bands of outside
@@ -204,6 +227,49 @@ type TemperatureBand struct {
 // vehicle that tells none) belongs nowhere: left out, and counted.
 type TripsByTemperature struct {
 	Bands   []TemperatureBand
+	LeftOut int
+}
+
+// ParkedBand sums the parked intervals whose outside temperature lies in [MinC, MinC +
+// TemperatureBandC), as ParkedStats.
+type ParkedBand struct {
+	MinC float64
+	ParkedStats
+}
+
+// ParkedByTemperature spreads the parked intervals of a period over the bands of
+// TripsByTemperature. An interval's temperature is the mean of those of the events
+// around it (a trip's or a charge's, OutsideTempC): the vehicle is not read while it
+// sleeps, and waking it to read one would itself drain it. Without either (a vehicle
+// that tells none, reconstructed or imported events), it is left out, and counted.
+type ParkedByTemperature struct {
+	Bands   []ParkedBand
+	LeftOut int
+}
+
+// ChargeBandType sums the charges of one type in a band of outside temperature.
+type ChargeBandType struct {
+	Count int
+	// EnergyPowerKWh sums the known integrated power estimates.
+	EnergyPowerKWh float64
+	// PowerKW is EnergyPowerKWh over the charging time of the same charges, pauses of a
+	// resumed charge included: unknown without one.
+	PowerKW Value[Rate]
+}
+
+// ChargeBand sums the charges whose outside temperature lies in [MinC, MinC +
+// TemperatureBandC). Count includes those of unknown type, in neither AC nor DC.
+type ChargeBand struct {
+	MinC   float64
+	Count  int
+	AC, DC ChargeBandType
+}
+
+// ChargesByTemperature spreads the observed charges of a period over the bands of
+// TripsByTemperature, by their OutsideTempC. A charge without one (a reconstructed or
+// imported one, one of a vehicle that tells none) is left out, and counted.
+type ChargesByTemperature struct {
+	Bands   []ChargeBand
 	LeftOut int
 }
 
@@ -251,8 +317,12 @@ type Summary struct {
 	Buckets            []BucketStats
 	TripsByDistance    TripsByDistance
 	TripsByTemperature TripsByTemperature
-	ChargesBySoC       ChargesBySoC
-	ChargesByPlace     ChargesByPlace
+	// ParkedByTemperature and ChargesByTemperature are in bands of TemperatureBandC as
+	// TripsByTemperature, each from its coldest band holding one to its warmest.
+	ParkedByTemperature  ParkedByTemperature
+	ChargesByTemperature ChargesByTemperature
+	ChargesBySoC         ChargesBySoC
+	ChargesByPlace       ChargesByPlace
 }
 
 // WithoutConsumption is s with every consumption unknown: a plug-in hybrid's trips
@@ -290,7 +360,10 @@ func (s Summary) WithoutConsumption() Summary {
 // at keeps the charges of one place in the charges' sums, the orphaned costs, which are
 // at no place, left out; the others still open and close the parked intervals and give
 // their odometer, as the trips do.
-func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from, to time.Time, loc *time.Location, bucket Bucket, at ChargesAt, p Params) (Summary, error) {
+//
+// sleep are the vehicle's sleep states over the parked intervals (SleepSpans), nil for a
+// source that does not tell them.
+func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, sleep []SleepSpan, from, to time.Time, loc *time.Location, bucket Bucket, at ChargesAt, p Params) (Summary, error) {
 	if !from.Before(to) {
 		return Summary{}, ErrEmptyPeriod
 	}
@@ -306,6 +379,8 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 	accs := make([]acc, len(bounds))
 	dist := newDistanceAcc()
 	var temp temperatureAcc
+	var parkedTemp parkedTempAcc
+	var chargeTemp chargeTempAcc
 	var bySoC ChargesBySoC
 	byPlace := newPlaceAcc(places)
 	// add counts an event starting at t in the totals and in its interval.
@@ -339,7 +414,7 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 			dist.add(t)
 			temp.add(t)
 		}
-		evs = append(evs, event{t.DetectedAt, t.Start, t.End, t.StartSoC, t.EndSoC})
+		evs = append(evs, event{t.DetectedAt, t.Start, t.End, t.StartSoC, t.EndSoC, t.Capacity, eventTemp(t.Reconstructed, t.OutsideTempC)})
 	}
 	for i, c := range charges {
 		var cost Value[Cost]
@@ -347,7 +422,7 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 			cost = costs.Charges[i]
 		}
 		reading(c.Start.After, c.OdometerKm)
-		evs = append(evs, event{c.DetectedAt, c.Start, c.End, c.StartSoC, c.EndSoC})
+		evs = append(evs, event{c.DetectedAt, c.Start, c.End, c.StartSoC, c.EndSoC, c.Capacity, eventTemp(c.Reconstructed, c.OutsideTempC)})
 		if !at.Keeps(c, places) {
 			continue
 		}
@@ -355,6 +430,7 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 		if in(c.Start.After, from, to) {
 			bySoC.add(c)
 			byPlace.add(c, cost)
+			chargeTemp.add(c)
 		}
 	}
 	if at.Group == PlaceGroupAny {
@@ -368,9 +444,13 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 	slices.SortStableFunc(evs, func(a, b event) int {
 		return cmp.Or(a.start.After.Compare(b.start.After), a.detectedAt.Compare(b.detectedAt))
 	})
+	sleep = sortedSpans(sleep)
 	for i := 1; i < len(evs); i++ {
-		prev, next := evs[i-1], evs[i]
-		add(next.start.After, func(a *acc) { a.parked(prev, next, p.MinChargeSoC) })
+		iv := parkedOf(evs[i-1], evs[i], sleep, p.MinChargeSoC)
+		add(evs[i].start.After, func(a *acc) { a.parked(iv) })
+		if in(evs[i].start.After, from, to) {
+			parkedTemp.add(iv)
+		}
 	}
 
 	total.odometerFrom(before)
@@ -378,7 +458,9 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 		odo = accs[i].odometerFrom(odo)
 	}
 	s := Summary{
-		Totals: total.stats(), TripsByDistance: dist.result(), TripsByTemperature: temp.result(), ChargesBySoC: bySoC, ChargesByPlace: byPlace.result(),
+		Totals: total.stats(), TripsByDistance: dist.result(), TripsByTemperature: temp.result(),
+		ParkedByTemperature: parkedTemp.result(), ChargesByTemperature: chargeTemp.result(),
+		ChargesBySoC: bySoC, ChargesByPlace: byPlace.result(),
 	}
 	if len(bounds) > 0 {
 		s.Buckets = make([]BucketStats, len(bounds))
@@ -430,10 +512,49 @@ func (d *distanceAcc) result() TripsByDistance {
 	return out
 }
 
-// temperatureAcc accumulates the trips by outside temperature, keyed by the band's
-// index: MinC / TemperatureBandC.
+// bandOf returns the index of the band of outside temperature holding c: MinC /
+// TemperatureBandC. False without c, or out of [MinTemperatureC, MaxTemperatureC).
+func bandOf(c Value[float64]) (int, bool) {
+	// Written so that NaN, which every comparison fails, is left out too.
+	if !c.OK || !(c.V >= MinTemperatureC && c.V < MaxTemperatureC) {
+		return 0, false
+	}
+	return int(math.Floor(c.V / TemperatureBandC)), true
+}
+
+// bands accumulates by band of outside temperature, keyed by bandOf.
+type bands[T any] map[int]*T
+
+func (b *bands[T]) at(i int) *T {
+	if *b == nil {
+		*b = map[int]*T{}
+	}
+	t := (*b)[i]
+	if t == nil {
+		t = new(T)
+		(*b)[i] = t
+	}
+	return t
+}
+
+// each calls f for each band from the coldest holding one to the warmest, with nil for
+// an empty one between.
+func (b bands[T]) each(f func(minC float64, t *T)) {
+	if len(b) == 0 {
+		return
+	}
+	lo, hi := math.MaxInt, math.MinInt
+	for i := range b {
+		lo, hi = min(lo, i), max(hi, i)
+	}
+	for i := lo; i <= hi; i++ {
+		f(float64(i*TemperatureBandC), b[i])
+	}
+}
+
+// temperatureAcc accumulates the trips by outside temperature.
 type temperatureAcc struct {
-	bands   map[int]*temperatureBandAcc
+	bands   bands[temperatureBandAcc]
 	leftOut int
 }
 
@@ -446,20 +567,12 @@ type temperatureBandAcc struct {
 }
 
 func (a *temperatureAcc) add(t Trip) {
-	// Written so that NaN, which every comparison fails, is left out too.
-	if c := t.OutsideTempC.V; t.Reconstructed || !t.OutsideTempC.OK || !(c >= MinTemperatureC && c < MaxTemperatureC) {
+	i, ok := bandOf(t.OutsideTempC)
+	if t.Reconstructed || !ok {
 		a.leftOut++
 		return
 	}
-	i := int(math.Floor(t.OutsideTempC.V / TemperatureBandC))
-	if a.bands == nil {
-		a.bands = map[int]*temperatureBandAcc{}
-	}
-	b := a.bands[i]
-	if b == nil {
-		b = &temperatureBandAcc{}
-		a.bands[i] = b
-	}
+	b := a.bands.at(i)
 	b.trip(t)
 	if t.DistanceKm.OK {
 		b.speedKm += t.DistanceKm.V
@@ -469,36 +582,101 @@ func (a *temperatureAcc) add(t Trip) {
 
 func (a *temperatureAcc) result() TripsByTemperature {
 	out := TripsByTemperature{Bands: []TemperatureBand{}, LeftOut: a.leftOut}
-	if len(a.bands) == 0 {
-		return out
-	}
-	lo, hi := math.MaxInt, math.MinInt
-	for i := range a.bands {
-		lo, hi = min(lo, i), max(hi, i)
-	}
-	for i := lo; i <= hi; i++ {
-		band := TemperatureBand{MinC: float64(i * TemperatureBandC)}
-		if b := a.bands[i]; b != nil {
+	a.bands.each(func(minC float64, b *temperatureBandAcc) {
+		band := TemperatureBand{MinC: minC}
+		if b != nil {
 			s := b.stats().Trips
 			band.Count, band.DistanceKm, band.DistanceUnknown = s.Count, s.DistanceKm, s.DistanceUnknown
 			band.ConsumptionKWhPer100km = s.ConsumptionKWhPer100km
-			band.Speed = b.speed()
+			band.Speed = rate(b.speedKm, b.speedTime)
 		}
 		out.Bands = append(out.Bands, band)
-	}
+	})
 	return out
 }
 
-func (b *temperatureBandAcc) speed() Value[Speed] {
-	// A known distance of 0 (the odometer unchanged) is a speed of 0, not an unknown one.
-	if b.speedKm < 0 || b.speedTime.Max <= 0 {
-		return Value[Speed]{}
+// parkedTempAcc accumulates the parked intervals by outside temperature, each band as acc.
+type parkedTempAcc struct {
+	bands   bands[acc]
+	leftOut int
+}
+
+func (a *parkedTempAcc) add(iv parkedInterval) {
+	i, ok := bandOf(iv.tempC)
+	if !ok {
+		a.leftOut++
+		return
 	}
-	sp := Speed{Min: b.speedKm / b.speedTime.Max.Hours()}
-	if b.speedTime.Min > 0 {
-		sp.Max = Value[float64]{V: b.speedKm / b.speedTime.Min.Hours(), OK: true}
+	a.bands.at(i).parked(iv)
+}
+
+func (a *parkedTempAcc) result() ParkedByTemperature {
+	out := ParkedByTemperature{Bands: []ParkedBand{}, LeftOut: a.leftOut}
+	a.bands.each(func(minC float64, b *acc) {
+		band := ParkedBand{MinC: minC}
+		if b != nil {
+			band.ParkedStats = b.stats().Parked
+		}
+		out.Bands = append(out.Bands, band)
+	})
+	return out
+}
+
+// chargeTempAcc accumulates the observed charges by outside temperature.
+type chargeTempAcc struct {
+	bands   bands[chargeBandAcc]
+	leftOut int
+}
+
+// chargeBandAcc is a band's charges, and by type the charging time of those whose
+// integrated energy is known, for their power.
+type chargeBandAcc struct {
+	count  int
+	ac, dc chargeTypeAcc
+}
+
+type chargeTypeAcc struct {
+	count  int
+	energy float64
+	time   Span
+}
+
+func (a *chargeTempAcc) add(c Charge) {
+	i, ok := bandOf(c.OutsideTempC)
+	if c.Reconstructed || !ok {
+		a.leftOut++
+		return
 	}
-	return Value[Speed]{V: sp, OK: true}
+	b := a.bands.at(i)
+	b.count++
+	if !c.Type.OK {
+		return
+	}
+	t := &b.ac
+	if c.Type.V == DC {
+		t = &b.dc
+	}
+	t.count++
+	if c.EnergyPowerKWh.OK {
+		t.energy += c.EnergyPowerKWh.V
+		t.time.add(c.Start, c.End)
+	}
+}
+
+func (a *chargeTempAcc) result() ChargesByTemperature {
+	out := ChargesByTemperature{Bands: []ChargeBand{}, LeftOut: a.leftOut}
+	a.bands.each(func(minC float64, b *chargeBandAcc) {
+		band := ChargeBand{MinC: minC}
+		if b != nil {
+			band.Count, band.AC, band.DC = b.count, b.ac.result(), b.dc.result()
+		}
+		out.Bands = append(out.Bands, band)
+	})
+	return out
+}
+
+func (t chargeTypeAcc) result() ChargeBandType {
+	return ChargeBandType{Count: t.count, EnergyPowerKWh: t.energy, PowerKW: rate(t.energy, t.time)}
 }
 
 func (c *ChargesBySoC) add(ch Charge) {
@@ -605,6 +783,62 @@ type event struct {
 	detectedAt       time.Time
 	start, end       Bounds
 	startSoC, endSoC Value[float64]
+	capacity         Value[Capacity]
+	tempC            Value[float64]
+}
+
+// eventTemp is the outside temperature an event gives the parked intervals around it: a
+// reconstructed one's would be a reading of some other time.
+func eventTemp(reconstructed bool, c Value[float64]) Value[float64] {
+	if reconstructed {
+		return Value[float64]{}
+	}
+	return c
+}
+
+// parkedInterval is what the sums need of the interval between two consecutive events.
+type parkedInterval struct {
+	// time is its sure part, from the latest end of the first event to the earliest start
+	// of the next.
+	time time.Duration
+	// lossPct is the SoC lost: unknown without a SoC at both ends, or a rise that only a
+	// charge explains. lossKWh is its energy, unknown without a capacity either.
+	lossPct, lossKWh Value[float64]
+	// sleepRead and asleep are the parts of time the vehicle's sleep state was read, and
+	// read asleep or out of reach.
+	sleepRead, asleep time.Duration
+	// tempC is the mean of the events' outside temperatures, those known.
+	tempC Value[float64]
+}
+
+// parkedOf is the interval between prev and next. A rise of the SoC below minRise is
+// noise, counted as no loss.
+func parkedOf(prev, next event, sleep []SleepSpan, minRise float64) parkedInterval {
+	from := prev.end.Before
+	iv := parkedInterval{time: max(0, next.start.After.Sub(from))}
+	if loss := prev.endSoC.V - next.startSoC.V; prev.endSoC.OK && next.startSoC.OK && loss > -minRise {
+		iv.lossPct = Value[float64]{V: max(0, loss), OK: true}
+		c := prev.capacity
+		if !c.OK {
+			c = next.capacity
+		}
+		if c.OK {
+			iv.lossKWh = Value[float64]{V: iv.lossPct.V * c.V.KWh / 100, OK: true}
+		}
+	}
+	iv.sleepRead, iv.asleep = sleepWithin(sleep, from, from.Add(iv.time))
+	var sum float64
+	n := 0
+	for _, t := range []Value[float64]{prev.tempC, next.tempC} {
+		if t.OK {
+			sum += t.V
+			n++
+		}
+	}
+	if n > 0 {
+		iv.tempC = Value[float64]{V: sum / float64(n), OK: true}
+	}
+	return iv
 }
 
 // acc accumulates the events of a period or an interval.
@@ -612,8 +846,10 @@ type acc struct {
 	s Stats
 	// Consumption: the energy and distance of the trips where both are known.
 	consKWh, consKm float64
-	// Parked time of the intervals with a known loss.
-	lossTime time.Duration
+	// Parked time of the intervals with a known loss, and of those whose loss's energy is
+	// known too, with that energy.
+	lossTime, powerTime time.Duration
+	lossKWh             float64
 	// The lowest and highest odometers of the events.
 	odoLow, odoHigh Value[float64]
 }
@@ -673,21 +909,23 @@ func (s *CostSum) add(c Value[Cost]) {
 	s.Max += c.V.Max
 }
 
-// parked adds the interval between two consecutive events. A rise of the SoC below
-// minRise is noise; a larger one means a charge that no event holds, so the loss is
-// unknown.
-func (a *acc) parked(prev, next event, minRise float64) {
+// parked adds the interval between two consecutive events.
+func (a *acc) parked(iv parkedInterval) {
 	s := &a.s.Parked
 	s.Intervals++
-	d := max(0, next.start.After.Sub(prev.end.Before))
-	s.Time += d
-	loss := prev.endSoC.V - next.startSoC.V
-	if !prev.endSoC.OK || !next.startSoC.OK || loss <= -minRise {
+	s.Time += iv.time
+	s.SleepRead += iv.sleepRead
+	s.Asleep += iv.asleep
+	if !iv.lossPct.OK {
 		s.SoCLossUnknown++
 		return
 	}
-	s.SoCLossPct += max(0, loss)
-	a.lossTime += d
+	s.SoCLossPct += iv.lossPct.V
+	a.lossTime += iv.time
+	if iv.lossKWh.OK {
+		a.lossKWh += iv.lossKWh.V
+		a.powerTime += iv.time
+	}
 }
 
 func (a *acc) odometer(kms ...Value[float64]) {
@@ -728,6 +966,12 @@ func (a *acc) stats() Stats {
 	}
 	if a.lossTime > 0 {
 		s.Parked.SoCLossPctPerDay = Value[float64]{V: s.Parked.SoCLossPct / a.lossTime.Hours() * 24, OK: true}
+	}
+	if a.powerTime > 0 {
+		s.Parked.PowerW = Value[float64]{V: a.lossKWh * 1000 / a.powerTime.Hours(), OK: true}
+	}
+	if s.Parked.SleepRead > 0 {
+		s.Parked.AsleepShare = Value[float64]{V: s.Parked.Asleep.Seconds() / s.Parked.SleepRead.Seconds(), OK: true}
 	}
 	return s
 }

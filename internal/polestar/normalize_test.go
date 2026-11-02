@@ -298,6 +298,9 @@ func TestNormalizer(t *testing.T) {
 	if got := n.StateKinds(); len(got) != 1 || got[0] != (core.Kind{Source: Source, Endpoint: "exterior"}) {
 		t.Errorf("state kinds %v", got)
 	}
+	if got := n.SleepKinds(); got != nil {
+		t.Errorf("sleep kinds %v", got)
+	}
 	if got := n.HealthKinds(); len(got) != 1 || got[0] != (core.Kind{Source: Source, Endpoint: "health"}) {
 		t.Errorf("health kinds %v", got)
 	}

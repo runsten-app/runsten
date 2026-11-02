@@ -96,13 +96,20 @@ type chargeStatsJSON struct {
 	ByType              chargesByTypeJSON `json:"by_type" doc:"The same figures by type of charge, but the orphaned costs: they have no type."`
 }
 
-type parkedStatsJSON struct {
+// ParkedStatsFields sum parked intervals. Exported, as PlaceStatsFields, for
+// parkedBandJSON to embed.
+type ParkedStatsFields struct {
 	Intervals      int     `json:"intervals" minimum:"0" doc:"The intervals between two consecutive events (trips and charges), counted where the second one starts."`
 	TimeS          int64   `json:"time_s" minimum:"0" doc:"Their sure duration, from the latest end of an event to the earliest start of the next."`
 	SoCLossPct     float64 `json:"soc_loss_pct" minimum:"0" doc:"The state of charge lost while parked, in points. A rise below the noise threshold counts as 0."`
 	SoCLossUnknown int     `json:"soc_loss_unknown" minimum:"0" doc:"The intervals whose loss is unknown: no state of charge at one end, or a rise that only a charge explains."`
 	// An average: null over nothing.
 	SoCLossPctPerDay *float64 `json:"soc_loss_pct_per_day" doc:"soc_loss_pct over the time of the intervals whose loss is known, per day. The state of charge has a resolution of one point: meaningful over weeks, not over a night. null without such time."`
+	// An average: null over nothing.
+	PowerW      *float64 `json:"power_w" doc:"The mean power lost while parked, in W: the energy of the state of charge lost (the loss × the battery capacity of the event before, else after, as its capacity_kwh) over the time of the intervals whose loss and capacity are both known. An estimate, as soc_loss_pct_per_day. null without such time."`
+	SleepReadS  int64    `json:"sleep_read_s" minimum:"0" doc:"The part of time_s the vehicle's responses told whether it slept over, from the fetch of each to its latest confirmation (a Tesla's state, read without waking it); 0 for a vehicle that does not tell it (Volvo, Polestar)."`
+	AsleepS     int64    `json:"asleep_s" minimum:"0" doc:"The part of sleep_read_s they told it asleep or out of reach."`
+	AsleepShare *float64 `json:"asleep_share" minimum:"0" maximum:"1" doc:"asleep_s over sleep_read_s: the share of the parked time the vehicle slept, as far as it was read. null without sleep_read_s."`
 }
 
 type odometerStatsJSON struct {
@@ -117,7 +124,7 @@ type odometerStatsJSON struct {
 type periodStatsJSON struct {
 	Trips    tripStatsJSON     `json:"trips"`
 	Charges  chargeStatsJSON   `json:"charges"`
-	Parked   parkedStatsJSON   `json:"parked"`
+	Parked   ParkedStatsFields `json:"parked"`
 	Odometer odometerStatsJSON `json:"odometer"`
 }
 
@@ -128,7 +135,7 @@ type bucketStatsJSON struct {
 	End      time.Time         `json:"end" pattern:"Z$" doc:"The end of the interval, excluded."`
 	Trips    tripStatsJSON     `json:"trips"`
 	Charges  chargeStatsJSON   `json:"charges"`
-	Parked   parkedStatsJSON   `json:"parked"`
+	Parked   ParkedStatsFields `json:"parked"`
 	Odometer odometerStatsJSON `json:"odometer"`
 }
 
@@ -165,6 +172,42 @@ type temperatureBandJSON struct {
 type tripsByTemperatureJSON struct {
 	Bands   []temperatureBandJSON `json:"bands" nullable:"false" doc:"Bands of 5 °C, coldest first, from the coldest holding a trip to the warmest, empty ones between included; [] without a trip that tells its temperature."`
 	LeftOut int                   `json:"left_out" minimum:"0" doc:"The trips in no band: those without an outside temperature (a vehicle that tells none, as a Volvo or a Polestar; a reconstructed or imported trip; one derived before Runsten kept it), or with one below -60 °C or from 70 °C, taken for a wrong reading."`
+}
+
+type parkedBandJSON struct {
+	MinC float64 `json:"min_c" doc:"The band holds the parked intervals whose outside temperature is at least min_c, in °C."`
+	MaxC float64 `json:"max_c" doc:"And less than max_c: min_c + 5."`
+	ParkedStatsFields
+}
+
+type parkedByTemperatureJSON struct {
+	Bands   []parkedBandJSON `json:"bands" nullable:"false" doc:"Bands of 5 °C as trips_by_temperature's, coldest first, from the coldest holding an interval to the warmest, empty ones between included; [] without an interval that has a temperature. An interval's temperature is the mean of the outside temperatures of the observed trips and charges around it (trips.outside_temp_c, charges.outside_temp_c): the vehicle is not read while it sleeps, and waking it to read one would drain it."`
+	LeftOut int              `json:"left_out" minimum:"0" doc:"The intervals in no band: between two events without an outside temperature (a vehicle that tells none, as a Volvo or a Polestar; reconstructed or imported events; events derived before Runsten kept it), or with one out of the bands' bounds, as trips_by_temperature's."`
+}
+
+// powerJSON is a mean power known by bounds.
+type powerJSON struct {
+	Min float64  `json:"min" minimum:"0" doc:"The energy over the longest charging time the charges' bounds allow."`
+	Max *float64 `json:"max" doc:"The energy over the shortest; null when the bounds allow no time at all."`
+}
+
+type chargeBandTypeJSON struct {
+	Count          int             `json:"count" minimum:"0"`
+	EnergyPowerKWh float64         `json:"energy_power_kwh" minimum:"0" doc:"The sum of the known integrated power estimates, as charges.energy_power_kwh."`
+	PowerKW        null[powerJSON] `json:"power_kw" doc:"The mean power of the charges whose energy_power_kwh is known, in kW: that energy over their charging time, known by bounds as charging_time_s, the pauses of a resumed charge included. null without such a charge."`
+}
+
+type chargeBandJSON struct {
+	MinC  float64            `json:"min_c" doc:"The band holds the charges whose mean outside temperature is at least min_c, in °C."`
+	MaxC  float64            `json:"max_c" doc:"And less than max_c: min_c + 5."`
+	Count int                `json:"count" minimum:"0" doc:"The band's charges, those of unknown type included."`
+	AC    chargeBandTypeJSON `json:"ac"`
+	DC    chargeBandTypeJSON `json:"dc"`
+}
+
+type chargesByTemperatureJSON struct {
+	Bands   []chargeBandJSON `json:"bands" nullable:"false" doc:"Bands of 5 °C as trips_by_temperature's, coldest first, from the coldest holding a charge to the warmest, empty ones between included; [] without a charge that tells its temperature."`
+	LeftOut int              `json:"left_out" minimum:"0" doc:"The charges in no band: those without an outside temperature (a vehicle that tells none, as a Volvo or a Polestar; a reconstructed or imported charge; one derived before Runsten kept it), or with one out of the bands' bounds, as trips_by_temperature's."`
 }
 
 type chargesBySoCJSON struct {
@@ -220,9 +263,35 @@ func tripsByTemperatureOf(d core.TripsByTemperature) tripsByTemperatureJSON {
 			MinC: b.MinC, MaxC: b.MinC + core.TemperatureBandC, Count: b.Count,
 			DistanceKm: b.DistanceKm, DistanceUnknown: b.DistanceUnknown,
 			ConsumptionKWhPer100km: opt(b.ConsumptionKWhPer100km, same),
-			Speed: nullOf(b.Speed, func(s core.Speed) speedJSON {
+			Speed: nullOf(b.Speed, func(s core.Rate) speedJSON {
 				return speedJSON{Min: s.Min, Max: opt(s.Max, same)}
 			}),
+		}
+	}
+	return out
+}
+
+func parkedByTemperatureOf(p core.ParkedByTemperature) parkedByTemperatureJSON {
+	out := parkedByTemperatureJSON{Bands: make([]parkedBandJSON, len(p.Bands)), LeftOut: p.LeftOut}
+	for i, b := range p.Bands {
+		out.Bands[i] = parkedBandJSON{MinC: b.MinC, MaxC: b.MinC + core.TemperatureBandC, ParkedStatsFields: parkedStatsOf(b.ParkedStats)}
+	}
+	return out
+}
+
+func chargeBandTypeOf(t core.ChargeBandType) chargeBandTypeJSON {
+	return chargeBandTypeJSON{
+		Count: t.Count, EnergyPowerKWh: t.EnergyPowerKWh,
+		PowerKW: nullOf(t.PowerKW, func(r core.Rate) powerJSON { return powerJSON{Min: r.Min, Max: opt(r.Max, same)} }),
+	}
+}
+
+func chargesByTemperatureOf(c core.ChargesByTemperature) chargesByTemperatureJSON {
+	out := chargesByTemperatureJSON{Bands: make([]chargeBandJSON, len(c.Bands)), LeftOut: c.LeftOut}
+	for i, b := range c.Bands {
+		out.Bands[i] = chargeBandJSON{
+			MinC: b.MinC, MaxC: b.MinC + core.TemperatureBandC, Count: b.Count,
+			AC: chargeBandTypeOf(b.AC), DC: chargeBandTypeOf(b.DC),
 		}
 	}
 	return out
@@ -260,10 +329,12 @@ type statsJSON struct {
 	Totals   periodStatsJSON    `json:"totals"`
 	Buckets  []bucketStatsJSON  `json:"buckets" nullable:"false" doc:"The intervals, oldest first, empty ones included; [] without a split. The first starts at the start of the day, week or month of from, the last ends at the end of the one of the last instant before to."`
 	// Over the period only: by interval, they would repeat the bands hundreds of times.
-	TripsByDistance    tripsByDistanceJSON    `json:"trips_by_distance" doc:"How the observed trips of the period spread by distance, with or without a split."`
-	TripsByTemperature tripsByTemperatureJSON `json:"trips_by_temperature" doc:"How the observed trips of the period spread by their mean outside temperature (trips.outside_temp_c), with or without a split."`
-	ChargesBySoC       chargesBySoCJSON       `json:"charges_by_soc" doc:"How the observed charges of the period spread by the state of charge they started and ended at."`
-	ChargesByPlace     chargesByPlaceJSON     `json:"charges_by_place" doc:"The charges of the period, reconstructed ones included, by the place their cost takes (charges.place), then outside every place by type, then without a position: each charge in one group."`
+	TripsByDistance      tripsByDistanceJSON      `json:"trips_by_distance" doc:"How the observed trips of the period spread by distance, with or without a split."`
+	TripsByTemperature   tripsByTemperatureJSON   `json:"trips_by_temperature" doc:"How the observed trips of the period spread by their mean outside temperature (trips.outside_temp_c), with or without a split."`
+	ParkedByTemperature  parkedByTemperatureJSON  `json:"parked_by_temperature" doc:"How the parked intervals of the period, counted as totals.parked, spread by outside temperature: the phantom drain in the cold and in the heat."`
+	ChargesByTemperature chargesByTemperatureJSON `json:"charges_by_temperature" doc:"How the observed charges of the period, of the place asked for, spread by their mean outside temperature (charges.outside_temp_c), AC apart from DC."`
+	ChargesBySoC         chargesBySoCJSON         `json:"charges_by_soc" doc:"How the observed charges of the period spread by the state of charge they started and ended at."`
+	ChargesByPlace       chargesByPlaceJSON       `json:"charges_by_place" doc:"The charges of the period, reconstructed ones included, by the place their cost takes (charges.place), then outside every place by type, then without a position: each charge in one group."`
 }
 
 func tripStatsOf(s core.TripStats) tripStatsJSON {
@@ -299,11 +370,13 @@ func chargeStatsOf(s core.ChargeStats) chargeStatsJSON {
 	}
 }
 
-func parkedStatsOf(s core.ParkedStats) parkedStatsJSON {
-	return parkedStatsJSON{
+func parkedStatsOf(s core.ParkedStats) ParkedStatsFields {
+	return ParkedStatsFields{
 		Intervals: s.Intervals, TimeS: int64(s.Time / time.Second),
 		SoCLossPct: s.SoCLossPct, SoCLossUnknown: s.SoCLossUnknown,
-		SoCLossPctPerDay: opt(s.SoCLossPctPerDay, same),
+		SoCLossPctPerDay: opt(s.SoCLossPctPerDay, same), PowerW: opt(s.PowerW, same),
+		SleepReadS: int64(s.SleepRead / time.Second), AsleepS: int64(s.Asleep / time.Second),
+		AsleepShare: opt(s.AsleepShare, same),
 	}
 }
 
@@ -392,6 +465,8 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 		out.Totals = periodStatsOf(core.Stats{})
 		out.TripsByDistance = tripsByDistanceOf(core.NoTripsByDistance())
 		out.TripsByTemperature = tripsByTemperatureOf(core.TripsByTemperature{})
+		out.ParkedByTemperature = parkedByTemperatureOf(core.ParkedByTemperature{})
+		out.ChargesByTemperature = chargesByTemperatureOf(core.ChargesByTemperature{})
 		out.ChargesBySoC = chargesBySoCOf(core.ChargesBySoC{})
 		out.ChargesByPlace = chargesByPlaceOf(core.NoChargesByPlace())
 		return respond(out), nil
@@ -404,7 +479,11 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 	if !l.NoCosts {
 		costs.Charges = s.costs(p.PricedCharges, model.ChargerKW)
 	}
-	sum, err := core.Summarize(p.Trips, p.Charges, costs, p.Places, from, to, loc, core.Bucket(in.Bucket), chargesAt(in.Place), s.Params)
+	sleep, err := s.sleepOf(ctx, v.ID, p, to)
+	if err != nil {
+		return nil, err
+	}
+	sum, err := core.Summarize(p.Trips, p.Charges, costs, p.Places, sleep, from, to, loc, core.Bucket(in.Bucket), chargesAt(in.Place), s.Params)
 	switch {
 	case errors.Is(err, core.ErrTooManyBuckets):
 		return nil, apiError(http.StatusBadRequest, codeInvalidParameter, "bucket: the period would have more than 400 intervals")
@@ -417,6 +496,8 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 	out.Totals = periodStatsOf(sum.Totals)
 	out.TripsByDistance, out.ChargesBySoC = tripsByDistanceOf(sum.TripsByDistance), chargesBySoCOf(sum.ChargesBySoC)
 	out.TripsByTemperature = tripsByTemperatureOf(sum.TripsByTemperature)
+	out.ParkedByTemperature = parkedByTemperatureOf(sum.ParkedByTemperature)
+	out.ChargesByTemperature = chargesByTemperatureOf(sum.ChargesByTemperature)
 	out.ChargesByPlace = chargesByPlaceOf(sum.ChargesByPlace)
 	for _, b := range sum.Buckets {
 		out.Buckets = append(out.Buckets, bucketStatsJSON{
@@ -426,6 +507,34 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 		})
 	}
 	return respond(out), nil
+}
+
+// maxSleepResponses bounds the responses telling whether the vehicle slept that the
+// statistics read: a Tesla's state changes a few times a day, so years of them. Beyond,
+// the time asleep is unknown rather than slow to read.
+const maxSleepResponses = 50_000
+
+// sleepOf reads the vehicle's sleep states over the parked intervals of p: from the end of
+// its first event, the one before the period that opens the first interval, to to.
+func (s *Server) sleepOf(ctx context.Context, vehicleID string, p Period, to time.Time) ([]core.SleepSpan, error) {
+	from := to
+	for _, t := range p.Trips {
+		from = minTime(from, t.End.Before)
+	}
+	for _, c := range p.Charges {
+		from = minTime(from, c.End.Before)
+	}
+	if !from.Before(to) {
+		return nil, nil
+	}
+	records, err := s.Readings.SleepReadings(ctx, sessionFrom(ctx).AccountID, vehicleID, from, to, maxSleepResponses+1)
+	if err != nil {
+		return nil, s.internal("sleep states not read", err)
+	}
+	if len(records) > maxSleepResponses {
+		return nil, nil
+	}
+	return core.SleepSpans(records), nil
 }
 
 // firstStart is the earliest start of the events, or to without any.

@@ -29,6 +29,9 @@ func (Normalizer) Kinds() []core.Kind { return kinds(NormalizedEndpoints()...) }
 // windows, read hourly, which the derivation leaves out.
 func (Normalizer) StateKinds() []core.Kind { return kinds(Doors, Windows) }
 
+// SleepKinds returns none: the API does not tell whether the car sleeps.
+func (Normalizer) SleepKinds() []core.Kind { return nil }
+
 // EnergyKinds returns the kinds holding the energy state: the state of charge, the range
 // and the charging power.
 func (Normalizer) EnergyKinds() []core.Kind { return kinds(EnergyState) }

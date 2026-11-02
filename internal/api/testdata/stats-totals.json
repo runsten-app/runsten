@@ -85,7 +85,11 @@
       "time_s": 42300,
       "soc_loss_pct": 0,
       "soc_loss_unknown": 3,
-      "soc_loss_pct_per_day": 0
+      "soc_loss_pct_per_day": 0,
+      "power_w": 0,
+      "sleep_read_s": 27000,
+      "asleep_s": 24300,
+      "asleep_share": 0.9
     },
     "odometer": {
       "start_km": 12400,
@@ -145,6 +149,47 @@
       }
     ],
     "left_out": 2
+  },
+  "parked_by_temperature": {
+    "bands": [
+      {
+        "min_c": 5,
+        "max_c": 10,
+        "intervals": 3,
+        "time_s": 29400,
+        "soc_loss_pct": 0,
+        "soc_loss_unknown": 2,
+        "soc_loss_pct_per_day": 0,
+        "power_w": 0,
+        "sleep_read_s": 16200,
+        "asleep_s": 13500,
+        "asleep_share": 0.8333333333333334
+      }
+    ],
+    "left_out": 1
+  },
+  "charges_by_temperature": {
+    "bands": [
+      {
+        "min_c": 5,
+        "max_c": 10,
+        "count": 1,
+        "ac": {
+          "count": 1,
+          "energy_power_kwh": 25.3,
+          "power_kw": {
+            "min": 7.027777777777778,
+            "max": 7.404878048780488
+          }
+        },
+        "dc": {
+          "count": 0,
+          "energy_power_kwh": 0,
+          "power_kw": null
+        }
+      }
+    ],
+    "left_out": 1
   },
   "charges_by_soc": {
     "start": [

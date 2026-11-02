@@ -166,6 +166,7 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		c.Sources = sourcesIn(ps, c.Start.Before, later(c.End.Before, c.DetectedAt))
 		if !c.Reconstructed {
 			c.MaxCurrentA, c.Phases = chargeCurrent(ps, c.Start.Before, c.End.Before)
+			c.OutsideTempC = outsideTemp(ps, c.DetectedAt, c.End.Before)
 		}
 	}
 	return d.res
@@ -202,12 +203,12 @@ func sourcesIn(ps []point, from, to time.Time) []string {
 }
 
 // outsideTemp returns the mean of the outside temperatures of the responses fetched within
-// [from, to]: a trip's from the reading that detected it, after the cursor's settled time
+// [from, to]: a trip's or a charge's from the reading that detected it, after the cursor's settled time
 // as every reading an incremental derivation replays, to its end. Each response counts
 // once, at its fetch: its confirmation moves as a run of identical responses grows, which
 // would make an incremental derivation and a rebuild differ. A response covering the
 // climate without a temperature counts for nothing. Absent when none was fetched: the trip
-// keeps the one fetched last before it (detector.outside).
+// keeps the one fetched last before it (detector.outside), the charge none.
 func outsideTemp(ps []point, from, to time.Time) Value[float64] {
 	var sum float64
 	n := 0

@@ -60,6 +60,9 @@ type Normalizer interface {
 	HealthKinds() []core.Kind
 	// NormalizeHealth reads a stored response of kind k into a health reading.
 	NormalizeHealth(k core.Kind, raw []byte) (core.Health, error)
+	// SleepKinds returns the kinds of response telling whether the vehicle sleeps
+	// (core.FieldSleep), read by Normalize; none for a source that does not tell it.
+	SleepKinds() []core.Kind
 }
 
 // Sources returns a Normalizer of the responses of every source norms knows, each read
@@ -90,6 +93,8 @@ func (s sources) EnergyKinds() []core.Kind { return s.kinds(Normalizer.EnergyKin
 func (s sources) StateKinds() []core.Kind { return s.kinds(Normalizer.StateKinds) }
 
 func (s sources) HealthKinds() []core.Kind { return s.kinds(Normalizer.HealthKinds) }
+
+func (s sources) SleepKinds() []core.Kind { return s.kinds(Normalizer.SleepKinds) }
 
 func (s sources) kinds(of func(Normalizer) []core.Kind) []core.Kind {
 	var out []core.Kind
@@ -202,6 +207,21 @@ func (d *Deriver) InProgress(ctx context.Context, accountID, vehicleID string, n
 // of each kind follow each other, each valid from its FetchedAt to its CheckedAt.
 func (d *Deriver) Readings(ctx context.Context, accountID, vehicleID string, from, to time.Time, limit int) ([]core.Record, error) {
 	snaps, err := d.st.SnapshotsBetween(ctx, accountID, vehicleID, from, to, d.norm.EnergyKinds(), limit)
+	if err != nil {
+		return nil, fmt.Errorf("snapshots: %w", err)
+	}
+	return d.normalize(vehicleID, snaps), nil
+}
+
+// SleepReadings returns, oldest first and at most limit of them, the responses telling
+// whether the vehicle sleeps read within [from, to], each valid from its FetchedAt to its
+// CheckedAt; none for a source that does not tell it.
+func (d *Deriver) SleepReadings(ctx context.Context, accountID, vehicleID string, from, to time.Time, limit int) ([]core.Record, error) {
+	kinds := d.norm.SleepKinds()
+	if len(kinds) == 0 {
+		return nil, nil
+	}
+	snaps, err := d.st.SnapshotsBetween(ctx, accountID, vehicleID, from, to, kinds, limit)
 	if err != nil {
 		return nil, fmt.Errorf("snapshots: %w", err)
 	}

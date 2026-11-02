@@ -61,6 +61,18 @@ type stats struct {
 		} `json:"bands"`
 		LeftOut int `json:"left_out"`
 	} `json:"trips_by_temperature"`
+	ParkedByTemperature struct {
+		Bands []struct {
+			Intervals int `json:"intervals"`
+		} `json:"bands"`
+		LeftOut int `json:"left_out"`
+	} `json:"parked_by_temperature"`
+	ChargesByTemperature struct {
+		Bands []struct {
+			Count int `json:"count"`
+		} `json:"bands"`
+		LeftOut int `json:"left_out"`
+	} `json:"charges_by_temperature"`
 	ChargesBySoC struct {
 		Start, End []int
 		LeftOut    int `json:"left_out"`
@@ -81,7 +93,10 @@ type stats struct {
 		} `json:"trips"`
 		Charges chargeStats `json:"charges"`
 		Parked  struct {
-			Intervals int `json:"intervals"`
+			Intervals   int      `json:"intervals"`
+			SleepReadS  int64    `json:"sleep_read_s"`
+			AsleepS     int64    `json:"asleep_s"`
+			AsleepShare *float64 `json:"asleep_share"`
 		} `json:"parked"`
 	} `json:"totals"`
 }
@@ -178,7 +193,7 @@ func TestStatsJSON(t *testing.T) {
 		s := read(t, base+parked+"/stats"+query("bucket", "day"))
 		if !s.From.Equal(e.clk.Now()) || !s.To.Equal(e.clk.Now()) || len(s.Buckets) != 0 ||
 			len(s.TripsByDistance.Bands) != 5 || s.TripsByTemperature.Bands == nil || len(s.TripsByTemperature.Bands) != 0 ||
-			len(s.ChargesBySoC.Start) != 101 {
+			s.ParkedByTemperature.Bands == nil || s.ChargesByTemperature.Bands == nil || len(s.ChargesBySoC.Start) != 101 {
 			t.Errorf("stats = %+v", s)
 		}
 	})
@@ -202,6 +217,35 @@ func TestStatsJSON(t *testing.T) {
 		}
 		if byTemp != 3 {
 			t.Errorf("trips by temperature %d: %+v", byTemp, s.TripsByTemperature)
+		}
+		parked := s.ParkedByTemperature.LeftOut
+		for _, b := range s.ParkedByTemperature.Bands {
+			parked += b.Intervals
+		}
+		charges := s.ChargesByTemperature.LeftOut
+		for _, b := range s.ChargesByTemperature.Bands {
+			charges += b.Count
+		}
+		if parked != s.Totals.Parked.Intervals || charges != 1 || len(s.ChargesByTemperature.Bands) != 1 {
+			t.Errorf("parked by temperature %+v, charges %+v", s.ParkedByTemperature, s.ChargesByTemperature)
+		}
+	})
+	t.Run("the sleep states not read", func(t *testing.T) {
+		e.server.Readings = failingReadings{}
+		defer func() { e.server.Readings = e.reader }()
+		resp, body := get(t, noFollow(), base+car+"/stats", c)
+		if resp.status != http.StatusInternalServerError {
+			t.Errorf("failure: %d %s", resp.status, body)
+		}
+		wantError(t, body, "internal")
+	})
+	t.Run("the time asleep within the parked intervals", func(t *testing.T) {
+		// Parked from 07:40 to 12:00, read asleep from 07:45 to 11:30 (3 h 45); from 13:00
+		// to 16:35, from 13:30 to 16:30 (3 h); from 17:25 to 18:20, read awake from 17:30 to
+		// 18:15 (45 min). The rest is not read.
+		p := read(t, base+car+"/stats"+query("from", "2026-09-28T05:00:00Z")).Totals.Parked
+		if p.SleepReadS != 7*3600+30*60 || p.AsleepS != 6*3600+45*60 || p.AsleepShare == nil || *p.AsleepShare != 0.9 {
+			t.Errorf("parked = %+v", p)
 		}
 	})
 	t.Run("a plug-in hybrid has no consumption", func(t *testing.T) {

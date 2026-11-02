@@ -24,6 +24,7 @@
   "average_power_kw": 4.2,
   "max_current_a": null,
   "phases": null,
+  "outside_temp_c": null,
   "capacity_kwh": 80,
   "capacity_source": "api",
   "position": {

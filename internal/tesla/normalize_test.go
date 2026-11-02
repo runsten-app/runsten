@@ -166,6 +166,9 @@ func TestNormalizerKinds(t *testing.T) {
 	if got, want := n.Kinds(), []core.Kind{{Source: Source, Endpoint: "vehicle"}, {Source: Source, Endpoint: "vehicle_data"}}; !reflect.DeepEqual(got, want) {
 		t.Errorf("kinds: %v", got)
 	}
+	if got, want := n.SleepKinds(), []core.Kind{{Source: Source, Endpoint: "vehicle"}}; !reflect.DeepEqual(got, want) {
+		t.Errorf("sleep: %v", got)
+	}
 	want := []core.Kind{{Source: Source, Endpoint: "vehicle_data"}}
 	for name, got := range map[string][]core.Kind{"energy": n.EnergyKinds(), "health": n.HealthKinds()} {
 		if !reflect.DeepEqual(got, want) {

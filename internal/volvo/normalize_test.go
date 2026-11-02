@@ -301,6 +301,9 @@ func TestNormalizer(t *testing.T) {
 	if got := n.StateKinds(); len(got) != 2 || got[0].Endpoint != string(Doors) || got[1].Endpoint != string(Windows) {
 		t.Errorf("state kinds %v", got)
 	}
+	if got := n.SleepKinds(); got != nil {
+		t.Errorf("sleep kinds %v", got)
+	}
 	odo := []byte(`{"data":{"odometer":{"value":1234,"unit":"km","timestamp":"2026-10-11T10:00:00Z"}}}`)
 	got, err := n.Normalize(core.Kind{Source: Source, Endpoint: string(Odometer)}, odo)
 	if err != nil || !got.OdometerKm.OK || got.OdometerKm.V != 1234 {

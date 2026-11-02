@@ -439,6 +439,8 @@
       "perDay": "{value} par jour",
       "parkedNote": "L'état de charge perdu entre deux événements : significatif sur des semaines, pas sur une nuit",
       "parkedUnknown": "inconnue pour {n} intervalle | inconnue pour {n} intervalles",
+      "parkedPower": "{value} perdus en moyenne",
+      "parkedAsleep": "en veille {value} du temps relevé",
       "cost": "Coût des charges",
       "costNote": "Estimé d'après les tarifs, ou saisi ; un intervalle quand l'heure des charges n'est pas connue",
       "costUnknown": "inconnu pour {n} charge | inconnu pour {n} charges"
@@ -549,6 +551,35 @@
         "hint": "Une voiture électrique consomme plus par temps froid : batterie et habitacle à chauffer. Survolez une tranche pour ses trajets et leur vitesse moyenne, qui distingue un hiver en ville d'un été sur l'autoroute.",
         "leftOut": "{n} trajet écarté : sans température extérieure. | {n} trajets écartés : sans température extérieure.",
         "tripCount": "{n} trajet | {n} trajets"
+      },
+      "parkedByTemperature": {
+        "title": "Perte à l’arrêt selon la température extérieure",
+        "loss": "Perte par jour",
+        "power": "Puissance perdue",
+        "asleep": "Temps en veille",
+        "intervals": "Arrêts",
+        "item": "{band}, {value}",
+        "summary": "Perte à l’arrêt selon la température extérieure : {list}.",
+        "none": "Aucune perte à l’arrêt connue sur cette période.",
+        "hint": "Un arrêt prend la température des trajets et recharges qui l’entourent : une voiture endormie n’est pas lue, et la réveiller la viderait. Survolez une tranche pour la puissance perdue et le temps en veille, quand le véhicule les donne.",
+        "leftOut": "{n} arrêt écarté : sans température extérieure autour. | {n} arrêts écartés : sans température extérieure autour."
+      },
+      "chargesByTemperature": {
+        "title": "Puissance de recharge selon la température extérieure (estimée)",
+        "ac": "AC",
+        "dc": "DC",
+        "lowest": "{type}, la plus basse",
+        "highest": "{type}, la plus haute",
+        "charges": "Recharges {type}",
+        "detail": "{type} : jusqu’à {power}, sur {charges}",
+        "detailOpen": "{type} : la plus haute inconnue, sur {charges}",
+        "detailUnknown": "{type} : puissance inconnue, sur {charges}",
+        "chargeCount": "{n} recharge | {n} recharges",
+        "item": "{band} en {type}, {power}",
+        "summary": "Puissance moyenne de recharge selon la température extérieure : {list}.",
+        "none": "Aucune puissance de recharge connue sur cette période.",
+        "hint": "Une batterie froide se recharge plus lentement, à réchauffer d’abord. Les barres sont la puissance moyenne la plus basse que permettent les heures des recharges, pauses comprises ; survolez une tranche pour les deux bornes.",
+        "leftOut": "{n} recharge écartée : sans température extérieure. | {n} recharges écartées : sans température extérieure."
       },
       "bySoC": {
         "title": "Charge au début et à la fin des recharges",

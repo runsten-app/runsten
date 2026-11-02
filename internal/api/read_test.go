@@ -53,6 +53,7 @@ type memReader struct {
 	charges  map[string][]core.Charge
 	tracks   map[string][][2]float64 // of the imported trips, by source:id
 	current  map[string][]core.Record
+	sleep    map[string][]core.Record // the responses telling whether it sleeps
 	health   map[string][]core.HealthRecord
 	versions map[string][]core.SoftwareVersion
 	open     map[string]core.ChargeInProgress // the charges in progress, by vehicle
@@ -70,7 +71,8 @@ type memReader struct {
 func newMemReader(settings *memSettings) *memReader {
 	return &memReader{
 		vehicles: map[string][]Vehicle{}, trips: map[string][]core.Trip{},
-		charges: map[string][]core.Charge{}, current: map[string][]core.Record{}, settings: settings,
+		charges: map[string][]core.Charge{}, current: map[string][]core.Record{}, sleep: map[string][]core.Record{},
+		settings: settings,
 	}
 }
 
@@ -515,7 +517,7 @@ func fixtures(m *memReader) {
 			Sources: fromVolvo,
 			Type:    some(core.AC), StartSoC: some(47.0), EndSoC: some(80.0), TargetSoC: some(80.0),
 			EnergySoCKWh: some(26.4), EnergyPowerKWh: some(25.3), Position: some(home),
-			Capacity: fromAPI, MaxCurrentA: some(16.0), Phases: some(3),
+			Capacity: fromAPI, MaxCurrentA: some(16.0), Phases: some(3), OutsideTempC: some(6.5),
 		},
 		{
 			DetectedAt: h(4, 0), Reconstructed: true, Sources: fromVolvo,
@@ -529,6 +531,14 @@ func fixtures(m *memReader) {
 		SoC:    core.Some(64.0, h(19, 2)), RangeKm: core.Some(256.0, h(19, 2)),
 		Charging: core.Some(core.ChargingActive, h(19, 2)), Connection: core.Some(core.Connected, h(19, 2)),
 		ChargeType: core.Some(core.AC, h(19, 2)), PowerW: core.Some(7400.0, h(19, 2)), TargetSoC: core.Some(80.0, h(19, 2)),
+	}
+	sleeps := func(f, c time.Time, st core.SleepState) core.Record {
+		return core.Record{FetchedAt: f, CheckedAt: c, Snapshot: core.Snapshot{Covers: core.FieldSleep, Sleep: core.Some(st, time.Time{})}}
+	}
+	m.sleep[car] = []core.Record{
+		sleeps(h(7, 45), h(11, 30), core.Asleep),
+		sleeps(h(13, 30), h(16, 30), core.Asleep),
+		sleeps(h(17, 30), h(18, 15), core.Awake),
 	}
 	m.current[car] = []core.Record{
 		{FetchedAt: h(17, 26), CheckedAt: h(19, 0), Snapshot: core.Snapshot{Covers: core.FieldEngine, Engine: core.Some(core.EngineStopped, h(17, 25))}},

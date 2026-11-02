@@ -2168,3 +2168,87 @@ func TestChargeCurrent(t *testing.T) {
 		t.Errorf("in progress %+v", res.InProgress)
 	}
 }
+
+// A charge's outside temperature is the mean of the responses fetched from the reading
+// that detected it to its end: each response once, at its fetch, never its confirmation,
+// nor a response before the charge or after its end, and none without one.
+func TestChargeOutsideTemp(t *testing.T) {
+	// withClimate is a Tesla's vehicle_data: the energy state and the climate in one
+	// response.
+	withClimate := func(s Snapshot, outside float64) Snapshot {
+		c := climate(outside, time.Time{})
+		s.Covers |= c.Covers
+		s.OutsideTempC, s.CabinTempC = c.OutsideTempC, c.CabinTempC
+		return s
+	}
+	base := []Record{
+		rec(0, 0, capacity(80)),
+		rec(0, 0, engine(EngineStopped)),
+		rec(0, 10, nrg(50, ChargingIdle)),
+		rec(20, 30, charging(51, 7000, AC)),
+		rec(40, 40, charging(60, 7000, AC)),
+		rec(50, 50, nrg(70, ChargingDone)),
+	}
+	with := func(rs ...Record) []Record { return append(slices.Clone(base), rs...) }
+	noTimestamps := DefaultParams()
+	noTimestamps.VehicleTimestamps = false
+	tests := []struct {
+		name    string
+		records []Record
+		p       Params
+		want    Value[float64]
+	}{
+		{
+			name: "read apart, fetched with the start and out of order",
+			records: with(
+				rec(0, 25, climate(-20, m(0))), // fetched before the charge, confirmed during it
+				rec(20, 20, climate(-4, m(20))),
+				rec(30, 45, climate(-2, m(10))), // recorded before the previous one
+				rec(60, 60, climate(30, m(60))), // after its end
+			),
+			p:    DefaultParams(),
+			want: val(-3),
+		},
+		{
+			name: "one response tells the energy state and the climate",
+			records: []Record{
+				rec(0, 0, capacity(80)),
+				rec(0, 10, withClimate(nrg(50, ChargingIdle), -20)),
+				rec(20, 30, withClimate(charging(51, 7000, AC), 4)),
+				rec(40, 40, withClimate(charging(60, 7000, AC), 6)),
+				rec(50, 50, withClimate(nrg(70, ChargingDone), 8)),
+			},
+			p:    noTimestamps,
+			want: val(6),
+		},
+		{
+			name:    "a vehicle that tells none",
+			records: base,
+			p:       DefaultParams(),
+		},
+		{
+			name: "a reconstructed charge has none",
+			records: []Record{
+				rec(0, 10, nrg(50, ChargingIdle)),
+				rec(10, 10, climate(5, time.Time{})),
+				rec(20, 20, nrg(60, ChargingIdle)),
+			},
+			p: DefaultParams(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			full := Derive(tt.records, Cursor{}, tt.p, nil)
+			if len(full.Charges) != 1 {
+				t.Fatalf("charges %+v", full.Charges)
+			}
+			if got := full.Charges[0].OutsideTempC; got != tt.want {
+				t.Errorf("outside %+v, want %+v", got, tt.want)
+			}
+			_, charges := deriveIncrementally(tt.records, tt.p)
+			if !reflect.DeepEqual(charges, full.Charges) {
+				t.Errorf("incremental:\n%+v\nfull:\n%+v", charges, full.Charges)
+			}
+		})
+	}
+}

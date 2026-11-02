@@ -439,6 +439,8 @@
       "perDay": "{value} per day",
       "parkedNote": "The state of charge lost between events: meaningful over weeks, not over a night",
       "parkedUnknown": "unknown for {n} interval | unknown for {n} intervals",
+      "parkedPower": "{value} lost on average",
+      "parkedAsleep": "asleep {value} of the time read",
       "cost": "Cost of charges",
       "costNote": "Estimated from the tariffs, or entered; a range when the times of the charges are not known",
       "costUnknown": "unknown for {n} charge | unknown for {n} charges"
@@ -549,6 +551,35 @@
         "hint": "An electric car uses more in the cold: heating the battery and the cabin. Point at a band for its trips and their average speed, which tells a winter in town from a summer on the motorway.",
         "leftOut": "{n} trip left out: without an outside temperature. | {n} trips left out: without an outside temperature.",
         "tripCount": "{n} trip | {n} trips"
+      },
+      "parkedByTemperature": {
+        "title": "Loss while parked by outside temperature",
+        "loss": "Loss per day",
+        "power": "Power lost",
+        "asleep": "Time asleep",
+        "intervals": "Parked intervals",
+        "item": "{band}, {value}",
+        "summary": "Loss while parked by outside temperature: {list}.",
+        "none": "No loss while parked known in this period.",
+        "hint": "An interval takes the temperature of the trips and charges around it: a car asleep is not read, and waking it would drain it. Point at a band for the power lost and the time asleep, where the vehicle tells them.",
+        "leftOut": "{n} interval left out: without an outside temperature around it. | {n} intervals left out: without an outside temperature around them."
+      },
+      "chargesByTemperature": {
+        "title": "Charging power by outside temperature (estimated)",
+        "ac": "AC",
+        "dc": "DC",
+        "lowest": "{type}, lowest",
+        "highest": "{type}, highest",
+        "charges": "{type} charges",
+        "detail": "{type}: up to {power}, over {charges}",
+        "detailOpen": "{type}: highest unknown, over {charges}",
+        "detailUnknown": "{type}: power unknown, over {charges}",
+        "chargeCount": "{n} charge | {n} charges",
+        "item": "{band} in {type}, {power}",
+        "summary": "Mean charging power by outside temperature: {list}.",
+        "none": "No charging power known in this period.",
+        "hint": "A cold battery charges slower, warmed first. The bars are the lowest mean power the charges’ times allow, pauses included; point at a band for both bounds.",
+        "leftOut": "{n} charge left out: without an outside temperature. | {n} charges left out: without an outside temperature."
       },
       "bySoC": {
         "title": "State of charge at the start and end of charges",

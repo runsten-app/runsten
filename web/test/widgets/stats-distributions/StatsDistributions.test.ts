@@ -76,6 +76,8 @@ describe('StatsDistributions', () => {
       'Consumption by outside temperature (estimated)',
     ])
     expect(await titles('charging')).toEqual([
+      'Loss while parked by outside temperature',
+      'Charging power by outside temperature (estimated)',
       'State of charge at the start and end of charges',
       'Energy charged by place (from the state of charge)',
     ])
@@ -88,6 +90,8 @@ describe('StatsDistributions', () => {
       'Trips by distance',
       'Consumption by trip distance (estimated)',
       'Consumption by outside temperature (estimated)',
+      'Loss while parked by outside temperature',
+      'Charging power by outside temperature (estimated)',
       'State of charge at the start and end of charges',
       'Energy charged by place (from the state of charge)',
       'Cost of charges by place',
@@ -115,6 +119,8 @@ describe('StatsDistributions', () => {
     // No list filters by band: a press leads nowhere; the list filters by place.
     const frames = w.findAllComponents(ChartFrame)
     expect(frames.map((f) => f.props('selectable'))).toEqual([
+      false,
+      false,
       false,
       false,
       false,
@@ -218,6 +224,142 @@ describe('StatsDistributions', () => {
     expect(w.find('.by-temperature').exists()).toBe(false)
   })
 
+  it('draws the loss while parked by outside temperature, the power and time asleep in the tooltip', async () => {
+    const s = structuredClone(stats) as Stats
+    const parked = s.totals.parked
+    s.parked_by_temperature = {
+      bands: [
+        {
+          ...parked,
+          min_c: -10,
+          max_c: -5,
+          intervals: 4,
+          soc_loss_pct_per_day: 1.25,
+          power_w: 42.4,
+          sleep_read_s: 3600,
+          asleep_s: 2700,
+          asleep_share: 0.75,
+        },
+        // Empty between two: no bar, never a zero.
+        {
+          ...parked,
+          min_c: -5,
+          max_c: 0,
+          intervals: 0,
+          soc_loss_pct_per_day: null,
+          power_w: null,
+          asleep_share: null,
+        },
+        // A vehicle whose capacity and sleep are unknown: the loss alone.
+        {
+          ...parked,
+          min_c: 0,
+          max_c: 5,
+          intervals: 2,
+          soc_loss_pct_per_day: 0.5,
+          power_w: null,
+          asleep_share: null,
+        },
+      ],
+      left_out: 3,
+    }
+    const w = await mounted(s)
+    expect(datasets(w, 'parked-by-temperature').map((d) => d.data)).toEqual([[1.25, null, 0.5]])
+    const frame = w.findAllComponents(ChartFrame).find((c) => c.classes('parked-by-temperature'))
+    const details = frame?.props('details') as (i: number) => string[]
+    expect(details(0).map(plain)).toEqual([
+      'Power lost: 42 W',
+      'Time asleep: 75%',
+      'Parked intervals: 4',
+    ])
+    expect(details(2).map(plain)).toEqual([
+      'Power lost: Unknown',
+      'Time asleep: Unknown',
+      'Parked intervals: 2',
+    ])
+    expect(details(3)).toEqual([])
+    expect(plain(w.find('.parked-by-temperature canvas').attributes('aria-label'))).toBe(
+      'Loss while parked by outside temperature: -10 to -5°C, 1.3% per day; 0 to 5°C, 0.5% per day.',
+    )
+    expect(w.findAll('.parked-by-temperature thead th').map((h) => plain(h.text()))).toEqual([
+      'Outside temperature',
+      'Loss per day',
+      'Power lost',
+      'Time asleep',
+      'Parked intervals',
+    ])
+    expect(plain(w.find('.parked-by-temperature .hint').text())).toContain(
+      '3 intervals left out: without an outside temperature around them.',
+    )
+  })
+
+  it('draws the charging power by outside temperature, AC apart from DC', async () => {
+    const s = structuredClone(stats) as Stats
+    const none = { count: 0, energy_power_kwh: 0, power_kw: null }
+    s.charges_by_temperature = {
+      bands: [
+        {
+          min_c: -5,
+          max_c: 0,
+          count: 3,
+          ac: { count: 2, energy_power_kwh: 40, power_kw: { min: 6.8, max: 7.1 } },
+          dc: { count: 1, energy_power_kwh: 30, power_kw: { min: 48, max: null } },
+        },
+        { min_c: 0, max_c: 5, count: 0, ac: none, dc: none },
+        {
+          min_c: 5,
+          max_c: 10,
+          count: 2,
+          ac: { count: 1, energy_power_kwh: 20, power_kw: { min: 10.4, max: 10.42 } },
+          // A DC charge whose power is unknown: neither bound.
+          dc: { count: 1, energy_power_kwh: 0, power_kw: null },
+        },
+      ],
+      left_out: 1,
+    }
+    const w = await mounted(s)
+    // The lower bound of each type's mean power: no midpoint.
+    expect(datasets(w, 'charges-by-temperature').map((d) => [d.label, d.data])).toEqual([
+      ['AC, lowest', [6.8, null, 10.4]],
+      ['DC, lowest', [48, null, null]],
+    ])
+    const frame = w.findAllComponents(ChartFrame).find((c) => c.classes('charges-by-temperature'))
+    const details = frame?.props('details') as (i: number) => string[]
+    expect(details(0).map(plain)).toEqual([
+      'AC: up to 7.1 kW, over 2 charges',
+      'DC: highest unknown, over 1 charge',
+    ])
+    expect(details(2).map(plain)).toEqual([
+      'AC: up to 10.4 kW, over 1 charge',
+      'DC: power unknown, over 1 charge',
+    ])
+    expect(plain(w.find('.charges-by-temperature canvas').attributes('aria-label'))).toBe(
+      'Mean charging power by outside temperature: -5 to 0°C in AC, 6.8–7.1 kW; ' +
+        '-5 to 0°C in DC, at least 48 kW; 5 to 10°C in AC, 10.4 kW.',
+    )
+    expect(w.findAll('.charges-by-temperature thead th').map((h) => plain(h.text()))).toEqual([
+      'Outside temperature',
+      'AC, lowest',
+      'AC, highest',
+      'AC charges',
+      'DC, lowest',
+      'DC, highest',
+      'DC charges',
+    ])
+    expect(plain(w.find('.charges-by-temperature .hint').text())).toContain(
+      '1 charge left out: without an outside temperature.',
+    )
+  })
+
+  it('draws no loss or charging power by temperature for a vehicle that tells none', async () => {
+    const s = structuredClone(stats) as Stats
+    s.parked_by_temperature = { bands: [], left_out: 4 }
+    s.charges_by_temperature = { bands: [], left_out: 2 }
+    const w = await mounted(s)
+    expect(w.find('.parked-by-temperature').exists()).toBe(false)
+    expect(w.find('.charges-by-temperature').exists()).toBe(false)
+  })
+
   it('leads from a place to the list of its charges over the same period', async () => {
     const s = structuredClone(stats) as Stats
     s.charges_by_place.outside.dc.count = 1
@@ -228,7 +370,7 @@ describe('StatsDistributions', () => {
     await flushPromises()
     // The frames of the views in order: the places' energy, then their cost.
     const frames = wrapper.findAllComponents(ChartFrame)
-    const [byPlace, costByPlace] = [frames[4], frames[5]]
+    const [byPlace, costByPlace] = [frames[6], frames[7]]
     const opened = async (frame: (typeof frames)[number] | undefined, i: number) => {
       await router.push('/vehicles/v1/stats?from=2026-09-01&to=2026-09-30&view=charging')
       frame?.vm.$emit('select', i)

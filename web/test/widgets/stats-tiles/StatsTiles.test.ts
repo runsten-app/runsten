@@ -73,6 +73,20 @@ describe('StatsTiles', () => {
     expect(tile(w, 'parked').notes).toContain('unknown for 3 intervals')
   })
 
+  it('tells the power lost while parked and the time asleep, where known', async () => {
+    const s = structuredClone(stats) as Stats
+    s.totals.parked = { ...s.totals.parked, power_w: 38.6, asleep_share: 0.912 }
+    fetchStats.mockResolvedValue(s)
+    const w = await tiles()
+    expect(tile(w, 'parked').notes).toEqual(
+      expect.arrayContaining(['39 W lost on average', 'asleep 91% of the time read']),
+    )
+    s.totals.parked = { ...s.totals.parked, power_w: null, asleep_share: null }
+    fetchStats.mockResolvedValue(s)
+    const none = await tiles({ vehicle: 'v2' })
+    expect(tile(none, 'parked').notes.join(' ')).not.toMatch(/ W |asleep/)
+  })
+
   it('says unknown, never 0, for an average over nothing', async () => {
     const s = structuredClone(stats) as Stats
     s.totals.trips.consumption_kwh_per_100km = null

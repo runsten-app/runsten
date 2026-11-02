@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"runsten/internal/core"
+	"runsten/internal/tesla"
 	"runsten/internal/volvo"
 )
 
@@ -64,6 +65,27 @@ func TestReadingsErrors(t *testing.T) {
 	d = New(&scriptedStore{snaps: []Snapshot{{Kind: kind(volvo.EnergyState), FetchedAt: at, CheckedAt: at, Payload: []byte("{")}}}, volvo.Normalizer{}, core.DefaultParams(), nil, quiet)
 	if got, err := d.Readings(context.Background(), "a", "v", at, at.Add(time.Hour), 10); err != nil || len(got) != 0 {
 		t.Errorf("readings = %+v, %v", got, err)
+	}
+}
+
+// A source that does not tell whether its vehicle sleeps reads nothing; another reads the
+// responses that tell it.
+func TestSleepReadings(t *testing.T) {
+	boom := errors.New("boom")
+	at := time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC)
+	state := core.Kind{Source: tesla.Source, Endpoint: string(tesla.VehicleState)}
+	st := &scriptedStore{snaps: []Snapshot{{Kind: state, FetchedAt: at, CheckedAt: at.Add(time.Hour), Payload: []byte(`{"response":{"state":"asleep"}}`)}}}
+	if got, err := New(st, volvo.Normalizer{}, core.DefaultParams(), nil, quiet).SleepReadings(context.Background(), "a", "v", at, at.Add(time.Hour), 10); err != nil || got != nil {
+		t.Errorf("volvo: %+v, %v", got, err)
+	}
+	d := New(st, Sources(volvo.Normalizer{}, tesla.Normalizer{}), core.DefaultParams(), nil, quiet)
+	got, err := d.SleepReadings(context.Background(), "a", "v", at, at.Add(time.Hour), 10)
+	if err != nil || len(got) != 1 || got[0].Snapshot.Sleep.V != core.Asleep || !got[0].CheckedAt.Equal(at.Add(time.Hour)) {
+		t.Errorf("tesla: %+v, %v", got, err)
+	}
+	d = New(&scriptedStore{snapErr: boom}, tesla.Normalizer{}, core.DefaultParams(), nil, quiet)
+	if _, err := d.SleepReadings(context.Background(), "a", "v", at, at.Add(time.Hour), 10); !errors.Is(err, boom) {
+		t.Errorf("err = %v", err)
 	}
 }
 

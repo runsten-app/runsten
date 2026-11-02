@@ -43,7 +43,7 @@ A Tesla stays awake while it is read, and an awake car loses a few kWh a day. Ru
 - Once the car has been parked, not charging, for 3 minutes, Runsten stops reading its data for 15 minutes. If it falls asleep, it is left alone until it wakes up; if not, the reading resumes, and stops again 3 minutes later.
 - An asleep car is never woken: what it measured while asleep is read when it wakes up.
 
-The vehicle's page says when the car is asleep, or out of reach (asleep or without a network: Tesla does not always tell which), and since when: its values are then those it had before.
+The vehicle's page says when the car is asleep, or out of reach (asleep or without a network: Tesla does not always tell which), and since when: its values are then those it had before. The [statistics](./statistics.md#the-loss-while-parked) give the share of the parked time it slept, beside the charge it lost.
 
 A trip that starts while Runsten leaves the car alone is seen when it ends, or when the 15 minutes are over: it is then found from the odometer, as a reconstructed trip.
 
@@ -63,7 +63,7 @@ The vehicle's page gives the version of the car's software, and the update waiti
 
 ## Its temperatures
 
-The vehicle's page gives the temperature the car measures outside and in its cabin, saying when the climate runs or the car preconditions, and when it heats its battery. Each trip gives the average outside temperature of the readings Runsten took while it ran, in its details and in the trips' CSV file: a consumption in winter reads against it, and the [statistics](./statistics.md#consumption-by-outside-temperature) give the consumption by band of outside temperature. With [MQTT](./mqtt.md), Home Assistant gets the temperatures and the climate as entities of the car. A trip Runsten did not see (found from the odometer) has none, nor do the trips recorded before Runsten kept it, until the instance rebuilds its trips and charges ([Updating](../self-hosting/updating.md#update-notes)). A Volvo or a Polestar tells no temperature Runsten reads: their pages show none.
+The vehicle's page gives the temperature the car measures outside and in its cabin, saying when the climate runs or the car preconditions, and when it heats its battery. Each trip gives the average outside temperature of the readings Runsten took while it ran, in its details and in the trips' CSV file: a consumption in winter reads against it, and the [statistics](./statistics.md#consumption-by-outside-temperature) give the consumption by band of outside temperature. Each charge keeps the same, in its CSV file, and the statistics give the [loss while parked and the charging power](./statistics.md#the-cold-parked-and-charging) by band of it. With [MQTT](./mqtt.md), Home Assistant gets the temperatures and the climate as entities of the car. A trip Runsten did not see (found from the odometer) has none, nor do the trips recorded before Runsten kept it, until the instance rebuilds its trips and charges ([Updating](../self-hosting/updating.md#update-notes)). A Volvo or a Polestar tells no temperature Runsten reads: their pages show none.
 
 ## Its doors and windows
 

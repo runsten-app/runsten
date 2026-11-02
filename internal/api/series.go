@@ -11,11 +11,15 @@ import (
 	"runsten/internal/core"
 )
 
-// Readings reads the energy states a vehicle gave over a window.
+// Readings reads the energy states a vehicle gave over a window, and whether it slept.
 type Readings interface {
 	// Readings returns the records of the vehicle's energy state read within [from, to],
 	// oldest first, at most limit of them.
 	Readings(ctx context.Context, accountID, vehicleID string, from, to time.Time, limit int) ([]core.Record, error)
+	// SleepReadings returns the records telling whether the vehicle sleeps read within
+	// [from, to], oldest first, at most limit of them: none for a source that does not
+	// tell it.
+	SleepReadings(ctx context.Context, accountID, vehicleID string, from, to time.Time, limit int) ([]core.Record, error)
 }
 
 const (

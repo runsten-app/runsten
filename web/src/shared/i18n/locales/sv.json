@@ -439,6 +439,8 @@
       "perDay": "{value} per dag",
       "parkedNote": "Laddningsnivå förlorad mellan händelser: meningsfull över veckor, inte över en natt",
       "parkedUnknown": "okänd för {n} intervall | okänd för {n} intervall",
+      "parkedPower": "{value} förlorat i genomsnitt",
+      "parkedAsleep": "sovande {value} av den avlästa tiden",
       "cost": "Laddningarnas kostnad",
       "costNote": "Uppskattad enligt tarifferna, eller angiven; ett intervall när laddningarnas tider inte är kända",
       "costUnknown": "okänd för {n} laddning | okänd för {n} laddningar"
@@ -549,6 +551,35 @@
         "hint": "En elbil drar mer i kyla: batteriet och kupén ska värmas. Peka på ett intervall för dess resor och deras medelhastighet, som skiljer en vinter i stan från en sommar på motorvägen.",
         "leftOut": "{n} resa utelämnad: utan utetemperatur. | {n} resor utelämnade: utan utetemperatur.",
         "tripCount": "{n} resa | {n} resor"
+      },
+      "parkedByTemperature": {
+        "title": "Förlust vid parkering efter utetemperatur",
+        "loss": "Förlust per dag",
+        "power": "Förlorad effekt",
+        "asleep": "Tid i viloläge",
+        "intervals": "Parkeringar",
+        "item": "{band}, {value}",
+        "summary": "Förlust vid parkering efter utetemperatur: {list}.",
+        "none": "Ingen känd förlust vid parkering under perioden.",
+        "hint": "En parkering får temperaturen från resorna och laddningarna runt den: en sovande bil läses inte, och att väcka den skulle tömma den. Peka på ett intervall för förlorad effekt och tid i viloläge, där fordonet anger dem.",
+        "leftOut": "{n} parkering utelämnad: utan utetemperatur runt den. | {n} parkeringar utelämnade: utan utetemperatur runt dem."
+      },
+      "chargesByTemperature": {
+        "title": "Laddeffekt efter utetemperatur (uppskattad)",
+        "ac": "AC",
+        "dc": "DC",
+        "lowest": "{type}, lägsta",
+        "highest": "{type}, högsta",
+        "charges": "{type}-laddningar",
+        "detail": "{type}: upp till {power}, på {charges}",
+        "detailOpen": "{type}: högsta okänd, på {charges}",
+        "detailUnknown": "{type}: okänd effekt, på {charges}",
+        "chargeCount": "{n} laddning | {n} laddningar",
+        "item": "{band} med {type}, {power}",
+        "summary": "Genomsnittlig laddeffekt efter utetemperatur: {list}.",
+        "none": "Ingen känd laddeffekt under perioden.",
+        "hint": "Ett kallt batteri laddar långsammare och värms först. Staplarna är den lägsta medeleffekt som laddningarnas tider tillåter, pauser inräknade; peka på ett intervall för båda gränserna.",
+        "leftOut": "{n} laddning utelämnad: utan utetemperatur. | {n} laddningar utelämnade: utan utetemperatur."
       },
       "bySoC": {
         "title": "Laddningsnivå i början och slutet av laddningar",
