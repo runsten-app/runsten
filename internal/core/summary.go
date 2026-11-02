@@ -446,7 +446,8 @@ type temperatureBandAcc struct {
 }
 
 func (a *temperatureAcc) add(t Trip) {
-	if t.Reconstructed || !t.OutsideTempC.OK || t.OutsideTempC.V < MinTemperatureC || t.OutsideTempC.V >= MaxTemperatureC {
+	// Written so that NaN, which every comparison fails, is left out too.
+	if c := t.OutsideTempC.V; t.Reconstructed || !t.OutsideTempC.OK || !(c >= MinTemperatureC && c < MaxTemperatureC) {
 		a.leftOut++
 		return
 	}

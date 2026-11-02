@@ -445,17 +445,18 @@ func TestSummarizeTripsByTemperatureEdges(t *testing.T) {
 	}
 
 	// A temperature out of [MinTemperatureC, MaxTemperatureC) is a wrong reading: left out,
-	// never thousands of empty bands up to it.
-	trips := []Trip{drive(t1, t1.Add(time.Hour), 10, 2, 80, 78), drive(t1.Add(2*time.Hour), t1.Add(3*time.Hour), 10, 2, 78, 76), drive(t1.Add(4*time.Hour), t1.Add(5*time.Hour), 10, 2, 76, 74)}
+	// never thousands of empty bands up to it; NaN too.
+	trips := []Trip{drive(t1, t1.Add(time.Hour), 10, 2, 80, 78), drive(t1.Add(2*time.Hour), t1.Add(3*time.Hour), 10, 2, 78, 76), drive(t1.Add(4*time.Hour), t1.Add(5*time.Hour), 10, 2, 76, 74), drive(t1.Add(6*time.Hour), t1.Add(7*time.Hour), 10, 2, 74, 72)}
 	trips[0].OutsideTempC = val(12.0)
 	trips[1].OutsideTempC = val(1e6)
 	trips[2].OutsideTempC = val(-60.5)
+	trips[3].OutsideTempC = val(math.NaN())
 	s, err = Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := s.TripsByTemperature; len(got.Bands) != 1 || got.Bands[0].MinC != 10 || got.LeftOut != 2 {
-		t.Errorf("out of range = %+v, want the 10 °C band alone and 2 left out", got)
+	if got := s.TripsByTemperature; len(got.Bands) != 1 || got.Bands[0].MinC != 10 || got.LeftOut != 3 {
+		t.Errorf("out of range = %+v, want the 10 °C band alone and 3 left out", got)
 	}
 }
 
