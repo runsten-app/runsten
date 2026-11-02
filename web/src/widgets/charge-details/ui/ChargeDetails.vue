@@ -123,6 +123,9 @@ const costNotes = computed(() => {
       <p class="text-body-medium">{{ t('event.importedHelp') }}</p>
     </v-alert>
 
+    <!-- What goes first, above the figures: the page's curve. -->
+    <slot />
+
     <v-row>
       <v-col v-if="!charge.reconstructed" cols="12" md="6">
         <v-card class="h-100 when">

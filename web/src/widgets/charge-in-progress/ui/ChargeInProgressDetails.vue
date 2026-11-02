@@ -51,6 +51,9 @@ const costNote = computed(() => {
       {{ t('chargeInProgress.stoppedHelp', { time: f.dateTime(charge.read_at, now) }) }}
     </v-alert>
 
+    <!-- What goes first, above the figures: the page's curve. -->
+    <slot />
+
     <v-row>
       <v-col cols="12" md="6">
         <v-card class="h-100 when">

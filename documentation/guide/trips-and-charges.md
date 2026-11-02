@@ -42,7 +42,7 @@ A Tesla also measures the energy that goes into its battery during a charge: the
 
 <Screen view="charge" alt="A charge at home: its energy, its place and its cost." />
 
-A charge shows its type (AC or DC), its energy, its place (or "Outside any place") and, once a currency is chosen, its cost. For a car that tells its current (a Tesla on AC, a Polestar), it shows the highest current read during the charge and, for a Tesla, the phases it drew on: a charge on three phases from one on a single phase. A Volvo tells neither. See [Places, tariffs and costs](./costs.md).
+A charge shows its curve first, the power and the state of charge over its time, then its figures: its type (AC or DC), its energy, its place (or "Outside any place") and, once a currency is chosen, its cost. For a car that tells its current (a Tesla on AC, a Polestar), it shows the highest current read during the charge and, for a Tesla, the phases it drew on: a charge on three phases from one on a single phase. A Volvo tells neither. See [Places, tariffs and costs](./costs.md).
 
 ## A charge in progress
 
