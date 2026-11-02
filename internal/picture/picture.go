@@ -32,6 +32,9 @@ type Params struct {
 	MaxSize, MaxBytes int
 	// TTL is how long a picture is kept.
 	TTL time.Duration
+	// FrontTimeout bounds the request for a banner's front view, so that the banner,
+	// asked after it, still answers within the server's write deadline.
+	FrontTimeout time.Duration
 }
 
 // DefaultParams are the relay's for the pictures Volvo's details link to, read on
@@ -40,6 +43,7 @@ func DefaultParams() Params {
 	return Params{
 		Hosts: []string{"cas.volvocars.com", "wizz.volvocars.com"},
 		Width: 640, MaxSize: 4 << 20, MaxBytes: 32 << 20, TTL: 24 * time.Hour,
+		FrontTimeout: 5 * time.Second,
 	}
 }
 
@@ -52,6 +56,9 @@ type Picture struct {
 // ErrUnavailable is the CDN failing to give a picture: an error of its own, a picture
 // too large, or anything but an image.
 var ErrUnavailable = errors.New("picture unavailable")
+
+// errMissing is the CDN having no picture at the URL: a 404.
+var errMissing = fmt.Errorf("%w: not found", ErrUnavailable)
 
 // types are the media types relayed: raster images only, which the browser shows without
 // running anything.
@@ -117,17 +124,13 @@ func (r *Relay) Picture(ctx context.Context, u string) (Picture, error) {
 	if ok && now.Sub(e.at) < r.p.TTL {
 		return e.pic, nil
 	}
-	var pic Picture
-	var err error
-	for _, c := range candidates(u) {
-		if pic, err = r.fetch(ctx, r.sized(c)); err == nil {
-			break
-		}
-	}
+	pic, keep, err := r.best(ctx, u)
 	if err != nil {
 		return Picture{}, err
 	}
-	r.keep(u, entry{pic, now})
+	if keep {
+		r.keep(u, entry{pic, now})
+	}
 	return pic, nil
 }
 
@@ -137,15 +140,30 @@ var banner = strings.NewReplacer(
 	"/exterior/studio/front/transparent_exterior-studio-front_",
 )
 
-// candidates are the URLs tried for u, in order. Volvo's details link the recent models
-// (2026 on, read 2026-11) to a banner: a close-up of the front left, the car cut on the
-// right and at the bottom. The same picture's front view shows the whole car, but not
-// every banner has one (a 404 for a 2025 one): the banner stays the fallback.
-func candidates(u string) []string {
-	if front := banner.Replace(u); front != u {
-		return []string{front, u}
+// best fetches the picture shown for u. Volvo's details link the recent models (2026
+// on, read 2026-11) to a banner: a close-up of the front left, the car cut on the right
+// and at the bottom. The same picture's front view shows the whole car, but not every
+// banner has one (a 404 for a 2025 one): the banner stays the fallback. keep is false
+// for a banner fetched after its front view failed otherwise than by a 404, so that the
+// front view is asked again next time.
+func (r *Relay) best(ctx context.Context, u string) (pic Picture, keep bool, err error) {
+	front := banner.Replace(u)
+	if front == u {
+		pic, err = r.fetch(ctx, r.sized(u))
+		return pic, true, err
 	}
-	return []string{u}
+	fctx, cancel := ctx, context.CancelFunc(func() {})
+	if r.p.FrontTimeout > 0 {
+		fctx, cancel = context.WithTimeout(ctx, r.p.FrontTimeout)
+	}
+	pic, err = r.fetch(fctx, r.sized(front))
+	cancel()
+	if err == nil {
+		return pic, true, nil
+	}
+	missing := errors.Is(err, errMissing)
+	pic, err = r.fetch(ctx, r.sized(u))
+	return pic, missing, err
 }
 
 // sized replaces the URL's w with the relay's width, leaving the rest of its query as it
@@ -181,6 +199,9 @@ func (r *Relay) fetch(ctx context.Context, u string) (Picture, error) {
 		return Picture{}, fmt.Errorf("%w: %w", ErrUnavailable, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode == http.StatusNotFound {
+		return Picture{}, errMissing
+	}
 	if resp.StatusCode != http.StatusOK {
 		return Picture{}, fmt.Errorf("%w: status %d", ErrUnavailable, resp.StatusCode)
 	}

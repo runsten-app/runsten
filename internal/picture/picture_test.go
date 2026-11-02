@@ -92,6 +92,9 @@ func TestPicture(t *testing.T) {
 	}
 }
 
+// stalled is a status for byURL: the CDN never answers, until the request is cancelled.
+const stalled = -1
+
 // byURL answers each URL with its own status, and records what was asked.
 type byURL struct {
 	status map[string]int
@@ -101,6 +104,10 @@ type byURL struct {
 func (c *byURL) RoundTrip(req *http.Request) (*http.Response, error) {
 	u := req.URL.String()
 	c.asked = append(c.asked, u)
+	if c.status[u] == stalled {
+		<-req.Context().Done()
+		return nil, req.Context().Err()
+	}
 	return &http.Response{
 		StatusCode: c.status[u], Header: http.Header{"Content-Type": {"image/png"}},
 		Body: io.NopCloser(strings.NewReader(u)), Request: req,
@@ -117,13 +124,19 @@ func TestPictureBanner(t *testing.T) {
 		status map[string]int
 		want   string
 		asked  int
+		kept   bool
 	}{
-		"its front view": {map[string]int{front: http.StatusOK, sized: http.StatusOK}, front, 1},
-		"no front view":  {map[string]int{front: http.StatusNotFound, sized: http.StatusOK}, sized, 2},
-		"neither":        {map[string]int{front: http.StatusNotFound, sized: http.StatusNotFound}, "", 2},
+		"its front view": {map[string]int{front: http.StatusOK, sized: http.StatusOK}, front, 1, true},
+		"no front view":  {map[string]int{front: http.StatusNotFound, sized: http.StatusOK}, sized, 2, true},
+		// The front view is asked again next time.
+		"front view failing": {map[string]int{front: http.StatusServiceUnavailable, sized: http.StatusOK}, sized, 2, false},
+		"front view stalled": {map[string]int{front: stalled, sized: http.StatusOK}, sized, 2, false},
+		"neither":            {map[string]int{front: http.StatusNotFound, sized: http.StatusNotFound}, "", 2, false},
 	} {
 		c := &byURL{status: tc.status}
-		r := New(DefaultParams(), &http.Client{Transport: c}, clock.NewManual(time.Unix(0, 0)))
+		p := DefaultParams()
+		p.FrontTimeout = 10 * time.Millisecond
+		r := New(p, &http.Client{Transport: c}, clock.NewManual(time.Unix(0, 0)))
 		got, err := r.Picture(context.Background(), banner)
 		if tc.want == "" {
 			if !errors.Is(err, ErrUnavailable) {
@@ -134,6 +147,10 @@ func TestPictureBanner(t *testing.T) {
 		}
 		if len(c.asked) != tc.asked {
 			t.Errorf("%s: asked %v", name, c.asked)
+		}
+		_, _ = r.Picture(context.Background(), banner)
+		if kept := len(c.asked) == tc.asked; kept != tc.kept {
+			t.Errorf("%s: kept %v, want %v", name, kept, tc.kept)
 		}
 	}
 }
