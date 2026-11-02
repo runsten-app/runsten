@@ -534,6 +534,22 @@
         "none": "Aucune consommation connue sur cette période.",
         "hint": "Les trajets courts consomment souvent plus au kilomètre : batterie et habitacle à chauffer, conduite en ville."
       },
+      "byTemperature": {
+        "title": "Consommation selon la température extérieure (estimée)",
+        "consumption": "Consommation",
+        "averageSpeed": "Vitesse moyenne",
+        "speed": "Vitesse moyenne, la plus basse",
+        "speedMax": "Vitesse moyenne, la plus haute",
+        "trips": "Trajets",
+        "distance": "Distance",
+        "header": "Température extérieure",
+        "item": "{band}, {value} sur {trips}",
+        "summary": "Consommation selon la température extérieure : {list}.",
+        "none": "Aucune consommation connue sur cette période.",
+        "hint": "Une voiture électrique consomme plus par temps froid : batterie et habitacle à chauffer. Survolez une tranche pour ses trajets et leur vitesse moyenne, qui distingue un hiver en ville d'un été sur l'autoroute.",
+        "leftOut": "{n} trajet écarté : sans température extérieure. | {n} trajets écartés : sans température extérieure.",
+        "tripCount": "{n} trajet | {n} trajets"
+      },
       "bySoC": {
         "title": "Charge au début et à la fin des recharges",
         "started": "Début",

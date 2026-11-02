@@ -37,7 +37,13 @@ export {
   parseAmount,
   type Amounts,
 } from './money-format'
-export { formatQuantity, formatSignedPercent, kilowatts, type Unit } from './number-format'
+export {
+  formatQuantity,
+  formatQuantityRange,
+  formatSignedPercent,
+  kilowatts,
+  type Unit,
+} from './number-format'
 export { parsePeriod, type Period } from './period'
 export { currencyName, currencySymbol, formatPricePerKwh, type CurrencyUnit } from './price-format'
 export {

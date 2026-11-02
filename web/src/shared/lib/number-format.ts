@@ -1,11 +1,12 @@
-// The units Runsten shows. Intl formats kilometers, percents and degrees itself; it has no watt,
+// The units Runsten shows. Intl formats kilometers, speeds, percents and degrees itself; it has no watt,
 // watt-hour, ampere, volt nor pressure unit, so kW, kWh, kWh/100 km, A, V and bar are a
 // formatted number and a symbol.
 export type Unit =
-  'km' | 'percent' | 'kW' | 'kWh' | 'kWhPer100km' | 'bar' | 'celsius' | 'ampere' | 'volt'
+  'km' | 'kmh' | 'percent' | 'kW' | 'kWh' | 'kWhPer100km' | 'bar' | 'celsius' | 'ampere' | 'volt'
 
 const intlUnits: Partial<Record<Unit, string>> = {
   km: 'kilometer',
+  kmh: 'kilometer-per-hour',
   percent: 'percent',
   celsius: 'celsius',
 }
@@ -16,6 +17,7 @@ const symbols: Partial<Record<Unit, string>> = {
 }
 const fractionDigits: Record<Unit, number> = {
   km: 0,
+  kmh: 0,
   percent: 0,
   kW: 1,
   kWh: 1,
@@ -46,6 +48,19 @@ export function formatQuantity(
     )
   // A no-break space, as Intl puts between a number and its unit.
   return `${new Intl.NumberFormat(locale, options).format(value)}\u00a0${symbols[unit] ?? unit}`
+}
+
+// formatQuantityRange formats bounds in their unit as Intl writes a range ("44–52 km/h"),
+// one value when both round alike: never formatRange on equal bounds ("~44 km/h").
+export function formatQuantityRange(min: number, max: number, unit: Unit, locale: string): string {
+  const options = { maximumFractionDigits: fractionDigits[unit] }
+  const unitName = intlUnits[unit]
+  const f = new Intl.NumberFormat(
+    locale,
+    unitName ? { ...options, style: 'unit', unit: unitName } : options,
+  )
+  const text = f.format(min) === f.format(max) ? f.format(min) : f.formatRange(min, max)
+  return unitName ? text : `${text}\u00a0${symbols[unit] ?? unit}`
 }
 
 // kilowatts converts a power in W, as the API gives it, to kW, as it is shown.

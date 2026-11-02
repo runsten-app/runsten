@@ -17,6 +17,12 @@ The **Stats** tab shows the totals of a period, this month by default, a shortcu
 
 Selecting a bar opens the trips or charges of its interval; a place's bar, the charges of that place over the period ([Charges by place](./trips-and-charges.md#charges-by-place)).
 
+## Consumption by outside temperature
+
+For a car that tells its outside temperature (a [Tesla](./tesla.md#its-temperatures)), the driving view adds the consumption of its trips by band of 5 °C, from the coldest band holding a trip to the warmest: an electric car uses more in the cold, heating its battery and its cabin. Point at a band to see its trips, their distance and their average speed: a winter in town and a summer on the motorway differ by more than the temperature, and the speed tells them apart. The speed is a range, from its lowest to its highest, since the times of a trip are known within the minute Runsten reads the car. The table under the chart, for screen readers, holds the same figures.
+
+Each trip counts in the band of its average outside temperature. A trip without one is left out, and the chart says how many: one Runsten did not see (found from the odometer), an imported one, or one recorded before Runsten kept the temperature, until the instance rebuilds its trips and charges. So is a temperature below -60 °C or from 70 °C, taken for a wrong reading. A Volvo or a Polestar tells no temperature: their statistics have no such chart.
+
 ## How the figures are counted
 
 - **Each trip and charge counts once**, in the interval it started in, never shared between two. The lists of trips and charges, instead, show every event that may overlap their period: the totals of a list and of a chart may differ for an event that crosses midnight or the end of a month.

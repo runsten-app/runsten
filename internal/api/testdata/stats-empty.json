@@ -394,6 +394,10 @@
     ],
     "left_out": 0
   },
+  "trips_by_temperature": {
+    "bands": [],
+    "left_out": 0
+  },
   "charges_by_soc": {
     "start": [
       0,

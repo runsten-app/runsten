@@ -1,3 +1,4 @@
+import { Chart } from 'chart.js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 import { vuetify } from '@/app/providers/vuetify'
@@ -404,6 +405,18 @@ describe('ChartFrame', () => {
     options.onHover({}, [{}])
   })
 
+  it('tells under the drawn figures what the details give of the interval pointed at', () => {
+    const w = mounted({ details: (i: number) => [`Trips: ${i + 1}`] })
+    const options = w.findComponent({ name: 'Bar' }).props('options') as {
+      plugins: {
+        tooltip: { callbacks: { afterBody: (items: { dataIndex: number }[]) => string[] } }
+      }
+    }
+    expect(options.plugins.tooltip.callbacks.afterBody([{ dataIndex: 1 }])).toEqual(['Trips: 2'])
+    const none = mounted().findComponent({ name: 'Bar' }).props('options') as typeof options
+    expect(none.plugins.tooltip.callbacks.afterBody([{ dataIndex: 1 }])).toEqual([])
+  })
+
   it('answers the nearest point over a linear axis, and only where a press leads', () => {
     // A scatter among the lines: the estimates of the capacity chart, by mileage.
     const w = mounted({
@@ -470,11 +483,17 @@ describe('ChartFrame', () => {
           borderDash?: number[]
           backgroundColor: string
           borderColor: string
+          pointRadius: number | ((c: { dataIndex: number }) => number)
         }[]
       }
     ).datasets
     expect(datasets[0]?.fill).toBe(false)
     expect(datasets[1]?.fill).toBe('-1')
+    // Chart.js fills only with its Filler plugin registered.
+    expect(Chart.registry.plugins.get('filler')).toBeDefined()
+    // A bound known alone has no segment: it is a point.
+    const radius = datasets[1]?.pointRadius
+    expect(typeof radius === 'function' ? radius({ dataIndex: 0 }) : radius).toBe(3)
     // The band fills in the band color, its bounds thin edges in their own.
     expect(datasets[1]?.backgroundColor).toBe(
       vuetify.theme.themes.value.light?.colors['chart-band'],

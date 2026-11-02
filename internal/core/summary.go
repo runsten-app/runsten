@@ -166,6 +166,47 @@ type TripsByDistance struct {
 	LeftOut int
 }
 
+// TemperatureBandC is the width of a band of outside temperature, in °C.
+const TemperatureBandC = 5
+
+// MinTemperatureC and MaxTemperatureC bound the outside temperatures a trip is grouped
+// by, [min, max): beyond, a reading is taken for an error and the trip is left out, so
+// that one wrong value never spreads the bands over thousands of empty ones.
+const (
+	MinTemperatureC = -60
+	MaxTemperatureC = 70
+)
+
+// Speed is an average speed known by bounds, in km/h: the distance over the most and
+// the least time the trips' bounds allow. Max is unknown when they allow no time at all.
+type Speed struct {
+	Min float64
+	Max Value[float64]
+}
+
+// TemperatureBand sums the trips whose outside temperature lies in [MinC, MinC +
+// TemperatureBandC).
+type TemperatureBand struct {
+	MinC            float64
+	Count           int
+	DistanceKm      float64
+	DistanceUnknown int
+	// ConsumptionKWhPer100km is an average, as TripStats'.
+	ConsumptionKWhPer100km Value[float64]
+	// Speed covers the trips whose distance is known: unknown without one of positive
+	// distance.
+	Speed Value[Speed]
+}
+
+// TripsByTemperature spreads the observed trips of a period over bands of outside
+// temperature, from the coldest band holding a trip to the warmest, empty ones between
+// included. A trip without a temperature (a reconstructed or imported one, one of a
+// vehicle that tells none) belongs nowhere: left out, and counted.
+type TripsByTemperature struct {
+	Bands   []TemperatureBand
+	LeftOut int
+}
+
 // ChargesBySoC counts the observed charges of a period by the SoC they started and ended
 // at, in points rounded to the nearest: Start[20] is the charges that started at 20 %. A
 // reconstructed charge's SoC are readings before and after it, not its own; it is left
@@ -206,11 +247,12 @@ type ChargesByPlace struct {
 // Summary holds the totals of a period and, when split, its intervals, empty ones
 // included, and how its trips and charges spread.
 type Summary struct {
-	Totals          Stats
-	Buckets         []BucketStats
-	TripsByDistance TripsByDistance
-	ChargesBySoC    ChargesBySoC
-	ChargesByPlace  ChargesByPlace
+	Totals             Stats
+	Buckets            []BucketStats
+	TripsByDistance    TripsByDistance
+	TripsByTemperature TripsByTemperature
+	ChargesBySoC       ChargesBySoC
+	ChargesByPlace     ChargesByPlace
 }
 
 // WithoutConsumption is s with every consumption unknown: a plug-in hybrid's trips
@@ -225,6 +267,10 @@ func (s Summary) WithoutConsumption() Summary {
 	s.TripsByDistance.Bands = slices.Clone(s.TripsByDistance.Bands)
 	for i := range s.TripsByDistance.Bands {
 		s.TripsByDistance.Bands[i].ConsumptionKWhPer100km = Value[float64]{}
+	}
+	s.TripsByTemperature.Bands = slices.Clone(s.TripsByTemperature.Bands)
+	for i := range s.TripsByTemperature.Bands {
+		s.TripsByTemperature.Bands[i].ConsumptionKWhPer100km = Value[float64]{}
 	}
 	return s
 }
@@ -259,6 +305,7 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 	var total acc
 	accs := make([]acc, len(bounds))
 	dist := newDistanceAcc()
+	var temp temperatureAcc
 	var bySoC ChargesBySoC
 	byPlace := newPlaceAcc(places)
 	// add counts an event starting at t in the totals and in its interval.
@@ -290,6 +337,7 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 		reading(t.Start.After, t.StartOdometerKm, t.EndOdometerKm)
 		if in(t.Start.After, from, to) {
 			dist.add(t)
+			temp.add(t)
 		}
 		evs = append(evs, event{t.DetectedAt, t.Start, t.End, t.StartSoC, t.EndSoC})
 	}
@@ -330,7 +378,7 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, from
 		odo = accs[i].odometerFrom(odo)
 	}
 	s := Summary{
-		Totals: total.stats(), TripsByDistance: dist.result(), ChargesBySoC: bySoC, ChargesByPlace: byPlace.result(),
+		Totals: total.stats(), TripsByDistance: dist.result(), TripsByTemperature: temp.result(), ChargesBySoC: bySoC, ChargesByPlace: byPlace.result(),
 	}
 	if len(bounds) > 0 {
 		s.Buckets = make([]BucketStats, len(bounds))
@@ -380,6 +428,77 @@ func (d *distanceAcc) result() TripsByDistance {
 		out.Bands[i] = b
 	}
 	return out
+}
+
+// temperatureAcc accumulates the trips by outside temperature, keyed by the band's
+// index: MinC / TemperatureBandC.
+type temperatureAcc struct {
+	bands   map[int]*temperatureBandAcc
+	leftOut int
+}
+
+// temperatureBandAcc is a band's trips, as acc for consumption, and the distance and
+// driving time of those whose distance is known, for their speed.
+type temperatureBandAcc struct {
+	acc
+	speedKm   float64
+	speedTime Span
+}
+
+func (a *temperatureAcc) add(t Trip) {
+	// Written so that NaN, which every comparison fails, is left out too.
+	if c := t.OutsideTempC.V; t.Reconstructed || !t.OutsideTempC.OK || !(c >= MinTemperatureC && c < MaxTemperatureC) {
+		a.leftOut++
+		return
+	}
+	i := int(math.Floor(t.OutsideTempC.V / TemperatureBandC))
+	if a.bands == nil {
+		a.bands = map[int]*temperatureBandAcc{}
+	}
+	b := a.bands[i]
+	if b == nil {
+		b = &temperatureBandAcc{}
+		a.bands[i] = b
+	}
+	b.trip(t)
+	if t.DistanceKm.OK {
+		b.speedKm += t.DistanceKm.V
+		b.speedTime.add(t.Start, t.End)
+	}
+}
+
+func (a *temperatureAcc) result() TripsByTemperature {
+	out := TripsByTemperature{Bands: []TemperatureBand{}, LeftOut: a.leftOut}
+	if len(a.bands) == 0 {
+		return out
+	}
+	lo, hi := math.MaxInt, math.MinInt
+	for i := range a.bands {
+		lo, hi = min(lo, i), max(hi, i)
+	}
+	for i := lo; i <= hi; i++ {
+		band := TemperatureBand{MinC: float64(i * TemperatureBandC)}
+		if b := a.bands[i]; b != nil {
+			s := b.stats().Trips
+			band.Count, band.DistanceKm, band.DistanceUnknown = s.Count, s.DistanceKm, s.DistanceUnknown
+			band.ConsumptionKWhPer100km = s.ConsumptionKWhPer100km
+			band.Speed = b.speed()
+		}
+		out.Bands = append(out.Bands, band)
+	}
+	return out
+}
+
+func (b *temperatureBandAcc) speed() Value[Speed] {
+	// A known distance of 0 (the odometer unchanged) is a speed of 0, not an unknown one.
+	if b.speedKm < 0 || b.speedTime.Max <= 0 {
+		return Value[Speed]{}
+	}
+	sp := Speed{Min: b.speedKm / b.speedTime.Max.Hours()}
+	if b.speedTime.Min > 0 {
+		sp.Max = Value[float64]{V: b.speedKm / b.speedTime.Min.Hours(), OK: true}
+	}
+	return Value[Speed]{V: sp, OK: true}
 }
 
 func (c *ChargesBySoC) add(ch Charge) {

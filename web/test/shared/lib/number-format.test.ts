@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { formatQuantity, formatSignedPercent, kilowatts, type Unit } from '@/shared/lib'
+import {
+  formatQuantity,
+  formatQuantityRange,
+  formatSignedPercent,
+  kilowatts,
+  type Unit,
+} from '@/shared/lib'
 
 // Intl writes no-break spaces (U+00A0, U+202F) in some locales and plain ones in others:
 // the tables compare them as plain spaces.
@@ -20,6 +26,9 @@ describe('formatQuantity', () => {
     [80, 'kWh', 'en-GB', '80 kWh'],
     [0, 'kW', 'en-GB', '0 kW'],
     [18.1, 'kWhPer100km', 'en-GB', '18.1 kWh/100 km'],
+    [96.4, 'kmh', 'en-GB', '96 km/h'],
+    [96.4, 'kmh', 'fr-FR', '96 km/h'],
+    [96.4, 'kmh', 'sv-SE', '96 km/h'],
     [18.1, 'kWhPer100km', 'fr-FR', '18,1 kWh/100 km'],
     [2.48, 'bar', 'en-GB', '2.48 bar'],
     [2.8, 'bar', 'fr-FR', '2,8 bar'],
@@ -39,6 +48,21 @@ describe('formatQuantity with digits', () => {
   it('keeps as many decimals as asked', () => {
     expect(plain(formatQuantity(32.2, 'km', 'en-GB'))).toBe('32 km')
     expect(plain(formatQuantity(32.2, 'km', 'en-GB', 1))).toBe('32.2 km')
+  })
+})
+
+describe('formatQuantityRange', () => {
+  it.each<[number, number, Unit, string, string]>([
+    [38.2, 41.6, 'kmh', 'en-GB', '38–42 km/h'],
+    [38.2, 41.6, 'kmh', 'fr-FR', '38–42 km/h'],
+    [38.2, 41.6, 'kmh', 'sv-SE', '38–42 km/h'],
+    // Bounds that round alike are one value, never Intl's "~".
+    [41.6, 42.1, 'kmh', 'en-GB', '42 km/h'],
+    [17.1, 18.25, 'kWhPer100km', 'en-GB', '17.1–18.3 kWh/100 km'],
+  ])('formats %s to %s %s in %s as %s', (min, max, unit, locale, want) => {
+    expect(formatQuantityRange(min, max, unit, locale).replace(/[\u00a0\u202f]/g, ' ')).toBe(
+      want.replace(/[\u00a0\u202f]/g, ' '),
+    )
   })
 })
 

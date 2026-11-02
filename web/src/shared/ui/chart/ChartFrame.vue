@@ -30,6 +30,7 @@ Chart.register(
   PointElement,
   CategoryScale,
   LinearScale,
+  Filler,
   Tooltip,
   Filler,
 )
@@ -58,6 +59,10 @@ const props = withDefaults(
     // The figures of the table, when they are not those drawn: a stacked difference (a
     // range's uncertainty) reads better as the range's top.
     tableSeries?: Series[]
+    // What the tooltip of an interval tells under its drawn figures, not drawn itself
+    // (a band's trips and their speed); the table holds them as tableSeries. Pressing an
+    // interval is not needed to read them: the tooltip shows on pointing.
+    details?: (index: number) => string[]
     // The x axis is linear, not categories (dates as milliseconds, odometers as
     // kilometers): the ticks are formatX's, and the labels serve the table only.
     formatX?: (v: number) => string
@@ -99,6 +104,7 @@ const props = withDefaults(
     beginAtZero: true,
     hint: undefined,
     tableSeries: undefined,
+    details: undefined,
     formatX: undefined,
     xTicks: undefined,
     xMin: undefined,
@@ -188,9 +194,10 @@ const data = computed(() => ({
       fill: s.band ? ('-1' as const) : s.area ? ('origin' as const) : false,
       // A line breaks where a value is unknown: a gap, never a zero.
       spanGaps: false,
+      // A lone known value is a point, a band's bound too: no segment would show it.
       pointRadius: s.scatter
         ? 3
-        : line && !thin && !s.dashed
+        : line && !s.dashed
           ? (c: { dataIndex: number }) => (isolated(s.data, c.dataIndex) ? 3 : 0)
           : 0,
       pointHoverRadius: thin || s.dashed ? 0 : 4,
@@ -389,6 +396,8 @@ const options = computed(() => {
             const format = props.series[c.datasetIndex]?.format ?? props.format
             return `${c.dataset.label ?? ''}: ${format(v)}`
           },
+          afterBody: (items: { dataIndex: number }[]) =>
+            props.details && items[0] ? props.details(items[0].dataIndex) : [],
         },
       },
     },

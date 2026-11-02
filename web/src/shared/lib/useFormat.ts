@@ -30,7 +30,12 @@ import {
   formatMajor,
   type Amounts,
 } from './money-format'
-import { formatQuantity, formatSignedPercent, type Unit } from './number-format'
+import {
+  formatQuantity,
+  formatQuantityRange,
+  formatSignedPercent,
+  type Unit,
+} from './number-format'
 import { currencyName, currencySymbol, formatPricePerKwh, type CurrencyUnit } from './price-format'
 import type { Bucket } from './stats-period'
 
@@ -64,6 +69,12 @@ export function useFormat() {
     unknown,
     quantity: (v: number | null | undefined, unit: Unit, digits?: number) =>
       formatQuantity(v ?? null, unit, intl.value, digits) ?? unknown(),
+    // quantityRange shows bounds in their unit ("44–52 km/h"); without the upper one,
+    // "at least" the lower.
+    quantityRange: (min: number, max: number | null, unit: Unit) =>
+      max === null
+        ? t('common.atLeastValue', { value: formatQuantity(min, unit, intl.value) ?? '' })
+        : formatQuantityRange(min, max, unit, intl.value),
     age: (iso: string, now: number) => formatAge(iso, now, intl.value),
     dateTime: (iso: string, now: number) => formatDateTime(iso, now, intl.value),
     coordinates: (p: Position | null | undefined) => (p ? formatCoordinates(p) : unknown()),

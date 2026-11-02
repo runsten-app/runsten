@@ -4070,6 +4070,24 @@ components:
         - min
         - max
       type: object
+    Speed:
+      additionalProperties: false
+      properties:
+        max:
+          description: The distance over the shortest; null when the bounds allow no time at all.
+          format: double
+          type:
+            - number
+            - "null"
+        min:
+          description: The distance over the longest time the trips' bounds allow.
+          format: double
+          minimum: 0
+          type: number
+      required:
+        - min
+        - max
+      type: object
     State:
       additionalProperties: false
       properties:
@@ -4204,6 +4222,9 @@ components:
         trips_by_distance:
           $ref: "#/components/schemas/TripsByDistance"
           description: How the observed trips of the period spread by distance, with or without a split.
+        trips_by_temperature:
+          $ref: "#/components/schemas/TripsByTemperature"
+          description: How the observed trips of the period spread by their mean outside temperature (trips.outside_temp_c), with or without a split.
       required:
         - from
         - to
@@ -4213,6 +4234,7 @@ components:
         - totals
         - buckets
         - trips_by_distance
+        - trips_by_temperature
         - charges_by_soc
         - charges_by_place
       type: object
@@ -4243,6 +4265,50 @@ components:
         - valid_from
         - price_per_kwh
         - windows
+      type: object
+    TemperatureBand:
+      additionalProperties: false
+      properties:
+        consumption_kwh_per_100km:
+          description: An estimate over the band's trips whose energy is known and distance positive, as trips.consumption_kwh_per_100km. null without such a trip, and for a plug-in hybrid.
+          format: double
+          type:
+            - number
+            - "null"
+        count:
+          format: int64
+          minimum: 0
+          type: integer
+        distance_km:
+          description: The sum of the known distances.
+          format: double
+          minimum: 0
+          type: number
+        distance_unknown:
+          format: int64
+          minimum: 0
+          type: integer
+        max_c:
+          description: "And less than max_c: min_c + 5."
+          format: double
+          type: number
+        min_c:
+          description: The band holds the trips whose mean outside temperature is at least min_c, in °C.
+          format: double
+          type: number
+        speed_kmh:
+          description: "The average speed of the band's trips whose distance is known, in km/h: their distance over their driving time, known by bounds as driving_time_s. A summer of motorway and a winter in town differ by more than the temperature. null without such a trip."
+          oneOf:
+            - $ref: "#/components/schemas/Speed"
+            - type: "null"
+      required:
+        - min_c
+        - max_c
+        - count
+        - distance_km
+        - distance_unknown
+        - consumption_kwh_per_100km
+        - speed_kmh
       type: object
     TeslaToken:
       additionalProperties: false
@@ -4539,6 +4605,23 @@ components:
           type: array
         left_out:
           description: "The trips in no band: the reconstructed ones, which may hold several, and those whose distance is unknown."
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - bands
+        - left_out
+      type: object
+    TripsByTemperature:
+      additionalProperties: false
+      properties:
+        bands:
+          description: Bands of 5 °C, coldest first, from the coldest holding a trip to the warmest, empty ones between included; [] without a trip that tells its temperature.
+          items:
+            $ref: "#/components/schemas/TemperatureBand"
+          type: array
+        left_out:
+          description: "The trips in no band: those without an outside temperature (a vehicle that tells none, as a Volvo or a Polestar; a reconstructed or imported trip; one derived before Runsten kept it), or with one below -60 °C or from 70 °C, taken for a wrong reading."
           format: int64
           minimum: 0
           type: integer

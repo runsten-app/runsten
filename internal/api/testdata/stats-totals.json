@@ -129,6 +129,23 @@
     ],
     "left_out": 1
   },
+  "trips_by_temperature": {
+    "bands": [
+      {
+        "min_c": 5,
+        "max_c": 10,
+        "count": 1,
+        "distance_km": 32,
+        "distance_unknown": 0,
+        "consumption_kwh_per_100km": 18.75,
+        "speed_kmh": {
+          "min": 42.666666666666664,
+          "max": 50.526315789473685
+        }
+      }
+    ],
+    "left_out": 2
+  },
   "charges_by_soc": {
     "start": [
       0,
