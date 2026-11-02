@@ -9,7 +9,7 @@ Runsten reads a Polestar through [Polestar's Data Portal](./polestar.md), which 
 ::: warning Beta, self-hosted only
 The Polestar app's API is **not official**: Polestar may change or close it without notice, and your Polestar account carries the risk. It is off by default: the administrator of your instance turns it on ([below](#turn-it-on)). Turn it on for your own instance only: many accounts read from the same addresses could get them blocked.
 
-It was built against a simulator, from the behaviour of the Home Assistant integration `polestar_api`; the sign-in was tried on a real Polestar ID, the readings are still to be checked on a real car.
+It was built against a simulator, from the behaviour of the Home Assistant integration `polestar_api` and of its library `pypolestar`; the sign-in was tried on a real Polestar ID, the readings are still to be checked on a real car.
 :::
 
 A Polestar the Data Portal reads should stay with it: it reads more (the position, the doors and windows, the tyres).
@@ -20,12 +20,19 @@ Runsten is not affiliated with Polestar. It only reads: it never sends a command
 
 The battery level, the range, the charging status, the odometer, and the service (the days and the distance to it, and the warnings of the brake fluid, the coolant and the oil). The model and its model year come with the car: Runsten recognizes its variant when one fits.
 
-It reads **neither the position, nor whether the car drives, nor the charging power, nor whether the cable is connected**:
+The Polestar app reads more than that over a second channel (gRPC), with the same sign-in, and so does Runsten when your car is served there:
+
+- **whether the cable is connected**, the **type of the charge** (AC or DC), its **power**, its **current** and **voltage**, and the time left;
+- the **charge limit**, which a Polestar 2 does not give (it is not on the platform that serves it).
+
+A car that is not served there, or a moment the channel fails, falls back on the first: Runsten asks again a day later, and reads the rest meanwhile. Nothing is to set up.
+
+It reads **neither the position nor whether the car drives**:
 
 - A trip is found from the odometer, as a trip Runsten did not see: it has no start or end place, no route, and its times are bounds.
-- A charge is found from the battery level and the charging status: it has no place, so no tariff of a place prices it; enter its cost if you want it counted ([Costs](./costs.md)). Its energy is the change of the battery level times the variant's capacity.
+- A charge has no place, so no tariff of a place prices it; enter its cost if you want it counted ([Costs](./costs.md)). When the power is read, the charge is measured: its type, its power along the session, and the energy that flowed; else it is found from the battery level and the charging status, and its energy is the change of the battery level times the variant's capacity.
 
-Runsten reads the car every 5 minutes, every minute while it charges, and makes at most 2,000 calls a day per Polestar ID, to stay clear of limits Polestar does not publish.
+Runsten reads the car every 5 minutes, every minute while it charges, its charge limit every hour, and makes at most 2,000 calls a day per Polestar ID, both channels together, to stay clear of limits Polestar does not publish.
 
 ## Turn it on
 

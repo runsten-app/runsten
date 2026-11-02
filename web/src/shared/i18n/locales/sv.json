@@ -1853,7 +1853,7 @@
     "deleted": "En borttagen plats"
   },
   "polestarId": {
-    "intro": "För en Polestar som Data Portal inte läser (utanför EU och EES) kan Runsten läsa Polestar-appens API med ditt Polestar ID. Den läser batterinivån, räckvidden, laddstatusen, vägmätaren och servicen; inte positionen: resor har inga platser och laddningar ingen platstaxa.",
+    "intro": "För en Polestar som Data Portal inte läser (utanför EU och EES) kan Runsten läsa Polestar-appens API med ditt Polestar ID. Den läser batterinivån, räckvidden, laddstatusen, vägmätaren och servicen, och där Polestar erbjuder dem, kabeln, laddeffekten och laddgränsen; inte positionen: resor har inga platser och laddningar ingen platstaxa.",
     "beta": "I beta. Polestar-appens API är inte officiellt: Polestar kan ändra eller stänga det utan förvarning, och ditt Polestar-konto bär risken. Endast för din egen instans.",
     "guide": "Läs guiden",
     "newTab": "(öppnas i en ny flik)",
