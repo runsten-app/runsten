@@ -85,7 +85,11 @@
       "time_s": 0,
       "soc_loss_pct": 0,
       "soc_loss_unknown": 0,
-      "soc_loss_pct_per_day": null
+      "soc_loss_pct_per_day": null,
+      "power_w": null,
+      "sleep_read_s": 0,
+      "asleep_s": 0,
+      "asleep_share": null
     },
     "odometer": {
       "start_km": null,
@@ -174,7 +178,11 @@
         "time_s": 0,
         "soc_loss_pct": 0,
         "soc_loss_unknown": 0,
-        "soc_loss_pct_per_day": null
+        "soc_loss_pct_per_day": null,
+        "power_w": null,
+        "sleep_read_s": 0,
+        "asleep_s": 0,
+        "asleep_share": null
       },
       "odometer": {
         "start_km": null,
@@ -262,7 +270,11 @@
         "time_s": 0,
         "soc_loss_pct": 0,
         "soc_loss_unknown": 0,
-        "soc_loss_pct_per_day": null
+        "soc_loss_pct_per_day": null,
+        "power_w": null,
+        "sleep_read_s": 0,
+        "asleep_s": 0,
+        "asleep_share": null
       },
       "odometer": {
         "start_km": null,
@@ -350,7 +362,11 @@
         "time_s": 0,
         "soc_loss_pct": 0,
         "soc_loss_unknown": 0,
-        "soc_loss_pct_per_day": null
+        "soc_loss_pct_per_day": null,
+        "power_w": null,
+        "sleep_read_s": 0,
+        "asleep_s": 0,
+        "asleep_share": null
       },
       "odometer": {
         "start_km": null,
@@ -395,6 +411,14 @@
     "left_out": 0
   },
   "trips_by_temperature": {
+    "bands": [],
+    "left_out": 0
+  },
+  "parked_by_temperature": {
+    "bands": [],
+    "left_out": 0
+  },
+  "charges_by_temperature": {
     "bands": [],
     "left_out": 0
   },

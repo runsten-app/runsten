@@ -39,6 +39,9 @@ func (Normalizer) StateKinds() []core.Kind { return nil }
 // HealthKinds returns the kinds of response NormalizeHealth reads.
 func (Normalizer) HealthKinds() []core.Kind { return kinds(VehicleData) }
 
+// SleepKinds returns the vehicle's state, the only response telling whether it sleeps.
+func (Normalizer) SleepKinds() []core.Kind { return kinds(VehicleState) }
+
 // Normalize reads a stored response of kind k.
 func (Normalizer) Normalize(k core.Kind, raw []byte) (core.Snapshot, error) {
 	if k.Source != Source {

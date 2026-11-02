@@ -279,7 +279,7 @@ components:
         odometer:
           $ref: "#/components/schemas/OdometerStats"
         parked:
-          $ref: "#/components/schemas/ParkedStats"
+          $ref: "#/components/schemas/ParkedStatsFields"
         start:
           description: The start of the interval, in the requested time zone, written in UTC.
           format: date-time
@@ -580,6 +580,12 @@ components:
           type:
             - number
             - "null"
+        outside_temp_c:
+          description: "The mean outside temperature, in °C, of the responses Runsten fetched while the charge ran, for a vehicle that tells it (Tesla): the vehicle's own, which in a garage is not the weather. null for the others, a reconstructed or imported charge, and a charge derived before Runsten kept it: a rebuild of the derived data gives it."
+          format: double
+          type:
+            - number
+            - "null"
         phases:
           description: "The AC phases the charge drew on: those of its latest reading with a current, an assumption that it drew on as many throughout. null as max_current_a, and for a vehicle that tells no phases (Polestar)."
           format: int64
@@ -638,6 +644,7 @@ components:
         - average_power_kw
         - max_current_a
         - phases
+        - outside_temp_c
         - position
         - place
         - address
@@ -651,6 +658,55 @@ components:
         - end
         - capacity_kwh
         - capacity_source
+      type: object
+    ChargeBand:
+      additionalProperties: false
+      properties:
+        ac:
+          $ref: "#/components/schemas/ChargeBandType"
+        count:
+          description: The band's charges, those of unknown type included.
+          format: int64
+          minimum: 0
+          type: integer
+        dc:
+          $ref: "#/components/schemas/ChargeBandType"
+        max_c:
+          description: "And less than max_c: min_c + 5."
+          format: double
+          type: number
+        min_c:
+          description: The band holds the charges whose mean outside temperature is at least min_c, in °C.
+          format: double
+          type: number
+      required:
+        - min_c
+        - max_c
+        - count
+        - ac
+        - dc
+      type: object
+    ChargeBandType:
+      additionalProperties: false
+      properties:
+        count:
+          format: int64
+          minimum: 0
+          type: integer
+        energy_power_kwh:
+          description: The sum of the known integrated power estimates, as charges.energy_power_kwh.
+          format: double
+          minimum: 0
+          type: number
+        power_kw:
+          description: "The mean power of the charges whose energy_power_kwh is known, in kW: that energy over their charging time, known by bounds as charging_time_s, the pauses of a resumed charge included. null without such a charge."
+          oneOf:
+            - $ref: "#/components/schemas/Power"
+            - type: "null"
+      required:
+        - count
+        - energy_power_kwh
+        - power_kw
       type: object
     ChargeInProgress:
       additionalProperties: false
@@ -983,6 +1039,23 @@ components:
       required:
         - start
         - end
+        - left_out
+      type: object
+    ChargesByTemperature:
+      additionalProperties: false
+      properties:
+        bands:
+          description: Bands of 5 °C as trips_by_temperature's, coldest first, from the coldest holding a charge to the warmest, empty ones between included; [] without a charge that tells its temperature.
+          items:
+            $ref: "#/components/schemas/ChargeBand"
+          type: array
+        left_out:
+          description: "The charges in no band: those without an outside temperature (a vehicle that tells none, as a Volvo or a Polestar; a reconstructed or imported charge; one derived before Runsten kept it), or with one out of the bands' bounds, as trips_by_temperature's."
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - bands
         - left_out
       type: object
     ChargesByType:
@@ -2633,11 +2706,126 @@ components:
         - items
         - next_cursor
       type: object
-    ParkedStats:
+    ParkedBand:
       additionalProperties: false
       properties:
+        asleep_s:
+          description: The part of sleep_read_s they told it asleep or out of reach.
+          format: int64
+          minimum: 0
+          type: integer
+        asleep_share:
+          description: "asleep_s over sleep_read_s: the share of the parked time the vehicle slept, as far as it was read. null without sleep_read_s."
+          format: double
+          maximum: 1
+          minimum: 0
+          type:
+            - number
+            - "null"
         intervals:
           description: The intervals between two consecutive events (trips and charges), counted where the second one starts.
+          format: int64
+          minimum: 0
+          type: integer
+        max_c:
+          description: "And less than max_c: min_c + 5."
+          format: double
+          type: number
+        min_c:
+          description: The band holds the parked intervals whose outside temperature is at least min_c, in °C.
+          format: double
+          type: number
+        power_w:
+          description: "The mean power lost while parked, in W: the energy of the state of charge lost (the loss × the battery capacity of the event before, else after, as its capacity_kwh) over the time of the intervals whose loss and capacity are both known. An estimate, as soc_loss_pct_per_day. null without such time."
+          format: double
+          type:
+            - number
+            - "null"
+        sleep_read_s:
+          description: The part of time_s the vehicle's responses told whether it slept over, from the fetch of each to its latest confirmation (a Tesla's state, read without waking it); 0 for a vehicle that does not tell it (Volvo, Polestar).
+          format: int64
+          minimum: 0
+          type: integer
+        soc_loss_pct:
+          description: The state of charge lost while parked, in points. A rise below the noise threshold counts as 0.
+          format: double
+          minimum: 0
+          type: number
+        soc_loss_pct_per_day:
+          description: "soc_loss_pct over the time of the intervals whose loss is known, per day. The state of charge has a resolution of one point: meaningful over weeks, not over a night. null without such time."
+          format: double
+          type:
+            - number
+            - "null"
+        soc_loss_unknown:
+          description: "The intervals whose loss is unknown: no state of charge at one end, or a rise that only a charge explains."
+          format: int64
+          minimum: 0
+          type: integer
+        time_s:
+          description: Their sure duration, from the latest end of an event to the earliest start of the next.
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - min_c
+        - max_c
+        - intervals
+        - time_s
+        - soc_loss_pct
+        - soc_loss_unknown
+        - soc_loss_pct_per_day
+        - power_w
+        - sleep_read_s
+        - asleep_s
+        - asleep_share
+      type: object
+    ParkedByTemperature:
+      additionalProperties: false
+      properties:
+        bands:
+          description: "Bands of 5 °C as trips_by_temperature's, coldest first, from the coldest holding an interval to the warmest, empty ones between included; [] without an interval that has a temperature. An interval's temperature is the mean of the outside temperatures of the observed trips and charges around it (trips.outside_temp_c, charges.outside_temp_c): the vehicle is not read while it sleeps, and waking it to read one would drain it."
+          items:
+            $ref: "#/components/schemas/ParkedBand"
+          type: array
+        left_out:
+          description: "The intervals in no band: between two events without an outside temperature (a vehicle that tells none, as a Volvo or a Polestar; reconstructed or imported events; events derived before Runsten kept it), or with one out of the bands' bounds, as trips_by_temperature's."
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - bands
+        - left_out
+      type: object
+    ParkedStatsFields:
+      additionalProperties: false
+      properties:
+        asleep_s:
+          description: The part of sleep_read_s they told it asleep or out of reach.
+          format: int64
+          minimum: 0
+          type: integer
+        asleep_share:
+          description: "asleep_s over sleep_read_s: the share of the parked time the vehicle slept, as far as it was read. null without sleep_read_s."
+          format: double
+          maximum: 1
+          minimum: 0
+          type:
+            - number
+            - "null"
+        intervals:
+          description: The intervals between two consecutive events (trips and charges), counted where the second one starts.
+          format: int64
+          minimum: 0
+          type: integer
+        power_w:
+          description: "The mean power lost while parked, in W: the energy of the state of charge lost (the loss × the battery capacity of the event before, else after, as its capacity_kwh) over the time of the intervals whose loss and capacity are both known. An estimate, as soc_loss_pct_per_day. null without such time."
+          format: double
+          type:
+            - number
+            - "null"
+        sleep_read_s:
+          description: The part of time_s the vehicle's responses told whether it slept over, from the fetch of each to its latest confirmation (a Tesla's state, read without waking it); 0 for a vehicle that does not tell it (Volvo, Polestar).
           format: int64
           minimum: 0
           type: integer
@@ -2668,6 +2856,10 @@ components:
         - soc_loss_pct
         - soc_loss_unknown
         - soc_loss_pct_per_day
+        - power_w
+        - sleep_read_s
+        - asleep_s
+        - asleep_share
       type: object
     PeriodStats:
       additionalProperties: false
@@ -2677,7 +2869,7 @@ components:
         odometer:
           $ref: "#/components/schemas/OdometerStats"
         parked:
-          $ref: "#/components/schemas/ParkedStats"
+          $ref: "#/components/schemas/ParkedStatsFields"
         trips:
           $ref: "#/components/schemas/TripStats"
       required:
@@ -3068,6 +3260,24 @@ components:
       required:
         - lat
         - lon
+      type: object
+    Power:
+      additionalProperties: false
+      properties:
+        max:
+          description: The energy over the shortest; null when the bounds allow no time at all.
+          format: double
+          type:
+            - number
+            - "null"
+        min:
+          description: The energy over the longest charging time the charges' bounds allow.
+          format: double
+          minimum: 0
+          type: number
+      required:
+        - min
+        - max
       type: object
     PriceLimits:
       additionalProperties: false
@@ -4201,6 +4411,9 @@ components:
         charges_by_soc:
           $ref: "#/components/schemas/ChargesBySoC"
           description: How the observed charges of the period spread by the state of charge they started and ended at.
+        charges_by_temperature:
+          $ref: "#/components/schemas/ChargesByTemperature"
+          description: How the observed charges of the period, of the place asked for, spread by their mean outside temperature (charges.outside_temp_c), AC apart from DC.
         currency:
           description: The account's currency, the unit of the _minor fields; null until it is set, and then no cost is known.
           oneOf:
@@ -4211,6 +4424,9 @@ components:
           format: date-time
           pattern: Z$
           type: string
+        parked_by_temperature:
+          $ref: "#/components/schemas/ParkedByTemperature"
+          description: "How the parked intervals of the period, counted as totals.parked, spread by outside temperature: the phantom drain in the cold and in the heat."
         time_zone:
           type: string
         to:
@@ -4235,6 +4451,8 @@ components:
         - buckets
         - trips_by_distance
         - trips_by_temperature
+        - parked_by_temperature
+        - charges_by_temperature
         - charges_by_soc
         - charges_by_place
       type: object

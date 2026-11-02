@@ -187,7 +187,7 @@ func TestSummarizeIntervals(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := Summarize(nil, nil, Costs{}, nil, tt.from, tt.to, tt.loc, tt.bucket, ChargesAt{}, DefaultParams())
+			s, err := Summarize(nil, nil, Costs{}, nil, nil, tt.from, tt.to, tt.loc, tt.bucket, ChargesAt{}, DefaultParams())
 			if !errors.Is(err, tt.wantErr) {
 				t.Fatalf("error = %v, want %v", err, tt.wantErr)
 			}
@@ -220,7 +220,7 @@ func TestSummarizeAttachment(t *testing.T) {
 		drive(pt("2026-06-03 23:59"), pt("2026-06-04 00:30"), 5, 1, 75, 74),  // last minute of 3 June
 		drive(pt("2026-06-04 00:00"), pt("2026-06-04 00:30"), 7, 1, 74, 73),  // at to: out
 	}
-	s, err := Summarize(trips, nil, Costs{}, nil, from, to, paris, BucketDay, ChargesAt{}, DefaultParams())
+	s, err := Summarize(trips, nil, Costs{}, nil, nil, from, to, paris, BucketDay, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -318,7 +318,7 @@ func TestSummarizeTrips(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := Summarize(tt.trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+			s, err := Summarize(tt.trips, nil, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -349,7 +349,7 @@ func TestSummarizeTripsByDistance(t *testing.T) {
 		},
 		noDistance,
 	}
-	s, err := Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketDay, ChargesAt{}, DefaultParams())
+	s, err := Summarize(trips, nil, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketDay, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -394,14 +394,14 @@ func TestSummarizeTripsByTemperature(t *testing.T) {
 		},
 		noDistance,
 	}
-	s, err := Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	s, err := Summarize(trips, nil, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
 	// Each trip lasts an hour, known within 5 minutes at both ends: 55 to 65 minutes.
-	speed := func(km float64, trips int) Value[Speed] {
+	speed := func(km float64, trips int) Value[Rate] {
 		low, high := time.Duration(trips)*65*time.Minute, time.Duration(trips)*55*time.Minute
-		return known(Speed{Min: km / low.Hours(), Max: val(km / high.Hours())})
+		return known(Rate{Min: km / low.Hours(), Max: val(km / high.Hours())})
 	}
 	want := TripsByTemperature{
 		Bands: []TemperatureBand{
@@ -422,7 +422,7 @@ func TestSummarizeTripsByTemperature(t *testing.T) {
 // no time has no upper bound.
 func TestSummarizeTripsByTemperatureEdges(t *testing.T) {
 	t1 := pt("2026-06-01 08:00")
-	s, err := Summarize([]Trip{drive(t1, t1.Add(time.Hour), 10, 2, 80, 78)}, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	s, err := Summarize([]Trip{drive(t1, t1.Add(time.Hour), 10, 2, 80, 78)}, nil, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -435,11 +435,11 @@ func TestSummarizeTripsByTemperatureEdges(t *testing.T) {
 		DetectedAt: t1.Add(10 * time.Minute), Start: Bounds{t1, t1.Add(10 * time.Minute)}, End: Bounds{t1, t1.Add(10 * time.Minute)},
 		DistanceKm: val(5), OutsideTempC: val(-0.5),
 	}
-	s, err = Summarize([]Trip{short}, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	s, err = Summarize([]Trip{short}, nil, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []TemperatureBand{{MinC: -5, Count: 1, DistanceKm: 5, Speed: known(Speed{Min: 30})}}
+	want := []TemperatureBand{{MinC: -5, Count: 1, DistanceKm: 5, Speed: known(Rate{Min: 30})}}
 	if got := s.TripsByTemperature.Bands; !reflect.DeepEqual(got, want) {
 		t.Errorf("short trip = %+v, want %+v", got, want)
 	}
@@ -447,11 +447,11 @@ func TestSummarizeTripsByTemperatureEdges(t *testing.T) {
 	// The odometer unchanged over a trip: a known speed of 0, not an unknown one.
 	still := drive(t1, t1.Add(time.Hour), 0, 0.2, 80, 80)
 	still.OutsideTempC = val(3.0)
-	s, err = Summarize([]Trip{still}, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	s, err = Summarize([]Trip{still}, nil, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := s.TripsByTemperature.Bands[0].Speed, known(Speed{Min: 0, Max: val(0.0)}); !reflect.DeepEqual(got, want) {
+	if got, want := s.TripsByTemperature.Bands[0].Speed, known(Rate{Min: 0, Max: val(0.0)}); !reflect.DeepEqual(got, want) {
 		t.Errorf("zero distance's speed = %+v, want %+v", got, want)
 	}
 
@@ -462,7 +462,7 @@ func TestSummarizeTripsByTemperatureEdges(t *testing.T) {
 	trips[1].OutsideTempC = val(1e6)
 	trips[2].OutsideTempC = val(-60.5)
 	trips[3].OutsideTempC = val(math.NaN())
-	s, err = Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	s, err = Summarize(trips, nil, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -477,7 +477,7 @@ func TestSummaryWithoutConsumption(t *testing.T) {
 	t1 := pt("2026-06-01 08:00")
 	trips := []Trip{drive(t1, t1.Add(time.Hour), 41, 1.3, 60, 55), drive(t1.Add(3*time.Hour), t1.Add(4*time.Hour), 12, 2, 55, 47)}
 	trips[0].OutsideTempC = val(4.0)
-	s, err := Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketDay, ChargesAt{}, DefaultParams())
+	s, err := Summarize(trips, nil, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketDay, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -528,7 +528,7 @@ func TestSummarizeChargesBySoC(t *testing.T) {
 		},
 		noEnd,
 	}
-	s, err := Summarize(nil, charges, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	s, err := Summarize(nil, charges, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -580,7 +580,7 @@ func TestSummarizeChargesByPlace(t *testing.T) {
 		{},
 		{},
 	}}
-	s, err := Summarize(nil, charges, costs, []Place{home, empty, work}, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	s, err := Summarize(nil, charges, costs, []Place{home, empty, work}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -601,7 +601,7 @@ func TestSummarizeChargesByPlace(t *testing.T) {
 	// Each group, picked, is the period's charges: the same sums, the orphans left out,
 	// the parked intervals those of every event.
 	costs.Orphans = []EnteredCost{{WindowAfter: h(1), AmountMinor: 900}}
-	all, err := Summarize(nil, charges, costs, []Place{home, empty, work}, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	all, err := Summarize(nil, charges, costs, []Place{home, empty, work}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -618,7 +618,7 @@ func TestSummarizeChargesByPlace(t *testing.T) {
 		}},
 		{ChargesAt{Group: PlaceGroupNoPosition}, want.NoPosition},
 	} {
-		s, err := Summarize(nil, charges, costs, []Place{home, empty, work}, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, tt.at, DefaultParams())
+		s, err := Summarize(nil, charges, costs, []Place{home, empty, work}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, tt.at, DefaultParams())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -636,7 +636,7 @@ func TestSummarizeChargesByPlace(t *testing.T) {
 	}
 
 	// Without places, every charge is outside, or without a position.
-	s, err = Summarize(nil, charges, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	s, err = Summarize(nil, charges, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -712,7 +712,7 @@ func TestSummarizeCharges(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := Summarize(nil, tt.charges, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+			s, err := Summarize(nil, tt.charges, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -751,7 +751,7 @@ func TestSummarizeCosts(t *testing.T) {
 			{WindowAfter: to, AmountMinor: 6},                     // after it
 		},
 	}
-	s, err := Summarize(nil, charges, costs, nil, from, to, paris, BucketDay, ChargesAt{}, DefaultParams())
+	s, err := Summarize(nil, charges, costs, nil, nil, from, to, paris, BucketDay, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -787,7 +787,7 @@ func TestSummarizeCosts(t *testing.T) {
 	}
 
 	// Fewer costs than charges: the others are unknown.
-	s, err = Summarize(nil, charges, Costs{Charges: costs.Charges[:2]}, nil, from, to, paris, BucketNone, ChargesAt{}, DefaultParams())
+	s, err = Summarize(nil, charges, Costs{Charges: costs.Charges[:2]}, nil, nil, from, to, paris, BucketNone, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -934,7 +934,7 @@ func TestSummarizeParked(t *testing.T) {
 			if tt.params != nil {
 				tt.params(&p)
 			}
-			s, err := Summarize(tt.trips, tt.charges, Costs{}, nil, from, to, paris, BucketDay, ChargesAt{}, p)
+			s, err := Summarize(tt.trips, tt.charges, Costs{}, nil, nil, from, to, paris, BucketDay, ChargesAt{}, p)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1026,7 +1026,7 @@ func TestSummarizeOdometer(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := Summarize(tt.trips, tt.charges, Costs{}, nil, from, to, paris, BucketDay, ChargesAt{}, DefaultParams())
+			s, err := Summarize(tt.trips, tt.charges, Costs{}, nil, nil, from, to, paris, BucketDay, ChargesAt{}, DefaultParams())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1108,7 +1108,7 @@ func TestSummarizeTotalsAreSums(t *testing.T) {
 	from, to := pt("2026-03-01 00:00"), pt("2026-11-01 00:00")
 	for seed := range uint64(4) {
 		trips, charges, costs := history(seed)
-		none, err := Summarize(trips, charges, costs, nil, from, to, paris, BucketNone, ChargesAt{}, DefaultParams())
+		none, err := Summarize(trips, charges, costs, nil, nil, from, to, paris, BucketNone, ChargesAt{}, DefaultParams())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1117,7 +1117,7 @@ func TestSummarizeTotalsAreSums(t *testing.T) {
 			t.Fatalf("seed %d: empty history %+v", seed, none.Totals)
 		}
 		for _, bucket := range []Bucket{BucketDay, BucketWeek, BucketMonth} {
-			s, err := Summarize(trips, charges, costs, nil, from, to, paris, bucket, ChargesAt{}, DefaultParams())
+			s, err := Summarize(trips, charges, costs, nil, nil, from, to, paris, bucket, ChargesAt{}, DefaultParams())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1180,5 +1180,183 @@ func checkSums(t *testing.T, path string, got, want reflect.Value) {
 		if math.Abs(got.Float()-want.Float()) > 1e-6 {
 			t.Errorf("%s: sum of intervals %g, total %g", path, got.Float(), want.Float())
 		}
+	}
+}
+
+// The power lost while parked rests on the capacity of the event before, else after, and
+// the time asleep on the sleep states read within the interval's sure part.
+func TestSummarizeParkedPowerAndSleep(t *testing.T) {
+	from, to := pt("2026-06-01 00:00"), pt("2026-06-03 00:00")
+	evening, morning := pt("2026-06-01 18:00"), pt("2026-06-02 08:00") // parked from 18:05 to 08:00
+	const parked = 13*time.Hour + 55*time.Minute
+	cap75 := known(Capacity{KWh: 75, Source: CapacityCatalogNet})
+	withCap := func(tr Trip, c Value[Capacity]) Trip { tr.Capacity = c; return tr }
+	sleep := []SleepSpan{
+		{From: evening.Add(-2 * time.Hour), To: evening, Asleep: true},                           // before: driving
+		{From: evening.Add(5 * time.Minute), To: evening.Add(125 * time.Minute)},                 // 2 h awake
+		{From: evening.Add(130 * time.Minute), To: morning.Add(-50 * time.Minute), Asleep: true}, // 11 h asleep
+		{From: morning.Add(-30 * time.Minute), To: morning.Add(time.Hour)},                       // 30 min within
+	}
+	const read, asleep = 13*time.Hour + 30*time.Minute, 11 * time.Hour
+	share := val(asleep.Seconds() / read.Seconds())
+	perDay := val(3 / parked.Hours() * 24)
+	power := val(3 * 75.0 / 100 * 1000 / parked.Hours())
+	for _, tt := range []struct {
+		name         string
+		before, next Value[Capacity]
+		sleep        []SleepSpan
+		want         ParkedStats
+	}{
+		{
+			name: "the capacity of the event before", before: cap75, sleep: sleep,
+			want: ParkedStats{
+				Intervals: 1, Time: parked, SoCLossPct: 3, SoCLossPctPerDay: perDay, PowerW: power,
+				SleepRead: read, Asleep: asleep, AsleepShare: share,
+			},
+		},
+		{
+			name: "else the one after", next: cap75,
+			want: ParkedStats{Intervals: 1, Time: parked, SoCLossPct: 3, SoCLossPctPerDay: perDay, PowerW: power},
+		},
+		{
+			name: "without a capacity, no power",
+			want: ParkedStats{Intervals: 1, Time: parked, SoCLossPct: 3, SoCLossPctPerDay: perDay},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			trips := []Trip{
+				withCap(drive(evening.Add(-time.Hour), evening, 10, 2, 80, 72), tt.before),
+				withCap(drive(morning, morning.Add(time.Hour), 10, 2, 69, 67), tt.next),
+			}
+			s, err := Summarize(trips, nil, Costs{}, nil, tt.sleep, from, to, paris, BucketDay, ChargesAt{}, DefaultParams())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := s.Totals.Parked; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parked = %+v\nwant     %+v", got, tt.want)
+			}
+			if got := s.Buckets[1].Parked; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parked on its day = %+v\nwant     %+v", got, tt.want)
+			}
+		})
+	}
+
+	// An unknown loss leaves the interval out of the power, as of the rate.
+	trips := []Trip{
+		withCap(drive(evening.Add(-time.Hour), evening, 10, 2, 80, 72), cap75),
+		withCap(drive(morning, morning.Add(time.Hour), 10, 2, 90, 88), cap75),
+	}
+	s, err := Summarize(trips, nil, Costs{}, nil, nil, from, to, paris, BucketNone, ChargesAt{}, DefaultParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p := s.Totals.Parked; p.PowerW.OK || p.AsleepShare.OK || p.SoCLossUnknown != 1 {
+		t.Errorf("parked = %+v", p)
+	}
+}
+
+// A parked interval takes the mean temperature of the observed events around it, those
+// that tell one; without, it is left out.
+func TestSummarizeParkedByTemperature(t *testing.T) {
+	h := func(n int) time.Time { return pt("2026-06-01 00:00").Add(time.Duration(n) * time.Hour) }
+	temp := func(tr Trip, c float64) Trip { tr.OutsideTempC = val(c); return tr }
+	reconstructed := temp(drive(h(9), h(10), 10, 2, 73, 71), 20)
+	reconstructed.Reconstructed = true
+	charge := plug(h(12), h(13), AC, 10, 10, 70, 85)
+	charge.OutsideTempC = val(12)
+	trips := []Trip{
+		temp(drive(h(-24), h(-23), 10, 2, 90, 80), 30), // opens the first interval only
+		temp(drive(h(0), h(1), 10, 2, 79, 78), -3),
+		temp(drive(h(3), h(4), 10, 2, 77, 76), -1), // after an interval of -3 and -1
+		drive(h(6), h(7), 10, 2, 75, 74),           // after one of -1 alone
+		reconstructed,                              // after one without a temperature
+	}
+	s, err := Summarize(trips, []Charge{charge}, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := s.ParkedByTemperature
+	var bands []string
+	for _, b := range got.Bands {
+		bands = append(bands, fmt.Sprintf("%g:%d", b.MinC, b.Intervals))
+	}
+	// The first interval, from the day before, is at 13.5 °C; the last at 12 °C, after
+	// a reconstructed trip.
+	if want := []string{"-5:2", "0:0", "5:0", "10:2"}; !reflect.DeepEqual(bands, want) || got.LeftOut != 1 {
+		t.Errorf("bands %v, left out %d; want %v, 1", bands, got.LeftOut, want)
+	}
+	if b := got.Bands[0]; b.SoCLossPct != 2 || b.Time != 2*115*time.Minute {
+		t.Errorf("band -5 = %+v", b)
+	}
+}
+
+// The observed charges spread by their outside temperature, AC apart from DC, with their
+// mean power over their charging time.
+func TestSummarizeChargesByTemperature(t *testing.T) {
+	h := func(n int) time.Time { return pt("2026-06-01 00:00").Add(time.Duration(n) * time.Hour) }
+	temp := func(c Charge, t float64) Charge { c.OutsideTempC = val(t); return c }
+	noPower := temp(plug(h(6), h(7), AC, 5, 0, 30, 40), 7)
+	noPower.EnergyPowerKWh = unknown[float64]()
+	untyped := temp(plug(h(8), h(9), AC, 5, 5, 40, 50), 1)
+	untyped.Type = unknown[ChargeType]()
+	reconstructed := temp(plug(h(10), h(11), AC, 5, 5, 50, 60), 1)
+	reconstructed.Reconstructed = true
+	charges := []Charge{
+		temp(plug(h(0), h(1), AC, 10, 11, 20, 35), 2),
+		temp(plug(h(2), h(3), DC, 30, 33, 10, 60), 3),
+		noPower,
+		untyped,
+		reconstructed,
+		plug(h(12), h(13), AC, 5, 5, 60, 70), // a vehicle that tells no temperature
+	}
+	s, err := Summarize(nil, charges, Costs{}, nil, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Each charge lasts an hour, known within 5 minutes at both ends: 55 to 65 minutes.
+	power := func(kwh float64) Value[Rate] {
+		return known(Rate{Min: kwh / (65 * time.Minute).Hours(), Max: val(kwh / (55 * time.Minute).Hours())})
+	}
+	want := ChargesByTemperature{
+		Bands: []ChargeBand{
+			{MinC: 0, Count: 3, AC: ChargeBandType{Count: 1, EnergyPowerKWh: 11, PowerKW: power(11)}, DC: ChargeBandType{Count: 1, EnergyPowerKWh: 33, PowerKW: power(33)}},
+			{MinC: 5, Count: 1, AC: ChargeBandType{Count: 1}},
+		},
+		LeftOut: 2,
+	}
+	if got := s.ChargesByTemperature; !reflect.DeepEqual(got, want) {
+		t.Errorf("by temperature = %+v\nwant             %+v", got, want)
+	}
+}
+
+func TestSleepSpans(t *testing.T) {
+	at := func(n int) time.Time { return pt("2026-06-01 00:00").Add(time.Duration(n) * time.Minute) }
+	state := func(f, c int, st SleepState) Record {
+		return Record{FetchedAt: at(f), CheckedAt: at(c), Snapshot: Snapshot{Covers: FieldSleep, Sleep: Some(st, time.Time{})}}
+	}
+	untold := state(100, 110, Awake)
+	untold.Snapshot.Sleep = Value[SleepState]{}
+	other := state(110, 120, Asleep)
+	other.Snapshot.Covers = FieldSoC
+	spans := SleepSpans([]Record{
+		state(30, 90, Offline),
+		state(0, 20, Awake),
+		state(25, 25, Asleep), // seen once: no time
+		state(60, 95, Asleep), // another source over the same time counts it once
+		untold, other,
+	})
+	want := []SleepSpan{
+		{From: at(0), To: at(20)},
+		{From: at(30), To: at(90), Asleep: true},
+		{From: at(90), To: at(95), Asleep: true},
+	}
+	if !reflect.DeepEqual(spans, want) {
+		t.Fatalf("spans %+v\nwant  %+v", spans, want)
+	}
+	if read, asleep := sleepWithin(spans, at(10), at(40)); read != 20*time.Minute || asleep != 10*time.Minute {
+		t.Errorf("within: read %s, asleep %s", read, asleep)
+	}
+	if read, _ := sleepWithin(spans, at(95), at(200)); read != 0 {
+		t.Errorf("after: read %s", read)
 	}
 }

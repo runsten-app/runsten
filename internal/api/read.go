@@ -603,6 +603,7 @@ type chargeJSON struct {
 	AveragePowerKW    *float64             `json:"average_power_kw" minimum:"0" doc:"An imported charge's average power, as the application gives it; null for a derived charge, which tells its power in its readings (GET /vehicles/{vehicle}/series)."`
 	MaxCurrentA       *float64             `json:"max_current_a" exclusiveMinimum:"0" doc:"The highest current the vehicle measured over the charge, in A, as the state's current_a. null for a vehicle that does not tell it (Volvo), a Tesla on DC, an imported or reconstructed charge, and a charge derived before Runsten kept it: a rebuild of the derived data gives it."`
 	Phases            *int                 `json:"phases" minimum:"1" doc:"The AC phases the charge drew on: those of its latest reading with a current, an assumption that it drew on as many throughout. null as max_current_a, and for a vehicle that tells no phases (Polestar)."`
+	OutsideTempC      *float64             `json:"outside_temp_c" doc:"The mean outside temperature, in °C, of the responses Runsten fetched while the charge ran, for a vehicle that tells it (Tesla): the vehicle's own, which in a garage is not the weather. null for the others, a reconstructed or imported charge, and a charge derived before Runsten kept it: a rebuild of the derived data gives it."`
 	CapacityFields
 	Position null[positionJSON] `json:"position"`
 	Place    null[placeRefJSON] `json:"place" doc:"The place of the charge: the nearest one whose circle holds its position; without a position, the place that takes such charges, unless the charge is DC. null elsewhere."`
@@ -621,6 +622,7 @@ func chargeOf(c core.Charge, places []core.Place, cost core.Value[core.Cost], bo
 		EnergyMeasuredKWh: opt(c.EnergyMeasuredKWh, same),
 		AveragePowerKW:    opt(c.AveragePowerKW, same),
 		MaxCurrentA:       opt(c.MaxCurrentA, same), Phases: opt(c.Phases, same),
+		OutsideTempC:   opt(c.OutsideTempC, same),
 		CapacityFields: capacityOf(c.Capacity),
 		Position:       nullOf(c.Position, positionOf),
 		Address:        addressOr(book.of(c.Position), ref, c.Import.V.StartAddress),

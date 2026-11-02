@@ -25,9 +25,25 @@ func (m *memReader) Readings(_ context.Context, _, vehicle string, from, to time
 	return out[:min(limit, len(out))], m.err
 }
 
+// SleepReadings reads the records telling whether the vehicle sleeps, as Readings.
+func (m *memReader) SleepReadings(_ context.Context, _, vehicle string, from, to time.Time, limit int) ([]core.Record, error) {
+	var out []core.Record
+	for _, r := range m.sleep[vehicle] {
+		if !r.CheckedAt.Before(from) && !r.FetchedAt.After(to) {
+			out = append(out, r)
+		}
+	}
+	slices.SortFunc(out, func(a, b core.Record) int { return a.FetchedAt.Compare(b.FetchedAt) })
+	return out[:min(limit, len(out))], m.err
+}
+
 type failingReadings struct{}
 
 func (failingReadings) Readings(context.Context, string, string, time.Time, time.Time, int) ([]core.Record, error) {
+	return nil, errEvents
+}
+
+func (failingReadings) SleepReadings(context.Context, string, string, time.Time, time.Time, int) ([]core.Record, error) {
 	return nil, errEvents
 }
 

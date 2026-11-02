@@ -40,6 +40,9 @@ func (Normalizer) NormalizeHealth(k core.Kind, raw []byte) (core.Health, error) 
 // doors, the windows and the locks), which the derivation leaves out.
 func (Normalizer) StateKinds() []core.Kind { return kinds(Exterior) }
 
+// SleepKinds returns none: the Data Portal does not tell whether the car sleeps.
+func (Normalizer) SleepKinds() []core.Kind { return nil }
+
 // EnergyKinds returns the kinds holding the energy state: the state of charge, the range
 // and the charging power.
 func (Normalizer) EnergyKinds() []core.Kind { return kinds(Battery) }
