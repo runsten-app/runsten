@@ -204,6 +204,44 @@ describe('ChartFrame', () => {
     expect(names).toEqual([['Driving', 20, 71]])
   })
 
+  it('tells the band under the pointer in the strip, even one of a pixel', async () => {
+    const w = mounted({
+      kind: 'line',
+      formatX: String,
+      series: [{ label: 'State of charge', data: [{ x: 0, y: 50 }], color: '#1d5b8f' }],
+      bands: [
+        { label: 'Parked', color: '#cccccc', from: 0, to: 100, detail: ['all day'] },
+        { label: 'Driving', color: '#aa0000', from: 60, to: 60, detail: ['1 Nov', '10:00'] },
+      ],
+    })
+    const [spans] = w.findComponent({ name: 'Line' }).props('plugins') as {
+      afterEvent: (chart: unknown, args: { event: unknown }) => void
+    }[]
+    const chart = {
+      scales: { x: { getPixelForValue: (v: number) => v } },
+      chartArea: { left: 0, right: 100, bottom: 55 },
+      width: 100,
+    }
+    const at = (type: string, x: number | null, y: number | null) =>
+      spans?.afterEvent(chart, { event: { type, x, y } })
+    // Within 3 pixels of the instant, in the strip (61 to 81): the trip drawn over parked.
+    at('mousemove', 62, 70)
+    await w.vm.$nextTick()
+    expect(w.find('.tip').text()).toBe('Driving1 Nov10:00')
+    expect(w.find('.tip').classes()).toContain('tip--left')
+    at('mousemove', 20, 70)
+    await w.vm.$nextTick()
+    expect(w.find('.tip').text()).toBe('Parkedall day')
+    // Over the plot, or gone: no tip.
+    at('mousemove', 20, 30)
+    await w.vm.$nextTick()
+    expect(w.find('.tip').exists()).toBe(false)
+    at('mousemove', 20, 70)
+    at('mouseout', null, null)
+    await w.vm.$nextTick()
+    expect(w.find('.tip').exists()).toBe(false)
+  })
+
   it('draws a series on the right axis, in its own format', () => {
     const w = mounted({
       kind: 'line',

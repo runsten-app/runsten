@@ -70,6 +70,16 @@ const known = computed(() =>
 // A band covers where the event may have been, from its earliest start to its latest
 // end, and solidly where it surely was; a reconstructed one is sure of nothing.
 type Event = { start: Bounds; end: Bounds; reconstructed: boolean }
+// What the pointer over a band tells: the day it began, its times (the end's day only when
+// another), how long it lasted; as honest as its bounds.
+function detail(start: Bounds, end: Bounds): string[] {
+  const day = f.dayKey(start.after)
+  return [
+    f.calendarDay(day),
+    `${f.bounds(start, day)} – ${f.bounds(end, day)}`,
+    f.duration(start, end),
+  ]
+}
 function band(e: Event, label: string, c: string): Band {
   const sureFrom = Date.parse(e.start.before)
   const sureTo = Date.parse(e.end.after)
@@ -79,6 +89,7 @@ function band(e: Event, label: string, c: string): Band {
     from: Date.parse(e.start.after),
     to: Date.parse(e.end.before),
     sure: !e.reconstructed && sureTo > sureFrom ? { from: sureFrom, to: sureTo } : undefined,
+    detail: detail(e.start, e.end),
   }
 }
 const events = computed<Band[]>(() => [
@@ -98,6 +109,10 @@ const parked = computed<Band[]>(() => {
     const out: Band[] = []
     let from = Date.parse(first.at)
     const push = (to: number) => {
+      const at = (v: number) => {
+        const iso = new Date(v).toISOString()
+        return { after: iso, before: iso }
+      }
       if (to > from)
         out.push({
           label: t('timeline.parked'),
@@ -106,6 +121,7 @@ const parked = computed<Band[]>(() => {
           from,
           to,
           sure: { from, to },
+          detail: detail(at(from), at(to)),
         })
     }
     for (const [a, b] of busy) {

@@ -15,7 +15,7 @@ import {
   type Plugin,
   type ChartOptions,
 } from 'chart.js'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Bar, Line } from 'vue-chartjs'
 import { useDisplay, useTheme } from 'vuetify'
 import type { Band, Series } from './series'
@@ -254,6 +254,30 @@ const zeros: Plugin<'bar'> = {
 }
 // The strip of the bands, under the plot and over the x axis's ticks, in pixels.
 const lane = { gap: 6, height: 20 }
+// The band under the pointer, and where its tip goes in the canvas, in pixels: from x
+// rightwards in the left half, leftwards in the right one, so that it stays inside.
+type Tip = { band: Band; x: number; y: number; left: boolean }
+const tip = ref<Tip | null>(null)
+// The part of a Chart.js chart the strip's pointer needs.
+type LaneChart = {
+  chartArea: { left: number; right: number; bottom: number }
+  width: number
+  scales: { x?: { getPixelForValue: (v: number) => number } }
+}
+// bandAt is the band drawn last under the pointer, in the strip: the one seen there. A
+// few pixels around a band count, so that one of a pixel can still be pointed at.
+function bandAt(chart: LaneChart, px: number, py: number): Tip | null {
+  const { chartArea: area, scales } = chart
+  const top = area.bottom + lane.gap
+  if (!scales.x || !props.bands?.length) return null
+  if (py < top || py > top + lane.height || px < area.left - 3 || px > area.right + 3) return null
+  const x = scales.x
+  const band = props.bands.findLast(
+    (b) => px >= x.getPixelForValue(b.from) - 3 && px <= x.getPixelForValue(b.to) + 3,
+  )
+  if (!band) return null
+  return { band, x: px, y: top + lane.height + 4, left: px > chart.width / 2 }
+}
 // spans draws the bands in their strip: faint where the event may have been, solid
 // where it surely was, named inside its surest part when the name fits.
 const spans: Plugin<'line'> = {
@@ -291,6 +315,14 @@ const spans: Plugin<'line'> = {
       }
     }
     ctx.restore()
+  },
+  // Every event, outside the plot too (onHover hears only those inside it): the band
+  // under the pointer, none once it leaves.
+  afterEvent(chart, { event }) {
+    tip.value =
+      event.type === 'mouseout' || event.x === null || event.y === null
+        ? null
+        : bandAt(chart, event.x, event.y)
   },
 }
 // The bands read the scales only, the same on a bar chart.
@@ -450,6 +482,19 @@ function pointY(raw: unknown): number | null {
           :plugins="linePlugins"
           :aria-label="summary"
         />
+        <!-- The band under the pointer, for the eye only: the table below says the same. -->
+        <div
+          v-if="tip"
+          class="tip"
+          :class="{ 'tip--left': tip.left }"
+          aria-hidden="true"
+          :style="{ left: `${tip.x}px`, top: `${tip.y}px` }"
+        >
+          <div class="tip-label">
+            <span class="mark" :style="{ '--mark': tip.band.color }" />{{ tip.band.label }}
+          </div>
+          <div v-for="(line, i) in tip.band.detail" :key="i">{{ line }}</div>
+        </div>
       </div>
       <!-- Not a v-card-subtitle: it cuts a long line short on a phone. -->
       <p v-if="hint && !empty" class="hint mt-3 mb-0">{{ hint }}</p>
@@ -493,6 +538,27 @@ function pointY(raw: unknown): number | null {
 .canvas {
   position: relative;
   height: 15rem;
+}
+.tip {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgb(var(--v-theme-on-surface));
+  color: rgb(var(--v-theme-background));
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.tip--left {
+  transform: translateX(-100%);
+}
+.tip-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
 }
 .hint {
   font-size: 0.75rem;

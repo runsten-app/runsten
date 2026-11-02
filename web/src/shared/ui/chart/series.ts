@@ -39,6 +39,8 @@ export type Band = {
   color: string
   // The color of its name, over the band's; the theme's on-primary without it.
   ink?: string
+  // What the pointer over it tells under its name, a line each (its day, times, duration).
+  detail?: string[]
   from: number
   to: number
   // The part it surely covers; none when nothing is sure (an event never seen).
