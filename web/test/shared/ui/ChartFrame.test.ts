@@ -1,3 +1,4 @@
+import { Chart } from 'chart.js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 import { vuetify } from '@/app/providers/vuetify'
@@ -441,11 +442,17 @@ describe('ChartFrame', () => {
           borderDash?: number[]
           backgroundColor: string
           borderColor: string
+          pointRadius: number | ((c: { dataIndex: number }) => number)
         }[]
       }
     ).datasets
     expect(datasets[0]?.fill).toBe(false)
     expect(datasets[1]?.fill).toBe('-1')
+    // Chart.js fills only with its Filler plugin registered.
+    expect(Chart.registry.plugins.get('filler')).toBeDefined()
+    // A bound known alone has no segment: it is a point.
+    const radius = datasets[1]?.pointRadius
+    expect(typeof radius === 'function' ? radius({ dataIndex: 0 }) : radius).toBe(3)
     // The band fills in the band color, its bounds thin edges in their own.
     expect(datasets[1]?.backgroundColor).toBe(
       vuetify.theme.themes.value.light?.colors['chart-band'],

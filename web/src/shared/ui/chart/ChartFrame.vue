@@ -4,6 +4,7 @@ import {
   BarElement,
   CategoryScale,
   Chart,
+  Filler,
   LinearScale,
   LineController,
   LineElement,
@@ -29,6 +30,7 @@ Chart.register(
   PointElement,
   CategoryScale,
   LinearScale,
+  Filler,
   Tooltip,
 )
 
@@ -186,9 +188,10 @@ const data = computed(() => ({
       fill: s.band ? ('-1' as const) : false,
       // A line breaks where a value is unknown: a gap, never a zero.
       spanGaps: false,
+      // A lone known value is a point, a band's bound too: no segment would show it.
       pointRadius: s.scatter
         ? 3
-        : line && !thin && !s.dashed
+        : line && !s.dashed
           ? (c: { dataIndex: number }) => (isolated(s.data, c.dataIndex) ? 3 : 0)
           : 0,
       pointHoverRadius: thin || s.dashed ? 0 : 4,
