@@ -95,6 +95,11 @@ describe('ChargePage', () => {
     const wrapper = await mounted(charging.charge?.id ?? '')
     expect(fetchCharge).not.toHaveBeenCalled()
     expect(wrapper.find('.charge-in-progress h1').text()).toBe('Charge in progress')
-    expect(wrapper.findComponent({ name: 'ChargeCurve' }).props('live')).toEqual(charging.charge)
+    const curve = wrapper.findComponent({ name: 'ChargeCurve' })
+    expect(curve.props('live')).toEqual(charging.charge)
+    // Its curve first too, above its cards.
+    expect(wrapper.find('.charge-in-progress > .v-row').element.previousElementSibling).toBe(
+      curve.element,
+    )
   })
 })
