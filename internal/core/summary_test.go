@@ -368,11 +368,89 @@ func TestSummarizeTripsByDistance(t *testing.T) {
 	}
 }
 
+// The observed trips of the period with an outside temperature spread over bands of 5 °C,
+// from the coldest holding one to the warmest, an empty one between them included; each
+// band has its distance, consumption and speed by bounds. A reconstructed trip, one
+// without a temperature, and one before the period are left out of every band.
+func TestSummarizeTripsByTemperature(t *testing.T) {
+	t1 := pt("2026-06-01 08:00")
+	h := func(n int) time.Time { return t1.Add(time.Duration(n) * time.Hour) }
+	at := func(tr Trip, c float64) Trip {
+		tr.OutsideTempC = val(c)
+		return tr
+	}
+	noDistance := at(drive(h(6), h(7), 0, 1, 60, 59), 13)
+	noDistance.DistanceKm = unknown[float64]()
+	trips := []Trip{
+		at(drive(h(-24), h(-23), 3, 1, 90, 89), -20), // the day before
+		at(drive(h(0), h(1), 60, 12, 89, 70), -3.5),
+		at(drive(h(1), h(2), 30, 3, 70, 66), 0), // a limit belongs to the band above
+		at(drive(h(2), h(3), 30, 6, 66, 58), 4.9),
+		at(drive(h(3), h(4), 120, 18, 58, 30), 12),
+		drive(h(4), h(5), 10, 2, 30, 28), // a vehicle that tells no temperature
+		{
+			DetectedAt: h(6), Reconstructed: true, Start: Bounds{h(5), h(6)}, End: Bounds{h(5), h(6)},
+			DistanceKm: val(30), EnergyKWh: val(6), StartSoC: val(28), EndSoC: val(20),
+		},
+		noDistance,
+	}
+	s, err := Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Each trip lasts an hour, known within 5 minutes at both ends: 55 to 65 minutes.
+	speed := func(km float64, trips int) Value[Speed] {
+		low, high := time.Duration(trips)*65*time.Minute, time.Duration(trips)*55*time.Minute
+		return known(Speed{Min: km / low.Hours(), Max: val(km / high.Hours())})
+	}
+	want := TripsByTemperature{
+		Bands: []TemperatureBand{
+			{MinC: -5, Count: 1, DistanceKm: 60, ConsumptionKWhPer100km: val(20), Speed: speed(60, 1)},
+			{MinC: 0, Count: 2, DistanceKm: 60, ConsumptionKWhPer100km: val(15), Speed: speed(60, 2)},
+			{MinC: 5},
+			// The trip without a distance counts, out of the consumption and the speed.
+			{MinC: 10, Count: 2, DistanceKm: 120, DistanceUnknown: 1, ConsumptionKWhPer100km: val(15), Speed: speed(120, 1)},
+		},
+		LeftOut: 2,
+	}
+	if got := s.TripsByTemperature; !reflect.DeepEqual(got, want) {
+		t.Errorf("by temperature = %+v\nwant             %+v", got, want)
+	}
+}
+
+// Without a trip that tells its temperature, there is no band; a speed whose bounds allow
+// no time has no upper bound.
+func TestSummarizeTripsByTemperatureEdges(t *testing.T) {
+	t1 := pt("2026-06-01 08:00")
+	s, err := Summarize([]Trip{drive(t1, t1.Add(time.Hour), 10, 2, 80, 78)}, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := s.TripsByTemperature, (TripsByTemperature{Bands: []TemperatureBand{}, LeftOut: 1}); !reflect.DeepEqual(got, want) {
+		t.Errorf("without a temperature = %+v, want %+v", got, want)
+	}
+
+	// Seen parked, then parked elsewhere 10 minutes later: the trip lasted 0 to 10 minutes.
+	short := Trip{
+		DetectedAt: t1.Add(10 * time.Minute), Start: Bounds{t1, t1.Add(10 * time.Minute)}, End: Bounds{t1, t1.Add(10 * time.Minute)},
+		DistanceKm: val(5), OutsideTempC: val(-0.5),
+	}
+	s, err = Summarize([]Trip{short}, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []TemperatureBand{{MinC: -5, Count: 1, DistanceKm: 5, Speed: known(Speed{Min: 30})}}
+	if got := s.TripsByTemperature.Bands; !reflect.DeepEqual(got, want) {
+		t.Errorf("short trip = %+v, want %+v", got, want)
+	}
+}
+
 // A plug-in hybrid's summary has no consumption, in the totals, the intervals or the
 // bands, and keeps every other figure; the summary it came from is left as it was.
 func TestSummaryWithoutConsumption(t *testing.T) {
 	t1 := pt("2026-06-01 08:00")
 	trips := []Trip{drive(t1, t1.Add(time.Hour), 41, 1.3, 60, 55), drive(t1.Add(3*time.Hour), t1.Add(4*time.Hour), 12, 2, 55, 47)}
+	trips[0].OutsideTempC = val(4.0)
 	s, err := Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketDay, ChargesAt{}, DefaultParams())
 	if err != nil {
 		t.Fatal(err)
@@ -392,11 +470,16 @@ func TestSummaryWithoutConsumption(t *testing.T) {
 			t.Errorf("band %d's consumption = %v, want unknown", i, b.ConsumptionKWhPer100km)
 		}
 	}
+	for i, b := range h.TripsByTemperature.Bands {
+		if b.ConsumptionKWhPer100km.OK || !b.Speed.OK {
+			t.Errorf("temperature band %d = %+v, want no consumption, its speed kept", i, b)
+		}
+	}
 	if h.Totals.Trips.Count != 2 || h.Totals.Trips.DistanceKm != 53 || h.Totals.Trips.EnergyKWh != 3.3 {
 		t.Errorf("trips = %+v, want the same counts, distance and energy", h.Totals.Trips)
 	}
 	if !s.Totals.Trips.ConsumptionKWhPer100km.OK || !s.Buckets[0].Trips.ConsumptionKWhPer100km.OK ||
-		!s.TripsByDistance.Bands[1].ConsumptionKWhPer100km.OK {
+		!s.TripsByDistance.Bands[1].ConsumptionKWhPer100km.OK || !s.TripsByTemperature.Bands[0].ConsumptionKWhPer100km.OK {
 		t.Error("the original summary lost its consumption")
 	}
 }

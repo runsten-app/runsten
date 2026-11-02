@@ -145,6 +145,28 @@ type tripsByDistanceJSON struct {
 	LeftOut int                `json:"left_out" minimum:"0" doc:"The trips in no band: the reconstructed ones, which may hold several, and those whose distance is unknown."`
 }
 
+// speedJSON is an average speed known by bounds.
+type speedJSON struct {
+	Min float64  `json:"min" minimum:"0" doc:"The distance over the longest time the trips' bounds allow."`
+	Max *float64 `json:"max" doc:"The distance over the shortest; null when the bounds allow no time at all."`
+}
+
+type temperatureBandJSON struct {
+	MinC            float64 `json:"min_c" doc:"The band holds the trips whose mean outside temperature is at least min_c, in °C."`
+	MaxC            float64 `json:"max_c" doc:"And less than max_c: min_c + 5."`
+	Count           int     `json:"count" minimum:"0"`
+	DistanceKm      float64 `json:"distance_km" minimum:"0" doc:"The sum of the known distances."`
+	DistanceUnknown int     `json:"distance_unknown" minimum:"0"`
+	// An average: null over nothing.
+	ConsumptionKWhPer100km *float64        `json:"consumption_kwh_per_100km" doc:"An estimate over the band's trips whose energy is known and distance positive, as trips.consumption_kwh_per_100km. null without such a trip, and for a plug-in hybrid."`
+	Speed                  null[speedJSON] `json:"speed_kmh" doc:"The average speed of the band's trips whose distance is known, in km/h: their distance over their driving time, known by bounds as driving_time_s. A summer of motorway and a winter in town differ by more than the temperature. null without such a trip."`
+}
+
+type tripsByTemperatureJSON struct {
+	Bands   []temperatureBandJSON `json:"bands" nullable:"false" doc:"Bands of 5 °C, coldest first, from the coldest holding a trip to the warmest, empty ones between included; [] without a trip that tells its temperature."`
+	LeftOut int                   `json:"left_out" minimum:"0" doc:"The trips in no band: those without an outside temperature (a vehicle that tells none, as a Volvo or a Polestar; a reconstructed or imported trip; one derived before Runsten kept it)."`
+}
+
 type chargesBySoCJSON struct {
 	Start   []int `json:"start" nullable:"false" minItems:"101" maxItems:"101" doc:"The charges by the state of charge they started at: start[20] is those that started at 20 %, rounded to the nearest point."`
 	End     []int `json:"end" nullable:"false" minItems:"101" maxItems:"101" doc:"The charges by the state of charge they ended at, as start."`
@@ -191,6 +213,21 @@ func tripsByDistanceOf(d core.TripsByDistance) tripsByDistanceJSON {
 	return out
 }
 
+func tripsByTemperatureOf(d core.TripsByTemperature) tripsByTemperatureJSON {
+	out := tripsByTemperatureJSON{Bands: make([]temperatureBandJSON, len(d.Bands)), LeftOut: d.LeftOut}
+	for i, b := range d.Bands {
+		out.Bands[i] = temperatureBandJSON{
+			MinC: b.MinC, MaxC: b.MinC + core.TemperatureBandC, Count: b.Count,
+			DistanceKm: b.DistanceKm, DistanceUnknown: b.DistanceUnknown,
+			ConsumptionKWhPer100km: opt(b.ConsumptionKWhPer100km, same),
+			Speed: nullOf(b.Speed, func(s core.Speed) speedJSON {
+				return speedJSON{Min: s.Min, Max: opt(s.Max, same)}
+			}),
+		}
+	}
+	return out
+}
+
 func chargesBySoCOf(c core.ChargesBySoC) chargesBySoCJSON {
 	return chargesBySoCJSON{Start: c.Start[:], End: c.End[:], LeftOut: c.LeftOut}
 }
@@ -223,9 +260,10 @@ type statsJSON struct {
 	Totals   periodStatsJSON    `json:"totals"`
 	Buckets  []bucketStatsJSON  `json:"buckets" nullable:"false" doc:"The intervals, oldest first, empty ones included; [] without a split. The first starts at the start of the day, week or month of from, the last ends at the end of the one of the last instant before to."`
 	// Over the period only: by interval, they would repeat the bands hundreds of times.
-	TripsByDistance tripsByDistanceJSON `json:"trips_by_distance" doc:"How the observed trips of the period spread by distance, with or without a split."`
-	ChargesBySoC    chargesBySoCJSON    `json:"charges_by_soc" doc:"How the observed charges of the period spread by the state of charge they started and ended at."`
-	ChargesByPlace  chargesByPlaceJSON  `json:"charges_by_place" doc:"The charges of the period, reconstructed ones included, by the place their cost takes (charges.place), then outside every place by type, then without a position: each charge in one group."`
+	TripsByDistance    tripsByDistanceJSON    `json:"trips_by_distance" doc:"How the observed trips of the period spread by distance, with or without a split."`
+	TripsByTemperature tripsByTemperatureJSON `json:"trips_by_temperature" doc:"How the observed trips of the period spread by their mean outside temperature (trips.outside_temp_c), with or without a split."`
+	ChargesBySoC       chargesBySoCJSON       `json:"charges_by_soc" doc:"How the observed charges of the period spread by the state of charge they started and ended at."`
+	ChargesByPlace     chargesByPlaceJSON     `json:"charges_by_place" doc:"The charges of the period, reconstructed ones included, by the place their cost takes (charges.place), then outside every place by type, then without a position: each charge in one group."`
 }
 
 func tripStatsOf(s core.TripStats) tripStatsJSON {
@@ -353,6 +391,7 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 	if !from.Before(to) { // no event, and no from
 		out.Totals = periodStatsOf(core.Stats{})
 		out.TripsByDistance = tripsByDistanceOf(core.NoTripsByDistance())
+		out.TripsByTemperature = tripsByTemperatureOf(core.TripsByTemperature{})
 		out.ChargesBySoC = chargesBySoCOf(core.ChargesBySoC{})
 		out.ChargesByPlace = chargesByPlaceOf(core.NoChargesByPlace())
 		return respond(out), nil
@@ -377,6 +416,7 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 	}
 	out.Totals = periodStatsOf(sum.Totals)
 	out.TripsByDistance, out.ChargesBySoC = tripsByDistanceOf(sum.TripsByDistance), chargesBySoCOf(sum.ChargesBySoC)
+	out.TripsByTemperature = tripsByTemperatureOf(sum.TripsByTemperature)
 	out.ChargesByPlace = chargesByPlaceOf(sum.ChargesByPlace)
 	for _, b := range sum.Buckets {
 		out.Buckets = append(out.Buckets, bucketStatsJSON{

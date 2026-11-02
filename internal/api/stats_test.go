@@ -55,6 +55,12 @@ type stats struct {
 		} `json:"bands"`
 		LeftOut int `json:"left_out"`
 	} `json:"trips_by_distance"`
+	TripsByTemperature struct {
+		Bands []struct {
+			Count int `json:"count"`
+		} `json:"bands"`
+		LeftOut int `json:"left_out"`
+	} `json:"trips_by_temperature"`
 	ChargesBySoC struct {
 		Start, End []int
 		LeftOut    int `json:"left_out"`
@@ -171,7 +177,8 @@ func TestStatsJSON(t *testing.T) {
 	t.Run("no event and no from: an empty period until now", func(t *testing.T) {
 		s := read(t, base+parked+"/stats"+query("bucket", "day"))
 		if !s.From.Equal(e.clk.Now()) || !s.To.Equal(e.clk.Now()) || len(s.Buckets) != 0 ||
-			len(s.TripsByDistance.Bands) != 5 || len(s.ChargesBySoC.Start) != 101 {
+			len(s.TripsByDistance.Bands) != 5 || s.TripsByTemperature.Bands == nil || len(s.TripsByTemperature.Bands) != 0 ||
+			len(s.ChargesBySoC.Start) != 101 {
 			t.Errorf("stats = %+v", s)
 		}
 	})
@@ -188,6 +195,13 @@ func TestStatsJSON(t *testing.T) {
 		}
 		if trips != 3 || starts != 1 || ends != 1 {
 			t.Errorf("trips %d, charges %d and %d: %+v %+v", trips, starts, ends, s.TripsByDistance, s.ChargesBySoC)
+		}
+		byTemp := s.TripsByTemperature.LeftOut
+		for _, b := range s.TripsByTemperature.Bands {
+			byTemp += b.Count
+		}
+		if byTemp != 3 {
+			t.Errorf("trips by temperature %d: %+v", byTemp, s.TripsByTemperature)
 		}
 	})
 	t.Run("a plug-in hybrid has no consumption", func(t *testing.T) {
@@ -212,6 +226,11 @@ func TestStatsJSON(t *testing.T) {
 						Consumption *float64 `json:"consumption_kwh_per_100km"`
 					} `json:"bands"`
 				} `json:"trips_by_distance"`
+				TripsByTemperature struct {
+					Bands []struct {
+						Consumption *float64 `json:"consumption_kwh_per_100km"`
+					} `json:"bands"`
+				} `json:"trips_by_temperature"`
 			}
 			if err := json.Unmarshal([]byte(body), &s); err != nil {
 				t.Fatal(err)
@@ -221,6 +240,9 @@ func TestStatsJSON(t *testing.T) {
 				values = append(values, b.Trips.Consumption)
 			}
 			for _, b := range s.TripsByDistance.Bands {
+				values = append(values, b.Consumption)
+			}
+			for _, b := range s.TripsByTemperature.Bands {
 				values = append(values, b.Consumption)
 			}
 			for _, v := range values {
