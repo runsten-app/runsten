@@ -537,8 +537,8 @@
       "byTemperature": {
         "title": "Förbrukning efter utetemperatur (uppskattad)",
         "consumption": "Förbrukning",
+        "averageSpeed": "Medelhastighet",
         "speed": "Medelhastighet, lägsta",
-        "speedRange": "Intervall, upp till högsta medelhastighet",
         "speedMax": "Medelhastighet, högsta",
         "trips": "Resor",
         "distance": "Sträcka",
@@ -546,7 +546,7 @@
         "item": "{band}, {value} på {trips}",
         "summary": "Förbrukning efter utetemperatur: {list}.",
         "none": "Ingen känd förbrukning under perioden.",
-        "hint": "En elbil drar mer i kyla: batteriet och kupén ska värmas. Medelhastigheten skiljer en vinter i stan från en sommar på motorvägen.",
+        "hint": "En elbil drar mer i kyla: batteriet och kupén ska värmas. Peka på ett intervall för dess resor och deras medelhastighet, som skiljer en vinter i stan från en sommar på motorvägen.",
         "leftOut": "{n} resa utelämnad: utan utetemperatur. | {n} resor utelämnade: utan utetemperatur.",
         "tripCount": "{n} resa | {n} resor"
       },

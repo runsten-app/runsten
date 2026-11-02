@@ -50,6 +50,19 @@ export function formatQuantity(
   return `${new Intl.NumberFormat(locale, options).format(value)}\u00a0${symbols[unit] ?? unit}`
 }
 
+// formatQuantityRange formats bounds in their unit as Intl writes a range ("44–52 km/h"),
+// one value when both round alike: never formatRange on equal bounds ("~44 km/h").
+export function formatQuantityRange(min: number, max: number, unit: Unit, locale: string): string {
+  const options = { maximumFractionDigits: fractionDigits[unit] }
+  const unitName = intlUnits[unit]
+  const f = new Intl.NumberFormat(
+    locale,
+    unitName ? { ...options, style: 'unit', unit: unitName } : options,
+  )
+  const text = f.format(min) === f.format(max) ? f.format(min) : f.formatRange(min, max)
+  return unitName ? text : `${text}\u00a0${symbols[unit] ?? unit}`
+}
+
 // kilowatts converts a power in W, as the API gives it, to kW, as it is shown.
 export function kilowatts(watts: number): number {
   return watts / 1000

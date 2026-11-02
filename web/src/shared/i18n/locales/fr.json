@@ -537,8 +537,8 @@
       "byTemperature": {
         "title": "Consommation selon la température extérieure (estimée)",
         "consumption": "Consommation",
+        "averageSpeed": "Vitesse moyenne",
         "speed": "Vitesse moyenne, la plus basse",
-        "speedRange": "Plage, jusqu'à la vitesse moyenne la plus haute",
         "speedMax": "Vitesse moyenne, la plus haute",
         "trips": "Trajets",
         "distance": "Distance",
@@ -546,7 +546,7 @@
         "item": "{band}, {value} sur {trips}",
         "summary": "Consommation selon la température extérieure : {list}.",
         "none": "Aucune consommation connue sur cette période.",
-        "hint": "Une voiture électrique consomme plus par temps froid : batterie et habitacle à chauffer. La vitesse moyenne distingue un hiver en ville d'un été sur l'autoroute.",
+        "hint": "Une voiture électrique consomme plus par temps froid : batterie et habitacle à chauffer. Survolez une tranche pour ses trajets et leur vitesse moyenne, qui distingue un hiver en ville d'un été sur l'autoroute.",
         "leftOut": "{n} trajet écarté : sans température extérieure. | {n} trajets écartés : sans température extérieure.",
         "tripCount": "{n} trajet | {n} trajets"
       },

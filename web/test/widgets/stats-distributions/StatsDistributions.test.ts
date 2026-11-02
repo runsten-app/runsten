@@ -124,7 +124,7 @@ describe('StatsDistributions', () => {
     ])
   })
 
-  it('draws what the trips consumed by outside temperature, and their speed', async () => {
+  it('draws what the trips consumed by outside temperature, their speed in the tooltip', async () => {
     const s = structuredClone(stats) as Stats
     s.trips_by_temperature = {
       bands: [
@@ -165,13 +165,29 @@ describe('StatsDistributions', () => {
       '0 to 5°C',
       '5 to 10°C',
     ])
-    const [consumption, low, high] = datasets(w, 'by-temperature')
-    expect(consumption?.data).toEqual([24.5, null, 17.1])
-    expect(low?.data).toEqual([38.2, null, 96])
-    expect(high?.data).toEqual([41.6, null, null])
-    // The speed is a line over the bars, against the right axis.
+    // The consumption alone is drawn: no second axis over the bars.
+    const drawn = datasets(w, 'by-temperature')
+    expect(drawn.map((d) => d.data)).toEqual([[24.5, null, 17.1]])
     const frame = w.findAllComponents(ChartFrame).find((c) => c.classes('by-temperature'))
-    expect(frame?.props('rightUnit')).toBe('km/h')
+    expect(frame?.props('rightUnit')).toBeUndefined()
+    // The tooltip tells each band's trips, distance and speed, a range or at least.
+    const details = frame?.props('details') as (i: number) => string[]
+    expect(details(0).map(plain)).toEqual([
+      'Trips: 3',
+      'Distance: 42 km',
+      'Average speed: 38–42 km/h',
+    ])
+    expect(details(1).map(plain)).toEqual([
+      'Trips: 0',
+      'Distance: Unknown',
+      'Average speed: Unknown',
+    ])
+    expect(details(2).map(plain)).toEqual([
+      'Trips: 1',
+      'Distance: 120 km',
+      'Average speed: at least 96 km/h',
+    ])
+    expect(details(3)).toEqual([])
     expect(plain(w.find('.by-temperature canvas').attributes('aria-label'))).toBe(
       'Consumption by outside temperature: -5 to 0°C, 24.5 kWh/100 km over 3 trips; ' +
         '5 to 10°C, 17.1 kWh/100 km over 1 trip.',
