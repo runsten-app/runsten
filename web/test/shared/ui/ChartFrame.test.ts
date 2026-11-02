@@ -232,6 +232,11 @@ describe('ChartFrame', () => {
     at('mousemove', 20, 70)
     await w.vm.$nextTick()
     expect(w.find('.tip').text()).toBe('Parkedall day')
+    // A screen reader, which has no pointer, is given the same in a list.
+    expect(w.findAll('.d-sr-only li').map((l) => l.text())).toEqual([
+      'Parked, all day',
+      'Driving, 1 Nov, 10:00',
+    ])
     // Over the plot, or gone: no tip.
     at('mousemove', 20, 30)
     await w.vm.$nextTick()

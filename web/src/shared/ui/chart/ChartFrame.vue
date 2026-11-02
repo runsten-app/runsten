@@ -526,6 +526,10 @@ function pointY(raw: unknown): number | null {
             </tr>
           </tbody>
         </table>
+        <!-- The bands, each with what its tip tells the pointer. -->
+        <ul v-if="bands?.some((b) => b.detail)">
+          <li v-for="(b, i) in bands" :key="i">{{ [b.label, ...(b.detail ?? [])].join(', ') }}</li>
+        </ul>
       </div>
     </v-card-text>
   </v-card>
@@ -549,7 +553,9 @@ function pointY(raw: unknown): number | null {
   color: rgb(var(--v-theme-background));
   font-size: 0.75rem;
   line-height: 1.4;
-  white-space: nowrap;
+  /* Anchored at the pointer, away from the nearer side: half the canvas is always free. */
+  inline-size: max-content;
+  max-inline-size: 50%;
 }
 .tip--left {
   transform: translateX(-100%);
