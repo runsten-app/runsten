@@ -55,10 +55,12 @@ func TestLoadConfigOverrides(t *testing.T) {
 		"RUNSTEN_HEALTH_ADDR": "127.0.0.1:8091", "RUNSTEN_ACCESS_RESTRICTED": "1",
 		"RUNSTEN_DEV_CLOCK_SPEED": "60", "RUNSTEN_VOLVO_DAILY_QUOTA": "50000",
 		"RUNSTEN_VOLVO_QUOTA_PER_USER": "true", "RUNSTEN_MQTT_PRIVATE_BROKERS": "false",
-		"RUNSTEN_POLESTAR_BASE_URL":    "http://localhost:8080/eu-north-1/data-portal/m2m",
-		"RUNSTEN_FLAGS":                "source.tesla=false",
-		"RUNSTEN_POLESTAR_ID_AUTH_URL": "http://localhost:8080/polestar-id",
-		"RUNSTEN_POLESTAR_ID_API_URL":  "http://localhost:8080/polestar-id/eu-north-1/mystar-v2",
+		"RUNSTEN_POLESTAR_BASE_URL":         "http://localhost:8080/eu-north-1/data-portal/m2m",
+		"RUNSTEN_FLAGS":                     "source.tesla=false",
+		"RUNSTEN_POLESTAR_ID_AUTH_URL":      "http://localhost:8080/polestar-id",
+		"RUNSTEN_POLESTAR_ID_API_URL":       "http://localhost:8080/polestar-id/eu-north-1/mystar-v2",
+		"RUNSTEN_POLESTAR_ID_DISCOVERY_URL": "http://localhost:8080/polestar-id/cnepmob",
+		"RUNSTEN_POLESTAR_ID_PCCS_URL":      "http://localhost:8080",
 	} {
 		m[k] = v
 	}
@@ -73,7 +75,10 @@ func TestLoadConfigOverrides(t *testing.T) {
 		cfg.healthAddr != "127.0.0.1:8091" || !cfg.restricted || cfg.clockSpeed != 60 || cfg.quota != (collector.Quota{Daily: 50000, PerUser: true}) ||
 		cfg.privateBrokers || cfg.polestarURL != "http://localhost:8080/eu-north-1/data-portal/m2m" ||
 		!maps.Equal(cfg.flags, map[flags.Name]bool{flags.SourceTesla: false}) ||
-		cfg.polestarID != (polestarid.Hosts{Auth: "http://localhost:8080/polestar-id", API: "http://localhost:8080/polestar-id/eu-north-1/mystar-v2"}) {
+		cfg.polestarID != (polestarid.Hosts{
+			Auth: "http://localhost:8080/polestar-id", API: "http://localhost:8080/polestar-id/eu-north-1/mystar-v2",
+			Discovery: "http://localhost:8080/polestar-id/cnepmob", PCCS: "http://localhost:8080",
+		}) {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -86,7 +91,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_DEV_CLOCK_SPEED": "0", "RUNSTEN_VOLVO_DAILY_QUOTA": "10k",
 		"RUNSTEN_VOLVO_QUOTA_PER_USER": "maybe", "RUNSTEN_MQTT_PRIVATE_BROKERS": "sometimes",
 		"RUNSTEN_POLESTAR_BASE_URL": "polestar", "RUNSTEN_FLAGS": "source.tesla=sometimes",
-		"RUNSTEN_POLESTAR_ID_API_URL": "mystar",
+		"RUNSTEN_POLESTAR_ID_API_URL": "mystar", "RUNSTEN_POLESTAR_ID_PCCS_URL": "pccs",
 	}), connect)
 	if err == nil {
 		t.Fatal("error expected")
@@ -97,6 +102,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_VOLVO_AUTH_URL", "RUNSTEN_TOKEN_KEEPALIVE", "RUNSTEN_HEALTH_ADDR", "RUNSTEN_ACCESS_RESTRICTED",
 		"RUNSTEN_DEV_CLOCK_SPEED", "RUNSTEN_VOLVO_DAILY_QUOTA", "RUNSTEN_VOLVO_QUOTA_PER_USER",
 		"RUNSTEN_MQTT_PRIVATE_BROKERS", "RUNSTEN_POLESTAR_BASE_URL", "RUNSTEN_FLAGS", "RUNSTEN_POLESTAR_ID_API_URL",
+		"RUNSTEN_POLESTAR_ID_PCCS_URL",
 	} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("the error should mention %s: %v", want, err)

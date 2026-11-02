@@ -48,6 +48,12 @@
 //	RUNSTEN_POLESTAR_ID_API_URL the Polestar app's API, which reads their cars when the
 //	                            flag source.polestar-id is on (default
 //	                            https://pc-api.polestar.com/eu-north-1/mystar-v2)
+//	RUNSTEN_POLESTAR_ID_DISCOVERY_URL
+//	                            the service that answers the host of the Polestar app's
+//	                            gRPC battery, under its own scheme (default
+//	                            https://cnepmob.volvocars.com)
+//	RUNSTEN_POLESTAR_ID_PCCS_URL the Polestar app's gRPC of the charge limit (default
+//	                            https://api.pccs-prod.plstr.io)
 //	RUNSTEN_TOKEN_MARGIN        refresh an access token this long before it expires
 //	                            (default 2m)
 //	RUNSTEN_TOKEN_KEEPALIVE     refresh an idle connection whose refresh token is older
@@ -329,6 +335,7 @@ func run(args []string) error {
 	log.Info("collector started", "version", version, "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
 		"polestar_base_url", cfg.polestarURL, "tesla_api_url", cfg.tesla.API, "tesla_auth_url", cfg.tesla.Auth,
 		"polestar_id_auth_url", cfg.polestarID.Auth, "polestar_id_api_url", cfg.polestarID.API,
+		"polestar_id_discovery_url", cfg.polestarID.Discovery, "polestar_id_pccs_url", cfg.polestarID.PCCS,
 		"daily_quota", cfg.quota.Daily, "quota_per_user", cfg.quota.PerUser, "instance_key", cfg.apiKey != "",
 		"mqtt_private_brokers", cfg.privateBrokers)
 	der := variants{
@@ -434,13 +441,16 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		authURL:     volvo.DefaultAuthURL,
 		polestarURL: polestar.DefaultBaseURL,
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
-		polestarID:  polestarid.Hosts{Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL},
-		tokens:      oauth.DefaultParams(),
-		tick:        10 * time.Second,
-		intervals:   collector.DefaultIntervals(),
-		quota:       collector.DefaultQuota(),
-		logLevel:    slog.LevelInfo,
-		clockSpeed:  1,
+		polestarID: polestarid.Hosts{
+			Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL,
+			Discovery: polestarid.DefaultDiscoveryURL, PCCS: polestarid.DefaultPCCSURL,
+		},
+		tokens:     oauth.DefaultParams(),
+		tick:       10 * time.Second,
+		intervals:  collector.DefaultIntervals(),
+		quota:      collector.DefaultQuota(),
+		logLevel:   slog.LevelInfo,
+		clockSpeed: 1,
 
 		privateBrokers: true,
 	}
@@ -497,6 +507,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.authURL, "RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL,
 		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
+		"RUNSTEN_POLESTAR_ID_DISCOVERY_URL": &cfg.polestarID.Discovery, "RUNSTEN_POLESTAR_ID_PCCS_URL": &cfg.polestarID.PCCS,
 	} {
 		if v := getenv(name); v != "" {
 			if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {

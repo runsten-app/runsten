@@ -55,8 +55,54 @@ type Upload struct {
 	Fields []string
 }
 
-// UploadOf reads the uploads a response carries.
-func UploadOf(raw []byte) (Upload, error) {
+// UploadOf reads the uploads a response of ep carries.
+func UploadOf(ep Endpoint, raw []byte) (Upload, error) {
+	switch ep {
+	case Battery, TargetSoC:
+		return grpcUploadOf(raw)
+	case Telematics:
+		return telematicsUploadOf(raw)
+	}
+	return Upload{}, nil
+}
+
+// grpcUploadOf reads a gRPC response stored (wire.go): its battery's timestamp, the
+// fields of each message of it.
+func grpcUploadOf(raw []byte) (Upload, error) {
+	var v map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return Upload{}, fmt.Errorf("upload: %w", err)
+	}
+	var u Upload
+	if vin, ok := v["vin"]; ok {
+		var s string
+		if json.Unmarshal(vin, &s) == nil {
+			if y, ok := modelYear(s); ok {
+				u.ModelYear = y
+			}
+		}
+	}
+	for kind, m := range v {
+		var fields map[string]json.RawMessage
+		if json.Unmarshal(m, &fields) != nil {
+			continue
+		}
+		for k, x := range fields {
+			if k != "timestamp" {
+				u.Fields = append(u.Fields, kind+"."+k)
+				continue
+			}
+			var t stamp
+			if json.Unmarshal(x, &t) == nil {
+				u.At = t.instant()
+			}
+		}
+	}
+	slices.Sort(u.Fields)
+	return u, nil
+}
+
+func telematicsUploadOf(raw []byte) (Upload, error) {
 	var v telematics
 	if err := json.Unmarshal(raw, &v); err != nil {
 		return Upload{}, fmt.Errorf("upload: %w", err)

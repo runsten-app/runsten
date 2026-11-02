@@ -4,8 +4,9 @@
 // (under teslaapi.APIPrefix, its token under teslaapi.AuthPrefix and its faults under
 // teslaapi.ControlPrefix, for the scenarios of brand tesla, with the refresh token
 // teslaapi.DevRefreshToken), the Polestar app's API read with the Polestar ID (under
-// polestaridapi.Prefix, its faults under polestaridapi.ControlPrefix, for the scenarios of
-// brand polestar with source polestar_id, signed in as polestaridapi.DevEmail), and
+// polestaridapi.Prefix, its faults under polestaridapi.ControlPrefix, its gRPC services at
+// their paths over HTTP/2 without TLS, for the scenarios of brand polestar with source
+// polestar_id, signed in as polestaridapi.DevEmail), and
 // Aximote's public
 // API for the imports (/api/public/v1/, its token
 // aximoteapi.DevToken): an electric car with the first scenario's VIN, whose history
@@ -181,7 +182,7 @@ func run() error {
 		mux.Handle(prefix, th)
 	}
 	pid := polestaridapi.NewHandler(polestarID, clk, cfg.polestarID)
-	for _, prefix := range []string{polestaridapi.Prefix, polestaridapi.ControlPrefix} {
+	for _, prefix := range []string{polestaridapi.Prefix, polestaridapi.ControlPrefix, polestaridapi.BatteryPath, polestaridapi.TargetSoCPath} {
 		mux.Handle(prefix, pid)
 	}
 	mux.Handle("/", volvoapi.NewHandler(srcs, clk, limits, faults, auth))
@@ -197,7 +198,12 @@ func run() error {
 		"tesla_vehicles", len(tesla), "tesla_sleep_after", cfg.tesla.SleepAfter.String(), "tesla_token_ttl", cfg.tesla.TokenTTL.String(),
 		"polestar_id_vehicles", len(polestarID), "polestar_id_token_ttl", cfg.polestarID.AccessTokenTTL.String())
 
-	if err := httpserver.Run(ctx, httpserver.New(cfg.addr, httpserver.LogRequests(log, mux), log), log); err != nil {
+	srv := httpserver.New(cfg.addr, httpserver.LogRequests(log, mux), log)
+	// HTTP/2 without TLS too, with prior knowledge: the Polestar app's gRPC needs HTTP/2.
+	srv.Protocols = new(http.Protocols)
+	srv.Protocols.SetHTTP1(true)
+	srv.Protocols.SetUnencryptedHTTP2(true)
+	if err := httpserver.Run(ctx, srv, log); err != nil {
 		return fmt.Errorf("server: %w", err)
 	}
 	return nil

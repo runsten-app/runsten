@@ -77,7 +77,7 @@ var allowed = map[string][]string{
 	"internal/volvo":             {"net/http", "encoding/json", "golang.org/x/oauth2", "internal/core", "internal/oauth"},
 	"internal/polestar":          {"net/http", "encoding/json", "internal/core"},
 	"internal/tesla":             {"net/http", "encoding/json", "internal/core"},
-	"internal/polestarid":        {"net/http", "encoding/json", "internal/core"},
+	"internal/polestarid":        {"net/http", "encoding/json", "google.golang.org/protobuf", "internal/core"},
 	"internal/geocode/nominatim": {"net/http", "encoding/json", "internal/core"},
 	"internal/aximote":           {"net/http", "encoding/json"},
 	// The latest release on GitHub, compared with the one running.
@@ -115,7 +115,7 @@ var allowed = map[string][]string{
 	},
 	// The fake Polestar Data Portal exposes the same vehicle model; it never imports the client.
 	"internal/simulator/polestarapi":   {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
-	"internal/simulator/polestaridapi": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
+	"internal/simulator/polestaridapi": {"net/http", "encoding/json", "google.golang.org/protobuf", "internal/platform/clock", "internal/simulator/vehicle"},
 	"internal/simulator/teslaapi":      {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
 	"internal/simulator/control":       {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
 	// The fake Aximote writes its API's JSON on its own: it never imports the client.

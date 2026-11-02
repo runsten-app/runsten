@@ -43,13 +43,15 @@ type Store interface {
 	RotatePolestarIDToken(ctx context.Context, accountID, connectionID string, setAt time.Time, token string) error
 }
 
-// Daily is the calls a day counted per connection: a prudent cap, the API publishing no
-// limit (ADR 0042 §6). A car parked all day is read about 300 times.
+// Daily is the calls a day counted per connection, the GraphQL's and the gRPC's together:
+// a prudent cap, the API publishing no limit (ADR 0042 §6). A car parked all day is read
+// about 600 times (the telematics and the battery every 5 minutes, the charge limit every
+// hour), a day with 8 hours of charge about 1,400.
 const Daily = 2_000
 
-// Intervals are the cadences (ADR 0042 §6): the telematics every 5 minutes parked, every
-// minute charging; the model once a day. The API tells no driving: a trip is derived from
-// the odometer.
+// Intervals are the cadences (ADR 0042 §6): the telematics and the gRPC's battery every 5
+// minutes parked, every minute charging; the charge limit every hour; the model once a
+// day. The API tells no driving: a trip is derived from the odometer.
 func Intervals() collector.Intervals {
 	return collector.Intervals{Parked: 5 * time.Minute, Active: time.Minute, Rare: time.Hour, Details: 24 * time.Hour}
 }
@@ -87,12 +89,23 @@ func (*Source) Spec() collector.SourceSpec {
 				Endpoint: collector.Endpoint(polestarid.Telematics), API: polestarid.Source,
 				Parked: collector.PaceParked, Driving: collector.PaceActive, Charging: collector.PaceActive,
 			},
+			// The gRPC's, after the telematics, which they never hold back: optional, a car
+			// a service does not serve (a Polestar 2 on PCCS) is asked again a day later,
+			// told to no one, and read through the GraphQL alone meanwhile.
+			{
+				Endpoint: collector.Endpoint(polestarid.Battery), API: polestarid.Source, Optional: true,
+				Parked: collector.PaceParked, Driving: collector.PaceActive, Charging: collector.PaceActive,
+			},
+			{
+				Endpoint: collector.Endpoint(polestarid.TargetSoC), API: polestarid.Source, Optional: true,
+				Parked: collector.PaceRare, Driving: collector.PaceRare, Charging: collector.PaceRare,
+			},
 			{
 				Endpoint: collector.Endpoint(polestarid.Cars), API: polestarid.Source,
 				Parked: collector.PaceDetails, Driving: collector.PaceDetails, Charging: collector.PaceDetails,
 			},
 		},
-		Settled:   []collector.Endpoint{collector.Endpoint(polestarid.Telematics)},
+		Settled:   []collector.Endpoint{collector.Endpoint(polestarid.Telematics), collector.Endpoint(polestarid.Battery)},
 		Daily:     Daily,
 		Intervals: Intervals(),
 	}
@@ -153,13 +166,14 @@ func (s *Source) keep(connectionID string, r rotation) {
 	s.rotated[connectionID] = r
 }
 
-// Observe implements collector.Source: the telematics tell whether the car charges. They
-// tell no driving.
+// Observe implements collector.Source: the telematics and the gRPC's battery tell whether
+// the car charges. They tell no driving.
 func (*Source) Observe(ep collector.Endpoint, raw []byte, a *collector.Activity) error {
-	if polestarid.Endpoint(ep) != polestarid.Telematics {
+	e := polestarid.Endpoint(ep)
+	if e != polestarid.Telematics && e != polestarid.Battery {
 		return nil
 	}
-	s, err := polestarid.Normalize(polestarid.Telematics, raw)
+	s, err := polestarid.Normalize(e, raw)
 	if err != nil {
 		return err //nolint:wrapcheck // polestarid's, which says what failed
 	}
@@ -176,10 +190,7 @@ func (*Source) Fingerprint(raw []byte) ([]byte, error) {
 
 // Upload implements collector.Source.
 func (*Source) Upload(ep collector.Endpoint, raw []byte) (collector.Upload, error) {
-	if polestarid.Endpoint(ep) != polestarid.Telematics {
-		return collector.Upload{}, nil
-	}
-	u, err := polestarid.UploadOf(raw)
+	u, err := polestarid.UploadOf(polestarid.Endpoint(ep), raw)
 	if err != nil {
 		return collector.Upload{}, err //nolint:wrapcheck // polestarid's, which says what failed
 	}
@@ -231,8 +242,43 @@ func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) 
 			return nil, sourceError(err)
 		}
 		return raw, nil
+	case polestarid.Battery:
+		raw, err := s.client.Battery(ctx, s.token, vin)
+		if err != nil {
+			return nil, grpcError(err)
+		}
+		return raw, nil
+	case polestarid.TargetSoC:
+		raw, err := s.client.TargetSoC(ctx, s.token, vin)
+		if err != nil {
+			return nil, grpcError(err)
+		}
+		return raw, nil
 	}
 	return nil, fmt.Errorf("polestar id: unknown endpoint %q", ep)
+}
+
+// grpcError tells the collector what a refusal of a gRPC service means: the endpoint's,
+// never the connection's, which the GraphQL reads on.
+//
+// The access is the one the GraphQL reads with, asked for again a minute before it ends:
+// a service refusing it (UNAUTHENTICATED) or limiting it refuses the car or the account,
+// not the access, whose end the GraphQL's refusal tells. Assumption, not seen on a real
+// car: the endpoint is left out for a rare interval, rather than the connection paused.
+func grpcError(err error) error {
+	var e *polestarid.APIError
+	if !errors.As(err, &e) {
+		return err
+	}
+	se := &collector.SourceError{Kind: collector.KindOther, Status: e.Status, Err: err}
+	switch e.Kind {
+	case polestarid.KindNotProvisioned:
+		se.Kind = collector.KindNotGranted
+	case polestarid.KindUnauthorized, polestarid.KindRateLimited:
+		se.Kind = collector.KindNotAvailable
+	case polestarid.KindOther, polestarid.KindTokenRefused, polestarid.KindSignInRefused:
+	}
+	return se
 }
 
 // sourceError tells the collector what a refusal of the Polestar ID or the API means.
@@ -249,7 +295,7 @@ func sourceError(err error) error {
 		se.Kind = collector.KindUnauthorized
 	case polestarid.KindRateLimited:
 		se.Kind = collector.KindRateLimited
-	case polestarid.KindOther:
+	case polestarid.KindOther, polestarid.KindNotProvisioned:
 		se.Kind = collector.KindOther
 	}
 	return se
