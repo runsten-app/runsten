@@ -92,6 +92,69 @@ func TestPicture(t *testing.T) {
 	}
 }
 
+// stalled is a status for byURL: the CDN never answers, until the request is cancelled.
+const stalled = -1
+
+// byURL answers each URL with its own status, and records what was asked.
+type byURL struct {
+	status map[string]int
+	asked  []string
+}
+
+func (c *byURL) RoundTrip(req *http.Request) (*http.Response, error) {
+	u := req.URL.String()
+	c.asked = append(c.asked, u)
+	if c.status[u] == stalled {
+		<-req.Context().Done()
+		return nil, req.Context().Err()
+	}
+	return &http.Response{
+		StatusCode: c.status[u], Header: http.Header{"Content-Type": {"image/png"}},
+		Body: io.NopCloser(strings.NewReader(u)), Request: req,
+	}, nil
+}
+
+func TestPictureBanner(t *testing.T) {
+	const (
+		banner = "https://wizz.volvocars.com/images/2027/416/exterior/studio/banner/transparent_exterior-studio-banner_4DD2.png?client=connected-vehicle-api&w=1920"
+		sized  = "https://wizz.volvocars.com/images/2027/416/exterior/studio/banner/transparent_exterior-studio-banner_4DD2.png?client=connected-vehicle-api&w=640"
+		front  = "https://wizz.volvocars.com/images/2027/416/exterior/studio/front/transparent_exterior-studio-front_4DD2.png?client=connected-vehicle-api&w=640"
+	)
+	for name, tc := range map[string]struct {
+		status map[string]int
+		want   string
+		asked  int
+		kept   bool
+	}{
+		"its front view": {map[string]int{front: http.StatusOK, sized: http.StatusOK}, front, 1, true},
+		"no front view":  {map[string]int{front: http.StatusNotFound, sized: http.StatusOK}, sized, 2, true},
+		// The front view is asked again next time.
+		"front view failing": {map[string]int{front: http.StatusServiceUnavailable, sized: http.StatusOK}, sized, 2, false},
+		"front view stalled": {map[string]int{front: stalled, sized: http.StatusOK}, sized, 2, false},
+		"neither":            {map[string]int{front: http.StatusNotFound, sized: http.StatusNotFound}, "", 2, false},
+	} {
+		c := &byURL{status: tc.status}
+		p := DefaultParams()
+		p.FrontTimeout = 10 * time.Millisecond
+		r := New(p, &http.Client{Transport: c}, clock.NewManual(time.Unix(0, 0)))
+		got, err := r.Picture(context.Background(), banner)
+		if tc.want == "" {
+			if !errors.Is(err, ErrUnavailable) {
+				t.Errorf("%s: %v", name, err)
+			}
+		} else if err != nil || string(got.Data) != tc.want {
+			t.Errorf("%s: got %q, %v, want %s", name, got.Data, err, tc.want)
+		}
+		if len(c.asked) != tc.asked {
+			t.Errorf("%s: asked %v", name, c.asked)
+		}
+		_, _ = r.Picture(context.Background(), banner)
+		if kept := len(c.asked) == tc.asked; kept != tc.kept {
+			t.Errorf("%s: kept %v, want %v", name, kept, tc.kept)
+		}
+	}
+}
+
 func TestPictureRefused(t *testing.T) {
 	p := DefaultParams()
 	p.MaxSize = 4
