@@ -4621,7 +4621,7 @@ components:
             $ref: "#/components/schemas/TemperatureBand"
           type: array
         left_out:
-          description: "The trips in no band: those without an outside temperature (a vehicle that tells none, as a Volvo or a Polestar; a reconstructed or imported trip; one derived before Runsten kept it)."
+          description: "The trips in no band: those without an outside temperature (a vehicle that tells none, as a Volvo or a Polestar; a reconstructed or imported trip; one derived before Runsten kept it), or with one below -60 °C or from 70 °C, taken for a wrong reading."
           format: int64
           minimum: 0
           type: integer

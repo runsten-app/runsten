@@ -443,6 +443,20 @@ func TestSummarizeTripsByTemperatureEdges(t *testing.T) {
 	if got := s.TripsByTemperature.Bands; !reflect.DeepEqual(got, want) {
 		t.Errorf("short trip = %+v, want %+v", got, want)
 	}
+
+	// A temperature out of [MinTemperatureC, MaxTemperatureC) is a wrong reading: left out,
+	// never thousands of empty bands up to it.
+	trips := []Trip{drive(t1, t1.Add(time.Hour), 10, 2, 80, 78), drive(t1.Add(2*time.Hour), t1.Add(3*time.Hour), 10, 2, 78, 76), drive(t1.Add(4*time.Hour), t1.Add(5*time.Hour), 10, 2, 76, 74)}
+	trips[0].OutsideTempC = val(12.0)
+	trips[1].OutsideTempC = val(1e6)
+	trips[2].OutsideTempC = val(-60.5)
+	s, err = Summarize(trips, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := s.TripsByTemperature; len(got.Bands) != 1 || got.Bands[0].MinC != 10 || got.LeftOut != 2 {
+		t.Errorf("out of range = %+v, want the 10 °C band alone and 2 left out", got)
+	}
 }
 
 // A plug-in hybrid's summary has no consumption, in the totals, the intervals or the

@@ -164,7 +164,7 @@ type temperatureBandJSON struct {
 
 type tripsByTemperatureJSON struct {
 	Bands   []temperatureBandJSON `json:"bands" nullable:"false" doc:"Bands of 5 °C, coldest first, from the coldest holding a trip to the warmest, empty ones between included; [] without a trip that tells its temperature."`
-	LeftOut int                   `json:"left_out" minimum:"0" doc:"The trips in no band: those without an outside temperature (a vehicle that tells none, as a Volvo or a Polestar; a reconstructed or imported trip; one derived before Runsten kept it)."`
+	LeftOut int                   `json:"left_out" minimum:"0" doc:"The trips in no band: those without an outside temperature (a vehicle that tells none, as a Volvo or a Polestar; a reconstructed or imported trip; one derived before Runsten kept it), or with one below -60 °C or from 70 °C, taken for a wrong reading."`
 }
 
 type chargesBySoCJSON struct {

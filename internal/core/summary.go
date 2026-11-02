@@ -169,6 +169,14 @@ type TripsByDistance struct {
 // TemperatureBandC is the width of a band of outside temperature, in °C.
 const TemperatureBandC = 5
 
+// MinTemperatureC and MaxTemperatureC bound the outside temperatures a trip is grouped
+// by, [min, max): beyond, a reading is taken for an error and the trip is left out, so
+// that one wrong value never spreads the bands over thousands of empty ones.
+const (
+	MinTemperatureC = -60
+	MaxTemperatureC = 70
+)
+
 // Speed is an average speed known by bounds, in km/h: the distance over the most and
 // the least time the trips' bounds allow. Max is unknown when they allow no time at all.
 type Speed struct {
@@ -438,7 +446,7 @@ type temperatureBandAcc struct {
 }
 
 func (a *temperatureAcc) add(t Trip) {
-	if t.Reconstructed || !t.OutsideTempC.OK {
+	if t.Reconstructed || !t.OutsideTempC.OK || t.OutsideTempC.V < MinTemperatureC || t.OutsideTempC.V >= MaxTemperatureC {
 		a.leftOut++
 		return
 	}

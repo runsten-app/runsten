@@ -21,7 +21,7 @@ Selecting a bar opens the trips or charges of its interval; a place's bar, the c
 
 For a car that tells its outside temperature (a [Tesla](./tesla.md#its-temperatures)), the driving view adds the consumption of its trips by band of 5 °C, from the coldest band holding a trip to the warmest: an electric car uses more in the cold, heating its battery and its cabin. Beside each band's consumption, the average speed of its trips: a winter in town and a summer on the motorway differ by more than the temperature, and the speed tells them apart. It is a range, from its lowest to its highest, since the times of a trip are known within the minute Runsten reads the car. The table under the chart, for screen readers, adds each band's trips and distance.
 
-Each trip counts in the band of its average outside temperature. A trip without one is left out, and the chart says how many: one Runsten did not see (found from the odometer), an imported one, or one recorded before Runsten kept the temperature, until the instance rebuilds its trips and charges. A Volvo or a Polestar tells no temperature: their statistics have no such chart.
+Each trip counts in the band of its average outside temperature. A trip without one is left out, and the chart says how many: one Runsten did not see (found from the odometer), an imported one, or one recorded before Runsten kept the temperature, until the instance rebuilds its trips and charges. So is a temperature below -60 °C or from 70 °C, taken for a wrong reading. A Volvo or a Polestar tells no temperature: their statistics have no such chart.
 
 ## How the figures are counted
 
