@@ -444,6 +444,17 @@ func TestSummarizeTripsByTemperatureEdges(t *testing.T) {
 		t.Errorf("short trip = %+v, want %+v", got, want)
 	}
 
+	// The odometer unchanged over a trip: a known speed of 0, not an unknown one.
+	still := drive(t1, t1.Add(time.Hour), 0, 0.2, 80, 80)
+	still.OutsideTempC = val(3.0)
+	s, err = Summarize([]Trip{still}, nil, Costs{}, nil, pt("2026-06-01 00:00"), pt("2026-06-02 00:00"), paris, BucketNone, ChargesAt{}, DefaultParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := s.TripsByTemperature.Bands[0].Speed, known(Speed{Min: 0, Max: val(0.0)}); !reflect.DeepEqual(got, want) {
+		t.Errorf("zero distance's speed = %+v, want %+v", got, want)
+	}
+
 	// A temperature out of [MinTemperatureC, MaxTemperatureC) is a wrong reading: left out,
 	// never thousands of empty bands up to it; NaN too.
 	trips := []Trip{drive(t1, t1.Add(time.Hour), 10, 2, 80, 78), drive(t1.Add(2*time.Hour), t1.Add(3*time.Hour), 10, 2, 78, 76), drive(t1.Add(4*time.Hour), t1.Add(5*time.Hour), 10, 2, 76, 74), drive(t1.Add(6*time.Hour), t1.Add(7*time.Hour), 10, 2, 74, 72)}

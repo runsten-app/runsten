@@ -490,7 +490,8 @@ func (a *temperatureAcc) result() TripsByTemperature {
 }
 
 func (b *temperatureBandAcc) speed() Value[Speed] {
-	if b.speedKm <= 0 || b.speedTime.Max <= 0 {
+	// A known distance of 0 (the odometer unchanged) is a speed of 0, not an unknown one.
+	if b.speedKm < 0 || b.speedTime.Max <= 0 {
 		return Value[Speed]{}
 	}
 	sp := Speed{Min: b.speedKm / b.speedTime.Max.Hours()}
