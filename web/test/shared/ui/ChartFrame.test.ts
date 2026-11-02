@@ -352,6 +352,29 @@ describe('ChartFrame', () => {
     options.onHover({}, [{}])
   })
 
+  it('draws a line over the bars, on them, marked as a line in the legend', () => {
+    // A speed beside a consumption: the consumption by outside temperature.
+    const w = mounted({
+      series: [
+        { label: 'Consumption', data: [18, 21], color: '#1d5b8f' },
+        { label: 'Speed', data: [40, 90], color: '#b3541e', line: true, right: true },
+      ],
+      rightUnit: 'km/h',
+    })
+    const data = w.findComponent({ name: 'Bar' }).props('data') as {
+      datasets: { type?: string; order: number; borderWidth: number; borderRadius?: number }[]
+    }
+    const [bars, line] = data.datasets
+    expect(bars).toMatchObject({ order: 0, borderWidth: 0, borderRadius: 2 })
+    expect(bars?.type).toBeUndefined()
+    expect(line).toMatchObject({ type: 'line', order: -1, borderWidth: 2.5 })
+    expect(line?.borderRadius).toBeUndefined()
+    expect(w.findAll('.legend .mark').map((m) => m.classes())).toEqual([
+      ['mark', 'mark--box'],
+      ['mark', 'mark--line'],
+    ])
+  })
+
   it('answers the nearest point over a linear axis, and only where a press leads', () => {
     // A scatter among the lines: the estimates of the capacity chart, by mileage.
     const w = mounted({

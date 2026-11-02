@@ -158,13 +158,14 @@ const data = computed(() => ({
     // A band fills towards its lower bound; both bounds are thin edges in chart-4. A soft
     // bar (the uncertainty of a cost) fills in the band color, edged in its own.
     const thin = s.band || s.edge
-    const line = props.kind === 'line' && !s.scatter
+    const line = (props.kind === 'line' || s.line) && !s.scatter
     return {
       label: s.label,
       data: s.data,
       yAxisID: s.right ? 'right' : 'y',
-      // A scatter among the lines of the same chart: the chart's kind stays its own.
-      type: s.scatter ? ('scatter' as const) : undefined,
+      // A scatter among the lines of the same chart, or a line among bars: the chart's
+      // kind stays its own.
+      type: s.scatter ? ('scatter' as const) : s.line ? ('line' as const) : undefined,
       backgroundColor: s.band || s.soft ? token('chart-band') : s.color,
       borderColor: s.color,
       borderWidth: s.soft
@@ -173,13 +174,14 @@ const data = computed(() => ({
           ? 1
           : s.dashed
             ? 1.5
-            : props.kind === 'bar'
+            : props.kind === 'bar' && !s.line
               ? 0
               : s.wide
                 ? 6
                 : 2.5,
       // Chart.js draws the higher order first, under the others.
-      order: s.wide ? 1 : 0,
+      // A line over bars is drawn last, on them.
+      order: s.wide ? 1 : s.line ? -1 : 0,
       borderDash: s.dashed ? [6, 4] : undefined,
       fill: s.band ? ('-1' as const) : false,
       // A line breaks where a value is unknown: a gap, never a zero.
@@ -193,7 +195,7 @@ const data = computed(() => ({
       pointBackgroundColor: s.color,
       // A point is worth a press; the column of an interval is wide, a point is not.
       pointHitRadius: s.scatter ? 10 : undefined,
-      borderRadius: props.kind === 'bar' ? 2 : undefined,
+      borderRadius: props.kind === 'bar' && !s.line ? 2 : undefined,
       categoryPercentage: phone.value ? 0.96 : 0.9,
       barPercentage: 1,
     }
@@ -218,7 +220,7 @@ const legend = computed(() => {
           ? 'band'
           : s.dashed
             ? 'dashed'
-            : props.kind === 'line' && !s.scatter
+            : (props.kind === 'line' || s.line) && !s.scatter
               ? 'line'
               : 'box',
       color: s.color,

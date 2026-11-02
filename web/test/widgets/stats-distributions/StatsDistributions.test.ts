@@ -73,6 +73,7 @@ describe('StatsDistributions', () => {
     expect(await titles('driving')).toEqual([
       'Trips by distance',
       'Consumption by trip distance (estimated)',
+      'Consumption by outside temperature (estimated)',
     ])
     expect(await titles('charging')).toEqual([
       'State of charge at the start and end of charges',
@@ -86,6 +87,7 @@ describe('StatsDistributions', () => {
     expect(w.findAll('h2').map((h) => h.text())).toEqual([
       'Trips by distance',
       'Consumption by trip distance (estimated)',
+      'Consumption by outside temperature (estimated)',
       'State of charge at the start and end of charges',
       'Energy charged by place (from the state of charge)',
       'Cost of charges by place',
@@ -112,7 +114,92 @@ describe('StatsDistributions', () => {
     )
     // No list filters by band: a press leads nowhere; the list filters by place.
     const frames = w.findAllComponents(ChartFrame)
-    expect(frames.map((f) => f.props('selectable'))).toEqual([false, false, false, true, true])
+    expect(frames.map((f) => f.props('selectable'))).toEqual([
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+    ])
+  })
+
+  it('draws what the trips consumed by outside temperature, and their speed', async () => {
+    const s = structuredClone(stats) as Stats
+    s.trips_by_temperature = {
+      bands: [
+        {
+          min_c: -5,
+          max_c: 0,
+          count: 3,
+          distance_km: 42,
+          distance_unknown: 0,
+          consumption_kwh_per_100km: 24.5,
+          speed_kmh: { min: 38.2, max: 41.6 },
+        },
+        // An empty band between two: no bar, no point, never a zero.
+        {
+          min_c: 0,
+          max_c: 5,
+          count: 0,
+          distance_km: 0,
+          distance_unknown: 0,
+          consumption_kwh_per_100km: null,
+          speed_kmh: null,
+        },
+        {
+          min_c: 5,
+          max_c: 10,
+          count: 1,
+          distance_km: 120,
+          distance_unknown: 0,
+          consumption_kwh_per_100km: 17.1,
+          speed_kmh: { min: 96, max: null },
+        },
+      ],
+      left_out: 2,
+    }
+    const w = await mounted(s)
+    expect(w.findAll('.by-temperature tbody th').map((h) => plain(h.text()))).toEqual([
+      '-5 to 0°C',
+      '0 to 5°C',
+      '5 to 10°C',
+    ])
+    const [consumption, low, high] = datasets(w, 'by-temperature')
+    expect(consumption?.data).toEqual([24.5, null, 17.1])
+    expect(low?.data).toEqual([38.2, null, 96])
+    expect(high?.data).toEqual([41.6, null, null])
+    // The speed is a line over the bars, against the right axis.
+    const frame = w.findAllComponents(ChartFrame).find((c) => c.classes('by-temperature'))
+    expect(frame?.props('rightUnit')).toBe('km/h')
+    expect(plain(w.find('.by-temperature canvas').attributes('aria-label'))).toBe(
+      'Consumption by outside temperature: -5 to 0°C, 24.5 kWh/100 km over 3 trips; ' +
+        '5 to 10°C, 17.1 kWh/100 km over 1 trip.',
+    )
+    expect(w.findAll('.by-temperature thead th').map((h) => plain(h.text()))).toEqual([
+      'Outside temperature',
+      'Consumption',
+      'Trips',
+      'Distance',
+      'Average speed, lowest',
+      'Average speed, highest',
+    ])
+    expect(
+      w
+        .findAll('.by-temperature tbody tr')[0]
+        ?.findAll('td')
+        .map((d) => plain(d.text())),
+    ).toEqual(['24.5 kWh/100 km', '3', '42 km', '38 km/h', '42 km/h'])
+    expect(plain(w.find('.by-temperature .hint').text())).toContain(
+      '2 trips left out: without an outside temperature.',
+    )
+  })
+
+  it('draws no chart by temperature for a vehicle that tells none', async () => {
+    const s = structuredClone(stats) as Stats
+    s.trips_by_temperature = { bands: [], left_out: 3 }
+    const w = await mounted(s)
+    expect(w.find('.by-temperature').exists()).toBe(false)
   })
 
   it('leads from a place to the list of its charges over the same period', async () => {
@@ -125,7 +212,7 @@ describe('StatsDistributions', () => {
     await flushPromises()
     // The frames of the views in order: the places' energy, then their cost.
     const frames = wrapper.findAllComponents(ChartFrame)
-    const [byPlace, costByPlace] = [frames[3], frames[4]]
+    const [byPlace, costByPlace] = [frames[4], frames[5]]
     const opened = async (frame: (typeof frames)[number] | undefined, i: number) => {
       await router.push('/vehicles/v1/stats?from=2026-09-01&to=2026-09-30&view=charging')
       frame?.vm.$emit('select', i)

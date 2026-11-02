@@ -23,6 +23,8 @@ export type Series = {
   // How the table for screen readers and the tooltip show this series' figures, when
   // they are not the chart's values (a count, another unit).
   format?: (v: number | null) => string
+  // line: drawn as a line over a bar chart's bars (a speed beside a consumption).
+  line?: boolean
   // right: drawn against the chart's second axis, on the right (a state of charge beside
   // a power).
   right?: boolean

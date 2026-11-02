@@ -10,7 +10,8 @@ import { ChartFrame, type Series } from '@/shared/ui/chart'
 import type { Stats } from '@/entities/stats'
 
 // StatsDistributions draws how the period's trips and charges spread, whatever its
-// split: the trips by distance and what each band consumed, the charges by the state of
+// split: the trips by distance and what each band consumed, what they consumed by
+// outside temperature, the charges by the state of
 // charge they started and ended at, and where they took place, with what they cost
 // there. A band holds events of the whole period: a press on a place, or its link above
 // the chart (the keyboard's way), leads to the list of its charges over the same period,
@@ -92,6 +93,96 @@ const byDistanceConsumption = computed(() => {
     ? t('stats.chart.byDistanceConsumption.summary', { list: known.join('; ') })
     : t('stats.chart.byDistanceConsumption.none')
   return { series, summary, empty: known.length ? undefined : summary }
+})
+
+// The bands of outside temperature, 5 °C each, from the coldest holding a trip to the
+// warmest: none for a vehicle that tells no temperature, and then no chart.
+const tempBands = computed(() => stats.value?.trips_by_temperature.bands ?? [])
+const tempLabels = computed(() =>
+  tempBands.value.map((b) =>
+    t('stats.band.between', { min: f.number(b.min_c), max: f.quantity(b.max_c, 'celsius') }),
+  ),
+)
+
+// byTemperature is what the trips of each band consumed, in bars, and their average
+// speed, as a line of its lowest bound and one of its highest, against the right axis:
+// a winter in town and a summer on the motorway differ by more than the temperature. The
+// table adds how many trips each band holds and their distance.
+const byTemperature = computed(() => {
+  const consumption = tempBands.value.map((b) => b.consumption_kwh_per_100km)
+  const speedMin = tempBands.value.map((b) => b.speed_kmh?.min ?? null)
+  const speedMax = tempBands.value.map((b) => b.speed_kmh?.max ?? null)
+  const speed = (v: number | null) => f.quantity(v, 'kmh')
+  const consumptionSeries: Series = {
+    label: t('stats.chart.byTemperature.consumption'),
+    data: consumption,
+    color: color('chart-2'),
+  }
+  const speedSeries: Series = {
+    label: t('stats.chart.byTemperature.speed'),
+    data: speedMin,
+    color: color('chart-1'),
+    line: true,
+    right: true,
+    format: speed,
+  }
+  const series: Series[] = [
+    consumptionSeries,
+    speedSeries,
+    {
+      label: t('stats.chart.byTemperature.speedRange'),
+      data: speedMax,
+      color: color('chart-4'),
+      line: true,
+      right: true,
+      band: true,
+      format: speed,
+    },
+  ]
+  const tableSeries: Series[] = [
+    consumptionSeries,
+    {
+      label: t('stats.chart.byTemperature.trips'),
+      data: tempBands.value.map((b) => b.count),
+      color: color('chart-2'),
+      format: count,
+    },
+    {
+      label: t('stats.chart.byTemperature.distance'),
+      data: tempBands.value.map((b) => (b.distance_unknown < b.count ? b.distance_km : null)),
+      color: color('chart-2'),
+      format: (v) => f.quantity(v, 'km'),
+    },
+    speedSeries,
+    {
+      label: t('stats.chart.byTemperature.speedMax'),
+      data: speedMax,
+      color: color('chart-4'),
+      format: speed,
+    },
+  ]
+  const known = tempBands.value.flatMap((b, i) =>
+    b.consumption_kwh_per_100km === null
+      ? []
+      : [
+          t('stats.chart.byTemperature.item', {
+            band: tempLabels.value[i] ?? '',
+            value: f.quantity(b.consumption_kwh_per_100km, 'kWhPer100km'),
+            trips: t('stats.chart.byTemperature.tripCount', b.count),
+          }),
+        ],
+  )
+  const summary = known.length
+    ? t('stats.chart.byTemperature.summary', { list: known.join('; ') })
+    : t('stats.chart.byTemperature.none')
+  const leftOut = stats.value?.trips_by_temperature.left_out ?? 0
+  const hint = [
+    t('stats.chart.byTemperature.hint'),
+    ...(leftOut ? [t('stats.chart.byTemperature.leftOut', leftOut)] : []),
+  ].join(' ')
+  // A plug-in hybrid has no consumption, but its speeds still tell something.
+  const empty = known.length || speedMin.some((v) => v !== null) ? undefined : summary
+  return { series, tableSeries, summary, hint, empty }
 })
 
 // The bands of the state of charge: ten points each, the last one holding 100 %.
@@ -301,6 +392,23 @@ const costByPlace = computed(() => {
       :selectable="false"
     />
     <ChartFrame
+      v-if="view === 'driving' && tempBands.length"
+      class="by-temperature"
+      :hint="byTemperature.hint"
+      kind="bar"
+      :title="t('stats.chart.byTemperature.title')"
+      :summary="byTemperature.summary"
+      :empty="byTemperature.empty"
+      :labels="tempLabels"
+      :series="byTemperature.series"
+      :table-series="byTemperature.tableSeries"
+      unit="kWh/100 km"
+      right-unit="km/h"
+      :interval-header="t('stats.chart.byTemperature.header')"
+      :format="(v) => f.quantity(v, 'kWhPer100km')"
+      :selectable="false"
+    />
+    <ChartFrame
       v-if="view === 'charging'"
       class="by-soc"
       :hint="bySoC.hint"
@@ -373,6 +481,10 @@ const costByPlace = computed(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 12px;
+}
+/* Its bands and two axes want the width: it takes a row of its own. */
+.by-temperature {
+  grid-column: 1 / -1;
 }
 @media (max-width: 959.98px) {
   .stats-distributions {

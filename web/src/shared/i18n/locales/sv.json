@@ -534,6 +534,22 @@
         "none": "Ingen känd förbrukning under perioden.",
         "hint": "Korta resor drar ofta mer per kilometer: batteriet och kupén ska värmas, stadskörning."
       },
+      "byTemperature": {
+        "title": "Förbrukning efter utetemperatur (uppskattad)",
+        "consumption": "Förbrukning",
+        "speed": "Medelhastighet, lägsta",
+        "speedRange": "Intervall, upp till högsta medelhastighet",
+        "speedMax": "Medelhastighet, högsta",
+        "trips": "Resor",
+        "distance": "Sträcka",
+        "header": "Utetemperatur",
+        "item": "{band}, {value} på {trips}",
+        "summary": "Förbrukning efter utetemperatur: {list}.",
+        "none": "Ingen känd förbrukning under perioden.",
+        "hint": "En elbil drar mer i kyla: batteriet och kupén ska värmas. Medelhastigheten skiljer en vinter i stan från en sommar på motorvägen.",
+        "leftOut": "{n} resa utelämnad: utan utetemperatur. | {n} resor utelämnade: utan utetemperatur.",
+        "tripCount": "{n} resa | {n} resor"
+      },
       "bySoC": {
         "title": "Laddningsnivå i början och slutet av laddningar",
         "started": "Började på",

@@ -534,6 +534,22 @@
         "none": "No consumption known in this period.",
         "hint": "Short trips often use more per kilometre: the battery and the cabin warm up, town driving."
       },
+      "byTemperature": {
+        "title": "Consumption by outside temperature (estimated)",
+        "consumption": "Consumption",
+        "speed": "Average speed, lowest",
+        "speedRange": "Range, up to the highest average speed",
+        "speedMax": "Average speed, highest",
+        "trips": "Trips",
+        "distance": "Distance",
+        "header": "Outside temperature",
+        "item": "{band}, {value} over {trips}",
+        "summary": "Consumption by outside temperature: {list}.",
+        "none": "No consumption known in this period.",
+        "hint": "An electric car uses more in the cold: heating the battery and the cabin. The average speed tells a winter in town from a summer on the motorway.",
+        "leftOut": "{n} trip left out: without an outside temperature. | {n} trips left out: without an outside temperature.",
+        "tripCount": "{n} trip | {n} trips"
+      },
       "bySoC": {
         "title": "State of charge at the start and end of charges",
         "started": "Started at",
