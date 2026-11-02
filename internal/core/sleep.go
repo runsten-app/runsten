@@ -10,8 +10,9 @@ import (
 // its fetch to its latest confirmation. Nothing is known between two responses.
 type SleepSpan struct {
 	From, To time.Time
-	// Asleep is the vehicle asleep or out of reach (Offline): either way it is not read,
-	// and drains as little as it may.
+	// Asleep is the vehicle asleep or out of reach (Offline): either way it is not read.
+	// Assumption: an Offline car drains as little as one asleep; Tesla does not always
+	// tell one asleep from one awake without a network.
 	Asleep bool
 }
 

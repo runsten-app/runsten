@@ -309,9 +309,10 @@ describe('StatsDistributions', () => {
         {
           min_c: 5,
           max_c: 10,
-          count: 1,
+          count: 2,
           ac: { count: 1, energy_power_kwh: 20, power_kw: { min: 10.4, max: 10.42 } },
-          dc: none,
+          // A DC charge whose power is unknown: neither bound.
+          dc: { count: 1, energy_power_kwh: 0, power_kw: null },
         },
       ],
       left_out: 1,
@@ -328,7 +329,10 @@ describe('StatsDistributions', () => {
       'AC: up to 7.1 kW, over 2 charges',
       'DC: highest unknown, over 1 charge',
     ])
-    expect(details(2).map(plain)).toEqual(['AC: up to 10.4 kW, over 1 charge'])
+    expect(details(2).map(plain)).toEqual([
+      'AC: up to 10.4 kW, over 1 charge',
+      'DC: power unknown, over 1 charge',
+    ])
     expect(plain(w.find('.charges-by-temperature canvas').attributes('aria-label'))).toBe(
       'Mean charging power by outside temperature: -5 to 0°C in AC, 6.8–7.1 kW; ' +
         '-5 to 0°C in DC, at least 48 kW; 5 to 10°C in AC, 10.4 kW.',

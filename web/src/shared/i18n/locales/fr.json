@@ -573,6 +573,7 @@
         "charges": "Recharges {type}",
         "detail": "{type} : jusqu’à {power}, sur {charges}",
         "detailOpen": "{type} : la plus haute inconnue, sur {charges}",
+        "detailUnknown": "{type} : puissance inconnue, sur {charges}",
         "chargeCount": "{n} recharge | {n} recharges",
         "item": "{band} en {type}, {power}",
         "summary": "Puissance moyenne de recharge selon la température extérieure : {list}.",

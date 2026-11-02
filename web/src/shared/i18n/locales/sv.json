@@ -573,6 +573,7 @@
         "charges": "{type}-laddningar",
         "detail": "{type}: upp till {power}, på {charges}",
         "detailOpen": "{type}: högsta okänd, på {charges}",
+        "detailUnknown": "{type}: okänd effekt, på {charges}",
         "chargeCount": "{n} laddning | {n} laddningar",
         "item": "{band} med {type}, {power}",
         "summary": "Genomsnittlig laddeffekt efter utetemperatur: {list}.",

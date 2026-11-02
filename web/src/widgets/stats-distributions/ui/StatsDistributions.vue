@@ -288,21 +288,22 @@ const chargesByTemperature = computed(() => {
   const details = (i: number) => {
     const b = chargeBands.value[i]
     if (!b) return []
-    // A type without a charge in the band says nothing.
-    return types.flatMap((ty) =>
-      b[ty.type].count === 0
-        ? []
-        : b[ty.type].power_kw?.max == null
-          ? t('stats.chart.chargesByTemperature.detailOpen', {
-              type: ty.label,
-              charges: t('stats.chart.chargesByTemperature.chargeCount', b[ty.type].count),
-            })
-          : t('stats.chart.chargesByTemperature.detail', {
-              type: ty.label,
-              power: kw(b[ty.type].power_kw?.max ?? null),
-              charges: t('stats.chart.chargesByTemperature.chargeCount', b[ty.type].count),
-            }),
-    )
+    // A type without a charge in the band says nothing; one whose power is unknown says
+    // so, apart from a known lower bound without an upper one.
+    return types.flatMap((ty) => {
+      const { count: n, power_kw: p } = b[ty.type]
+      if (n === 0) return []
+      const charges = t('stats.chart.chargesByTemperature.chargeCount', n)
+      if (!p)
+        return t('stats.chart.chargesByTemperature.detailUnknown', { type: ty.label, charges })
+      if (p.max === null)
+        return t('stats.chart.chargesByTemperature.detailOpen', { type: ty.label, charges })
+      return t('stats.chart.chargesByTemperature.detail', {
+        type: ty.label,
+        power: kw(p.max),
+        charges,
+      })
+    })
   }
   const known = chargeBands.value.flatMap((b, i) =>
     types.flatMap((ty) =>

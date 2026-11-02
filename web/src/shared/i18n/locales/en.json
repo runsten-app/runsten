@@ -573,6 +573,7 @@
         "charges": "{type} charges",
         "detail": "{type}: up to {power}, over {charges}",
         "detailOpen": "{type}: highest unknown, over {charges}",
+        "detailUnknown": "{type}: power unknown, over {charges}",
         "chargeCount": "{n} charge | {n} charges",
         "item": "{band} in {type}, {power}",
         "summary": "Mean charging power by outside temperature: {list}.",
