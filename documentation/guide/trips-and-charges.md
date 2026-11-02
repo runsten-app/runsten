@@ -16,7 +16,7 @@ Beside the period, the **Charges** tab chooses a place: one of your places, **El
 
 The car is read every few minutes, never continuously. So a time is the two readings around it:
 
-- **"06:55–07:01 → 07:40"**: the trip started between 06:55 and 07:01, and ended at 07:40. Two readings less than a minute apart give one time, the nearest minute to their middle: the minutes shown would tell nothing finer.
+- **"06:55–07:01 → 07:40"**: the trip started between 06:55 and 07:01, and ended at 07:40. Two readings up to two minutes apart give one time, the nearest minute to their middle: two neighbouring minutes would tell nothing worth reading.
 - **A Tesla** parked a few minutes is left alone for 15 minutes, so that it may fall asleep: reading it keeps it awake and drains its battery. A trip started meanwhile is seen at its first reading on the way, and its start spans the window: "20:35–20:50".
 - **A duration** is every value those bounds allow: "38–45 min".
 - **A trip that never moved**, the car put in drive and back without its odometer or its position changing (to unplug, say), is not a trip.

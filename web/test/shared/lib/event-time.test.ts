@@ -20,6 +20,10 @@ const late: Bounds = { after: '2026-09-28T23:55:00Z', before: '2026-09-29T00:05:
 const instant: Bounds = { after: '2026-09-28T07:01:00Z', before: '2026-09-28T07:01:00Z' }
 // Twenty seconds across a minute: finer than the minutes shown.
 const close: Bounds = { after: '2026-09-28T19:56:51Z', before: '2026-09-28T19:57:11Z' }
+// Ninety seconds: still one time, not two neighbouring minutes.
+const closeMinute: Bounds = { after: '2026-09-28T15:01:10Z', before: '2026-09-28T15:02:40Z' }
+// Over two minutes: a range.
+const apart: Bounds = { after: '2026-09-28T15:01:00Z', before: '2026-09-28T15:03:10Z' }
 const closeEarly: Bounds = { after: '2026-09-28T19:56:10Z', before: '2026-09-28T19:56:40Z' }
 const closeBeforeMidnight: Bounds = {
   after: '2026-09-28T23:59:40Z',
@@ -43,8 +47,10 @@ describe('formatBounds', () => {
     // Bounds that coincide are one time.
     [instant, 'en-GB', '2026-09-28', '07:01'],
     [instant, 'fr-FR', undefined, '28 sept. 2026, 07:01'],
-    // Less than a minute apart: their middle, to the nearest minute.
+    // Up to two minutes apart: their middle, to the nearest minute.
     [close, 'fr-FR', '2026-09-28', '19:57'],
+    [closeMinute, 'fr-FR', '2026-09-28', '15:02'],
+    [apart, 'en-GB', '2026-09-28', '15:01–15:03'],
     [closeEarly, 'en-GB', '2026-09-28', '19:56'],
     [closeAtMidnight, 'en-GB', '2026-09-28', '29 Sept 2026, 00:00'],
     // Both before midnight: kept on their day, not rounded into the next.
