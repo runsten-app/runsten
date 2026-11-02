@@ -44,16 +44,36 @@ afterEach(() => {
 
 const plain = (s = '') => s.replace(/\s+/g, ' ').trim()
 
-async function mounted() {
+async function mounted(week = false) {
   const { wrapper } = mountWith(SocTimeline, { props: { vehicle: 'v1' } })
   await flushPromises()
+  if (week) {
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === '7 d')
+      ?.trigger('click')
+    await flushPromises()
+  }
   return wrapper
 }
 
 describe('SocTimeline', () => {
-  it('asks the last 7 days, on a window that moves every five minutes', async () => {
+  it('asks the last 24 hours, on a window that moves every five minutes', async () => {
     await mounted()
     expect(mocks.fetchSeries).toHaveBeenCalledWith('v1', {
+      from: '2026-09-27T19:00:00.000Z',
+      to: '2026-09-28T19:00:00.000Z',
+    })
+    expect(mocks.fetchTrips).toHaveBeenCalledWith('v1', {
+      from: '2026-09-27T19:00:00.000Z',
+      to: undefined,
+      cursor: undefined,
+    })
+  })
+
+  it('asks the last 7 days when the reader picks them', async () => {
+    await mounted(true)
+    expect(mocks.fetchSeries).toHaveBeenLastCalledWith('v1', {
       from: '2026-09-21T19:00:00.000Z',
       to: '2026-09-28T19:00:00.000Z',
     })
@@ -64,15 +84,17 @@ describe('SocTimeline', () => {
     })
   })
 
-  it('draws the state of charge over bands of every trip and charge', async () => {
+  it('draws the state of charge over a strip of every trip and charge, parked between', async () => {
     const w = await mounted()
     const frame = w.findComponent({ name: 'ChartFrame' })
     const [soc] = frame.props('series') as Series[]
     expect(soc?.data).toHaveLength(6)
+    expect(soc?.area).toBe(true)
     const bands = frame.props('bands') as Band[]
     // Every page of the trips: the second is loaded too.
     expect(mocks.fetchTrips).toHaveBeenCalledTimes(2)
     expect(bands.map((b) => b.label)).toEqual([
+      'Parked',
       ...Array(trips1.items.length + trips2.items.length).fill('Driving'),
       'Charging',
       'Charging',
@@ -86,13 +108,19 @@ describe('SocTimeline', () => {
       sure: { from: Date.parse('2026-09-28T18:30:00Z'), to: Date.parse('2026-09-28T21:55:00Z') },
     })
     expect(charging[1]?.sure).toBeUndefined()
+    // Parked while read, up to the charge's earliest start; a lone reading spans nothing,
+    // and nothing was read between the two runs.
+    expect(bands[0]).toMatchObject({
+      from: Date.parse('2026-09-28T17:26:00Z'),
+      to: Date.parse('2026-09-28T18:20:00Z'),
+    })
     expect(plain(w.find('canvas').attributes('aria-label'))).toBe(
-      'Over the last 7 days, from 50% to 50%, between 47% and 50%; 3 trips and 2 charges.',
+      'Over the last 24 hours, from 50% to 50%, between 47% and 50%; 3 trips and 2 charges.',
     )
   })
 
   it("tells each day's lowest and highest state of charge, and its events", async () => {
-    const w = await mounted()
+    const w = await mounted(true)
     const rows = w.findAll('tbody tr').map((r) => r.findAll('th, td').map((c) => plain(c.text())))
     expect(rows).toHaveLength(8)
     expect(rows.at(-1)).toEqual(['28 Sept 2026', '47%', '50%', '3', '2'])
@@ -102,7 +130,7 @@ describe('SocTimeline', () => {
   it('says so when nothing was read', async () => {
     mocks.fetchSeries.mockResolvedValue({ ...series, runs: [] })
     const w = await mounted()
-    expect(w.find('.empty').text()).toBe('Nothing was read in the last 7 days.')
+    expect(w.find('.empty').text()).toBe('Nothing was read in the last 24 hours.')
     expect(w.find('canvas').exists()).toBe(false)
   })
 })

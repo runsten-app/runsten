@@ -781,20 +781,33 @@
     }
   },
   "timeline": {
-    "title": "State of charge, last 7 days",
+    "title": "State of charge",
     "soc": "State of charge",
     "driving": "Driving",
     "charging": "Charging",
-    "hint": "Bands: trips and charges, stronger where they surely were. The line breaks where nothing was read.",
-    "summary": "Over the last 7 days, from {first} to {last}, between {min} and {max}; {trips} and {charges}.",
-    "none": "Nothing was read in the last 7 days.",
+    "parked": "Parked",
+    "hint": "Under the line, what the vehicle was doing: paler where it is not sure, empty where nothing was read.",
+    "summary": "{over}, from {first} to {last}, between {min} and {max}; {trips} and {charges}.",
+    "over": {
+      "day": "Over the last 24 hours",
+      "week": "Over the last 7 days"
+    },
+    "none": {
+      "day": "Nothing was read in the last 24 hours.",
+      "week": "Nothing was read in the last 7 days."
+    },
     "tripCount": "no trip | {n} trip | {n} trips",
     "chargeCount": "no charge | {n} charge | {n} charges",
     "day": "Day",
     "low": "Lowest state of charge",
     "high": "Highest state of charge",
     "trips": "Trips started",
-    "charges": "Charges started"
+    "charges": "Charges started",
+    "window": {
+      "label": "Period shown",
+      "day": "24 h",
+      "week": "7 d"
+    }
   },
   "recent": {
     "title": "Last 30 days",

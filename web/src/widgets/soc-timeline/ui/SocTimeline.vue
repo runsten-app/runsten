@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from 'vuetify'
 import { useCharges } from '@/features/browse-charges'
@@ -8,26 +8,41 @@ import { readingsOf, seriesLine, useSeries } from '@/features/view-series'
 import { timeTicks, useFormat, useNow, type Bounds } from '@/shared/lib'
 import { ChartFrame, type Band, type Series } from '@/shared/ui/chart'
 
-// SocTimeline draws the state of charge of the last 7 days as the vehicle gave it, over
-// bands of its trips and charges: between them, it was parked. A line breaks where
-// nothing was read; read every hour, the readings show as points. The table for screen
-// readers gives each day's lowest and highest state of charge, and its events.
+// SocTimeline draws the state of charge of the last 24 hours, or 7 days, as the vehicle
+// gave it, and under it a strip of what the vehicle was doing: driving, charging, or
+// parked between them while it was read; empty where nothing was. A line breaks there
+// too; read every hour, the readings show as points. The table for screen readers gives
+// each day's lowest and highest state of charge, and its events.
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const f = useFormat()
 const theme = useTheme()
 
-const days = 7
+// The last day by default: a trip of half an hour is a sliver in a week.
+type Window = 'day' | 'week'
+const windows: Window[] = ['day', 'week']
+const shown = ref<Window>('day')
+const days = computed(() => (shown.value === 'day' ? 1 : 7))
+// Each window's words, written out: the linter finds a key only when it is whole.
+const words = computed(() =>
+  shown.value === 'day'
+    ? { over: t('timeline.over.day'), none: t('timeline.none.day') }
+    : { over: t('timeline.over.week'), none: t('timeline.none.week') },
+)
+const windowLabels = computed<Record<Window, string>>(() => ({
+  day: t('timeline.window.day'),
+  week: t('timeline.window.week'),
+}))
 const step = 5 * 60_000
 // The window moves on every five minutes: a key that changed every second would read
 // again for nothing, the collector reading no more often than once a minute.
 const now = useNow(60_000)
 const end = computed(() => Math.floor(now.value / step) * step)
-const start = computed(() => end.value - days * 24 * 3600_000)
+const start = computed(() => end.value - days.value * 24 * 3600_000)
 const from = computed(() => new Date(start.value).toISOString())
 
-// Both ends: without to, the server's now would make the window longer than its 7 days
-// by the rounding of the end.
+// Both ends: without to, the server's now would make the window longer than its days by
+// the rounding of the end.
 const { series } = useSeries(
   () => props.vehicle,
   () => ({ from: from.value, to: new Date(end.value).toISOString() }),
@@ -53,7 +68,7 @@ const known = computed(() =>
 )
 
 // A band covers where the event may have been, from its earliest start to its latest
-// end, and more strongly where it surely was; a reconstructed one is sure of nothing.
+// end, and solidly where it surely was; a reconstructed one is sure of nothing.
 type Event = { start: Bounds; end: Bounds; reconstructed: boolean }
 function band(e: Event, label: string, c: string): Band {
   const sureFrom = Date.parse(e.start.before)
@@ -66,16 +81,50 @@ function band(e: Event, label: string, c: string): Band {
     sure: !e.reconstructed && sureTo > sureFrom ? { from: sureFrom, to: sureTo } : undefined,
   }
 }
-const bands = computed<Band[]>(() => [
+const events = computed<Band[]>(() => [
   ...trips.trips.value.map((e) => band(e, t('timeline.driving'), color('chart-2'))),
-  ...charges.charges.value.map((e) => band(e, t('timeline.charging'), color('chart-3'))),
+  ...charges.charges.value.map((e) => band(e, t('timeline.charging'), color('chart-5'))),
 ])
+// Parked is wherever the vehicle was read, from the first reading of a run to its last,
+// outside its trips and charges (as far as they may reach): each stretch its own band,
+// named where it has room. Between two runs nothing was read: no band.
+const parked = computed<Band[]>(() => {
+  const busy = events.value.map((e) => [e.from, e.to] as const).sort((x, y) => x[0] - y[0])
+  return (series.value?.runs ?? []).flatMap((run) => {
+    const first = run.readings[0]
+    const last = run.readings.at(-1)
+    if (!first || !last) return []
+    const end = Date.parse(last.at)
+    const out: Band[] = []
+    let from = Date.parse(first.at)
+    const push = (to: number) => {
+      if (to > from)
+        out.push({
+          label: t('timeline.parked'),
+          color: color('track'),
+          ink: color('text-secondary'),
+          from,
+          to,
+          sure: { from, to },
+        })
+    }
+    for (const [a, b] of busy) {
+      if (b <= from || a >= end) continue
+      push(a)
+      from = Math.max(from, b)
+    }
+    push(end)
+    return out
+  })
+})
+const bands = computed<Band[]>(() => [...parked.value, ...events.value])
 
 const lines = computed<Series[]>(() => [
   {
     label: t('timeline.soc'),
     data: seriesLine(series.value?.runs ?? [], (r) => r.soc_pct),
     color: color('chart-1'),
+    area: true,
   },
 ])
 
@@ -117,7 +166,7 @@ const table = computed(() => {
       {
         label: t('timeline.charges'),
         data: rows.map((r) => r.charges),
-        color: color('chart-3'),
+        color: color('chart-5'),
         format: count,
       },
     ] satisfies Series[],
@@ -128,9 +177,10 @@ const summary = computed(() => {
   const r = known.value
   const first = r[0]
   const last = r.at(-1)
-  if (!first || !last) return t('timeline.none')
+  if (!first || !last) return words.value.none
   const socs = r.map((x) => x.soc_pct)
   return t('timeline.summary', {
+    over: words.value.over,
     first: f.quantity(first.soc_pct, 'percent'),
     last: f.quantity(last.soc_pct, 'percent'),
     min: f.quantity(Math.min(...socs), 'percent'),
@@ -140,9 +190,14 @@ const summary = computed(() => {
   })
 })
 
-const ticks = computed(() => timeTicks(start.value, end.value, 7).ticks)
+const ticks = computed(() => timeTicks(start.value, end.value, 7))
 const iso = (v: number) => new Date(v).toISOString()
-const formatTick = (v: number) => f.bucket(iso(v), 'day')
+// A day for a tick over the week, an hour alone over the day (its own day given, the time
+// leaves it out).
+function formatTick(v: number): string {
+  const at = iso(v)
+  return ticks.value.daily ? f.bucket(at, 'day') : f.time(at, f.dayKey(at))
+}
 const formatPoint = (v: number) => f.time(iso(v))
 </script>
 
@@ -165,12 +220,28 @@ const formatPoint = (v: number) => f.time(iso(v))
     :format-point="formatPoint"
     :x-min="start"
     :x-max="end"
-    :x-ticks="ticks"
+    :x-ticks="ticks.ticks"
     :y-min="0"
     :y-max="100"
     :selectable="false"
     :empty="known.length ? undefined : summary"
-  />
+  >
+    <template #actions>
+      <!-- Only this tile changes: the choice stays out of the URL. -->
+      <v-btn-toggle
+        v-model="shown"
+        mandatory
+        density="compact"
+        class="segmented"
+        role="group"
+        :aria-label="t('timeline.window.label')"
+      >
+        <v-btn v-for="w in windows" :key="w" :value="w" :aria-pressed="w === shown">
+          {{ windowLabels[w] }}
+        </v-btn>
+      </v-btn-toggle>
+    </template>
+  </ChartFrame>
 </template>
 
 <style scoped>
