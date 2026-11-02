@@ -251,7 +251,7 @@ const parkedByTemperature = computed(() => {
 
 // chargesByTemperature is the mean power of the AC and the DC charges of each band: the
 // cold slows a charge, a battery to warm first. A power is known by bounds, as the
-// durations; the bars are the lower one, the tooltip and the table both.
+// durations; the bars are the lower one, the tooltip adds the upper, the table both.
 const chargesByTemperature = computed(() => {
   const kw = (v: number | null) => f.quantity(v, 'kW')
   const power = (b: ChargeBandType) =>
@@ -261,7 +261,7 @@ const chargesByTemperature = computed(() => {
     { type: 'dc', label: t('stats.chart.chargesByTemperature.dc'), color: color('chart-2') },
   ] as const
   const series: Series[] = types.map((ty) => ({
-    label: ty.label,
+    label: t('stats.chart.chargesByTemperature.lowest', { type: ty.label }),
     data: chargeBands.value.map((b) => b[ty.type].power_kw?.min ?? null),
     color: ty.color,
   }))
@@ -292,11 +292,16 @@ const chargesByTemperature = computed(() => {
     return types.flatMap((ty) =>
       b[ty.type].count === 0
         ? []
-        : t('stats.chart.chargesByTemperature.detail', {
-            type: ty.label,
-            power: power(b[ty.type]),
-            charges: t('stats.chart.chargesByTemperature.chargeCount', b[ty.type].count),
-          }),
+        : b[ty.type].power_kw?.max == null
+          ? t('stats.chart.chargesByTemperature.detailOpen', {
+              type: ty.label,
+              charges: t('stats.chart.chargesByTemperature.chargeCount', b[ty.type].count),
+            })
+          : t('stats.chart.chargesByTemperature.detail', {
+              type: ty.label,
+              power: kw(b[ty.type].power_kw?.max ?? null),
+              charges: t('stats.chart.chargesByTemperature.chargeCount', b[ty.type].count),
+            }),
     )
   }
   const known = chargeBands.value.flatMap((b, i) =>

@@ -319,16 +319,16 @@ describe('StatsDistributions', () => {
     const w = await mounted(s)
     // The lower bound of each type's mean power: no midpoint.
     expect(datasets(w, 'charges-by-temperature').map((d) => [d.label, d.data])).toEqual([
-      ['AC', [6.8, null, 10.4]],
-      ['DC', [48, null, null]],
+      ['AC, lowest', [6.8, null, 10.4]],
+      ['DC, lowest', [48, null, null]],
     ])
     const frame = w.findAllComponents(ChartFrame).find((c) => c.classes('charges-by-temperature'))
     const details = frame?.props('details') as (i: number) => string[]
     expect(details(0).map(plain)).toEqual([
-      'AC: 6.8–7.1 kW over 2 charges',
-      'DC: at least 48 kW over 1 charge',
+      'AC: up to 7.1 kW, over 2 charges',
+      'DC: highest unknown, over 1 charge',
     ])
-    expect(details(2).map(plain)).toEqual(['AC: 10.4 kW over 1 charge'])
+    expect(details(2).map(plain)).toEqual(['AC: up to 10.4 kW, over 1 charge'])
     expect(plain(w.find('.charges-by-temperature canvas').attributes('aria-label'))).toBe(
       'Mean charging power by outside temperature: -5 to 0°C in AC, 6.8–7.1 kW; ' +
         '-5 to 0°C in DC, at least 48 kW; 5 to 10°C in AC, 10.4 kW.',
