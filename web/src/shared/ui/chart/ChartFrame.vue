@@ -4,6 +4,7 @@ import {
   BarElement,
   CategoryScale,
   Chart,
+  Filler,
   LinearScale,
   LineController,
   LineElement,
@@ -30,6 +31,7 @@ Chart.register(
   CategoryScale,
   LinearScale,
   Tooltip,
+  Filler,
 )
 
 // ChartFrame is a chart and its data, in a tile. A canvas has no content a screen reader
@@ -83,7 +85,8 @@ const props = withDefaults(
     // The tooltip's title over a linear axis, when the ticks say less (a day for a tick,
     // a time for a reading); formatX without it.
     formatPoint?: (v: number) => string
-    // Spans of the x axis behind the series (trips, charges), in the legend after them.
+    // Spans of the x axis in a strip under the plot (trips, charges), in the legend after
+    // the series.
     bands?: Band[]
     // The second axis, on the right, of the series marked right: its unit and bounds.
     rightUnit?: string
@@ -165,7 +168,8 @@ const data = computed(() => ({
       yAxisID: s.right ? 'right' : 'y',
       // A scatter among the lines of the same chart: the chart's kind stays its own.
       type: s.scatter ? ('scatter' as const) : undefined,
-      backgroundColor: s.band || s.soft ? token('chart-band') : s.color,
+      // An area's fill is its own color, faint: the line stays what the eye follows.
+      backgroundColor: s.band || s.soft ? token('chart-band') : s.area ? `${s.color}1f` : s.color,
       borderColor: s.color,
       borderWidth: s.soft
         ? 1
@@ -181,7 +185,7 @@ const data = computed(() => ({
       // Chart.js draws the higher order first, under the others.
       order: s.wide ? 1 : 0,
       borderDash: s.dashed ? [6, 4] : undefined,
-      fill: s.band ? ('-1' as const) : false,
+      fill: s.band ? ('-1' as const) : s.area ? ('origin' as const) : false,
       // A line breaks where a value is unknown: a gap, never a zero.
       spanGaps: false,
       pointRadius: s.scatter
@@ -248,27 +252,43 @@ const zeros: Plugin<'bar'> = {
     ctx.restore()
   },
 }
-// spans fills the bands behind the series, full height, before them: faint where the
-// event may have been, twice as strong where it surely was.
+// The strip of the bands, under the plot and over the x axis's ticks, in pixels.
+const lane = { gap: 6, height: 20 }
+// spans draws the bands in their strip: faint where the event may have been, solid
+// where it surely was, named inside its surest part when the name fits.
 const spans: Plugin<'line'> = {
   id: 'runsten-spans',
-  beforeDatasetsDraw(chart) {
+  afterDatasetsDraw(chart) {
     const x = chart.scales.x
     const area = chart.chartArea
     if (!x || !props.bands?.length) return
     const ctx = chart.ctx
-    const fill = (from: number, to: number) => {
+    const top = area.bottom + lane.gap
+    const span = (from: number, to: number) => {
       const left = Math.max(area.left, x.getPixelForValue(from))
       const right = Math.min(area.right, x.getPixelForValue(to))
       // At least a pixel: a span shorter than one is still there.
-      if (right >= left) ctx.fillRect(left, area.top, Math.max(1, right - left), area.height)
+      return right >= left ? { left, width: Math.max(1, right - left) } : null
     }
     ctx.save()
+    ctx.font = `600 11px ${String(theme.current.value.variables['font-body'] ?? '')}`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
     for (const b of props.bands) {
+      const whole = span(b.from, b.to)
+      const sure = b.sure ? span(b.sure.from, b.sure.to) : null
       ctx.fillStyle = b.color
-      ctx.globalAlpha = 0.14
-      fill(b.from, b.to)
-      if (b.sure) fill(b.sure.from, b.sure.to)
+      if (whole) {
+        ctx.globalAlpha = 0.4
+        ctx.fillRect(whole.left, top, whole.width, lane.height)
+      }
+      ctx.globalAlpha = 1
+      if (sure) ctx.fillRect(sure.left, top, sure.width, lane.height)
+      const named = sure ?? whole
+      if (named && ctx.measureText(b.label).width + 8 <= named.width) {
+        ctx.fillStyle = b.ink ?? token('on-primary')
+        ctx.fillText(b.label, named.left + named.width / 2, top + lane.height / 2)
+      }
     }
     ctx.restore()
   },
@@ -282,6 +302,8 @@ const options = computed(() => {
   const font = { family: String(theme.current.value.variables['font-body'] ?? ''), size: 11 }
   const ticks = { color: secondary, font, maxRotation: 0 }
   const axis = { ticks, grid: { display: false }, border: { display: false } }
+  // The x axis's ticks go under the bands' strip.
+  const xTicks = props.bands?.length ? { ...ticks, padding: lane.gap + lane.height + 4 } : ticks
   const inverted = { color: token('background') }
   return {
     responsive: true,
@@ -345,7 +367,7 @@ const options = computed(() => {
             type: 'linear' as const,
             ...(props.xMin !== undefined ? { min: props.xMin } : {}),
             ...(props.xMax !== undefined ? { max: props.xMax } : {}),
-            ticks: { ...axis.ticks, callback: (v: number) => props.formatX?.(v) ?? String(v) },
+            ticks: { ...xTicks, callback: (v: number) => props.formatX?.(v) ?? String(v) },
             // The widget's ticks (month starts) replace the axis's own: a linear axis
             // graduates anywhere in a month, and the same month twice.
             ...(props.xTicks
@@ -356,7 +378,7 @@ const options = computed(() => {
                 }
               : {}),
           }
-        : { ...axis, stacked: props.stacked },
+        : { ...axis, ticks: xTicks, stacked: props.stacked },
       y: {
         ...axis,
         grid: { color: token('chart-grid') },
@@ -509,10 +531,6 @@ function pointY(raw: unknown): number | null {
 }
 .mark--dashed {
   border-block-start-style: dashed;
-}
-.mark--span {
-  background: var(--mark);
-  opacity: 0.4;
 }
 .mark--band {
   background: rgb(var(--v-theme-chart-band));

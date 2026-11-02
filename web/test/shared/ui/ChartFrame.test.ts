@@ -154,7 +154,7 @@ describe('ChartFrame', () => {
 
   // Spans behind the series: faint where an event may have been, again where it surely
   // was, clipped to the chart's area; in the legend after the series, once per label.
-  it('fills the bands behind the series, and names them in the legend', () => {
+  it('draws the bands in a strip under the plot, named where they fit, and in the legend', () => {
     const w = mounted({
       kind: 'line',
       formatX: String,
@@ -167,32 +167,41 @@ describe('ChartFrame', () => {
     expect(w.findAll('.legend li').map((l) => l.text())).toEqual(['State of charge', 'Driving'])
     expect(w.find('.legend .mark--span').exists()).toBe(true)
     const [spans] = w.findComponent({ name: 'Line' }).props('plugins') as {
-      beforeDatasetsDraw: (chart: unknown) => void
+      afterDatasetsDraw: (chart: unknown) => void
     }[]
     const rects: number[][] = []
     const alphas: number[] = []
+    const names: (string | number)[][] = []
     const ctx = {
       save: () => undefined,
       restore: () => undefined,
       fillStyle: '',
+      font: '',
+      textAlign: '',
+      textBaseline: '',
       globalAlpha: 1,
       fillRect(...r: number[]) {
         rects.push(r)
         alphas.push(this.globalAlpha)
       },
+      measureText: (t: string) => ({ width: t.length }),
+      fillText: (t: string, x: number, y: number) => names.push([t, x, y]),
     }
-    spans?.beforeDatasetsDraw({
+    spans?.afterDatasetsDraw({
       scales: { x: { getPixelForValue: (v: number) => v } },
-      chartArea: { left: 0, right: 100, top: 5, height: 50 },
+      chartArea: { left: 0, right: 100, bottom: 55 },
       ctx,
     })
-    // Clipped at the left, the sure part over it, and a pixel for an instant.
+    // Under the plot: clipped at the left, the sure part over it, and a pixel for an
+    // instant.
     expect(rects).toEqual([
-      [0, 5, 40, 50],
-      [10, 5, 20, 50],
-      [60, 5, 1, 50],
+      [0, 61, 40, 20],
+      [10, 61, 20, 20],
+      [60, 61, 1, 20],
     ])
-    expect(alphas).toEqual([0.14, 0.14, 0.14])
+    expect(alphas).toEqual([0.4, 1, 0.4])
+    // Named in the middle of its sure part; a pixel has no room for a name.
+    expect(names).toEqual([['Driving', 20, 71]])
   })
 
   it('draws a series on the right axis, in its own format', () => {
