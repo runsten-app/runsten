@@ -99,10 +99,12 @@ const events = computed<Band[]>(() => [
 // Parked is wherever the vehicle was read, from the first reading of a run to its last,
 // outside its trips and charges (as far as they may reach): each stretch its own band,
 // named where it has room. Between two runs nothing was read: no band. Until every page
-// of the events is read (one failed, or still coming), a trip may hide in it: parked is
-// then only maybe, paler.
+// of the events is read (the first still coming, one failed, more to come), a trip may
+// hide in it: parked is then only maybe, paler.
 const parked = computed<Band[]>(() => {
-  const complete = !trips.hasMore.value && !charges.hasMore.value
+  const complete = [trips, charges].every(
+    (e) => !e.isPending.value && !e.error.value && !e.hasMore.value,
+  )
   const busy = events.value.map((e) => [e.from, e.to] as const).sort((x, y) => x[0] - y[0])
   return (series.value?.runs ?? []).flatMap((run) => {
     const first = run.readings[0]
