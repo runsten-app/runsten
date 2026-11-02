@@ -284,9 +284,11 @@ func normalizeTargetSoC(raw []byte, s *core.Snapshot) error {
 	if err := json.Unmarshal(raw, &v); err != nil {
 		return err //nolint:wrapcheck // wrapped by Normalize
 	}
-	s.Covers = core.FieldTargetSoC
-	if t := v.TargetSoC; t != nil {
-		s.TargetSoC = number(t.Level, time.Time{})
+	// Without a level (protobuf leaves a zero out), the response covers nothing: the limit
+	// read before holds.
+	if t := v.TargetSoC; t != nil && t.Level != nil {
+		s.Covers = core.FieldTargetSoC
+		s.TargetSoC = core.Some(*t.Level, time.Time{})
 	}
 	return nil
 }

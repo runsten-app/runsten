@@ -103,6 +103,11 @@ func TestTheRealTargetSoCNormalizes(t *testing.T) {
 	if s.Covers != core.FieldTargetSoC || s.TargetSoC.V != 80 || !s.TargetSoC.At.IsZero() {
 		t.Errorf("snapshot %+v", s)
 	}
+	for _, raw := range []string{`{"targetSoc":{}}`, `{"vin":"x"}`} {
+		if s, err := Normalize(TargetSoC, []byte(raw)); err != nil || s.Covers != 0 {
+			t.Errorf("%s: %+v %v: no level, the one read before holds", raw, s, err)
+		}
+	}
 }
 
 // A battery charging on DC, as pypolestar's synthetic case: what the capture did not have.
