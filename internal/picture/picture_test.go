@@ -92,6 +92,52 @@ func TestPicture(t *testing.T) {
 	}
 }
 
+// byURL answers each URL with its own status, and records what was asked.
+type byURL struct {
+	status map[string]int
+	asked  []string
+}
+
+func (c *byURL) RoundTrip(req *http.Request) (*http.Response, error) {
+	u := req.URL.String()
+	c.asked = append(c.asked, u)
+	return &http.Response{
+		StatusCode: c.status[u], Header: http.Header{"Content-Type": {"image/png"}},
+		Body: io.NopCloser(strings.NewReader(u)), Request: req,
+	}, nil
+}
+
+func TestPictureBanner(t *testing.T) {
+	const (
+		banner = "https://wizz.volvocars.com/images/2027/416/exterior/studio/banner/transparent_exterior-studio-banner_4DD2.png?client=connected-vehicle-api&w=1920"
+		sized  = "https://wizz.volvocars.com/images/2027/416/exterior/studio/banner/transparent_exterior-studio-banner_4DD2.png?client=connected-vehicle-api&w=640"
+		front  = "https://wizz.volvocars.com/images/2027/416/exterior/studio/front/transparent_exterior-studio-front_4DD2.png?client=connected-vehicle-api&w=640"
+	)
+	for name, tc := range map[string]struct {
+		status map[string]int
+		want   string
+		asked  int
+	}{
+		"its front view": {map[string]int{front: http.StatusOK, sized: http.StatusOK}, front, 1},
+		"no front view":  {map[string]int{front: http.StatusNotFound, sized: http.StatusOK}, sized, 2},
+		"neither":        {map[string]int{front: http.StatusNotFound, sized: http.StatusNotFound}, "", 2},
+	} {
+		c := &byURL{status: tc.status}
+		r := New(DefaultParams(), &http.Client{Transport: c}, clock.NewManual(time.Unix(0, 0)))
+		got, err := r.Picture(context.Background(), banner)
+		if tc.want == "" {
+			if !errors.Is(err, ErrUnavailable) {
+				t.Errorf("%s: %v", name, err)
+			}
+		} else if err != nil || string(got.Data) != tc.want {
+			t.Errorf("%s: got %q, %v, want %s", name, got.Data, err, tc.want)
+		}
+		if len(c.asked) != tc.asked {
+			t.Errorf("%s: asked %v", name, c.asked)
+		}
+	}
+}
+
 func TestPictureRefused(t *testing.T) {
 	p := DefaultParams()
 	p.MaxSize = 4

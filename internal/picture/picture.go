@@ -117,12 +117,35 @@ func (r *Relay) Picture(ctx context.Context, u string) (Picture, error) {
 	if ok && now.Sub(e.at) < r.p.TTL {
 		return e.pic, nil
 	}
-	pic, err := r.fetch(ctx, r.sized(u))
+	var pic Picture
+	var err error
+	for _, c := range candidates(u) {
+		if pic, err = r.fetch(ctx, r.sized(c)); err == nil {
+			break
+		}
+	}
 	if err != nil {
 		return Picture{}, err
 	}
 	r.keep(u, entry{pic, now})
 	return pic, nil
+}
+
+// banner turns a banner of wizz.volvocars.com into the same picture's front view.
+var banner = strings.NewReplacer(
+	"/exterior/studio/banner/transparent_exterior-studio-banner_",
+	"/exterior/studio/front/transparent_exterior-studio-front_",
+)
+
+// candidates are the URLs tried for u, in order. Volvo's details link the recent models
+// (2026 on, read 2026-11) to a banner: a close-up of the front left, the car cut on the
+// right and at the bottom. The same picture's front view shows the whole car, but not
+// every banner has one (a 404 for a 2025 one): the banner stays the fallback.
+func candidates(u string) []string {
+	if front := banner.Replace(u); front != u {
+		return []string{front, u}
+	}
+	return []string{u}
 }
 
 // sized replaces the URL's w with the relay's width, leaving the rest of its query as it
