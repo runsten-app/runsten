@@ -97,6 +97,8 @@ describe('StatsPage', () => {
     expect(titles()).toEqual([
       'Energy charged (from the state of charge)',
       'Loss while parked',
+      'Loss while parked by outside temperature',
+      'Charging power by outside temperature (estimated)',
       'State of charge at the start and end of charges',
       'Energy charged by place (from the state of charge)',
     ])

@@ -109,6 +109,17 @@ const tiles = computed<Tile[]>(() => {
       notes: [
         t('stats.tile.parkedNote'),
         ...note(pk.soc_loss_unknown, t('stats.tile.parkedUnknown', pk.soc_loss_unknown)),
+        // The power needs the battery's capacity, the time asleep a vehicle that tells it.
+        ...note(
+          pk.power_w !== null,
+          t('stats.tile.parkedPower', { value: f.quantity(pk.power_w, 'W') }),
+        ),
+        ...note(
+          pk.asleep_share !== null,
+          t('stats.tile.parkedAsleep', {
+            value: f.quantity(pk.asleep_share === null ? null : pk.asleep_share * 100, 'percent'),
+          }),
+        ),
       ],
     },
   ]
