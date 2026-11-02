@@ -22,14 +22,14 @@ const Brand = "polestar"
 type Normalizer struct{}
 
 // Kinds returns the kinds of response Normalize reads.
-func (Normalizer) Kinds() []core.Kind { return kinds(Telematics, Cars) }
+func (Normalizer) Kinds() []core.Kind { return kinds(Telematics, Battery, TargetSoC, Cars) }
 
 // HealthKinds returns the kinds of response NormalizeHealth reads.
 func (Normalizer) HealthKinds() []core.Kind { return kinds(Telematics) }
 
 // EnergyKinds returns the kinds holding the energy state: the state of charge and the
-// range.
-func (Normalizer) EnergyKinds() []core.Kind { return kinds(Telematics) }
+// range, and the gRPC's battery the charging power.
+func (Normalizer) EnergyKinds() []core.Kind { return kinds(Telematics, Battery) }
 
 // StateKinds returns none: the API tells neither the doors nor the windows.
 func (Normalizer) StateKinds() []core.Kind { return nil }
@@ -64,15 +64,20 @@ func kinds(eps ...Endpoint) []core.Kind {
 // Normalize converts a raw response of ep into a vendor-neutral snapshot, each value
 // dated by its block's timestamp, the car's.
 //
-// What the API gives is less than the Data Portal's: no position, no engine, no cable and
-// no charging power. The trips are derived from the odometer, the charges from the
-// charging status and the state of charge.
+// What the API gives is less than the Data Portal's: no position and no engine, the
+// trips derived from the odometer. The GraphQL tells no cable nor charging power either:
+// a car the gRPC's battery serves has them, else its charges come from the charging
+// status and the state of charge.
 func Normalize(ep Endpoint, raw []byte) (core.Snapshot, error) {
 	var s core.Snapshot
 	var err error
 	switch ep {
 	case Telematics:
 		err = normalizeTelematics(raw, &s)
+	case Battery:
+		err = normalizeBattery(raw, &s)
+	case TargetSoC:
+		err = normalizeTargetSoC(raw, &s)
 	case Cars:
 		err = normalizeCars(raw, &s)
 	default:
@@ -135,8 +140,9 @@ type telematics struct {
 	} `json:"data"`
 }
 
-// chargingStatuses maps chargingStatusV2. pypolestar reads only CHARGING and IDLE of this
-// API; the others are the Data Portal's, assumed the same words 🟡 (to check on a real
+// chargingStatuses maps chargingStatusV2 of the GraphQL, and chargingStatus of the gRPC's
+// battery (its proto's ChargingStatus). pypolestar reads only CHARGING and IDLE of the
+// GraphQL; the others are the Data Portal's, assumed the same words 🟡 (to check on a real
 // car). An unknown one is absent.
 var chargingStatuses = map[string]core.ChargingStatus{
 	"CHARGING":              core.ChargingActive,
@@ -176,6 +182,113 @@ func normalizeTelematics(raw []byte, s *core.Snapshot) error {
 		if o.Meters != nil {
 			s.OdometerKm = core.Some(*o.Meters/1000, o.Timestamp.instant())
 		}
+	}
+	return nil
+}
+
+// enum reads an enum value without its prefix (CHARGING_TYPE_AC: AC); absent when it has
+// not the prefix, or is not among values.
+func enum[T ~string](v, prefix string, at time.Time, values map[string]T) core.Value[T] {
+	name, ok := strings.CutPrefix(v, prefix)
+	if !ok {
+		return core.Value[T]{}
+	}
+	t, ok := values[name]
+	if !ok {
+		return core.Value[T]{}
+	}
+	return core.Some(t, at)
+}
+
+// normalizeBattery reads GetLatestBattery's battery, the Data Portal's battery domain
+// over gRPC: the cable, the type and power of the charge, its current and voltage, the
+// time left.
+//
+// The state of charge, the range and the charging status are the telematics' too: the
+// battery covers each only when it tells it, so that a value protobuf leaves out (a zero,
+// UNSPECIFIED) does not erase the one the telematics read. The rest only the battery
+// tells.
+func normalizeBattery(raw []byte, s *core.Snapshot) error {
+	var v struct {
+		Battery *struct {
+			Timestamp     *stamp   `json:"timestamp"`
+			SoC           *float64 `json:"batteryChargeLevelPercentage"`
+			RangeKm       *float64 `json:"estimatedDistanceToEmptyKm"`
+			Connection    string   `json:"chargerConnectionStatus"`
+			Status        string   `json:"chargingStatus"`
+			Type          string   `json:"chargingType"`
+			PowerW        *float64 `json:"chargingPowerWatts"`
+			CurrentA      *float64 `json:"chargingCurrentAmps"`
+			VoltageV      *float64 `json:"chargingVoltageVolts"`
+			Consumption   *float64 `json:"averageEnergyConsumptionKwhPer100Km"`
+			MinutesToFull *float64 `json:"estimatedChargingTimeToFullMinutes"`
+		} `json:"battery"`
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return err //nolint:wrapcheck // wrapped by Normalize
+	}
+	b := v.Battery
+	if b == nil {
+		return nil
+	}
+	at := b.Timestamp.instant()
+	s.Covers = core.FieldConnection | core.FieldChargeType | core.FieldPower | core.FieldConsumption | core.FieldChargeDetails
+	if b.SoC != nil {
+		s.Covers |= core.FieldSoC
+		s.SoC = core.Some(*b.SoC, at)
+	}
+	if b.RangeKm != nil {
+		s.Covers |= core.FieldRange
+		s.RangeKm = core.Some(*b.RangeKm, at)
+	}
+	// Its first version's words (chargingStatus), the GraphQL's being V2: the same,
+	// without V2_.
+	if c := enum(b.Status, "CHARGING_STATUS_", at, chargingStatuses); c.OK {
+		s.Covers |= core.FieldCharging
+		s.Charging = c
+	}
+	s.Connection = enum(b.Connection, "CHARGER_CONNECTION_STATUS_", at, map[string]core.Connection{
+		"CONNECTED": core.Connected, "DISCONNECTED": core.Disconnected, "FAULT": core.ConnectionFault,
+	})
+	// WIRELESS is no type a charge has here: absent.
+	s.ChargeType = enum(b.Type, "CHARGING_TYPE_", at, map[string]core.ChargeType{
+		"AC": core.AC, "DC": core.DC, "NONE": core.NoCharge,
+	})
+	charging := s.Charging.OK && s.Charging.V == core.ChargingActive
+	s.PowerW = number(b.PowerW, at)
+	if !s.PowerW.OK && s.Charging.OK && !charging {
+		// protobuf leaves a zero out: out of a charge, the power is 0. During one, a power
+		// missing is a car that does not tell it: absent.
+		s.PowerW = core.Some(0.0, at)
+	}
+	s.ConsumptionKWhPer100km = number(b.Consumption, at)
+	// Assumption, as the Data Portal's: the battery's side on DC, the grid's on AC; the
+	// phases are not told.
+	s.CurrentA, s.VoltageV = number(b.CurrentA, at), number(b.VoltageV, at)
+	// Said only while charging: a real car idle and plugged in told 1 minute (pypolestar's
+	// fixture). To full, as told, which the car may count to its target as well.
+	if m := b.MinutesToFull; charging && m != nil && *m > 0 {
+		s.TimeLeft = core.Some(core.TimeLeft{Duration: time.Duration(*m * float64(time.Minute)), To: core.ToFull}, at)
+	}
+	return nil
+}
+
+// normalizeTargetSoC reads GetTargetSoc's charge limit. The response holds no reading's
+// time: its updatedAt is when the owner set it, not when the car told it.
+func normalizeTargetSoC(raw []byte, s *core.Snapshot) error {
+	var v struct {
+		TargetSoC *struct {
+			Level *float64 `json:"batteryChargeTargetLevel"`
+		} `json:"targetSoc"`
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return err //nolint:wrapcheck // wrapped by Normalize
+	}
+	// Without a level (protobuf leaves a zero out), the response covers nothing: the limit
+	// read before holds.
+	if t := v.TargetSoC; t != nil && t.Level != nil {
+		s.Covers = core.FieldTargetSoC
+		s.TargetSoC = core.Some(*t.Level, time.Time{})
 	}
 	return nil
 }

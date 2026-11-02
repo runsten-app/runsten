@@ -1853,7 +1853,7 @@
     "deleted": "A deleted place"
   },
   "polestarId": {
-    "intro": "For a Polestar the Data Portal does not read (outside the EU and the EEA), Runsten can read the Polestar app's API with your Polestar ID. It reads the battery level, the range, the charging status, the odometer and the service; not the position: trips have no places, charges no place's tariff.",
+    "intro": "For a Polestar the Data Portal does not read (outside the EU and the EEA), Runsten can read the Polestar app's API with your Polestar ID. It reads the battery level, the range, the charging status, the odometer and the service, and where Polestar serves them, the cable, the charging power and the charge limit; not the position: trips have no places, charges no place's tariff.",
     "beta": "In beta. The Polestar app's API is not official: Polestar may change or close it without notice, and your Polestar account carries the risk. For your own instance only.",
     "guide": "Read the guide",
     "newTab": "(opens in a new tab)",

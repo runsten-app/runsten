@@ -1853,7 +1853,7 @@
     "deleted": "Un lieu supprimé"
   },
   "polestarId": {
-    "intro": "Pour une Polestar que le Data Portal ne lit pas (hors de l'UE et de l'EEE), Runsten peut lire l'API de l'app Polestar avec votre Polestar ID. Il lit le niveau de batterie, l'autonomie, l'état de charge, l'odomètre et l'entretien ; pas la position : les trajets n'ont pas de lieux, les charges pas de tarif de lieu.",
+    "intro": "Pour une Polestar que le Data Portal ne lit pas (hors de l'UE et de l'EEE), Runsten peut lire l'API de l'app Polestar avec votre Polestar ID. Il lit le niveau de batterie, l'autonomie, l'état de charge, l'odomètre et l'entretien, et là où Polestar les sert, le câble, la puissance de charge et la limite de charge ; pas la position : les trajets n'ont pas de lieux, les charges pas de tarif de lieu.",
     "beta": "En bêta. L'API de l'app Polestar n'est pas officielle : Polestar peut la changer ou la fermer sans prévenir, et votre compte Polestar en porte le risque. Pour votre propre instance seulement.",
     "guide": "Lire le guide",
     "newTab": "(s'ouvre dans un nouvel onglet)",

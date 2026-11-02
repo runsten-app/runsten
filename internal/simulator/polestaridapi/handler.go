@@ -1,12 +1,13 @@
 // Package polestaridapi exposes simulated vehicles as the Polestar app's API, read with
 // the owner's Polestar ID (ADR 0042): the Polestar ID's sign-in (PingFederate's form, the
 // authorization code with PKCE, the refresh token rotated at each refresh) and the
-// GraphQL of mystar-v2 (the account's cars, their telematics). The sign-in reproduces
+// GraphQL of mystar-v2 (the account's cars, their telematics), and the app's two gRPC
+// services (grpc.go: the battery, the charge limit). The sign-in reproduces
 // what was checked on a real Polestar ID; the GraphQL's shapes are pypolestar's, no real
 // response of a car having been seen yet.
 //
-// Everything is under Prefix: the simulator serves the Volvo ID on the same paths as the
-// Polestar ID's (/as/…). A revocation of the refresh tokens is set on demand under
+// Everything is under Prefix but the gRPC methods, at the root as on the real hosts: the
+// simulator serves the Volvo ID on the same paths as the Polestar ID's (/as/…). A revocation of the refresh tokens is set on demand under
 // ControlPrefix.
 package polestaridapi
 
@@ -95,6 +96,9 @@ func NewHandler(srcs []Source, clk clock.Clock, behavior Behavior) *Handler {
 	h.mux.HandleFunc("POST "+Prefix+"as/{flow}/resume/as/authorization.ping", h.resume)
 	h.mux.HandleFunc("POST "+Prefix+"as/token.oauth2", h.token)
 	h.mux.HandleFunc("POST "+APIPath, h.graphql)
+	h.mux.HandleFunc("GET "+DiscoveryPath, h.discovery)
+	h.mux.HandleFunc("POST "+BatteryPath, h.battery)
+	h.mux.HandleFunc("POST "+TargetSoCPath, h.targetSoC)
 	h.mux.HandleFunc("POST "+ControlPrefix+"revoke", h.revoke)
 	h.mux.HandleFunc("POST "+ControlPrefix+"refresh-token", h.issueRefreshToken)
 	return h
@@ -175,10 +179,7 @@ func (h *Handler) telematics(vins []string, now time.Time) map[string]any {
 // values only (CHARGING_STATUS_V2_CHARGING, …_IDLE), no cable nor power.
 func (h *Handler) renderBattery(vin string, r vehicle.Report, now time.Time) map[string]any {
 	e := r.Energy
-	at := r.EnergyAt
-	if every := h.behavior.ParkedUpload; every > 0 && !r.Status.Driving && !now.Before(at) {
-		at = at.Add(now.Sub(at) / every * every)
-	}
+	at := h.energyAt(r, now)
 	status, minutes := "IDLE", 0
 	if e.Charging == vehicle.Charging {
 		status = "CHARGING"

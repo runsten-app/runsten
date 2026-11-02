@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -28,6 +29,10 @@ const (
 	KindUnauthorized
 	// KindRateLimited: 429, wait RetryIn.
 	KindRateLimited
+	// KindNotProvisioned: a gRPC service does not serve the car (PERMISSION_DENIED,
+	// UNIMPLEMENTED or NOT_FOUND, the access valid): a Polestar 2 is not provisioned on
+	// PCCS. Asking again only spends calls.
+	KindNotProvisioned
 )
 
 // defaultRateRetry is the delay after a 429 without Retry-After: no limit of the API is
@@ -40,17 +45,23 @@ type call int
 const (
 	tokenCall call = iota
 	graphqlCall
+	discoveryCall
+	grpcCall
 )
 
 // APIError is a refusal of the Polestar ID or of the API. It holds neither a token, a
 // password nor a VIN: the logs carry it.
 type APIError struct {
-	Endpoint string // token, sign-in, cars or telematics
-	Status   int
-	Code     string // the OAuth error of the token endpoint; empty elsewhere
-	Message  string
-	Kind     Kind
-	RetryIn  time.Duration // for KindRateLimited
+	Endpoint string // token, sign-in, cars, telematics, discovery, battery or target-soc
+	// Status is the HTTP status; of a gRPC status, the one it maps to (grpc-gateway's
+	// mapping), so that the collector reacts to it as to an HTTP one.
+	Status int
+	// Code is the OAuth error of the token endpoint, or the gRPC status's name; empty
+	// elsewhere.
+	Code    string
+	Message string
+	Kind    Kind
+	RetryIn time.Duration // for KindRateLimited
 }
 
 func (e *APIError) Error() string {
@@ -75,8 +86,61 @@ func newAPIError(endpoint string, k call, resp *http.Response, body []byte) *API
 		if code == "invalid_grant" {
 			e.Kind = KindTokenRefused
 		}
+	case k == discoveryCall:
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		e.Kind = KindUnauthorized
+	}
+	return e
+}
+
+// grpcCodes are gRPC's status codes, by number, with the HTTP status each maps to
+// (grpc-gateway's HTTPStatusFromCode).
+var grpcCodes = []struct {
+	name   string
+	status int
+}{
+	{"OK", http.StatusOK},
+	{"CANCELLED", 499},
+	{"UNKNOWN", http.StatusInternalServerError},
+	{"INVALID_ARGUMENT", http.StatusBadRequest},
+	{"DEADLINE_EXCEEDED", http.StatusGatewayTimeout},
+	{"NOT_FOUND", http.StatusNotFound},
+	{"ALREADY_EXISTS", http.StatusConflict},
+	{"PERMISSION_DENIED", http.StatusForbidden},
+	{"RESOURCE_EXHAUSTED", http.StatusTooManyRequests},
+	{"FAILED_PRECONDITION", http.StatusBadRequest},
+	{"ABORTED", http.StatusConflict},
+	{"OUT_OF_RANGE", http.StatusBadRequest},
+	{"UNIMPLEMENTED", http.StatusNotImplemented},
+	{"INTERNAL", http.StatusInternalServerError},
+	{"UNAVAILABLE", http.StatusServiceUnavailable},
+	{"DATA_LOSS", http.StatusInternalServerError},
+	{"UNAUTHENTICATED", http.StatusUnauthorized},
+}
+
+// grpcStatus reads a call's grpc-status and grpc-message: nil for OK, an *APIError else,
+// a status missing or unreadable included.
+func grpcStatus(endpoint, status, message string) error {
+	code, err := strconv.Atoi(status)
+	if err != nil || code < 0 || code >= len(grpcCodes) {
+		return &APIError{Endpoint: endpoint, Status: http.StatusBadGateway, Message: "no gRPC status: " + clip(status)}
+	}
+	if code == 0 {
+		return nil
+	}
+	// grpc-message is percent-encoded (gRPC over HTTP/2).
+	if m, err := url.PathUnescape(message); err == nil {
+		message = m
+	}
+	c := grpcCodes[code]
+	e := &APIError{Endpoint: endpoint, Status: c.status, Code: c.name, Message: clip(maskVINs(message))}
+	switch c.name {
+	case "UNAUTHENTICATED":
+		e.Kind = KindUnauthorized
+	case "RESOURCE_EXHAUSTED":
+		e.Kind, e.RetryIn = KindRateLimited, defaultRateRetry
+	case "PERMISSION_DENIED", "UNIMPLEMENTED", "NOT_FOUND":
+		e.Kind = KindNotProvisioned
 	}
 	return e
 }

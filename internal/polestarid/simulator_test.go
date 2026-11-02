@@ -28,7 +28,9 @@ type sim struct {
 	srv *httptest.Server
 }
 
-func newSim(t *testing.T) *sim {
+// newSim starts the simulator on the polestar4-id scenario, its model changed to model
+// when given.
+func newSim(t *testing.T, model ...string) *sim {
 	t.Helper()
 	data, err := os.ReadFile("../../scenarios/polestar4-id.yaml")
 	if err != nil {
@@ -38,15 +40,19 @@ func newSim(t *testing.T) *sim {
 	if err != nil {
 		t.Fatal(err)
 	}
+	for _, m := range model {
+		sc.Vehicle.Model = m
+	}
 	s, err := scenario.NewSimulation(sc, vehicle.DefaultUploadPolicy())
 	if err != nil {
 		t.Fatal(err)
 	}
 	clk := clock.NewManual(sc.Start)
-	srv := httptest.NewServer(polestaridapi.NewHandler([]polestaridapi.Source{s}, clk, polestaridapi.DefaultBehavior()))
-	t.Cleanup(srv.Close)
+	srv := h2c(t, polestaridapi.NewHandler([]polestaridapi.Source{s}, clk, polestaridapi.DefaultBehavior()))
 	base := srv.URL + strings.TrimSuffix(polestaridapi.Prefix, "/")
-	c := NewClient(Hosts{Auth: base, API: srv.URL + polestaridapi.APIPath}, srv.Client())
+	c := NewClient(Hosts{
+		Auth: base, API: srv.URL + polestaridapi.APIPath, Discovery: srv.URL + polestaridapi.DiscoveryPath, PCCS: srv.URL,
+	}, srv.Client())
 	return &sim{Client: c, clk: clk, srv: srv}
 }
 
@@ -259,4 +265,82 @@ func TestAChargeIsSeen(t *testing.T) {
 	if snap.Charging.V != core.ChargingActive {
 		t.Errorf("charging %+v, want active", snap.Charging)
 	}
+}
+
+// Over gRPC, the charge at home is measured: the cable, its type, its power, and the
+// charge limit.
+func TestTheBatteryAndTheChargeLimitOverGRPC(t *testing.T) {
+	s := newSim(t)
+	tok, err := s.Refresh(t.Context(), polestaridapi.DevRefreshToken())
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := s.Battery(t.Context(), tok.Access, vin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parked, err := Normalize(Battery, raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parked.Connection.V != core.Disconnected || parked.Charging.V != core.ChargingIdle || parked.PowerW.V != 0 || !parked.PowerW.OK || parked.SoC.V != 66 {
+		t.Errorf("parked %+v", parked)
+	}
+
+	s.clk.Advance(11*time.Hour + 50*time.Minute) // charging at home since 16:45
+	if tok, err = s.Refresh(t.Context(), tok.Refresh); err != nil {
+		t.Fatal(err)
+	}
+	if raw, err = s.Battery(t.Context(), tok.Access, vin); err != nil {
+		t.Fatal(err)
+	}
+	c, err := Normalize(Battery, raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Connection.V != core.Connected || c.Charging.V != core.ChargingActive || c.ChargeType.V != core.AC || c.PowerW.V != 11_000 ||
+		c.VoltageV.V != 400 || c.CurrentA.V != 28 || !c.TimeLeft.OK || c.TimeLeft.V.To != core.ToFull {
+		t.Errorf("charging %+v", c)
+	}
+	if raw, err = s.TargetSoC(t.Context(), tok.Access, vin); err != nil {
+		t.Fatal(err)
+	}
+	if ts, err := Normalize(TargetSoC, raw); err != nil || ts.TargetSoC.V != 90 {
+		t.Errorf("target %+v %v", ts, err)
+	}
+	again, err := s.TargetSoC(t.Context(), tok.Access, vin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f1, _ := Fingerprint(raw); string(f1) != string(must(Fingerprint(again))) {
+		t.Errorf("the same limit read twice is new: %s, then %s", raw, again)
+	}
+	if _, err := s.Battery(t.Context(), "expired", vin); kindOf(err) != KindUnauthorized {
+		t.Errorf("a token refused: %v, want KindUnauthorized", err)
+	}
+	if _, err := s.Battery(t.Context(), tok.Access, "LPSYCZRE5RL000099"); kindOf(err) != KindNotProvisioned {
+		t.Errorf("another car: %v, want KindNotProvisioned", err)
+	}
+}
+
+// A Polestar 2 is not provisioned on PCCS: the charge limit is refused, the battery read.
+func TestAPolestar2HasNoChargeLimit(t *testing.T) {
+	s := newSim(t, "Polestar 2")
+	tok, err := s.Refresh(t.Context(), polestaridapi.DevRefreshToken())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.TargetSoC(t.Context(), tok.Access, vin); kindOf(err) != KindNotProvisioned {
+		t.Errorf("%v, want KindNotProvisioned", err)
+	}
+	if _, err := s.Battery(t.Context(), tok.Access, vin); err != nil {
+		t.Error(err)
+	}
+}
+
+func must(b []byte, err error) []byte {
+	if err != nil {
+		panic(err)
+	}
+	return b
 }

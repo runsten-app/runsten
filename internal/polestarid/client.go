@@ -4,7 +4,9 @@
 // one redirection for polestar.com's client: Runsten gets the tokens by exchanging a code
 // the owner pastes back, or by signing in with the owner's email and password as the app
 // does. The refresh token rotates at every refresh. The data is the GraphQL of mystar-v2:
-// the account's cars, and their telematics (battery, odometer, service).
+// the account's cars, and their telematics (battery, odometer, service); and two gRPC
+// services of the app (grpc.go): the battery with its cable and charging power, and the
+// charge limit.
 //
 // It returns raw responses: the collector stores them as is, and Normalizer reads them
 // into snapshots.
@@ -56,11 +58,14 @@ const (
 	Cars Endpoint = "cars"
 )
 
-// Hosts are the addresses of the Polestar ID and of the GraphQL, without a trailing slash
-// needed.
+// Hosts are the addresses of the Polestar ID, of the GraphQL and of the gRPC services,
+// without a trailing slash needed.
 type Hosts struct {
 	Auth string // DefaultAuthURL: the issuer, under which /as/… are
 	API  string // DefaultAPIURL
+	// Discovery answers the host of the battery's gRPC (DefaultDiscoveryURL), PCCS serves
+	// the charge limit's (DefaultPCCSURL). Empty, their calls fail: the GraphQL reads on.
+	Discovery, PCCS string
 }
 
 // Tokens are what an exchange, a sign-in or a refresh gives.
@@ -77,11 +82,15 @@ type Tokens struct {
 type Client struct {
 	auth, api string
 	hc        *http.Client
+	grpc      *grpcHosts
 }
 
 // NewClient creates a client. hc must have a timeout.
 func NewClient(h Hosts, hc *http.Client) *Client {
-	return &Client{auth: strings.TrimRight(h.Auth, "/"), api: strings.TrimRight(h.API, "/"), hc: hc}
+	return &Client{
+		auth: strings.TrimRight(h.Auth, "/"), api: strings.TrimRight(h.API, "/"), hc: hc,
+		grpc: &grpcHosts{discovery: h.Discovery, pccs: h.PCCS, hc: h2(hc)},
+	}
 }
 
 // NewVerifier returns a PKCE code verifier (RFC 7636): 43 characters of 32 random bytes.

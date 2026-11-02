@@ -49,7 +49,8 @@ vars:
   # Development wiring to the simulator: its Volvo API and Volvo ID on :8080, and its
   # development application (client runsten-dev); its Polestar Data Portal under
   # /eu-north-1/data-portal/m2m; Tesla's Owner API, its token under /oauth2/v3; the
-  # Polestar ID and the Polestar app's API under /polestar-id, its flag on.
+  # Polestar ID and the Polestar app's API under /polestar-id (its gRPC at the root), its
+  # flag on.
   # Development-only encryption key (32 zero bytes).
   DEV_ENV: >-
     RUNSTEN_DATABASE_URL="{{.DB_DEV}}"
@@ -60,6 +61,7 @@ vars:
     RUNSTEN_TESLA_API_URL=http://localhost:8080 RUNSTEN_TESLA_AUTH_URL=http://localhost:8080/oauth2/v3
     RUNSTEN_POLESTAR_ID_AUTH_URL=http://localhost:8080/polestar-id
     RUNSTEN_POLESTAR_ID_API_URL=http://localhost:8080/polestar-id/eu-north-1/mystar-v2
+    RUNSTEN_POLESTAR_ID_DISCOVERY_URL=http://localhost:8080/polestar-id/cnepmob RUNSTEN_POLESTAR_ID_PCCS_URL=http://localhost:8080
     RUNSTEN_FLAGS=source.polestar-id=true
 
   # The simulator's Polestar ID (polestaridapi.DevEmail and DevPassword), development

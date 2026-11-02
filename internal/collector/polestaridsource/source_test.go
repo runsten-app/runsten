@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -52,7 +53,9 @@ type sim struct {
 	srv   *httptest.Server
 }
 
-func newSim(t *testing.T, cred Credential) *sim {
+// newSim starts the simulator on the polestar4-id scenario, its model changed to model
+// when given, over HTTP/2 without TLS for the gRPC.
+func newSim(t *testing.T, cred Credential, model ...string) *sim {
 	t.Helper()
 	data, err := os.ReadFile("../../../scenarios/polestar4-id.yaml")
 	if err != nil {
@@ -62,15 +65,23 @@ func newSim(t *testing.T, cred Credential) *sim {
 	if err != nil {
 		t.Fatal(err)
 	}
+	for _, m := range model {
+		sc.Vehicle.Model = m
+	}
 	s, err := scenario.NewSimulation(sc, vehicle.DefaultUploadPolicy())
 	if err != nil {
 		t.Fatal(err)
 	}
 	clk := clock.NewManual(sc.Start)
-	srv := httptest.NewServer(polestaridapi.NewHandler([]polestaridapi.Source{s}, clk, polestaridapi.DefaultBehavior()))
+	srv := httptest.NewUnstartedServer(polestaridapi.NewHandler([]polestaridapi.Source{s}, clk, polestaridapi.DefaultBehavior()))
+	srv.Config.Protocols = new(http.Protocols)
+	srv.Config.Protocols.SetHTTP1(true)
+	srv.Config.Protocols.SetUnencryptedHTTP2(true)
+	srv.Start()
 	t.Cleanup(srv.Close)
 	client := polestarid.NewClient(polestarid.Hosts{
 		Auth: srv.URL + strings.TrimSuffix(polestaridapi.Prefix, "/"), API: srv.URL + polestaridapi.APIPath,
+		Discovery: srv.URL + polestaridapi.DiscoveryPath, PCCS: srv.URL,
 	}, srv.Client())
 	cred.SetAt = setAt
 	st := &creds{cred: cred}
@@ -208,5 +219,74 @@ func TestObserveTellsTheCharge(t *testing.T) {
 	u, err := s.src.Upload(collector.Endpoint(polestarid.Telematics), raw)
 	if err != nil || u.At.IsZero() || u.ModelYear != 2024 || len(u.Fields) == 0 {
 		t.Errorf("upload %+v %v", u, err)
+	}
+}
+
+// The gRPC's battery tells the charge, its power and the cable; the charge limit is read
+// too.
+func TestTheGRPCTellsTheCharge(t *testing.T) {
+	s := newSim(t, Credential{Refresh: polestaridapi.DevRefreshToken()})
+	s.clk.Advance(11*time.Hour + 50*time.Minute) // charging at home
+	sess, _, err := s.src.Login(t.Context(), "acc", "conn")
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := sess.Fetch(t.Context(), vin, collector.Endpoint(polestarid.Battery))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var a collector.Activity
+	if err := s.src.Observe(collector.Endpoint(polestarid.Battery), raw, &a); err != nil {
+		t.Fatal(err)
+	}
+	if !a.Charges || a.Charging != string(core.ChargingActive) {
+		t.Errorf("activity %+v", a)
+	}
+	u, err := s.src.Upload(collector.Endpoint(polestarid.Battery), raw)
+	if err != nil || u.At.IsZero() || u.ModelYear != 2024 || !slices.Contains(u.Fields, "battery.chargingPowerWatts") {
+		t.Errorf("upload %+v %v", u, err)
+	}
+	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(polestarid.TargetSoC)); err != nil {
+		t.Error(err)
+	}
+}
+
+// A Polestar 2's charge limit is refused: not granted, which the collector leaves out of an
+// optional endpoint for a day, told to no one.
+func TestAPolestar2sChargeLimitIsNotGranted(t *testing.T) {
+	s := newSim(t, Credential{Refresh: polestaridapi.DevRefreshToken()}, "Polestar 2")
+	sess, _, err := s.src.Login(t.Context(), "acc", "conn")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(polestarid.TargetSoC)); kindOf(err) != collector.KindNotGranted {
+		t.Errorf("%v, want KindNotGranted", err)
+	}
+	for _, spec := range s.src.Spec().Endpoints {
+		grpc := spec.Endpoint == collector.Endpoint(polestarid.Battery) || spec.Endpoint == collector.Endpoint(polestarid.TargetSoC)
+		if spec.Optional != grpc || spec.API != polestarid.Source {
+			t.Errorf("%+v: the gRPC's are optional, every call counted on %s", spec, polestarid.Source)
+		}
+	}
+}
+
+// A gRPC service's refusal is the endpoint's, never the connection's: the GraphQL reads on.
+func TestAGRPCRefusalLeavesTheConnection(t *testing.T) {
+	for _, tt := range []struct {
+		kind polestarid.Kind
+		want collector.ErrorKind
+	}{
+		{polestarid.KindNotProvisioned, collector.KindNotGranted},
+		{polestarid.KindUnauthorized, collector.KindNotAvailable},
+		{polestarid.KindRateLimited, collector.KindNotAvailable},
+		{polestarid.KindOther, collector.KindOther},
+	} {
+		if got := kindOf(grpcError(&polestarid.APIError{Kind: tt.kind})); got != tt.want {
+			t.Errorf("%d: %d, want %d", tt.kind, got, tt.want)
+		}
+	}
+	plain := errors.New("unreachable")
+	if !errors.Is(grpcError(plain), plain) {
+		t.Error("a transport error is passed on")
 	}
 }
