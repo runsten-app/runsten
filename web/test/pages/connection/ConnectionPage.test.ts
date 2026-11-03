@@ -612,6 +612,16 @@ describe('ConnectionPage', () => {
     expect(w.find('.v-alert').text()).toContain(text)
   })
 
+  it('tells the outcome of a sign-in that comes back to the page already shown', async () => {
+    const { w, router } = await pageAt('/connection?volvo=connected')
+    await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({}))
+    await router.push('/connection?polestar=no_vehicle')
+    await flushPromises()
+    expect(w.find('.v-alert').text()).toContain('Your Polestar account has no vehicle')
+    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Polestar')
+    await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({}))
+  })
+
   it("ignores a refused key from another brand's sign-in", async () => {
     const { w } = await pageAt('/connection?polestar=key_refused')
     expect(w.find('.v-alert').exists()).toBe(false)

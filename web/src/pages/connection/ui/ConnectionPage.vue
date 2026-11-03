@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { mdiArrowLeft } from '@mdi/js'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { limitsPage } from '@/entities/session'
@@ -54,18 +54,26 @@ const route = useRoute()
 const router = useRouter()
 const outcomes = ['connected', 'key_refused', 'no_vehicle', 'too_many_vehicles'] as const
 type Outcome = (typeof outcomes)[number]
-// The brand whose sign-in came back, by its parameter. Volvo's key is the only one a
+// The brand whose sign-in came back, by its parameter, read whenever the query brings one
+// (the page stays mounted through a navigation to itself). Volvo's key is the only one a
 // sign-in may refuse.
-const outcomeBrand = brands.find((b) => route.query[b] !== undefined)
-const outcome = ref(
-  outcomeBrand &&
-    outcomes.find(
-      (o) => o === route.query[outcomeBrand] && (o !== 'key_refused' || outcomeBrand === 'volvo'),
-    ),
+const outcomeBrand = ref<Brand>()
+const outcome = ref<Outcome>()
+watch(
+  () => brands.find((b) => route.query[b] !== undefined),
+  (b) => {
+    if (!b) return
+    const value = route.query[b]
+    outcomeBrand.value = b
+    outcome.value = outcomes.find((o) => o === value && (o !== 'key_refused' || b === 'volvo'))
+    const dropped = Object.fromEntries(brands.map((x) => [x, undefined]))
+    void router.replace({ query: { ...route.query, ...dropped }, hash: route.hash })
+  },
+  { immediate: true },
 )
 const outcomeText = (o: Outcome) => {
-  if (outcomeBrand && outcomeBrand !== 'volvo') {
-    const brand = brandLabels.value[outcomeBrand]
+  if (outcomeBrand.value && outcomeBrand.value !== 'volvo') {
+    const brand = brandLabels.value[outcomeBrand.value]
     switch (o) {
       case 'connected':
         return t('connection.outcome.brand.connected', { brand })
@@ -86,12 +94,6 @@ const outcomeText = (o: Outcome) => {
       return t('connection.outcome.tooManyVehicles')
   }
 }
-onMounted(() => {
-  if (outcomeBrand) {
-    const dropped = Object.fromEntries(brands.map((b) => [b, undefined]))
-    void router.replace({ query: { ...route.query, ...dropped }, hash: route.hash })
-  }
-})
 const f = useFormat()
 const now = useNow()
 const { vehicles, isPending, error } = useCollections()
@@ -152,7 +154,7 @@ const tab = computed<Brand>({
   get() {
     const fromHash = asBrand(route.hash.slice(1))
     if (fromHash) return fromHash
-    const signedIn = asBrand(outcomeBrand)
+    const signedIn = asBrand(outcomeBrand.value)
     if (signedIn) return signedIn
     const from = vehicles.value?.find((v) => v.id === props.vehicle)
     return (
