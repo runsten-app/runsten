@@ -115,3 +115,58 @@ func TestWarnIfExposed(t *testing.T) {
 		}
 	}
 }
+
+// TestIdleReads: through the request log, as the binaries serve, a body slower than the
+// server's read timeout passes while it keeps coming, and a response later than its write
+// timeout too; a body that stalls longer than idle is cut off.
+func TestIdleReads(t *testing.T) {
+	const idle = 200 * time.Millisecond
+	h := LogRequests(slog.New(slog.DiscardHandler), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := IdleReads(w, r, idle); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "cut off", http.StatusBadRequest)
+			return
+		}
+		time.Sleep(150 * time.Millisecond) // the work, past the write timeout
+		_, _ = w.Write(b)
+	}))
+	srv := httptest.NewUnstartedServer(h)
+	srv.Config.ReadTimeout, srv.Config.WriteTimeout = 100*time.Millisecond, 100*time.Millisecond
+	srv.Start()
+	defer srv.Close()
+
+	send := func(gap time.Duration) (string, error) {
+		pr, pw := io.Pipe()
+		go func() {
+			for _, part := range []string{"a", "b", "c"} {
+				_, _ = pw.Write([]byte(part))
+				time.Sleep(gap)
+			}
+			_ = pw.Close()
+		}()
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, srv.URL, pr)
+		resp, err := srv.Client().Do(req)
+		if err != nil {
+			return "", err
+		}
+		defer func() { _ = resp.Body.Close() }()
+		b, _ := io.ReadAll(resp.Body)
+		return resp.Status + " " + string(b), nil
+	}
+	if got, err := send(idle / 2); err != nil || got != "200 OK abc" {
+		t.Errorf("a body that keeps coming: %q, %v", got, err)
+	}
+	if got, err := send(2 * idle); err == nil && got == "200 OK abc" {
+		t.Error("a body that stalls is not cut off")
+	}
+
+	// A writer whose connection has no deadlines to set.
+	r := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/", strings.NewReader("x"))
+	if err := IdleReads(httptest.NewRecorder(), r, idle); err == nil {
+		t.Error("no error where the deadlines cannot be set")
+	}
+}

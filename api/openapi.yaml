@@ -8090,7 +8090,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_parameter`: `currency`. `invalid_body`: more than 4 GiB. `invalid_file`: not TeslaMate's backup (a custom-format archive, a table or a column missing, a file cut short); the message tells why and how to make the backup."
+          description: "`invalid_parameter`: `currency`. `invalid_body`: more than 4 GiB. `invalid_file`: not TeslaMate's backup (a custom-format archive, a table or a column missing, a file cut short or corrupt), or larger than an import reads (8 GiB decompressed, 30,000 drives or charges of the car); the message tells why and how to make the backup."
         "401":
           content:
             application/json:

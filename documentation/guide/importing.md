@@ -33,7 +33,7 @@ docker compose exec -T database pg_dump -U teslamate teslamate \
 
 or from a file, in Runsten's folder: `docker compose run --rm -T api import teslamate --vin YOUR_VIN < teslamate.bck`. `--vin` is the vehicle's, as Runsten lists it; `--currency` imports the costs in that currency, left out without it; `--user` names the user whose account holds the vehicle, on an instance of several. The report is logged at the end.
 
-Behind a reverse proxy, the web interface's upload must pass it: allow a large request body on the route `/api/v1/vehicles/…/imports/teslamate` (nginx refuses more than 1 MB by default: `client_max_body_size`; Caddy has no limit), or use the command line.
+Behind a reverse proxy, the web interface's upload must pass it: a large request body, and an answer that comes once the whole file is read ([Reverse proxy](../self-hosting/reverse-proxy.md#good-to-know): nothing to do with Caddy, two settings with nginx), or use the command line. A sender that stops for more than a minute is cut off.
 
 ### What is imported
 

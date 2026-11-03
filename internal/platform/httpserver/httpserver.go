@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -129,4 +130,42 @@ type statusRecorder struct {
 func (r *statusRecorder) WriteHeader(code int) {
 	r.status = code
 	r.ResponseWriter.WriteHeader(code)
+}
+
+// Unwrap gives http.ResponseController the connection's writer: a handler that sets its
+// own deadlines does so through the log.
+func (r *statusRecorder) Unwrap() http.ResponseWriter { return r.ResponseWriter }
+
+// IdleReads frees a request whose body takes minutes to send (a backup of a gigabyte)
+// from the server's deadlines, without leaving it unbounded: each read of the body must
+// come within idle of the previous one, and once the body is read whole, the response
+// may take as long as the work does. A sender that stalls is cut off. It fails where
+// the server cannot set a connection's deadlines.
+func IdleReads(w http.ResponseWriter, r *http.Request, idle time.Duration) error {
+	rc := http.NewResponseController(w)
+	if err := rc.SetWriteDeadline(time.Time{}); err != nil {
+		return fmt.Errorf("lifting the write deadline: %w", err)
+	}
+	if err := rc.SetReadDeadline(time.Now().Add(idle)); err != nil {
+		return fmt.Errorf("setting the read deadline: %w", err)
+	}
+	r.Body = &idleBody{ReadCloser: r.Body, rc: rc, idle: idle}
+	return nil
+}
+
+type idleBody struct {
+	io.ReadCloser
+	rc   *http.ResponseController
+	idle time.Duration
+}
+
+func (b *idleBody) Read(p []byte) (int, error) {
+	_ = b.rc.SetReadDeadline(time.Now().Add(b.idle)) // set once already: the server supports it
+	n, err := b.ReadCloser.Read(p)
+	if errors.Is(err, io.EOF) {
+		// The body is read: the server's watch of the closed connection must not time
+		// out while the response is worked on, which would cancel the request.
+		_ = b.rc.SetReadDeadline(time.Time{})
+	}
+	return n, err //nolint:wrapcheck // a body's reader, as it is
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"runsten/internal/core"
+	"runsten/internal/platform/httpserver"
 )
 
 // ErrNoMatchingCar is a TeslaMate backup without the vehicle's VIN: its message names the
@@ -73,18 +74,24 @@ type teslaMateBodyKey struct{}
 // teslaMateMediaTypes are the backup's: plain, or gzipped.
 var teslaMateMediaTypes = []string{"application/octet-stream", "application/gzip"}
 
-// teslaMateBody gives the handler the body as it comes, bounded, with no deadline to
-// read it nor to answer: a backup of a gigabyte takes minutes to send. Only a session
-// reaches it.
+// teslaMateIdle is how long the sender of a backup may pause: the upload as a whole has
+// no deadline, a gigabyte takes minutes, but a sender that stalls is cut off rather than
+// holding one of the instance's few slots.
+const teslaMateIdle = time.Minute
+
+// teslaMateBody gives the handler the body as it comes, bounded, each read within
+// teslaMateIdle of the previous one, and the response as long as the import takes. Only
+// a session reaches it.
 func (s *Server) teslaMateBody(ctx huma.Context, next func(huma.Context)) {
 	r, w := unwrap(ctx)
 	if mt, _, err := mime.ParseMediaType(ctx.Header("Content-Type")); err != nil || !slices.Contains(teslaMateMediaTypes, mt) {
 		writeError(w, http.StatusUnsupportedMediaType, codeUnsupportedMediaType, "application/octet-stream or application/gzip expected")
 		return
 	}
-	rc := http.NewResponseController(w)
-	_ = rc.SetReadDeadline(time.Time{})  // no deadline; an error: the server's own stand
-	_ = rc.SetWriteDeadline(time.Time{}) // as above
+	if err := httpserver.IdleReads(w, r, teslaMateIdle); err != nil {
+		// The server's deadlines stand: a large backup is cut off by them.
+		s.Log.Warn("the deadlines of a backup's upload are the server's", "err", err)
+	}
 	body := http.MaxBytesReader(w, r.Body, maxTeslaMateBody)
 	next(huma.WithValue(ctx, teslaMateBodyKey{}, io.Reader(body)))
 }
@@ -155,8 +162,9 @@ func (s *Server) registerTeslaMate(api huma.API) {
 		Middlewares: huma.Middlewares{s.teslaMateBody},
 	}, "What was imported.", writeErrors(map[int]string{
 		http.StatusBadRequest: "`invalid_parameter`: `currency`. `invalid_body`: more than 4 GiB. `invalid_file`: " +
-			"not TeslaMate's backup (a custom-format archive, a table or a column missing, a file cut short); the " +
-			"message tells why and how to make the backup.",
+			"not TeslaMate's backup (a custom-format archive, a table or a column missing, a file cut short or corrupt), " +
+			"or larger than an import reads (8 GiB decompressed, 30,000 drives or charges of the car); the message tells " +
+			"why and how to make the backup.",
 		http.StatusForbidden: errCrossOrigin + " " + errSessionOnly,
 		http.StatusNotFound:  errVehicle,
 		http.StatusConflict: "`not_tesla`: the vehicle is not a Tesla. `no_matching_car`: no car of the backup has the " +

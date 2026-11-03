@@ -61,7 +61,8 @@ var allowed = map[string][]string{
 	// the flags' declarations (never flags/eval: depguard).
 	"internal/api": {
 		"net/http", "encoding/json", "github.com/danielgtaylor/huma/v2", "internal/auth", "internal/catalog", "internal/core",
-		"internal/flags", "internal/oauth", "internal/platform/clock", "internal/platform/netguard",
+		"internal/flags", "internal/oauth", "internal/platform/clock", "internal/platform/httpserver",
+		"internal/platform/netguard",
 	},
 	"internal/auth": {"golang.org/x/crypto", "internal/platform/clock"}, // argon2id
 	// The addresses' worker declares its Store and its Geocoder.
@@ -102,7 +103,7 @@ var allowed = map[string][]string{
 	},
 	"internal/debugui": {"net/http", "encoding/json", "internal/collector", "internal/platform/clock", "internal/volvo"},
 	// The front end's server knows runsten-api only by URL: it relays requests.
-	"internal/web": {"net/http"},
+	"internal/web": {"net/http", "internal/platform/httpserver"},
 
 	// Technical building blocks: no business code.
 	"internal/platform/clock":      nil,

@@ -22,6 +22,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"runsten/internal/platform/httpserver"
 )
 
 // Placeholders of web/index.html, filled by the server.
@@ -81,6 +83,9 @@ var relayed = []string{
 	"/api/", "/auth/",
 	"/.well-known/oauth-protected-resource", "/.well-known/oauth-authorization-server",
 }
+
+// uploadIdle is how long the sender of a long upload may pause, as runsten-api allows.
+const uploadIdle = time.Minute
 
 // longUpload tells the requests that send a file too large for the server's deadlines:
 // TeslaMate's backup.
@@ -197,10 +202,11 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, prefix) {
 			if longUpload(r) {
 				// A backup of a gigabyte takes minutes to send: the server's deadlines
-				// would cut it. runsten-api lifts its own, and bounds what it reads.
-				rc := http.NewResponseController(w)
-				_ = rc.SetReadDeadline(time.Time{})  // no deadline; an error: the server's own stand
-				_ = rc.SetWriteDeadline(time.Time{}) // as above
+				// would cut it, a sender that stalls is cut off still. runsten-api
+				// bounds what it reads.
+				if err := httpserver.IdleReads(w, r, uploadIdle); err != nil {
+					s.log.Warn("the deadlines of an upload are the server's", "err", err)
+				}
 			}
 			s.proxy.ServeHTTP(w, r)
 			return
