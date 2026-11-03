@@ -1,10 +1,50 @@
 ---
-description: "Import your car's trips and charges from before Runsten read it: from Aximote, with a personal access token, or from the files of the Volvo Data Portal (EU Data Act)."
+description: "Import your car's trips and charges from before Runsten read it: from a TeslaMate backup, from Aximote, with a personal access token, or from the files of the Volvo Data Portal (EU Data Act)."
 ---
 
 # Importing your history
 
-Runsten reads your car from the day you connect it. What came before may be in another app, or at Volvo Cars: Runsten imports it from **Aximote**, with a personal access token of its Pro offer, and from the files of the **Volvo Data Portal**, which Volvo Cars gives an owner in the EU who asks for their car's data.
+Runsten reads your car from the day you connect it. What came before may be in another app, or at Volvo Cars: Runsten imports it from a **TeslaMate** backup, from **Aximote**, with a personal access token of its Pro offer, and from the files of the **Volvo Data Portal**, which Volvo Cars gives an owner in the EU who asks for their car's data.
+
+## From TeslaMate
+
+A Tesla's years in [TeslaMate](https://github.com/teslamate-org/teslamate) come with it: Runsten reads the backup TeslaMate's documentation tells every user to make, without TeslaMate running nor its database being reachable. The import is in **beta**: it has been tried on a backup of four and a half years, TeslaMate 1.20 to 4.4; tell us if one of yours is refused.
+
+### Making the backup
+
+In the folder of TeslaMate's `docker-compose.yml`:
+
+```sh
+docker compose exec -T database pg_dump -U teslamate teslamate > teslamate.bck
+```
+
+Runsten reads that plain file, or the same gzipped (`teslamate.bck.gz`). A backup made with `pg_dump -Fc` (a custom-format archive) is refused: make it again without `-F`. It holds everything TeslaMate recorded, positions included: keep it as you keep TeslaMate's database, and delete the copy once imported.
+
+### Importing it
+
+From the web interface: open the vehicle's settings (the menu of its name in the bar), then **Imported history**, and under **Import from TeslaMate** press **Choose the backup**. Check **Import TeslaMate's costs** if they are in the account's currency: TeslaMate keeps none, and Runsten does not guess it. Then **Import**. The browser compresses the backup before sending it (a few years are about a gigabyte, several times less compressed): it still takes a few minutes on a slow connection, the page open. The report shows in the same place.
+
+On a self-hosted instance, the command line needs no upload at all, and the backup may even go straight from TeslaMate's database to Runsten:
+
+```sh
+docker compose exec -T database pg_dump -U teslamate teslamate \
+  | docker compose -f ~/runsten/compose.yaml run --rm -T api import teslamate --vin YOUR_VIN --currency EUR
+```
+
+or from a file, in Runsten's folder: `docker compose run --rm -T api import teslamate --vin YOUR_VIN < teslamate.bck`. `--vin` is the vehicle's, as Runsten lists it; `--currency` imports the costs in that currency, left out without it; `--user` names the user whose account holds the vehicle, on an instance of several. The report is logged at the end.
+
+Behind a reverse proxy, the web interface's upload must pass it: a large request body, and an answer that comes once the whole file is read ([Reverse proxy](../self-hosting/reverse-proxy.md#good-to-know): nothing to do with Caddy, two settings with nginx), or use the command line. A sender that stops for more than a minute is cut off.
+
+### What is imported
+
+Only the car with this vehicle's VIN: a backup of several cars imports the one that is this vehicle, never another. Runsten reads the backup as it comes and keeps nothing of it but what follows.
+
+- **Drives**: their exact times, distance, odometer, state of charge and rated range at both ends, the positions at both ends, the outside temperature, and their energy as TeslaMate counts it (the rated range used times the car's efficiency). No place names: Runsten names the positions as it names those it reads.
+- **Tracks**: TeslaMate's positions of each drive, at most 500 per drive, evenly kept. A track is fine-grained location data: Runsten keeps it with the trip, reads it only to draw it on the trip's map, and deletes it with the import.
+- **Charges**: their exact times, the position and the odometer, the state of charge, the energy the car counted into its battery, AC or DC (a fast charger, or AC phases), the highest current and the phases, the outside temperature, the rated range at both ends and the usable charge at the end, and the cost when asked for. With these, the [battery page](./battery.md#a-tesla) estimates the capacity at each imported charge as TeslaMate does: its years of capacity history come along.
+- **Not imported**: TeslaMate's other readings (Runsten reads its own), its geofences and addresses (set your [places](./costs.md) in Runsten), and its software updates, yet.
+
+As for the others, only what started before Runsten's first reading of the vehicle is imported; the report tells how many drives and charges were imported, how many were left because they start after that reading, and how many were unfinished or out of bounds (a drive TeslaMate never closed). Importing again replaces them, one by one, by TeslaMate's IDs; deleting the import removes every one, with the tracks.
 
 ## From Aximote
 

@@ -147,24 +147,33 @@ func inBounds(lat, lon float64) bool {
 }
 
 // track is the GeoJSON LineString of the waypoints between from and to, sorted by
-// time, those out of bounds left out; nil with fewer than two. Written by hand: the
-// importer knows no JSON, and a LineString is numbers only.
+// time, those out of bounds left out; nil with fewer than two.
 func track(waypoints []volvoportal.Waypoint, from, to time.Time) []byte {
 	i, _ := slices.BinarySearchFunc(waypoints, from, func(w volvoportal.Waypoint, t time.Time) int { return w.At.Compare(t) })
+	var coords [][2]float64
+	for ; i < len(waypoints) && !waypoints[i].At.After(to); i++ {
+		coords = append(coords, [2]float64{waypoints[i].Lon, waypoints[i].Lat})
+	}
+	return lineString(coords)
+}
+
+// lineString is the GeoJSON LineString of the coordinates, longitude first, those out
+// of bounds left out; nil with fewer than two. Written by hand: the importer knows no
+// JSON, and a LineString is numbers only.
+func lineString(coords [][2]float64) []byte {
 	b := []byte(`{"type":"LineString","coordinates":[`)
 	n := 0
-	for ; i < len(waypoints) && !waypoints[i].At.After(to); i++ {
-		w := waypoints[i]
-		if !inBounds(w.Lat, w.Lon) {
+	for _, c := range coords {
+		if !inBounds(c[1], c[0]) {
 			continue
 		}
 		if n > 0 {
 			b = append(b, ',')
 		}
 		b = append(b, '[')
-		b = strconv.AppendFloat(b, w.Lon, 'f', -1, 64)
+		b = strconv.AppendFloat(b, c[0], 'f', -1, 64)
 		b = append(b, ',')
-		b = strconv.AppendFloat(b, w.Lat, 'f', -1, 64)
+		b = strconv.AppendFloat(b, c[1], 'f', -1, 64)
 		b = append(b, ']')
 		n++
 	}

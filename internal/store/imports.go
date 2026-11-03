@@ -60,8 +60,10 @@ func saveImport(ctx context.Context, tx pgx.Tx, accountID, vehicleID string, tri
 			err := tx.QueryRow(ctx, `
 				INSERT INTO imported_trips (account_id, vehicle_id, source, source_id, started_at, ended_at,
 					distance_km, start_odometer_km, end_odometer_km, start_soc, end_soc, energy_kwh,
-					capacity_kwh, capacity_source, start_lat, start_lon, end_lat, end_lon, start_address, end_address)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+					capacity_kwh, capacity_source, start_lat, start_lon, end_lat, end_lon, start_address, end_address,
+					start_range_km, end_range_km, outside_temp_c)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+					$21, $22, $23)
 				ON CONFLICT (vehicle_id, source, source_id) DO UPDATE SET imported_at = now(),
 					started_at = EXCLUDED.started_at, ended_at = EXCLUDED.ended_at,
 					distance_km = EXCLUDED.distance_km, start_odometer_km = EXCLUDED.start_odometer_km,
@@ -69,12 +71,15 @@ func saveImport(ctx context.Context, tx pgx.Tx, accountID, vehicleID string, tri
 					energy_kwh = EXCLUDED.energy_kwh, capacity_kwh = EXCLUDED.capacity_kwh,
 					capacity_source = EXCLUDED.capacity_source, start_lat = EXCLUDED.start_lat,
 					start_lon = EXCLUDED.start_lon, end_lat = EXCLUDED.end_lat, end_lon = EXCLUDED.end_lon,
-					start_address = EXCLUDED.start_address, end_address = EXCLUDED.end_address
+					start_address = EXCLUDED.start_address, end_address = EXCLUDED.end_address,
+					start_range_km = EXCLUDED.start_range_km, end_range_km = EXCLUDED.end_range_km,
+					outside_temp_c = EXCLUDED.outside_temp_c
 				RETURNING id`,
 				accountID, vehicleID, imp.Source, imp.SourceID, t.Start.After, t.End.Before,
 				opt(t.DistanceKm), opt(t.StartOdometerKm), opt(t.EndOdometerKm), opt(t.StartSoC), opt(t.EndSoC),
 				opt(t.EnergyKWh), kwh, source, from[0], from[1], to[0], to[1],
-				nonEmpty(imp.StartAddress), nonEmpty(imp.EndAddress)).Scan(&id)
+				nonEmpty(imp.StartAddress), nonEmpty(imp.EndAddress),
+				opt(t.StartRangeKm), opt(t.EndRangeKm), opt(t.OutsideTempC)).Scan(&id)
 			if err != nil {
 				return fmt.Errorf("imported trip: %w", err)
 			}
@@ -107,18 +112,27 @@ func saveImport(ctx context.Context, tx pgx.Tx, accountID, vehicleID string, tri
 			_, err := tx.Exec(ctx, `
 				INSERT INTO imported_charges (account_id, vehicle_id, source, source_id, started_at, ended_at,
 					charge_type, start_soc, end_soc, energy_kwh, energy_soc_kwh, capacity_kwh, capacity_source,
-					average_power_kw, cost_minor, cost_currency, lat, lon, address)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+					average_power_kw, cost_minor, cost_currency, lat, lon, address,
+					start_range_km, end_range_km, end_usable_soc, energy_measured_kwh, max_current_a, phases,
+					outside_temp_c, odometer_km)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
+					$20, $21, $22, $23, $24, $25, $26, $27)
 				ON CONFLICT (vehicle_id, source, source_id) DO UPDATE SET imported_at = now(),
 					started_at = EXCLUDED.started_at, ended_at = EXCLUDED.ended_at, charge_type = EXCLUDED.charge_type,
 					start_soc = EXCLUDED.start_soc, end_soc = EXCLUDED.end_soc, energy_kwh = EXCLUDED.energy_kwh,
 					energy_soc_kwh = EXCLUDED.energy_soc_kwh, capacity_kwh = EXCLUDED.capacity_kwh,
 					capacity_source = EXCLUDED.capacity_source, average_power_kw = EXCLUDED.average_power_kw,
 					cost_minor = EXCLUDED.cost_minor, cost_currency = EXCLUDED.cost_currency,
-					lat = EXCLUDED.lat, lon = EXCLUDED.lon, address = EXCLUDED.address`,
+					lat = EXCLUDED.lat, lon = EXCLUDED.lon, address = EXCLUDED.address,
+					start_range_km = EXCLUDED.start_range_km, end_range_km = EXCLUDED.end_range_km,
+					end_usable_soc = EXCLUDED.end_usable_soc, energy_measured_kwh = EXCLUDED.energy_measured_kwh,
+					max_current_a = EXCLUDED.max_current_a, phases = EXCLUDED.phases,
+					outside_temp_c = EXCLUDED.outside_temp_c, odometer_km = EXCLUDED.odometer_km`,
 				accountID, vehicleID, imp.Source, imp.SourceID, c.Start.After, c.End.Before,
 				opt(c.Type), opt(c.StartSoC), opt(c.EndSoC), opt(c.EnergyPowerKWh), opt(c.EnergySoCKWh), kwh, source,
-				opt(c.AveragePowerKW), costMinor, currency, pos[0], pos[1], nonEmpty(imp.StartAddress))
+				opt(c.AveragePowerKW), costMinor, currency, pos[0], pos[1], nonEmpty(imp.StartAddress),
+				opt(c.StartRangeKm), opt(c.EndRangeKm), opt(c.EndUsableSoC), opt(c.EnergyMeasuredKWh),
+				opt(c.MaxCurrentA), opt(c.Phases), opt(c.OutsideTempC), opt(c.OdometerKm))
 			if err != nil {
 				return fmt.Errorf("imported charge: %w", err)
 			}

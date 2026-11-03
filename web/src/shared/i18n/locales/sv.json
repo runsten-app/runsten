@@ -188,7 +188,8 @@
       "aximote": "Importerad från Aximote",
       "volvoCsv": "Importerad från Volvo Cars-appen",
       "volvoDataPortal": "Importerad från Volvo Data Portal",
-      "other": "Importerad från {source}"
+      "other": "Importerad från {source}",
+      "teslamate": "Importerad från TeslaMate"
     },
     "importedHelp": "Importerad från en annan app, från innan Runsten läste fordonet: tider och siffror är den appens egna.",
     "importedTimesNote": "Tiderna är de som appen gav, på minuten eller bättre: inget intervall."
@@ -1697,6 +1698,41 @@
       "confirm": "Ta bort",
       "error": "Importen kunde inte tas bort. Försök igen om en stund.",
       "done": "{what}: borttagen."
+    },
+    "teslamate": {
+      "title": "Importera från TeslaMate",
+      "beta": "Beta",
+      "intro": "Din TeslaMate-historik följer med: resorna med sina spår, och laddningarna med sin räckvidd, som batterisidans kapacitetsuppskattningar bygger på. Bara bilen med det här fordonets VIN importeras, och bara det som började före fordonets första avläsning. En ny import ersätter den.",
+      "how": "Gör säkerhetskopian som TeslaMates dokumentation beskriver, i mappen med dess docker-compose.yml, och välj sedan filen här (den får vara gzip-komprimerad):",
+      "open": "Välj säkerhetskopian",
+      "backup": {
+        "label": "TeslaMate-säkerhetskopia",
+        "hint": "Filen som pg_dump skrev, till exempel teslamate.bck. Den komprimeras innan den skickas: en stor fil tar ändå några minuter."
+      },
+      "clear": "Ta bort säkerhetskopian",
+      "costs": "Importera TeslaMates kostnader, i {currency}",
+      "noCurrency": "TeslaMate sparar ingen valuta: välj kontots valuta i inställningarna för att importera kostnaderna.",
+      "start": "Importera",
+      "cancel": "Avbryt",
+      "compressing": "Komprimerar säkerhetskopian…",
+      "sending": "Skickar och läser säkerhetskopian…",
+      "done": "Importen är klar",
+      "report": {
+        "imported": "Inget importerat. | En resa eller laddning importerad. | {n} resor och laddningar importerade.",
+        "skipped": "En utelämnad: den börjar efter fordonets första avläsning ({date}). | {n} utelämnade: de börjar efter fordonets första avläsning ({date}).",
+        "invalid": "En utelämnad: oavslutad, eller ett värde utanför gränserna. | {n} utelämnade: oavslutade, eller ett värde utanför gränserna."
+      },
+      "error": {
+        "summary": "Säkerhetskopian importerades inte",
+        "required": "Välj säkerhetskopian.",
+        "file": "Det här är ingen TeslaMate-säkerhetskopia som Runsten kan läsa: gör den med kommandot ovan, utan -F, och skicka hela filen.",
+        "car": "Ingen bil i den här säkerhetskopian har det här fordonets VIN: är det rätt Teslas TeslaMate?",
+        "tooLarge": "Säkerhetskopian är större än 4 GB: komprimera den med gzip först.",
+        "active": "En säkerhetskopia av det här fordonet importeras redan.",
+        "busy": "Runsten läser andra säkerhetskopior. Försök igen om en minut.",
+        "network": "Runsten kunde inte nås. Försök igen om en stund.",
+        "internal": "Säkerhetskopian kunde inte importeras. Försök igen om en stund."
+      }
     }
   },
   "polestar": {

@@ -438,8 +438,8 @@ const (
 	importedTripColumns = `vehicle_id, imported_at, source || ':' || source_id, false,
 		started_at, started_at, ended_at, ended_at,
 		start_odometer_km, end_odometer_km, distance_km, start_soc, end_soc,
-		NULL, NULL, energy_kwh, start_lat, start_lon, end_lat, end_lon,
-		NULL, NULL, capacity_kwh, capacity_source, ARRAY[source], NULL,
+		start_range_km, end_range_km, energy_kwh, start_lat, start_lon, end_lat, end_lon,
+		NULL, NULL, capacity_kwh, capacity_source, ARRAY[source], outside_temp_c,
 		source, source_id, start_address, end_address
 		FROM imported_trips`
 	derivedTrips = `(SELECT ` + derivedTripColumns + `) trips`
@@ -462,8 +462,8 @@ const (
 		started_at, started_at, ended_at, ended_at,
 		charge_type, start_soc, end_soc, NULL, energy_soc_kwh, energy_kwh, lat, lon,
 		capacity_kwh, capacity_source, NULL, NULL, NULL,
-		NULL, NULL, NULL, ARRAY[source], NULL,
-		NULL, NULL, NULL, NULL, NULL, NULL,
+		NULL, NULL, odometer_km, ARRAY[source], energy_measured_kwh,
+		start_range_km, end_range_km, end_usable_soc, max_current_a, phases, outside_temp_c,
 		source, source_id, address, average_power_kw, cost_minor, cost_currency
 		FROM imported_charges`
 	derivedCharges = `(SELECT ` + derivedChargeColumns + `) charges`

@@ -21,6 +21,9 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
+
+	"runsten/internal/platform/httpserver"
 )
 
 // Placeholders of web/index.html, filled by the server.
@@ -79,6 +82,16 @@ func (t MapTiles) origin() (string, error) {
 var relayed = []string{
 	"/api/", "/auth/",
 	"/.well-known/oauth-protected-resource", "/.well-known/oauth-authorization-server",
+}
+
+// uploadIdle is how long the sender of a long upload may pause, as runsten-api allows.
+const uploadIdle = time.Minute
+
+// longUpload tells the requests that send a file too large for the server's deadlines:
+// TeslaMate's backup.
+func longUpload(r *http.Request) bool {
+	return r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/api/v1/vehicles/") &&
+		strings.HasSuffix(r.URL.Path, "/imports/teslamate")
 }
 
 // Config configures the handler.
@@ -187,6 +200,14 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, prefix := range relayed {
 		if strings.HasPrefix(r.URL.Path, prefix) {
+			if longUpload(r) {
+				// A backup of a gigabyte takes minutes to send: the server's deadlines
+				// would cut it, a sender that stalls is cut off still. runsten-api
+				// bounds what it reads.
+				if err := httpserver.IdleReads(w, r, uploadIdle); err != nil {
+					s.log.Warn("the deadlines of an upload are the server's", "err", err)
+				}
+			}
 			s.proxy.ServeHTTP(w, r)
 			return
 		}

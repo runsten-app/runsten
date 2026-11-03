@@ -318,7 +318,9 @@ type Server struct {
 	api     huma.API // the JSON API, and its OpenAPI document
 	// tokenLimiter bounds the rate of each access token's requests.
 	tokenLimiter *limiter
-	errorSchema  *huma.Schema // the body of the errors
+	// teslaMate are the TeslaMate backups being read.
+	teslaMate   teslaMateImports
+	errorSchema *huma.Schema // the body of the errors
 }
 
 // New creates the server.
@@ -348,6 +350,7 @@ func New(cfg Config) *Server {
 	s.registerImports(s.api)
 	s.registerImportJobs(s.api)
 	s.registerFileImports(s.api)
+	s.registerTeslaMate(s.api)
 	s.registerModel(s.api)
 	s.registerSheet(s.api)
 	s.registerDeletion(s.api)

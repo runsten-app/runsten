@@ -38,7 +38,7 @@ func receipt(kwh, eta float64) Value[BilledEnergy] {
 // est is the estimate a case expects, off the charge it comes from.
 func est(c Charge, source EstimateSource, spanSoC, kwh float64) CapacityEstimate {
 	return CapacityEstimate{
-		Charge: c.DetectedAt, At: c.End.Before, OdometerKm: c.OdometerKm, Type: c.Type,
+		Charge: c.DetectedAt, Import: c.Import, At: c.End.Before, OdometerKm: c.OdometerKm, Type: c.Type,
 		Source: source, SpanSoC: spanSoC, CapacityKWh: kwh,
 	}
 }
@@ -50,7 +50,7 @@ func checkEstimates(t *testing.T, got, want []CapacityEstimate) {
 	}
 	for i, w := range want {
 		g := got[i]
-		if g.Charge != w.Charge || g.At != w.At || g.Source != w.Source || g.SpanSoC != w.SpanSoC ||
+		if g.Import != w.Import || g.Charge != w.Charge || g.At != w.At || g.Source != w.Source || g.SpanSoC != w.SpanSoC ||
 			g.OdometerKm != w.OdometerKm || g.Type != w.Type || math.Abs(g.CapacityKWh-w.CapacityKWh) > 1e-9 {
 			t.Errorf("estimate %d:\n got %+v\nwant %+v", i, g, w)
 		}
@@ -640,6 +640,13 @@ func rated(at time.Time, from, to, usable, range0, range1, kwh float64) Charge {
 	return c
 }
 
+// importedRated is c imported from TeslaMate: no span, its exact times.
+func importedRated(c Charge, id string) Charge {
+	c.Import = known(Import{Source: "teslamate", SourceID: id})
+	c.Span, c.Start.After, c.End.After = Value[PowerSpan]{}, c.Start.Before, c.End.Before
+	return c
+}
+
 func TestRatedEfficiency(t *testing.T) {
 	at := time.Date(2026, 9, 28, 20, 0, 0, 0, time.UTC)
 	ok := rated(at, 40, 80, 80, 200, 400, 30) // 0.15 kWh per km
@@ -722,6 +729,13 @@ func TestRatedEstimates(t *testing.T) {
 			c.EnergyMeasuredKWh = Value[float64]{}
 			return c
 		}()}, []CapacityEstimate{est(a, EstimatePower, 40, 75)}, CapacityExcluded{NoEfficiency: 1}},
+
+		// An imported charge (TeslaMate's) has no readings to integrate, so no power
+		// estimate, which is no exclusion either; its rated one stands, and measures the
+		// efficiency. Two imported at the same time are told apart by their import.
+		{"imported", []Charge{importedRated(a, "2"), importedRated(a, "1")}, []CapacityEstimate{
+			est(importedRated(a, "1"), EstimateRated, 80, 75), est(importedRated(a, "2"), EstimateRated, 80, 75),
+		}, CapacityExcluded{}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			tr, err := CapacityTrend(tt.charges, nil, nil, net75, DefaultParams(), DefaultCapacityParams(), nil)

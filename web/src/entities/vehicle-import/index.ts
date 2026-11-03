@@ -3,6 +3,8 @@ export {
   fetchAximoteVehicles,
   fetchImportJob,
   fetchImports,
+  gzipped,
+  importTeslaMate,
   importVolvoDataPortal,
   startAximoteImport,
 } from './api/importApi'

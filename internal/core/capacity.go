@@ -175,8 +175,10 @@ type BilledEnergy struct {
 // CapacityEstimate is one estimate of the battery capacity, from one charge: the
 // energy it took over the SoC change it raised.
 type CapacityEstimate struct {
-	// Charge identifies the charge the estimate comes from: its detection time.
+	// Charge identifies the charge the estimate comes from: its detection time, or its
+	// import for an imported one.
 	Charge time.Time
+	Import Value[Import]
 	// At is when the charge ended at the latest: the date the estimate is plotted at.
 	At time.Time
 	// OdometerKm is the charge's: the estimate is plotted against it too. Absent when
@@ -318,10 +320,13 @@ func CapacityTrend(charges []Charge, billed []Value[BilledEnergy], trips []Trip,
 	}
 	efficiency := cp.ratedEfficiency(charges, p)
 	for i, c := range charges {
-		head := CapacityEstimate{Charge: c.DetectedAt, At: c.End.Before, OdometerKm: c.OdometerKm, Type: c.Type}
+		head := CapacityEstimate{Charge: c.DetectedAt, Import: c.Import, At: c.End.Before, OdometerKm: c.OdometerKm, Type: c.Type}
 		e := head
 		e.Source = EstimatePower
 		switch {
+		case c.Import.OK:
+			// An imported charge comes without its readings: no span to integrate, nothing
+			// to count against it. Its rated estimate stands.
 		case c.Reconstructed:
 			excluded.Reconstructed++
 		case !c.EnergyPowerKWh.OK:
@@ -393,6 +398,7 @@ func CapacityTrend(charges []Charge, billed []Value[BilledEnergy], trips []Trip,
 		return cmp.Or(
 			a.At.Compare(b.At),
 			a.Charge.Compare(b.Charge),
+			cmp.Compare(a.Import.V.Source+":"+a.Import.V.SourceID, b.Import.V.Source+":"+b.Import.V.SourceID),
 			cmp.Compare(a.Source.rank(), b.Source.rank()),
 		)
 	})

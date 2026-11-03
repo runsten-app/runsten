@@ -19,8 +19,8 @@ afterEach(() => {
   wrapper = undefined
 })
 
-async function mounted(volvo: boolean) {
-  wrapper = mountWith(ImportSources, { props: { vehicle: 'v1', volvo } }).wrapper
+async function mounted(volvo: boolean, tesla = false) {
+  wrapper = mountWith(ImportSources, { props: { vehicle: 'v1', volvo, tesla } }).wrapper
   await flushPromises()
   return wrapper
 }
@@ -42,5 +42,13 @@ describe('ImportSources', () => {
     const w = await mounted(false)
     expect(w.findAll('h4').map((h) => h.text())).toEqual(['Import from Aximote Beta'])
     expect(w.find('.portal-import').exists()).toBe(false)
+  })
+
+  it('offers TeslaMate first to a Tesla', async () => {
+    const w = await mounted(false, true)
+    expect(w.findAll('h4').map((h) => h.text())).toEqual([
+      'Import from TeslaMate Beta',
+      'Import from Aximote Beta',
+    ])
   })
 })

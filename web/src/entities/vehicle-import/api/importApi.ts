@@ -71,3 +71,41 @@ export async function importVolvoDataPortal(
     }),
   )
 }
+
+// isGzip tells a file gzip already compressed, by its first bytes.
+async function isGzip(file: Blob): Promise<boolean> {
+  const head = new Uint8Array(await file.slice(0, 2).arrayBuffer())
+  return head[0] === 0x1f && head[1] === 0x8b
+}
+
+// gzipped compresses the backup before it is sent: TeslaMate's is several times smaller
+// so. Without CompressionStream, or already gzipped, it goes as it is.
+export async function gzipped(file: Blob): Promise<{ body: Blob; type: string }> {
+  if (await isGzip(file)) return { body: file, type: 'application/gzip' }
+  if (typeof CompressionStream === 'undefined')
+    return { body: file, type: 'application/octet-stream' }
+  const stream = file.stream().pipeThrough(new CompressionStream('gzip'))
+  return { body: await new Response(stream).blob(), type: 'application/gzip' }
+}
+
+// importTeslaMate imports the history of the vehicle's car in a TeslaMate backup, its
+// charges' costs in currency when given. compressed is told once the backup is ready to
+// send. Written at once: the report comes back.
+export async function importTeslaMate(
+  vehicle: string,
+  backup: File,
+  currency?: string,
+  compressed?: () => void,
+): Promise<FileImport> {
+  const { body, type } = await gzipped(backup)
+  compressed?.()
+  return unwrap(
+    api.POST('/vehicles/{vehicle}/imports/teslamate', {
+      params: { path: { vehicle }, query: currency ? { currency } : {} },
+      // The generated type names the body as a string: the file is sent as it is.
+      body: body as unknown as string,
+      bodySerializer: (b) => b as unknown as Blob,
+      headers: { 'Content-Type': type },
+    }),
+  )
+}

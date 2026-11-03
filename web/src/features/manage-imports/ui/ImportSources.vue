@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import AximoteImport from './AximoteImport.vue'
+import TeslaMateImport from './TeslaMateImport.vue'
 import VolvoDataPortalImport from './VolvoDataPortalImport.vue'
 
-// ImportSources adds to a vehicle's history: from Aximote or, for a Volvo, from the files
-// of the Volvo Data Portal. One tile, each source a part of it with its latest report and
-// its form; what was imported is listed apart (ImportList).
-const props = withDefaults(defineProps<{ vehicle: string; volvo?: boolean }>(), { volvo: true })
+// ImportSources adds to a vehicle's history: from Aximote, for a Volvo from the files of
+// the Volvo Data Portal, for a Tesla from a TeslaMate backup. One tile, each source a part
+// of it with its latest report and its form; what was imported is listed apart
+// (ImportList).
+const props = withDefaults(defineProps<{ vehicle: string; volvo?: boolean; tesla?: boolean }>(), {
+  volvo: true,
+  tesla: false,
+})
 const { t } = useI18n()
 const titleId = 'import-sources-title'
 </script>
@@ -17,6 +22,10 @@ const titleId = 'import-sources-title'
       {{ t('imports.addTitle') }}
     </v-card-title>
     <v-card-text class="pt-0">
+      <template v-if="tesla">
+        <TeslaMateImport :vehicle="props.vehicle" />
+        <v-divider class="my-6" />
+      </template>
       <AximoteImport :vehicle="props.vehicle" />
       <template v-if="volvo">
         <v-divider class="my-6" />

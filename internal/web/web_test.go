@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 )
 
 const indexHTML = `<!doctype html><html><head>
@@ -341,5 +342,48 @@ func TestRelayUnavailable(t *testing.T) {
 	rec = do(t, h, http.MethodGet, "/auth/volvo/start", nil)
 	if rec.Code != http.StatusBadGateway || strings.Contains(rec.Body.String(), "{") {
 		t.Errorf("auth: %d %q", rec.Code, rec.Body.String())
+	}
+}
+
+// TestLongUpload: the backup's upload outlasts the server's read deadline, which the
+// relay lifts for it alone.
+func TestLongUpload(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		_, _ = w.Write(b)
+	}))
+	defer backend.Close()
+	api, _ := url.Parse(backend.URL)
+	front := httptest.NewUnstartedServer(newServer(t, api, ""))
+	front.Config.ReadTimeout = 100 * time.Millisecond
+	front.Start()
+	defer front.Close()
+
+	send := func(path string) (string, error) {
+		pr, pw := io.Pipe()
+		go func() {
+			_, _ = pw.Write([]byte("first,"))
+			time.Sleep(300 * time.Millisecond) // past the read deadline
+			_, _ = pw.Write([]byte("then"))
+			_ = pw.Close()
+		}()
+		req, _ := http.NewRequestWithContext(t.Context(), http.MethodPost, front.URL+path, pr)
+		req.Header.Set("Content-Type", "application/octet-stream")
+		resp, err := front.Client().Do(req)
+		if err != nil {
+			return "", err
+		}
+		defer func() { _ = resp.Body.Close() }()
+		b, _ := io.ReadAll(resp.Body)
+		return resp.Status + " " + string(b), nil
+	}
+	if got, err := send("/api/v1/vehicles/v/imports/teslamate"); err != nil || got != "200 OK first,then" {
+		t.Errorf("the backup: %q, %v", got, err)
+	}
+	if got, err := send("/api/v1/vehicles/v/imports/volvo_data_portal"); err == nil && got == "200 OK first,then" {
+		t.Error("another upload outlasts the deadline")
 	}
 }

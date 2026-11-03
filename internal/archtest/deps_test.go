@@ -29,7 +29,7 @@ var allowed = map[string][]string{
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/catalog", "internal/core",
 		"internal/derive", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
 		"internal/platform", "internal/polestar", "internal/polestarid", "internal/release", "internal/store", "internal/tesla",
-		"internal/volvo", "internal/volvoportal",
+		"internal/teslamate", "internal/volvo", "internal/volvoportal",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
@@ -61,14 +61,18 @@ var allowed = map[string][]string{
 	// the flags' declarations (never flags/eval: depguard).
 	"internal/api": {
 		"net/http", "encoding/json", "github.com/danielgtaylor/huma/v2", "internal/auth", "internal/catalog", "internal/core",
-		"internal/flags", "internal/oauth", "internal/platform/clock", "internal/platform/netguard",
+		"internal/flags", "internal/oauth", "internal/platform/clock", "internal/platform/httpserver",
+		"internal/platform/netguard",
 	},
 	"internal/auth": {"golang.org/x/crypto", "internal/platform/clock"}, // argon2id
 	// The addresses' worker declares its Store and its Geocoder.
 	"internal/geocode": {"internal/core", "internal/platform/clock"},
 	// The import worker declares its Store and its Source, Aximote's client, whose
-	// values it converts, as it converts the Volvo Data Portal's files.
-	"internal/importer": {"internal/aximote", "internal/core", "internal/platform/clock", "internal/volvoportal"},
+	// values it converts, as it converts the Volvo Data Portal's files and TeslaMate's
+	// backup.
+	"internal/importer": {
+		"internal/aximote", "internal/core", "internal/platform/clock", "internal/teslamate", "internal/volvoportal",
+	},
 	// What is published to an MQTT broker, built from the domain: neither network nor
 	// database; Home Assistant's discovery configurations are JSON.
 	"internal/publish": {"encoding/json", "internal/core"},
@@ -85,6 +89,7 @@ var allowed = map[string][]string{
 	// The vendors' pictures of the vehicles, relayed to the browser.
 	"internal/picture":     {"net/http", "internal/platform/clock"},
 	"internal/volvoportal": nil,
+	"internal/teslamate":   nil,
 	// The only package that knows paho.
 	"internal/publish/mqtt": {
 		"github.com/eclipse/paho.mqtt.golang", "internal/core", "internal/platform/clock", "internal/platform/netguard",
@@ -98,7 +103,7 @@ var allowed = map[string][]string{
 	},
 	"internal/debugui": {"net/http", "encoding/json", "internal/collector", "internal/platform/clock", "internal/volvo"},
 	// The front end's server knows runsten-api only by URL: it relays requests.
-	"internal/web": {"net/http"},
+	"internal/web": {"net/http", "internal/platform/httpserver"},
 
 	// Technical building blocks: no business code.
 	"internal/platform/clock":      nil,
