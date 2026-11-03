@@ -43,8 +43,11 @@ const live = computed(() => (open.value?.id === props.id ? open.value : null))
       {{ t('charge.back') }}
     </v-btn>
     <v-progress-linear v-if="isPending" indeterminate :aria-label="t('charge.loading')" />
-    <ChargeInProgressDetails v-else-if="live" :charge="live" />
-    <ChargeDetails v-else :id="id" :vehicle="vehicle" :in-progress-failed="!!openError" />
-    <ChargeCurve v-if="!isPending" :id="id" :vehicle="vehicle" :live class="mt-4" />
+    <ChargeInProgressDetails v-else-if="live" :charge="live">
+      <ChargeCurve :id="id" :vehicle="vehicle" :live class="mb-4" />
+    </ChargeInProgressDetails>
+    <ChargeDetails v-else :id="id" :vehicle="vehicle" :in-progress-failed="!!openError">
+      <ChargeCurve :id="id" :vehicle="vehicle" :live class="mb-4" />
+    </ChargeDetails>
   </AppShell>
 </template>

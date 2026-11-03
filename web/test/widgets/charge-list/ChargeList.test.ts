@@ -103,7 +103,9 @@ describe('ChargeList', () => {
     fetchCharges.mockResolvedValue(charges)
     const w = await mounted()
     const [seen, reconstructed] = w.findAll('a.charge-summary')
-    expect(seen?.find('.event-when').text()).toBe('18:20–18:30 → 21:55–21:56')
+    expect(seen?.find('.event-when').text()).toBe('18:20–18:30 → 21:56')
+    // At a place: the line names it.
+    expect(seen?.find('.where').text()).toBe('Maison de Tante Agathe')
     expect(plain(seen?.find('.figures').text())).toBe(
       'AC · 47% → 80% · 3 hrs, 25 mins – 3 hrs, 36 mins',
     )
@@ -112,6 +114,8 @@ describe('ChargeList', () => {
     )
     expect(reconstructed?.find('.event-when').text()).toBe('Happened between 01:00 and 04:00')
     expect(plain(reconstructed?.find('.figures').text())).toBe('40% → 62%')
+    // Neither a place nor an address: no line for it.
+    expect(reconstructed?.find('.where').exists()).toBe(false)
     expect(reconstructed?.find('.reconstructed').exists()).toBe(true)
     expect(w.find('.end').text()).toBe('No more charges.')
   })

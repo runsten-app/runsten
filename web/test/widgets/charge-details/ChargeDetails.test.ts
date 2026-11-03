@@ -66,7 +66,7 @@ describe('ChargeDetails', () => {
     expect(w.find('h1').text()).toBe('Charge')
     expect(facts(w, 'when')).toEqual({
       Start: '18:20–18:30',
-      End: '21:55–21:56',
+      End: '21:56',
       Duration: '3 hrs, 25 mins – 3 hrs, 36 mins',
     })
     expect(facts(w, 'figures')).toEqual({

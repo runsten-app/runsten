@@ -4,7 +4,7 @@ description: "Read the trips and charges of your car in Runsten: times as ranges
 
 # Trips and charges
 
-The **Trips** and **Charges** tabs list the events of a period, by day, newest first, under a line of totals: "3 trips started in the period · 73 km · 18.8 kWh/100 km (estimated)". The period stays in the address of the page: a link to it opens the same list. Above each list, its CSV files: the events of the period, and every value the car reported over it ([Exporting your data](./exporting.md)).
+The **Trips** and **Charges** tabs list the events of a period, by day, newest first, under a line of totals: "3 trips started in the period · 73 km · 18.8 kWh/100 km (estimated)". Each line names where the event happened when a place or an address does: a trip from where to where, a charge where it took place. The period stays in the address of the page: a link to it opens the same list. Above each list, its CSV files: the events of the period, and every value the car reported over it ([Exporting your data](./exporting.md)).
 
 <Screen view="trips" alt="The Trips tab: the trips of a period, by day, under their totals." />
 
@@ -16,7 +16,7 @@ Beside the period, the **Charges** tab chooses a place: one of your places, **El
 
 The car is read every few minutes, never continuously. So a time is the two readings around it:
 
-- **"06:55–07:01 → 07:40"**: the trip started between 06:55 and 07:01, and ended at 07:40. Two readings less than a minute apart give one time, the nearest minute to their middle: the minutes shown would tell nothing finer.
+- **"06:55–07:01 → 07:40"**: the trip started between 06:55 and 07:01, and ended at 07:40. Two readings up to two minutes apart give one time, the nearest minute to their middle: two neighbouring minutes would tell nothing worth reading.
 - **A Tesla** parked a few minutes is left alone for 15 minutes, so that it may fall asleep: reading it keeps it awake and drains its battery. A trip started meanwhile is seen at its first reading on the way, and its start spans the window: "20:35–20:50".
 - **A duration** is every value those bounds allow: "38–45 min".
 - **A trip that never moved**, the car put in drive and back without its odometer or its position changing (to unplug, say), is not a trip.
@@ -42,7 +42,7 @@ A Tesla also measures the energy that goes into its battery during a charge: the
 
 <Screen view="charge" alt="A charge at home: its energy, its place and its cost." />
 
-A charge shows its type (AC or DC), its energy, its place (or "Outside any place") and, once a currency is chosen, its cost. For a car that tells its current (a Tesla on AC, a Polestar), it shows the highest current read during the charge and, for a Tesla, the phases it drew on: a charge on three phases from one on a single phase. A Volvo tells neither. See [Places, tariffs and costs](./costs.md).
+A charge shows its curve first, the power and the state of charge over its time, then its figures: its type (AC or DC), its energy, its place (or "Outside any place") and, once a currency is chosen, its cost. For a car that tells its current (a Tesla on AC, a Polestar), it shows the highest current read during the charge and, for a Tesla, the phases it drew on: a charge on three phases from one on a single phase. A Volvo tells neither. See [Places, tariffs and costs](./costs.md).
 
 ## A charge in progress
 

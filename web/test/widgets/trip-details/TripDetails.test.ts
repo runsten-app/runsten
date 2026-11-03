@@ -83,7 +83,7 @@ describe('TripDetails', () => {
     expect(w.find('header').text()).toContain('Monday, 28 September')
     expect(facts(w, 'when')).toEqual({
       Start: '06:55–07:01',
-      End: '07:39–07:40',
+      End: '07:40',
       Duration: '38–45 mins',
     })
     expect(facts(w, 'figures')).toEqual({
@@ -281,7 +281,7 @@ describe('TripDetails', () => {
     expect(w.find('header').text()).toContain('lundi 28 septembre 2026')
     expect(facts(w, 'when')).toEqual({
       Début: '06:55 – 07:01',
-      Fin: '07:39 – 07:40',
+      Fin: '07:40',
       Durée: '38–45 min',
     })
   })

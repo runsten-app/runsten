@@ -35,7 +35,7 @@ describe('TripList', () => {
     const w = await mounted({}, `/vehicles/${vehicle}/trips?from=2026-09-28`)
     expect(w.find('h2').text()).toBe('Monday, 28 September 2026')
     const row = w.find('a.trip-summary')
-    expect(row.find('.event-when').text()).toBe('06:55–07:01 → 07:39–07:40')
+    expect(row.find('.event-when').text()).toBe('06:55–07:01 → 07:40')
     expect(plain(row.find('.figures').text())).toBe('32 km · 38–45 mins · 62% → 55%')
     // It starts at a place: the route names it, and reads as words.
     expect(row.find('.route [aria-hidden]').text()).toBe('Maison de Tante Agathe → Elsewhere')

@@ -6,8 +6,8 @@ import { useFormat } from '@/shared/lib'
 import { EventWhen, ImportedBadge, ReconstructedBadge, SpokenText } from '@/shared/ui'
 import type { Charge } from '../model/Charge'
 
-// ChargeSummary is a charge in a list, a link to its details: when, how much, how long,
-// and its cost when it is known (an unknown one is told in the details).
+// ChargeSummary is a charge in a list, a link to its details: when, where when a place
+// or an address names it, how much, how long, and its cost when it is known (an unknown one is told in the details).
 const props = defineProps<{ charge: Charge; to: RouteLocationRaw; day?: string }>()
 const { t } = useI18n()
 const f = useFormat()
@@ -25,11 +25,12 @@ const figures = computed(() => {
   if (!c.reconstructed) out.push(f.duration(c.start, c.end))
   return out.join(' · ')
 })
+const where = computed(() => props.charge.place?.name ?? props.charge.address)
 const cost = computed(() => (props.charge.cost ? f.chargeCost(props.charge.cost) : null))
 </script>
 
 <template>
-  <v-list-item :to="to" lines="two" class="charge-summary">
+  <v-list-item :to="to" :lines="where ? 'three' : 'two'" class="charge-summary">
     <v-list-item-title class="text-title-medium">
       <EventWhen
         :start="charge.start"
@@ -38,6 +39,7 @@ const cost = computed(() => (props.charge.cost ? f.chargeCost(props.charge.cost)
         :day
       />
     </v-list-item-title>
+    <v-list-item-subtitle v-if="where" class="where">{{ where }}</v-list-item-subtitle>
     <v-list-item-subtitle class="figures">{{ figures }}</v-list-item-subtitle>
     <template v-if="charge.reconstructed || charge.imported || cost" #append>
       <div class="d-flex flex-column align-end ga-1">

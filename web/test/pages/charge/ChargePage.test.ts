@@ -1,8 +1,9 @@
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent } from 'vue'
+import { defineComponent, h } from 'vue'
 import { ChargePage } from '@/pages/charge'
 import { ApiError } from '@/shared/api'
+import charge from '@fixtures/charge.json'
 import charging from '@fixtures/charging.json'
 import settings from '@fixtures/settings.json'
 import { mountWith, testRouter } from '@test/utils'
@@ -21,7 +22,7 @@ vi.mock('@/widgets/charge-curve', () => ({
       id: { type: String, required: true },
       live: { type: Object, default: null },
     },
-    render: () => null,
+    render: () => h('div', { class: 'charge-curve' }),
   }),
 }))
 vi.mock('@/entities/settings', async (original) => ({
@@ -61,11 +62,19 @@ describe('ChargePage', () => {
       '/vehicles/v1/charges?to=2026-09-30&place=outside',
     )
     expect(wrapper.find('.v-tab[aria-current="page"]').text()).toBe('Charges')
-    expect(wrapper.findComponent({ name: 'ChargeCurve' }).props()).toEqual({
-      vehicle: 'v1',
-      id: 'nope',
-      live: null,
-    })
+    // No charge, no curve.
+    expect(wrapper.findComponent({ name: 'ChargeCurve' }).exists()).toBe(false)
+  })
+
+  // The curve sums the charge up: it comes first, above the figures, without scrolling.
+  it('shows the curve of the charge above its figures', async () => {
+    fetchCharge.mockResolvedValue(charge)
+    const wrapper = await mounted(charge.id)
+    const curve = wrapper.findComponent({ name: 'ChargeCurve' })
+    expect(curve.props()).toEqual({ vehicle: 'v1', id: charge.id, live: null })
+    expect(wrapper.find('.charge-details > .v-row').element.previousElementSibling).toBe(
+      curve.element,
+    )
   })
 
   // Without the charge in progress, an ID not found may be that of a charge still open:
@@ -86,6 +95,11 @@ describe('ChargePage', () => {
     const wrapper = await mounted(charging.charge?.id ?? '')
     expect(fetchCharge).not.toHaveBeenCalled()
     expect(wrapper.find('.charge-in-progress h1').text()).toBe('Charge in progress')
-    expect(wrapper.findComponent({ name: 'ChargeCurve' }).props('live')).toEqual(charging.charge)
+    const curve = wrapper.findComponent({ name: 'ChargeCurve' })
+    expect(curve.props('live')).toEqual(charging.charge)
+    // Its curve first too, above its cards.
+    expect(wrapper.find('.charge-in-progress > .v-row').element.previousElementSibling).toBe(
+      curve.element,
+    )
   })
 })
