@@ -188,7 +188,8 @@
       "aximote": "Importé d'Aximote",
       "volvoCsv": "Importé de l'app Volvo Cars",
       "volvoDataPortal": "Importé du Volvo Data Portal",
-      "other": "Importé de {source}"
+      "other": "Importé de {source}",
+      "teslamate": "Importé de TeslaMate"
     },
     "importedHelp": "Importé d'une autre app, d'avant que Runsten ne lise le véhicule : ses heures et ses chiffres sont ceux de cette app.",
     "importedTimesNote": "Les heures sont celles que l'app a données, à la minute ou mieux : pas d'intervalle."
@@ -1697,6 +1698,41 @@
       "confirm": "Supprimer",
       "error": "L'import n'a pas pu être supprimé. Réessayez dans un instant.",
       "done": "{what} : supprimé."
+    },
+    "teslamate": {
+      "title": "Importer depuis TeslaMate",
+      "beta": "Bêta",
+      "intro": "Votre historique TeslaMate vous suit : ses trajets avec leurs tracés, et ses charges avec leur autonomie, sur laquelle reposent les estimations de capacité de la page Batterie. Seule la voiture qui a le VIN de ce véhicule est importée, et seulement ce qui a commencé avant la première lecture du véhicule. Importer à nouveau le remplace.",
+      "how": "Faites la sauvegarde comme le dit la documentation de TeslaMate, dans le dossier de son docker-compose.yml, puis choisissez le fichier ici (il peut être compressé en gzip) :",
+      "open": "Choisir la sauvegarde",
+      "backup": {
+        "label": "Sauvegarde TeslaMate",
+        "hint": "Le fichier écrit par pg_dump, comme teslamate.bck. Il est compressé avant l'envoi : un gros fichier prend tout de même quelques minutes."
+      },
+      "clear": "Retirer la sauvegarde",
+      "costs": "Importer les coûts de TeslaMate, en {currency}",
+      "noCurrency": "TeslaMate ne garde aucune devise : choisissez celle du compte dans les réglages pour importer ses coûts.",
+      "start": "Importer",
+      "cancel": "Annuler",
+      "compressing": "Compression de la sauvegarde…",
+      "sending": "Envoi et lecture de la sauvegarde…",
+      "done": "Import terminé",
+      "report": {
+        "imported": "Rien d'importé. | Un trajet ou une charge importé. | {n} trajets et charges importés.",
+        "skipped": "Un laissé de côté : il commence après la première lecture du véhicule ({date}). | {n} laissés de côté : ils commencent après la première lecture du véhicule ({date}).",
+        "invalid": "Un laissé de côté : inachevé, ou une valeur hors limites. | {n} laissés de côté : inachevés, ou une valeur hors limites."
+      },
+      "error": {
+        "summary": "La sauvegarde n'a pas été importée",
+        "required": "Choisissez la sauvegarde.",
+        "file": "Ce n'est pas une sauvegarde TeslaMate que Runsten sait lire : faites-la avec la commande ci-dessus, sans -F, et envoyez le fichier entier.",
+        "car": "Aucune voiture de cette sauvegarde n'a le VIN de ce véhicule : est-ce bien le TeslaMate de cette Tesla ?",
+        "tooLarge": "La sauvegarde dépasse 4 Go : compressez-la d'abord en gzip.",
+        "active": "Une sauvegarde de ce véhicule est déjà en cours d'import.",
+        "busy": "Runsten lit d'autres sauvegardes. Réessayez dans une minute.",
+        "network": "Runsten est injoignable. Réessayez dans un instant.",
+        "internal": "La sauvegarde n'a pas pu être importée. Réessayez dans un instant."
+      }
     }
   },
   "polestar": {

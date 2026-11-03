@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, toValue, watch, type MaybeRefOrGetter } from 'vue'
+import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
+import { fetchSettings, settingsKeys } from '@/entities/settings'
 import {
   fetchAximoteVehicles,
   fetchImportJob,
   importKeys,
+  importTeslaMate,
   importVolvoDataPortal,
   isActive,
   startAximoteImport,
@@ -58,4 +60,31 @@ export function useImportVolvoDataPortal(vehicle: MaybeRefOrGetter<string>) {
     onSuccess: () => afterImportChange(queryClient, toValue(vehicle)),
   })
   return { importFiles: mutateAsync, isPending, error, reset }
+}
+
+// useImportTeslaMate imports a TeslaMate backup; once written, what it imported is read
+// again everywhere. phase tells whether the backup is being compressed or sent.
+export function useImportTeslaMate(vehicle: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient()
+  const phase = ref<'compressing' | 'sending' | null>(null)
+  const { mutateAsync, isPending, error, reset } = useMutation({
+    mutationFn: (p: { backup: File; currency?: string }) => {
+      phase.value = 'compressing'
+      return importTeslaMate(toValue(vehicle), p.backup, p.currency, () => {
+        phase.value = 'sending'
+      })
+    },
+    onSuccess: () => afterImportChange(queryClient, toValue(vehicle)),
+    onSettled: () => {
+      phase.value = null
+    },
+  })
+  return { importBackup: mutateAsync, isPending, phase, error, reset }
+}
+
+// useAccountCurrency is the account's currency, null without one: TeslaMate's costs are
+// imported in it, when the user says they are.
+export function useAccountCurrency() {
+  const { data } = useQuery({ queryKey: settingsKeys.current(), queryFn: fetchSettings })
+  return computed(() => data.value?.currency?.code ?? null)
 }

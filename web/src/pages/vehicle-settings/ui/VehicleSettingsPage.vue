@@ -72,8 +72,12 @@ const titleId = computed(() => `vehicle-settings-${props.area}-title`)
         </div>
         <div v-else-if="current" class="tiles">
           <ImportList :vehicle />
-          <!-- The Volvo Data Portal's files are a Volvo's history: none of a Polestar. -->
-          <ImportSources :vehicle :volvo="current.connection.provider === 'volvo'" />
+          <!-- The Volvo Data Portal's files are a Volvo's history, TeslaMate's a Tesla's. -->
+          <ImportSources
+            :vehicle
+            :volvo="current.connection.provider === 'volvo'"
+            :tesla="current.connection.provider === 'tesla'"
+          />
         </div>
       </section>
     </div>

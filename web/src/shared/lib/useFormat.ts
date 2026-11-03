@@ -146,6 +146,8 @@ export function useFormat() {
           return t('event.importedFrom.volvoCsv')
         case 'volvo_data_portal':
           return t('event.importedFrom.volvoDataPortal')
+        case 'teslamate':
+          return t('event.importedFrom.teslamate')
         default:
           return t('event.importedFrom.other', { source })
       }
