@@ -444,3 +444,17 @@ func TestBatteryJSON(t *testing.T) {
 		wantError(t, body, "invalid_parameter")
 	})
 }
+
+// An imported charge's estimate leads to it by its import: its detection time is the
+// import's, the same for every event of it.
+func TestEstimateOfImported(t *testing.T) {
+	at := time.Date(2026, 9, 28, 20, 0, 0, 0, time.UTC)
+	e := core.CapacityEstimate{Charge: at, At: at, Source: core.EstimateRated, SpanSoC: 80, CapacityKWh: 75}
+	if got := estimateOf(e).Charge; got != "2026-09-28T20:00:00.000000Z" {
+		t.Errorf("derived: %s", got)
+	}
+	e.Import = some(core.Import{Source: "teslamate", SourceID: "42"})
+	if got := estimateOf(e).Charge; got != "teslamate:42" {
+		t.Errorf("imported: %s", got)
+	}
+}

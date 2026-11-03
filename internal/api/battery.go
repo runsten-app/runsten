@@ -125,8 +125,12 @@ func changeOf(c core.CapacityChange) capacityChangeJSON {
 }
 
 func estimateOf(e core.CapacityEstimate) capacityEstimateJSON {
+	id := e.Charge.UTC().Format(idFormat)
+	if e.Import.OK {
+		id = e.Import.V.Source + ":" + e.Import.V.SourceID
+	}
 	return capacityEstimateJSON{
-		Charge: e.Charge.UTC().Format(idFormat), At: e.At, OdometerKm: opt(e.OdometerKm, same),
+		Charge: id, At: e.At, OdometerKm: opt(e.OdometerKm, same),
 		Source: estimateSourceJSON(e.Source), Type: nullOf(e.Type, text[core.ChargeType, chargeTypeJSON]),
 		SpanSoC: e.SpanSoC, CapacityKWh: e.CapacityKWh,
 	}

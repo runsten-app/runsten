@@ -210,6 +210,42 @@ func TestSaveImport(t *testing.T) {
 }
 
 // A vehicle without a snapshot takes what starts before the import.
+// What an application read beyond its summaries (TeslaMate's) is kept, and read with the
+// events: the ranges, the usable level and the measured energy the battery's rated
+// estimates rest on.
+func TestSaveImportReadings(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, v := newVehicle(t, s, "token", "YV1AAAAAAAAAAAAA1")
+	start := t0.Add(-48 * time.Hour)
+	trip := importedTrip("teslamate", "7", start)
+	trip.Trip.StartRangeKm, trip.Trip.EndRangeKm, trip.Trip.OutsideTempC = some(400), some(380), some(-3.5)
+	charge := importedCharge("8", start.Add(time.Hour))
+	charge.Import = imported("teslamate", "8")
+	charge.StartRangeKm, charge.EndRangeKm, charge.EndUsableSoC = some(200), some(380), some(75)
+	charge.EnergyMeasuredKWh, charge.MaxCurrentA, charge.OutsideTempC, charge.OdometerKm = some(27.5), some(16), some(12), some(10010)
+	charge.Phases = core.Value[int]{V: 3, OK: true}
+	if _, err := s.SaveImport(ctx, a, v, []importer.ImportedTrip{trip}, []core.Charge{charge}); err != nil {
+		t.Fatal(err)
+	}
+	trips, err := s.ListTrips(ctx, a, v, api.EventQuery{})
+	if err != nil || len(trips) != 1 {
+		t.Fatalf("trips %+v, %v", trips, err)
+	}
+	if tr := trips[0]; tr.StartRangeKm != some(400) || tr.EndRangeKm != some(380) || tr.OutsideTempC != some(-3.5) {
+		t.Errorf("trip %+v", tr)
+	}
+	p, err := s.PeriodEvents(ctx, a, v, time.Time{}, t0)
+	if err != nil || len(p.Charges) != 1 {
+		t.Fatalf("charges %+v, %v", p.Charges, err)
+	}
+	if c := p.Charges[0]; c.StartRangeKm != some(200) || c.EndRangeKm != some(380) || c.EndUsableSoC != some(75) ||
+		c.EnergyMeasuredKWh != some(27.5) || c.MaxCurrentA != some(16) || c.Phases != charge.Phases ||
+		c.OutsideTempC != some(12) || c.OdometerKm != some(10010) || c.Span.OK {
+		t.Errorf("charge %+v", c)
+	}
+}
+
 func TestSaveImportWithoutSnapshot(t *testing.T) {
 	s, _ := testStore(t)
 	ctx := context.Background()
