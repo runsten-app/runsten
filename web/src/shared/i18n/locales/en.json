@@ -1408,7 +1408,7 @@
     },
     "tesla": {
       "title": "Tesla account",
-      "off": "Tesla is not offered on this instance: your Teslas are no longer read. What was read stays, and your token is kept: they are read again once it is offered."
+      "off": "Tesla's Owner API is not offered on this instance: your Teslas read through it are no longer read. What was read stays, and your token is kept: they are read again once it is offered."
     },
     "polestarId": {
       "title": "Polestar ID",

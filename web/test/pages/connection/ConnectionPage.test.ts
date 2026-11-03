@@ -228,7 +228,9 @@ describe('ConnectionPage', () => {
     const w = await page()
     expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Tesla')
     const panel = w.find('#connection-panel-tesla')
-    expect(panel.find('.tesla-off').text()).toContain('Tesla is not offered on this instance')
+    expect(panel.find('.tesla-off').text()).toContain(
+      "Tesla's Owner API is not offered on this instance",
+    )
     expect(panel.find('#tesla-refresh-token').exists()).toBe(false)
   })
 

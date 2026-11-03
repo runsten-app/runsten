@@ -1408,7 +1408,7 @@
     },
     "tesla": {
       "title": "Compte Tesla",
-      "off": "Tesla n'est pas proposée sur cette instance : vos Tesla ne sont plus lues. Ce qui a été lu reste, et votre jeton est gardé : elles sont lues à nouveau dès qu'elle l'est."
+      "off": "L'Owner API de Tesla n'est pas proposée sur cette instance : vos Tesla lues par elle ne sont plus lues. Ce qui a été lu reste, et votre jeton est gardé : elles sont lues à nouveau dès qu'elle l'est."
     },
     "polestarId": {
       "title": "Polestar ID",
