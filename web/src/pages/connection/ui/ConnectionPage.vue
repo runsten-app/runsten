@@ -15,6 +15,8 @@ import { useCollections } from '@/features/watch-collection'
 import { useFormat, useNow } from '@/shared/lib'
 import { FactItem } from '@/shared/ui'
 import { AppShell } from '@/widgets/app-shell'
+import { extensionBrandSections } from '../extensions'
+import { brands, type Brand } from '../model/brands'
 import VehicleCollection from './VehicleCollection.vue'
 
 // ConnectionPage is the hidden part: the Volvo ID that lets Runsten read, the application
@@ -24,8 +26,9 @@ import VehicleCollection from './VehicleCollection.vue'
 // The vehicle it was opened from, if any, is kept for the way back. The Volvo ID flow
 // comes back to it with its outcome (volvo=connected, key_refused, no_vehicle, which
 // names the button to click again, or too_many_vehicles, which leads to the offer when
-// the instance has a page of it), told once: the parameter leaves the URL, a reload does
-// not tell it again.
+// the instance has a page of it), and so may the sign-in of a brand an extension
+// connects (tesla=connected): told once, in the brand's tab, the parameter leaves the URL,
+// a reload does not tell it again.
 //
 // Without the instance's key (the hosted offer), the account's comes first: the Volvo ID
 // is connected after, the vehicles listed with it. With it (self-hosting), it reads every
@@ -42,15 +45,36 @@ import VehicleCollection from './VehicleCollection.vue'
 // says why they are not read. Polestar's holds the Data Portal, and the Polestar ID while
 // the flag source.polestar-id is on for the account (off by default: an unofficial API, the
 // instance's choice), or the account has Polestars read with it from before.
-const props = defineProps<{ vehicle?: string; outcome?: string }>()
+// A brand's section an extension sets (extensionBrandSections) takes the place of the
+// core's, and shows its tab whatever the above.
+const props = defineProps<{ vehicle?: string }>()
 const { t } = useI18n()
 const { unread } = useLimits()
 const route = useRoute()
 const router = useRouter()
 const outcomes = ['connected', 'key_refused', 'no_vehicle', 'too_many_vehicles'] as const
 type Outcome = (typeof outcomes)[number]
-const outcome = ref(outcomes.find((o) => o === props.outcome))
+// The brand whose sign-in came back, by its parameter. Volvo's key is the only one a
+// sign-in may refuse.
+const outcomeBrand = brands.find((b) => route.query[b] !== undefined)
+const outcome = ref(
+  outcomeBrand &&
+    outcomes.find(
+      (o) => o === route.query[outcomeBrand] && (o !== 'key_refused' || outcomeBrand === 'volvo'),
+    ),
+)
 const outcomeText = (o: Outcome) => {
+  if (outcomeBrand && outcomeBrand !== 'volvo') {
+    const brand = brandLabels.value[outcomeBrand]
+    switch (o) {
+      case 'connected':
+        return t('connection.outcome.brand.connected', { brand })
+      case 'no_vehicle':
+        return t('connection.outcome.brand.noVehicle', { brand })
+      default:
+        return t('connection.outcome.brand.tooManyVehicles', { brand })
+    }
+  }
   switch (o) {
     case 'connected':
       return t('connection.outcome.connected')
@@ -63,8 +87,9 @@ const outcomeText = (o: Outcome) => {
   }
 }
 onMounted(() => {
-  if (route.query.volvo !== undefined) {
-    void router.replace({ query: { ...route.query, volvo: undefined } })
+  if (outcomeBrand) {
+    const dropped = Object.fromEntries(brands.map((b) => [b, undefined]))
+    void router.replace({ query: { ...route.query, ...dropped }, hash: route.hash })
   }
 })
 const f = useFormat()
@@ -90,8 +115,6 @@ const connection = computed(
 )
 const lost = computed(() => connection.value?.status === 'reauth_required')
 
-const brands = ['volvo', 'polestar', 'tesla'] as const
-type Brand = (typeof brands)[number]
 const brandLabels = computed<Record<Brand, string>>(() => ({
   volvo: t('connection.brand.volvo'),
   polestar: t('connection.brand.polestar'),
@@ -116,10 +139,12 @@ const polestarIdShown = computed(
     (vehicles.value ?? []).some((v) => v.connection.provider === 'polestar_id'),
 )
 const shown = computed(() =>
-  brands.filter((b) =>
-    b === 'volvo'
-      ? settings.value?.volvo !== false || ofBrand(b).length
-      : b !== 'tesla' || teslaOn.value || ofBrand(b).length,
+  brands.filter(
+    (b) =>
+      !!extensionBrandSections[b] ||
+      (b === 'volvo'
+        ? settings.value?.volvo !== false || ofBrand(b).length
+        : b !== 'tesla' || teslaOn.value || ofBrand(b).length),
   ),
 )
 const asBrand = (s?: string) => shown.value.find((b) => b === s)
@@ -127,7 +152,8 @@ const tab = computed<Brand>({
   get() {
     const fromHash = asBrand(route.hash.slice(1))
     if (fromHash) return fromHash
-    if (props.outcome && asBrand('volvo')) return 'volvo'
+    const signedIn = asBrand(outcomeBrand)
+    if (signedIn) return signedIn
     const from = vehicles.value?.find((v) => v.id === props.vehicle)
     return (
       asBrand(brandOf(from?.connection.provider)) ??
@@ -248,8 +274,9 @@ const alerted = computed(
           role="tabpanel"
           :aria-labelledby="`connection-tab-${b}`"
         >
+          <component :is="extensionBrandSections[b]" v-if="extensionBrandSections[b]" />
           <section
-            v-if="b === 'volvo' && !settings.volvo"
+            v-else-if="b === 'volvo' && !settings.volvo"
             class="mb-8"
             aria-labelledby="connection-no-volvo-title"
           >

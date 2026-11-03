@@ -1,5 +1,6 @@
 import { flushPromises, type DOMWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 import type { ConnectionSettings } from '@/entities/connection'
 import type { Vehicle } from '@/entities/vehicle'
 import { ConnectionPage } from '@/pages/connection'
@@ -26,6 +27,14 @@ vi.mock('@/features/view-flags', async () => {
       computed(() => (name === 'source.polestar-id' ? flag.polestarId : flag.tesla)),
   }
 })
+
+// The brands' sections an extension sets: none in the public build, one in a test.
+const brands = vi.hoisted(() => ({ sections: {} as Record<string, unknown> }))
+vi.mock('@/pages/connection/extensions', () => ({
+  get extensionBrandSections() {
+    return brands.sections
+  },
+}))
 
 const mocks = vi.hoisted(() => ({ fetchVehicles: vi.fn(), fetchConnection: vi.fn() }))
 vi.mock('@/entities/vehicle', async (original) => ({
@@ -74,13 +83,23 @@ beforeEach(() => {
 })
 afterEach(() => {
   extension.limitsPage = null
+  brands.sections = {}
   vi.useRealTimers()
 })
 
-async function page(props: { vehicle?: string; outcome?: string } = {}) {
+async function page(props: { vehicle?: string } = {}) {
   const { wrapper } = mountWith(ConnectionPage, { props })
   await flushPromises()
   return wrapper
+}
+
+// pageAt opens the page at a URL, as a sign-in comes back to it.
+async function pageAt(url: string) {
+  const router = testRouter()
+  await router.push(url)
+  const { wrapper } = mountWith(ConnectionPage, { router })
+  await flushPromises()
+  return { w: wrapper, router }
 }
 
 // facts reads a <dl> as its labels and values.
@@ -542,21 +561,18 @@ describe('ConnectionPage', () => {
   })
 
   it('tells the outcome of the Volvo ID flow it comes back from, once', async () => {
-    const router = testRouter()
-    await router.push('/connection?volvo=connected')
-    const { wrapper: w } = mountWith(ConnectionPage, { router, props: { outcome: 'connected' } })
-    await flushPromises()
+    const { w, router } = await pageAt('/connection?volvo=connected&vehicle=v1')
     expect(w.find('.v-alert').text()).toContain('Volvo ID connected')
-    await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({}))
+    await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({ vehicle: 'v1' }))
   })
 
   it('warns when Volvo refused the key at the connection', async () => {
-    const w = await page({ outcome: 'key_refused' })
+    const { w } = await pageAt('/connection?volvo=key_refused')
     expect(w.find('.v-alert').text()).toContain('Volvo refused your key')
   })
 
   it('warns when the Volvo ID has no vehicle', async () => {
-    const w = await page({ outcome: 'no_vehicle' })
+    const { w } = await pageAt('/connection?volvo=no_vehicle')
     expect(w.find('.v-alert').text()).toContain('Your Volvo ID has no vehicle')
     expect(w.find('.v-alert').text()).toContain('click “Reconnect the Volvo ID” again') // the button shown: a connection is in place
   })
@@ -565,10 +581,7 @@ describe('ConnectionPage', () => {
     'warns when the Volvo ID has too many vehicles, leading to the page that lifts the limits: %s',
     async (limitsPage) => {
       extension.limitsPage = limitsPage
-      const { wrapper: w } = mountWith(ConnectionPage, {
-        props: { outcome: 'too_many_vehicles' },
-      })
-      await flushPromises()
+      const { w } = await pageAt('/connection?volvo=too_many_vehicles')
       expect(w.find('.v-alert').text()).toContain(
         'your account would have more vehicles than it may',
       )
@@ -578,7 +591,57 @@ describe('ConnectionPage', () => {
   )
 
   it('ignores an unknown outcome', async () => {
-    const w = await page({ outcome: 'forged' })
+    const { w, router } = await pageAt('/connection?volvo=forged')
     expect(w.find('.v-alert').exists()).toBe(false)
+    await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({}))
+  })
+
+  it("tells the outcome of another brand's sign-in in its tab, once", async () => {
+    brands.sections.tesla = { render: () => h('section', { class: 'fleet' }, 'Sign in with Tesla') }
+    const { w, router } = await pageAt('/connection?tesla=connected')
+    expect(w.find('.v-alert').text()).toContain('Signed in with Tesla')
+    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Tesla')
+    await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({}))
+  })
+
+  it.each([
+    ['no_vehicle', 'Your Tesla account has no vehicle'],
+    ['too_many_vehicles', 'your account would have more vehicles than it may'],
+  ])("warns of another brand's sign-in that failed: %s", async (outcome, text) => {
+    const { w } = await pageAt(`/connection?tesla=${outcome}`)
+    expect(w.find('.v-alert').text()).toContain(text)
+  })
+
+  it("ignores a refused key from another brand's sign-in", async () => {
+    const { w } = await pageAt('/connection?polestar=key_refused')
+    expect(w.find('.v-alert').exists()).toBe(false)
+    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Polestar')
+  })
+
+  it("shows an extension's section in place of the brand's own, its tab whatever the flag", async () => {
+    flag.tesla = false
+    brands.sections.tesla = { render: () => h('section', { class: 'fleet' }, 'Sign in with Tesla') }
+    const w = await page()
+    expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
+      'Volvo needs your attention',
+      'Polestar needs your attention',
+      'Tesla Beta',
+    ])
+    await w.findAll('[role="tab"]')[2]?.trigger('click')
+    await flushPromises()
+    const tesla = w.find('#connection-panel-tesla')
+    expect(tesla.find('.fleet').text()).toBe('Sign in with Tesla')
+    expect(tesla.find('#connection-tesla-title').exists()).toBe(false)
+    expect(tesla.find('.tesla-off').exists()).toBe(false)
+    // The other brands keep the core's.
+    expect(w.find('#connection-volvo-title').exists()).toBe(true)
+  })
+
+  it("shows an extension's section in place of the Owner API's form, its flag on", async () => {
+    brands.sections.tesla = { render: () => h('section', { class: 'fleet' }, 'Sign in with Tesla') }
+    const { w } = await pageAt('/connection#tesla')
+    const tesla = w.find('#connection-panel-tesla')
+    expect(tesla.find('.fleet').exists()).toBe(true)
+    expect(tesla.find('#tesla-refresh-token').exists()).toBe(false)
   })
 })
