@@ -28,4 +28,6 @@ A Tesla tells more: the energy it counts into its battery during a charge, its r
 - **The rated efficiency**, the energy a kilometre of rated range holds: the energy the car measured over the rated range a charge added, the median over the charges of 10 minutes or more that end at 95 % at most. The capacity tile gives it.
 - **An estimate per charge**: the rated range at its end, brought back to 100 % of the usable charge, times the rated efficiency. A charge that ends with less than 50 % usable gives none: its whole-number percent weighs too much.
 
+The charges [imported from TeslaMate](./importing.md#from-teslamate) give these estimates too: years of history from the first day.
+
 The car's own count is far more precise than the rise of its state of charge. Once there are 5 of these estimates, the current capacity, its evolution and the monthly median rest on them alone; the others stay on the chart, in another color. It is still the battery's estimate of itself, not a test of the battery.

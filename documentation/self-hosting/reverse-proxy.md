@@ -62,6 +62,7 @@ Without a proxy, an SSH tunnel brings the server's loopback to your machine: `ss
 ## Good to know
 
 - The proxy must keep the `Host` header (Caddy and most proxies do): `runsten-api` refuses the requests that change state when their `Origin` does not match it.
+- The [import of a TeslaMate backup](../guide/importing.md#from-teslamate) sends a file of up to a few hundred megabytes, for minutes: the proxy must accept a large request body and wait for it on `/api/v1/vehicles/…/imports/teslamate` (Caddy does by default; nginx needs `client_max_body_size` and a longer `client_body_timeout` there). The command line needs neither.
 - Behind the proxy, failed sign-ins are counted per username and for the proxy's address as a whole: someone who fails 10 times delays everyone's next sign-in by up to 15 minutes, but open sessions keep working.
 - A `basic_auth` or an address filter at the proxy is not needed; it remains possible as an extra layer, at the price of two logins.
 - Never publish the debug page through the proxy: it shows VINs and locations. `runsten-api`'s own port needs no publishing either.
