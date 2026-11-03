@@ -246,6 +246,7 @@ describe('ConnectionPage', () => {
     const w = await page({ vehicle: 'tesla-fleet-1' })
     expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Tesla')
     const v = w.find('#connection-panel-tesla .vehicle-collection')
+    expect(w.find('#connection-panel-tesla .tesla-off').exists()).toBe(false)
     expect(v.find('.state').text()).toBe('Not read: not signed in with Tesla')
     expect(facts(v.find('dl'))).toMatchObject({
       'Next reading': 'None until the owner signs in with Tesla again',

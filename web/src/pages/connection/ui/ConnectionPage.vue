@@ -103,6 +103,11 @@ const brandOf = (p?: Vehicle['connection']['provider']) =>
 const ofBrand = (b: Brand) =>
   (vehicles.value ?? []).filter((v) => brandOf(v.connection.provider) === b)
 const teslaOn = useFlag('source.tesla')
+// The Owner API's flag off tells its own Teslas they are no longer read; those of the
+// Fleet API are read by another source, which the flag does not stop.
+const ownerTeslas = computed(() =>
+  (vehicles.value ?? []).some((v) => v.connection.provider === 'tesla'),
+)
 const polestarIdOn = useFlag('source.polestar-id')
 const polestarIdShown = computed(
   () =>
@@ -374,7 +379,9 @@ const alerted = computed(
               {{ t('connection.tesla.title') }}
             </h2>
             <TeslaForm v-if="teslaOn" :connection="settings" />
-            <p v-else class="text-body-medium tesla-off">{{ t('connection.tesla.off') }}</p>
+            <p v-else-if="ownerTeslas" class="text-body-medium tesla-off">
+              {{ t('connection.tesla.off') }}
+            </p>
           </section>
 
           <section v-if="ofBrand(b).length" :aria-labelledby="`connection-vehicles-${b}`">
