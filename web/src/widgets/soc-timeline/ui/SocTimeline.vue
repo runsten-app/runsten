@@ -234,8 +234,8 @@ const strip = computed<Band[]>(() => {
       minus([s.span], busy).map(
         stretch(
           t('timeline.asleep'),
-          color('chart-3'),
-          color('on-primary'),
+          color('boundary'),
+          color('on-surface'),
           s.state === 'offline' ? [t('timeline.offline')] : [],
         ),
       ),
