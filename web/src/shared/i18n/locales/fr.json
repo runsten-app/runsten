@@ -1291,7 +1291,9 @@
       "quotaPolestar": "Quota Polestar atteint jusqu'à {time}",
       "notConfigured": "Non lu : Volvo n'est pas configuré sur cette instance",
       "credentialRefusedTesla": "Non lu : Tesla a refusé le jeton de rafraîchissement",
+      "credentialRefusedTeslaFleet": "Non lu : Tesla a retiré l'accès donné à Runsten",
       "credentialMissingTesla": "Non lu : aucun jeton Tesla donné",
+      "credentialMissingTeslaFleet": "Non lu : pas de connexion avec Tesla",
       "unsharedTesla": "Non lu : le véhicule n'est plus dans le compte Tesla",
       "pausedTesla": "En pause par Tesla jusqu'à {time}",
       "quotaTesla": "Appels du jour à Tesla atteints jusqu'à {time}",
@@ -1323,10 +1325,14 @@
       "pausedPolestar": "Polestar a limité le nombre d'appels. La lecture reprend d'elle-même.",
       "notConfigured": "Cette instance n'a pas d'application Volvo : rien de nouveau n'est lu de ce véhicule tant que son administrateur n'en a pas renseigné une. Son historique reste.",
       "credentialRefusedTesla": "Tesla a refusé le jeton de rafraîchissement avec lequel ce véhicule est lu : déconnexion du compte Tesla, mot de passe changé, ou Owner API fermée au compte. Obtenez un nouveau jeton et donnez-le sur la page Connexion : ce qui a été lu reste.",
+      "credentialRefusedTeslaFleet": "Tesla a retiré l'accès que vous avez donné à Runsten pour lire ce véhicule : révoqué dans votre compte Tesla, ou son mot de passe changé. Connectez-vous à nouveau avec Tesla sur la page Connexion : ce qui a été lu reste.",
       "credentialMissingTesla": "Runsten lit cette Tesla avec un jeton de rafraîchissement de votre compte Tesla, qui a été retiré : donnez-en un nouveau sur la page Connexion.",
+      "credentialMissingTeslaFleet": "Runsten lit cette Tesla par votre connexion avec Tesla, qui a été retirée : connectez-vous à nouveau sur la page Connexion.",
       "unsharedTesla": "Votre compte Tesla ne liste plus ce véhicule : vendu, ou retiré du compte. S'il revient, donnez à nouveau le jeton sur la page Connexion : le véhicule est lu à nouveau.",
+      "unsharedTeslaFleet": "Votre compte Tesla ne liste plus ce véhicule : vendu, ou retiré du compte. S'il revient, connectez-vous à nouveau avec Tesla sur la page Connexion : le véhicule est lu à nouveau.",
       "pausedTesla": "Tesla a limité le nombre d'appels. La lecture reprend d'elle-même.",
       "quotaTesla": "Runsten fait au plus 3 000 appels par jour à Tesla par jeton, pour rester loin de ses limites non publiées : ils sont épuisés. La lecture reprend d'elle-même.",
+      "quotaTeslaFleet": "Les appels de Runsten à Tesla pour ce véhicule ont atteint leur limite du jour. La lecture reprend d'elle-même.",
       "credentialRefusedPolestarId": "Le Polestar ID a refusé la connexion de Runsten pour cette voiture : la session a pris fin, ou le mot de passe a changé. Reconnectez votre Polestar ID sur la page de connexion : ce qui a été lu reste.",
       "credentialMissingPolestarId": "Runsten lit cette Polestar avec votre Polestar ID, qui a été retiré : reconnectez-le sur la page de connexion.",
       "unsharedPolestarId": "Votre Polestar ID ne liste plus cette voiture : vendue, ou retirée du compte. Si elle revient, reconnectez le Polestar ID sur la page de connexion : la voiture est lue à nouveau.",
@@ -1351,6 +1357,7 @@
       "noneDueUnsharedTesla": "Aucune : le véhicule n'est plus dans le compte Tesla",
       "noneDueNotConfigured": "Aucune tant que Volvo n'est pas configuré",
       "noneDueToken": "Aucune tant qu'aucun jeton Tesla n'est donné",
+      "noneDueTeslaFleet": "Aucune tant que le propriétaire ne s'est pas reconnecté avec Tesla",
       "noneDuePolestarId": "Aucune avant la reconnexion du Polestar ID",
       "noneDueUnsharedPolestarId": "Aucune : la voiture n'est plus dans le Polestar ID"
     },
@@ -1360,6 +1367,7 @@
       "location": "position",
       "polestar": "Data Portal de Polestar",
       "tesla": "Owner API de Tesla",
+      "teslaFleet": "Fleet API de Tesla",
       "polestarId": "API de l'app Polestar"
     },
     "failure": {
@@ -1383,6 +1391,7 @@
       "unavailableTesla": "Tesla injoignable",
       "tokenTesla": "Aucun jeton de Tesla",
       "credentialRefusedTesla": "Jeton Tesla refusé",
+      "credentialRefusedTeslaFleet": "Accès Tesla retiré",
       "credentialRefusedPolestarId": "Polestar ID refusé"
     },
     "key": {
@@ -1404,7 +1413,7 @@
     },
     "tesla": {
       "title": "Compte Tesla",
-      "off": "Tesla n'est pas proposée sur cette instance : vos Tesla ne sont plus lues. Ce qui a été lu reste, et votre jeton est gardé : elles sont lues à nouveau dès qu'elle l'est."
+      "off": "L'Owner API de Tesla n'est pas proposée sur cette instance : vos Tesla lues par elle ne sont plus lues. Ce qui a été lu reste, et votre jeton est gardé : elles sont lues à nouveau dès qu'elle l'est."
     },
     "polestarId": {
       "title": "Polestar ID",

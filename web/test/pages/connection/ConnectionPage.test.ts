@@ -228,8 +228,31 @@ describe('ConnectionPage', () => {
     const w = await page()
     expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Tesla')
     const panel = w.find('#connection-panel-tesla')
-    expect(panel.find('.tesla-off').text()).toContain('Tesla is not offered on this instance')
+    expect(panel.find('.tesla-off').text()).toContain(
+      "Tesla's Owner API is not offered on this instance",
+    )
     expect(panel.find('#tesla-refresh-token').exists()).toBe(false)
+  })
+
+  it("reads a Tesla of the Fleet API in the Tesla tab, and tells its sign-in's removal", async () => {
+    flag.tesla = false
+    const car = items.find((v) => v.connection.provider === 'polestar')
+    if (!car) throw new Error('fixture')
+    mocks.fetchVehicles.mockResolvedValue([
+      {
+        ...car,
+        id: 'tesla-fleet-1',
+        connection: { ...car.connection, provider: 'tesla_fleet', credential: 'missing' },
+      },
+    ])
+    const w = await page({ vehicle: 'tesla-fleet-1' })
+    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Tesla')
+    const v = w.find('#connection-panel-tesla .vehicle-collection')
+    expect(w.find('#connection-panel-tesla .tesla-off').exists()).toBe(false)
+    expect(v.find('.state').text()).toBe('Not read: not signed in with Tesla')
+    expect(facts(v.find('dl'))).toMatchObject({
+      'Next reading': 'None until the owner signs in with Tesla again',
+    })
   })
 
   it('tells a Tesla no longer in its account as such', async () => {

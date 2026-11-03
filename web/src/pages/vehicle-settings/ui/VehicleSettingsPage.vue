@@ -76,7 +76,7 @@ const titleId = computed(() => `vehicle-settings-${props.area}-title`)
           <ImportSources
             :vehicle
             :volvo="current.connection.provider === 'volvo'"
-            :tesla="current.connection.provider === 'tesla'"
+            :tesla="['tesla', 'tesla_fleet'].includes(current.connection.provider)"
           />
         </div>
       </section>

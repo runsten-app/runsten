@@ -36,6 +36,12 @@ func TestImportTeslaMate(t *testing.T) {
 		e.files.currency != "" {
 		t.Errorf("without a currency: %d %s, %q", resp.status, out, e.files.currency)
 	}
+	// A Tesla of the Fleet API's: its history is a Tesla's all the same.
+	e.reader.vehicles[account] = []Vehicle{{ID: car, VIN: teslaVIN, Provider: "tesla_fleet"}}
+	if resp, out := do(t, noFollow(), http.MethodPost, url, "application/octet-stream", backup, c); resp.status != http.StatusOK {
+		t.Errorf("a Fleet API's Tesla: %d %s", resp.status, out)
+	}
+	e.reader.vehicles[account] = []Vehicle{{ID: car, VIN: teslaVIN, Provider: "tesla"}}
 	if !strings.Contains(logs.String(), "backup imported") {
 		t.Errorf("logs:\n%s", logs)
 	}

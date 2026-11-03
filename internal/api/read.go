@@ -94,7 +94,7 @@ type providerJSON string
 
 // Schema lists the providers.
 func (providerJSON) Schema(huma.Registry) *huma.Schema {
-	return enumSchema(providerVolvo, providerPolestar, providerTesla, providerPolestarID)
+	return enumSchema(providerVolvo, providerPolestar, providerTesla, providerPolestarID, providerTeslaFleet)
 }
 
 const (
@@ -103,7 +103,19 @@ const (
 	providerTesla    providerJSON = "tesla"
 	// providerPolestarID: the Polestar app's API, read with the owner's Polestar ID.
 	providerPolestarID providerJSON = "polestar_id"
+	// providerTeslaFleet: Tesla's Fleet API, through an application the instance's
+	// operator registered, read by a source an extension adds.
+	providerTeslaFleet providerJSON = "tesla_fleet"
 )
+
+// credentialed reports whether p's connections read with a credential of their own,
+// rather than a Volvo ID and an application key.
+func (p providerJSON) credentialed() bool {
+	return p == providerPolestar || p == providerTesla || p == providerPolestarID || p == providerTeslaFleet
+}
+
+// tesla reports whether p reads Teslas.
+func (p providerJSON) tesla() bool { return p == providerTesla || p == providerTeslaFleet }
 
 // credentialStatus is the state of a Polestar or Tesla connection's credential.
 type credentialStatus string
@@ -120,7 +132,7 @@ const (
 )
 
 type connectionJSON struct {
-	Provider     providerJSON           `json:"provider" doc:"volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API."`
+	Provider     providerJSON           `json:"provider" doc:"volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it."`
 	Status       connectionStatus       `json:"status" doc:"reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. not_configured: the instance has no Volvo application, the vehicle is not read until its administrator sets one. Always active for a Polestar or Tesla connection: credential tells its state."`
 	APIKey       null[apiKeyStatus]     `json:"api_key" doc:"The application key the vehicle is read with: instance, the instance's, which reads every vehicle when the instance has one; own, the account's. refused: the account's, refused by Volvo; missing: none, the instance has none either. Neither refused nor missing is read, until the user gives a key (PUT /connection/api-key). null for a Polestar or Tesla connection, read with its own credential."`
 	Credential   null[credentialStatus] `json:"credential" doc:"The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account; a Polestar ID's session ended, or its password refused); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla, /connection/polestar-id/code or /password). null for a Volvo connection."`
@@ -212,7 +224,7 @@ type vehicleListJSON struct {
 }
 
 func (s *Server) connectionOf(v Vehicle) connectionJSON {
-	if p := providerJSON(v.Provider); p == providerPolestar || p == providerTesla || p == providerPolestarID {
+	if p := providerJSON(v.Provider); p.credentialed() {
 		c := connectionJSON{Provider: p, Status: connectionActive, Credential: known(credentialSet)}
 		switch {
 		case v.CredentialMissing:

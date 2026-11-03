@@ -1066,3 +1066,22 @@ func TestCursor(t *testing.T) {
 		t.Errorf("round trip: %+v, %v", got, err)
 	}
 }
+
+// TestConnectionOfTeslaFleet: a Tesla of the Fleet API's is read with its own credential,
+// as the Owner API's, its state told: set, refused, missing.
+func TestConnectionOfTeslaFleet(t *testing.T) {
+	s := &Server{}
+	for _, tc := range []struct {
+		v    Vehicle
+		want credentialStatus
+	}{
+		{Vehicle{Provider: "tesla_fleet"}, credentialSet},
+		{Vehicle{Provider: "tesla_fleet", CredentialRefused: true}, credentialRefused},
+		{Vehicle{Provider: "tesla_fleet", CredentialMissing: true}, credentialMissing},
+	} {
+		c := s.connectionOf(tc.v)
+		if c.Provider != providerTeslaFleet || c.Credential != known(tc.want) || c.APIKey.ok {
+			t.Errorf("%+v: %+v", tc.v, c)
+		}
+	}
+}

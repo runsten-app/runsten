@@ -105,7 +105,7 @@ func (s *Server) importTeslaMate(ctx context.Context, in *teslaMateInput) (*body
 	}
 	// TeslaMate's history is a Tesla's: the VIN would tell another car's apart, but a
 	// Volvo's is never in it.
-	if v.Provider != string(providerTesla) {
+	if !providerJSON(v.Provider).tesla() {
 		return nil, apiError(http.StatusConflict, codeNotTesla, "TeslaMate's backup is a Tesla's: this vehicle is not a Tesla")
 	}
 	if _, ok := core.CurrencyOf(in.Currency); in.Currency != "" && !ok {
