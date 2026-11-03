@@ -255,7 +255,7 @@ func run(args []string) error {
 	norm := normalizers()
 	deriver := derive.New(st, norm, core.DefaultParams(), capacities{catalog: cat, vehicle: vehicleOf(st)}, log)
 	if cmd == rebuild {
-		return rebuildAll(ctx, st, deriver, log)
+		return rebuildAll(ctx, st, deriver, norm, log)
 	}
 
 	hc := &http.Client{Timeout: 30 * time.Second}
@@ -418,14 +418,21 @@ type extensions struct {
 	log         *slog.Logger
 }
 
-// rebuildAll recomputes the events of every vehicle. Rebuilding is idempotent: it
-// replaces the events, it never adds to them.
-func rebuildAll(ctx context.Context, st *store.Store, d *derive.Deriver, log *slog.Logger) error {
+// rebuildAll recomputes the events of every vehicle norm reads the provider of.
+// Rebuilding is idempotent: it replaces the events, it never adds to them. A vehicle of
+// a provider no normalizer reads (an extension's, absent from this build) is left alone:
+// rebuilt without its readings, it would lose its trips and charges.
+func rebuildAll(ctx context.Context, st *store.Store, d *derive.Deriver, norm derive.Normalizer, log *slog.Logger) error {
 	targets, err := st.Targets(ctx)
 	if err != nil {
 		return fmt.Errorf("rebuild: %w", err)
 	}
+	read := readProviders(norm)
 	for _, t := range targets {
+		if !read(t.Provider) {
+			log.Warn("events not rebuilt: no normalizer reads the vehicle's provider", "vehicle", t.VehicleID, "provider", t.Provider)
+			continue
+		}
 		res, err := d.Rebuild(ctx, t.AccountID, t.VehicleID)
 		if err != nil {
 			return fmt.Errorf("rebuild vehicle %s: %w", t.VehicleID, err)
@@ -433,6 +440,21 @@ func rebuildAll(ctx context.Context, st *store.Store, d *derive.Deriver, log *sl
 		log.Info("events rebuilt", "vehicle", t.VehicleID, "trips", len(res.Trips), "charges", len(res.Charges))
 	}
 	return nil
+}
+
+// readProviders tells whether norm reads the readings of a provider's connections, each
+// provider being the source of its readings; Volvo's for an empty one.
+func readProviders(norm derive.Normalizer) func(provider string) bool {
+	sources := map[string]bool{}
+	for _, k := range norm.Kinds() {
+		sources[k.Source] = true
+	}
+	return func(provider string) bool {
+		if provider == "" {
+			provider = volvo.Source
+		}
+		return sources[provider]
+	}
 }
 
 func loadConfig(getenv func(string) string, cmd command) (config, error) {
