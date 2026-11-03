@@ -56,7 +56,8 @@ const outcomes = ['connected', 'key_refused', 'no_vehicle', 'too_many_vehicles']
 type Outcome = (typeof outcomes)[number]
 // The brand whose sign-in came back, by its parameter, read whenever the query brings one
 // (the page stays mounted through a navigation to itself). Volvo's key is the only one a
-// sign-in may refuse.
+// sign-in may refuse. Its tab goes into the hash, unless the URL names one, so that a later
+// navigation (to another vehicle's tab) decides again; that one forgets the outcome too.
 const outcomeBrand = ref<Brand>()
 const outcome = ref<Outcome>()
 watch(
@@ -67,9 +68,15 @@ watch(
     outcomeBrand.value = b
     outcome.value = outcomes.find((o) => o === value && (o !== 'key_refused' || b === 'volvo'))
     const dropped = Object.fromEntries(brands.map((x) => [x, undefined]))
-    void router.replace({ query: { ...route.query, ...dropped }, hash: route.hash })
+    void router.replace({ query: { ...route.query, ...dropped }, hash: route.hash || `#${b}` })
   },
   { immediate: true },
+)
+watch(
+  () => props.vehicle,
+  () => {
+    outcome.value = undefined
+  },
 )
 const outcomeText = (o: Outcome) => {
   if (outcomeBrand.value && outcomeBrand.value !== 'volvo') {
@@ -154,8 +161,6 @@ const tab = computed<Brand>({
   get() {
     const fromHash = asBrand(route.hash.slice(1))
     if (fromHash) return fromHash
-    const signedIn = asBrand(outcomeBrand.value)
-    if (signedIn) return signedIn
     const from = vehicles.value?.find((v) => v.id === props.vehicle)
     return (
       asBrand(brandOf(from?.connection.provider)) ??

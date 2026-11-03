@@ -1,6 +1,6 @@
 import { flushPromises, type DOMWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { h } from 'vue'
+import { h, reactive } from 'vue'
 import type { ConnectionSettings } from '@/entities/connection'
 import type { Vehicle } from '@/entities/vehicle'
 import { ConnectionPage } from '@/pages/connection'
@@ -618,14 +618,42 @@ describe('ConnectionPage', () => {
     await router.push('/connection?polestar=no_vehicle')
     await flushPromises()
     expect(w.find('.v-alert').text()).toContain('Your Polestar account has no vehicle')
+    await vi.waitFor(() =>
+      expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Polestar'),
+    )
+    await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({}))
+  })
+
+  it("keeps the tab the URL names over the sign-in's", async () => {
+    const { w, router } = await pageAt('/connection?volvo=connected#polestar')
+    expect(w.find('.v-alert').text()).toContain('Volvo ID connected')
     expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Polestar')
     await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({}))
+    expect(router.currentRoute.value.hash).toBe('#polestar')
+  })
+
+  it("forgets a sign-in's outcome on the way to another vehicle's tab", async () => {
+    // The route's props, as the router gives them to the page it keeps.
+    const props = reactive<{ vehicle?: string }>({})
+    const router = testRouter()
+    await router.push('/connection?polestar=connected')
+    const { wrapper: w } = mountWith(ConnectionPage, { router, props })
+    await flushPromises()
+    await vi.waitFor(() => expect(router.currentRoute.value.hash).toBe('#polestar'))
+    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Polestar')
+    await router.push('/connection?vehicle=v1')
+    props.vehicle = 'v1'
+    await flushPromises()
+    expect(w.find('.v-alert').exists()).toBe(false)
+    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Volvo')
   })
 
   it("ignores a refused key from another brand's sign-in", async () => {
     const { w } = await pageAt('/connection?polestar=key_refused')
     expect(w.find('.v-alert').exists()).toBe(false)
-    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Polestar')
+    await vi.waitFor(() =>
+      expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Polestar'),
+    )
   })
 
   it("shows an extension's section in place of the brand's own, its tab whatever the flag", async () => {
