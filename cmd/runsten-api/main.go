@@ -81,8 +81,9 @@
 //	                             history read with the user's token (default
 //	                             https://api.aximote.com)
 //	RUNSTEN_TESLAMATE_IMPORTS    how many TeslaMate backups are read at once (default 2):
-//	                             each takes up to about 240 MB until it is written; 1 where
-//	                             runsten-api has little memory
+//	                             each takes memory until it is written, about 170 MB for
+//	                             4.5 years of a car, up to about 800 MB for the largest
+//	                             backup accepted; 1 where runsten-api has little memory
 //	RUNSTEN_HEALTH_TOKEN         the bearer token of /healthz/full, 32 characters at
 //	                             least (default none: no report)
 //	RUNSTEN_UPDATE_CHECK         true to read the latest release of Runsten on GitHub

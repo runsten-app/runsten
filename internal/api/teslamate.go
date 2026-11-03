@@ -29,7 +29,9 @@ const (
 	maxTeslaMateBody = 4 << 30
 	// DefaultTeslaMateImports is how many backups an instance reads at once, unless
 	// Config.TeslaMateImports says otherwise: each keeps its drives and their tracks in
-	// memory until it is written, up to about 240 MB.
+	// memory until it is written: about 170 MB for 4.5 years of a car, up to about 800 MB
+	// for the largest backup accepted (30,000 drives, their tracks both compact and as
+	// GeoJSON while they are converted).
 	DefaultTeslaMateImports = 2
 	// teslaMateRetry is what a refusal for want of a slot asks to wait, in seconds.
 	teslaMateRetry = 60
