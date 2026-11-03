@@ -327,6 +327,49 @@ describe('CollectionNotice', () => {
     expect(alert.text()).toContain(body)
   })
 
+  // teslaFleet is a Tesla read through the Fleet API.
+  function teslaFleet(
+    patch: Partial<Vehicle> = {},
+    collection = {},
+    credential: Vehicle['connection']['credential'] = 'set',
+  ): Vehicle | undefined {
+    const v = shared(collection)
+    return (
+      v && { ...v, connection: { ...v.connection, provider: 'tesla_fleet', credential }, ...patch }
+    )
+  }
+
+  it.each<[string, Vehicle | undefined, string, string]>([
+    [
+      'its access withdrawn',
+      teslaFleet({}, {}, 'refused'),
+      'Not read: Tesla withdrew the access given to Runsten',
+      'Sign in with Tesla again',
+    ],
+    [
+      'its sign-in removed',
+      teslaFleet({}, {}, 'missing'),
+      'Not read: not signed in with Tesla',
+      'through your sign-in with Tesla, which was removed',
+    ],
+    [
+      'no longer in the account',
+      teslaFleet({ unshared_at: '2026-09-28T07:00:00Z' }),
+      'Not read: the vehicle is no longer in the Tesla account',
+      'sign in with Tesla again on the connection page',
+    ],
+    [
+      'its calls of the day used up',
+      teslaFleet({}, { quota: [{ api: 'tesla_fleet', until: '2026-09-28T09:00:00Z' }] }),
+      'Daily calls to Tesla reached until 09:00',
+      'reached their daily limit',
+    ],
+  ])('tells a Tesla of the Fleet API %s', async (_, v, title, body) => {
+    const alert = await notice(v)
+    expect(plain(alert.find('.v-alert-title').text())).toBe(title)
+    expect(alert.text()).toContain(body)
+  })
+
   it('says nothing before the vehicle is read', async () => {
     fetchVehicle.mockReturnValue(new Promise(() => {}))
     const { wrapper } = mountWith(CollectionNotice, { props: { vehicle: 'v' } })

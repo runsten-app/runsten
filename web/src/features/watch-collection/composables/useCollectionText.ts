@@ -9,12 +9,13 @@ import { useFormat } from '@/shared/lib'
 type Provider = Connection['provider']
 
 // byProvider picks the text of the provider: Volvo's for any other; the Data Portal's for
-// the Polestar ID, unless it has its own.
+// the Polestar ID, and the Owner API's for Tesla's Fleet API, unless they have their own.
 function byProvider<T>(
   provider: Provider,
-  texts: { volvo: T; polestar: T; tesla: T; polestarId?: T },
+  texts: { volvo: T; polestar: T; tesla: T; polestarId?: T; teslaFleet?: T },
 ): T {
   if (provider === 'polestar_id') return texts.polestarId ?? texts.polestar
+  if (provider === 'tesla_fleet') return texts.teslaFleet ?? texts.tesla
   return provider === 'polestar' || provider === 'tesla' ? texts[provider] : texts.volvo
 }
 
@@ -40,6 +41,8 @@ export function useCollectionText() {
         return t('connection.api.tesla')
       case 'polestar_id':
         return t('connection.api.polestarId')
+      case 'tesla_fleet':
+        return t('connection.api.teslaFleet')
       default:
         return name
     }
@@ -72,6 +75,7 @@ export function useCollectionText() {
         polestar: t('connection.failure.credentialRefused'),
         tesla: t('connection.failure.credentialRefusedTesla'),
         polestarId: t('connection.failure.credentialRefusedPolestarId'),
+        teslaFleet: t('connection.failure.credentialRefusedTeslaFleet'),
       }),
       unshared: t('connection.failure.unshared'),
       not_granted: t('connection.failure.notGranted'),
@@ -99,12 +103,14 @@ export function useCollectionText() {
               polestar: t('connection.state.credentialRefused'),
               tesla: t('connection.state.credentialRefusedTesla'),
               polestarId: t('connection.state.credentialRefusedPolestarId'),
+              teslaFleet: t('connection.state.credentialRefusedTeslaFleet'),
             })
           : byProvider(provider, {
               volvo: t('connection.state.credentialMissing'),
               polestar: t('connection.state.credentialMissing'),
               tesla: t('connection.state.credentialMissingTesla'),
               polestarId: t('connection.state.credentialMissingPolestarId'),
+              teslaFleet: t('connection.state.credentialMissingTeslaFleet'),
             })
       case 'unshared':
         return byProvider(provider, {

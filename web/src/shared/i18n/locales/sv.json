@@ -1286,7 +1286,9 @@
       "quotaPolestar": "Polestars kvot nådd till {time}",
       "notConfigured": "Läses inte: Volvo är inte konfigurerat på den här instansen",
       "credentialRefusedTesla": "Läses inte: Tesla avvisade uppdateringstoken",
+      "credentialRefusedTeslaFleet": "Läses inte: Tesla drog tillbaka åtkomsten som Runsten fått",
       "credentialMissingTesla": "Läses inte: ingen Tesla-token angiven",
+      "credentialMissingTeslaFleet": "Läses inte: inte inloggad med Tesla",
       "unsharedTesla": "Läses inte: fordonet finns inte längre i Tesla-kontot",
       "pausedTesla": "Pausad av Tesla till {time}",
       "quotaTesla": "Dagens anrop till Tesla förbrukade till {time}",
@@ -1318,10 +1320,14 @@
       "pausedPolestar": "Polestar har begränsat antalet anrop. Läsningen återupptas av sig själv.",
       "notConfigured": "Den här instansen har ingen Volvo-applikation: inget nytt läses från fordonet förrän administratören anger en. Dess historik finns kvar.",
       "credentialRefusedTesla": "Tesla avvisade uppdateringstoken som fordonet läses med: utloggad från Tesla-kontot, lösenordet ändrat, eller Owner API stängt för kontot. Hämta en ny token och ange den på anslutningssidan: det som redan lästs finns kvar.",
+      "credentialRefusedTeslaFleet": "Tesla drog tillbaka åtkomsten du gav Runsten för att läsa fordonet: återkallad i ditt Tesla-konto, eller lösenordet ändrat. Logga in med Tesla igen på anslutningssidan: det som redan lästs finns kvar.",
       "credentialMissingTesla": "Runsten läser den här Teslan med en uppdateringstoken från ditt Tesla-konto, som har tagits bort: ange en ny på anslutningssidan.",
+      "credentialMissingTeslaFleet": "Runsten läser den här Teslan genom din inloggning med Tesla, som har tagits bort: logga in igen på anslutningssidan.",
       "unsharedTesla": "Ditt Tesla-konto listar inte längre fordonet: sålt, eller borttaget från kontot. Kommer det tillbaka, ange token igen på anslutningssidan: fordonet läses igen.",
+      "unsharedTeslaFleet": "Ditt Tesla-konto listar inte längre fordonet: sålt, eller borttaget från kontot. Kommer det tillbaka, logga in med Tesla igen på anslutningssidan: fordonet läses igen.",
       "pausedTesla": "Tesla begränsade antalet anrop. Läsningen återupptas av sig själv.",
       "quotaTesla": "Runsten gör högst 3 000 anrop om dagen till Tesla per token, för att hålla sig från dess opublicerade gränser: de är förbrukade. Läsningen återupptas av sig själv.",
+      "quotaTeslaFleet": "Runstens anrop till Tesla för fordonet har nått sin dagliga gräns. Läsningen återupptas av sig själv.",
       "credentialRefusedPolestarId": "Polestar ID nekade Runstens inloggning för den här bilen: sessionen upphörde eller lösenordet ändrades. Anslut ditt Polestar ID igen på anslutningssidan: det som lästs finns kvar.",
       "credentialMissingPolestarId": "Runsten läser den här Polestar-bilen med ditt Polestar ID, som togs bort: anslut det igen på anslutningssidan.",
       "unsharedPolestarId": "Ditt Polestar ID listar inte längre den här bilen: såld eller borttagen från kontot. Om den kommer tillbaka, anslut Polestar ID igen på anslutningssidan: bilen läses igen.",
@@ -1346,6 +1352,7 @@
       "noneDueUnsharedTesla": "Ingen: fordonet finns inte längre i Tesla-kontot",
       "noneDueNotConfigured": "Ingen förrän Volvo är konfigurerat",
       "noneDueToken": "Ingen förrän en Tesla-token anges",
+      "noneDueTeslaFleet": "Ingen förrän ägaren loggar in med Tesla igen",
       "noneDuePolestarId": "Ingen förrän Polestar ID anslutits igen",
       "noneDueUnsharedPolestarId": "Ingen: bilen finns inte längre i Polestar ID"
     },
@@ -1355,6 +1362,7 @@
       "location": "position",
       "polestar": "Polestars Data Portal",
       "tesla": "Teslas Owner API",
+      "teslaFleet": "Teslas Fleet API",
       "polestarId": "Polestar-appens API"
     },
     "failure": {
@@ -1378,6 +1386,7 @@
       "unavailableTesla": "Tesla nås inte",
       "tokenTesla": "Ingen token från Tesla",
       "credentialRefusedTesla": "Tesla-token avvisad",
+      "credentialRefusedTeslaFleet": "Tesla-åtkomst återkallad",
       "credentialRefusedPolestarId": "Polestar ID nekat"
     },
     "key": {

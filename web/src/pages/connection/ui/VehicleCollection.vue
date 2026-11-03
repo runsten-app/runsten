@@ -61,11 +61,13 @@ const nextRead = computed(() => {
     if (state.value.kind === 'credential')
       return provider === 'tesla'
         ? t('connection.facts.noneDueToken')
-        : provider === 'polestar_id'
-          ? t('connection.facts.noneDuePolestarId')
-          : t('connection.facts.noneDueCredential')
+        : provider === 'tesla_fleet'
+          ? t('connection.facts.noneDueTeslaFleet')
+          : provider === 'polestar_id'
+            ? t('connection.facts.noneDuePolestarId')
+            : t('connection.facts.noneDueCredential')
     if (state.value.kind === 'unshared')
-      return provider === 'tesla'
+      return provider === 'tesla' || provider === 'tesla_fleet'
         ? t('connection.facts.noneDueUnsharedTesla')
         : provider === 'polestar_id'
           ? t('connection.facts.noneDueUnsharedPolestarId')

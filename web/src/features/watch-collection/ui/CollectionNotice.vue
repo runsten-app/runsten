@@ -51,12 +51,14 @@ function body(s: CollectionState): string {
             polestar: t('connection.notice.credentialRefused'),
             tesla: t('connection.notice.credentialRefusedTesla'),
             polestarId: t('connection.notice.credentialRefusedPolestarId'),
+            teslaFleet: t('connection.notice.credentialRefusedTeslaFleet'),
           })
         : byProvider(provider.value, {
             volvo: t('connection.notice.credentialMissing'),
             polestar: t('connection.notice.credentialMissing'),
             tesla: t('connection.notice.credentialMissingTesla'),
             polestarId: t('connection.notice.credentialMissingPolestarId'),
+            teslaFleet: t('connection.notice.credentialMissingTeslaFleet'),
           })
     case 'unshared':
       return byProvider(provider.value, {
@@ -64,13 +66,16 @@ function body(s: CollectionState): string {
         polestar: t('connection.notice.unshared'),
         tesla: t('connection.notice.unsharedTesla'),
         polestarId: t('connection.notice.unsharedPolestarId'),
+        teslaFleet: t('connection.notice.unsharedTeslaFleet'),
       })
     case 'notGranted':
       return t('connection.notice.notGranted', { endpoint: s.endpoint ?? f.unknown() })
     default:
       // The quota is the key's: the account's own, or the instance's, shared; or the
-      // Polestar credential's, the Tesla refresh token's, the Polestar ID's.
+      // Polestar credential's, the Tesla refresh token's, the Polestar ID's, the calls to
+      // Tesla's Fleet API.
       if (provider.value === 'polestar') return t('connection.notice.quotaPolestar')
+      if (provider.value === 'tesla_fleet') return t('connection.notice.quotaTeslaFleet')
       if (provider.value === 'polestar_id') return t('connection.notice.quotaPolestarId')
       if (provider.value === 'tesla') return t('connection.notice.quotaTesla')
       return connection.value?.api_key === 'own'

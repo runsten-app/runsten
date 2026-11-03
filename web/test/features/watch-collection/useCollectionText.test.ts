@@ -19,6 +19,8 @@ describe('useCollectionText', () => {
     expect(text.failure('api_closed', 'tesla')).toBe('API closed to the account')
     expect(text.failure('credential_refused', 'polestar_id')).toBe('Polestar ID refused')
     expect(text.failure('unavailable', 'polestar_id')).toBe('Polestar unreachable')
+    expect(text.failure('credential_refused', 'tesla_fleet')).toBe('Tesla access withdrawn')
+    expect(text.failure('unavailable', 'tesla_fleet')).toBe('Tesla unreachable')
   })
 
   it("names the Data Portal's API", () => {
@@ -26,6 +28,7 @@ describe('useCollectionText', () => {
     expect(text.api('polestar')).toBe('Polestar Data Portal')
     expect(text.api('tesla')).toBe('Tesla Owner API')
     expect(text.api('polestar_id')).toBe('Polestar app API')
+    expect(text.api('tesla_fleet')).toBe('Tesla Fleet API')
     expect(text.api('elsewhere')).toBe('elsewhere')
   })
 })

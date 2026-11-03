@@ -98,7 +98,8 @@ const brandLabels = computed<Record<Brand, string>>(() => ({
   tesla: t('connection.brand.tesla'),
 }))
 // A Polestar read with the Polestar ID is a Polestar's: one tab.
-const brandOf = (p?: Vehicle['connection']['provider']) => (p === 'polestar_id' ? 'polestar' : p)
+const brandOf = (p?: Vehicle['connection']['provider']) =>
+  p === 'polestar_id' ? 'polestar' : p === 'tesla_fleet' ? 'tesla' : p
 const ofBrand = (b: Brand) =>
   (vehicles.value ?? []).filter((v) => brandOf(v.connection.provider) === b)
 const teslaOn = useFlag('source.tesla')

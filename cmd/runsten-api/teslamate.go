@@ -16,6 +16,7 @@ import (
 	"runsten/internal/importer"
 	"runsten/internal/platform/clock"
 	"runsten/internal/store"
+	"runsten/internal/tesla"
 )
 
 // importTeslaMateUsage is the command's synopsis.
@@ -82,7 +83,7 @@ func importTeslaMate(args []string, getenv func(string) string, stdin io.Reader,
 	vehicleID := ""
 	for _, v := range vehicles {
 		if strings.EqualFold(v.VIN, strings.TrimSpace(*vin)) {
-			if v.Provider != "tesla" {
+			if v.Provider != tesla.Source && v.Provider != tesla.FleetSource {
 				return errors.New("the vehicle of this VIN is not read as a Tesla: TeslaMate's history is a Tesla's")
 			}
 			vehicleID = v.ID

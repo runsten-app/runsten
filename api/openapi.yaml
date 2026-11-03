@@ -1325,12 +1325,13 @@ components:
               type: string
             - type: "null"
         provider:
-          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API."
+          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it."
           enum:
             - volvo
             - polestar
             - tesla
             - polestar_id
+            - tesla_fleet
           type: string
         reauth_at:
           description: When the grant was found lost; null while active.

@@ -1286,7 +1286,9 @@
       "quotaPolestar": "Polestar quota reached until {time}",
       "notConfigured": "Not read: Volvo is not configured on this instance",
       "credentialRefusedTesla": "Not read: Tesla refused the refresh token",
+      "credentialRefusedTeslaFleet": "Not read: Tesla withdrew the access given to Runsten",
       "credentialMissingTesla": "Not read: no Tesla refresh token given",
+      "credentialMissingTeslaFleet": "Not read: not signed in with Tesla",
       "unsharedTesla": "Not read: the vehicle is no longer in the Tesla account",
       "pausedTesla": "Paused by Tesla until {time}",
       "quotaTesla": "Daily calls to Tesla reached until {time}",
@@ -1318,10 +1320,14 @@
       "pausedPolestar": "Polestar limited the number of calls. Reading resumes by itself.",
       "notConfigured": "This instance has no Volvo application: nothing new is read of this vehicle until its administrator sets one. Its history stays.",
       "credentialRefusedTesla": "Tesla refused the refresh token this vehicle is read with: signed out of the Tesla account, its password changed, or Tesla closed its Owner API to the account. Get a new token and give it on the connection page: what was read stays.",
+      "credentialRefusedTeslaFleet": "Tesla withdrew the access you gave Runsten to read this vehicle: revoked in your Tesla account, or its password changed. Sign in with Tesla again on the connection page: what was read stays.",
       "credentialMissingTesla": "Runsten reads this Tesla with a refresh token of your Tesla account, which was removed: give a new one on the connection page.",
+      "credentialMissingTeslaFleet": "Runsten reads this Tesla through your sign-in with Tesla, which was removed: sign in again on the connection page.",
       "unsharedTesla": "Your Tesla account no longer lists this vehicle: sold, or removed from the account. Should it come back, give the refresh token again on the connection page: the vehicle is read again.",
+      "unsharedTeslaFleet": "Your Tesla account no longer lists this vehicle: sold, or removed from the account. Should it come back, sign in with Tesla again on the connection page: the vehicle is read again.",
       "pausedTesla": "Tesla limited the number of calls. Reading resumes by itself.",
       "quotaTesla": "Runsten makes at most 3,000 calls a day to Tesla per refresh token, to stay clear of its unpublished limits: they are used up. Reading resumes by itself.",
+      "quotaTeslaFleet": "The calls Runsten makes to Tesla for this vehicle reached their daily limit. Reading resumes by itself.",
       "credentialRefusedPolestarId": "The Polestar ID refused Runsten's sign-in for this car: the session ended, or the password changed. Connect your Polestar ID again on the connection page: what was read stays.",
       "credentialMissingPolestarId": "Runsten reads this Polestar with your Polestar ID, which was removed: connect it again on the connection page.",
       "unsharedPolestarId": "Your Polestar ID no longer lists this car: sold, or removed from the account. Should it come back, connect the Polestar ID again on the connection page: the car is read again.",
@@ -1346,6 +1352,7 @@
       "noneDueUnsharedTesla": "None: the vehicle is no longer in the Tesla account",
       "noneDueNotConfigured": "None until Volvo is configured",
       "noneDueToken": "None until a Tesla refresh token is given",
+      "noneDueTeslaFleet": "None until the owner signs in with Tesla again",
       "noneDuePolestarId": "None until the Polestar ID is connected again",
       "noneDueUnsharedPolestarId": "None: the car is no longer in the Polestar ID"
     },
@@ -1355,6 +1362,7 @@
       "location": "position",
       "polestar": "Polestar Data Portal",
       "tesla": "Tesla Owner API",
+      "teslaFleet": "Tesla Fleet API",
       "polestarId": "Polestar app API"
     },
     "failure": {
@@ -1378,6 +1386,7 @@
       "unavailableTesla": "Tesla unreachable",
       "tokenTesla": "No token from Tesla",
       "credentialRefusedTesla": "Tesla refresh token refused",
+      "credentialRefusedTeslaFleet": "Tesla access withdrawn",
       "credentialRefusedPolestarId": "Polestar ID refused"
     },
     "key": {
