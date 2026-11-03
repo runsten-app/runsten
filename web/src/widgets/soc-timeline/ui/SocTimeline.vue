@@ -2,6 +2,8 @@
 import { computed, ref, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from 'vuetify'
+import type { Charge } from '@/entities/charge'
+import type { Trip } from '@/entities/trip'
 import { useCharges } from '@/features/browse-charges'
 import { useTrips } from '@/features/browse-trips'
 import { readingsOf, seriesLine, useSeries } from '@/features/view-series'
@@ -11,8 +13,9 @@ import { ChartFrame, type Band, type Series } from '@/shared/ui/chart'
 // SocTimeline draws the state of charge of the last 24 hours, or 7 days, as the vehicle
 // gave it, and under it a strip of what the vehicle was doing: driving, charging, or
 // parked between them while it was read; empty where nothing was. A line breaks there
-// too; read every hour, the readings show as points. The table for screen readers gives
-// each day's lowest and highest state of charge, and its events.
+// too; read every hour, the readings show as points. The pointer over a trip or a charge
+// tells its figures, as the lists do. The table for screen readers gives each day's
+// lowest and highest state of charge, and its events.
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const f = useFormat()
@@ -70,17 +73,23 @@ const known = computed(() =>
 // A band covers where the event may have been, from its earliest start to its latest
 // end, and solidly where it surely was; a reconstructed one is sure of nothing.
 type Event = { start: Bounds; end: Bounds; reconstructed: boolean }
-// What the pointer over a band tells: the day it began, its times (the end's day only when
-// another), how long it lasted; as honest as its bounds.
-function detail(start: Bounds, end: Bounds): string[] {
+// What the pointer over a band tells first: the day it began, its times (the end's day only
+// when another), how long it lasted; as honest as its bounds. A reconstructed event, as
+// in the lists, is the one interval it lies within, with no duration.
+function detail(start: Bounds, end: Bounds, reconstructed = false): string[] {
   const day = f.dayKey(start.after)
+  if (reconstructed)
+    return [
+      f.calendarDay(day),
+      t('event.between', { from: f.time(start.after, day), to: f.time(end.before, day) }),
+    ]
   return [
     f.calendarDay(day),
     `${f.bounds(start, day)} – ${f.bounds(end, day)}`,
     f.duration(start, end),
   ]
 }
-function band(e: Event, label: string, c: string): Band {
+function band(e: Event, label: string, c: string, figures: string[]): Band {
   const sureFrom = Date.parse(e.start.before)
   const sureTo = Date.parse(e.end.after)
   return {
@@ -89,12 +98,51 @@ function band(e: Event, label: string, c: string): Band {
     from: Date.parse(e.start.after),
     to: Date.parse(e.end.before),
     sure: !e.reconstructed && sureTo > sureFrom ? { from: sureFrom, to: sureTo } : undefined,
-    detail: detail(e.start, e.end),
+    detail: [...detail(e.start, e.end, e.reconstructed), ...figures],
   }
 }
+// Then what the lists tell of it, each figure only when known: a trip's ends, its
+// distance, the state of charge it used and its consumption…
+function tripFigures(trip: Trip): string[] {
+  const out: string[] = []
+  const from = trip.start_place?.name ?? trip.start_address
+  const to = trip.end_place?.name ?? trip.end_address
+  if (from || to)
+    out.push(t('trip.route', { from: from ?? t('trip.elsewhere'), to: to ?? t('trip.elsewhere') }))
+  const { distance_km: d, energy_kwh: e } = trip
+  const figures: string[] = []
+  if (d !== null) figures.push(f.quantity(d, 'km'))
+  if (trip.start_soc_pct !== null || trip.end_soc_pct !== null)
+    figures.push(f.change(trip.start_soc_pct, trip.end_soc_pct, 'percent'))
+  // As the statistics count it: its energy over a positive distance.
+  if (e !== null && d !== null && d > 0) figures.push(f.quantity((e * 100) / d, 'kWhPer100km'))
+  if (figures.length) out.push(figures.join(' · '))
+  return out
+}
+// …a charge's place, its type, the state of charge it went through, the energy it added
+// (measured when the vehicle did, else from the state of charge), its average power and
+// its cost.
+function chargeFigures(charge: Charge): string[] {
+  const out: string[] = []
+  const where = charge.place?.name ?? charge.address
+  if (where) out.push(where)
+  const figures: string[] = []
+  if (charge.type) figures.push(charge.type)
+  if (charge.start_soc_pct !== null || charge.end_soc_pct !== null)
+    figures.push(f.change(charge.start_soc_pct, charge.end_soc_pct, 'percent'))
+  const energy = charge.energy_measured_kwh ?? charge.energy_soc_kwh
+  if (energy !== null) figures.push(f.quantity(energy, 'kWh'))
+  if (figures.length) out.push(figures.join(' · '))
+  if (charge.average_power_kw !== null)
+    out.push(t('timeline.averagePower', { power: f.quantity(charge.average_power_kw, 'kW') }))
+  if (charge.cost) out.push(f.chargeCost(charge.cost).text)
+  return out
+}
 const events = computed<Band[]>(() => [
-  ...trips.trips.value.map((e) => band(e, t('timeline.driving'), color('chart-2'))),
-  ...charges.charges.value.map((e) => band(e, t('timeline.charging'), color('chart-5'))),
+  ...trips.trips.value.map((e) => band(e, t('timeline.driving'), color('chart-2'), tripFigures(e))),
+  ...charges.charges.value.map((e) =>
+    band(e, t('timeline.charging'), color('chart-5'), chargeFigures(e)),
+  ),
 ])
 // Parked is wherever the vehicle was read, from the first reading of a run to its last,
 // outside its trips and charges (as far as they may reach): each stretch its own band,

@@ -119,6 +119,46 @@ describe('SocTimeline', () => {
     )
   })
 
+  it("tells a trip's and a charge's figures under its times, each only when known", async () => {
+    const w = await mounted()
+    const bands = w.findComponent({ name: 'ChartFrame' }).props('bands') as Band[]
+    const driving = bands.filter((b) => b.label === 'Driving')
+    const charging = bands.filter((b) => b.label === 'Charging')
+    expect(driving.map((b) => b.detail?.map(plain))).toEqual([
+      [
+        '28 Sept 2026',
+        '16:35–16:41 – 17:25',
+        '43–50 mins',
+        'Elsewhere → Maison de Tante Agathe',
+        '33 km',
+      ],
+      // A reconstructed trip: one interval, no duration, as in the list.
+      ['28 Sept 2026', 'Happened between 12:00 and 13:00', '8 km'],
+      [
+        '28 Sept 2026',
+        '06:55–07:01 – 07:40',
+        '38–45 mins',
+        'Maison de Tante Agathe → Elsewhere',
+        '32 km · 62% → 55% · 18.8 kWh/100 km',
+      ],
+    ])
+    expect(charging.map((b) => b.detail?.map(plain))).toEqual([
+      [
+        '28 Sept 2026',
+        '18:20–18:30 – 21:56',
+        '3 hrs, 25 mins – 3 hrs, 36 mins',
+        'Maison de Tante Agathe',
+        'AC · 47% → 80% · 26.4 kWh',
+        '€5.24 – €5.79',
+      ],
+      ['28 Sept 2026', 'Happened between 01:00 and 04:00', '40% → 62% · 17.6 kWh'],
+    ])
+    // The table for screen readers lists the same.
+    expect(w.findAll('.d-sr-only li').map((li) => plain(li.text()))).toContain(
+      'Charging, 28 Sept 2026, 18:20–18:30 – 21:56, 3 hrs, 25 mins – 3 hrs, 36 mins, Maison de Tante Agathe, AC · 47% → 80% · 26.4 kWh, €5.24 – €5.79',
+    )
+  })
+
   it('says parked only maybe while a page of the events could not be read', async () => {
     mocks.fetchTrips.mockImplementation((_v: string, q: { cursor?: string }) =>
       q.cursor ? Promise.reject(new Error('down')) : Promise.resolve(trips1),

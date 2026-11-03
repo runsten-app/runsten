@@ -851,6 +851,7 @@
     "high": "Niveau de charge le plus haut",
     "trips": "Trajets commencés",
     "charges": "Recharges commencées",
+    "averagePower": "{power} en moyenne",
     "window": {
       "label": "Période affichée",
       "day": "24 h",

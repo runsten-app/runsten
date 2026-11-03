@@ -851,6 +851,7 @@
     "high": "Högsta laddningsnivå",
     "trips": "Påbörjade resor",
     "charges": "Påbörjade laddningar",
+    "averagePower": "{power} i genomsnitt",
     "window": {
       "label": "Visad period",
       "day": "24 h",

@@ -851,6 +851,7 @@
     "high": "Highest state of charge",
     "trips": "Trips started",
     "charges": "Charges started",
+    "averagePower": "{power} on average",
     "window": {
       "label": "Period shown",
       "day": "24 h",
