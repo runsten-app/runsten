@@ -35,24 +35,31 @@ func SleepSpans(records []Record) []SleepSpan {
 // SleepStretches lays the sorted spans out over [from, to]: each cut at its edges, and
 // joined to the one before it when they tell the same state and no more than gap
 // separates them, as the readings of a run are. Between two stretches nothing was read.
+// A span of no time is no stretch, but another state read in between keeps two apart.
 func SleepStretches(spans []SleepSpan, from, to time.Time, gap time.Duration) []SleepSpan {
 	var out []SleepSpan
+	var last SleepState // the state of the latest span, drawn or not
 	for _, s := range spans {
 		s.From, s.To = later(s.From, from), earlier(s.To, to)
-		if !s.To.After(s.From) {
+		if s.To.Before(s.From) {
 			continue
 		}
-		if n := len(out); n > 0 && out[n-1].State == s.State && s.From.Sub(out[n-1].To) <= gap {
-			out[n-1].To = s.To
-			continue
+		joined := len(out) > 0 && last == s.State && out[len(out)-1].State == s.State &&
+			s.From.Sub(out[len(out)-1].To) <= gap
+		last = s.State
+		switch {
+		case joined:
+			out[len(out)-1].To = later(out[len(out)-1].To, s.To)
+		case s.To.After(s.From):
+			out = append(out, s)
 		}
-		out = append(out, s)
 	}
 	return out
 }
 
 // sortedSpans sorts spans by their start and cuts each one where the previous ends: two
-// sources telling the same time count it once.
+// sources telling the same time count it once. A response read once is a span of no
+// time, kept: it tells the state at that instant.
 func sortedSpans(spans []SleepSpan) []SleepSpan {
 	spans = slices.Clone(spans)
 	slices.SortStableFunc(spans, func(a, b SleepSpan) int { return a.From.Compare(b.From) })
@@ -62,7 +69,7 @@ func sortedSpans(spans []SleepSpan) []SleepSpan {
 		if s.From.Before(end) {
 			s.From = end
 		}
-		if !s.To.After(s.From) {
+		if s.To.Before(s.From) {
 			continue
 		}
 		out = append(out, s)

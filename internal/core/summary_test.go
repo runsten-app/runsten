@@ -1341,12 +1341,13 @@ func TestSleepSpans(t *testing.T) {
 	spans := SleepSpans([]Record{
 		state(30, 90, Offline),
 		state(0, 20, Awake),
-		state(25, 25, Asleep), // seen once: no time
+		state(25, 25, Asleep), // seen once: no time, kept for the instant
 		state(60, 95, Asleep), // another source over the same time counts it once
 		untold, other,
 	})
 	want := []SleepSpan{
 		{From: at(0), To: at(20), State: Awake},
+		{From: at(25), To: at(25), State: Asleep, Asleep: true},
 		{From: at(30), To: at(90), State: Offline, Asleep: true},
 		{From: at(90), To: at(95), State: Asleep, Asleep: true},
 	}
@@ -1381,6 +1382,25 @@ func TestSleepStretches(t *testing.T) {
 		span(60, 70, Offline),
 		span(200, 260, Offline),
 	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("stretches %+v\nwant       %+v", got, want)
+	}
+}
+
+func TestSleepStretchesKeepAReadingApart(t *testing.T) {
+	at := func(n int) time.Time { return pt("2026-06-01 00:00").Add(time.Duration(n) * time.Minute) }
+	span := func(f, c int, st SleepState) SleepSpan {
+		return SleepSpan{From: at(f), To: at(c), State: st, Asleep: st != Awake}
+	}
+	// Asleep, read awake once, asleep again: two stretches, the awake one of no time
+	// drawn nowhere.
+	got := SleepStretches([]SleepSpan{
+		span(0, 20, Asleep),
+		span(25, 25, Awake),
+		span(30, 50, Asleep),
+		span(55, 55, Asleep), // read once more, asleep: it lengthens the stretch
+	}, at(0), at(100), 30*time.Minute)
+	want := []SleepSpan{span(0, 20, Asleep), span(30, 55, Asleep)}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("stretches %+v\nwant       %+v", got, want)
 	}
