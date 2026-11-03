@@ -197,6 +197,14 @@ linters:
               desc: the reader returns the portal's values; importer converts them
             - pkg: runsten/internal/importer
               desc: outward dependency forbidden
+        # The reader of TeslaMate's backup returns its rows as they are.
+        teslamate-is-a-reader:
+          files: ["**/internal/teslamate/**"]
+          deny:
+            - pkg: runsten/internal/core
+              desc: the reader returns TeslaMate's values; importer converts them
+            - pkg: runsten/internal/importer
+              desc: outward dependency forbidden
         # The front end's server serves files and relays to runsten-api by URL: it knows
         # no business code, no storage and no secret.
         web-without-business:
