@@ -13,6 +13,11 @@ import (
 // Source names Tesla's Owner API among the sources of readings.
 const Source = "tesla"
 
+// FleetSource names Tesla's Fleet API, through an application the instance's operator
+// registered at Tesla: the provider of a connection whose vehicles a source an extension
+// registers reads, and the source of its readings. The core reads none of them itself.
+const FleetSource = "tesla_fleet"
+
 // Brand is the maker of every vehicle the Owner API reads, as the catalog names it.
 const Brand = "tesla"
 
