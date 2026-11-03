@@ -202,7 +202,18 @@ describe('SocTimeline', () => {
   })
 
   it("tells an update's installation as far as a reading saw it, and none unseen", async () => {
-    mocks.fetchSoftwareVersions.mockResolvedValue(versions)
+    // And one installed a week before the window: left out.
+    const older = {
+      ...versions.items[0],
+      id: '2026-09-20T05:00:00.000000Z',
+      version: '2026.32.9',
+      installed: { after: '2026-09-20T04:00:00Z', before: '2026-09-20T05:00:00Z' },
+      install_start: { after: '2026-09-20T03:30:00Z', before: '2026-09-20T03:31:00Z' },
+    }
+    mocks.fetchSoftwareVersions.mockResolvedValue({
+      ...versions,
+      items: [...versions.items, older],
+    })
     const w = await mounted()
     const bands = w.findComponent({ name: 'ChartFrame' }).props('bands') as Band[]
     // 2026.38.3.2 seen installing from 03:30–03:31, read from 05:00; the others never seen.

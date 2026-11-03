@@ -144,19 +144,22 @@ function chargeFigures(charge: Charge): string[] {
   return out
 }
 // An update's installation, as far as it was seen: from its start, which a reading saw,
-// to the first reading of the version; none when no reading saw it installing.
+// to the first reading of the version; none when no reading saw it installing. Only
+// those within the window: the older versions would be listed for screen readers.
 const updates = computed<Band[]>(() =>
   software.versions.value.flatMap((v) => {
     if (!v.install_start) return []
-    const end = { after: v.installed.after ?? v.install_start.before, before: v.installed.before }
-    return [
-      band(
-        { start: v.install_start, end, reconstructed: false },
-        t('timeline.update'),
-        color('warning'),
-        [t('timeline.version', { version: v.version })],
-      ),
-    ]
+    const installed = {
+      after: v.installed.after ?? v.install_start.before,
+      before: v.installed.before,
+    }
+    const b = band(
+      { start: v.install_start, end: installed, reconstructed: false },
+      t('timeline.update'),
+      color('warning'),
+      [t('timeline.version', { version: v.version })],
+    )
+    return b.to > start.value && b.from < end.value ? [b] : []
   }),
 )
 const events = computed<Band[]>(() => [
