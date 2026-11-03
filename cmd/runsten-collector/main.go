@@ -252,7 +252,7 @@ func run(args []string) error {
 	if err != nil {
 		return fmt.Errorf("catalog: %w", err)
 	}
-	norm := derive.Sources(volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{})
+	norm := normalizers()
 	deriver := derive.New(st, norm, core.DefaultParams(), capacities{catalog: cat, vehicle: vehicleOf(st)}, log)
 	if cmd == rebuild {
 		return rebuildAll(ctx, st, deriver, log)
@@ -562,4 +562,12 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		errs = append(errs, fmt.Errorf("RUNSTEN_FLAGS: %w", err))
 	}
 	return cfg, errors.Join(errs...)
+}
+
+// normalizers reads the stored responses of every source: the core's, and those an
+// extension adds.
+func normalizers() derive.Normalizer {
+	return derive.Sources(append([]derive.Normalizer{
+		volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{},
+	}, extensionNormalizers()...)...)
 }

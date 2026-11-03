@@ -10,3 +10,11 @@ func TestNoExtensions(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// TestNoExtensionNormalizers: the public build derives the readings of its own sources
+// only.
+func TestNoExtensionNormalizers(t *testing.T) {
+	if n := extensionNormalizers(); n != nil {
+		t.Errorf("normalizers %v", n)
+	}
+}

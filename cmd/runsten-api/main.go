@@ -281,7 +281,7 @@ func run(args []string) error {
 	if cfg.geocoder != nil {
 		addresses = st
 	}
-	deriver := derive.New(st, derive.Sources(volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{}), core.DefaultParams(), nil, log)
+	deriver := derive.New(st, normalizers(), core.DefaultParams(), nil, log)
 	ax := aximote.NewClient(cfg.aximoteURL, hc)
 	// Only when asked is GitHub read: nothing leaves for it otherwise.
 	var releases api.Releases
@@ -812,4 +812,12 @@ func (a aximoteVehicles) AximoteVehicles(ctx context.Context, token string) ([]a
 		}
 	}
 	return out, nil
+}
+
+// normalizers reads the stored responses of every source: the core's, and those an
+// extension adds.
+func normalizers() derive.Normalizer {
+	return derive.Sources(append([]derive.Normalizer{
+		volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{},
+	}, extensionNormalizers()...)...)
 }
