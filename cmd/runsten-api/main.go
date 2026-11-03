@@ -80,6 +80,9 @@
 //	RUNSTEN_AXIMOTE_BASE_URL     Aximote's public API, which the imports of a vehicle's
 //	                             history read with the user's token (default
 //	                             https://api.aximote.com)
+//	RUNSTEN_TESLAMATE_IMPORTS    how many TeslaMate backups are read at once (default 2):
+//	                             each takes up to about 240 MB until it is written; 1 where
+//	                             runsten-api has little memory
 //	RUNSTEN_HEALTH_TOKEN         the bearer token of /healthz/full, 32 characters at
 //	                             least (default none: no report)
 //	RUNSTEN_UPDATE_CHECK         true to read the latest release of Runsten on GitHub
@@ -143,6 +146,8 @@ import (
 const (
 	flowTTL    = 10 * time.Minute
 	maxPending = 16
+	// maxTeslaMateImports bounds RUNSTEN_TESLAMATE_IMPORTS: more would take gigabytes.
+	maxTeslaMateImports = 8
 )
 
 // version is the release built, set by the build (-ldflags "-X main.version=0.11.0":
@@ -185,6 +190,9 @@ type config struct {
 	healthToken string
 	// updateCheck: read the latest release on GitHub, to tell a newer one.
 	updateCheck bool
+	// teslaMateImports is how many TeslaMate backups are read at once; 0: the API's
+	// default.
+	teslaMateImports int
 	// privateBrokers: an account's MQTT broker may be on a local network, or over
 	// plain mqtt://. False on an instance open to the Internet's users.
 	privateBrokers bool
@@ -285,19 +293,20 @@ func run(args []string) error {
 	pictureParams.UserAgent = "Runsten/" + version
 	handler := api.New(api.Config{
 		Sessions: sessions, AccessTokens: sessions,
-		Addresses:   addresses,
-		Pictures:    pictures{picture.New(pictureParams, hc, clock.Real{})},
-		Reader:      st,
-		Settings:    st,
-		Models:      st,
-		Deletion:    st,
-		Costs:       st,
-		Imports:     st,
-		ImportJobs:  st,
-		Aximote:     aximoteVehicles{ax},
-		FileImports: fileImports{importer.NewFiles(st, clock.Real{})},
-		Accounts:    st,
-		Flags:       features,
+		Addresses:        addresses,
+		Pictures:         pictures{picture.New(pictureParams, hc, clock.Real{})},
+		Reader:           st,
+		Settings:         st,
+		Models:           st,
+		Deletion:         st,
+		Costs:            st,
+		Imports:          st,
+		ImportJobs:       st,
+		Aximote:          aximoteVehicles{ax},
+		FileImports:      fileImports{importer.NewFiles(st, clock.Real{})},
+		TeslaMateImports: cfg.teslaMateImports,
+		Accounts:         st,
+		Flags:            features,
 		// The readings' CSV file: the responses as stored, each source's private fields
 		// left out.
 		Responses:     st,
@@ -585,6 +594,13 @@ func loadConfig(getenv func(string) string) (config, error) {
 			errs = append(errs, fmt.Errorf("RUNSTEN_UPDATE_CHECK %q: true or false expected", v))
 		}
 		cfg.updateCheck = b
+	}
+	if v := getenv("RUNSTEN_TESLAMATE_IMPORTS"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 1 || n > maxTeslaMateImports {
+			errs = append(errs, fmt.Errorf("RUNSTEN_TESLAMATE_IMPORTS %q: a number from 1 to %d expected", v, maxTeslaMateImports))
+		}
+		cfg.teslaMateImports = n
 	}
 	if v := getenv("RUNSTEN_HEALTH_TOKEN"); v != "" {
 		if len(v) < minHealthToken {

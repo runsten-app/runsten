@@ -67,7 +67,7 @@ func TestImportTeslaMate(t *testing.T) {
 	}
 
 	t.Run("one at a time per vehicle", func(t *testing.T) {
-		e.server.teslaMate.start(car)
+		e.server.teslaMate.start(car, DefaultTeslaMateImports)
 		defer e.server.teslaMate.done(car)
 		resp, out := do(t, noFollow(), http.MethodPost, url, "application/octet-stream", backup, c)
 		if resp.status != http.StatusConflict {
@@ -77,7 +77,7 @@ func TestImportTeslaMate(t *testing.T) {
 	})
 	t.Run("a few per instance", func(t *testing.T) {
 		for _, v := range []string{"v1", "v2"} {
-			e.server.teslaMate.start(v)
+			e.server.teslaMate.start(v, DefaultTeslaMateImports)
 			defer e.server.teslaMate.done(v)
 		}
 		resp, out := do(t, noFollow(), http.MethodPost, url, "application/octet-stream", backup, c)
@@ -85,6 +85,16 @@ func TestImportTeslaMate(t *testing.T) {
 			t.Errorf("%d %v %s", resp.status, resp.header, out)
 		}
 		wantError(t, out, codeSourceUnavailable)
+	})
+	t.Run("one at a time where the instance says so", func(t *testing.T) {
+		e.server.TeslaMateImports = 1
+		defer func() { e.server.TeslaMateImports = 0 }()
+		e.server.teslaMate.start("v1", DefaultTeslaMateImports)
+		defer e.server.teslaMate.done("v1")
+		resp, out := do(t, noFollow(), http.MethodPost, url, "application/octet-stream", backup, c)
+		if resp.status != http.StatusServiceUnavailable {
+			t.Errorf("%d %s", resp.status, out)
+		}
 	})
 	// The slots are given back, whatever the import did.
 	if resp, out := do(t, noFollow(), http.MethodPost, url, "application/octet-stream", backup, c); resp.status != http.StatusOK {
