@@ -218,10 +218,15 @@ describe('ChartFrame', () => {
     const [spans] = w.findComponent({ name: 'Line' }).props('plugins') as {
       afterEvent: (chart: unknown, args: { event: unknown }) => void
     }[]
+    const active = { elements: [{ datasetIndex: 0, index: 0 }] }
     const chart = {
       scales: { x: { getPixelForValue: (v: number) => v } },
       chartArea: { left: 0, right: 100, bottom: 55 },
       width: 100,
+      tooltip: {
+        getActiveElements: () => active.elements,
+        setActiveElements: (e: typeof active.elements) => (active.elements = e),
+      },
     }
     const at = (type: string, x: number | null, y: number | null) =>
       spans?.afterEvent(chart, { event: { type, x, y } })
@@ -230,6 +235,10 @@ describe('ChartFrame', () => {
     await w.vm.$nextTick()
     expect(w.find('.tip').text()).toBe('Driving1 Nov10:00')
     expect(w.find('.tip').classes()).toContain('tip--left')
+    // Up from the strip's top (61), over the plot: under it, the card would cut it.
+    expect(w.find('.tip').attributes('style')).toContain('top: 57px')
+    // The point's tooltip gives way to it.
+    expect(active.elements).toEqual([])
     at('mousemove', 20, 70)
     await w.vm.$nextTick()
     expect(w.find('.tip').text()).toBe('Parkedall day')
