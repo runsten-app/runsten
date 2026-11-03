@@ -12,7 +12,8 @@ import { ChartFrame, type Band, type Series } from '@/shared/ui/chart'
 
 // SocTimeline draws the state of charge of the last 24 hours, or 7 days, as the vehicle
 // gave it, and under it a strip of what the vehicle was doing: driving, charging, or
-// parked between them while it was read; empty where nothing was. A line breaks there
+// parked between them while it was read, asleep where its source told so; empty where
+// nothing was. A line breaks there
 // too; read every hour, the readings show as points. The pointer over a trip or a charge
 // tells its figures, as the lists do. The table for screen readers gives each day's
 // lowest and highest state of charge, and its events.
@@ -145,48 +146,89 @@ const events = computed<Band[]>(() => [
   ),
 ])
 // Parked is wherever the vehicle was read, from the first reading of a run to its last,
-// outside its trips and charges (as far as they may reach): each stretch its own band,
-// named where it has room. Between two runs nothing was read: no band. Until every page
+// or told awake, outside its trips and charges (as far as they may reach); asleep (or
+// offline) wherever it was told so, outside them too, and parked no more. A vehicle
+// asleep is not read: the stretches asleep fall between the runs. Each stretch is its
+// own band, named where it has room; where nothing was read, no band. Until every page
 // of the events is read (the first still coming, one failed, more to come), a trip may
-// hide in it: parked is then only maybe, paler.
-const parked = computed<Band[]>(() => {
+// hide in them: they are then only maybe, paler.
+type Span = [number, number]
+// minus is the parts of the sorted spans outside the sorted cuts.
+function minus(spans: Span[], cuts: Span[]): Span[] {
+  return spans.flatMap(([from, end]) => {
+    const out: Span[] = []
+    let at = from
+    for (const [a, b] of cuts) {
+      if (b <= at || a >= end) continue
+      if (a > at) out.push([at, a])
+      at = Math.max(at, b)
+    }
+    if (end > at) out.push([at, end])
+    return out
+  })
+}
+// union joins the spans that overlap or touch, sorted.
+function union(spans: Span[]): Span[] {
+  const out: Span[] = []
+  for (const [a, b] of [...spans].sort((x, y) => x[0] - y[0])) {
+    const last = out.at(-1)
+    if (last && a <= last[1]) last[1] = Math.max(last[1], b)
+    else out.push([a, b])
+  }
+  return out
+}
+const sleep = computed(() =>
+  (series.value?.sleep ?? []).map((s) => ({
+    span: [Date.parse(s.from), Date.parse(s.to)] as Span,
+    state: s.state,
+  })),
+)
+const strip = computed<Band[]>(() => {
   const complete = [trips, charges].every(
     (e) => !e.isPending.value && !e.error.value && !e.hasMore.value,
   )
-  const busy = events.value.map((e) => [e.from, e.to] as const).sort((x, y) => x[0] - y[0])
-  return (series.value?.runs ?? []).flatMap((run) => {
-    const first = run.readings[0]
-    const last = run.readings.at(-1)
-    if (!first || !last) return []
-    const end = Date.parse(last.at)
-    const out: Band[] = []
-    let from = Date.parse(first.at)
-    const push = (to: number) => {
-      const at = (v: number) => {
-        const iso = new Date(v).toISOString()
-        return { after: iso, before: iso }
-      }
-      if (to > from)
-        out.push({
-          label: t('timeline.parked'),
-          color: color('track'),
-          ink: color('text-secondary'),
-          from,
-          to,
-          sure: complete ? { from, to } : undefined,
-          detail: detail(at(from), at(to)),
-        })
-    }
-    for (const [a, b] of busy) {
-      if (b <= from || a >= end) continue
-      push(a)
-      from = Math.max(from, b)
-    }
-    push(end)
-    return out
-  })
+  const busy = union(events.value.map((e): Span => [e.from, e.to]))
+  const at = (v: number) => {
+    const iso = new Date(v).toISOString()
+    return { after: iso, before: iso }
+  }
+  const stretch =
+    (label: string, c: string, ink: string, extra: string[]) =>
+    ([from, to]: Span) => ({
+      label,
+      color: c,
+      ink,
+      from,
+      to,
+      sure: complete ? { from, to } : undefined,
+      detail: [...detail(at(from), at(to)), ...extra],
+    })
+  const asleep = sleep.value
+    .filter((s) => s.state !== 'awake')
+    .flatMap((s) =>
+      minus([s.span], busy).map(
+        stretch(
+          t('timeline.asleep'),
+          color('chart-3'),
+          color('on-primary'),
+          s.state === 'offline' ? [t('timeline.offline')] : [],
+        ),
+      ),
+    )
+  const read = union([
+    ...(series.value?.runs ?? []).flatMap((run): Span[] => {
+      const first = run.readings[0]
+      const last = run.readings.at(-1)
+      return first && last ? [[Date.parse(first.at), Date.parse(last.at)]] : []
+    }),
+    ...sleep.value.filter((s) => s.state === 'awake').map((s) => s.span),
+  ])
+  const parked = minus(read, union([...busy, ...asleep.map((b): Span => [b.from, b.to])])).map(
+    stretch(t('timeline.parked'), color('track'), color('text-secondary'), []),
+  )
+  return [...parked, ...asleep]
 })
-const bands = computed<Band[]>(() => [...parked.value, ...events.value])
+const bands = computed<Band[]>(() => [...strip.value, ...events.value])
 
 const lines = computed<Series[]>(() => [
   {

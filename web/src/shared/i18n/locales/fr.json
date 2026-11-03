@@ -834,6 +834,8 @@
     "driving": "Conduite",
     "charging": "Recharge",
     "parked": "Garé",
+    "asleep": "Endormi",
+    "offline": "Hors ligne : endormi ou sans réseau",
     "hint": "Sous la courbe, ce que faisait le véhicule : plus pâle là où ce n'est pas sûr, vide là où rien n'a été lu.",
     "summary": "{over}, de {first} à {last}, entre {min} et {max} ; {trips} et {charges}.",
     "over": {

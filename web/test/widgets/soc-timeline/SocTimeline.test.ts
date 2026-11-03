@@ -95,6 +95,7 @@ describe('SocTimeline', () => {
     expect(mocks.fetchTrips).toHaveBeenCalledTimes(2)
     expect(bands.map((b) => b.label)).toEqual([
       'Parked',
+      'Asleep',
       ...Array(trips1.items.length + trips2.items.length).fill('Driving'),
       'Charging',
       'Charging',
@@ -157,6 +158,40 @@ describe('SocTimeline', () => {
     expect(w.findAll('.d-sr-only li').map((li) => plain(li.text()))).toContain(
       'Charging, 28 Sept 2026, 18:20–18:30 – 21:56, 3 hrs, 25 mins – 3 hrs, 36 mins, Maison de Tante Agathe, AC · 47% → 80% · 26.4 kWh, €5.24 – €5.79',
     )
+  })
+
+  it('tells asleep where the source told so, and parked where it was awake, outside the events', async () => {
+    mocks.fetchSeries.mockResolvedValue({
+      ...series,
+      sleep: [
+        // Offline across the morning trip (06:55–07:40): cut around it.
+        { from: '2026-09-28T06:00:00Z', to: '2026-09-28T08:00:00Z', state: 'offline' },
+        // Awake, with no energy read: parked all the same.
+        { from: '2026-09-28T09:00:00Z', to: '2026-09-28T09:30:00Z', state: 'awake' },
+        // Asleep over a run's readings: asleep, parked no more.
+        { from: '2026-09-28T17:40:00Z', to: '2026-09-28T18:00:00Z', state: 'asleep' },
+      ],
+    })
+    const w = await mounted()
+    const bands = w.findComponent({ name: 'ChartFrame' }).props('bands') as Band[]
+    const spans = (label: string) =>
+      bands
+        .filter((b) => b.label === label)
+        .map((b) => [new Date(b.from).toISOString(), new Date(b.to).toISOString()])
+    expect(spans('Asleep')).toEqual([
+      ['2026-09-28T06:00:00.000Z', '2026-09-28T06:55:00.000Z'],
+      ['2026-09-28T07:40:00.000Z', '2026-09-28T08:00:00.000Z'],
+      ['2026-09-28T17:40:00.000Z', '2026-09-28T18:00:00.000Z'],
+    ])
+    expect(spans('Parked')).toEqual([
+      ['2026-09-28T09:00:00.000Z', '2026-09-28T09:30:00.000Z'],
+      ['2026-09-28T17:26:00.000Z', '2026-09-28T17:40:00.000Z'],
+      ['2026-09-28T18:00:00.000Z', '2026-09-28T18:20:00.000Z'],
+    ])
+    // Offline is asleep's tint, the pointer telling which.
+    const [offline] = bands.filter((b) => b.label === 'Asleep')
+    expect(offline?.detail?.at(-1)).toBe('Offline: asleep or without a network')
+    expect(bands.filter((b) => b.label === 'Asleep').at(-1)?.detail).toHaveLength(3)
   })
 
   it('says parked only maybe while a page of the events could not be read', async () => {

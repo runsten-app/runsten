@@ -834,6 +834,8 @@
     "driving": "Körning",
     "charging": "Laddning",
     "parked": "Parkerad",
+    "asleep": "Sover",
+    "offline": "Offline: sover eller saknar nätverk",
     "hint": "Under linjen, vad fordonet gjorde: blekare där det inte är säkert, tomt där inget lästes.",
     "summary": "{over}, från {first} till {last}, mellan {min} och {max}; {trips} och {charges}.",
     "over": {
