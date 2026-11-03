@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -199,5 +200,23 @@ func TestSeriesJSON(t *testing.T) {
 			t.Errorf("failure: %d %s", resp.status, body)
 		}
 		wantError(t, body, "internal")
+		e.server.Readings = sleepFailing{e.reader}
+		if resp, _ := get(t, noFollow(), window(h(14, 0), h(19, 0)), c); resp.status != http.StatusInternalServerError {
+			t.Errorf("sleep failure: %d", resp.status)
+		}
 	})
+	t.Run("no sleep state", func(t *testing.T) {
+		// A Volvo tells none: an empty list, never null.
+		resp, body := get(t, noFollow(), e.api.URL+"/api/v1/vehicles/"+chosen+"/series?from=2026-09-28T00:00:00Z&to=2026-09-29T00:00:00Z", c)
+		if resp.status != http.StatusOK || !strings.Contains(body, `"sleep":[]`) {
+			t.Errorf("no sleep state: %d %s", resp.status, body)
+		}
+	})
+}
+
+// sleepFailing reads the energy states, never the sleep states.
+type sleepFailing struct{ *memReader }
+
+func (sleepFailing) SleepReadings(context.Context, string, string, time.Time, time.Time, int) ([]core.Record, error) {
+	return nil, errEvents
 }

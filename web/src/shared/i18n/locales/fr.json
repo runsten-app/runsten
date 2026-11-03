@@ -834,6 +834,10 @@
     "driving": "Conduite",
     "charging": "Recharge",
     "parked": "Garé",
+    "asleep": "Endormi",
+    "offline": "Hors ligne : endormi ou sans réseau",
+    "update": "Mise à jour",
+    "version": "Version {version}",
     "hint": "Sous la courbe, ce que faisait le véhicule : plus pâle là où ce n'est pas sûr, vide là où rien n'a été lu.",
     "summary": "{over}, de {first} à {last}, entre {min} et {max} ; {trips} et {charges}.",
     "over": {
@@ -851,6 +855,7 @@
     "high": "Niveau de charge le plus haut",
     "trips": "Trajets commencés",
     "charges": "Recharges commencées",
+    "averagePower": "{power} en moyenne",
     "window": {
       "label": "Période affichée",
       "day": "24 h",

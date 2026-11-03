@@ -262,7 +262,8 @@ const zeros: Plugin<'bar'> = {
 // The strip of the bands, under the plot and over the x axis's ticks, in pixels.
 const lane = { gap: 6, height: 20 }
 // The band under the pointer, and where its tip goes in the canvas, in pixels: from x
-// rightwards in the left half, leftwards in the right one, so that it stays inside.
+// rightwards in the left half, leftwards in the right one, so that it stays inside; up
+// from y, over the plot: under the strip, a tip of several lines would leave the card.
 type Tip = { band: Band; x: number; y: number; left: boolean }
 const tip = ref<Tip | null>(null)
 // The part of a Chart.js chart the strip's pointer needs.
@@ -283,7 +284,7 @@ function bandAt(chart: LaneChart, px: number, py: number): Tip | null {
     (b) => px >= x.getPixelForValue(b.from) - 3 && px <= x.getPixelForValue(b.to) + 3,
   )
   if (!band) return null
-  return { band, x: px, y: top + lane.height + 4, left: px > chart.width / 2 }
+  return { band, x: px, y: top - 4, left: px > chart.width / 2 }
 }
 // spans draws the bands in their strip: faint where the event may have been, solid
 // where it surely was, named inside its surest part when the name fits.
@@ -324,12 +325,18 @@ const spans: Plugin<'line'> = {
     ctx.restore()
   },
   // Every event, outside the plot too (onHover hears only those inside it): the band
-  // under the pointer, none once it leaves.
-  afterEvent(chart, { event }) {
+  // under the pointer, none once it leaves. Its tip rises over the plot: the point's
+  // tooltip, which the strip's pointer raises too, gives way to it.
+  afterEvent(chart, args) {
+    const { event } = args
     tip.value =
       event.type === 'mouseout' || event.x === null || event.y === null
         ? null
         : bandAt(chart, event.x, event.y)
+    if (tip.value && chart.tooltip?.getActiveElements().length) {
+      chart.tooltip.setActiveElements([], { x: 0, y: 0 })
+      args.changed = true
+    }
   },
 }
 // The bands read the scales only, the same on a bar chart.
@@ -565,9 +572,10 @@ function pointY(raw: unknown): number | null {
   /* Anchored at the pointer, away from the nearer side: half the canvas is always free. */
   inline-size: max-content;
   max-inline-size: 50%;
+  transform: translateY(-100%);
 }
 .tip--left {
-  transform: translateX(-100%);
+  transform: translate(-100%, -100%);
 }
 .tip-label {
   display: flex;

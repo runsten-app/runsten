@@ -834,6 +834,10 @@
     "driving": "Körning",
     "charging": "Laddning",
     "parked": "Parkerad",
+    "asleep": "Sover",
+    "offline": "Offline: sover eller saknar nätverk",
+    "update": "Uppdatering",
+    "version": "Version {version}",
     "hint": "Under linjen, vad fordonet gjorde: blekare där det inte är säkert, tomt där inget lästes.",
     "summary": "{over}, från {first} till {last}, mellan {min} och {max}; {trips} och {charges}.",
     "over": {
@@ -851,6 +855,7 @@
     "high": "Högsta laddningsnivå",
     "trips": "Påbörjade resor",
     "charges": "Påbörjade laddningar",
+    "averagePower": "{power} i genomsnitt",
     "window": {
       "label": "Visad period",
       "day": "24 h",

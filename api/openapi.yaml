@@ -3888,6 +3888,11 @@ components:
           items:
             $ref: "#/components/schemas/SeriesRun"
           type: array
+        sleep:
+          description: "Whether the vehicle was awake, asleep or offline, oldest first, for a source that tells it (Tesla): each stretch from the first reading of its state to the last, two readings of one state no more than 90 minutes apart joined. Nothing was read between two stretches. [] for the other sources, when nothing was read, or past 20,000 responses."
+          items:
+            $ref: "#/components/schemas/SeriesSleep"
+          type: array
         to:
           format: date-time
           pattern: Z$
@@ -3896,6 +3901,7 @@ components:
         - from
         - to
         - runs
+        - sleep
       type: object
     SeriesReading:
       additionalProperties: false
@@ -3940,6 +3946,31 @@ components:
           type: array
       required:
         - readings
+      type: object
+    SeriesSleep:
+      additionalProperties: false
+      properties:
+        from:
+          description: The first reading of the state in the window, or from when read before it.
+          format: date-time
+          pattern: Z$
+          type: string
+        state:
+          description: "awake, asleep, or offline: out of reach, asleep or without a network."
+          enum:
+            - awake
+            - asleep
+            - offline
+          type: string
+        to:
+          description: The last reading of the state in the window, or to when read again after it.
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - from
+        - to
+        - state
       type: object
     Service:
       additionalProperties: false
@@ -8541,7 +8572,7 @@ paths:
         - vehicles
   /vehicles/{vehicle}/series:
     get:
-      description: "The state of charge, charging power and range as the vehicle gave them within `[from, to]`, both included: a charge's bounds are reading times. A stored response is two readings, when it was fetched and the latest time it was read again unchanged; nothing is known between two responses, and nothing is interpolated. The readings come in runs, a new one where more than 90 minutes separate two responses. How close they are follows how often the vehicle was read: every minute while it drives or charges, less often parked, or every hour for an account read so. At most 7 days, and 20,000 responses; the history the account does not see is left out, as from the lists."
+      description: "The state of charge, charging power and range as the vehicle gave them within `[from, to]`, both included: a charge's bounds are reading times. A stored response is two readings, when it was fetched and the latest time it was read again unchanged; nothing is known between two responses, and nothing is interpolated. The readings come in runs, a new one where more than 90 minutes separate two responses. How close they are follows how often the vehicle was read: every minute while it drives or charges, less often parked, or every hour for an account read so. At most 7 days, and 20,000 responses; the history the account does not see is left out, as from the lists. For a source that tells it (Tesla), whether the vehicle was awake, asleep or offline over the window: asleep, it is not read, so those stretches fall between the runs."
       operationId: getVehicleSeries
       parameters:
         - description: The vehicle ID.

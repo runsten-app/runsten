@@ -834,6 +834,10 @@
     "driving": "Driving",
     "charging": "Charging",
     "parked": "Parked",
+    "asleep": "Asleep",
+    "offline": "Offline: asleep or without a network",
+    "update": "Update",
+    "version": "Version {version}",
     "hint": "Under the line, what the vehicle was doing: paler where it is not sure, empty where nothing was read.",
     "summary": "{over}, from {first} to {last}, between {min} and {max}; {trips} and {charges}.",
     "over": {
@@ -851,6 +855,7 @@
     "high": "Highest state of charge",
     "trips": "Trips started",
     "charges": "Charges started",
+    "averagePower": "{power} on average",
     "window": {
       "label": "Period shown",
       "day": "24 h",
