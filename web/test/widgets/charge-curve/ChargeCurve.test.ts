@@ -37,7 +37,12 @@ function charging(n: number): ApiSeries {
     power_w: 7400,
     range_km: 190 + i * 4,
   }))
-  return { from: charge.start.after, to: charge.end.before, runs: n ? [{ readings }] : [] }
+  return {
+    from: charge.start.after,
+    to: charge.end.before,
+    runs: n ? [{ readings }] : [],
+    sleep: [],
+  }
 }
 
 async function mounted(id = charge.id) {

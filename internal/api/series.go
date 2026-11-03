@@ -54,11 +54,20 @@ type seriesRunJSON struct {
 	Readings []seriesReadingJSON `json:"readings" nullable:"false" minItems:"1" doc:"Oldest first, at most 90 minutes between two responses: a line joins them."`
 }
 
+// seriesSleepJSON is a stretch of time the vehicle was read in one sleep state.
+type seriesSleepJSON struct {
+	From  time.Time `json:"from" pattern:"Z$" doc:"The first reading of the state in the window, or from when read before it."`
+	To    time.Time `json:"to" pattern:"Z$" doc:"The last reading of the state in the window, or to when read again after it."`
+	State sleepJSON `json:"state" doc:"awake, asleep, or offline: out of reach, asleep or without a network."`
+}
+
 type seriesJSON struct {
 	From time.Time `json:"from" pattern:"Z$" doc:"The start of the window: the one asked for, or the start of the history the account sees when later."`
 	To   time.Time `json:"to" pattern:"Z$"`
 	// Runs rather than nulls between the readings: a gap has no time of its own.
 	Runs []seriesRunJSON `json:"runs" nullable:"false" doc:"The readings, oldest first, in runs: a new run starts where more than 90 minutes separate two responses, nothing being read in between. A line joins the readings of a run and breaks between two runs. [] when nothing was read in the window."`
+	// A vehicle asleep is not read: its stretches asleep fall between the runs.
+	Sleep []seriesSleepJSON `json:"sleep" nullable:"false" doc:"Whether the vehicle was awake, asleep or offline, oldest first, for a source that tells it (Tesla): each stretch from the first reading of its state to the last, two readings of one state no more than 90 minutes apart joined. Nothing was read between two stretches. [] for the other sources, when nothing was read, or past 20,000 responses."`
 }
 
 func seriesReadingOf(r core.Reading) seriesReadingJSON {
@@ -88,7 +97,7 @@ func (s *Server) getSeries(ctx context.Context, in *seriesInput) (*body[seriesJS
 		return nil, err
 	}
 	from = later(from, l.HistoryFrom)
-	out := seriesJSON{From: from, To: to, Runs: []seriesRunJSON{}}
+	out := seriesJSON{From: from, To: to, Runs: []seriesRunJSON{}, Sleep: []seriesSleepJSON{}}
 	if !from.Before(to) {
 		out.From = to
 		return respond(out), nil
@@ -107,6 +116,17 @@ func (s *Server) getSeries(ctx context.Context, in *seriesInput) (*body[seriesJS
 			readings[i] = seriesReadingOf(r)
 		}
 		out.Runs = append(out.Runs, seriesRunJSON{Readings: readings})
+	}
+	sleep, err := s.Readings.SleepReadings(ctx, sessionFrom(ctx).AccountID, v.ID, from, to, maxSeriesResponses+1)
+	if err != nil {
+		return nil, s.internal("sleep states not read", err)
+	}
+	// Beyond, the sleep is unknown rather than the readings refused: they are what the
+	// window asks.
+	if len(sleep) <= maxSeriesResponses {
+		for _, st := range core.SleepStretches(core.SleepSpans(sleep), from, to, seriesGap) {
+			out.Sleep = append(out.Sleep, seriesSleepJSON{From: st.From, To: st.To, State: text[core.SleepState, sleepJSON](st.State)})
+		}
 	}
 	return respond(out), nil
 }
@@ -129,7 +149,9 @@ func (s *Server) registerSeries(api huma.API) {
 			"nothing is interpolated. The readings come in runs, a new one where more than 90 minutes separate two " +
 			"responses. How close they are follows how often the vehicle was read: every minute while it drives or " +
 			"charges, less often parked, or every hour for an account read so. At most 7 days, and 20,000 " +
-			"responses; the history the account does not see is left out, as from the lists.",
+			"responses; the history the account does not see is left out, as from the lists. For a source that " +
+			"tells it (Tesla), whether the vehicle was awake, asleep or offline over the window: asleep, it is " +
+			"not read, so those stretches fall between the runs.",
 	}, "The readings.", map[int]string{
 		http.StatusBadRequest: "`invalid_parameter`: `from` or `to`, a window over 7 days, or more than 20,000 " +
 			"responses in it; the message names the parameter.",

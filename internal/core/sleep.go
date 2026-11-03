@@ -10,6 +10,8 @@ import (
 // its fetch to its latest confirmation. Nothing is known between two responses.
 type SleepSpan struct {
 	From, To time.Time
+	// State is the one the response told.
+	State SleepState
 	// Asleep is the vehicle asleep or out of reach (Offline): either way it is not read.
 	// Assumption: an Offline car drains as little as one asleep; Tesla does not always
 	// tell one asleep from one awake without a network.
@@ -24,9 +26,29 @@ func SleepSpans(records []Record) []SleepSpan {
 		if r.Snapshot.Covers&FieldSleep == 0 || !r.Snapshot.Sleep.OK {
 			continue
 		}
-		out = append(out, SleepSpan{From: r.FetchedAt, To: r.CheckedAt, Asleep: r.Snapshot.Sleep.V != Awake})
+		st := r.Snapshot.Sleep.V
+		out = append(out, SleepSpan{From: r.FetchedAt, To: r.CheckedAt, State: st, Asleep: st != Awake})
 	}
 	return sortedSpans(out)
+}
+
+// SleepStretches lays the sorted spans out over [from, to]: each cut at its edges, and
+// joined to the one before it when they tell the same state and no more than gap
+// separates them, as the readings of a run are. Between two stretches nothing was read.
+func SleepStretches(spans []SleepSpan, from, to time.Time, gap time.Duration) []SleepSpan {
+	var out []SleepSpan
+	for _, s := range spans {
+		s.From, s.To = later(s.From, from), earlier(s.To, to)
+		if !s.To.After(s.From) {
+			continue
+		}
+		if n := len(out); n > 0 && out[n-1].State == s.State && s.From.Sub(out[n-1].To) <= gap {
+			out[n-1].To = s.To
+			continue
+		}
+		out = append(out, s)
+	}
+	return out
 }
 
 // sortedSpans sorts spans by their start and cuts each one where the previous ends: two
