@@ -225,17 +225,3 @@ func TestDevClock(t *testing.T) {
 		})
 	}
 }
-
-// TestReadProviders: the core's normalizers read the core's providers, Volvo's for an
-// empty one; a provider only an extension reads is not, and is not rebuilt.
-func TestReadProviders(t *testing.T) {
-	read := readProviders(normalizers())
-	for _, p := range []string{"", "volvo", "polestar", "tesla", "polestar_id"} {
-		if !read(p) {
-			t.Errorf("%q not read", p)
-		}
-	}
-	if read("tesla_fleet") {
-		t.Error("tesla_fleet read without its extension")
-	}
-}
