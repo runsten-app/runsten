@@ -50,7 +50,7 @@ func checkEstimates(t *testing.T, got, want []CapacityEstimate) {
 	}
 	for i, w := range want {
 		g := got[i]
-		if g.Charge != w.Charge || g.At != w.At || g.Source != w.Source || g.SpanSoC != w.SpanSoC ||
+		if g.Import != w.Import || g.Charge != w.Charge || g.At != w.At || g.Source != w.Source || g.SpanSoC != w.SpanSoC ||
 			g.OdometerKm != w.OdometerKm || g.Type != w.Type || math.Abs(g.CapacityKWh-w.CapacityKWh) > 1e-9 {
 			t.Errorf("estimate %d:\n got %+v\nwant %+v", i, g, w)
 		}
