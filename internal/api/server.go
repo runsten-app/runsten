@@ -278,6 +278,9 @@ type Config struct {
 	PolestarID         PolestarIDCredentials
 	PolestarIDAccounts PolestarIDAccounts
 	PolestarIDFlows    *oauth.Flows
+	// TeslaMateImports is how many TeslaMate backups the instance reads at once; 0:
+	// DefaultTeslaMateImports. One where the API has little memory.
+	TeslaMateImports int
 	// MaxVehicles caps the vehicles of an account, set by an extension; 0: no cap. A
 	// Volvo ID, a key or a Polestar credential that gives access to more is refused,
 	// nothing recorded.

@@ -27,15 +27,17 @@ const (
 	// maxTeslaMateBody bounds the bytes of a backup as sent: a few years of TeslaMate are
 	// about a gigabyte plain, several times less gzipped.
 	maxTeslaMateBody = 4 << 30
-	// maxTeslaMateImports is how many backups an instance reads at once: each keeps its
-	// drives and their tracks in memory until it is written.
-	maxTeslaMateImports = 2
+	// DefaultTeslaMateImports is how many backups an instance reads at once, unless
+	// Config.TeslaMateImports says otherwise: each keeps its drives and their tracks in
+	// memory until it is written: about 170 MB for 4.5 years of a car, up to about 800 MB
+	// for the largest backup accepted (30,000 drives, their tracks both compact and as
+	// GeoJSON while they are converted).
+	DefaultTeslaMateImports = 2
 	// teslaMateRetry is what a refusal for want of a slot asks to wait, in seconds.
 	teslaMateRetry = 60
 )
 
-// teslaMateImports are the imports of TeslaMate backups running: by vehicle, at most
-// maxTeslaMateImports.
+// teslaMateImports are the imports of TeslaMate backups running: by vehicle, at most max.
 type teslaMateImports struct {
 	mu       sync.Mutex
 	vehicles []string
@@ -43,13 +45,13 @@ type teslaMateImports struct {
 
 // start takes a slot for the vehicle: false and busy when the instance has none, false
 // alone when the vehicle has one.
-func (t *teslaMateImports) start(vehicle string) (ok, busy bool) {
+func (t *teslaMateImports) start(vehicle string, max int) (ok, busy bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	switch {
 	case slices.Contains(t.vehicles, vehicle):
 		return false, false
-	case len(t.vehicles) >= maxTeslaMateImports:
+	case len(t.vehicles) >= max:
 		return false, true
 	}
 	t.vehicles = append(t.vehicles, vehicle)
@@ -109,7 +111,11 @@ func (s *Server) importTeslaMate(ctx context.Context, in *teslaMateInput) (*body
 	if _, ok := core.CurrencyOf(in.Currency); in.Currency != "" && !ok {
 		return nil, apiError(http.StatusBadRequest, codeInvalidParameter, "currency: not a currency Runsten accepts")
 	}
-	ok, busy := s.teslaMate.start(v.ID)
+	limit := s.TeslaMateImports
+	if limit <= 0 {
+		limit = DefaultTeslaMateImports
+	}
+	ok, busy := s.teslaMate.start(v.ID, limit)
 	switch {
 	case busy:
 		return nil, huma.ErrorWithHeaders( //nolint:wrapcheck // the error of the contract, with its header
