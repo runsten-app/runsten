@@ -836,6 +836,8 @@
     "parked": "Parked",
     "asleep": "Asleep",
     "offline": "Offline: asleep or without a network",
+    "update": "Update",
+    "version": "Version {version}",
     "hint": "Under the line, what the vehicle was doing: paler where it is not sure, empty where nothing was read.",
     "summary": "{over}, from {first} to {last}, between {min} and {max}; {trips} and {charges}.",
     "over": {

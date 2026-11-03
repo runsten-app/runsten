@@ -4,6 +4,7 @@ import type { Band, Series } from '@/shared/ui/chart'
 import { SocTimeline } from '@/widgets/soc-timeline'
 import charges from '@fixtures/charges.json'
 import series from '@fixtures/series.json'
+import versions from '@fixtures/software-versions.json'
 import trips1 from '@fixtures/trips-page-1.json'
 import trips2 from '@fixtures/trips-page-2.json'
 import { mountWith } from '@test/utils'
@@ -13,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   fetchSeries: vi.fn(),
   fetchTrips: vi.fn(),
   fetchCharges: vi.fn(),
+  fetchSoftwareVersions: vi.fn(),
 }))
 vi.mock('@/entities/series', async (original) => ({
   ...(await original<typeof import('@/entities/series')>()),
@@ -21,6 +23,10 @@ vi.mock('@/entities/series', async (original) => ({
 vi.mock('@/entities/trip', async (original) => ({
   ...(await original<typeof import('@/entities/trip')>()),
   fetchTrips: mocks.fetchTrips,
+}))
+vi.mock('@/entities/health', async (original) => ({
+  ...(await original<typeof import('@/entities/health')>()),
+  fetchSoftwareVersions: mocks.fetchSoftwareVersions,
 }))
 vi.mock('@/entities/charge', async (original) => ({
   ...(await original<typeof import('@/entities/charge')>()),
@@ -37,6 +43,7 @@ beforeEach(() => {
     Promise.resolve(q.cursor ? trips2 : trips1),
   )
   mocks.fetchCharges.mockResolvedValue(charges)
+  mocks.fetchSoftwareVersions.mockResolvedValue({ items: [], next_cursor: null })
 })
 afterEach(() => {
   vi.useRealTimers()
@@ -192,6 +199,26 @@ describe('SocTimeline', () => {
     const [offline] = bands.filter((b) => b.label === 'Asleep')
     expect(offline?.detail?.at(-1)).toBe('Offline: asleep or without a network')
     expect(bands.filter((b) => b.label === 'Asleep').at(-1)?.detail).toHaveLength(3)
+  })
+
+  it("tells an update's installation as far as a reading saw it, and none unseen", async () => {
+    mocks.fetchSoftwareVersions.mockResolvedValue(versions)
+    const w = await mounted()
+    const bands = w.findComponent({ name: 'ChartFrame' }).props('bands') as Band[]
+    // 2026.38.3.2 seen installing from 03:30–03:31, read from 05:00; the others never seen.
+    const updates = bands.filter((b) => b.label === 'Update')
+    expect(updates).toHaveLength(1)
+    expect(updates[0]).toMatchObject({
+      from: Date.parse('2026-09-28T03:30:00Z'),
+      to: Date.parse('2026-09-28T05:00:00Z'),
+      sure: { from: Date.parse('2026-09-28T03:31:00Z'), to: Date.parse('2026-09-28T04:00:00Z') },
+    })
+    expect(updates[0]?.detail?.map(plain)).toEqual([
+      '28 Sept 2026',
+      '03:31 – 04:00–05:00',
+      '29 mins – 1 hr, 30 mins',
+      'Version 2026.38.3.2',
+    ])
   })
 
   it('says parked only maybe while a page of the events could not be read', async () => {

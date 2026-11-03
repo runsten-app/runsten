@@ -6,17 +6,18 @@ import type { Charge } from '@/entities/charge'
 import type { Trip } from '@/entities/trip'
 import { useCharges } from '@/features/browse-charges'
 import { useTrips } from '@/features/browse-trips'
+import { useSoftwareVersions } from '@/features/view-health'
 import { readingsOf, seriesLine, useSeries } from '@/features/view-series'
 import { timeTicks, useFormat, useNow, type Bounds } from '@/shared/lib'
 import { ChartFrame, type Band, type Series } from '@/shared/ui/chart'
 
 // SocTimeline draws the state of charge of the last 24 hours, or 7 days, as the vehicle
-// gave it, and under it a strip of what the vehicle was doing: driving, charging, or
-// parked between them while it was read, asleep where its source told so; empty where
-// nothing was. A line breaks there
-// too; read every hour, the readings show as points. The pointer over a trip or a charge
-// tells its figures, as the lists do. The table for screen readers gives each day's
-// lowest and highest state of charge, and its events.
+// gave it, and under it a strip of what the vehicle was doing: driving, charging,
+// installing an update, or parked between them while it was read, asleep where its
+// source told so; empty where nothing was. A line breaks there too; read every hour, the
+// readings show as points. The pointer over a trip or a charge tells its figures, as the
+// lists do. The table for screen readers gives each day's lowest and highest state of
+// charge, and its events.
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const f = useFormat()
@@ -53,6 +54,9 @@ const { series } = useSeries(
 )
 const trips = useTrips(() => props.vehicle, from, undefined)
 const charges = useCharges(() => props.vehicle, from, undefined)
+// The newest versions are enough: a vehicle takes fewer than one a week. Read with the
+// software's tile, from the same cache.
+const software = useSoftwareVersions(() => props.vehicle)
 // Every event of the week, however many pages: the bands would stop short otherwise.
 watchEffect(() => {
   if (trips.hasMore.value && !trips.isLoadingMore.value && !trips.loadMoreFailed.value)
@@ -139,6 +143,22 @@ function chargeFigures(charge: Charge): string[] {
   if (charge.cost) out.push(f.chargeCost(charge.cost).text)
   return out
 }
+// An update's installation, as far as it was seen: from its start, which a reading saw,
+// to the first reading of the version; none when no reading saw it installing.
+const updates = computed<Band[]>(() =>
+  software.versions.value.flatMap((v) => {
+    if (!v.install_start) return []
+    const end = { after: v.installed.after ?? v.install_start.before, before: v.installed.before }
+    return [
+      band(
+        { start: v.install_start, end, reconstructed: false },
+        t('timeline.update'),
+        color('warning'),
+        [t('timeline.version', { version: v.version })],
+      ),
+    ]
+  }),
+)
 const events = computed<Band[]>(() => [
   ...trips.trips.value.map((e) => band(e, t('timeline.driving'), color('chart-2'), tripFigures(e))),
   ...charges.charges.value.map((e) =>
@@ -146,7 +166,7 @@ const events = computed<Band[]>(() => [
   ),
 ])
 // Parked is wherever the vehicle was read, from the first reading of a run to its last,
-// or told awake, outside its trips and charges (as far as they may reach); asleep (or
+// or told awake, outside its trips, charges and updates (as far as they may reach); asleep (or
 // offline) wherever it was told so, outside them too, and parked no more. A vehicle
 // asleep is not read: the stretches asleep fall between the runs. Each stretch is its
 // own band, named where it has room; where nothing was read, no band. Until every page
@@ -184,10 +204,12 @@ const sleep = computed(() =>
   })),
 )
 const strip = computed<Band[]>(() => {
-  const complete = [trips, charges].every(
-    (e) => !e.isPending.value && !e.error.value && !e.hasMore.value,
-  )
-  const busy = union(events.value.map((e): Span => [e.from, e.to]))
+  // The versions' later pages are older than the window: none needed.
+  const complete =
+    [trips, charges].every((e) => !e.isPending.value && !e.error.value && !e.hasMore.value) &&
+    !software.isPending.value &&
+    !software.error.value
+  const busy = union([...events.value, ...updates.value].map((e): Span => [e.from, e.to]))
   const at = (v: number) => {
     const iso = new Date(v).toISOString()
     return { after: iso, before: iso }
@@ -228,7 +250,7 @@ const strip = computed<Band[]>(() => {
   )
   return [...parked, ...asleep]
 })
-const bands = computed<Band[]>(() => [...strip.value, ...events.value])
+const bands = computed<Band[]>(() => [...strip.value, ...events.value, ...updates.value])
 
 const lines = computed<Series[]>(() => [
   {
