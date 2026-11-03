@@ -3,6 +3,7 @@ package importer
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -219,7 +220,7 @@ func TestDriveTrack(t *testing.T) {
 	start := time.Date(2024, 5, 1, 7, 0, 0, 0, time.UTC)
 	const n = 2017
 	for i := range n {
-		tr.add(trackPoint{at: start.Add(time.Duration(i) * time.Second), lat: 45, lon: float64(i) / 1000})
+		tr.add(newTrackPoint(start.Add(time.Duration(i)*time.Second), 45, float64(i)/1000))
 	}
 	if len(tr.points) > maxTrackPoints || len(tr.points) < maxTrackPoints/2 {
 		t.Errorf("%d points kept", len(tr.points))
@@ -230,5 +231,52 @@ func TestDriveTrack(t *testing.T) {
 	}
 	if (*driveTrack)(nil).lineString() != nil {
 		t.Error("no track")
+	}
+}
+
+// TestTeslaMateTooLarge: a backup with more than an import keeps in memory stops it.
+func TestTeslaMateTooLarge(t *testing.T) {
+	cars := "COPY public.cars (id, vin, name, efficiency) FROM stdin;\n1\tVIN1\t\\N\t0.15\n\\.\n"
+	rows := func(header, row string, n int) string {
+		var b strings.Builder
+		b.WriteString(header)
+		for i := range n {
+			fmt.Fprintf(&b, row, i)
+		}
+		b.WriteString("\\.\n")
+		return b.String()
+	}
+	for _, tc := range []struct {
+		name, dump, what string
+		max              int
+	}{
+		{
+			"drives", cars + rows("COPY public.drives (id, car_id, start_date, end_date, distance, start_km, end_km, "+
+				"start_rated_range_km, end_rated_range_km, outside_temp_avg, start_position_id, end_position_id) FROM stdin;\n",
+				"%d\t1\t2024-01-01 08:00:00\t\\N\t\\N\t\\N\t\\N\t\\N\t\\N\t\\N\t\\N\t\\N\n", maxTeslaMateEvents+1),
+			"drives of the car", maxTeslaMateEvents,
+		},
+		{
+			"processes", cars + rows("COPY public.charging_processes (id, car_id, start_date, end_date, charge_energy_added, "+
+				"start_battery_level, end_battery_level, start_rated_range_km, end_rated_range_km, outside_temp_avg, position_id, "+
+				"cost) FROM stdin;\n", "%d\t1\t2024-01-01 08:00:00\t\\N\t\\N\t\\N\t\\N\t\\N\t\\N\t\\N\t1\t\\N\n", maxTeslaMateEvents+1),
+			"charges of the car", maxTeslaMateEvents,
+		},
+		{
+			"readings", cars + rows("COPY public.charges (charging_process_id, date, usable_battery_level, "+
+				"charger_actual_current, charger_phases, fast_charger_present) FROM stdin;\n",
+				"%d\t2024-01-01 08:00:00\t\\N\t\\N\t\\N\t\\N\n", maxTeslaMateProcesses+1),
+			"charges", maxTeslaMateProcesses,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := &allSaver{}
+			_, err := NewFiles(s, clock.NewManual(t0)).TeslaMate(context.Background(), "acc", "veh", "VIN1", "",
+				strings.NewReader(tc.dump))
+			var tl *TooLargeError
+			if !errors.As(err, &tl) || tl.What != tc.what || tl.Max != tc.max || s.trips != nil || s.charges != nil {
+				t.Errorf("%v", err)
+			}
+		})
 	}
 }

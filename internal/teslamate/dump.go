@@ -14,6 +14,7 @@ package teslamate
 import (
 	"bufio"
 	"bytes"
+	"compress/flate"
 	"compress/gzip"
 	"errors"
 	"fmt"
@@ -71,6 +72,15 @@ const (
 // `drives` before `positions`). A table asked for and missing fails, once the whole file
 // is read. An error each returns stops the reading and is returned as it is.
 func Read(r io.Reader, tables []Table, each func(Row) error) error {
+	return read(r, tables, each, MaxBytes)
+}
+
+// MaxBytes bounds a backup once decompressed: a few years of TeslaMate are about a
+// gigabyte. Beyond, a file of a few megabytes gzipped could keep the reading going for
+// as long as it expands.
+const MaxBytes = 8 << 30
+
+func read(r io.Reader, tables []Table, each func(Row) error, limit int64) error {
 	br := bufio.NewReaderSize(r, bufferSize)
 	if head, _ := br.Peek(2); bytes.Equal(head, []byte{0x1f, 0x8b}) {
 		zr, err := gzip.NewReader(br)
@@ -78,7 +88,9 @@ func Read(r io.Reader, tables []Table, each func(Row) error) error {
 			return &FormatError{Reason: "a gzip file not understood: " + err.Error()}
 		}
 		defer zr.Close()
-		br = bufio.NewReaderSize(zr, bufferSize)
+		br = bufio.NewReaderSize(&limited{r: gzipFile{zr}, left: limit}, bufferSize)
+	} else {
+		br = bufio.NewReaderSize(&limited{r: br, left: limit}, bufferSize)
 	}
 	if err := checkFormat(br); err != nil {
 		return err
@@ -135,6 +147,43 @@ func Read(r io.Reader, tables []Table, each func(Row) error) error {
 		}
 	}
 	return nil
+}
+
+// gzipFile tells a gzip file cut short or corrupt as such: the reader's own failure, not
+// the connection's, which stays as it is.
+type gzipFile struct{ r io.Reader }
+
+func (g gzipFile) Read(p []byte) (int, error) {
+	n, err := g.r.Read(p)
+	var corrupt flate.CorruptInputError
+	if errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, gzip.ErrChecksum) || errors.Is(err, gzip.ErrHeader) ||
+		errors.As(err, &corrupt) {
+		return n, &FormatError{Reason: "a gzip file cut short or corrupt"}
+	}
+	return n, err //nolint:wrapcheck // the reader's, as it is
+}
+
+// limited fails past left bytes.
+type limited struct {
+	r    io.Reader
+	left int64
+}
+
+func (l *limited) Read(p []byte) (int, error) {
+	if l.left <= 0 {
+		// A file of exactly the limit ends there.
+		var one [1]byte
+		if n, err := l.r.Read(one[:]); n == 0 && err != nil {
+			return 0, err //nolint:wrapcheck // the reader's, as it is
+		}
+		return 0, &FormatError{Reason: fmt.Sprintf("larger than %d GiB once decompressed", MaxBytes>>30)}
+	}
+	if int64(len(p)) > l.left {
+		p = p[:l.left]
+	}
+	n, err := l.r.Read(p)
+	l.left -= int64(n)
+	return n, err //nolint:wrapcheck // the reader's, as it is
 }
 
 // checkFormat refuses the formats a user may give instead of the plain one.

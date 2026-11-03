@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -22,6 +23,25 @@ const SourceTeslaMate = "teslamate"
 // records one every few seconds, thousands a drive. Between half and all of it are
 // kept, evenly.
 const maxTrackPoints = 500
+
+// What an import keeps in memory until it writes, read as it comes: a car's drives with
+// their tracks, at most maxTrackPoints each, its charging processes, and the readings of
+// every car's processes, read before the processes tell their car. A car of TeslaMate
+// makes about 600 drives and 300 charges a year.
+const (
+	maxTeslaMateEvents    = 30_000  // drives, and charging processes, of the car
+	maxTeslaMateProcesses = 100_000 // charging processes of every car, by their readings
+)
+
+// TooLargeError is a backup with more than an import keeps in memory.
+type TooLargeError struct {
+	What string
+	Max  int
+}
+
+func (e *TooLargeError) Error() string {
+	return fmt.Sprintf("more than %d %s: more than an import reads at once", e.Max, e.What)
+}
 
 // TeslaMateCar is a car of a TeslaMate backup.
 type TeslaMateCar struct {
@@ -65,7 +85,7 @@ var teslaMateTables = []teslamate.Table{
 // imported in currency, TeslaMate's being unknown to it; none when currency is empty.
 // The backup is read once, as it comes, and nothing is written before its end: a
 // backup cut short or not TeslaMate's returns a *teslamate.FormatError, one without the
-// VIN a *NoCarError.
+// VIN a *NoCarError, one larger than it reads a *TooLargeError.
 func (f *Files) TeslaMate(ctx context.Context, accountID, vehicleID, vin, currency string, backup io.Reader) (Report, error) {
 	var cur core.Currency
 	if currency != "" {
@@ -163,6 +183,14 @@ func (r *teslaMateReading) row(row teslamate.Row) error {
 	}
 	if !ok {
 		r.invalid++
+	}
+	switch {
+	case len(r.drives) > maxTeslaMateEvents:
+		return &TooLargeError{What: "drives of the car", Max: maxTeslaMateEvents}
+	case len(r.processes) > maxTeslaMateEvents:
+		return &TooLargeError{What: "charges of the car", Max: maxTeslaMateEvents}
+	case len(r.readings) > maxTeslaMateProcesses:
+		return &TooLargeError{What: "charges", Max: maxTeslaMateProcesses}
 	}
 	return nil
 }
@@ -311,7 +339,7 @@ func (r *teslaMateReading) readPosition(row teslamate.Row) bool {
 	}
 	if drive != nil {
 		if t := r.tracks[*drive]; t != nil {
-			t.add(trackPoint{at: *at, lat: *lat, lon: *lon})
+			t.add(newTrackPoint(*at, *lat, *lon))
 		}
 	}
 	if _, wanted := r.positions[*id]; !wanted {
@@ -511,9 +539,22 @@ func finiteValue(v *float64, at time.Time) (core.Value[float64], bool) {
 	return core.Some(*v, at), true
 }
 
+// trackPoint is a point of a track, compact: a drive keeps hundreds of them until the
+// import writes. A float32 holds TeslaMate's six decimals of a degree within half a
+// metre.
 type trackPoint struct {
-	at       time.Time
-	lat, lon float64
+	at       int64 // Unix milliseconds
+	lat, lon float32
+}
+
+func newTrackPoint(at time.Time, lat, lon float64) trackPoint {
+	return trackPoint{at: at.UnixMilli(), lat: float32(lat), lon: float32(lon)}
+}
+
+// degrees is a coordinate as TeslaMate wrote it, as near as a float32 tells it.
+func degrees(v float32) float64 {
+	d, _ := strconv.ParseFloat(strconv.FormatFloat(float64(v), 'f', -1, 32), 64)
+	return d
 }
 
 // driveTrack keeps a drive's points as they are read, at most maxTrackPoints: once full, every
@@ -526,7 +567,7 @@ type driveTrack struct {
 }
 
 func (t *driveTrack) add(p trackPoint) {
-	if t.seen == 0 || !p.at.Before(t.last.at) {
+	if t.seen == 0 || p.at >= t.last.at {
 		t.last = p
 	}
 	t.seen++
@@ -552,13 +593,13 @@ func (t *driveTrack) lineString() []byte {
 	if t == nil {
 		return nil
 	}
-	slices.SortStableFunc(t.points, func(a, b trackPoint) int { return a.at.Compare(b.at) })
+	slices.SortStableFunc(t.points, func(a, b trackPoint) int { return cmp.Compare(a.at, b.at) })
 	if n := len(t.points); n > 0 && t.points[n-1] != t.last {
 		t.points = append(t.points, t.last)
 	}
 	coords := make([][2]float64, 0, len(t.points))
 	for _, p := range t.points {
-		coords = append(coords, [2]float64{p.lon, p.lat})
+		coords = append(coords, [2]float64{degrees(p.lon), degrees(p.lat)})
 	}
 	return lineString(coords)
 }

@@ -345,3 +345,47 @@ func show[T any](v *T, ok bool) string {
 	}
 	return fmt.Sprint(*v)
 }
+
+func TestReadBadGzip(t *testing.T) {
+	plain, err := os.ReadFile("testdata/teslamate-v4.4.0.bck")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gz := gzipped(string(plain))
+	corrupt := []byte(gz)
+	corrupt[len(corrupt)-5] ^= 0xff // the checksum's
+	for name, in := range map[string]string{
+		"cut short": gz[:len(gz)/2],
+		"corrupt":   string(corrupt),
+	} {
+		err := Read(strings.NewReader(in), fixtureTables, func(Row) error { return nil })
+		var fe *FormatError
+		if !errors.As(err, &fe) || fe.Reason != "a gzip file cut short or corrupt" {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+	// The connection's failure stays the connection's.
+	boom := errors.New("boom")
+	err = Read(io.MultiReader(strings.NewReader(gz[:len(gz)/2]), iotest.ErrReader(boom)), fixtureTables,
+		func(Row) error { return nil })
+	if !errors.Is(err, boom) {
+		t.Errorf("reader failing: %v", err)
+	}
+}
+
+func TestReadLimit(t *testing.T) {
+	plain, err := os.ReadFile("testdata/teslamate-v4.4.0.bck")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, in := range map[string]string{"plain": string(plain), "gzipped": gzipped(string(plain))} {
+		var fe *FormatError
+		err := read(strings.NewReader(in), fixtureTables, func(Row) error { return nil }, int64(len(plain)/2))
+		if !errors.As(err, &fe) || fe.Reason != "larger than 8 GiB once decompressed" {
+			t.Errorf("%s: %v", name, err)
+		}
+		if err := read(strings.NewReader(in), fixtureTables, func(Row) error { return nil }, int64(len(plain))); err != nil {
+			t.Errorf("%s, at the limit: %v", name, err)
+		}
+	}
+}

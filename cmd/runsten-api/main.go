@@ -685,9 +685,10 @@ func (i fileImports) ImportVolvoDataPortal(ctx context.Context, accountID, vehic
 func (i fileImports) ImportTeslaMate(ctx context.Context, accountID, vehicleID, vin, currency string, r io.Reader) (api.FileImport, error) {
 	rep, err := i.f.TeslaMate(ctx, accountID, vehicleID, vin, currency, r)
 	var fe *teslamate.FormatError
+	var tooLarge *importer.TooLargeError
 	var noCar *importer.NoCarError
 	switch {
-	case errors.As(err, &fe):
+	case errors.As(err, &fe), errors.As(err, &tooLarge):
 		return api.FileImport{}, fmt.Errorf("%w: %w", api.ErrImportFile, err)
 	case errors.As(err, &noCar):
 		vins := make([]string, 0, len(noCar.Cars))
