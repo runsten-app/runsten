@@ -133,6 +133,7 @@ import (
 	"runsten/internal/release"
 	"runsten/internal/store"
 	"runsten/internal/tesla"
+	"runsten/internal/teslamate"
 	"runsten/internal/volvo"
 	"runsten/internal/volvoportal"
 )
@@ -210,10 +211,13 @@ func run(args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), probeTimeout)
 		defer cancel()
 		return health.Probe(ctx, &http.Client{Timeout: probeTimeout}, addr) //nolint:wrapcheck // already has context
+	case len(args) >= 2 && args[0] == "import" && args[1] == "teslamate":
+		return importTeslaMate(args[2:], os.Getenv, os.Stdin, os.Stderr)
 	case len(args) == 3 && args[0] == "user" && (args[1] == "create" || args[1] == "password"):
 		return userCommand(args[1], args[2], os.Getenv, os.Stdin, os.Stderr)
 	case len(args) > 0:
-		return fmt.Errorf("unknown command %q (expected: user create <name>, user password <name>, healthcheck, or none to serve)", args)
+		return fmt.Errorf("unknown command %q (expected: user create <name>, user password <name>, %s, healthcheck, "+
+			"or none to serve)", args, importTeslaMateUsage)
 	}
 	cfg, err := loadConfig(os.Getenv)
 	if err != nil {
@@ -672,6 +676,25 @@ func (i fileImports) ImportVolvoDataPortal(ctx context.Context, accountID, vehic
 	switch {
 	case errors.As(err, &fe):
 		return api.FileImport{}, fmt.Errorf("%w: %w", api.ErrImportFile, err)
+	case err != nil:
+		return api.FileImport{}, err //nolint:wrapcheck // the importer's, with its context
+	}
+	return api.FileImport{Imported: rep.Saved, Skipped: rep.Skipped, Invalid: rep.Invalid, Cutoff: rep.Cutoff}, nil
+}
+
+func (i fileImports) ImportTeslaMate(ctx context.Context, accountID, vehicleID, vin, currency string, r io.Reader) (api.FileImport, error) {
+	rep, err := i.f.TeslaMate(ctx, accountID, vehicleID, vin, currency, r)
+	var fe *teslamate.FormatError
+	var noCar *importer.NoCarError
+	switch {
+	case errors.As(err, &fe):
+		return api.FileImport{}, fmt.Errorf("%w: %w", api.ErrImportFile, err)
+	case errors.As(err, &noCar):
+		vins := make([]string, 0, len(noCar.Cars))
+		for _, c := range noCar.Cars {
+			vins = append(vins, c.VIN)
+		}
+		return api.FileImport{}, fmt.Errorf("%w: it has %s", api.ErrNoMatchingCar, strings.Join(vins, ", "))
 	case err != nil:
 		return api.FileImport{}, err //nolint:wrapcheck // the importer's, with its context
 	}

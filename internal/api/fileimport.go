@@ -20,6 +20,11 @@ type FileImports interface {
 	// ErrImportFile is a file that is not the portal's: its message tells why, and
 	// nothing is written.
 	ImportVolvoDataPortal(ctx context.Context, accountID, vehicleID string, trips, waypoints io.Reader) (FileImport, error)
+	// ImportTeslaMate imports the history of the car of the VIN in a TeslaMate backup,
+	// read from r as it comes, its costs in currency (none when empty). An error wrapping
+	// ErrImportFile is a file that is not TeslaMate's backup, one wrapping
+	// ErrNoMatchingCar a backup without the VIN; nothing is written either way.
+	ImportTeslaMate(ctx context.Context, accountID, vehicleID, vin, currency string, r io.Reader) (FileImport, error)
 }
 
 // ErrImportFile is a file that is not the one expected.

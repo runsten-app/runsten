@@ -18,6 +18,25 @@ type fakeFileImports struct {
 	trips, waypoints string
 	gotWaypoints     bool
 	err              error
+	// TeslaMate's: the backup read, the VIN and the currency given.
+	backup, vin, currency string
+}
+
+// ImportTeslaMate takes a backup that starts with PGDMP as an archive, one that starts
+// with "other" as another car's, and reports one event per line.
+func (f *fakeFileImports) ImportTeslaMate(_ context.Context, _, _, vin, currency string, r io.Reader) (FileImport, error) {
+	if f.err != nil {
+		return FileImport{}, f.err
+	}
+	b, _ := io.ReadAll(r)
+	f.backup, f.vin, f.currency = string(b), vin, currency
+	switch {
+	case strings.HasPrefix(f.backup, "PGDMP"):
+		return FileImport{}, fmt.Errorf("reading the backup: %w: a custom-format archive", ErrImportFile)
+	case strings.HasPrefix(f.backup, "other"):
+		return FileImport{}, fmt.Errorf("%w: it has SYNTHETIC0000VIN2", ErrNoMatchingCar)
+	}
+	return FileImport{Imported: strings.Count(f.backup, "\n"), Skipped: 0, Invalid: 1, Cutoff: h(4, 0)}, nil
 }
 
 func (f *fakeFileImports) ImportVolvoDataPortal(_ context.Context, _, _ string, trips, waypoints io.Reader) (FileImport, error) {

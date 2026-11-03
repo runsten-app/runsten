@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 )
 
 // Placeholders of web/index.html, filled by the server.
@@ -79,6 +80,13 @@ func (t MapTiles) origin() (string, error) {
 var relayed = []string{
 	"/api/", "/auth/",
 	"/.well-known/oauth-protected-resource", "/.well-known/oauth-authorization-server",
+}
+
+// longUpload tells the requests that send a file too large for the server's deadlines:
+// TeslaMate's backup.
+func longUpload(r *http.Request) bool {
+	return r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/api/v1/vehicles/") &&
+		strings.HasSuffix(r.URL.Path, "/imports/teslamate")
 }
 
 // Config configures the handler.
@@ -187,6 +195,13 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, prefix := range relayed {
 		if strings.HasPrefix(r.URL.Path, prefix) {
+			if longUpload(r) {
+				// A backup of a gigabyte takes minutes to send: the server's deadlines
+				// would cut it. runsten-api lifts its own, and bounds what it reads.
+				rc := http.NewResponseController(w)
+				_ = rc.SetReadDeadline(time.Time{})  // no deadline; an error: the server's own stand
+				_ = rc.SetWriteDeadline(time.Time{}) // as above
+			}
 			s.proxy.ServeHTTP(w, r)
 			return
 		}

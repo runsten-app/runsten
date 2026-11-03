@@ -606,7 +606,7 @@ components:
           description: "The event was never seen, only revealed by the odometer or the state of charge: it lies somewhere within [start.after, end.before], and start and end are that same interval."
           type: boolean
         sources:
-          description: "Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote; volvo_data_portal: the files of the Volvo Data Portal). One vocabulary for both, which new sources extend."
+          description: "Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote; volvo_data_portal: the files of the Volvo Data Portal; teslamate: a TeslaMate backup). One vocabulary for both, which new sources extend."
           examples:
             - - volvo
           items:
@@ -1795,6 +1795,8 @@ components:
             - invalid_file
             - insufficient_scope
             - rate_limited
+            - not_tesla
+            - no_matching_car
             - internal
           type: string
         message:
@@ -4689,7 +4691,7 @@ components:
           description: "The event was never seen, only revealed by the odometer or the state of charge: it lies somewhere within [start.after, end.before], and start and end are that same interval."
           type: boolean
         sources:
-          description: "Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote; volvo_data_portal: the files of the Volvo Data Portal). One vocabulary for both, which new sources extend."
+          description: "Where the event comes from, sorted: the sources of the readings a derived event was derived from (volvo: the Volvo Cars API), or the application an imported one was imported from (aximote: Aximote; volvo_data_portal: the files of the Volvo Data Portal; teslamate: a TeslaMate backup). One vocabulary for both, which new sources extend."
           examples:
             - - volvo
           items:
@@ -8038,6 +8040,110 @@ paths:
         - sessionSecure: []
         - accessToken: []
       summary: The imports of a vehicle
+      tags:
+        - events
+  /vehicles/{vehicle}/imports/teslamate:
+    post:
+      description: "The drives, with their tracks, and the charging processes of the car of the vehicle's VIN in TeslaMate's backup: the plain file `pg_dump` writes (`docker compose exec -T database pg_dump -U teslamate teslamate > teslamate.bck`), as the body, maybe gzipped. Read as it comes, nothing kept of it: written at once at its end, only what starts before the vehicle's first reading; an event imported before replaced. A charge keeps its ranges, usable level and measured energy, which the battery's rated estimates rest on. At most 4 GiB as sent; one import per vehicle, and a few per instance, at once."
+      operationId: importTeslaMate
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+        - description: "The ISO 4217 code of the costs TeslaMate recorded, which it does not tell: without it, the charges are imported without their cost."
+          explode: false
+          in: query
+          name: currency
+          schema:
+            description: "The ISO 4217 code of the costs TeslaMate recorded, which it does not tell: without it, the charges are imported without their cost."
+            examples:
+              - EUR
+            pattern: ^[A-Z]{3}$
+            type: string
+      requestBody:
+        content:
+          application/gzip:
+            schema:
+              contentMediaType: application/octet-stream
+              format: binary
+              type: string
+          application/octet-stream:
+            schema:
+              contentMediaType: application/octet-stream
+              format: binary
+              type: string
+        description: TeslaMate's backup, plain (`application/octet-stream`) or gzipped (`application/gzip`).
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileImport"
+          description: What was imported.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_parameter`: `currency`. `invalid_body`: more than 4 GiB. `invalid_file`: not TeslaMate's backup (a custom-format archive, a table or a column missing, a file cut short); the message tells why and how to make the backup."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: this operation requires a session, never an access token."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_tesla`: the vehicle is not a Tesla. `no_matching_car`: no car of the backup has the vehicle's VIN; the message names theirs. `import_active`: a backup of the vehicle is being read. Nothing is imported."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: neither `application/octet-stream` nor `application/gzip`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: the instance is reading as many backups as it reads at once."
+          headers:
+            Retry-After:
+              description: Seconds to wait before sending the backup again.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Import the history of a TeslaMate instance
       tags:
         - events
   /vehicles/{vehicle}/imports/volvo_data_portal:
