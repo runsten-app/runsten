@@ -80,15 +80,15 @@ func (s *Stream) Run(ctx context.Context, tick time.Duration) error {
 // last step, and closes a connection whose ID token expired.
 func (s *Stream) Step() {
 	now := s.h.clk.Now()
-	s.h.observe(now)
-	s.publish(false)
 	s.mu.Lock()
 	cl, expired := s.conn, s.conn != nil && !now.Before(s.expires)
 	s.mu.Unlock()
-	if expired {
+	if expired { // before publishing: nothing reaches a connection past its ID token
 		cl.Stop(errors.New("ID token expired"))
 		s.release(cl)
 	}
+	s.h.observe(now)
+	s.publish(false)
 }
 
 // publish publishes the descriptors each car sent since the last publication, or all
@@ -189,9 +189,11 @@ func (k *hook) OnConnect(cl *mochi.Client, pk packets.Packet) error {
 // OnConnectAuthenticate accepts the connections OnConnect let through.
 func (*hook) OnConnectAuthenticate(*mochi.Client, packets.Packet) bool { return true }
 
-// OnACLCheck lets a client read its account's topics only, and write none.
-func (*hook) OnACLCheck(_ *mochi.Client, topic string, write bool) bool {
-	return !write && strings.HasPrefix(topic, GCID+"/")
+// OnACLCheck lets a client read the topics BMW's guide names, <GCID>/+ and <GCID>/<VIN>
+// of a vehicle of the account, and write none.
+func (k *hook) OnACLCheck(_ *mochi.Client, topic string, write bool) bool {
+	vin, ok := strings.CutPrefix(topic, GCID+"/")
+	return !write && ok && (vin == "+" || k.s.h.byVIN[vin] != nil)
 }
 
 func (k *hook) OnDisconnect(cl *mochi.Client, _ error, _ bool) { k.s.release(cl) }

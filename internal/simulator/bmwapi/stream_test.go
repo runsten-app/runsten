@@ -133,11 +133,15 @@ func TestStream(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 	}
 
-	// The ID token's expiry closes the connection; a fresh one connects again.
+	// The ID token's expiry closes the connection, before what changed meanwhile is sent;
+	// a fresh one connects again.
 	s.clk.Advance(time.Hour)
+	s.src.st.PluggedIn = false
 	s.stream.Step()
 	select {
 	case <-sub.lost:
+	case m := <-sub.msgs:
+		t.Fatalf("sent past the ID token's expiry: %v", m)
 	case <-time.After(5 * time.Second):
 		t.Fatal("still connected after the ID token expired")
 	}
@@ -165,13 +169,21 @@ func TestStreamRefusals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := sub.subscribe(t, "another-gcid/+"); err == nil {
-		// MQTT 3.1.1 refuses a subscription in its SUBACK: nothing comes.
-		select {
-		case m := <-sub.msgs:
-			t.Errorf("received another account's: %v", m)
-		case <-time.After(200 * time.Millisecond):
+	// MQTT 3.1.1 refuses a subscription in its SUBACK: nothing comes.
+	for _, topic := range []string{"another-gcid/+", GCID + "/#", GCID + "/WBY00000000000000"} {
+		if err := sub.subscribe(t, topic); err == nil {
+			select {
+			case m := <-sub.msgs:
+				t.Errorf("%s received %v", topic, m)
+			case <-time.After(200 * time.Millisecond):
+			}
 		}
+	}
+	if err := sub.subscribe(t, GCID+"/"+vin); err != nil {
+		t.Fatal(err)
+	}
+	if m := sub.next(t); m["vin"] != vin {
+		t.Errorf("the vehicle's topic: %v", m)
 	}
 }
 
