@@ -198,8 +198,13 @@ func (k *hook) OnACLCheck(_ *mochi.Client, topic string, write bool) bool {
 
 func (k *hook) OnDisconnect(cl *mochi.Client, _ error, _ bool) { k.s.release(cl) }
 
-// OnSubscribed sends the cars' current values, once the subscription is in place.
-func (k *hook) OnSubscribed(*mochi.Client, packets.Packet, []byte) {
+// OnSubscribed sends the cars' current values, once the subscription is in place. mochi
+// calls it for a refused filter too: nothing is sent unless one was granted (a reason
+// code below 0x80).
+func (k *hook) OnSubscribed(_ *mochi.Client, _ packets.Packet, codes []byte) {
+	if !slices.ContainsFunc(codes, func(c byte) bool { return c < 0x80 }) {
+		return
+	}
 	go func() {
 		k.s.h.observe(k.s.h.clk.Now())
 		k.s.publish(true)

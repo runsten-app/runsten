@@ -169,21 +169,22 @@ func TestStreamRefusals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// MQTT 3.1.1 refuses a subscription in its SUBACK: nothing comes.
-	for _, topic := range []string{"another-gcid/+", GCID + "/#", GCID + "/WBY00000000000000"} {
-		if err := sub.subscribe(t, topic); err == nil {
-			select {
-			case m := <-sub.msgs:
-				t.Errorf("%s received %v", topic, m)
-			case <-time.After(200 * time.Millisecond):
-			}
-		}
-	}
 	if err := sub.subscribe(t, GCID+"/"+vin); err != nil {
 		t.Fatal(err)
 	}
 	if m := sub.next(t); m["vin"] != vin {
 		t.Errorf("the vehicle's topic: %v", m)
+	}
+	// MQTT 3.1.1 refuses a subscription in its SUBACK: nothing comes of it, nor is sent
+	// again on the subscription granted.
+	for _, topic := range []string{"another-gcid/+", GCID + "/#", GCID + "/WBY00000000000000"} {
+		if err := sub.subscribe(t, topic); err == nil {
+			select {
+			case m := <-sub.msgs:
+				t.Errorf("%s: received %v", topic, m)
+			case <-time.After(200 * time.Millisecond):
+			}
+		}
 	}
 }
 
