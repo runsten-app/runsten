@@ -6,7 +6,10 @@
 // teslaapi.DevRefreshToken), the Polestar app's API read with the Polestar ID (under
 // polestaridapi.Prefix, its faults under polestaridapi.ControlPrefix, its gRPC services at
 // their paths over HTTP/2 without TLS, for the scenarios of brand polestar with source
-// polestar_id, signed in as polestaridapi.DevEmail), and
+// polestar_id, signed in as polestaridapi.DevEmail), BMW CarData (its device flow and
+// tokens under bmwapi.AuthPrefix, its API under bmwapi.APIPrefix and its faults under
+// bmwapi.ControlPrefix, for the scenarios of brand bmw or mini, with the client ID
+// bmwapi.DevClientID; its MQTT stream, without TLS, on SIM_BMW_STREAM_ADDR), and
 // Aximote's public
 // API for the imports (/api/public/v1/, its token
 // aximoteapi.DevToken): an electric car with the first scenario's VIN, whose history
@@ -47,6 +50,12 @@
 //	SIM_TESLA_SLEEP_AFTER   how long a Tesla neither driving, charging nor read falls asleep
 //	                        after its last activity (default 10m, 0 = never)
 //	SIM_TESLA_TOKEN_TTL     lifetime of the Tesla access tokens issued (default 8h)
+//	SIM_BMW_STREAM_ADDR     listen address of CarData's MQTT stream, opened when a scenario
+//	                        is a BMW's or a Mini's (default :9000, BMW's port)
+//	SIM_BMW_TOKEN_TTL       lifetime of CarData's access and ID tokens issued (default 1h);
+//	                        the stream is closed when its ID token expires
+//	SIM_BMW_SEND_EVERY      how often at most a BMW sends a value that changes all along a
+//	                        drive or a charge (default 30s, in simulated time)
 //	SIM_POLESTAR_ID_TOKEN_TTL  lifetime of the Polestar ID's access tokens issued (default
 //	                        300s, the real one's)
 //	SIM_LOG_LEVEL           debug, info, warn, error (default info)
@@ -71,6 +80,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -82,6 +92,7 @@ import (
 	"runsten/internal/platform/clock"
 	"runsten/internal/platform/httpserver"
 	"runsten/internal/simulator/aximoteapi"
+	"runsten/internal/simulator/bmwapi"
 	"runsten/internal/simulator/control"
 	"runsten/internal/simulator/pgledger"
 	"runsten/internal/simulator/polestarapi"
@@ -113,6 +124,8 @@ type config struct {
 	polestarBehavior polestarapi.Behavior
 	tesla            teslaapi.Behavior
 	polestarID       polestaridapi.Behavior
+	bmw              bmwapi.Behavior
+	bmwStreamAddr    string
 }
 
 func main() {
@@ -138,6 +151,7 @@ func run() error {
 		polestar   []polestarapi.Source
 		polestarID []polestaridapi.Source
 		tesla      []teslaapi.Source
+		bmw        []bmwapi.Source
 	)
 	vins := make([]string, 0, len(scs))
 	for _, sim := range fleet.Simulations() {
@@ -148,6 +162,8 @@ func run() error {
 			polestar = append(polestar, sim)
 		case sim.Brand() == scenario.BrandTesla:
 			tesla = append(tesla, sim)
+		case sim.Brand() == scenario.BrandBMW || sim.Brand() == scenario.BrandMini:
+			bmw = append(bmw, sim)
 		default:
 			srcs = append(srcs, sim)
 		}
@@ -181,6 +197,25 @@ func run() error {
 	for _, prefix := range []string{teslaapi.APIPrefix, teslaapi.AuthPrefix, teslaapi.ControlPrefix} {
 		mux.Handle(prefix, th)
 	}
+	bh := bmwapi.NewHandler(bmw, clk, cfg.bmw)
+	for _, prefix := range []string{bmwapi.AuthPrefix, bmwapi.APIPrefix, bmwapi.ControlPrefix} {
+		mux.Handle(prefix, bh)
+	}
+	if len(bmw) > 0 {
+		ln, err := new(net.ListenConfig).Listen(ctx, "tcp", cfg.bmwStreamAddr)
+		if err != nil {
+			return fmt.Errorf("CarData stream: %w", err)
+		}
+		stream, err := bmwapi.NewStream(bh, ln, log)
+		if err != nil {
+			return fmt.Errorf("CarData stream: %w", err)
+		}
+		go func() {
+			if err := stream.Run(ctx, time.Second); err != nil {
+				log.Error("CarData stream", "error", err)
+			}
+		}()
+	}
 	pid := polestaridapi.NewHandler(polestarID, clk, cfg.polestarID)
 	for _, prefix := range []string{polestaridapi.Prefix, polestaridapi.ControlPrefix, polestaridapi.BatteryPath, polestaridapi.TargetSoCPath} {
 		mux.Handle(prefix, pid)
@@ -196,6 +231,7 @@ func run() error {
 		"polestar_vehicles", len(polestar), "polestar_client_id", cfg.polestar.ClientID,
 		"polestar_credential_ttl", psLimits.CredentialTTL.String(), "polestar_parked_upload", cfg.polestarBehavior.ParkedUpload.String(),
 		"tesla_vehicles", len(tesla), "tesla_sleep_after", cfg.tesla.SleepAfter.String(), "tesla_token_ttl", cfg.tesla.TokenTTL.String(),
+		"bmw_vehicles", len(bmw), "bmw_stream_addr", cfg.bmwStreamAddr, "bmw_token_ttl", cfg.bmw.TokenTTL.String(),
 		"polestar_id_vehicles", len(polestarID), "polestar_id_token_ttl", cfg.polestarID.AccessTokenTTL.String())
 
 	srv := httpserver.New(cfg.addr, httpserver.LogRequests(log, mux), log)
@@ -238,6 +274,8 @@ func loadConfig(getenv func(string) string) (config, error) {
 		polestar:         polestarapi.DevCredential(),
 		polestarBehavior: polestarapi.DefaultBehavior(),
 		tesla:            teslaapi.DefaultBehavior(),
+		bmw:              bmwapi.DefaultBehavior(),
+		bmwStreamAddr:    ":9000",
 		polestarID:       polestaridapi.DefaultBehavior(),
 	}
 	var errs []error
@@ -348,6 +386,23 @@ func loadConfig(getenv func(string) string) (config, error) {
 			errs = append(errs, fmt.Errorf("SIM_TESLA_TOKEN_TTL %q: duration > 0 expected", v))
 		}
 		cfg.tesla.TokenTTL = d
+	}
+	if v := getenv("SIM_BMW_STREAM_ADDR"); v != "" {
+		cfg.bmwStreamAddr = v
+	}
+	if v := getenv("SIM_BMW_TOKEN_TTL"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil || d <= 0 {
+			errs = append(errs, fmt.Errorf("SIM_BMW_TOKEN_TTL %q: duration > 0 expected", v))
+		}
+		cfg.bmw.TokenTTL = d
+	}
+	if v := getenv("SIM_BMW_SEND_EVERY"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil || d < 0 {
+			errs = append(errs, fmt.Errorf("SIM_BMW_SEND_EVERY %q: duration ≥ 0 expected", v))
+		}
+		cfg.bmw.SendEvery = d
 	}
 	if v := getenv("SIM_POLESTAR_ID_TOKEN_TTL"); v != "" {
 		d, err := time.ParseDuration(v)

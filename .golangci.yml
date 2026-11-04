@@ -41,6 +41,8 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/polestaridapi
               desc: outward dependency forbidden
+            - pkg: runsten/internal/simulator/bmwapi
+              desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/scenario
               desc: outward dependency forbidden
         # The scenario engine drives the vehicle, without knowing HTTP or the API.
@@ -56,6 +58,8 @@ linters:
             - pkg: runsten/internal/simulator/teslaapi
               desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/polestaridapi
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/simulator/bmwapi
               desc: outward dependency forbidden
         # The simulated API declares its Ledger: pgledger keeps the grants in PostgreSQL.
         volvoapi-without-database:
@@ -440,18 +444,20 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/collector
               desc: outward dependency forbidden
-        # paho is the MQTT adapter's alone: neither the domain nor the collector know it.
+        # paho is the MQTT adapter's alone: neither the domain nor the collector know it. The
+        # tests of the simulated CarData stream connect to it as a client would.
         paho-only-in-mqtt:
-          files: ["$all", "!**/internal/publish/mqtt/**"]
+          files: ["$all", "!**/internal/publish/mqtt/**", "!**/internal/simulator/bmwapi/*_test.go"]
           deny:
             - pkg: github.com/eclipse/paho.mqtt.golang
               desc: MQTT belongs to internal/publish/mqtt
-        # The embedded broker tests the MQTT adapter: it never ships.
+        # The embedded broker tests the MQTT adapter, and serves the simulated CarData
+        # stream: it never ships in runsten's own binaries.
         mochi-only-in-tests:
-          files: ["$all", "!$test"]
+          files: ["$all", "!$test", "!**/internal/simulator/bmwapi/**"]
           deny:
             - pkg: github.com/mochi-mqtt
-              desc: the embedded broker is for the tests of internal/publish/mqtt
+              desc: the embedded broker is for the tests of internal/publish/mqtt and the simulator
         # The OpenAPI validator checks the API in tests: runsten-api does not validate at run time.
         openapi-only-in-tests:
           files: ["$all", "!$test"]

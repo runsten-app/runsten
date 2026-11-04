@@ -136,7 +136,7 @@ func TestParseAPI(t *testing.T) {
 }
 
 func TestBrand(t *testing.T) {
-	for brand, want := range map[string]string{"": BrandVolvo, "brand: volvo\n": BrandVolvo, "brand: polestar\n": BrandPolestar, "brand: tesla\n": BrandTesla} {
+	for brand, want := range map[string]string{"": BrandVolvo, "brand: volvo\n": BrandVolvo, "brand: polestar\n": BrandPolestar, "brand: tesla\n": BrandTesla, "brand: bmw\n": BrandBMW, "brand: mini\n": BrandMini} {
 		sc, err := Parse([]byte(brand + commute))
 		if err != nil {
 			t.Fatal(err)
