@@ -81,7 +81,8 @@ func newSimulation(sc *Scenario, policy vehicle.UploadPolicy, origin time.Time) 
 // VIN returns the simulated vehicle's VIN.
 func (s *Simulation) VIN() string { return s.sc.VIN }
 
-// Brand returns the vehicle's maker: BrandVolvo, BrandPolestar or BrandTesla.
+// Brand returns the vehicle's maker: BrandVolvo, BrandPolestar, BrandTesla, BrandBMW or
+// BrandMini.
 func (s *Simulation) Brand() string {
 	if s.sc.Brand == "" {
 		return BrandVolvo
