@@ -134,7 +134,7 @@ export function createAppRouter(history: RouterHistory, queryClient: QueryClient
         path: '/connection',
         name: 'connection',
         component: () => import('@/pages/connection').then((m) => m.ConnectionPage),
-        props: (to) => ({ vehicle: text(to.query.vehicle), outcome: text(to.query.volvo) }),
+        props: (to) => ({ vehicle: text(to.query.vehicle) }),
       },
       // One record for a new place ("new") and an existing one: once created, the URL
       // takes its ID and the same form stays, with its focus. A new place may start at

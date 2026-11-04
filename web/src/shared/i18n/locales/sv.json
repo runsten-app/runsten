@@ -1248,7 +1248,12 @@
       "connected": "Volvo ID anslutet: insamlaren läser dina fordon från sitt nästa varv.",
       "keyRefused": "Ditt Volvo ID är anslutet, men Volvo avvisade din nyckel: rätta den nedan, fordonen listas då, utan att du ansluter igen.",
       "noVehicle": "Ditt Volvo ID har inget fordon: det anslöts inte. Lägg till din bil i detta Volvo ID i Volvo Cars-appen och klicka sedan på ”{button}” igen.",
-      "tooManyVehicles": "Med ditt Volvo ID:s fordon skulle ditt konto få fler fordon än det tillåter: det anslöts inte."
+      "tooManyVehicles": "Med ditt Volvo ID:s fordon skulle ditt konto få fler fordon än det tillåter: det anslöts inte.",
+      "brand": {
+        "connected": "Inloggad med {brand}: insamlaren läser dina fordon från sitt nästa varv.",
+        "noVehicle": "Ditt {brand}-konto har inget fordon som Runsten kan läsa: det anslöts inte.",
+        "tooManyVehicles": "Med ditt {brand}-kontos fordon skulle ditt konto få fler fordon än det tillåter: det anslöts inte."
+      }
     },
     "volvoId": {
       "title": "Volvo ID",
