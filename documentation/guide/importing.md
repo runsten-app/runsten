@@ -17,7 +17,7 @@ Every import is in **beta**: tell us if one of yours is refused, or if a trip or
 ## How an import works
 
 - **Where**: in the vehicle's settings (the menu of its name in the bar), under **Imported history**. Each import has its own part there, and its report shows in the same place.
-- **Only what came before**: only what started before Runsten's first reading of the vehicle is imported, so it never duplicates what Runsten saw. The report tells how many trips and charges were imported, how many were left because they start after that reading, and how many were unfinished or out of bounds.
+- **Only what came before**: only what started before Runsten's first reading of the vehicle (or before the import, for a vehicle not read yet) is imported, so it never duplicates what Runsten saw. The report tells how many events were imported, how many were left because they start at or after that reading, and how many were left because they are unfinished or out of bounds.
 - **Importing again** replaces what was imported, one by one: nothing is counted twice. **Deleting the import**, in the same place, removes every trip and charge it brought, with their tracks; what Runsten read stays.
 - **Tracks**: a track is fine-grained location data. Runsten keeps it with the trip, reads it only to draw it on the trip's map, and deletes it with the import.
 
@@ -63,7 +63,7 @@ Only the car with this vehicle's VIN: a backup of several cars imports the one t
 - **Charges**: their exact times, the position and the odometer, the state of charge, the energy the car counted into its battery, AC or DC (a fast charger, or AC phases), the highest current and the phases, the outside temperature, the rated range at both ends and the usable charge at the end, and the cost when asked for. With these, the [battery page](./battery.md#a-tesla) estimates the capacity at each imported charge as TeslaMate does: its years of capacity history come along.
 - **Not imported**: TeslaMate's other readings (Runsten reads its own), its geofences and addresses (set your [places](./costs.md) in Runsten), and its software updates, yet.
 
-A drive TeslaMate never closed is left as unfinished. Importing again replaces the drives and charges by TeslaMate's IDs.
+A drive TeslaMate never closed, or a charge still in progress, is left out and counted as unfinished. Importing again replaces the drives and charges by TeslaMate's IDs.
 
 ## Volvo
 
@@ -75,7 +75,7 @@ In the EU, the Data Act lets the user of a connected car ask its maker for the d
 2. Download the two CSV files it gives.
 3. In the vehicle's **Imported history**, under **Import from the Volvo Data Portal**, press **Choose the files**: the trips file, required, and the waypoints file, optional. Then **Import**.
 
-The import runs at once. Files of 32 MB at most together: a year of waypoints is a few. A file that is not the portal's (another app's export, the waypoints given as the trips) is refused, and nothing is imported.
+The import runs at once. Files of 32 MiB at most together: a year of waypoints is a few. A file without the columns of the portal's (the waypoints given as the trips, for one) or that is not a readable CSV is refused, and nothing is imported.
 
 #### What is imported
 
@@ -83,7 +83,7 @@ The import runs at once. Files of 32 MB at most together: a year of waypoints is
 - **Tracks**: the waypoints, about one a minute while driving, with a precise position. Those of a trip, from its start to its end, make its track.
 - **No charges**: the portal gives none.
 
-What the portal gives may be shorter than the period asked for: an owner found the last month missing. Fuel, regeneration and heading are given as 0 for an electric car: Runsten leaves them out. A row that is unreadable or out of bounds (a trip that ends before it starts) is counted in the report. Importing the same files again replaces the trips by their start time.
+What the portal gives may be shorter than the period asked for: an owner found the last month missing. Fuel, regeneration and heading are given as 0 for an electric car: Runsten leaves them out. A trip that is unreadable or out of bounds (one that ends before it starts) is left out and counted in the report; a waypoint that is, is left out alone. Importing the same files again replaces the trips by their start time.
 
 ## Any brand
 
@@ -104,7 +104,7 @@ Runsten keeps the token encrypted while the import runs and erases it as soon as
 - **Charges**: the charging session's times, the energy charged, the average power, the cost Aximote gives, and the state of charge from the battery's energy at both ends, when Aximote gives it. Never AC or DC: Aximote does not tell, and Runsten does not guess it from the power.
 - **Tracks** of the trips, when Aximote gives them: the path driven.
 
-A trip still under way or a charge in progress is left as unfinished; fuel stops are left without being counted. Importing again replaces what was imported, event by event.
+A trip still under way or a charge in progress is left out and counted as unfinished; fuel stops are left out without being counted. Importing again replaces what was imported, event by event.
 
 #### When it fails
 
