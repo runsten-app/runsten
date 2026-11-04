@@ -396,7 +396,12 @@ func TestChargingHistory(t *testing.T) {
 	if v, _ := s.sent(DescPhaseNumber); v != "3-PHASES" {
 		t.Errorf("phases: %v", v)
 	}
-	s.clk.Advance(time.Hour)
+	for range 3 { // read along the charge: still one session
+		s.clk.Advance(15 * time.Minute)
+		st.SoC += 3
+		s.h.observe(s.clk.Now())
+	}
+	s.clk.Advance(15 * time.Minute)
 	st.SoC, st.Charging, st.ChargingPowerW, st.ChargeAddedKWh = 77.8, vehicle.Done, 0, 11
 	s.h.observe(s.clk.Now())
 	if v, _ := s.sent(DescHVStatus); v != "FINISHED_NOT_FULL" {

@@ -202,7 +202,7 @@ func (c *car) follow(st vehicle.State, now time.Time) {
 	switch {
 	case charging && c.charge == nil:
 		c.charge = &session{start: now, startSoC: st.SoC, mileageKm: int(st.OdometerKm), lat: st.Position.Lat, lon: st.Position.Lon}
-	case c.charge != nil:
+	case !charging && c.charge != nil:
 		s := *c.charge
 		s.end, s.endSoC, s.addedKWh = now, st.SoC, st.ChargeAddedKWh
 		if hours := s.end.Sub(s.start).Hours(); hours > 0 {
@@ -278,7 +278,10 @@ func (h *Handler) basicData(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	spec := c.spec
 	h.mu.Unlock()
-	brand, series := "BMW", strings.Fields(spec.Model + " ")[0]
+	brand, series := "BMW", ""
+	if f := strings.Fields(spec.Model); len(f) > 0 {
+		series = f[0]
+	}
 	if c.src.Brand() == "mini" {
 		brand = "MINI"
 	}
