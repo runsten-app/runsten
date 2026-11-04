@@ -122,7 +122,9 @@ var allowed = map[string][]string{
 	"internal/simulator/polestarapi":   {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
 	"internal/simulator/polestaridapi": {"net/http", "encoding/json", "google.golang.org/protobuf", "internal/platform/clock", "internal/simulator/vehicle"},
 	"internal/simulator/teslaapi":      {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
-	"internal/simulator/control":       {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
+	// The simulated CarData stream is a broker of its own: the embedded one.
+	"internal/simulator/bmwapi":  {"net/http", "net", "encoding/json", "github.com/mochi-mqtt/server/v2", "internal/platform/clock", "internal/simulator/vehicle"},
+	"internal/simulator/control": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
 	// The fake Aximote writes its API's JSON on its own: it never imports the client.
 	"internal/simulator/aximoteapi": {"net/http", "encoding/json"},
 	// The simulated Volvo ID's grants, kept across restarts.
