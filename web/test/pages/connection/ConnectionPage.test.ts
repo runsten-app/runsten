@@ -600,7 +600,9 @@ describe('ConnectionPage', () => {
     brands.sections.tesla = { render: () => h('section', { class: 'fleet' }, 'Sign in with Tesla') }
     const { w, router } = await pageAt('/connection?tesla=connected')
     expect(w.find('.v-alert').text()).toContain('Signed in with Tesla')
-    expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Tesla')
+    await vi.waitFor(() =>
+      expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Tesla'),
+    )
     await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({}))
   })
 
@@ -630,6 +632,19 @@ describe('ConnectionPage', () => {
     expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Polestar')
     await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({}))
     expect(router.currentRoute.value.hash).toBe('#polestar')
+  })
+
+  it('keeps an outcome that comes with another vehicle', async () => {
+    const props = reactive<{ vehicle?: string }>({ vehicle: 'v1' })
+    const router = testRouter()
+    await router.push('/connection?vehicle=v1')
+    const { wrapper: w } = mountWith(ConnectionPage, { router, props })
+    await flushPromises()
+    await router.push('/connection?tesla=connected')
+    props.vehicle = undefined
+    await flushPromises()
+    expect(w.find('.v-alert').text()).toContain('Signed in with Tesla')
+    await vi.waitFor(() => expect(router.currentRoute.value.query).toEqual({}))
   })
 
   it("forgets a sign-in's outcome on the way to another vehicle's tab", async () => {
@@ -666,7 +681,7 @@ describe('ConnectionPage', () => {
       'Tesla Beta',
     ])
     await w.findAll('[role="tab"]')[2]?.trigger('click')
-    await flushPromises()
+    await vi.waitFor(() => expect(w.find('#connection-panel-tesla .fleet').exists()).toBe(true))
     const tesla = w.find('#connection-panel-tesla')
     expect(tesla.find('.fleet').text()).toBe('Sign in with Tesla')
     expect(tesla.find('#connection-tesla-title').exists()).toBe(false)

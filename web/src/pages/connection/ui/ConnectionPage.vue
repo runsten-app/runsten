@@ -75,7 +75,8 @@ watch(
 watch(
   () => props.vehicle,
   () => {
-    outcome.value = undefined
+    // An outcome that comes with the new vehicle stays: its parameter is still in the query.
+    if (!brands.some((b) => route.query[b] !== undefined)) outcome.value = undefined
   },
 )
 const outcomeText = (o: Outcome) => {
@@ -161,6 +162,9 @@ const tab = computed<Brand>({
   get() {
     const fromHash = asBrand(route.hash.slice(1))
     if (fromHash) return fromHash
+    // A sign-in's parameter, until it leaves the URL for the hash.
+    const signedIn = asBrand(brands.find((x) => route.query[x] !== undefined))
+    if (signedIn) return signedIn
     const from = vehicles.value?.find((v) => v.id === props.vehicle)
     return (
       asBrand(brandOf(from?.connection.provider)) ??
