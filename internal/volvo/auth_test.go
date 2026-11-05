@@ -109,10 +109,10 @@ func TestKeycloak(t *testing.T) {
 		{
 			name: "a vid-dc- application on Keycloak", clientID: "vid-dc-abc", scopes: []string{"openid"},
 			authorize: "https://auth.volvocars.com/realms/volvocars/protocol/openid-connect/auth",
-			exchange:  "https://auth.volvocars.com/realms/volvocars/protocol/openid-connect/token", scope: "openid offline_access",
+			exchange:  "https://auth.volvocars.com/realms/volvocars/protocol/openid-connect/token", scope: "openid",
 		},
 		{
-			name: "offline_access already requested", clientID: "vid-dc-abc", scopes: []string{"offline_access", "openid"},
+			name: "offline_access only when given", clientID: "vid-dc-abc", scopes: []string{"offline_access", "openid"},
 			authorize: "https://auth.volvocars.com/realms/volvocars/protocol/openid-connect/auth",
 			exchange:  "https://auth.volvocars.com/realms/volvocars/protocol/openid-connect/token", scope: "offline_access openid",
 		},
@@ -120,7 +120,7 @@ func TestKeycloak(t *testing.T) {
 			name: "a Keycloak realm given, whatever the client ID", base: "http://sim:8080/realms/volvocars/", clientID: "runsten-dev",
 			scopes:    []string{"openid"},
 			authorize: "http://sim:8080/realms/volvocars/protocol/openid-connect/auth",
-			exchange:  "http://sim:8080/realms/volvocars/protocol/openid-connect/token", scope: "openid offline_access",
+			exchange:  "http://sim:8080/realms/volvocars/protocol/openid-connect/token", scope: "openid",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -143,13 +143,6 @@ func TestKeycloak(t *testing.T) {
 				t.Errorf("scope = %q, want %q", got, tc.scope)
 			}
 		})
-	}
-	// offline_access is added to a copy: the caller's slice, with room to spare, is left alone.
-	scopes := make([]string, 1, 2)
-	scopes[0] = "openid"
-	NewAuthClient(AuthConfig{BaseURL: KeycloakAuthURL, ClientID: "vid-dc-abc", Scopes: scopes}, http.DefaultClient)
-	if scopes[:2][1] != "" {
-		t.Errorf("the caller's scopes were changed: %q", scopes[:2])
 	}
 }
 

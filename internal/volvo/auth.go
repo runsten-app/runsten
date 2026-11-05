@@ -43,11 +43,6 @@ func AuthURL(clientID string) string {
 // /realms/{realm}.
 func isKeycloak(base string) bool { return strings.Contains(base, "/realms/") }
 
-// offlineAccess is the scope Keycloak issues a refresh token for that outlives the
-// user's session: without it, the refresh token dies with the session, hours or days
-// later, and every vehicle with it. Volvo asks for it from a backend that refreshes.
-const offlineAccess = "offline_access"
-
 // DefaultScopes are the read scopes of the endpoints the collector polls. Runsten
 // never requests a command scope. location:read is reportedly subject to a manual
 // review by Volvo (community source): an application without it must set its own
@@ -111,23 +106,22 @@ type AuthClient struct {
 	hc   *http.Client
 }
 
-// NewAuthClient creates a client. hc must have a timeout. On Keycloak, the scopes
-// requested always include offline_access.
+// NewAuthClient creates a client. hc must have a timeout. The scopes are requested
+// as given, on either server: Keycloak refuses the whole request (invalid_scope) for
+// a scope the application lacks, and the developer portal does not offer
+// offline_access, so it is never added.
 func NewAuthClient(cfg AuthConfig, hc *http.Client) *AuthClient {
 	base := strings.TrimRight(cfg.BaseURL, "/")
-	authorize, token, scopes := base+authorizePath, base+tokenPath, cfg.Scopes
+	authorize, token := base+authorizePath, base+tokenPath
 	if isKeycloak(base) {
 		authorize, token = base+keycloakAuthorizePath, base+keycloakTokenPath
-		if !slices.Contains(scopes, offlineAccess) {
-			scopes = append(slices.Clone(scopes), offlineAccess)
-		}
 	}
 	return &AuthClient{
 		conf: &oauth2.Config{
 			ClientID:     cfg.ClientID,
 			ClientSecret: cfg.ClientSecret,
 			RedirectURL:  cfg.RedirectURI,
-			Scopes:       scopes,
+			Scopes:       cfg.Scopes,
 			Endpoint: oauth2.Endpoint{
 				AuthURL:  authorize,
 				TokenURL: token,

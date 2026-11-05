@@ -30,7 +30,7 @@ Then, on the [developer portal](https://developer.volvocars.com/):
 
 If a scope is missing from your application, set `RUNSTEN_VOLVO_SCOPES` to the list it has (`.env.example` shows the default).
 
-The client ID of an application created since Volvo ID's move to a new server starts with `vid-` (`vid-dc-` today): Runsten then signs in through the new Volvo ID (`https://auth.volvocars.com/realms/volvocars`), and asks for `offline_access` beside the scopes, as Volvo asks of an application that refreshes its tokens from a server. An older one, starting with `dc-`, goes through the former Volvo ID until it stops working (see below).
+The client ID of an application created since Volvo ID's move to a new server starts with `vid-` (`vid-dc-` today): Runsten then signs in through the new Volvo ID (`https://auth.volvocars.com/realms/volvocars`). An older one, starting with `dc-`, goes through the former Volvo ID until it stops working (see below).
 
 In `.env`:
 
