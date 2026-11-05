@@ -29,7 +29,9 @@
 //	RUNSTEN_VOLVO_CLIENT_SECRET its client secret, with it: tokens are refreshed by the
 //	                            collector
 //	RUNSTEN_VOLVO_BASE_URL      API address (default https://api.volvocars.com)
-//	RUNSTEN_VOLVO_AUTH_URL      Volvo ID address (default https://volvoid.eu.volvocars.com)
+//	RUNSTEN_VOLVO_AUTH_URL      Volvo ID address (default: the one of the client ID,
+//	                            https://auth.volvocars.com/realms/volvocars for vid-…,
+//	                            https://volvoid.eu.volvocars.com otherwise)
 //	RUNSTEN_VOLVO_ACCESS_TOKEN  user's OAuth token (connect only)
 //	RUNSTEN_POLESTAR_BASE_URL   Polestar Data Portal's M2M API address (default
 //	                            https://pc-api.polestar.com/eu-north-1/data-portal/m2m):
@@ -460,7 +462,6 @@ func readProviders(norm derive.Normalizer) func(provider string) bool {
 func loadConfig(getenv func(string) string, cmd command) (config, error) {
 	cfg := config{
 		baseURL:     volvo.DefaultBaseURL,
-		authURL:     volvo.DefaultAuthURL,
 		polestarURL: polestar.DefaultBaseURL,
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		polestarID: polestarid.Hosts{
@@ -537,6 +538,9 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 			}
 			*dst = v
 		}
+	}
+	if cfg.authURL == "" {
+		cfg.authURL = volvo.AuthURL(cfg.clientID)
 	}
 	durations := map[string]*time.Duration{
 		"RUNSTEN_TOKEN_MARGIN":    &cfg.tokens.Margin,

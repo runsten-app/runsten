@@ -94,6 +94,85 @@ func TestAuthorizeURL(t *testing.T) {
 	}
 }
 
+func TestKeycloak(t *testing.T) {
+	for _, tc := range []struct {
+		name, base, clientID string
+		scopes               []string
+		authorize, exchange  string // the authorization and token endpoints
+		scope                string
+	}{
+		{
+			name: "a dc- application on the former server", clientID: "dc-abc", scopes: []string{"openid"},
+			authorize: "https://volvoid.eu.volvocars.com/as/authorization.oauth2",
+			exchange:  "https://volvoid.eu.volvocars.com/as/token.oauth2", scope: "openid",
+		},
+		{
+			name: "a vid-dc- application on Keycloak", clientID: "vid-dc-abc", scopes: []string{"openid"},
+			authorize: "https://auth.volvocars.com/realms/volvocars/protocol/openid-connect/auth",
+			exchange:  "https://auth.volvocars.com/realms/volvocars/protocol/openid-connect/token", scope: "openid offline_access",
+		},
+		{
+			name: "offline_access already requested", clientID: "vid-dc-abc", scopes: []string{"offline_access", "openid"},
+			authorize: "https://auth.volvocars.com/realms/volvocars/protocol/openid-connect/auth",
+			exchange:  "https://auth.volvocars.com/realms/volvocars/protocol/openid-connect/token", scope: "offline_access openid",
+		},
+		{
+			name: "a Keycloak realm given, whatever the client ID", base: "http://sim:8080/realms/volvocars/", clientID: "runsten-dev",
+			scopes:    []string{"openid"},
+			authorize: "http://sim:8080/realms/volvocars/protocol/openid-connect/auth",
+			exchange:  "http://sim:8080/realms/volvocars/protocol/openid-connect/token", scope: "openid offline_access",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			base := tc.base
+			if base == "" {
+				base = AuthURL(tc.clientID)
+			}
+			auth := NewAuthClient(AuthConfig{BaseURL: base, ClientID: tc.clientID, Scopes: tc.scopes}, http.DefaultClient)
+			u, err := url.Parse(auth.AuthorizeURL("s", "chal"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := u.Scheme + "://" + u.Host + u.Path; got != tc.authorize {
+				t.Errorf("authorization endpoint = %s, want %s", got, tc.authorize)
+			}
+			if got := auth.conf.Endpoint.TokenURL; got != tc.exchange {
+				t.Errorf("token endpoint = %s, want %s", got, tc.exchange)
+			}
+			if got := u.Query().Get("scope"); got != tc.scope {
+				t.Errorf("scope = %q, want %q", got, tc.scope)
+			}
+		})
+	}
+	// offline_access is added to a copy: the caller's slice, with room to spare, is left alone.
+	scopes := make([]string, 1, 2)
+	scopes[0] = "openid"
+	NewAuthClient(AuthConfig{BaseURL: KeycloakAuthURL, ClientID: "vid-dc-abc", Scopes: scopes}, http.DefaultClient)
+	if scopes[:2][1] != "" {
+		t.Errorf("the caller's scopes were changed: %q", scopes[:2])
+	}
+}
+
+// TestKeycloakAgainstSimulator plays the flow on the simulated Volvo ID's Keycloak
+// paths: exchange and refresh.
+func TestKeycloakAgainstSimulator(t *testing.T) {
+	cfg := volvoapi.DefaultOAuth()
+	_, _, _, srv := authSim(t, cfg)
+	auth := NewAuthClient(AuthConfig{
+		BaseURL: srv.URL + volvoapi.KeycloakRealm, ClientID: cfg.ClientID, ClientSecret: cfg.ClientSecret,
+		RedirectURI: cfg.RedirectURI, Scopes: DefaultScopes(),
+	}, srv.Client())
+	ctx := context.Background()
+	verifier := "a-verifier-of-at-least-forty-three-characters-long"
+	g, err := auth.Exchange(ctx, authorize(ctx, t, srv, auth, oauth2.S256ChallengeFromVerifier(verifier)), verifier)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := auth.Refresh(ctx, g.RefreshToken); err != nil {
+		t.Fatalf("refresh: %v", err)
+	}
+}
+
 // TestAuthorizationAgainstSimulator is the contract test between the client and the
 // simulated Volvo ID: exchange, use, expiry, refresh with rotation.
 func TestAuthorizationAgainstSimulator(t *testing.T) {

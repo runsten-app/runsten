@@ -99,9 +99,11 @@ func NewHandler(srcs []Source, clk clock.Clock, limits Limits, faults Faults, au
 	api.Handle("/location/", lim.middleware(apiLocation, locationMux))
 	api.HandleFunc("/", notFound)
 	h.mux.Handle("/", faults.middleware(clk, api))
-	// Volvo ID is a separate service (volvoid.eu.volvocars.com): the API faults and
-	// limits do not apply to it (assumption).
-	h.mux.Handle("/as/", iss.routes())
+	// Volvo ID is a separate service (volvoid.eu.volvocars.com, auth.volvocars.com):
+	// the API faults and limits do not apply to it (assumption).
+	volvoID := iss.routes()
+	h.mux.Handle("/as/", volvoID)
+	h.mux.Handle(KeycloakRealm+"/", volvoID)
 	return h
 }
 

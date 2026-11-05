@@ -50,7 +50,9 @@
 //	RUNSTEN_VOLVO_SCOPES         requested scopes, space separated (default: the read
 //	                             scopes of the polled endpoints, location:read included)
 //	RUNSTEN_VOLVO_BASE_URL       API address (default https://api.volvocars.com)
-//	RUNSTEN_VOLVO_AUTH_URL       Volvo ID address (default https://volvoid.eu.volvocars.com)
+//	RUNSTEN_VOLVO_AUTH_URL       Volvo ID address (default: the one of the client ID,
+//	                             https://auth.volvocars.com/realms/volvocars for vid-…,
+//	                             https://volvoid.eu.volvocars.com otherwise)
 //	RUNSTEN_API_ADDR             listen address (default 127.0.0.1:8081). runsten-api
 //	                             serves plain http: beyond this machine, put an https
 //	                             reverse proxy in front of it, or passwords and session
@@ -512,7 +514,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		polestarURL: polestar.DefaultBaseURL,
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		polestarID:  polestarid.Hosts{Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL},
-		app:         volvo.AuthConfig{BaseURL: volvo.DefaultAuthURL, Scopes: volvo.DefaultScopes()},
+		app:         volvo.AuthConfig{Scopes: volvo.DefaultScopes()},
 		addr:        defaultAddr,
 		logLevel:    slog.LevelInfo,
 		// Self-hosting publishes to a broker on its own network.
@@ -550,6 +552,9 @@ func loadConfig(getenv func(string) string) (config, error) {
 			}
 			*dst = v
 		}
+	}
+	if cfg.app.BaseURL == "" {
+		cfg.app.BaseURL = volvo.AuthURL(cfg.app.ClientID)
 	}
 	if v := getenv("RUNSTEN_VOLVO_SCOPES"); v != "" {
 		cfg.app.Scopes = strings.Fields(v)

@@ -30,6 +30,8 @@ Then, on the [developer portal](https://developer.volvocars.com/):
 
 If a scope is missing from your application, set `RUNSTEN_VOLVO_SCOPES` to the list it has (`.env.example` shows the default).
 
+The client ID of an application created since Volvo ID's move to a new server starts with `vid-` (`vid-dc-` today): Runsten then signs in through the new Volvo ID (`https://auth.volvocars.com/realms/volvocars`), and asks for `offline_access` beside the scopes, as Volvo asks of an application that refreshes its tokens from a server. An older one, starting with `dc-`, goes through the former Volvo ID until it stops working (see below).
+
 In `.env`:
 
 ```sh
@@ -39,6 +41,17 @@ RUNSTEN_VOLVO_API_KEY=…
 ```
 
 Runsten derives the redirect URI from `RUNSTEN_APP_URL`: it must be the one registered with the application. Set `RUNSTEN_VOLVO_REDIRECT_URI` only if you registered another, on the host your browser uses.
+
+## Moving to the new Volvo ID
+
+Volvo ID moves to a new server: the applications whose client ID starts with `dc-` stop working after January 31, 2027 ([Volvo's announcement](https://developer.volvocars.com/news/volvoid-migration/)). Before then:
+
+1. Create a new application on the developer portal, as above, with the same redirect URI. Its client ID starts with `vid-dc-`, and it has an API key of its own.
+2. Put its client ID, client secret and API key in `.env`, in place of the former ones, and restart Runsten (`docker compose up -d`). If your `.env` sets `RUNSTEN_VOLVO_AUTH_URL`, remove it, or set it to `https://auth.volvocars.com/realms/volvocars`: it wins over the client ID.
+3. Reconnect your Volvo ID: the former application's tokens are refused by the new Volvo ID, so every vehicle page asks for it, with a **Reconnect the Volvo ID** button.
+4. Once the vehicles are read again, delete the former application on the portal.
+
+An account that gave an API key of its own on the Connection page gives the new application's there.
 
 ## The quota
 

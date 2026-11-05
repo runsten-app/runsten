@@ -14,14 +14,39 @@ import (
 	"runsten/internal/oauth"
 )
 
-// DefaultAuthURL is the address of Volvo ID, the authorization server.
-const DefaultAuthURL = "https://volvoid.eu.volvocars.com"
-
-// Volvo ID endpoints (documented).
+// Volvo ID, the authorization server, moves to Keycloak: the applications created
+// before have a client ID starting with dc- and Volvo ID's former address, which they
+// keep until January 31, 2027; those created since, vid-dc- and Keycloak's realm.
 const (
-	authorizePath = "/as/authorization.oauth2"
-	tokenPath     = "/as/token.oauth2" //nolint:gosec // endpoint path, not a credential
+	DefaultAuthURL  = "https://volvoid.eu.volvocars.com"
+	KeycloakAuthURL = "https://auth.volvocars.com/realms/volvocars"
 )
+
+// Volvo ID endpoints (documented): the former server's, and Keycloak's under its realm.
+const (
+	authorizePath         = "/as/authorization.oauth2"
+	tokenPath             = "/as/token.oauth2" //nolint:gosec // endpoint path, not a credential
+	keycloakAuthorizePath = "/protocol/openid-connect/auth"
+	keycloakTokenPath     = "/protocol/openid-connect/token" //nolint:gosec // endpoint path, not a credential
+)
+
+// AuthURL returns the Volvo ID that issued an application's client ID: Keycloak for
+// one starting with vid-, the former server otherwise.
+func AuthURL(clientID string) string {
+	if strings.HasPrefix(clientID, "vid-") {
+		return KeycloakAuthURL
+	}
+	return DefaultAuthURL
+}
+
+// isKeycloak reports whether a Volvo ID address is a Keycloak realm, whose path is
+// /realms/{realm}.
+func isKeycloak(base string) bool { return strings.Contains(base, "/realms/") }
+
+// offlineAccess is the scope Keycloak issues a refresh token for that outlives the
+// user's session: without it, the refresh token dies with the session, hours or days
+// later, and every vehicle with it. Volvo asks for it from a backend that refreshes.
+const offlineAccess = "offline_access"
 
 // DefaultScopes are the read scopes of the endpoints the collector polls. Runsten
 // never requests a command scope. location:read is reportedly subject to a manual
@@ -71,7 +96,7 @@ func reauthCodes() []string { return []string{"invalid_grant"} }
 
 // AuthConfig is an application registered on the Volvo developer portal.
 type AuthConfig struct {
-	BaseURL      string // Volvo ID address (DefaultAuthURL, or the simulator)
+	BaseURL      string // Volvo ID address (AuthURL(ClientID), or the simulator)
 	ClientID     string
 	ClientSecret string // never leaves the backend
 	RedirectURI  string // as registered with the application
@@ -86,18 +111,26 @@ type AuthClient struct {
 	hc   *http.Client
 }
 
-// NewAuthClient creates a client. hc must have a timeout.
+// NewAuthClient creates a client. hc must have a timeout. On Keycloak, the scopes
+// requested always include offline_access.
 func NewAuthClient(cfg AuthConfig, hc *http.Client) *AuthClient {
 	base := strings.TrimRight(cfg.BaseURL, "/")
+	authorize, token, scopes := base+authorizePath, base+tokenPath, cfg.Scopes
+	if isKeycloak(base) {
+		authorize, token = base+keycloakAuthorizePath, base+keycloakTokenPath
+		if !slices.Contains(scopes, offlineAccess) {
+			scopes = append(slices.Clone(scopes), offlineAccess)
+		}
+	}
 	return &AuthClient{
 		conf: &oauth2.Config{
 			ClientID:     cfg.ClientID,
 			ClientSecret: cfg.ClientSecret,
 			RedirectURL:  cfg.RedirectURI,
-			Scopes:       cfg.Scopes,
+			Scopes:       scopes,
 			Endpoint: oauth2.Endpoint{
-				AuthURL:  base + authorizePath,
-				TokenURL: base + tokenPath,
+				AuthURL:  authorize,
+				TokenURL: token,
 				// Documented: Basic base64(client_id:client_secret). Set explicitly, so
 				// that the library never retries with the secret in the body.
 				AuthStyle: oauth2.AuthStyleInHeader,

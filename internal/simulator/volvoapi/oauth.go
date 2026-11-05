@@ -156,10 +156,18 @@ func newIssuer(clk clock.Clock, cfg OAuth) *issuer {
 	return s
 }
 
+// KeycloakRealm is the path of the simulated Volvo ID on Keycloak, the issuer of the
+// applications created since its move: the simulator's address followed by it is a
+// runsten-api's or a collector's RUNSTEN_VOLVO_AUTH_URL. The former server's endpoints,
+// under /as/, stay served beside it: both issue the same grants.
+const KeycloakRealm = "/realms/volvocars"
+
 func (s *issuer) routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /as/authorization.oauth2", s.authorize)
 	mux.HandleFunc("POST /as/token.oauth2", s.token)
+	mux.HandleFunc("GET "+KeycloakRealm+"/protocol/openid-connect/auth", s.authorize)
+	mux.HandleFunc("POST "+KeycloakRealm+"/protocol/openid-connect/token", s.token)
 	mux.HandleFunc("/", notFound)
 	return mux
 }
