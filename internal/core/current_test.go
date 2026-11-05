@@ -105,7 +105,55 @@ func TestLatest(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "a vehicle offline that answered since is no longer offline",
+			records: []Record{
+				rec(0, 20, sleeping(Offline)),
+				rec(10, 30, odo(12400)), // fetched before the last offline reading: no word
+				rec(40, 40, nrg(70, ChargingIdle)),
+			},
+			check: func(t *testing.T, c Current) {
+				if c.Snapshot.Covers&FieldSleep != 0 || c.Snapshot.Sleep.OK {
+					t.Errorf("sleep = %+v", c.Snapshot.Sleep)
+				}
+				if f, k := c.Read(FieldSleep); !f.IsZero() || !k.IsZero() {
+					t.Errorf("sleep read at %s, %s", f, k)
+				}
+				if !c.CheckedAt().Equal(m(40)) {
+					t.Errorf("checked at %s", c.CheckedAt())
+				}
+			},
+		},
+		{
+			name: "a vehicle asleep since its last values stays asleep",
+			records: []Record{
+				rec(0, 30, nrg(70, ChargingIdle)),
+				rec(10, 40, sleeping(Asleep)),
+			},
+			check: func(t *testing.T, c Current) {
+				if s := c.Snapshot.Sleep; !s.OK || s.V != Asleep {
+					t.Errorf("sleep = %+v", s)
+				}
+			},
+		},
+		{
+			name: "a vehicle awake stays awake",
+			records: []Record{
+				rec(0, 0, sleeping(Awake)),
+				rec(10, 10, nrg(70, ChargingIdle)),
+			},
+			check: func(t *testing.T, c Current) {
+				if s := c.Snapshot.Sleep; !s.OK || s.V != Awake {
+					t.Errorf("sleep = %+v", s)
+				}
+			},
+		},
 	} {
 		t.Run(tt.name, func(t *testing.T) { tt.check(t, Latest(tt.records)) })
 	}
+}
+
+// sleeping is a response telling the vehicle's sleep state, and nothing else.
+func sleeping(st SleepState) Snapshot {
+	return Snapshot{Covers: FieldSleep, Sleep: Some(st, time.Time{})}
 }
