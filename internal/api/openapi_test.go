@@ -235,6 +235,7 @@ var goldenRequests = map[string]string{
 	"session.json":                  "POST /api/v1/session",
 	"import-volvo-data-portal.json": "POST /api/v1/vehicles/" + car + "/imports/volvo_data_portal",
 	"import-teslamate.json":         "POST /api/v1/vehicles/" + car + "/imports/teslamate",
+	"import-aaos-logging.json":      "POST /api/v1/vehicles/" + car + "/imports/aaos_logging",
 	"connection.json":               "PUT /api/v1/connection/api-key",
 	"connection-polestar.json":      "PUT /api/v1/connection/polestar",
 	"connection-polestar-id.json":   "PUT /api/v1/connection/polestar-id/code",

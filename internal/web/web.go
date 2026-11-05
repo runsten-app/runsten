@@ -88,10 +88,10 @@ var relayed = []string{
 const uploadIdle = time.Minute
 
 // longUpload tells the requests that send a file too large for the server's deadlines:
-// TeslaMate's backup.
+// TeslaMate's backup, AAOS Logging's export.
 func longUpload(r *http.Request) bool {
 	return r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/api/v1/vehicles/") &&
-		strings.HasSuffix(r.URL.Path, "/imports/teslamate")
+		(strings.HasSuffix(r.URL.Path, "/imports/teslamate") || strings.HasSuffix(r.URL.Path, "/imports/aaos_logging"))
 }
 
 // Config configures the handler.

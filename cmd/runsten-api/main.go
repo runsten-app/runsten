@@ -117,6 +117,7 @@ import (
 
 	"golang.org/x/term"
 
+	"runsten/internal/aaoslogging"
 	"runsten/internal/api"
 	"runsten/internal/auth"
 	"runsten/internal/aximote"
@@ -695,6 +696,18 @@ type fileImports struct{ f *importer.Files }
 func (i fileImports) ImportVolvoDataPortal(ctx context.Context, accountID, vehicleID string, trips, waypoints io.Reader) (api.FileImport, error) {
 	rep, err := i.f.VolvoDataPortal(ctx, accountID, vehicleID, trips, waypoints)
 	var fe *volvoportal.FormatError
+	switch {
+	case errors.As(err, &fe):
+		return api.FileImport{}, fmt.Errorf("%w: %w", api.ErrImportFile, err)
+	case err != nil:
+		return api.FileImport{}, err //nolint:wrapcheck // the importer's, with its context
+	}
+	return api.FileImport{Imported: rep.Saved, Skipped: rep.Skipped, Invalid: rep.Invalid, Cutoff: rep.Cutoff}, nil
+}
+
+func (i fileImports) ImportAAOSLogging(ctx context.Context, accountID, vehicleID string, r io.ReaderAt, size int64) (api.FileImport, error) {
+	rep, err := i.f.AAOSLogging(ctx, accountID, vehicleID, r, size)
+	var fe *aaoslogging.FormatError
 	switch {
 	case errors.As(err, &fe):
 		return api.FileImport{}, fmt.Errorf("%w: %w", api.ErrImportFile, err)
