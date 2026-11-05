@@ -66,6 +66,10 @@ func (s *Server) getTripMap(ctx context.Context, in *tripMapInput) (*body[tripMa
 	if h := l.HistoryFrom; !h.IsZero() && (!fromSet || from.Before(h)) {
 		from, fromSet = h, true
 	}
+	// A period wholly before the history stays empty, never reversed.
+	if from.After(to) {
+		from = to
+	}
 	var p Period
 	if !fromSet || from.Before(to) {
 		if p, err = s.Reader.PeriodEvents(ctx, sessionFrom(ctx).AccountID, v.ID, from, to); err != nil {
