@@ -55,8 +55,10 @@ var allowed = map[string][]string{
 	// The collector's Source of Tesla's Owner API: the client, adapted.
 	"internal/collector/teslasource":      {"internal/collector", "internal/core", "internal/tesla"},
 	"internal/collector/polestaridsource": {"internal/collector", "internal/core", "internal/polestarid"},
-	"internal/derive":                     {"internal/core"},
-	"internal/oauth":                      {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
+	// CarData's, which holds each connection's subscription to the stream.
+	"internal/collector/bmwsource": {"internal/bmw", "internal/collector", "internal/core", "internal/platform/clock"},
+	"internal/derive":              {"internal/core"},
+	"internal/oauth":               {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
 	// It reads the catalog, pure data like core, to recognize the vehicles' variants, and
 	// the flags' declarations (never flags/eval: depguard).
 	"internal/api": {

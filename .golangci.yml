@@ -109,6 +109,8 @@ linters:
               desc: the collector declares its own Source, which collector/teslasource adapts the Tesla client to
             - pkg: runsten/internal/polestarid
               desc: the collector declares its own Source, which collector/polestaridsource adapts the Polestar ID client to
+            - pkg: runsten/internal/bmw
+              desc: the collector declares its own Source, which collector/bmwsource adapts the CarData client to
         # The collector's Polestar source adapts the client: no transport, no storage.
         polestarsource-adapts:
           files: ["**/internal/collector/polestarsource/**", "!$test"]
@@ -265,6 +267,18 @@ linters:
               desc: each vendor's client stands alone
             - pkg: runsten/internal/oauth
               desc: the M2M credential has no grant to keep, a token is asked again
+        # The collector's CarData source adapts the client: no transport, no storage.
+        bmwsource-adapts:
+          files: ["**/internal/collector/bmwsource/**", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the transport belongs to the bmw client
+            - pkg: github.com/eclipse/paho.mqtt.golang
+              desc: the stream belongs to the bmw client
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: bmwsource declares its own Store, which the store implements
         # The CarData client depends on neither storage nor the collector, nor on another
         # vendor's client.
         bmw-is-a-client:

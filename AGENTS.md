@@ -61,13 +61,22 @@ internal/
                        typed errors (APIError, Kind); fingerprint; normalization into
                        core.Snapshot (Normalizer, derive's for the source `polestar_id`: no
                        position nor engine) and of the service into core.Health
+  bmw/                 BMW CarData (ADR 0045, not wired yet): the device flow of the owner's client ID and
+                       its rotated refresh token, the REST API (mappings, basic data, Runsten's container
+                       and its values, the charging history), the subscription to the MQTT stream on paho
+                       (stream.go: the last value of each descriptor by VIN, the CONNACK refusals);
+                       typed errors (APIError, Kind); fingerprint; normalization into core.Snapshot
+                       (Normalizer, derive's for the source `bmw`) and of the tyres into core.Health
   collector/           adaptive polling, each vehicle through its connection's provider; declares its own
                        API, Store, TokenSource, Observer, Deriver, Publisher and Source interfaces;
                        polestarsource/: the Source of the Polestar Data Portal, its client adapted;
                        teslasource/: the Source of Tesla's Owner API, its client adapted, the
                        refresh token's rotation kept (declares its Store); polestaridsource/: the
                        Source of the Polestar ID, the refresh token kept at every refresh, the
-                       password signing in again when it is refused (declares its Store)
+                       password signing in again when it is refused (declares its Store); bmwsource/:
+                       the Source of CarData, which holds each connection's subscription to the stream
+                       and reads it as a Local endpoint, without a call; the API's quota left alone
+                       until midnight UTC once spent (declares its Store)
   oauth/               token lifecycle (Manager), pending flows (state, PKCE), enrollment; declares its Store
                        and Refresher
   aximote/             Aximote's public API client (vehicles, trips, refuels, the tracks' GeoJSON export),
