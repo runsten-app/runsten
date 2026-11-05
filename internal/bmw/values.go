@@ -13,18 +13,37 @@ import (
 func isNoise(k string) bool { return k == "timestamp" }
 
 // Fingerprint returns the fingerprint of a response's values, the timestamps excluded, at
-// every depth. Two responses with the same fingerprint bring nothing new.
+// every depth. Two responses with the same fingerprint bring nothing new. Whether the
+// latitude and the longitude have the same timestamp is in it: the normalizer reads a
+// position only then, and the longitude of a latitude pushed apart may come with the
+// same value.
 func Fingerprint(raw []byte) ([]byte, error) {
 	var v any
 	if err := json.Unmarshal(raw, &v); err != nil {
 		return nil, fmt.Errorf("fingerprint: %w", err)
 	}
-	canonical, err := json.Marshal(strip(v)) // json.Marshal sorts map keys
+	stripped := strip(v)
+	if m, ok := stripped.(map[string]any); ok && paired(raw) {
+		m["positionPaired"] = true // no descriptor's name: none is a top-level key
+	}
+	canonical, err := json.Marshal(stripped) // json.Marshal sorts map keys
 	if err != nil {
 		return nil, fmt.Errorf("fingerprint: %w", err)
 	}
 	sum := sha256.Sum256(canonical)
 	return sum[:], nil
+}
+
+// paired reports whether a response of values holds a latitude and a longitude of the
+// same timestamp.
+func paired(raw []byte) bool {
+	v, err := parseValues(Stream, raw)
+	if err != nil {
+		return false
+	}
+	_, latAt, ok1 := v.get(DescLatitude)
+	_, lonAt, ok2 := v.get(DescLongitude)
+	return ok1 && ok2 && latAt.Equal(lonAt)
 }
 
 func strip(v any) any {

@@ -174,6 +174,25 @@ func TestFingerprintIgnoresTimestamps(t *testing.T) {
 	if !bytes.Equal(a, b) || bytes.Equal(a, c) {
 		t.Error("fingerprint")
 	}
+
+	// The same coordinates, apart then of the same timestamp: the position becomes
+	// readable, which is news.
+	pos := func(latAt, lonAt string) []byte {
+		f, err := Fingerprint([]byte(`{"telematicData":{
+			"vehicle.cabin.infotainment.navigation.currentLocation.latitude":{"value":50.85,"timestamp":"` + latAt + `"},
+			"vehicle.cabin.infotainment.navigation.currentLocation.longitude":{"value":4.35,"timestamp":"` + lonAt + `"}}}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return f
+	}
+	apart, together := pos("2026-10-01T08:00:30Z", "2026-10-01T08:00:00Z"), pos("2026-10-01T08:00:30Z", "2026-10-01T08:00:30.000Z")
+	if bytes.Equal(apart, together) {
+		t.Error("a position paired since has the fingerprint of one apart")
+	}
+	if !bytes.Equal(together, pos("2026-10-01T09:00:00Z", "2026-10-01T09:00:00Z")) {
+		t.Error("a position paired again, unchanged, is news")
+	}
 }
 
 func TestUploadOf(t *testing.T) {
