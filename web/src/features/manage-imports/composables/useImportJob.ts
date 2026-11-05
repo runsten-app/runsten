@@ -4,6 +4,7 @@ import { fetchSettings, settingsKeys } from '@/entities/settings'
 import {
   fetchAximoteVehicles,
   fetchImportJob,
+  importAAOSLogging,
   importKeys,
   importTeslaMate,
   importVolvoDataPortal,
@@ -60,6 +61,17 @@ export function useImportVolvoDataPortal(vehicle: MaybeRefOrGetter<string>) {
     onSuccess: () => afterImportChange(queryClient, toValue(vehicle)),
   })
   return { importFiles: mutateAsync, isPending, error, reset }
+}
+
+// useImportAAOSLogging imports AAOS Logging's export; once written, what it imported is
+// read again everywhere.
+export function useImportAAOSLogging(vehicle: MaybeRefOrGetter<string>) {
+  const queryClient = useQueryClient()
+  const { mutateAsync, isPending, error, reset } = useMutation({
+    mutationFn: (exported: File) => importAAOSLogging(toValue(vehicle), exported),
+    onSuccess: () => afterImportChange(queryClient, toValue(vehicle)),
+  })
+  return { importExport: mutateAsync, isPending, error, reset }
 }
 
 // useImportTeslaMate imports a TeslaMate backup; once written, what it imported is read

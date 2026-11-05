@@ -4,6 +4,7 @@ export {
   fetchImportJob,
   fetchImports,
   gzipped,
+  importAAOSLogging,
   importTeslaMate,
   importVolvoDataPortal,
   startAximoteImport,

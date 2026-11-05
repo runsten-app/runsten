@@ -189,7 +189,8 @@
       "volvoCsv": "Importerad från Volvo Cars-appen",
       "volvoDataPortal": "Importerad från Volvo Data Portal",
       "other": "Importerad från {source}",
-      "teslamate": "Importerad från TeslaMate"
+      "teslamate": "Importerad från TeslaMate",
+      "aaosLogging": "Importerad från AAOS Logging"
     },
     "importedHelp": "Importerad från en annan app, från innan Runsten läste fordonet: tider och siffror är den appens egna.",
     "importedTimesNote": "Tiderna är de som appen gav, på minuten eller bättre: inget intervall."
@@ -1701,6 +1702,35 @@
         "tooLarge": "Filerna är för stora: högst 32 MB tillsammans.",
         "network": "Runsten kunde inte nås. Försök igen om en stund.",
         "internal": "Filerna kunde inte importeras. Försök igen om en stund."
+      }
+    },
+    "aaos": {
+      "title": "Importera från AAOS Logging",
+      "beta": "Beta",
+      "intro": "AAOS Logging är en app för bilar med Google inbyggt (Volvo, Polestar, Renault…) som registrerar varje resa och synkar den till din Google Drive. Ladda ner bilens mapp i Google Drive, i AAOSLogging, när appen har synkat: Drive ger en ZIP-fil; välj den här. Bara resor från före fordonets första avläsning importeras, med spår, laddningsnivå och utetemperatur; appen registrerar inga laddningar. En ny import ersätter dem.",
+      "open": "Välj exporten",
+      "link": "AAOS Logging på Google Play",
+      "newTab": "(öppnas i en ny flik)",
+      "file": {
+        "label": "Bilens mapp (ZIP)",
+        "hint": "ZIP-filen som Google Drive ger för bilens mapp i AAOSLogging."
+      },
+      "clear": "Ta bort: {file}",
+      "start": "Importera",
+      "cancel": "Avbryt",
+      "done": "Importen är klar",
+      "report": {
+        "imported": "Ingen resa importerad. | En resa importerad. | {n} resor importerade.",
+        "skipped": "En utelämnad: den börjar efter fordonets första avläsning ({date}). | {n} utelämnade: de börjar efter fordonets första avläsning ({date}).",
+        "invalid": "En resa utelämnad, ofullständig eller utanför gränserna. | {n} resor utelämnade, ofullständiga eller utanför gränserna."
+      },
+      "error": {
+        "summary": "Exporten importerades inte",
+        "required": "Välj ZIP-filen med bilens mapp.",
+        "file": "Det här är ingen export från AAOS Logging, eller så är den ofullständig: ladda ner bilens mapp i Google Drive, i AAOSLogging, när appen har synkat, och välj ZIP-filen som den är.",
+        "tooLarge": "Exporten är för stor: högst 512 MB.",
+        "network": "Runsten kunde inte nås. Försök igen om en stund.",
+        "internal": "Exporten kunde inte importeras. Försök igen om en stund."
       }
     },
     "error": "Importerna kunde inte läsas in. Försök igen om en stund.",

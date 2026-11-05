@@ -4,12 +4,14 @@ import {
   deleteImport,
   fetchImports,
   gzipped,
+  importAAOSLogging,
   importKeys,
   importTeslaMate,
   importVolvoDataPortal,
 } from '@/entities/vehicle-import'
 import imports from '@fixtures/imports.json'
 import portalReport from '@fixtures/import-volvo-data-portal.json'
+import aaosReport from '@fixtures/import-aaos-logging.json'
 import teslaMateReport from '@fixtures/import-teslamate.json'
 import { api } from '@/shared/api'
 import { apiError, json, stubFetch } from '@test/http'
@@ -74,6 +76,25 @@ describe('import of the Volvo Data Portal', () => {
     const form = (spy.mock.calls[0] as unknown as PostCall)[1].body as FormData
     expect(form.has('trips')).toBe(true)
     expect(form.has('waypoints')).toBe(false)
+  })
+})
+
+describe('import of AAOS Logging', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('sends the export as a multipart form, and reads the report', async () => {
+    const spy = vi
+      .spyOn(api, 'POST')
+      .mockResolvedValue({ data: aaosReport, response: json(aaosReport) })
+    const exported = new File(['PK'], 'AAOSLogging.zip', { type: 'application/zip' })
+    expect(await importAAOSLogging(vehicle, exported)).toEqual(aaosReport)
+    const [path, init] = spy.mock.calls[0] as unknown as PostCall
+    expect(path).toBe('/vehicles/{vehicle}/imports/aaos_logging')
+    expect(init.params).toEqual({ path: { vehicle } })
+    const form = init.bodySerializer(init.body) as FormData
+    expect(form).toBeInstanceOf(FormData)
+    expect(form.get('export')).toBe(exported)
+    expect([...form.keys()]).toEqual(['export'])
   })
 })
 
