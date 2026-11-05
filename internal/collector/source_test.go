@@ -34,6 +34,7 @@ type fakeSource struct {
 	loginErr error
 	answer   func(ep Endpoint, login int, at time.Time) ([]byte, error)
 	upload   func(ep Endpoint, raw []byte) (Upload, error) // nil: nothing told
+	local    Endpoint                                      // read without a call (EndpointSpec.Local)
 	logins   int
 	calls    map[Endpoint][]time.Time
 }
@@ -46,7 +47,7 @@ func (f *fakeSource) Spec() SourceSpec {
 	telemetry := func(ep Endpoint, parked Pace) EndpointSpec {
 		return EndpointSpec{Endpoint: ep, API: "fake", Parked: parked, Driving: PaceActive, Charging: PaceActive}
 	}
-	return SourceSpec{
+	spec := SourceSpec{
 		Name: "fake",
 		Endpoints: []EndpointSpec{
 			telemetry(psBattery, PaceParked), telemetry(psAvailability, PaceParked),
@@ -57,6 +58,10 @@ func (f *fakeSource) Spec() SourceSpec {
 		Settled: []Endpoint{psOdometer, psLocation},
 		Daily:   f.daily,
 	}
+	for i := range spec.Endpoints {
+		spec.Endpoints[i].Local = spec.Endpoints[i].Endpoint == f.local
+	}
+	return spec
 }
 
 func (f *fakeSource) Login(context.Context, string, string) (Session, time.Duration, error) {
@@ -524,6 +529,37 @@ func TestSourceQuota(t *testing.T) {
 	g.restore(st.calls, []Target{target()}, clk.Now())
 	if _, ok := g.tokens[unit{api: "fake"}]; ok || g.usage["a"] != float64(volvo) {
 		t.Errorf("tokens %v, usage %v", g.tokens, g.usage)
+	}
+}
+
+// TestSourceLocal: an endpoint that reads what the source holds is read at its pace with
+// the budget spent, and counts on nothing.
+func TestSourceLocal(t *testing.T) {
+	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+	src := newFakeSource(clk)
+	src.daily, src.local = 27, psBattery // a burst of one call
+	st := &sourceStore{memStore: memStore{targets: []Target{sourceTarget()}}}
+	c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+	c.AddSource(src, st)
+	// Five parked intervals, less than the budget takes to give another call.
+	for range 5 {
+		poll(t, c)
+		clk.Advance(DefaultIntervals().Parked)
+	}
+	if n := len(src.calls[psBattery]); n != 5 {
+		t.Errorf("the local endpoint read %d times in 5 parked intervals", n)
+	}
+	if n := len(src.calls[psAvailability]); n != 1 {
+		t.Errorf("%d calls on a burst of one", n)
+	}
+	fake := 0
+	for _, call := range st.calls {
+		if call.API == "fake" {
+			fake += call.N
+		}
+	}
+	if fake != 1 {
+		t.Errorf("%d calls saved, the local reads among them", fake)
 	}
 }
 

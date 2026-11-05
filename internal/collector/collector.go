@@ -719,9 +719,11 @@ func (c *Collector) bringForward(t Target, vs *vehicleState, src *source, spec E
 	}
 }
 
-// due reports whether a call of spec is due now for t, and the budget allows it.
+// due reports whether a call of spec is due now for t, and the budget allows it (a Local
+// endpoint needs none).
 func (c *Collector) due(t Target, vs *vehicleState, spec EndpointSpec, now time.Time) bool {
-	return !now.Before(vs.next[spec.Endpoint]) && !now.Before(vs.missing[spec.Endpoint]) && c.allowed(t, spec.API, now)
+	return !now.Before(vs.next[spec.Endpoint]) && !now.Before(vs.missing[spec.Endpoint]) &&
+		(spec.Local || c.allowed(t, spec.API, now))
 }
 
 // read saves a response of ep, tells the observer, and updates the vehicle's mode; it
@@ -990,7 +992,10 @@ func (c *Collector) status(t Target, vs *vehicleState) Status {
 			continue // due once the vehicle is seen awake
 		}
 		due := vs.next[spec.Endpoint]
-		blocks := []time.Time{vs.missing[spec.Endpoint], c.apiBlocked[c.budget.unitOf(t, spec.API)], c.pausedUntil(t)}
+		blocks := []time.Time{vs.missing[spec.Endpoint], c.pausedUntil(t)}
+		if !spec.Local {
+			blocks = append(blocks, c.apiBlocked[c.budget.unitOf(t, spec.API)])
+		}
 		if t.readsVolvo() {
 			blocks = append(blocks, c.keyRefused[keyOf(t)])
 		}

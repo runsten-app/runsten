@@ -36,6 +36,9 @@ type EndpointSpec struct {
 	// Awake: reading it keeps the vehicle awake. It is read only while the vehicle is seen
 	// awake, and out of its sleep window (SourceSpec.Sleep).
 	Awake bool
+	// Local: it reads what the source already holds (what a stream pushed), without a
+	// call to the provider. It is not counted in the budget, nor held back by it.
+	Local bool
 }
 
 func (s EndpointSpec) pace(m mode) Pace {
