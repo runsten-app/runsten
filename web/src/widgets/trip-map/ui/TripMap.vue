@@ -77,7 +77,7 @@ const summary = computed(() => {
   <v-card v-if="map && map.trips > 0" class="trip-map mb-4">
     <v-card-title tag="h2">{{ t('tripMap.title') }}</v-card-title>
     <v-card-text>
-      <p class="text-body-medium mb-3">{{ summary }}</p>
+      <p class="text-body-medium mt-0 mb-3">{{ summary }}</p>
       <MapView :label="t('tripMap.label')" :spots :links="drawn" tall />
       <p class="text-body-small text-medium-emphasis mt-2 mb-0">
         {{ t('tripMap.hint') }}
