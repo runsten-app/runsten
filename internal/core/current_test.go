@@ -125,6 +125,19 @@ func TestLatest(t *testing.T) {
 			},
 		},
 		{
+			name: "a later fetch counts even when an older record is confirmed last",
+			records: []Record{
+				rec(0, 20, sleeping(Offline)),
+				rec(10, 50, odo(12400)),
+				rec(30, 30, nrg(70, ChargingIdle)),
+			},
+			check: func(t *testing.T, c Current) {
+				if c.Snapshot.Sleep.OK {
+					t.Errorf("sleep = %+v", c.Snapshot.Sleep)
+				}
+			},
+		},
+		{
 			name: "a vehicle asleep since its last values stays asleep",
 			records: []Record{
 				rec(0, 30, nrg(70, ChargingIdle)),
