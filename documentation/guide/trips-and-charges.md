@@ -10,7 +10,7 @@ The **Trips** and **Charges** tabs list the events of a period, by day, newest f
 
 ## Where the car went
 
-Under the totals, the **Trips** tab draws the period on a map: where its trips started and ended, and a line between two spots for the trips between them, thicker the more often they were driven, either way. A month shows the daily commute as one thick line, a year the whole area the car drives in. The ends within a place's circle are that place; the others are gathered around the same address (squares of about 300 m). Runsten reads where a trip starts and ends, not the road it took: the lines are straight. Below the map, the journeys made more than once, the most frequent first, with their trips and their distance. A trip without a position (a reconstructed one) is counted apart. The map is the API's `GET /vehicles/{vehicle}/trip-map`.
+Under the totals, the **Trips** tab draws the period on a map: where its trips started and ended, and a line between two spots for the trips between them, thicker the more often they were driven, either way. A month shows the daily commute as one thick line, a year the whole area the car drives in. The ends within a place's circle are that place; the others are gathered around the same address (within 250 m). Runsten reads where a trip starts and ends, not the road it took: the lines are straight. Below the map, the journeys made more than once, the most frequent first, with their trips and their distance. A trip without a position (a reconstructed one) is counted apart. The map is the API's `GET /vehicles/{vehicle}/trip-map`.
 
 ## Charges by place
 

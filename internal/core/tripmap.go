@@ -2,15 +2,14 @@ package core
 
 import (
 	"cmp"
-	"math"
 	"slices"
 	"time"
 )
 
-// SpotDegrees is the side of the squares, in degrees, that gather the ends of the trips
-// outside every place: about 330 m of latitude, enough for the spots a vehicle parks at
-// around the same address, day after day, to be one.
-const SpotDegrees = 0.003
+// SpotRadiusM is how far from the first end a spot gathered the others may be, outside
+// every place: enough for the spots a vehicle parks at around the same address, day after
+// day, to be one.
+const SpotRadiusM = 250
 
 // TripMap is where a vehicle went over a period, drawn from the ends of its trips: the
 // spots it left and reached, and the links between them, each the trips that went one way
@@ -23,8 +22,8 @@ type TripMap struct {
 	Trips, WithoutPosition int
 }
 
-// MapSpot gathers the ends of trips: a place's (its circle), or else a square of
-// SpotDegrees.
+// MapSpot gathers the ends of trips: a place's (its circle), or else those within
+// SpotRadiusM of the first one it gathered.
 type MapSpot struct {
 	Position Position // the place's, else the mean of the ends it gathers
 	// First is the first end the spot gathered: one a trip had, whose address the list
@@ -43,30 +42,34 @@ type MapLink struct {
 
 // MapTrips draws the map of the trips that started in [from, to).
 func MapTrips(trips []Trip, places []Place, from, to time.Time) TripMap {
-	type spotKey struct {
-		place    string
-		lat, lon int64
-	}
 	type gather struct {
 		MapSpot
 		sumLat, sumLon float64
 		n              int
 	}
 	var out TripMap
-	keys := map[spotKey]int{}
 	var spots []*gather
+	byPlace := map[string]int{}
 	spotOf := func(p Position) int {
-		k := spotKey{lat: int64(math.Floor(p.Lat / SpotDegrees)), lon: int64(math.Floor(p.Lon / SpotDegrees))}
 		place, at := PlaceAt(p, places)
+		i, ok := -1, false
 		if at {
-			k = spotKey{place: place.ID}
+			i, ok = byPlace[place.ID]
+		} else {
+			// The nearest spot outside every place within reach, measured from its first
+			// end: a spot never creeps along a street.
+			best := 0.0
+			for j, g := range spots {
+				if d := distanceM(p, g.First); !g.Place.OK && d <= SpotRadiusM && (!ok || d < best) {
+					i, ok, best = j, true, d
+				}
+			}
 		}
-		i, ok := keys[k]
 		if !ok {
 			i = len(spots)
-			keys[k] = i
 			g := &gather{MapSpot: MapSpot{First: p}}
 			if at {
+				byPlace[place.ID] = i
 				g.Position, g.Place = place.Position, Value[Place]{V: place, OK: true}
 			}
 			spots = append(spots, g)
@@ -78,6 +81,11 @@ func MapTrips(trips []Trip, places []Place, from, to time.Time) TripMap {
 		}
 		return i
 	}
+	// Oldest first, whatever the order given: the same trips gather the same spots.
+	trips = slices.Clone(trips)
+	slices.SortStableFunc(trips, func(x, y Trip) int {
+		return cmp.Or(x.Start.After.Compare(y.Start.After), x.DetectedAt.Compare(y.DetectedAt))
+	})
 	type linkKey struct{ a, b int }
 	links := map[linkKey]*MapLink{}
 	for _, t := range trips {

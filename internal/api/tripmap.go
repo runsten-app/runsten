@@ -21,7 +21,7 @@ type tripMapJSON struct {
 	To                   time.Time     `json:"to" pattern:"Z$"`
 	Trips                int           `json:"trips" minimum:"0" doc:"The trips of the map: those that started in the period, both ends known."`
 	TripsWithoutPosition int           `json:"trips_without_position" minimum:"0" doc:"The trips of the period left out, an end unknown (a reconstructed trip has none)."`
-	Spots                []mapSpotJSON `json:"spots" nullable:"false" doc:"Where the trips started and ended, the most visited first: a place, the ends within its circle, or else a square of 0.003° gathering the ends around the same address. The first 50 have their address."`
+	Spots                []mapSpotJSON `json:"spots" nullable:"false" doc:"Where the trips started and ended, the most visited first: a place, the ends within its circle, or else the ends within 250 m of the first one it gathered, around the same address. The first 50 have their address."`
 	Links                []mapLinkJSON `json:"links" nullable:"false" doc:"The trips between two spots, either way, the most driven first. A trip back to the spot it left is none."`
 }
 

@@ -4864,7 +4864,7 @@ components:
             $ref: "#/components/schemas/MapLink"
           type: array
         spots:
-          description: "Where the trips started and ended, the most visited first: a place, the ends within its circle, or else a square of 0.003° gathering the ends around the same address. The first 50 have their address."
+          description: "Where the trips started and ended, the most visited first: a place, the ends within its circle, or else the ends within 250 m of the first one it gathered, around the same address. The first 50 have their address."
           items:
             $ref: "#/components/schemas/MapSpot"
           type: array

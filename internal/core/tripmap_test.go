@@ -12,8 +12,9 @@ func TestMapTrips(t *testing.T) {
 		return Trip{Start: Bounds{After: start, Before: start}, From: from, To: to, DistanceKm: known(km)}
 	}
 	home := homePlace()
-	// Work is no place: the vehicle parks along the same street, a few dozen meters apart.
-	work1, work2 := Position{Lat: 45.7797, Lon: 4.9270}, Position{Lat: 45.7799, Lon: 4.9274}
+	// Work is no place: the vehicle parks along the same street, a few dozen meters apart,
+	// on both sides of a round latitude.
+	work1, work2 := Position{Lat: 45.7798, Lon: 4.9270}, Position{Lat: 45.7801, Lon: 4.9274}
 	shop := Position{Lat: 45.7501, Lon: 4.8501}
 	nearHome := Position{Lat: 45.7642, Lon: 4.8359} // within home's circle
 	trips := []Trip{
