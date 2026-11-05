@@ -1,0 +1,39 @@
+{
+  "from": "2026-09-28T06:55:00Z",
+  "to": "2026-09-28T23:00:00Z",
+  "trips": 2,
+  "trips_without_position": 1,
+  "spots": [
+    {
+      "position": {
+        "lat": 45.764,
+        "lon": 4.8357
+      },
+      "place": {
+        "id": "5e1f0000-0000-4000-8000-000000000001",
+        "name": "Maison de Tante Agathe"
+      },
+      "address": null,
+      "departures": 1,
+      "arrivals": 1
+    },
+    {
+      "position": {
+        "lat": 45.7797,
+        "lon": 4.927
+      },
+      "place": null,
+      "address": null,
+      "departures": 1,
+      "arrivals": 1
+    }
+  ],
+  "links": [
+    {
+      "a": 0,
+      "b": 1,
+      "trips": 2,
+      "distance_km": 65
+    }
+  ]
+}
