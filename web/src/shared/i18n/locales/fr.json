@@ -229,6 +229,18 @@
     "end": "Il n'y a pas d'autre trajet.",
     "csv": "Télécharger en CSV"
   },
+  "tripMap": {
+    "title": "Où le véhicule est allé",
+    "label": "Carte des trajets de la période",
+    "spot": "{name} : un trajet parti ou arrivé ici | {name} : {count} trajets partis ou arrivés ici",
+    "between": "{from} ↔ {to}",
+    "trips": "{n} trajet | {n} trajets",
+    "spots": "{n} lieu | {n} lieux",
+    "links": "{n} liaison | {n} liaisons",
+    "hint": "Runsten connaît le départ et l'arrivée d'un trajet, pas son parcours : chaque ligne relie deux lieux, plus épaisse qu'elle a été parcourue souvent, dans un sens ou dans l'autre.",
+    "withoutPosition": "Un trajet sans position est laissé de côté. | {n} trajets sans position sont laissés de côté.",
+    "frequent": "Trajets les plus fréquents"
+  },
   "readingsCsv": {
     "download": "Télécharger tous les relevés (CSV)",
     "tooLong": "Tous les relevés : choisissez 31 jours au plus."

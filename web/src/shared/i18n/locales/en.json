@@ -229,6 +229,18 @@
     "end": "No more trips.",
     "csv": "Download CSV"
   },
+  "tripMap": {
+    "title": "Where the vehicle went",
+    "label": "Map of the trips of the period",
+    "spot": "{name}: one trip started or ended here | {name}: {count} trips started or ended here",
+    "between": "{from} ↔ {to}",
+    "trips": "{n} trip | {n} trips",
+    "spots": "{n} spot | {n} spots",
+    "links": "{n} link | {n} links",
+    "hint": "Runsten reads where a trip starts and ends, not its path: each line joins two spots, thicker the more often it was driven, either way.",
+    "withoutPosition": "One trip without a position is left out. | {n} trips without a position are left out.",
+    "frequent": "Most frequent journeys"
+  },
   "readingsCsv": {
     "download": "Download every reading (CSV)",
     "tooLong": "Every reading: choose 31 days at most."

@@ -6,10 +6,11 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from 'vuetify'
 import type { MapTiles, Position } from '@/shared/lib'
-import type { MapCircle, MapMarker } from './types'
+import type { MapCircle, MapLink, MapMarker, MapSpot } from './types'
 
 // MapFrame is a Leaflet map of the instance's tiles: markers, a route between them or
-// the line of a track, a place's circle, and the position pressed when pickable.
+// the line of a track, a place's circle, and the position pressed when pickable; or the
+// spots and links of many trips, each drawn by its weight.
 // Leaflet styles its elements through the CSSOM, which the CSP allows; its markers here
 // are SVG, never images.
 // Vector tiles (a PMTiles file) are drawn by protomaps-leaflet on canvases, in the
@@ -23,6 +24,9 @@ const props = defineProps<{
   // line is a track, drawn instead of the route: the path driven, not a straight one.
   line?: Position[]
   pickable?: boolean
+  spots?: MapSpot[]
+  links?: MapLink[]
+  tall?: boolean
 }>()
 const emit = defineEmits<{ pick: [position: Position] }>()
 const theme = useTheme()
@@ -68,6 +72,29 @@ function draw() {
     L.polyline(points, { color: accent, weight: 3, dashArray: '6 6', interactive: false }).addTo(
       layers,
     )
+  // The links under the spots, the light ones first: the most driven on top.
+  for (const l of [...(props.links ?? [])].sort((a, b) => a.weight - b.weight)) {
+    L.polyline([latLng(l.from), latLng(l.to)], {
+      color: accent,
+      weight: 2 + 6 * l.weight,
+      opacity: 0.3 + 0.6 * l.weight,
+      lineCap: 'round',
+    })
+      .bindTooltip(escape(l.label), { sticky: true })
+      .addTo(layers)
+  }
+  for (const s of props.spots ?? []) {
+    L.circleMarker(latLng(s.position), {
+      radius: 4 + 8 * s.weight,
+      color: ring,
+      weight: 1.5,
+      fillColor: accent,
+      fillOpacity: 0.5 + 0.5 * s.weight,
+    })
+      .bindTooltip(escape(s.label), { direction: 'top' })
+      .addTo(layers)
+    bounds.extend(latLng(s.position))
+  }
   for (const m of props.markers ?? []) {
     L.circleMarker(latLng(m.position), {
       radius: 7,
@@ -121,7 +148,13 @@ function drawVector() {
   vectorTiles.addTo(map)
 }
 
-watch(() => [props.markers, props.circle, props.route, props.line], draw, { deep: true })
+watch(
+  () => [props.markers, props.circle, props.route, props.line, props.spots, props.links],
+  draw,
+  {
+    deep: true,
+  },
+)
 watch(
   () => [theme.current.value.dark, locale.value],
   () => props.tiles.vector && drawVector(),
@@ -135,7 +168,7 @@ onBeforeUnmount(() => map?.remove())
     role="region"
     :aria-label="label"
     class="map-frame"
-    :class="{ dark: theme.current.value.dark && !tiles.vector, pickable }"
+    :class="{ dark: theme.current.value.dark && !tiles.vector, pickable, tall }"
   />
 </template>
 
@@ -150,6 +183,14 @@ onBeforeUnmount(() => map?.remove())
 }
 .pickable {
   cursor: crosshair;
+}
+.tall {
+  height: 26rem;
+}
+@media (max-width: 600px) {
+  .tall {
+    height: 20rem;
+  }
 }
 /* Raster tiles are drawn light: dark, they are turned, keeping their hues. */
 .dark :deep(.leaflet-tile-pane) {

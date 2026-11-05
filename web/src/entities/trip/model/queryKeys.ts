@@ -5,6 +5,8 @@ export const tripKeys = {
   lists: (vehicle: string) => ['trips', vehicle] as const,
   list: (vehicle: string, from?: string, to?: string) =>
     ['trips', vehicle, from ?? null, to ?? null] as const,
+  map: (vehicle: string, from?: string, to?: string) =>
+    ['trips', vehicle, 'map', from ?? null, to ?? null] as const,
   detail: (vehicle: string, id: string) => ['trip', vehicle, id] as const,
   track: (vehicle: string, id: string) => ['trip', vehicle, id, 'track'] as const,
 }
