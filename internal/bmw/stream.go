@@ -145,6 +145,12 @@ func (s *Subscription) connect(ctx context.Context, idToken string) error {
 	cl = paho.NewClient(opts)
 	tok := cl.Connect()
 	if err := wait(ctx, tok); err != nil {
+		// Given up on (a timeout, ctx done), the attempt may still succeed: closed once it
+		// ends, or it would hold the account's only connection.
+		go func() {
+			<-tok.Done()
+			cl.Disconnect(250)
+		}()
 		var code byte
 		if ct, ok := tok.(*paho.ConnectToken); ok {
 			code = ct.ReturnCode()
