@@ -38,6 +38,8 @@ type mapLinkJSON struct {
 	B          int     `json:"b" minimum:"1"`
 	Trips      int     `json:"trips" minimum:"1"`
 	DistanceKm float64 `json:"distance_km" minimum:"0" doc:"The sum of the trips' known distances."`
+	// DistanceUnknown as distance_unknown of the statistics' trips.
+	DistanceUnknown int `json:"distance_unknown" minimum:"0" doc:"The trips whose distance is unknown, left out of distance_km."`
 }
 
 // maxSpotAddresses bounds the spots of a map whose addresses are read.
@@ -101,7 +103,9 @@ func (s *Server) getTripMap(ctx context.Context, in *tripMapInput) (*body[tripMa
 		})
 	}
 	for _, lk := range m.Links {
-		out.Links = append(out.Links, mapLinkJSON{A: lk.A, B: lk.B, Trips: lk.Trips, DistanceKm: lk.DistanceKm})
+		out.Links = append(out.Links, mapLinkJSON{
+			A: lk.A, B: lk.B, Trips: lk.Trips, DistanceKm: lk.DistanceKm, DistanceUnknown: lk.DistanceUnknown,
+		})
 	}
 	return respond(out), nil
 }

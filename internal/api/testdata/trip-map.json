@@ -33,7 +33,8 @@
       "a": 0,
       "b": 1,
       "trips": 2,
-      "distance_km": 65
+      "distance_km": 65,
+      "distance_unknown": 0
     }
   ]
 }

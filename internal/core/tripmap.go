@@ -38,6 +38,8 @@ type MapLink struct {
 	A, B       int
 	Trips      int
 	DistanceKm float64 // the sum of the known distances
+	// DistanceUnknown counts the trips whose distance is not known.
+	DistanceUnknown int
 }
 
 // MapTrips draws the map of the trips that started in [from, to).
@@ -112,6 +114,8 @@ func MapTrips(trips []Trip, places []Place, from, to time.Time) TripMap {
 		l.Trips++
 		if t.DistanceKm.OK {
 			l.DistanceKm += t.DistanceKm.V
+		} else {
+			l.DistanceUnknown++
 		}
 	}
 	// The spots by visits, the first seen first between equals; the links follow them.
@@ -128,7 +132,9 @@ func MapTrips(trips []Trip, places []Place, from, to time.Time) TripMap {
 	}
 	for _, l := range links {
 		a, b := rank[l.A], rank[l.B]
-		out.Links = append(out.Links, MapLink{A: min(a, b), B: max(a, b), Trips: l.Trips, DistanceKm: l.DistanceKm})
+		out.Links = append(out.Links, MapLink{
+			A: min(a, b), B: max(a, b), Trips: l.Trips, DistanceKm: l.DistanceKm, DistanceUnknown: l.DistanceUnknown,
+		})
 	}
 	slices.SortFunc(out.Links, func(x, y MapLink) int {
 		return cmp.Or(cmp.Compare(y.Trips, x.Trips), cmp.Compare(x.A, y.A), cmp.Compare(x.B, y.B))

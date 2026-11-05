@@ -232,7 +232,8 @@
   "tripMap": {
     "title": "Où le véhicule est allé",
     "label": "Carte des trajets de la période",
-    "spot": "{name} : un trajet parti ou arrivé ici | {name} : {count} trajets partis ou arrivés ici",
+    "departures": "{n} départ | {n} départs",
+    "arrivals": "{n} arrivée | {n} arrivées",
     "between": "{from} ↔ {to}",
     "trips": "{n} trajet | {n} trajets",
     "spots": "{n} lieu | {n} lieux",

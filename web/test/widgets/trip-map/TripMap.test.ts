@@ -43,6 +43,13 @@ describe('TripMap', () => {
     )
   })
 
+  it('tells the trips of a journey whose distance is unknown', async () => {
+    const partly = structuredClone(fixture) as Map
+    partly.links = [{ ...fixture.links[0], distance_unknown: 1 } as Map['links'][number]]
+    const li = (await mount(partly)).find('.frequent li')
+    expect(plain(li.text())).toMatch(/2 trips · 65 km · distance unknown for 1 trip$/)
+  })
+
   it('lists no journey driven once, and shows nothing without a trip', async () => {
     const once = structuredClone(fixture) as Map
     once.links = [{ ...fixture.links[0], trips: 1 } as Map['links'][number]]

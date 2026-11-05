@@ -232,7 +232,8 @@
   "tripMap": {
     "title": "Where the vehicle went",
     "label": "Map of the trips of the period",
-    "spot": "{name}: one trip started or ended here | {name}: {count} trips started or ended here",
+    "departures": "{n} departure | {n} departures",
+    "arrivals": "{n} arrival | {n} arrivals",
     "between": "{from} ↔ {to}",
     "trips": "{n} trip | {n} trips",
     "spots": "{n} spot | {n} spots",

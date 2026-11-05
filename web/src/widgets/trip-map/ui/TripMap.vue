@@ -28,11 +28,7 @@ const spots = computed<MapSpot[]>(() => {
   const top = Math.max(1, ...all.map((s) => s.departures + s.arrivals))
   return all.map((s, i) => ({
     position: s.position,
-    label: t(
-      'tripMap.spot',
-      { name: named.value[i] ?? '', count: s.departures + s.arrivals },
-      s.departures + s.arrivals,
-    ),
+    label: `${named.value[i] ?? ''}: ${t('tripMap.departures', s.departures)}, ${t('tripMap.arrivals', s.arrivals)}`,
     weight: Math.sqrt((s.departures + s.arrivals) / top),
   }))
 })
@@ -100,6 +96,9 @@ const summary = computed(() => {
             {{ ' ' }}
             <span class="text-medium-emphasis">
               {{ t('tripMap.trips', l.link.trips) }} · {{ f.quantity(l.link.distance_km, 'km') }}
+              <template v-if="l.link.distance_unknown">
+                · {{ t('stats.trips.distanceUnknown', l.link.distance_unknown) }}
+              </template>
             </span>
           </li>
         </ol>
@@ -110,6 +109,9 @@ const summary = computed(() => {
         <li v-for="l in links" :key="`${l.link.a}-${l.link.b}`">
           {{ t('tripMap.between', { from: l.from, to: l.to }) }},
           {{ t('tripMap.trips', l.link.trips) }}, {{ f.quantity(l.link.distance_km, 'km') }}
+          <template v-if="l.link.distance_unknown">
+            , {{ t('stats.trips.distanceUnknown', l.link.distance_unknown) }}
+          </template>
         </li>
       </ol>
     </v-card-text>

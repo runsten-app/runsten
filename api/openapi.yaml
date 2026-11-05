@@ -2305,6 +2305,11 @@ components:
           format: double
           minimum: 0
           type: number
+        distance_unknown:
+          description: The trips whose distance is unknown, left out of distance_km.
+          format: int64
+          minimum: 0
+          type: integer
         trips:
           format: int64
           minimum: 1
@@ -2314,6 +2319,7 @@ components:
         - b
         - trips
         - distance_km
+        - distance_unknown
       type: object
     MapSpot:
       additionalProperties: false

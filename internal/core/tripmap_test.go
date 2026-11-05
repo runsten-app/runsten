@@ -21,7 +21,7 @@ func TestMapTrips(t *testing.T) {
 		trip(at(1, 7), known(lyon), known(work1), 32),
 		trip(at(1, 17), known(work2), known(nearHome), 33),
 		trip(at(2, 7), known(lyon), known(work2), 32),
-		trip(at(2, 18), known(work1), known(shop), 9),
+		with(trip(at(2, 18), known(work1), known(shop), 9), func(t *Trip) { t.DistanceKm = Value[float64]{} }),
 		trip(at(2, 19), known(shop), known(lyon), 4),
 		trip(at(3, 9), known(lyon), known(nearHome), 1), // a round trip: no link
 		trip(at(3, 12), Value[Position]{}, known(lyon), 5),
@@ -39,7 +39,7 @@ func TestMapTrips(t *testing.T) {
 		Links: []MapLink{
 			{A: 0, B: 1, Trips: 3, DistanceKm: 97},
 			{A: 0, B: 2, Trips: 1, DistanceKm: 4},
-			{A: 1, B: 2, Trips: 1, DistanceKm: 9},
+			{A: 1, B: 2, Trips: 1, DistanceUnknown: 1},
 		},
 		Trips: 6, WithoutPosition: 1,
 	}

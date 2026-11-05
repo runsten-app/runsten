@@ -232,7 +232,8 @@
   "tripMap": {
     "title": "Vart fordonet har kört",
     "label": "Karta över periodens resor",
-    "spot": "{name}: en resa började eller slutade här | {name}: {count} resor började eller slutade här",
+    "departures": "{n} avgång | {n} avgångar",
+    "arrivals": "{n} ankomst | {n} ankomster",
     "between": "{from} ↔ {to}",
     "trips": "{n} resa | {n} resor",
     "spots": "{n} plats | {n} platser",
