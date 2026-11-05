@@ -80,6 +80,18 @@ describe('useTrip', () => {
     expect(mocks.fetchTrip).not.toHaveBeenCalled()
   })
 
+  // The map of the period sits beside the lists: no page of trips to look into.
+  it('looks past the map of the period', async () => {
+    const queryClient = client()
+    queryClient.setQueryData(tripKeys.map(vehicle, from), { trips: 0, spots: [], links: [] })
+    queryClient.setQueryData(tripKeys.list(vehicle, from), {
+      pages: [page2],
+      pageParams: [undefined],
+    })
+    const { result } = withSetup(() => useTrip(vehicle, trip.id), { queryClient })
+    expect(result.trip.value).toEqual(page2.items[0])
+  })
+
   it('reads a trip no list holds', async () => {
     mocks.fetchTrip.mockResolvedValue(trip)
     const { result } = withSetup(() => useTrip(vehicle, trip.id))
