@@ -41,6 +41,7 @@ A request body is sent as `application/json`, but the files of an import, as `mu
 | `POST /api/v1/vehicles/{id}/aximote-vehicles` | the vehicles of an Aximote account, the token in the body; the one with the vehicle's VIN marked |
 | `POST`, `GET /api/v1/vehicles/{id}/import-job` | import the vehicle's history from Aximote, in the background (`202`, `409` while one runs); its progress and report |
 | `POST /api/v1/vehicles/{id}/imports/volvo_data_portal` | import the files of the Volvo Data Portal, at once: a `multipart/form-data` body with the `trips` file and, optionally, the `waypoints` file (32 MiB at most); the report |
+| `POST /api/v1/vehicles/{id}/imports/aaos_logging` | import the export of AAOS Logging, at once: a `multipart/form-data` body with the `export` file, the ZIP Google Drive gives for the car's folder (512 MiB at most); the report |
 | `GET /api/v1/vehicles/{id}/stats` | totals of a period (`from`, `to`) and the odometer at its ends, by `day`, `week` or `month` in a time zone (`bucket`, `tz`) |
 | `GET /api/v1/vehicles/{id}/battery` | the estimated battery capacity over the whole history |
 | `GET`, `PUT /api/v1/settings` | the account's currency, and the accepted ones |
