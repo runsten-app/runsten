@@ -265,6 +265,29 @@ linters:
               desc: each vendor's client stands alone
             - pkg: runsten/internal/oauth
               desc: the M2M credential has no grant to keep, a token is asked again
+        # The CarData client depends on neither storage nor the collector, nor on another
+        # vendor's client.
+        bmw-is-a-client:
+          files: ["**/internal/bmw/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: the client stores nothing
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/derive
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/api
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/catalog
+              desc: recognizing a variant is a reading of the API, not a normalization
+            - pkg: runsten/internal/volvo
+              desc: each vendor's client stands alone
+            - pkg: runsten/internal/tesla
+              desc: each vendor's client stands alone
+            - pkg: runsten/internal/oauth
+              desc: the refresh token is the collector's to keep and rotate, not oauth's Manager's
         # The Tesla client depends on neither storage nor the collector, nor on another
         # vendor's client.
         tesla-is-a-client:
@@ -330,6 +353,8 @@ linters:
             - pkg: runsten/internal/tesla
               desc: the domain knows no vendor
             - pkg: runsten/internal/polestarid
+              desc: the domain knows no vendor
+            - pkg: runsten/internal/bmw
               desc: the domain knows no vendor
             - pkg: runsten/internal/simulator
               desc: the domain knows nothing about the simulator
@@ -444,10 +469,11 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/collector
               desc: outward dependency forbidden
-        # paho is the MQTT adapter's alone: neither the domain nor the collector know it. The
-        # tests of the simulated CarData stream connect to it as a client would.
+        # paho is the MQTT adapter's and CarData's stream's: neither the domain nor the
+        # collector know it. The tests of the simulated CarData stream connect to it as a
+        # client would.
         paho-only-in-mqtt:
-          files: ["$all", "!**/internal/publish/mqtt/**", "!**/internal/simulator/bmwapi/*_test.go"]
+          files: ["$all", "!**/internal/publish/mqtt/**", "!**/internal/bmw/**", "!**/internal/simulator/bmwapi/*_test.go"]
           deny:
             - pkg: github.com/eclipse/paho.mqtt.golang
               desc: MQTT belongs to internal/publish/mqtt
