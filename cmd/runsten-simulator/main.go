@@ -63,7 +63,8 @@
 // until then.
 //
 // The simulated Volvo ID serves /as/authorization.oauth2 (the simulated user consents
-// at once) and /as/token.oauth2 (PKCE, refresh token rotation).
+// at once) and /as/token.oauth2 (PKCE, refresh token rotation), and the same on
+// Keycloak's paths under /realms/volvocars (/protocol/openid-connect/auth and /token).
 package main
 
 import (

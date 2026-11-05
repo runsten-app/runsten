@@ -33,6 +33,23 @@ func base() map[string]string {
 	}
 }
 
+// TestLoadConfigVolvoID checks that the Volvo ID follows the application's client ID,
+// unless RUNSTEN_VOLVO_AUTH_URL names one.
+func TestLoadConfigVolvoID(t *testing.T) {
+	for _, tc := range []struct{ clientID, authURL, want string }{
+		{"dc-abc", "", volvo.DefaultAuthURL},
+		{"vid-dc-abc", "", volvo.KeycloakAuthURL},
+		{"vid-dc-abc", "http://sim:8080", "http://sim:8080"},
+	} {
+		m := base()
+		m["RUNSTEN_VOLVO_CLIENT_ID"], m["RUNSTEN_VOLVO_AUTH_URL"] = tc.clientID, tc.authURL
+		cfg, err := loadConfig(env(m))
+		if err != nil || cfg.app.BaseURL != tc.want {
+			t.Errorf("%s, %q: auth URL = %q (%v), want %q", tc.clientID, tc.authURL, cfg.app.BaseURL, err, tc.want)
+		}
+	}
+}
+
 func TestLoadConfigDefaults(t *testing.T) {
 	cfg, err := loadConfig(env(base()))
 	if err != nil {
