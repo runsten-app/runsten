@@ -6,6 +6,7 @@ import { useVehicle } from '@/features/select-vehicle'
 import { isApiError } from '@/shared/api'
 import { AppShell } from '@/widgets/app-shell'
 import { VehicleState } from '@/widgets/vehicle-state'
+import { extensionVehicleActions } from '../extensions'
 
 // The charts come on demand, with Chart.js: the page itself, the first one opened,
 // shows the state without waiting for them.
@@ -37,6 +38,13 @@ const label = computed(() => (current.value ? vehicleLabel(current.value) : null
           <SocTimeline :vehicle="vehicle" class="h-100" />
         </template>
       </VehicleState>
+      <component
+        :is="action"
+        v-for="(action, i) in extensionVehicleActions"
+        :key="i"
+        :vehicle="vehicle"
+        class="mt-4"
+      />
       <RecentSummary :vehicle="vehicle" class="mt-4" />
     </template>
   </AppShell>
