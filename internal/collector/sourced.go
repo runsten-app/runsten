@@ -130,11 +130,13 @@ func (c *Collector) session(ctx context.Context, t Target, src *source, now time
 	return s, nil
 }
 
-// fetchSource calls the provider, counts the call in the budget and reports a failed
-// call to the observer.
+// fetchSource calls the provider, counts the call in the budget (unless spec reads what
+// the source holds) and reports a failed call to the observer.
 func (c *Collector) fetchSource(ctx context.Context, t Target, src *source, sess Session, spec EndpointSpec, start time.Time) ([]byte, error) {
-	c.budget.spend(t, spec.API, start)
-	c.recentCalls[t.ConnectionID] = append(recent(c.recentCalls[t.ConnectionID], start), start)
+	if !spec.Local {
+		c.budget.spend(t, spec.API, start)
+		c.recentCalls[t.ConnectionID] = append(recent(c.recentCalls[t.ConnectionID], start), start)
+	}
 	raw, err := sess.Fetch(ctx, t.VIN, spec.Endpoint)
 	if err != nil {
 		call := Call{

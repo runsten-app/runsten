@@ -55,8 +55,10 @@ var allowed = map[string][]string{
 	// The collector's Source of Tesla's Owner API: the client, adapted.
 	"internal/collector/teslasource":      {"internal/collector", "internal/core", "internal/tesla"},
 	"internal/collector/polestaridsource": {"internal/collector", "internal/core", "internal/polestarid"},
-	"internal/derive":                     {"internal/core"},
-	"internal/oauth":                      {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
+	// CarData's, which holds each connection's subscription to the stream.
+	"internal/collector/bmwsource": {"internal/bmw", "internal/collector", "internal/core", "internal/platform/clock"},
+	"internal/derive":              {"internal/core"},
+	"internal/oauth":               {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
 	// It reads the catalog, pure data like core, to recognize the vehicles' variants, and
 	// the flags' declarations (never flags/eval: depguard).
 	"internal/api": {
@@ -78,10 +80,12 @@ var allowed = map[string][]string{
 	"internal/publish": {"encoding/json", "internal/core"},
 
 	// Adapters.
-	"internal/volvo":             {"net/http", "encoding/json", "golang.org/x/oauth2", "internal/core", "internal/oauth"},
-	"internal/polestar":          {"net/http", "encoding/json", "internal/core"},
-	"internal/tesla":             {"net/http", "encoding/json", "internal/core"},
-	"internal/polestarid":        {"net/http", "encoding/json", "google.golang.org/protobuf", "internal/core"},
+	"internal/volvo":      {"net/http", "encoding/json", "golang.org/x/oauth2", "internal/core", "internal/oauth"},
+	"internal/polestar":   {"net/http", "encoding/json", "internal/core"},
+	"internal/tesla":      {"net/http", "encoding/json", "internal/core"},
+	"internal/polestarid": {"net/http", "encoding/json", "google.golang.org/protobuf", "internal/core"},
+	// CarData's REST and its MQTT stream.
+	"internal/bmw":               {"net/http", "encoding/json", "github.com/eclipse/paho.mqtt.golang", "internal/core"},
 	"internal/geocode/nominatim": {"net/http", "encoding/json", "internal/core"},
 	"internal/aximote":           {"net/http", "encoding/json"},
 	// The latest release on GitHub, compared with the one running.
@@ -90,7 +94,7 @@ var allowed = map[string][]string{
 	"internal/picture":     {"net/http", "internal/platform/clock"},
 	"internal/volvoportal": nil,
 	"internal/teslamate":   nil,
-	// The only package that knows paho.
+	// It knows paho, as bmw does for CarData's stream: no other package.
 	"internal/publish/mqtt": {
 		"github.com/eclipse/paho.mqtt.golang", "internal/core", "internal/platform/clock", "internal/platform/netguard",
 		"internal/publish",
