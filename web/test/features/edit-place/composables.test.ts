@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import { chargeKeys } from '@/entities/charge'
 import { placeKeys, type Place } from '@/entities/place'
 import { statsKeys } from '@/entities/stats'
+import { tripKeys } from '@/entities/trip'
 import { useDeletePlace, usePlace, usePlaces, useSavePlace } from '@/features/edit-place'
 import place from '@fixtures/place.json'
 import places from '@fixtures/places.json'
@@ -33,6 +34,7 @@ const stale = [
   chargeKeys.all(),
   chargeKeys.details(),
   statsKeys.every(),
+  tripKeys.allMaps(),
 ]
 
 describe('usePlaces and usePlace', () => {
