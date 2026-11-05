@@ -1,6 +1,6 @@
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent } from 'vue'
+import { defineComponent, h } from 'vue'
 import { VehiclePage } from '@/pages/vehicle'
 import { ApiError } from '@/shared/api'
 import { RecentSummary } from '@/widgets/recent-summary'
@@ -29,6 +29,9 @@ vi.mock('@/entities/stats', async (original) => ({
   ...(await original<typeof import('@/entities/stats')>()),
   fetchStats: () => Promise.resolve(empty),
 }))
+// The extensions' actions: none in the public build, one in a test.
+const { actions } = vi.hoisted(() => ({ actions: [] as unknown[] }))
+vi.mock('@/pages/vehicle/extensions', () => ({ extensionVehicleActions: actions }))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
   ...mocks,
@@ -36,6 +39,7 @@ vi.mock('@/entities/vehicle', async (original) => ({
 
 beforeEach(() => {
   Object.values(mocks).forEach((m) => m.mockReset())
+  actions.length = 0
   mocks.fetchVehicles.mockResolvedValue(vehicles.items)
 })
 
@@ -84,6 +88,25 @@ describe('VehiclePage', () => {
     mocks.fetchVehicleState.mockResolvedValue(state)
     const w = await page(state.vehicle_id)
     expect(w.find('.v-main a[href$="/settings"]').exists()).toBe(false)
+  })
+
+  it("shows an extension's actions after the state, given the vehicle", async () => {
+    mocks.fetchVehicle.mockResolvedValue(vehicles.items[0])
+    mocks.fetchVehicleState.mockResolvedValue(state)
+    expect((await page(state.vehicle_id)).find('.vehicle-action').exists()).toBe(false)
+
+    actions.push(
+      defineComponent({
+        name: 'VehicleAction',
+        props: { vehicle: { type: String, required: true } },
+        render: () => h('section', { class: 'vehicle-action' }),
+      }),
+    )
+    const w = await page(state.vehicle_id)
+    expect(w.findComponent({ name: 'VehicleAction' }).props('vehicle')).toBe(state.vehicle_id)
+    // After the state; the summary, which has no event here, shows nothing.
+    const html = w.html()
+    expect(html.indexOf('verdandi')).toBeLessThan(html.indexOf('vehicle-action'))
   })
 
   it('tells an unknown vehicle, with a way back', async () => {
