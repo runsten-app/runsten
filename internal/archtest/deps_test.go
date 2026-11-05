@@ -94,7 +94,7 @@ var allowed = map[string][]string{
 	"internal/picture":     {"net/http", "internal/platform/clock"},
 	"internal/volvoportal": nil,
 	"internal/teslamate":   nil,
-	// The only package that knows paho.
+	// It knows paho, as bmw does for CarData's stream: no other package.
 	"internal/publish/mqtt": {
 		"github.com/eclipse/paho.mqtt.golang", "internal/core", "internal/platform/clock", "internal/platform/netguard",
 		"internal/publish",
