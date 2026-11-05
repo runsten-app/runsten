@@ -13,7 +13,7 @@ import { MapView, type MapLink, type MapSpot } from '@/shared/ui'
 const props = defineProps<{ vehicle: string; from?: string; to?: string }>()
 const { t } = useI18n()
 const f = useFormat()
-const { map } = useTripMap(
+const { map, error } = useTripMap(
   () => props.vehicle,
   () => props.from,
   () => props.to,
@@ -58,8 +58,11 @@ const drawn = computed<MapLink[]>(() => {
   }))
 })
 
-// The journeys made again: a link driven once is on the map, not in the list.
+// Every link, in words, for whoever cannot read the map; the journeys made again show.
+// A link driven once is on the map, not in the list shown.
 const frequent = computed(() => links.value.filter((l) => l.link.trips > 1).slice(0, 5))
+
+const shown = computed(() => !!map.value && map.value.trips + map.value.trips_without_position > 0)
 
 const summary = computed(() => {
   const m = map.value
@@ -73,14 +76,17 @@ const summary = computed(() => {
 </script>
 
 <template>
+  <v-alert v-if="error && !map" type="error" variant="tonal" class="trip-map-error mb-4">
+    {{ t('tripMap.error') }}
+  </v-alert>
   <!-- Nothing to draw: the list says the period is empty. -->
-  <v-card v-if="map && map.trips > 0" class="trip-map mb-4">
+  <v-card v-else-if="map && shown" class="trip-map mb-4">
     <v-card-title tag="h2">{{ t('tripMap.title') }}</v-card-title>
     <v-card-text>
       <p class="text-body-medium mt-0 mb-3">{{ summary }}</p>
-      <MapView :label="t('tripMap.label')" :spots :links="drawn" tall />
+      <MapView v-if="map.trips > 0" :label="t('tripMap.label')" :spots :links="drawn" tall />
       <p class="text-body-small text-medium-emphasis mt-2 mb-0">
-        {{ t('tripMap.hint') }}
+        <template v-if="map.trips > 0">{{ t('tripMap.hint') }}</template>
         <template v-if="map.trips_without_position">
           {{ t('tripMap.withoutPosition', map.trips_without_position) }}
         </template>
@@ -98,6 +104,14 @@ const summary = computed(() => {
           </li>
         </ol>
       </template>
+      <!-- For screen readers and the keyboard: every link of the map, which they cannot
+           read; the list shown above holds the frequent ones only. -->
+      <ol v-if="links.length" class="d-sr-only" :aria-label="t('tripMap.every')">
+        <li v-for="l in links" :key="`${l.link.a}-${l.link.b}`">
+          {{ t('tripMap.between', { from: l.from, to: l.to }) }},
+          {{ t('tripMap.trips', l.link.trips) }}, {{ f.quantity(l.link.distance_km, 'km') }}
+        </li>
+      </ol>
     </v-card-text>
   </v-card>
 </template>

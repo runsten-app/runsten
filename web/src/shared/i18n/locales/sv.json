@@ -239,7 +239,9 @@
     "links": "{n} sträcka | {n} sträckor",
     "hint": "Runsten vet var en resa börjar och slutar, inte vägen: varje linje förbinder två platser, tjockare ju oftare den körts, åt ena eller andra hållet.",
     "withoutPosition": "En resa utan position är utelämnad. | {n} resor utan position är utelämnade.",
-    "frequent": "Vanligaste resorna"
+    "frequent": "Vanligaste resorna",
+    "error": "Kartan över resorna kunde inte laddas. Försök igen om en stund.",
+    "every": "Alla resor på kartan"
   },
   "readingsCsv": {
     "download": "Ladda ner alla avläsningar (CSV)",

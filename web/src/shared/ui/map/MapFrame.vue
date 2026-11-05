@@ -2,7 +2,7 @@
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { leafletLayer } from 'protomaps-leaflet'
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from 'vuetify'
 import type { MapTiles, Position } from '@/shared/lib'
@@ -158,6 +158,11 @@ watch(
 watch(
   () => [theme.current.value.dark, locale.value],
   () => props.tiles.vector && drawVector(),
+)
+// The overlays take the theme's colors as values: drawn again once the new theme applies.
+watch(
+  () => theme.current.value.dark,
+  () => nextTick(draw),
 )
 onBeforeUnmount(() => map?.remove())
 </script>

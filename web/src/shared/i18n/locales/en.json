@@ -239,7 +239,9 @@
     "links": "{n} link | {n} links",
     "hint": "Runsten reads where a trip starts and ends, not its path: each line joins two spots, thicker the more often it was driven, either way.",
     "withoutPosition": "One trip without a position is left out. | {n} trips without a position are left out.",
-    "frequent": "Most frequent journeys"
+    "frequent": "Most frequent journeys",
+    "error": "The map of the trips could not be loaded. Try again in a moment.",
+    "every": "Every journey of the map"
   },
   "readingsCsv": {
     "download": "Download every reading (CSV)",

@@ -239,7 +239,9 @@
     "links": "{n} liaison | {n} liaisons",
     "hint": "Runsten connaît le départ et l'arrivée d'un trajet, pas son parcours : chaque ligne relie deux lieux, d'autant plus épaisse qu'elle a été parcourue souvent, dans un sens ou dans l'autre.",
     "withoutPosition": "Un trajet sans position est laissé de côté. | {n} trajets sans position sont laissés de côté.",
-    "frequent": "Trajets les plus fréquents"
+    "frequent": "Trajets les plus fréquents",
+    "error": "La carte des trajets n'a pas pu être chargée. Réessayez dans un instant.",
+    "every": "Tous les trajets de la carte"
   },
   "readingsCsv": {
     "download": "Télécharger tous les relevés (CSV)",

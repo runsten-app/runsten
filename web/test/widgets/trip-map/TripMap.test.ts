@@ -48,7 +48,43 @@ describe('TripMap', () => {
     once.links = [{ ...fixture.links[0], trips: 1 } as Map['links'][number]]
     expect((await mount(once)).find('.frequent').exists()).toBe(false)
 
-    const none: Map = { ...(fixture as Map), trips: 0, spots: [], links: [] }
+    const none: Map = {
+      ...(fixture as Map),
+      trips: 0,
+      trips_without_position: 0,
+      spots: [],
+      links: [],
+    }
     expect((await mount(none)).find('.trip-map').exists()).toBe(false)
+  })
+
+  it('tells the trips without a position when none can be drawn', async () => {
+    const lost: Map = {
+      ...(fixture as Map),
+      trips: 0,
+      trips_without_position: 2,
+      spots: [],
+      links: [],
+    }
+    const w = await mount(lost)
+    expect(w.find('.map-view').exists()).toBe(false)
+    expect(w.find('.trip-map').text()).toContain('2 trips without a position are left out.')
+  })
+
+  it('names every link for screen readers, those driven once too', async () => {
+    const once = structuredClone(fixture) as Map
+    once.links = [{ ...fixture.links[0], trips: 1 } as Map['links'][number]]
+    const every = (await mount(once)).find('.trip-map ol.d-sr-only')
+    expect(plain(every.text())).toBe('Maison de Tante Agathe ↔ 45.77970, 4.92700, 1 trip, 65 km')
+  })
+
+  it('says when the map could not be read', async () => {
+    fetchTripMap.mockRejectedValue(new Error('down'))
+    const { wrapper } = mountWith(TripMap, { props: { vehicle: 'v1' } })
+    await flushPromises()
+    await vi.waitFor(() => expect(wrapper.find('.trip-map-error').exists()).toBe(true), {
+      timeout: 5000,
+    })
+    expect(wrapper.text()).toContain('The map of the trips could not be loaded.')
   })
 })
