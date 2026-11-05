@@ -237,7 +237,7 @@
     "trips": "{n} trajet | {n} trajets",
     "spots": "{n} lieu | {n} lieux",
     "links": "{n} liaison | {n} liaisons",
-    "hint": "Runsten connaît le départ et l'arrivée d'un trajet, pas son parcours : chaque ligne relie deux lieux, plus épaisse qu'elle a été parcourue souvent, dans un sens ou dans l'autre.",
+    "hint": "Runsten connaît le départ et l'arrivée d'un trajet, pas son parcours : chaque ligne relie deux lieux, d'autant plus épaisse qu'elle a été parcourue souvent, dans un sens ou dans l'autre.",
     "withoutPosition": "Un trajet sans position est laissé de côté. | {n} trajets sans position sont laissés de côté.",
     "frequent": "Trajets les plus fréquents"
   },
