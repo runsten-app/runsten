@@ -113,7 +113,7 @@ internal/
                        flows pending in memory);
                        testdata/ holds the golden responses, openapi_test.go generates api/openapi.yaml and
                        validates the responses against it
-  catalog/             data sheet of the electric and plug-in hybrid Volvo, Polestar and Tesla variants (variants.yaml, embedded
+  catalog/             data sheet of the electric and plug-in hybrid Volvo, Polestar, Tesla, BMW and Mini variants (variants.yaml, embedded
                        and validated) and the variant of a vehicle (Match, MatchReading, Recognize, Chosen,
                        Effective; a Tesla's by its trim_badging, core.Snapshot.Trim); pure data
   flags/               the feature flags' declarations (name, default, whether the front end reads them, purpose,
