@@ -11,6 +11,7 @@ describe('LocaleSelect', () => {
     expect(select.props('items')).toEqual([
       { value: 'en', title: 'English' },
       { value: 'de', title: 'Deutsch' },
+      { value: 'es', title: 'Español' },
       { value: 'fr', title: 'Français' },
       { value: 'it', title: 'Italiano' },
       { value: 'nb', title: 'Norsk bokmål' },

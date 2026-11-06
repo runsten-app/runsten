@@ -51,6 +51,7 @@ describe('HistoryLimitNotice', () => {
     ['nb', 'Historikken vises fra lørdag 29. august 2026. De tidligere turene'],
     ['sv', 'Historik visas från lördag 29 augusti 2026. Äldre resor'],
     ['de', 'Verlauf ab Samstag, 29. August 2026 angezeigt. Ältere Fahrten'],
+    ['es', 'Historial mostrado desde el sábado, 29 de agosto de 2026. Los viajes'],
   ])('tells from when the history is shown, in %s', async (locale, text) => {
     i18n.global.locale.value = locale
     expect((await notice(limited)).text()).toContain(text)

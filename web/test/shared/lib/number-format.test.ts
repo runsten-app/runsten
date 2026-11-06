@@ -22,6 +22,10 @@ describe('formatQuantity', () => {
     // Germany groups thousands with a point, Switzerland with an apostrophe.
     [12473, 'km', 'de-DE', '12.473 km'],
     [12473, 'km', 'de-CH', "12'473 km"],
+    // Spain groups thousands from five digits only; Mexico, as English, from four.
+    [12473, 'km', 'es-ES', '12.473 km'],
+    [1234, 'km', 'es-ES', '1234 km'],
+    [1234, 'km', 'es-MX', '1,234 km'],
     [255.6, 'km', 'en-GB', '256 km'],
     [7.4, 'kW', 'en-GB', '7.4 kW'],
     [7.4, 'kW', 'fr-FR', '7,4 kW'],

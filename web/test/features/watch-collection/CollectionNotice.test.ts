@@ -61,6 +61,7 @@ describe('CollectionNotice', () => {
     ['nb', 'Ny autentisering kreves', 'Siden 06:30 · årsak: refresh token expired'],
     ['sv', 'Ny inloggning krävs', 'Sedan 06:30 · orsak: refresh token expired'],
     ['de', 'Erneute Anmeldung erforderlich', 'Seit 06:30 · Grund: refresh token expired'],
+    ['es', 'Reautenticación necesaria', 'Desde 6:30 · motivo: refresh token expired'],
   ])('asks to connect the Volvo ID again, in %s', async (locale, title, since) => {
     i18n.global.locale.value = locale
     const alert = await notice(lost)
@@ -117,6 +118,7 @@ describe('CollectionNotice', () => {
     ['nb', 'Ikke lest: Volvos API betjener ikke markedet til denne bilen'],
     ['sv', 'Läses inte: Volvos API betjänar inte det här fordonets marknad'],
     ['de', 'Nicht gelesen: Die API von Volvo bedient den Markt dieses Fahrzeugs nicht'],
+    ['es', 'No se lee: la API de Volvo no cubre el mercado de este vehículo'],
   ])("tells a market Volvo's API does not serve, in %s", async (locale, title) => {
     i18n.global.locale.value = locale
     const alert = await notice(unserved)
@@ -143,7 +145,7 @@ describe('CollectionNotice', () => {
   })
 
   // Read from the messages: an instance may word them otherwise.
-  it.each<Locale>(['en', 'de', 'fr', 'it', 'nb', 'nl', 'sv'])(
+  it.each<Locale>(['en', 'de', 'es', 'fr', 'it', 'nb', 'nl', 'sv'])(
     'tells a vehicle the offer leaves unread, in %s',
     async (locale) => {
       i18n.global.locale.value = locale

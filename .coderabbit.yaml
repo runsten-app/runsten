@@ -68,7 +68,7 @@ reviews:
     - path: "internal/**"
       instructions: "Dependencies point inward and interfaces are declared by their consumer (see AGENTS.md, \"Architecture rules\"). A new package or dependency must update both .golangci.yml (depguard) and internal/archtest's allowlist."
     - path: "web/src/**"
-      instructions: "Feature-Sliced Design: imports go down the layers only, through a slice's index.ts; TanStack Query in features/*/composables only; types come from the generated OpenAPI schema, never hand-written. Every user-facing string goes through vue-i18n, in English, French and Swedish."
+      instructions: "Feature-Sliced Design: imports go down the layers only, through a slice's index.ts; TanStack Query in features/*/composables only; types come from the generated OpenAPI schema, never hand-written. Every user-facing string goes through vue-i18n, in English, French, German, Italian, Dutch, Norwegian, Spanish and Swedish."
     - path: "documentation/**"
       instructions: "User documentation in English, published on the public site: check accuracy against the code and plain wording."
 

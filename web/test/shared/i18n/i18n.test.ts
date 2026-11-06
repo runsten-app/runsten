@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { i18n, initialLocale, intlLocale, localeChosen, setLocale } from '@/shared/i18n'
 import de from '@/shared/i18n/locales/de.json'
 import en from '@/shared/i18n/locales/en.json'
+import es from '@/shared/i18n/locales/es.json'
 import fr from '@/shared/i18n/locales/fr.json'
 import it_ from '@/shared/i18n/locales/it.json'
 import nb from '@/shared/i18n/locales/nb.json'
@@ -22,6 +23,7 @@ describe('initialLocale', () => {
     { stored: null, languages: ['FR'], want: 'fr' },
     { stored: null, languages: ['it-CH', 'en'], want: 'it' },
     { stored: null, languages: ['nl-BE', 'fr-BE'], want: 'nl' },
+    { stored: null, languages: ['es-MX', 'en'], want: 'es' },
     { stored: null, languages: ['pt-PT'], want: 'en' },
     // Norwegian, as browsers say it.
     { stored: null, languages: ['nb-NO'], want: 'nb' },
@@ -75,6 +77,7 @@ describe('messages', () => {
     expect(keys(nl).sort()).toEqual(keys(en).sort())
     expect(keys(sv).sort()).toEqual(keys(en).sort())
     expect(keys(de).sort()).toEqual(keys(en).sort())
+    expect(keys(es).sort()).toEqual(keys(en).sort())
   })
 })
 
