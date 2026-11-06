@@ -6,6 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { limitsPage } from '@/entities/session'
 import { collectionState, needsAttention, vehicleLabels, type Vehicle } from '@/entities/vehicle'
 import { ApiKeyForm, useConnectionSettings } from '@/features/manage-api-key'
+import { BmwForm } from '@/features/manage-bmw'
 import { PolestarForm, renewalDue } from '@/features/manage-polestar'
 import { PolestarIdForm } from '@/features/manage-polestar-id'
 import { TeslaForm } from '@/features/manage-tesla'
@@ -35,7 +36,7 @@ import VehicleCollection from './VehicleCollection.vue'
 // vehicle: there is no key to give.
 //
 // One tab per brand, each with its connection and its vehicles: a brand added later is a
-// tab more. The tab is the URL's hash (#volvo, #polestar, #tesla: the home's choice of a
+// tab more. The tab is the URL's hash (#volvo, #polestar, #tesla, #bmw: the home's choice of a
 // brand opens its tab); without one, that of the vehicle the page was opened from, else the
 // first brand the account has a vehicle of, else Volvo's. A dot marks a tab whose vehicles need the user,
 // or whose credential is to be renewed (Polestar's).
@@ -44,7 +45,9 @@ import VehicleCollection from './VehicleCollection.vue'
 // the flag source.tesla is on for the account, unless it has Teslas from before: it then
 // says why they are not read. Polestar's holds the Data Portal, and the Polestar ID while
 // the flag source.polestar-id is on for the account (off by default: an unofficial API, the
-// instance's choice), or the account has Polestars read with it from before.
+// instance's choice), or the account has Polestars read with it from before. BMW's is there
+// only while the flag source.bmw is on for the account (on by default), unless it has a
+// connection or BMWs from before: it then says why they are not read.
 // A brand's section an extension sets (extensionBrandSections) takes the place of the
 // core's, and shows its tab whatever the above.
 const props = defineProps<{ vehicle?: string }>()
@@ -129,6 +132,7 @@ const brandLabels = computed<Record<Brand, string>>(() => ({
   volvo: t('connection.brand.volvo'),
   polestar: t('connection.brand.polestar'),
   tesla: t('connection.brand.tesla'),
+  bmw: t('connection.brand.bmw'),
 }))
 // A Polestar read with the Polestar ID is a Polestar's: one tab.
 const brandOf = (p?: Vehicle['connection']['provider']) =>
@@ -141,6 +145,7 @@ const teslaOn = useFlag('source.tesla')
 const ownerTeslas = computed(() =>
   (vehicles.value ?? []).some((v) => v.connection.provider === 'tesla'),
 )
+const bmwOn = useFlag('source.bmw')
 const polestarIdOn = useFlag('source.polestar-id')
 const polestarIdShown = computed(
   () =>
@@ -154,7 +159,9 @@ const shown = computed(() =>
       !!extensionBrandSections[b] ||
       (b === 'volvo'
         ? settings.value?.volvo !== false || ofBrand(b).length
-        : b !== 'tesla' || teslaOn.value || ofBrand(b).length),
+        : b === 'tesla'
+          ? teslaOn.value || ofBrand(b).length
+          : b !== 'bmw' || bmwOn.value || !!settings.value?.bmw || ofBrand(b).length),
   ),
 )
 const asBrand = (s?: string) => shown.value.find((b) => b === s)
@@ -260,7 +267,7 @@ const alerted = computed(
         >
           {{ brandLabels[b] }}
           <v-chip
-            v-if="b === 'tesla'"
+            v-if="b === 'tesla' || b === 'bmw'"
             size="x-small"
             variant="tonal"
             color="primary"
@@ -412,6 +419,16 @@ const alerted = computed(
               </p>
             </section>
           </template>
+          <section v-else-if="b === 'bmw'" class="mb-8" aria-labelledby="connection-bmw-title">
+            <h2 id="connection-bmw-title" class="text-title-large mb-3">
+              {{ t('connection.bmw.title') }}
+              <v-chip size="x-small" variant="tonal" color="primary" class="ms-2 beta">
+                {{ t('connection.polestar.beta') }}
+              </v-chip>
+            </h2>
+            <BmwForm v-if="bmwOn" :connection="settings" />
+            <p v-else class="text-body-medium bmw-off">{{ t('connection.bmw.off') }}</p>
+          </section>
           <section v-else class="mb-8" aria-labelledby="connection-tesla-title">
             <h2 id="connection-tesla-title" class="text-title-large mb-3">
               {{ t('connection.tesla.title') }}

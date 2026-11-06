@@ -17,3 +17,8 @@ export type TeslaToken = components['schemas']['TeslaToken']
 // Polestar's page, its address and state.
 export type PolestarId = components['schemas']['PolestarID']
 export type PolestarIdAuthorization = components['schemas']['PolestarIDAuthorization']
+// Bmw is what the user is shown again of their BMW CarData connection: the last four
+// characters of the client ID they created, and when; BmwDevice is BMW's device flow
+// started with it: the code to enter on BMW's page, and when to ask whether it was.
+export type Bmw = components['schemas']['Bmw']
+export type BmwDevice = components['schemas']['BmwDevice']

@@ -1262,7 +1262,8 @@
     "brand": {
       "volvo": "Volvo",
       "polestar": "Polestar",
-      "tesla": "Tesla"
+      "tesla": "Tesla",
+      "bmw": "BMW"
     },
     "brandAttention": "vraagt uw aandacht",
     "outcome": {
@@ -1325,7 +1326,12 @@
       "quotaTesla": "Dagelijks aantal aanroepen naar Tesla bereikt tot {time}",
       "credentialRefusedPolestarId": "Niet uitgelezen: het Polestar ID heeft de aanmelding geweigerd",
       "credentialMissingPolestarId": "Niet uitgelezen: geen Polestar ID gekoppeld",
-      "unsharedPolestarId": "Niet uitgelezen: de auto staat niet meer in het Polestar ID"
+      "unsharedPolestarId": "Niet uitgelezen: de auto staat niet meer in het Polestar ID",
+      "credentialRefusedBmw": "Niet uitgelezen: BMW heeft de koppeling geweigerd",
+      "credentialMissingBmw": "Niet uitgelezen: geen BMW gekoppeld",
+      "unsharedBmw": "Niet uitgelezen: het BMW-account is niet langer hoofdgebruiker van de auto",
+      "pausedBmw": "Door BMW gepauzeerd tot {time}",
+      "quotaBmw": "Dagelijks aantal aanroepen naar BMW bereikt tot {time}"
     },
     "notice": {
       "reauth": {
@@ -1362,7 +1368,12 @@
       "credentialRefusedPolestarId": "Het Polestar ID heeft de aanmelding van Runsten voor deze auto geweigerd: de sessie is beëindigd, of het wachtwoord is gewijzigd. Koppel uw Polestar ID opnieuw op de koppelingspagina: wat al is uitgelezen, blijft bewaard.",
       "credentialMissingPolestarId": "Runsten leest deze Polestar uit met uw Polestar ID, maar dat is verwijderd: koppel het opnieuw op de koppelingspagina.",
       "unsharedPolestarId": "Uw Polestar ID vermeldt deze auto niet meer: verkocht, of uit het account verwijderd. Komt hij terug, koppel dan het Polestar ID opnieuw op de koppelingspagina: de auto wordt dan weer uitgelezen.",
-      "quotaPolestarId": "Runsten doet hoogstens 2000 aanroepen per dag naar de API van de Polestar-app per Polestar ID, om ruim binnen de niet-gepubliceerde limieten te blijven: die zijn op. Het uitlezen wordt vanzelf hervat."
+      "quotaPolestarId": "Runsten doet hoogstens 2000 aanroepen per dag naar de API van de Polestar-app per Polestar ID, om ruim binnen de niet-gepubliceerde limieten te blijven: die zijn op. Het uitlezen wordt vanzelf hervat.",
+      "credentialRefusedBmw": "BMW heeft de koppeling geweigerd waarmee deze auto wordt uitgelezen: twee weken ongebruikt, of het abonnement van de client ID is in het portaal ingetrokken. Koppel opnieuw via de koppelingspagina: wat al is uitgelezen, blijft bewaard.",
+      "credentialMissingBmw": "Runsten leest deze auto uit via uw BMW-koppeling, maar die is verwijderd: koppel opnieuw via de koppelingspagina.",
+      "unsharedBmw": "Uw BMW-account is niet langer hoofdgebruiker van deze auto, of vermeldt hem niet meer: verkocht, of van eigenaar gewisseld. Komt hij terug, koppel BMW dan opnieuw via de koppelingspagina: de auto wordt dan weer uitgelezen.",
+      "pausedBmw": "BMW heeft het aantal aanroepen beperkt. Het uitlezen wordt vanzelf hervat.",
+      "quotaBmw": "Runsten doet hoogstens 40 aanroepen per dag naar de API van BMW per koppeling, om u enkele van de 50 van BMW te laten: die zijn op. De stream, die geen limiet heeft, wordt nog steeds gelezen; de rest wordt vanzelf hervat."
     },
     "facts": {
       "mode": "Uitleesmodus",
@@ -1385,7 +1396,9 @@
       "noneDueToken": "Geen, tot er een Tesla-refreshtoken is opgegeven",
       "noneDueTeslaFleet": "Geen, tot de eigenaar zich opnieuw aanmeldt bij Tesla",
       "noneDuePolestarId": "Geen, tot het Polestar ID opnieuw is gekoppeld",
-      "noneDueUnsharedPolestarId": "Geen: de auto staat niet meer in het Polestar ID"
+      "noneDueUnsharedPolestarId": "Geen: de auto staat niet meer in het Polestar ID",
+      "noneDueBmw": "Geen, tot BMW opnieuw is gekoppeld",
+      "noneDueUnsharedBmw": "Geen: het BMW-account is niet langer hoofdgebruiker van de auto"
     },
     "api": {
       "connectedVehicle": "voertuiggegevens",
@@ -1394,7 +1407,8 @@
       "polestar": "Polestar Data Portal",
       "tesla": "Tesla Owner API",
       "teslaFleet": "Tesla Fleet API",
-      "polestarId": "API van de Polestar-app"
+      "polestarId": "API van de Polestar-app",
+      "bmw": "BMW CarData"
     },
     "failure": {
       "quota": "Quotum bereikt",
@@ -1418,7 +1432,12 @@
       "tokenTesla": "Geen token van Tesla",
       "credentialRefusedTesla": "Tesla-refreshtoken geweigerd",
       "credentialRefusedTeslaFleet": "Tesla-toegang ingetrokken",
-      "credentialRefusedPolestarId": "Polestar ID geweigerd"
+      "credentialRefusedPolestarId": "Polestar ID geweigerd",
+      "streamHeld": "Stream bezet door een andere toepassing (Home Assistant, evcc)",
+      "notFoundBmw": "Voertuig onbekend bij BMW",
+      "unavailableBmw": "BMW onbereikbaar",
+      "tokenBmw": "Geen token van BMW",
+      "credentialRefusedBmw": "BMW-koppeling geweigerd"
     },
     "key": {
       "title": "Volvo-sleutel"
@@ -1444,6 +1463,14 @@
     "polestarId": {
       "title": "Polestar ID",
       "off": "Het Polestar ID wordt op deze instantie niet aangeboden: uw Polestars die daarmee werden uitgelezen, worden niet meer uitgelezen. Wat al is uitgelezen, blijft bewaard, en uw koppeling wordt behouden: ze worden weer uitgelezen zodra het weer wordt aangeboden."
+    },
+    "bmw": {
+      "title": "BMW CarData",
+      "off": "BMW wordt op deze instantie niet aangeboden: uw BMW’s en MINI’s die daarmee werden uitgelezen, worden niet meer uitgelezen. Wat al is uitgelezen, blijft bewaard, en uw koppeling wordt behouden: ze worden weer uitgelezen zodra BMW weer wordt aangeboden."
+    },
+    "streamHeld": {
+      "text": "Een andere toepassing bezet de stream van BMW: BMW staat er per account maar één tegelijk toe, en dat kan de CarData-integratie van Home Assistant of evcc zijn. Runsten leest niets van de stream tot die hem loslaat. Stop die toepassing, of laat Runsten uw auto in plaats daarvan voor Home Assistant publiceren op uw MQTT-broker:",
+      "mqtt": "MQTT-instellingen"
     }
   },
   "apiKey": {
@@ -1995,6 +2022,73 @@
       "tooManyPending": "Er staan te veel aanmeldingen open op deze instantie. Probeer het over een paar minuten opnieuw.",
       "unavailable": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
       "internal": "Het Polestar ID kon niet worden gekoppeld. Probeer het zo meteen opnieuw."
+    }
+  },
+  "bmw": {
+    "intro": "Runsten leest uw BMW of MINI uit via BMW CarData, de officiële dienst die BMW gratis openstelt voor eigenaars: de auto stuurt zijn metingen (batterij, actieradius, laden, kilometerstand, positie) en Runsten ontvangt ze. U maakt zelf uw client ID aan in het portaal MyBMW of MyMINI; Runsten vraagt nooit om uw BMW-wachtwoord en stuurt nooit een opdracht naar de auto.",
+    "beta": "De ondersteuning voor BMW is in bèta: ze is gebouwd op basis van de documentatie van BMW en moet nog op meer auto’s worden getest.",
+    "guide": "Lees de handleiding",
+    "newTab": "(opent in een nieuw tabblad)",
+    "refused": {
+      "title": "Uw BMW-koppeling is geweigerd",
+      "body": "BMW heeft de koppeling van Runsten geweigerd op {time}: twee weken ongebruikt, of het abonnement van de client ID is in het portaal ingetrokken. Uw auto’s worden niet uitgelezen tot u opnieuw koppelt; wat al is uitgelezen, blijft bewaard."
+    },
+    "current": "Uw client ID",
+    "last4": "Eindigt op {last4}",
+    "setAt": "Gekoppeld",
+    "reconnect": "Opnieuw koppelen",
+    "delete": {
+      "button": "Koppeling verwijderen",
+      "title": "Uw BMW-koppeling verwijderen?",
+      "text": "Uw BMW’s en MINI’s blijven bestaan, met hun geschiedenis, maar worden niet meer uitgelezen tot u opnieuw koppelt. Runsten wist zijn tokens; de client ID blijft in het portaal staan, waar u hem kunt verwijderen.",
+      "error": "De koppeling kon niet worden verwijderd. Probeer het zo meteen opnieuw.",
+      "cancel": "Annuleren",
+      "confirm": "Verwijderen"
+    },
+    "steps": {
+      "title": "Maak uw client ID aan in het portaal van BMW",
+      "create": "Meld u op een computer aan bij het portaal MyBMW of MyMINI, open de tegel “BMW CarData” en kies “Create CarData Client”.",
+      "subscribe": "Abonneer de client op zowel CarData API als CarData Streaming, het ene na het andere: wacht op de bevestiging van het eerste voordat u het tweede neemt.",
+      "stream": "Stel daarna de stream in: vink de gegevenssleutels aan die de handleiding noemt, zodat de auto ze verstuurt.",
+      "note": "Noteer de client ID meteen en plak hem hieronder. Klik in het portaal nooit op “Authenticate device”: dat doet Runsten."
+    },
+    "label": "Client ID",
+    "help": "Daarmee vraagt Runsten BMW om een code, die u goedkeurt op de eigen pagina van BMW: uw BMW-wachtwoord blijft tussen u en BMW. Daarna worden alleen de laatste vier tekens van de client ID getoond.",
+    "save": "Code opvragen",
+    "cancel": "Annuleren",
+    "cancelled": "Koppelen geannuleerd.",
+    "saved": "BMW gekoppeld: Runsten leest uw auto’s uit vanaf zijn volgende ronde.",
+    "deleted": "BMW-koppeling verwijderd.",
+    "waiting": "Wacht tot u de code goedkeurt op de pagina van BMW. Runsten vraagt BMW om de paar seconden opnieuw.",
+    "waitingUnreachable": "BMW heeft niet geantwoord: Runsten blijft het proberen, de code kan nog worden goedgekeurd.",
+    "code": {
+      "title": "Keur de code goed op de pagina van BMW",
+      "open": "Open de pagina van BMW in een nieuw tabblad, meld u aan met uw BMW- of MINI-account en keur deze code goed.",
+      "label": "Uw code",
+      "page": "Pagina van BMW",
+      "expires": "Geldig tot {time}.",
+      "cancel": "Annuleren"
+    },
+    "error": {
+      "summary": "BMW is niet gekoppeld",
+      "required": "Plak de client ID.",
+      "spaces": "De client ID bevat geen spaties: kopieer hem opnieuw.",
+      "characters": "De client ID bevat alleen letters, cijfers en tekens: kopieer hem opnieuw.",
+      "tooShort": "De client ID heeft minstens {min} tekens: kopieer hem volledig.",
+      "tooLong": "De client ID heeft hoogstens {max} tekens: kopieer alleen de client ID.",
+      "clientRefused": "BMW kent deze client ID niet: controleer hem in het portaal, en of u hem helemaal hebt gekopieerd.",
+      "invalidBody": "Deze client ID is geweigerd: kopieer hem opnieuw.",
+      "expired": "De code is verlopen, of er wachtte er geen: vraag een nieuwe code op.",
+      "refused": "BMW heeft de koppeling geweigerd: de code is afgewezen of door BMW niet geaccepteerd. Vraag een nieuwe code op.",
+      "scopeMissing": "De client ID is niet geabonneerd op CarData API: abonneer hem in het portaal op CarData API (en CarData Streaming) en vraag dan een nieuwe code op. Er is niets gekoppeld.",
+      "noVehicle": "Dit BMW-account is hoofdgebruiker van geen enkel voertuig, en alleen de hoofdgebruiker kan een auto uitlezen: er is niets gekoppeld.",
+      "tooManyVehicles": "Met de voertuigen van dit BMW-account zou uw account meer voertuigen hebben dan toegestaan: er is niets gekoppeld.",
+      "notAdmitted": "Uw account moet eerst een stap zetten, zoals voorwaarden aanvaarden: laad de pagina opnieuw. Er is niets gekoppeld.",
+      "notOffered": "BMW wordt op deze instantie niet aangeboden.",
+      "bmwUnavailable": "BMW heeft niet geantwoord: er is niets gekoppeld. Probeer het zo meteen opnieuw.",
+      "tooManyPending": "Er wachten te veel koppelingen met BMW op deze instantie. Probeer het over een paar minuten opnieuw.",
+      "unavailable": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
+      "internal": "BMW kon niet worden gekoppeld. Probeer het zo meteen opnieuw."
     }
   }
 }
