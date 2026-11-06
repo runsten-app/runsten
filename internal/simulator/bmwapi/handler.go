@@ -59,6 +59,10 @@ type Behavior struct {
 	TokenTTL time.Duration
 	// ApproveAfter is how long after a device code the simulated owner has approved it.
 	ApproveAfter time.Duration
+	// CodeLifetime is how long a device code lasts on the simulated clock: BMW's 5
+	// minutes, which its client is told in real time, the owner entering it in real
+	// time. An accelerated simulation lengthens it as much (Scaled).
+	CodeLifetime time.Duration
 	// SendEvery is how often at most the car sends a descriptor that changes all along
 	// a drive or a charge (the SoC, the odometer, the position, the range): unknown on
 	// the real car, to measure (ADR 0045 §9). The others are sent at each change.
@@ -67,7 +71,16 @@ type Behavior struct {
 
 // DefaultBehavior returns the assumptions used without explicit configuration.
 func DefaultBehavior() Behavior {
-	return Behavior{TokenTTL: time.Hour, ApproveAfter: 10 * time.Second, SendEvery: 30 * time.Second}
+	return Behavior{TokenTTL: time.Hour, ApproveAfter: 10 * time.Second, CodeLifetime: codeLifetime, SendEvery: 30 * time.Second}
+}
+
+// Scaled is b for a simulation at speed times real time: the device code lasts its real
+// lifetime.
+func (b Behavior) Scaled(speed float64) Behavior {
+	if speed > 1 {
+		b.CodeLifetime = time.Duration(float64(codeLifetime) * speed)
+	}
+	return b
 }
 
 // known is a descriptor's last value the car sent, and when.
