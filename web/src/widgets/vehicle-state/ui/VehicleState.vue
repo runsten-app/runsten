@@ -814,10 +814,12 @@ const update = computed(() => {
   gap: 18px;
   flex: 1 1 auto;
 }
+/* The figures on one baseline, the last line of each item: their boxes' bottoms would
+   not be, the space under the baseline growing with the figure's size. */
 .hero-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: last baseline;
   gap: 16px 32px;
 }
 .fields {
