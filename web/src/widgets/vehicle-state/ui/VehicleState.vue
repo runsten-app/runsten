@@ -752,6 +752,10 @@ const update = computed(() => {
   flex-wrap: wrap;
   gap: 8px;
 }
+/* Its actions all showing nothing (a vehicle they do not concern): no gap left for them. */
+.sleep-actions:empty {
+  display: none;
+}
 .tile-body {
   display: flex;
   flex-direction: column;
