@@ -402,6 +402,7 @@ type climateJSON struct {
 	On              null[reading[bool]]    `json:"on" doc:"The cabin's climate is running: by hand, from the app or on a schedule."`
 	Preconditioning null[reading[bool]]    `json:"preconditioning" doc:"The vehicle is heating or cooling its cabin and battery before a departure."`
 	BatteryHeater   null[reading[bool]]    `json:"battery_heater" doc:"The battery is being heated."`
+	SetpointC       null[reading[float64]] `json:"setpoint_c" doc:"The cabin temperature the climate is set to, in °C, whether it runs or not: above the cabin's, a climate running heats it; below, it cools it."`
 }
 
 // climateOf is the vehicle's climate, each value null where the source does not tell it
@@ -420,6 +421,7 @@ func climateOf(c core.Current) climateJSON {
 		On:              flag(func(cl core.Climate) core.Value[bool] { return cl.On }),
 		Preconditioning: flag(func(cl core.Climate) core.Value[bool] { return cl.Preconditioning }),
 		BatteryHeater:   flag(func(cl core.Climate) core.Value[bool] { return cl.BatteryHeater }),
+		SetpointC:       readingOf(c, core.FieldClimate, n.Climate.V.SetpointC, same),
 	}
 }
 

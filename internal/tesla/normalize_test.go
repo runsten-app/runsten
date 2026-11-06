@@ -101,6 +101,7 @@ func TestNormalizeFixture(t *testing.T) {
 		CabinTempC:   core.Some(16.0, at),
 		Climate: core.Some(core.Climate{
 			On: core.Some(false, at), Preconditioning: core.Some(false, at), BatteryHeater: core.Some(false, at),
+			SetpointC: core.Some(20.0, at),
 		}, at),
 		// Locked, all closed, Sentry Mode off; no tank lid nor sunroof told.
 		Doors: core.Some(core.Doors{
@@ -286,9 +287,16 @@ func TestNormalizeClimate(t *testing.T) {
 		body string
 		want core.Snapshot
 	}{
-		{`"outside_temp": -3.5, "inside_temp": 19.5, "is_climate_on": true, "is_preconditioning": true, "battery_heater": true`, core.Snapshot{
+		{`"outside_temp": -3.5, "inside_temp": 19.5, "is_climate_on": true, "is_preconditioning": true, "battery_heater": true, "driver_temp_setting": 21.5`, core.Snapshot{
 			Covers: core.FieldClimate, OutsideTempC: core.Some(-3.5, at), CabinTempC: core.Some(19.5, at),
-			Climate: core.Some(core.Climate{On: core.Some(true, at), Preconditioning: core.Some(true, at), BatteryHeater: core.Some(true, at)}, at),
+			Climate: core.Some(core.Climate{
+				On: core.Some(true, at), Preconditioning: core.Some(true, at), BatteryHeater: core.Some(true, at),
+				SetpointC: core.Some(21.5, at),
+			}, at),
+		}},
+		// The setpoint alone, the climate's state untold: a climate all the same.
+		{`"driver_temp_setting": 20`, core.Snapshot{
+			Covers: core.FieldClimate, Climate: core.Some(core.Climate{SetpointC: core.Some(20.0, at)}, at),
 		}},
 		// Asleep a moment before, the car gives no temperature yet.
 		{`"outside_temp": null, "inside_temp": null, "is_climate_on": false`, core.Snapshot{

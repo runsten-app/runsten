@@ -564,12 +564,37 @@ describe('VehicleState', () => {
       on: { ...at, value: true },
       preconditioning: { ...at, value: false },
       battery_heater: { ...at, value: true },
+      setpoint_c: null,
     }
     let w = await mounted({ ...state, climate })
     expect(reading(w, 'Outside').value).toBe('-3.5°C')
     expect(reading(w, 'Cabin').value).toBe('19.5°C')
+    // Without a setpoint, that it runs, without a way.
     expect(w.find('.climate-running').text()).toBe('Climate on')
+    expect(w.find('.climate-pill').text()).toBe('Climate on')
     expect(w.find('.heater').text()).toBe('Battery heating')
+    // With one, which way it goes: half a degree apart or more, it heats or cools.
+    for (const [setpoint, text] of [
+      [21, 'Heating to 21°C'],
+      [18, 'Cooling to 18°C'],
+      [19.5, 'Climate at 19.5°C'],
+      [19.9, 'Climate at 19.9°C'],
+    ] as const) {
+      w.unmount()
+      w = await mounted({
+        ...state,
+        climate: { ...climate, setpoint_c: { ...at, value: setpoint } },
+      })
+      expect(w.find('.climate-pill').text()).toBe(text)
+      expect(w.find('.climate-running').text()).toBe(text)
+    }
+    // Without the cabin's temperature, no way: the setpoint alone, the climate's setting.
+    w.unmount()
+    w = await mounted({
+      ...state,
+      climate: { ...climate, cabin_temp_c: null, setpoint_c: { ...at, value: 22 } },
+    })
+    expect(w.find('.climate-pill').text()).toBe('Climate at 22°C')
     // Preconditioning says it, which runs the climate too; the heater off says nothing.
     w.unmount()
     w = await mounted({
@@ -582,6 +607,25 @@ describe('VehicleState', () => {
     })
     expect(w.find('.climate-running').text()).toBe('Preconditioning')
     expect(w.find('.heater').exists()).toBe(false)
+    w.unmount()
+    w = await mounted({
+      ...state,
+      climate: {
+        ...climate,
+        on: { ...at, value: false },
+        preconditioning: { ...at, value: true },
+        setpoint_c: { ...at, value: 22 },
+      },
+    })
+    expect(w.find('.climate-pill').text()).toBe('Preconditioning to 22°C')
+    // A setpoint with the climate off says nothing.
+    w.unmount()
+    w = await mounted({
+      ...state,
+      climate: { ...climate, on: { ...at, value: false }, setpoint_c: { ...at, value: 22 } },
+    })
+    expect(w.find('.climate-pill').exists()).toBe(false)
+    expect(w.find('.climate-running').exists()).toBe(false)
     // Without the cabin's temperature, nor a state of charge: what runs still says itself.
     w.unmount()
     w = await mounted({
@@ -598,6 +642,7 @@ describe('VehicleState', () => {
     expect(() => reading(w, 'Outside')).toThrow()
     expect(() => reading(w, 'Cabin')).toThrow()
     expect(w.find('.climate-running').exists()).toBe(false)
+    expect(w.find('.climate-pill').exists()).toBe(false)
     expect(() => reading(w, 'Climate')).toThrow()
     expect(w.find('.heater').exists()).toBe(false)
   })
