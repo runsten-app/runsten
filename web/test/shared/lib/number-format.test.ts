@@ -19,6 +19,9 @@ describe('formatQuantity', () => {
     [12473, 'km', 'en-GB', '12,473 km'],
     [12473, 'km', 'fr-FR', '12 473 km'],
     [12473, 'km', 'sv-SE', '12 473 km'],
+    // Germany groups thousands with a point, Switzerland with an apostrophe.
+    [12473, 'km', 'de-DE', '12.473 km'],
+    [12473, 'km', 'de-CH', "12'473 km"],
     [255.6, 'km', 'en-GB', '256 km'],
     [7.4, 'kW', 'en-GB', '7.4 kW'],
     [7.4, 'kW', 'fr-FR', '7,4 kW'],

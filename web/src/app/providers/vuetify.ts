@@ -51,6 +51,6 @@ export const vuetify = createVuetify({
   },
   defaults,
   icons: { defaultSet: 'mdi', aliases, sets: { mdi } },
-  // The adapter takes any I18n; ours is narrowed to its three locales and typed messages.
+  // The adapter takes any I18n; ours is narrowed to its locales and typed messages.
   locale: { adapter: createVueI18nAdapter({ i18n: i18n as unknown as AdapterI18n, useI18n }) },
 })
