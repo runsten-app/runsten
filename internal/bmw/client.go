@@ -361,7 +361,8 @@ func DecodePicture(raw []byte) (Picture, error) {
 	return p, nil
 }
 
-// Containers lists the account's containers.
+// Containers lists the account's active containers: BMW keeps a deleted one listed,
+// DELETED, until it purges it.
 func (c *Client) Containers(ctx context.Context, token string) ([]Container, error) {
 	raw, err := c.get(ctx, token, "containers", "/customers/containers")
 	if err != nil {
@@ -369,8 +370,9 @@ func (c *Client) Containers(ctx context.Context, token string) ([]Container, err
 	}
 	var resp struct {
 		Containers []struct {
-			ID   string `json:"containerId"`
-			Name string `json:"name"`
+			ID    string `json:"containerId"`
+			Name  string `json:"name"`
+			State string `json:"state"`
 		} `json:"containers"`
 	}
 	if err := json.Unmarshal(raw, &resp); err != nil {
@@ -378,7 +380,9 @@ func (c *Client) Containers(ctx context.Context, token string) ([]Container, err
 	}
 	out := make([]Container, 0, len(resp.Containers))
 	for _, ct := range resp.Containers {
-		out = append(out, Container{ID: ct.ID, Name: ct.Name})
+		if !strings.EqualFold(ct.State, "DELETED") {
+			out = append(out, Container{ID: ct.ID, Name: ct.Name})
+		}
 	}
 	return out, nil
 }
@@ -411,26 +415,39 @@ func (c *Client) CreateContainer(ctx context.Context, token, name, purpose strin
 	return Container{ID: resp.ID, Name: resp.Name}, nil
 }
 
-// ContainerName is the name of the container Runsten creates for itself.
-const ContainerName = "runsten"
+// DeleteContainer deletes the container of the ID.
+func (c *Client) DeleteContainer(ctx context.Context, token, id string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, c.api+"/customers/containers/"+url.PathEscape(id), http.NoBody)
+	if err != nil {
+		return fmt.Errorf("delete container: %w", err)
+	}
+	_, err = c.do(req, token, "delete container")
+	return err
+}
 
-// EnsureContainer returns the ID of the account's container named ContainerName,
-// created with Descriptors when there is none: 1 or 2 calls.
-func (c *Client) EnsureContainer(ctx context.Context, token string) (string, error) {
+// EnsureContainer returns Runsten's container of this release (ContainerName), created
+// with Descriptors when the account has none. Runsten's containers of another release
+// are deleted first: BMW allows 10 an account, and they cannot be changed. 1 call when it
+// exists, 2 plus one per container replaced otherwise.
+func (c *Client) EnsureContainer(ctx context.Context, token string) (Container, error) {
 	cts, err := c.Containers(ctx, token)
 	if err != nil {
-		return "", err
+		return Container{}, err
 	}
+	name := ContainerName()
 	for _, ct := range cts {
-		if ct.Name == ContainerName {
-			return ct.ID, nil
+		if ct.Name == name {
+			return ct, nil
 		}
 	}
-	ct, err := c.CreateContainer(ctx, token, ContainerName, "Runsten, a data logger of the owner's vehicles", Descriptors())
-	if err != nil {
-		return "", err
+	for _, ct := range cts {
+		if isRunstenContainer(ct.Name) {
+			if err := c.DeleteContainer(ctx, token, ct.ID); err != nil {
+				return Container{}, err
+			}
+		}
 	}
-	return ct.ID, nil
+	return c.CreateContainer(ctx, token, name, "Runsten, a data logger of the owner's vehicles", Descriptors())
 }
 
 func (c *Client) get(ctx context.Context, token, name, path string) ([]byte, error) {
@@ -472,6 +489,9 @@ func send(hc *http.Client, req *http.Request, name string, k call) ([]byte, erro
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return nil, newAPIError(name, k, resp.StatusCode, body)
+	}
+	if resp.StatusCode == http.StatusNoContent {
+		return nil, nil
 	}
 	if !json.Valid(body) {
 		return nil, fmt.Errorf("%s: invalid JSON response", name)

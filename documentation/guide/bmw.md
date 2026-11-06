@@ -46,8 +46,15 @@ The keys to tick, under the groups of the portal's catalogue:
 | Odometer | `vehicle.vehicle.travelledDistance` |
 | Position | `vehicle.cabin.infotainment.navigation.currentLocation.latitude`, `vehicle.cabin.infotainment.navigation.currentLocation.longitude` |
 | Tyres | `vehicle.chassis.axle.row1.wheel.left.tire.pressure`, `vehicle.chassis.axle.row1.wheel.right.tire.pressure`, `vehicle.chassis.axle.row2.wheel.left.tire.pressure`, `vehicle.chassis.axle.row2.wheel.right.tire.pressure` |
+| Doors and locks | `vehicle.cabin.door.row1.driver.isOpen`, `vehicle.cabin.door.row1.passenger.isOpen`, `vehicle.cabin.door.row2.driver.isOpen`, `vehicle.cabin.door.row2.passenger.isOpen`, `vehicle.body.hood.isOpen`, `vehicle.body.trunk.isOpen`, `vehicle.cabin.door.lock.status` |
+| Windows | `vehicle.cabin.window.row1.driver.status`, `vehicle.cabin.window.row1.passenger.status`, `vehicle.cabin.window.row2.driver.status`, `vehicle.cabin.window.row2.passenger.status`, `vehicle.cabin.sunroof.status` |
+| Climate | `vehicle.vehicle.preConditioning.activity` |
 
 Not every car sends every key.
+
+::: tip Connected before Runsten read the doors
+If you connected your BMW before Runsten read its doors, windows, locks and climate, tick the keys of the last three rows in the portal: the stream sends them from then on. Nothing else to do: Runsten replaces the set of keys it reads through the API by itself, once, at its next hourly read.
+:::
 
 ## Connect it in Runsten
 
@@ -63,10 +70,14 @@ Runsten keeps the tokens BMW gives, encrypted, and only ever sends them to BMW. 
 
 ## What is read, and how often
 
-Runsten reads the battery level and the target, the range, the charging (status, cable and type, power, current, voltage, phases, time left), the odometer, the position and the tyres' pressure, and the model of the car with its battery capacity, which tell its variant when one fits ([Vehicle models](./vehicle-models.md)). BMW's capacity is taken as the gross one, before the reserve, which is not yet checked on a real car: when no variant fits, it is the capacity the energies are counted on, and they may come out a little high if it is not. Its colour, as BMW codes it, and its steering side show in its settings, and BMW's picture of the car beside it in the menu and on its state.
+Runsten reads the battery level and the target, the range, the charging (status, cable and type, power, current, voltage, phases, time left), the odometer, the position, the tyres' pressure, the doors, the hood, the boot, the windows, the sunroof and the central lock, and whether the car is preconditioning, and the model of the car with its battery capacity, which tell its variant when one fits ([Vehicle models](./vehicle-models.md)). BMW's capacity is taken as the gross one, before the reserve, which is not yet checked on a real car: when no variant fits, it is the capacity the energies are counted on, and they may come out a little high if it is not. Its colour, as BMW codes it, and its steering side show in its settings, and BMW's picture of the car beside it in the menu and on its state.
 
 - The **stream** is read at the collector's pace: every minute while the car is parked, every 15 seconds while it drives or charges (at best: a collector busy with many vehicles, or an instance's own policy, may read it less often). It costs no call. A parked car that sleeps sends nothing: Runsten dates every value by the moment the car measured it, never by the moment it arrived.
 - The **API** is the safety net: a value the stream did not push, and what a restart of Runsten lost, aimed at once an hour; the model of the car, its picture and its charging history, once a day. That is about 27 calls a day per car. Runsten makes **40 calls a day at most** per connection, of the 50 BMW allows, to leave you a few of your own: with two cars or more, the calls are spread over the day and the hourly reads come less often. The stream is not affected.
+
+The doors, windows and lock show on the car's state and its Health page, and a car left parked unlocked or open is told, in Runsten and to [Home Assistant](./mqtt.md), as for the other brands. The users of the Home Assistant CarData integrations report these keys as **rare or unreliable on some cars**: the car may send them only now and then, or not at all. Runsten shows what it received, dated, and never takes a key it did not receive for closed. BMW tells which door is the driver's, and Runsten takes it for the front left one, as BMW's catalogue does: on a right-hand drive car, the left and right doors and windows may be swapped.
+
+CarData has no key for the outside or cabin temperature, nor for the car's software version: Runsten cannot show them for a BMW or a Mini.
 
 A trip is worked out from the ignition, the odometer and the position, as BMW gives no trip of its own. When the car pushes its position often enough while it drives, the trip has a route; Runsten does not promise it before it has been seen on real cars.
 

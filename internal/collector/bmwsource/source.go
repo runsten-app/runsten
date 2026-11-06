@@ -31,8 +31,9 @@ type Credential struct {
 	// GCID is the BMW account's: the stream's username.
 	GCID    string
 	Refresh string
-	// ContainerID is Runsten's container in the account; empty until created.
-	ContainerID string
+	// ContainerID is Runsten's container in the account, named ContainerName; empty until
+	// created.
+	ContainerID, ContainerName string
 	// SetAt is when the owner connected: a rotation replaces the refresh token of this
 	// connection only, never one the owner set since.
 	SetAt time.Time
@@ -46,7 +47,7 @@ type Store interface {
 	// which a refresh gave; a credential the owner set since is left alone.
 	RotateBMWToken(ctx context.Context, accountID, connectionID string, setAt time.Time, token string) error
 	// SetBMWContainer records the container of the credential set at setAt.
-	SetBMWContainer(ctx context.Context, accountID, connectionID string, setAt time.Time, containerID string) error
+	SetBMWContainer(ctx context.Context, accountID, connectionID string, setAt time.Time, containerID, name string) error
 }
 
 // Daily is the API's calls a day counted per connection: 40 of BMW's 50, the rest left to
@@ -182,9 +183,11 @@ func (s *Source) Login(ctx context.Context, accountID, connectionID string) (col
 		gcid = cred.GCID
 	}
 	s.subscribe(connectionID, gcid, tok.ID)
-	sess := &session{
-		src: s, accountID: accountID, connectionID: connectionID, token: tok.Access,
-		container: cred.ContainerID, setAt: cred.SetAt,
+	sess := &session{src: s, accountID: accountID, connectionID: connectionID, token: tok.Access, setAt: cred.SetAt}
+	if cred.ContainerName == bmw.ContainerName() {
+		// A container of a previous release lacks descriptors: the first read of the API
+		// replaces it.
+		sess.container = cred.ContainerID
 	}
 	ttl := tok.ExpiresIn - accessMargin
 	if ttl <= 0 {
@@ -430,7 +433,8 @@ func held(err error) bool {
 }
 
 // telematicData reads the container's values, creating Runsten's container first when
-// the connection has none, or again when the owner deleted it.
+// the connection has none or one of a previous release, or again when the owner deleted
+// it.
 func (s *session) telematicData(ctx context.Context, vin string) ([]byte, error) {
 	if s.container == "" {
 		if err := s.ensureContainer(ctx); err != nil {
@@ -449,12 +453,12 @@ func (s *session) telematicData(ctx context.Context, vin string) ([]byte, error)
 }
 
 func (s *session) ensureContainer(ctx context.Context) error {
-	id, err := s.src.client.EnsureContainer(ctx, s.token)
+	ct, err := s.src.client.EnsureContainer(ctx, s.token)
 	if err != nil {
 		return err //nolint:wrapcheck // bmw's, which says what failed
 	}
-	s.container = id
-	if err := s.src.store.SetBMWContainer(ctx, s.accountID, s.connectionID, s.setAt, id); err != nil {
+	s.container = ct.ID
+	if err := s.src.store.SetBMWContainer(ctx, s.accountID, s.connectionID, s.setAt, ct.ID, ct.Name); err != nil {
 		return fmt.Errorf("keep the bmw container: %w", err)
 	}
 	return nil

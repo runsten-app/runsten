@@ -30,6 +30,9 @@ type bmwJSON struct {
 	GCID        string `json:"gcid"`
 	Refresh     string `json:"refresh"`
 	ContainerID string `json:"containerId,omitempty"`
+	// ContainerName tells the release the container was created for (bmw.ContainerName);
+	// empty for the first ones, named runsten alone.
+	ContainerName string `json:"containerName,omitempty"`
 }
 
 // SetBMW implements api.BMWCredentials: it sets the account's BMW connection, at at, created if it has none. Its last four
@@ -94,8 +97,8 @@ func (s *Store) RotateBMWToken(ctx context.Context, accountID, connectionID stri
 
 // SetBMWContainer implements bmwsource.Store: the container of the credential set at
 // setAt, which the collector created; one the owner set since is left alone.
-func (s *Store) SetBMWContainer(ctx context.Context, accountID, connectionID string, setAt time.Time, containerID string) error {
-	return s.updateBMW(ctx, accountID, connectionID, setAt, func(c *bmwJSON) { c.ContainerID = containerID })
+func (s *Store) SetBMWContainer(ctx context.Context, accountID, connectionID string, setAt time.Time, containerID, name string) error {
+	return s.updateBMW(ctx, accountID, connectionID, setAt, func(c *bmwJSON) { c.ContainerID, c.ContainerName = containerID, name })
 }
 
 // updateBMW changes the credential set at setAt under its row's lock, so that a rotation

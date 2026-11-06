@@ -1,6 +1,11 @@
 package bmw
 
-import "slices"
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"slices"
+	"strings"
+)
 
 // The CarData descriptors Runsten reads, named as BMW's telematics data catalogue names
 // them (ADR 0045 §5). Which a car sends, and how often, is to see on a real one.
@@ -30,6 +35,26 @@ const (
 	DescTyreFrontRight = "vehicle.chassis.axle.row1.wheel.right.tire.pressure"
 	DescTyreRearLeft   = "vehicle.chassis.axle.row2.wheel.left.tire.pressure"
 	DescTyreRearRight  = "vehicle.chassis.axle.row2.wheel.right.tire.pressure"
+
+	// The doors and the lids: OPEN or CLOSED, the catalogue's words for a type it calls
+	// boolean (a boolean read too). The catalogue names row1's driver door the front left
+	// one; on a right-hand drive car it may be the right (assumed: as the catalogue says).
+	DescDoorFrontLeft  = "vehicle.cabin.door.row1.driver.isOpen"
+	DescDoorFrontRight = "vehicle.cabin.door.row1.passenger.isOpen"
+	DescDoorRearLeft   = "vehicle.cabin.door.row2.driver.isOpen"
+	DescDoorRearRight  = "vehicle.cabin.door.row2.passenger.isOpen"
+	DescHood           = "vehicle.body.hood.isOpen"
+	DescTrunk          = "vehicle.body.trunk.isOpen"      // CLOSED, OPEN, INTERMEDIATE
+	DescLock           = "vehicle.cabin.door.lock.status" // LOCKED, SECURED, UNLOCKED, SELECTIVE-LOCKED
+	// The windows and the sunroof: CLOSED, INTERMEDIATE or OPEN.
+	DescWindowFrontLeft  = "vehicle.cabin.window.row1.driver.status"
+	DescWindowFrontRight = "vehicle.cabin.window.row1.passenger.status"
+	DescWindowRearLeft   = "vehicle.cabin.window.row2.driver.status"
+	DescWindowRearRight  = "vehicle.cabin.window.row2.passenger.status"
+	DescSunroof          = "vehicle.cabin.sunroof.status"
+	// DescPreconditioning is the preconditioning's activity: standby, heating, cooling,
+	// ventilation or inactive.
+	DescPreconditioning = "vehicle.vehicle.preConditioning.activity"
 )
 
 // Descriptors returns the descriptors of Runsten's container, sorted: those the owner
@@ -40,7 +65,28 @@ func Descriptors() []string {
 		DescACAmpere, DescACVoltage, DescPhaseNumber, DescTimeToFull, DescPortStatus, DescPortDCStatus,
 		DescOdometer, DescLatitude, DescLongitude, DescRange, DescIsMoving, DescIgnition,
 		DescTyreFrontLeft, DescTyreFrontRight, DescTyreRearLeft, DescTyreRearRight,
+		DescDoorFrontLeft, DescDoorFrontRight, DescDoorRearLeft, DescDoorRearRight, DescHood, DescTrunk, DescLock,
+		DescWindowFrontLeft, DescWindowFrontRight, DescWindowRearLeft, DescWindowRearRight, DescSunroof,
+		DescPreconditioning,
 	}
 	slices.Sort(d)
 	return d
+}
+
+// containerPrefix begins the name of every container Runsten creates; the first ones
+// were named so alone.
+const containerPrefix = "runsten"
+
+// ContainerName is the name of Runsten's container: its prefix and 8 hexadecimal digits
+// of its descriptors' hash. A container cannot be changed once created (ADR 0045 §5):
+// a release that reads more descriptors names a new one, which the collector creates in
+// place of the previous.
+func ContainerName() string {
+	sum := sha256.Sum256([]byte(strings.Join(Descriptors(), "\n")))
+	return containerPrefix + "-" + hex.EncodeToString(sum[:4])
+}
+
+// isRunstenContainer tells a container Runsten created, of any release.
+func isRunstenContainer(name string) bool {
+	return name == containerPrefix || strings.HasPrefix(name, containerPrefix+"-")
 }
