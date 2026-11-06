@@ -145,6 +145,10 @@
       "cabin": "Cabin",
       "climateOn": "Climate on",
       "preconditioning": "Preconditioning",
+      "climateAt": "Climate at {temp}",
+      "heatingTo": "Heating to {temp}",
+      "coolingTo": "Cooling to {temp}",
+      "preconditioningTo": "Preconditioning to {temp}",
       "batteryHeater": "Battery heating"
     }
   },

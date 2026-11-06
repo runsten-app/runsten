@@ -47,7 +47,9 @@ func TestState(t *testing.T) {
 		// A Tesla's, its preconditioning untold.
 		OutsideTempC: core.Some(-3.5, t0),
 		CabinTempC:   core.Some(19.0, t0),
-		Climate:      core.Some(core.Climate{On: core.Some(true, t0), BatteryHeater: core.Some(false, t0)}, t0),
+		Climate: core.Some(core.Climate{
+			On: core.Some(true, t0), BatteryHeater: core.Some(false, t0), SetpointC: core.Some(21.5, t0),
+		}, t0),
 		// Locked, the tailgate open and a window ajar, the others untold.
 		Doors: core.Some(core.Doors{
 			Locked: core.Some(true, t0), FrontLeft: core.Some(core.Closed, t0), Tailgate: core.Some(core.Open, t0),
@@ -57,9 +59,10 @@ func TestState(t *testing.T) {
 	}
 	climate := map[string]string{
 		"outside_temp_c": "-3.5", "cabin_temp_c": "19", "climate": "on", "preconditioning": "", "battery_heater": "off",
+		"climate_setpoint_c": "21.5",
 	}
 	none := map[string]string{
-		"outside_temp_c": "", "cabin_temp_c": "", "climate": "", "preconditioning": "", "battery_heater": "",
+		"outside_temp_c": "", "cabin_temp_c": "", "climate": "", "preconditioning": "", "battery_heater": "", "climate_setpoint_c": "",
 	}
 	with := func(m, more map[string]string) map[string]string {
 		for k, v := range more {
@@ -155,7 +158,7 @@ func TestStateOrder(t *testing.T) {
 		base + "battery_level", base + "range_km", base + "charging_status", base + "plug", base + "charge_type",
 		base + "charging_power_kw", base + "target_soc", base + "odometer_km", base + "engine", base + "location",
 		base + "read_at", base + "outside_temp_c", base + "cabin_temp_c", base + "climate", base + "preconditioning",
-		base + "battery_heater", base + "locked", base + "door_front_left", base + "door_front_right",
+		base + "battery_heater", base + "climate_setpoint_c", base + "locked", base + "door_front_left", base + "door_front_right",
 		base + "door_rear_left", base + "door_rear_right", base + "hood", base + "tailgate", base + "tank_lid",
 		base + "window_front_left", base + "window_front_right", base + "window_rear_left", base + "window_rear_right",
 		base + "sunroof", base + "sentry", base + "openings_read_at",

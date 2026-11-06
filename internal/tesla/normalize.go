@@ -117,6 +117,7 @@ type climateState struct {
 	ClimateOn       *bool    `json:"is_climate_on"`
 	Preconditioning *bool    `json:"is_preconditioning"`
 	BatteryHeater   *bool    `json:"battery_heater"`
+	DriverTemp      *float64 `json:"driver_temp_setting"`
 }
 
 type driveState struct {
@@ -511,8 +512,9 @@ func normalizeClimate(c *climateState, s *core.Snapshot) {
 	}
 	cl := core.Climate{
 		On: flag(c.ClimateOn), Preconditioning: flag(c.Preconditioning), BatteryHeater: flag(c.BatteryHeater),
+		SetpointC: number(c.DriverTemp, at),
 	}
-	if cl.On.OK || cl.Preconditioning.OK || cl.BatteryHeater.OK {
+	if cl.On.OK || cl.Preconditioning.OK || cl.BatteryHeater.OK || cl.SetpointC.OK {
 		s.Climate = core.Some(cl, at)
 	}
 }

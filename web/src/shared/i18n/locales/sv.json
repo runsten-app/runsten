@@ -145,6 +145,10 @@
       "cabin": "Kupé",
       "climateOn": "Klimat på",
       "preconditioning": "Förkonditionering",
+      "climateAt": "Klimat på {temp}",
+      "heatingTo": "Värmer till {temp}",
+      "coolingTo": "Kyler till {temp}",
+      "preconditioningTo": "Förkonditionering till {temp}",
       "batteryHeater": "Batteriet värms"
     }
   },

@@ -3,10 +3,13 @@ import {
   mdiAccessPointNetworkOff,
   mdiBatteryCharging,
   mdiCar,
+  mdiFan,
+  mdiHeatWave,
   mdiHelpCircleOutline,
   mdiOpenInNew,
   mdiParking,
   mdiSleep,
+  mdiSnowflake,
 } from '@mdi/js'
 import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -209,15 +212,31 @@ const vehicleTile = computed(() => {
   return s.odometer_km ?? s.climate.outside_temp_c ?? s.climate.cabin_temp_c ?? s.software ?? null
 })
 
-// The climate, said under the cabin's temperature only while it runs: preconditioning
-// first, which runs it too.
+// The climate, only while it runs: preconditioning first, which runs it too. Its setpoint
+// against the cabin's temperature tells which way it goes: half a degree apart or more,
+// it heats or cools; closer, it holds. Said in the state's line, for a glance, and under
+// the cabin's temperature.
 const climateRunning = computed(() => {
   const c = state.value?.climate
-  if (c?.preconditioning?.value)
-    return { reading: c.preconditioning, value: t('state.climate.preconditioning') }
-  if (c?.on?.value) return { reading: c.on, value: t('state.climate.climateOn') }
-  return null
+  const reading = c?.preconditioning?.value ? c.preconditioning : c?.on?.value ? c.on : null
+  if (!c || !reading) return null
+  const setpoint = c.setpoint_c?.value ?? null
+  const cabin = c.cabin_temp_c?.value ?? null
+  const gap = setpoint !== null && cabin !== null ? setpoint - cabin : 0
+  const way = gap >= 0.5 ? 'heating' : gap <= -0.5 ? 'cooling' : 'holding'
+  const temp = setpoint !== null ? f.quantity(setpoint, 'celsius') : null
+  let value: string
+  if (reading === c.preconditioning)
+    value = temp
+      ? t('state.climate.preconditioningTo', { temp })
+      : t('state.climate.preconditioning')
+  else if (!temp) value = t('state.climate.climateOn')
+  else if (way === 'heating') value = t('state.climate.heatingTo', { temp })
+  else if (way === 'cooling') value = t('state.climate.coolingTo', { temp })
+  else value = t('state.climate.climateAt', { temp })
+  return { reading, value, icon: climateIcons[way] }
 })
+const climateIcons = { heating: mdiHeatWave, cooling: mdiSnowflake, holding: mdiFan }
 // The battery heated (a Tesla's, in the cold), said only while it is.
 const batteryHeating = computed(() => !!state.value?.climate.battery_heater?.value)
 
@@ -306,6 +325,9 @@ const update = computed(() => {
     <div class="meta d-flex flex-wrap align-center">
       <StatusPill :icon="mode ? modeIcons[mode] : mdiHelpCircleOutline" class="mode">
         {{ mode ? modeLabels[mode] : t('state.mode.unknown') }}
+      </StatusPill>
+      <StatusPill v-if="climateRunning" :icon="climateRunning.icon" class="climate-pill">
+        {{ climateRunning.value }}
       </StatusPill>
       <span v-if="sleep" class="sleep d-inline-flex flex-wrap align-center ga-2">
         <StatusPill :icon="sleepIcons[sleep.value]">{{ sleepLabels[sleep.value] }}</StatusPill>
