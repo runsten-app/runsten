@@ -463,6 +463,12 @@ func (s *session) ensureContainer(ctx context.Context) error {
 // apiError tells the collector what a refusal of the API means. The day's calls spent,
 // the API is left alone until 00:00 UTC, and the stream reads on.
 func (s *session) apiError(err error, now time.Time) error {
+	var pe *bmw.PictureError
+	if errors.As(err, &pe) {
+		// BMW answered, without a picture kept: the endpoint's, tried again later, no
+		// failure told.
+		return &collector.SourceError{Kind: collector.KindNotAvailable, Status: pe.Status, Err: err}
+	}
 	var e *bmw.APIError
 	if errors.As(err, &e) && e.Kind == bmw.KindRateLimited {
 		y, m, d := now.UTC().Date()

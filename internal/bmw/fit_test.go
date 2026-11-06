@@ -2,11 +2,13 @@ package bmw
 
 import (
 	"bytes"
+	"errors"
 	"image"
 	"image/color"
 	"image/jpeg"
 	"image/png"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -67,5 +69,22 @@ func TestFit(t *testing.T) {
 	}
 	if _, err := fit([]byte("\x89PNG\r\n\x1a\nbroken"), "image/png"); err == nil {
 		t.Error("a broken PNG")
+	}
+}
+
+func TestImageNotAPicture(t *testing.T) {
+	// BMW answers, with no picture kept: a PictureError of its status, no APIError.
+	for name, body := range map[string][]byte{
+		"html":   []byte("<!doctype html><p>no picture</p>"),
+		"broken": []byte("\x89PNG\r\n\x1a\nbroken"),
+		"large":  append([]byte("\x89PNG\r\n\x1a\n"), make([]byte, MaxImage)...),
+	} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write(body) }))
+		_, err := NewClient(Hosts{API: srv.URL}, srv.Client()).Image(t.Context(), "token", "WBY31AW02RFR00001")
+		srv.Close()
+		var pe *PictureError
+		if !errors.As(err, &pe) || pe.Status != http.StatusOK {
+			t.Errorf("%s: %v", name, err)
+		}
 	}
 }

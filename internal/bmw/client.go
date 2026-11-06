@@ -292,6 +292,17 @@ type Picture struct {
 	Data []byte `json:"image"`
 }
 
+// PictureError is an answer of Image that holds no picture Runsten keeps: not an image
+// of a known type, larger than MaxImage, or unreadable. BMW answered, with Status: the
+// vehicle gives no picture, not a failure of the API.
+type PictureError struct {
+	Status int
+	Err    error
+}
+
+func (e *PictureError) Error() string { return e.Err.Error() }
+func (e *PictureError) Unwrap() error { return e.Err }
+
 // pictureTypes are the media types of a picture kept.
 var pictureTypes = map[string]bool{"image/png": true, "image/jpeg": true, "image/webp": true}
 
@@ -321,15 +332,15 @@ func (c *Client) Image(ctx context.Context, token, vin string) ([]byte, error) {
 		return nil, newAPIError(name, apiCall, resp.StatusCode, body)
 	}
 	if len(body) > MaxImage {
-		return nil, fmt.Errorf("%s: larger than %d bytes", name, MaxImage)
+		return nil, &PictureError{Status: resp.StatusCode, Err: fmt.Errorf("%s: larger than %d bytes", name, MaxImage)}
 	}
 	mt := http.DetectContentType(body)
 	if !pictureTypes[mt] {
-		return nil, fmt.Errorf("%s: not an image: %s", name, mt)
+		return nil, &PictureError{Status: resp.StatusCode, Err: fmt.Errorf("%s: not an image: %s", name, mt)}
 	}
 	body, err = fit(body, mt)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", name, err)
+		return nil, &PictureError{Status: resp.StatusCode, Err: fmt.Errorf("%s: %w", name, err)}
 	}
 	raw, err := json.Marshal(Picture{Type: mt, Data: body})
 	if err != nil {
