@@ -145,6 +145,10 @@
       "cabin": "Interieur",
       "climateOn": "Klimaatregeling aan",
       "preconditioning": "Voorconditionering",
+      "climateAt": "Klimaatregeling op {temp}",
+      "heatingTo": "Verwarmt tot {temp}",
+      "coolingTo": "Koelt tot {temp}",
+      "preconditioningTo": "Voorconditionering op {temp}",
       "batteryHeater": "Batterijverwarming"
     }
   },
