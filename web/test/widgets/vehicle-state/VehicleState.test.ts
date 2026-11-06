@@ -119,6 +119,9 @@ describe('VehicleState', () => {
     expect(reading(w, 'Power').value).toBe('7.4 kW')
     expect(reading(w, 'Type').value).toBe('AC')
     expect(reading(w, 'Cable').value).toBe('Connected')
+    // An icon leads the labels looked for at a glance, hidden from a screen reader.
+    const cable = w.findAll('.reading').find((r) => r.find('dt').text() === 'Cable')
+    expect(cable?.find('dt .label-icon').attributes('aria-hidden')).toBe('true')
     // The target is the bar's, said once.
     expect(() => reading(w, 'Target')).toThrow()
     expect(plain(w.find('.under-bar .target').text())).toBe('Target 80%')

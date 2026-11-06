@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import {
+  mdiCarSeat,
   mdiCctv,
+  mdiChip,
+  mdiCounter,
+  mdiEvPlugCcs2,
+  mdiEvPlugType2,
+  mdiEvStation,
+  mdiPowerPlug,
+  mdiPowerPlugOff,
+  mdiThermometer,
   mdiFan,
   mdiHeatingCoil,
   mdiHeatWave,
@@ -164,6 +173,18 @@ const typeLabels = computed<Record<CurrentChargeType, string>>(() => ({
   DC: 'DC',
   none: t('charging.type.none'),
 }))
+// The icons that lead the labels of the values looked for at a glance: the plug of the
+// charge's type (Type 2 on AC, CCS on DC), the cable in or out.
+const typeIcons: Record<CurrentChargeType, string> = {
+  AC: mdiEvPlugType2,
+  DC: mdiEvPlugCcs2,
+  none: mdiEvStation,
+}
+const cableIcons: Record<Cable, string> = {
+  connected: mdiPowerPlug,
+  disconnected: mdiPowerPlugOff,
+  fault: mdiPowerPlugOff,
+}
 
 // The charging status is the tile's title pill: done and charging are good news, an
 // error is one; the rest is said plainly.
@@ -466,6 +487,7 @@ const update = computed(() => {
               />
               <ReadingItem
                 :label="t('state.charging.type')"
+                :icon="state.charging.type ? typeIcons[state.charging.type.value] : mdiEvStation"
                 :reading="state.charging.type"
                 :value="label(state.charging.type, typeLabels)"
                 :now="now"
@@ -475,6 +497,7 @@ const update = computed(() => {
               />
               <ReadingItem
                 :label="t('state.charging.cable')"
+                :icon="state.charging.cable ? cableIcons[state.charging.cable.value] : mdiPowerPlug"
                 :reading="state.charging.cable"
                 :value="label(state.charging.cable, cableLabels)"
                 :now="now"
@@ -553,6 +576,7 @@ const update = computed(() => {
             <dl class="fields">
               <ReadingItem
                 :label="t('state.odometer')"
+                :icon="mdiCounter"
                 :reading="state.odometer_km"
                 :value="quantity(state.odometer_km, 'km')"
                 :now="now"
@@ -563,6 +587,7 @@ const update = computed(() => {
               <ReadingItem
                 v-if="state.climate.outside_temp_c"
                 :label="t('state.climate.outside')"
+                :icon="mdiThermometer"
                 :reading="state.climate.outside_temp_c"
                 :value="quantity(state.climate.outside_temp_c, 'celsius')"
                 :now="now"
@@ -573,6 +598,7 @@ const update = computed(() => {
               <ReadingItem
                 v-if="state.climate.cabin_temp_c"
                 :label="t('state.climate.cabin')"
+                :icon="mdiCarSeat"
                 :reading="state.climate.cabin_temp_c"
                 :value="quantity(state.climate.cabin_temp_c, 'celsius')"
                 :now="now"
@@ -584,6 +610,7 @@ const update = computed(() => {
               <ReadingItem
                 v-if="state.software"
                 :label="t('state.software')"
+                :icon="mdiChip"
                 :reading="state.software"
                 :value="state.software.value"
                 :now="now"
