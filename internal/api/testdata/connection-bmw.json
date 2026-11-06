@@ -1,0 +1,17 @@
+{
+  "volvo": true,
+  "connected": false,
+  "client_id": "runsten-dev",
+  "instance_key": {
+    "last4": "key"
+  },
+  "api_key": null,
+  "polestar": null,
+  "tesla": null,
+  "polestar_id": null,
+  "bmw": {
+    "last4": "c1d0",
+    "set_at": "2026-09-28T05:00:20Z",
+    "refused_at": null
+  }
+}

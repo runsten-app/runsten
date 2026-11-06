@@ -6,6 +6,7 @@
   "expires_at": "2026-10-28T05:00:00Z",
   "limits": null,
   "flags": {
+    "source.bmw": true,
     "source.polestar-id": false,
     "source.tesla": true
   }

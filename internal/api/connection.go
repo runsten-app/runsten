@@ -74,6 +74,7 @@ type connectionSettingsJSON struct {
 	Polestar    null[polestarCredentialJSON] `json:"polestar" doc:"The account's credential of Polestar's Data Portal, which reads its Polestar vehicles; null: none."`
 	Tesla       null[teslaTokenJSON]         `json:"tesla" doc:"The account's refresh token of Tesla's Owner API, which reads its Tesla vehicles; null: none."`
 	PolestarID  null[polestarIDJSON]         `json:"polestar_id" doc:"The account's Polestar ID, which reads its Polestars through the Polestar app's API where the Data Portal does not (the flag source.polestar-id); null: none."`
+	BMW         null[bmwJSON]                `json:"bmw" doc:"The account's BMW CarData connection, which reads its BMWs and Minis (the flag source.bmw); null: none."`
 }
 
 type apiKeyUpdateJSON struct {
@@ -117,6 +118,11 @@ func (s *Server) connectionSettings(ctx context.Context, account string) (connec
 		return connectionSettingsJSON{}, s.internal("Polestar ID connection not read", err)
 	}
 	out.PolestarID = polestarIDOf(pc)
+	bc, err := s.BMW.BMWConnection(ctx, account)
+	if err != nil {
+		return connectionSettingsJSON{}, s.internal("BMW connection not read", err)
+	}
+	out.BMW = bmwOf(bc)
 	return out, nil
 }
 

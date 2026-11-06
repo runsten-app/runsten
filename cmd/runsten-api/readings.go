@@ -1,6 +1,7 @@
 package main
 
 import (
+	"runsten/internal/bmw"
 	"runsten/internal/polestar"
 	"runsten/internal/tesla"
 	"runsten/internal/volvo"
@@ -13,5 +14,6 @@ func privateFields() map[string][]string {
 		volvo.Source:    volvo.PrivateFields(),
 		polestar.Source: polestar.PrivateFields(),
 		tesla.Source:    tesla.PrivateFields(),
+		bmw.Source:      bmw.PrivateFields(),
 	}
 }

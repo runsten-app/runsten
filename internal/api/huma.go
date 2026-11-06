@@ -153,6 +153,8 @@ const (
 	codeInvalidFile          errorCode = "invalid_file"
 	codeInsufficientScope    errorCode = "insufficient_scope"
 	codeRateLimited          errorCode = "rate_limited"
+	codeAuthorizationPending errorCode = "authorization_pending"
+	codeScopeMissing         errorCode = "scope_missing"
 	codeInternal             errorCode = "internal"
 )
 
@@ -162,7 +164,7 @@ func (errorCode) Schema(huma.Registry) *huma.Schema {
 		codeCrossOrigin, codeNotFound, codeMethodNotAllowed, codeUnsupportedMediaType, codeTooManyAttempts,
 		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeImportedCharge, codeAPIKeyRefused, codeCredentialRefused, codeAPIClosed, codeNoVehicle, codeNotVolvo, codeInstanceKey, codeVolvoNotConfigured, codeTooManyVehicles, codeNotAdmitted, codeFeatureUnavailable,
 		codeBrokerRefused, codeTokenRefused, codeSourceUnavailable, codeAuthorizationExpired, codeImportActive, codeInvalidFile, codeInsufficientScope, codeRateLimited,
-		codeNotTesla, codeNoMatchingCar, codeInternal)
+		codeNotTesla, codeNoMatchingCar, codeAuthorizationPending, codeScopeMissing, codeInternal)
 }
 
 // errorJSON is the body of every JSON error, and the error the operations return.
