@@ -10,7 +10,8 @@ import ReadingProvenance from './ReadingProvenance.vue'
 // formatted; null is unknown), how long ago it was last checked and since when it holds.
 // In a tile that says these once (tile, the reading it shows them of), the value repeats
 // only what differs from it. The slot adds to the value (a gauge): inside the <dd>, a
-// <dl> holding only its items.
+// <dl> holding only its items. An icon may lead the label, to find the value at a glance:
+// small, in the label's color, never on the value.
 const props = withDefaults(
   defineProps<{
     label: string
@@ -21,8 +22,9 @@ const props = withDefaults(
     staleAfter?: number
     size?: 'hero' | 'large' | 'small'
     tile?: Reading | null
+    icon?: string
   }>(),
-  { staleAfter: defaultStaleAfter, size: 'large', tile: undefined },
+  { staleAfter: defaultStaleAfter, size: 'large', tile: undefined, icon: undefined },
 )
 
 const f = useFormat()
@@ -47,7 +49,9 @@ const own = computed(() => {
 
 <template>
   <div class="reading" :class="{ stale }">
-    <dt class="label">{{ label }}</dt>
+    <dt class="label">
+      <v-icon v-if="icon" :icon size="16" aria-hidden="true" class="label-icon" />{{ label }}
+    </dt>
     <dd>
       <TileFigure
         class="value"
@@ -78,6 +82,11 @@ const own = computed(() => {
   font-size: 0.8125rem;
   color: rgb(var(--v-theme-text-secondary));
   margin-bottom: 4px;
+}
+/* Inline, so that the label keeps its baseline; the icon sits on it. */
+.label-icon {
+  vertical-align: -3px;
+  margin-right: 4px;
 }
 dd {
   margin: 0;

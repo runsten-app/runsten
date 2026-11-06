@@ -19,6 +19,8 @@ const props = defineProps<{
   windows: Reading<Windows> | null
   now: number
   connection: Pick<Connection, 'status'> & Partial<Pick<Connection, 'credential'>>
+  // Sentry Mode said elsewhere (in the title of the tile that holds the line), not in it.
+  sentryApart?: boolean
 }>()
 
 const { t } = useI18n()
@@ -88,7 +90,9 @@ const measured = computed(() => {
         {{ summary.locked ? t('state.openings.locked') : t('state.openings.unlocked') }}
       </StatusPill>
       <span v-for="fact in facts" :key="fact" class="fact">{{ fact }}</span>
-      <span v-if="sentry" class="fact sentry">{{ t('state.openings.sentry') }}</span>
+      <span v-if="sentry && !sentryApart" class="fact sentry">{{
+        t('state.openings.sentry')
+      }}</span>
     </div>
     <div v-if="reading" class="mt-2">
       <ReadingProvenance :reading="reading" :now="now" :connection="connection" />

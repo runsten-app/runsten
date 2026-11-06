@@ -93,6 +93,7 @@
     "odometer": "Mätarställning",
     "openings": {
       "title": "Dörrar och fönster",
+      "titleWithTyres": "Dörrar, fönster och däck",
       "locked": "Låst",
       "unlocked": "Olåst",
       "allClosed": "Allt stängt",
@@ -140,7 +141,6 @@
       "version": "{version}: {status}"
     },
     "climate": {
-      "title": "Klimat",
       "outside": "Ute",
       "cabin": "Kupé",
       "climateOn": "Klimat på",
@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "Laddningsnivå",
+    "title": "Aktivitet",
     "soc": "Laddningsnivå",
     "driving": "Körning",
     "charging": "Laddning",
@@ -882,12 +882,6 @@
       "day": "24 h",
       "week": "7 d"
     }
-  },
-  "recent": {
-    "title": "Senaste 30 dagarna",
-    "chart": "Sträcka per dag",
-    "stats": "Visa statistiken",
-    "hint": "Sträckan för varje dag. Tryck på en dag för att se dess resor."
   },
   "chargeCurve": {
     "title": "Laddkurva",

@@ -93,6 +93,7 @@
     "odometer": "Kilometerteller",
     "openings": {
       "title": "Dører og vinduer",
+      "titleWithTyres": "Dører, vinduer og dekk",
       "locked": "Låst",
       "unlocked": "Ulåst",
       "allClosed": "Alt lukket",
@@ -140,7 +141,6 @@
       "version": "{version}: {status}"
     },
     "climate": {
-      "title": "Klima",
       "outside": "Ute",
       "cabin": "Kupé",
       "climateOn": "Klima på",
@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "Ladenivå",
+    "title": "Aktivitet",
     "soc": "Ladenivå",
     "driving": "Kjører",
     "charging": "Lader",
@@ -882,12 +882,6 @@
       "day": "24 t",
       "week": "7 d"
     }
-  },
-  "recent": {
-    "title": "Siste 30 dager",
-    "chart": "Distanse per dag",
-    "stats": "Se statistikken",
-    "hint": "Distansen hver dag. Trykk på en dag for å se turene."
   },
   "chargeCurve": {
     "title": "Ladekurve",

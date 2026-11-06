@@ -3,8 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { VehiclePage } from '@/pages/vehicle'
 import { ApiError } from '@/shared/api'
-import { RecentSummary } from '@/widgets/recent-summary'
-import empty from '@fixtures/stats-empty.json'
 import state from '@fixtures/state.json'
 import reauth from '@fixtures/vehicle-reauth-required.json'
 import unknown from '@fixtures/state-unknown.json'
@@ -16,18 +14,13 @@ const mocks = vi.hoisted(() => ({
   fetchVehicle: vi.fn(),
   fetchVehicleState: vi.fn(),
 }))
-// The charts have their own tests: here, only that the page loads them. The summary of
-// the last 30 days gets no event, and shows nothing.
+// The chart has its own tests: here, only that the page loads it.
 vi.mock('@/widgets/soc-timeline', () => ({
   SocTimeline: defineComponent({
     name: 'SocTimeline',
     props: { vehicle: { type: String, required: true } },
     render: () => null,
   }),
-}))
-vi.mock('@/entities/stats', async (original) => ({
-  ...(await original<typeof import('@/entities/stats')>()),
-  fetchStats: () => Promise.resolve(empty),
 }))
 // The extensions' actions: none in the public build, one in a test.
 const { actions } = vi.hoisted(() => ({ actions: [] as unknown[] }))
@@ -77,9 +70,10 @@ describe('VehiclePage', () => {
     expect(w.text()).not.toContain(vehicles.items[0]?.vin)
     expect(w.text()).toContain('64%')
     expect(w.findComponent({ name: 'SocTimeline' }).props('vehicle')).toBe(state.vehicle_id)
-    // The last days beside the vehicle's tile, in the state's grid.
+    // The last days at the foot of the state's grid.
     expect(w.find('.verdandi').findComponent({ name: 'SocTimeline' }).exists()).toBe(true)
-    expect(w.findComponent(RecentSummary).props('vehicle')).toBe(state.vehicle_id)
+    // The totals of a longer period are the statistics', not the state's.
+    expect(w.find('.recent-summary').exists()).toBe(false)
   })
 
   // The bar's menu leads to the vehicle's settings: the page repeats no way there.

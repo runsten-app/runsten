@@ -35,7 +35,7 @@ const warningTones: Record<TyreWarning, 'success' | 'warning' | 'error'> = {
   ok: 'success',
   high: 'warning',
   fault: 'warning',
-  low: 'error',
+  low: 'warning',
   very_low: 'error',
 }
 const serviceTones: Record<ServiceState, 'success' | 'warning' | 'error' | 'neutral'> = {

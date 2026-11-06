@@ -5,15 +5,21 @@ import { ApiError } from '@/shared/api'
 import { i18n, type Locale } from '@/shared/i18n'
 import { VehicleState } from '@/widgets/vehicle-state'
 import charging from '@fixtures/charging.json'
+import health from '@fixtures/health.json'
 import state from '@fixtures/state.json'
 import unknown from '@fixtures/state-unknown.json'
 import vehicle from '@fixtures/vehicle-model.json'
 import { mountWith } from '@test/utils'
 
-const { fetchVehicle, fetchVehicleState, fetchChargeInProgress } = vi.hoisted(() => ({
+const { fetchVehicle, fetchVehicleState, fetchChargeInProgress, fetchHealth } = vi.hoisted(() => ({
   fetchVehicle: vi.fn(),
   fetchVehicleState: vi.fn(),
   fetchChargeInProgress: vi.fn(),
+  fetchHealth: vi.fn(),
+}))
+vi.mock('@/entities/health', async (original) => ({
+  ...(await original<typeof import('@/entities/health')>()),
+  fetchHealth,
 }))
 vi.mock('@/entities/charge', async (original) => ({
   ...(await original<typeof import('@/entities/charge')>()),
@@ -36,6 +42,8 @@ beforeEach(() => {
   fetchVehicle.mockResolvedValue(noVariant)
   fetchChargeInProgress.mockReset()
   fetchChargeInProgress.mockResolvedValue(null)
+  fetchHealth.mockReset()
+  fetchHealth.mockResolvedValue({ ...health, tyres: null })
   vi.useFakeTimers({ now, toFake: ['Date'] })
 })
 afterEach(() => {
@@ -110,7 +118,6 @@ describe('VehicleState', () => {
   it('puts a charge in progress forward, in a tile of its own', async () => {
     const w = await mounted(state)
     expect(plain(w.find('.mode').text())).toBe('Charging')
-    expect(w.find('.charge-line').exists()).toBe(false)
     const tile = w.find('.v-card[data-test="charging"]')
     expect(tile.find('h2').text()).toContain('Charging')
     // The status is the tile's pill, named for a screen reader.
@@ -120,6 +127,9 @@ describe('VehicleState', () => {
     expect(reading(w, 'Power').value).toBe('7.4 kW')
     expect(reading(w, 'Type').value).toBe('AC')
     expect(reading(w, 'Cable').value).toBe('Connected')
+    // An icon leads the labels looked for at a glance, hidden from a screen reader.
+    const cable = w.findAll('.reading').find((r) => r.find('dt').text() === 'Cable')
+    expect(cable?.find('dt .label-icon').attributes('aria-hidden')).toBe('true')
     // The target is the bar's, said once.
     expect(() => reading(w, 'Target')).toThrow()
     expect(plain(w.find('.under-bar .target').text())).toBe('Target 80%')
@@ -181,18 +191,19 @@ describe('VehicleState', () => {
   })
 
   it.each(['done', 'idle', 'scheduled'])(
-    'says a charge %s in one line under the battery',
+    'says a charge %s small in its tile, beside the battery',
     async (value) => {
       const parked = {
         ...state,
         charging: { ...state.charging, status: { ...state.charging.status, value } },
       }
       const w = await mounted(parked)
-      expect(w.find('.v-card[data-test="charging"]').exists()).toBe(false)
-      const line = w.find('.battery .charge-line')
-      expect(line.find('h3').text()).toBe('Charging')
-      expect(line.attributes('aria-labelledby')).toBe(line.find('h3').attributes('id'))
-      expect(plain(line.find('.charging-status').text())).toMatch(/^Status: /)
+      const tile = w.find('.v-card[data-test="charging"]')
+      expect(tile.find('h2').text()).toContain('Charging')
+      // Idle says nothing worth a pill; done or scheduled does.
+      const pill = tile.find('.charging-status')
+      if (value === 'idle') expect(pill.exists()).toBe(false)
+      else expect(plain(pill.text())).toMatch(/^Status: /)
       expect(reading(w, 'Cable').value).toBe('Connected')
       expect(reading(w, 'Type').value).toBe('AC')
       // No power to tell while nothing charges, the target under the bar only.
@@ -201,7 +212,7 @@ describe('VehicleState', () => {
     },
   )
 
-  it('keeps the target in the line where no state of charge draws a bar', async () => {
+  it('keeps the target in the tile where no state of charge draws a bar', async () => {
     const parked = {
       ...state,
       soc_pct: null,
@@ -209,8 +220,7 @@ describe('VehicleState', () => {
     }
     const w = await mounted(parked)
     expect(reading(w, 'Target').value).toBe('80%')
-    // Its times, which the bar's line no longer says.
-    expect(w.find('.charge-line .details').exists()).toBe(true)
+    expect(provenance(w, 'Charging')).toMatch(/^checked .+ · since /)
   })
 
   it('takes a power above zero without a status for a charge, not a zero one', async () => {
@@ -223,15 +233,14 @@ describe('VehicleState', () => {
       },
     })
     let w = await mounted(power(7400))
-    expect(w.find('.v-card[data-test="charging"]').exists()).toBe(true)
     expect(reading(w, 'Power').value).toBe('7.4 kW')
     w.unmount()
     w = await mounted(power(0))
-    expect(w.find('.charge-line').exists()).toBe(true)
+    expect(w.find('.v-card[data-test="charging"]').exists()).toBe(true)
     expect(() => reading(w, 'Power')).toThrow()
   })
 
-  it('dates the line by the values it shows, not by a power it does not', async () => {
+  it('dates the tile by the values it shows, not by a power it does not', async () => {
     const at = (t: string) => ({ reported_at: null, fetched_at: t, checked_at: t })
     const w = await mounted({
       ...state,
@@ -241,17 +250,20 @@ describe('VehicleState', () => {
         power_w: { ...at('2026-09-28T12:00:00Z'), value: 0 },
       },
     })
-    const times = w.findAll('.charge-line .details time').map((t) => t.attributes('datetime'))
+    const tile = w.find('.v-card[data-test="charging"]')
+    const times = tile
+      .findAll('.details time')
+      .filter((t) => !t.element.closest('.reading'))
+      .map((t) => t.attributes('datetime'))
     expect(times).toEqual(['2026-09-28T18:00:00Z', '2026-09-28T18:00:00Z'])
   })
 
-  it.each(['discharging', 'error'])('gives a charge %s its tile', async (value) => {
+  it.each(['discharging', 'error'])('shows the power of a charge %s', async (value) => {
     const w = await mounted({
       ...state,
       charging: { ...state.charging, status: { ...state.charging.status, value } },
     })
-    expect(w.find('.v-card[data-test="charging"]').exists()).toBe(true)
-    expect(w.find('.charge-line').exists()).toBe(false)
+    expect(reading(w, 'Power').value).toBeTruthy()
   })
 
   it('tells a charge type the car says is none from an unknown one', async () => {
@@ -306,7 +318,8 @@ describe('VehicleState', () => {
     // target (no bar to show it).
     expect(values).toHaveLength(8)
     expect(new Set(values)).toEqual(new Set([unknownText]))
-    expect(w.find('.charging-status').text()).toContain(unknownText)
+    // A status unknown says nothing worth a pill.
+    expect(w.find('.charging-status').exists()).toBe(false)
     expect(w.text()).toContain(never)
     expect(w.findAll('time')).toHaveLength(0)
     expect(w.find('a[target="_blank"]').exists()).toBe(false)
@@ -405,20 +418,31 @@ describe('VehicleState', () => {
     expect(w.find('.sleep').exists()).toBe(false)
     w.unmount()
     w = await mounted({ ...state, sleep: { ...at, value: 'asleep' } })
-    expect(w.findAll('.sleep > *').map((e) => plain(e.text()))).toEqual([
-      'Asleep',
-      'since 18:40',
+    // Beside the mode, in the headline, which it tints; why the values are old, under it.
+    expect(plain(w.find('.headline-title').text())).toBe('Charging · Asleep since 18:40')
+    expect(w.find('.headline').classes()).toContain('asleep')
+    expect(plain(w.find('.sleep-note').text())).toBe(
       'Runsten lets it sleep: what it measures is read when it wakes up.',
-    ])
+    )
+    expect(w.find('.sleep').attributes('role')).toBe('status')
+    w.unmount()
+    // Its mode unknown: the sleep alone.
+    w = await mounted({
+      ...state,
+      engine: null,
+      charging: { ...state.charging, status: null, power_w: null },
+      sleep: { ...at, value: 'asleep' },
+    })
+    expect(plain(w.find('.headline-title').text())).toBe('Asleep since 18:40')
     expect(w.find('.sleep time').attributes('datetime')).toBe(at.fetched_at)
     w.unmount()
     w = await mounted({ ...state, sleep: { ...at, value: 'offline' } })
     // Out of reach may be awake without a network: not said to sleep.
-    expect(w.findAll('.sleep > *').map((e) => plain(e.text()))).toEqual([
-      'Out of reach',
-      'since 18:40',
+    expect(plain(w.find('.sleep').text())).toBe('· Out of reach since 18:40')
+    expect(w.find('.headline').classes()).toContain('offline')
+    expect(plain(w.find('.sleep-note').text())).toBe(
       'Runsten reads it again as soon as Tesla can reach it.',
-    ])
+    )
     // A car that tells nothing of its sleep (a Volvo): nothing either.
     w.unmount()
     w = await mounted(state)
@@ -473,7 +497,7 @@ describe('VehicleState', () => {
     expect(() => reading(w, 'Software update')).toThrow()
   })
 
-  it('says in a line whether the car is locked and what is open, nothing for a car without', async () => {
+  it('says in a tile whether the car is locked and what is open, nothing for a car without', async () => {
     const at = {
       reported_at: '2026-09-28T19:00:00Z',
       fetched_at: '2026-09-28T19:00:30Z',
@@ -494,7 +518,7 @@ describe('VehicleState', () => {
       sentry: null,
     } as const
     const windows = { ...closed, sunroof: null } as const
-    // Each part of the line: the heading, the pill and the facts.
+    // Each part of the line: the pill and the facts.
     const line = (w: Awaited<ReturnType<typeof mounted>>) =>
       w
         .findAll('[data-test="openings"] .row > *')
@@ -505,8 +529,8 @@ describe('VehicleState', () => {
       doors: { ...at, value: doors },
       windows: { ...at, value: windows },
     })
-    expect(line(w)).toBe('Doors and windows | Locked | All closed')
-    expect(w.find('[data-test="openings"] h3').text()).toBe('Doors and windows')
+    expect(line(w)).toBe('Locked | All closed')
+    expect(w.find('[data-test="openings"] h2').text()).toBe('Doors and windows')
     expect(plain(w.find('[data-test="openings"] .details').text())).toBe(
       'checked 1 min ago · since 19:00',
     )
@@ -523,17 +547,19 @@ describe('VehicleState', () => {
       windows: { ...at, value: { ...windows, front_left: 'open', rear_right: 'open' } },
     })
     expect(line(w)).toBe(
-      'Doors and windows | Unlocked | Open: front left window and rear right window | Ajar: rear left door | Sentry Mode on',
+      'Unlocked | Open: front left window and rear right window | Ajar: rear left door',
     )
+    // Sentry Mode watching, in the tile's title, as each tile says what of it runs.
+    expect(plain(w.find('[data-test="openings"] h2 .sentry').text())).toBe('Sentry Mode on')
     expect(w.find('[data-test="openings"] .measured').text()).toBe('The car last measured 15:00')
     w.unmount()
     // The windows alone, the lock untold: no pill, and closed said of the windows only.
     w = await mounted({ ...state, windows: { ...at, value: windows } })
-    expect(line(w)).toBe('Doors and windows | Windows closed')
+    expect(line(w)).toBe('Windows closed')
     w.unmount()
     // The doors alone: closed said of the doors only.
     w = await mounted({ ...state, doors: { ...at, value: doors } })
-    expect(line(w)).toBe('Doors and windows | Locked | Doors closed')
+    expect(line(w)).toBe('Locked | Doors closed')
     w.unmount()
     // Read apart and the windows checked longer ago: the line takes their times, and the
     // older of the car's measures.
@@ -575,7 +601,7 @@ describe('VehicleState', () => {
     expect(reading(w, 'Cabin').value).toBe('19.5°C')
     // Without a setpoint, that it runs, without a way.
     expect(w.find('.climate-running').text()).toBe('Climate on')
-    expect(w.find('.climate-pill').text()).toBe('Climate on')
+    expect(w.find('[data-test=activity-climate]').text()).toBe('Climate on')
     expect(w.find('.heater').text()).toBe('Battery heating')
     // With one, which way it goes: half a degree apart or more, it heats or cools.
     for (const [setpoint, text] of [
@@ -589,7 +615,7 @@ describe('VehicleState', () => {
         ...state,
         climate: { ...climate, setpoint_c: { ...at, value: setpoint } },
       })
-      expect(w.find('.climate-pill').text()).toBe(text)
+      expect(w.find('[data-test=activity-climate]').text()).toBe(text)
       expect(w.find('.climate-running').text()).toBe(text)
     }
     // Without the cabin's temperature, no way: the setpoint alone, the climate's setting.
@@ -598,7 +624,7 @@ describe('VehicleState', () => {
       ...state,
       climate: { ...climate, cabin_temp_c: null, setpoint_c: { ...at, value: 22 } },
     })
-    expect(w.find('.climate-pill').text()).toBe('Climate at 22°C')
+    expect(w.find('[data-test=activity-climate]').text()).toBe('Climate at 22°C')
     // Preconditioning says it, which runs the climate too; the heater off says nothing.
     w.unmount()
     w = await mounted({
@@ -621,16 +647,17 @@ describe('VehicleState', () => {
         setpoint_c: { ...at, value: 22 },
       },
     })
-    expect(w.find('.climate-pill').text()).toBe('Preconditioning to 22°C')
+    expect(w.find('[data-test=activity-climate]').text()).toBe('Preconditioning to 22°C')
     // A setpoint with the climate off says nothing.
     w.unmount()
     w = await mounted({
       ...state,
       climate: { ...climate, on: { ...at, value: false }, setpoint_c: { ...at, value: 22 } },
     })
-    expect(w.find('.climate-pill').exists()).toBe(false)
+    expect(w.find('[data-test=activity-climate]').exists()).toBe(false)
     expect(w.find('.climate-running').exists()).toBe(false)
-    // Without the cabin's temperature, nor a state of charge: what runs still says itself.
+    // Without the cabin's temperature, nor a state of charge: what runs still says itself,
+    // in the titles of the vehicle and the battery.
     w.unmount()
     w = await mounted({
       ...state,
@@ -638,17 +665,105 @@ describe('VehicleState', () => {
       climate: { ...climate, cabin_temp_c: null },
     })
     expect(() => reading(w, 'Cabin')).toThrow()
-    expect(reading(w, 'Climate').value).toBe('Climate on')
-    expect(w.find('.heater').text()).toBe('Battery heating')
+    expect(plain(w.find('h2 .climate-running').text())).toBe('Climate on')
+    expect(plain(w.find('h2 .heater').text())).toBe('Battery heating')
     // A car without: neither the temperatures nor an Unknown in their place.
     w.unmount()
     w = await mounted(state)
     expect(() => reading(w, 'Outside')).toThrow()
     expect(() => reading(w, 'Cabin')).toThrow()
     expect(w.find('.climate-running').exists()).toBe(false)
-    expect(w.find('.climate-pill').exists()).toBe(false)
-    expect(() => reading(w, 'Climate')).toThrow()
+    expect(w.find('[data-test=activity-climate]').exists()).toBe(false)
     expect(w.find('.heater').exists()).toBe(false)
+  })
+
+  it('says in the headline what runs: the charge, the climate, the heater, Sentry', async () => {
+    const at = state.charging.power_w
+    const pills = (w: Awaited<ReturnType<typeof mounted>>) =>
+      w.findAll('[data-test="headline"] .activity').map((e) => plain(e.text()))
+    let w = await mounted(state)
+    expect(pills(w)).toEqual(['7.4 kW'])
+    w.unmount()
+    w = await mounted({
+      ...state,
+      charging: { ...state.charging, status: { ...at, value: 'discharging' } },
+      climate: {
+        ...state.climate,
+        on: { ...at, value: true },
+        battery_heater: { ...at, value: true },
+      },
+      doors: { ...at, value: { locked: true, sentry: true } },
+    })
+    expect(pills(w)).toEqual([
+      'Discharging · 7.4 kW',
+      'Climate on',
+      'Battery heating',
+      'Sentry Mode on',
+    ])
+    w.unmount()
+    // Nothing running, no pill.
+    w = await mounted({
+      ...state,
+      charging: { ...state.charging, status: { ...at, value: 'idle' }, power_w: null },
+    })
+    expect(pills(w)).toEqual([])
+  })
+
+  it('shows the tyres with the doors and windows, laid out as the wheels', async () => {
+    const at = state.charging.power_w
+    const doors = {
+      front_left: 'closed',
+      front_right: 'closed',
+      rear_left: 'closed',
+      rear_right: 'closed',
+      locked: true,
+      hood: 'closed',
+      tailgate: 'closed',
+      tank_lid: null,
+      sentry: null,
+    }
+    const wheels = (w: Awaited<ReturnType<typeof mounted>>) =>
+      w.findAll('[data-test="state-tyres"] .wheel').map((e) =>
+        e
+          .findAll('dt, .pressure, .warning')
+          .map((d) => plain(d.text()))
+          .join(' '),
+      )
+    fetchHealth.mockResolvedValue(health)
+    let w = await mounted({ ...state, doors: { ...at, value: doors } })
+    const tile = w.find('[data-test="openings"]')
+    expect(plain(tile.find('h2').text())).toBe('Doors, windows and tyres')
+    // Pressures in bar, a warning beside the one that is not OK; one rear tyre low.
+    expect(wheels(w)).toEqual([
+      'Front left 2.82 bar',
+      'Front right 2.8 bar',
+      'Rear left 2.48 bar Low',
+      'Rear right Unknown Fault',
+    ])
+    expect(plain(tile.find('.tyres-head .status-pill').text())).toBe('Needs attention')
+    // A tyre that warns in its tone's color.
+    expect(w.findAll('[data-test="state-tyres"] .wheel')[2]?.classes()).toContain('text-warning')
+    w.unmount()
+    // A car that gives a warning per tyre, no pressure (a Volvo): the warnings, all OK.
+    fetchHealth.mockResolvedValue({
+      ...health,
+      tyres: {
+        ...health.tyres,
+        wheels: health.tyres.wheels.map((t) => ({ ...t, pressure_kpa: null, warning: 'ok' })),
+      },
+    })
+    w = await mounted(state)
+    // Its tyres alone, without doors: the tile is theirs.
+    expect(plain(w.find('[data-test="openings"] h2').text())).toBe('Tyres')
+    expect(wheels(w)).toEqual(['Front left OK', 'Front right OK', 'Rear left OK', 'Rear right OK'])
+    // Fine: nothing said of them, no pill.
+    expect(w.find('.tyres-head .status-pill').exists()).toBe(false)
+    w.unmount()
+    // No tyres: no part, the tile the doors' alone.
+    fetchHealth.mockResolvedValue({ ...health, tyres: null })
+    w = await mounted({ ...state, doors: { ...at, value: doors } })
+    expect(plain(w.find('[data-test="openings"] h2').text())).toBe('Doors and windows')
+    expect(w.find('[data-test="state-tyres"]').exists()).toBe(false)
   })
 
   it("tells the car's latest measure once it is older than half an hour", async () => {

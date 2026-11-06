@@ -93,6 +93,7 @@
     "odometer": "Odometer",
     "openings": {
       "title": "Doors and windows",
+      "titleWithTyres": "Doors, windows and tyres",
       "locked": "Locked",
       "unlocked": "Unlocked",
       "allClosed": "All closed",
@@ -140,7 +141,6 @@
       "version": "{version}: {status}"
     },
     "climate": {
-      "title": "Climate",
       "outside": "Outside",
       "cabin": "Cabin",
       "climateOn": "Climate on",
@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "State of charge",
+    "title": "Activity",
     "soc": "State of charge",
     "driving": "Driving",
     "charging": "Charging",
@@ -882,12 +882,6 @@
       "day": "24 h",
       "week": "7 d"
     }
-  },
-  "recent": {
-    "title": "Last 30 days",
-    "chart": "Distance by day",
-    "stats": "See the statistics",
-    "hint": "The distance of each day. Press a day to see its trips."
   },
   "chargeCurve": {
     "title": "Charging curve",

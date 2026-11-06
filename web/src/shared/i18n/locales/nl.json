@@ -93,6 +93,7 @@
     "odometer": "Kilometerstand",
     "openings": {
       "title": "Portieren en ramen",
+      "titleWithTyres": "Portieren, ramen en banden",
       "locked": "Vergrendeld",
       "unlocked": "Ontgrendeld",
       "allClosed": "Alles dicht",
@@ -140,7 +141,6 @@
       "version": "{version}: {status}"
     },
     "climate": {
-      "title": "Klimaat",
       "outside": "Buiten",
       "cabin": "Interieur",
       "climateOn": "Klimaatregeling aan",
@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "Laadniveau",
+    "title": "Activiteit",
     "soc": "Laadniveau",
     "driving": "Rijdt",
     "charging": "Laadt",
@@ -882,12 +882,6 @@
       "day": "24 u",
       "week": "7 d"
     }
-  },
-  "recent": {
-    "title": "Laatste 30 dagen",
-    "chart": "Afstand per dag",
-    "stats": "Bekijk de statistieken",
-    "hint": "De afstand van elke dag. Druk op een dag om de ritten ervan te zien."
   },
   "chargeCurve": {
     "title": "Laadcurve",

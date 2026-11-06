@@ -8,13 +8,11 @@ import { AppShell } from '@/widgets/app-shell'
 import { VehicleState } from '@/widgets/vehicle-state'
 import { extensionVehicleActions } from '../extensions'
 
-// The charts come on demand, with Chart.js: the page itself, the first one opened,
-// shows the state without waiting for them.
+// The page is the vehicle's state now, with what it did over the last day or week: the
+// totals of longer periods are the statistics'. The chart comes on demand, with Chart.js:
+// the page itself, the first one opened, shows the state without waiting for it.
 const SocTimeline = defineAsyncComponent(() =>
   import('@/widgets/soc-timeline').then((m) => m.SocTimeline),
-)
-const RecentSummary = defineAsyncComponent(() =>
-  import('@/widgets/recent-summary').then((m) => m.RecentSummary),
 )
 
 const props = defineProps<{ vehicle: string }>()
@@ -45,7 +43,6 @@ const label = computed(() => (current.value ? vehicleLabel(current.value) : null
         :vehicle="vehicle"
         class="mt-4"
       />
-      <RecentSummary :vehicle="vehicle" class="mt-4" />
     </template>
   </AppShell>
 </template>

@@ -93,6 +93,7 @@
     "odometer": "Cuentakilómetros",
     "openings": {
       "title": "Puertas y ventanillas",
+      "titleWithTyres": "Puertas, ventanillas y neumáticos",
       "locked": "Bloqueado",
       "unlocked": "Desbloqueado",
       "allClosed": "Todo cerrado",
@@ -140,7 +141,6 @@
       "version": "{version}: {status}"
     },
     "climate": {
-      "title": "Climatización",
       "outside": "Exterior",
       "cabin": "Habitáculo",
       "climateOn": "Climatización activada",
@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "Nivel de carga",
+    "title": "Actividad",
     "soc": "Nivel de carga",
     "driving": "En marcha",
     "charging": "Cargando",
@@ -882,12 +882,6 @@
       "day": "24 h",
       "week": "7 d"
     }
-  },
-  "recent": {
-    "title": "Últimos 30 días",
-    "chart": "Distancia por día",
-    "stats": "Ver las estadísticas",
-    "hint": "La distancia de cada día. Seleccione un día para ver sus viajes."
   },
   "chargeCurve": {
     "title": "Curva de carga",

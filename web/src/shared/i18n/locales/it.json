@@ -93,6 +93,7 @@
     "odometer": "Contachilometri",
     "openings": {
       "title": "Portiere e finestrini",
+      "titleWithTyres": "Portiere, finestrini e pneumatici",
       "locked": "Bloccato",
       "unlocked": "Sbloccato",
       "allClosed": "Tutto chiuso",
@@ -140,7 +141,6 @@
       "version": "{version}: {status}"
     },
     "climate": {
-      "title": "Climatizzazione",
       "outside": "Esterno",
       "cabin": "Abitacolo",
       "climateOn": "Climatizzazione attiva",
@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "Stato di carica",
+    "title": "Attività",
     "soc": "Stato di carica",
     "driving": "In marcia",
     "charging": "In carica",
@@ -882,12 +882,6 @@
       "day": "24 h",
       "week": "7 g"
     }
-  },
-  "recent": {
-    "title": "Ultimi 30 giorni",
-    "chart": "Distanza al giorno",
-    "stats": "Vedi le statistiche",
-    "hint": "La distanza di ogni giorno. Prema un giorno per vederne i viaggi."
   },
   "chargeCurve": {
     "title": "Curva di ricarica",

@@ -93,6 +93,7 @@
     "odometer": "Kilometerstand",
     "openings": {
       "title": "Türen und Fenster",
+      "titleWithTyres": "Türen, Fenster und Reifen",
       "locked": "Verriegelt",
       "unlocked": "Entriegelt",
       "allClosed": "Alles geschlossen",
@@ -140,7 +141,6 @@
       "version": "{version}: {status}"
     },
     "climate": {
-      "title": "Klima",
       "outside": "Außen",
       "cabin": "Innenraum",
       "climateOn": "Klimatisierung an",
@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "Ladezustand",
+    "title": "Aktivität",
     "soc": "Ladezustand",
     "driving": "Fahren",
     "charging": "Laden",
@@ -882,12 +882,6 @@
       "day": "24 Std.",
       "week": "7 T."
     }
-  },
-  "recent": {
-    "title": "Letzte 30 Tage",
-    "chart": "Strecke pro Tag",
-    "stats": "Statistik ansehen",
-    "hint": "Die Strecke jedes Tages. Tippen Sie auf einen Tag, um seine Fahrten zu sehen."
   },
   "chargeCurve": {
     "title": "Ladekurve",
