@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { mdiFan, mdiHeatWave, mdiOpenInNew, mdiSnowflake } from '@mdi/js'
+import {
+  mdiCctv,
+  mdiFan,
+  mdiHeatingCoil,
+  mdiHeatWave,
+  mdiLightningBolt,
+  mdiOpenInNew,
+  mdiSnowflake,
+} from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
@@ -227,6 +235,29 @@ const climateIcons = { heating: mdiHeatWave, cooling: mdiSnowflake, holding: mdi
 // The battery heated (a Tesla's, in the cold), said only while it is.
 const batteryHeating = computed(() => !!state.value?.climate.battery_heater?.value)
 
+// What runs while the car stands or drives, said in the headline, each in a pill, so that
+// a glance tells what the car is spending its battery on: the charge (its power, or its
+// status when it discharges or fails), the climate, the battery heated, Sentry Mode. The
+// tiles below keep the details.
+const activities = computed(() => {
+  const s = state.value
+  if (!s) return []
+  const out: { key: string; icon: string; text: string }[] = []
+  const status = s.charging.status?.value
+  if (chargeActive.value) {
+    const parts = status && status !== 'charging' ? [statusLabels.value[status]] : []
+    if (power.value) parts.push(power.value.value ?? '')
+    if (parts.length) out.push({ key: 'charge', icon: mdiLightningBolt, text: parts.join(' · ') })
+  }
+  if (climateRunning.value)
+    out.push({ key: 'climate', icon: climateRunning.value.icon, text: climateRunning.value.value })
+  if (batteryHeating.value)
+    out.push({ key: 'heater', icon: mdiHeatingCoil, text: t('state.climate.batteryHeater') })
+  if (s.doors?.value.sentry)
+    out.push({ key: 'sentry', icon: mdiCctv, text: t('state.openings.sentry') })
+  return out
+})
+
 // A charge running, discharging or failing shows its power, large; otherwise (idle, done,
 // scheduled, unknown) its tile says its status and the cable, small. The engine is not
 // shown: the mode's pill above says it, read from it.
@@ -261,7 +292,7 @@ const update = computed(() => {
     </v-alert>
 
     <!-- What the vehicle is doing, before any value: its mode, and its sleep when it sleeps,
-         large; the climate running and how fresh the values are, small, under it. Tinted
+         large; what runs (charge, climate, battery heater, Sentry) and how fresh the values are, small, beside it. Tinted
          only while it sleeps or is out of reach, which explains the values below. -->
     <header class="headline" :class="sleep?.value" data-test="headline">
       <p class="headline-title">
@@ -278,10 +309,8 @@ const update = computed(() => {
           }}</time>
         </span>
       </p>
-      <span v-if="climateRunning" class="climate-pill">
-        <v-icon :icon="climateRunning.icon" size="16" aria-hidden="true" />{{
-          climateRunning.value
-        }}</span
+      <span v-for="a in activities" :key="a.key" class="activity" :data-test="`activity-${a.key}`">
+        <v-icon :icon="a.icon" size="16" aria-hidden="true" />{{ a.text }}</span
       >
       <div v-if="sleep && extensionSleepActions.length" class="sleep-actions">
         <component
@@ -703,12 +732,13 @@ const update = computed(() => {
   font-weight: 400;
   color: rgb(var(--v-theme-text-secondary));
 }
-.climate-pill {
+.activity {
   font-size: 0.8125rem;
   font-weight: 500;
+  white-space: nowrap;
 }
 /* Inline, so that its text keeps the line's baseline; the icon sits on it. */
-.climate-pill .v-icon {
+.activity .v-icon {
   vertical-align: -3px;
   margin-right: 4px;
 }
