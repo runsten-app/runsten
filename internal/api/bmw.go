@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -224,6 +225,10 @@ func (s *Server) postBMWAuthorization(ctx context.Context, in *bmwClientInput) (
 	case err != nil:
 		s.Log.Warn("BMW device code not given", "err", err)
 		return nil, apiError(http.StatusBadGateway, codeSourceUnavailable, "BMW did not answer, try again later")
+	case !secureURL(d.VerificationURI) || (d.VerificationURIComplete != "" && !secureURL(d.VerificationURIComplete)):
+		// The owner signs in there: never a page another could change on the way.
+		s.Log.Warn("BMW device code with a verification page not over https")
+		return nil, apiError(http.StatusBadGateway, codeSourceUnavailable, "BMW did not answer as expected, try again later")
 	}
 	now := s.Clock.Now()
 	fl := bmwFlow{clientID: in.Body.ClientID, device: d, expires: now.Add(d.ExpiresIn), interval: d.Interval, next: now.Add(d.Interval)}
@@ -238,6 +243,12 @@ func (s *Server) postBMWAuthorization(ctx context.Context, in *bmwClientInput) (
 		out.VerificationURIComplete = &d.VerificationURIComplete
 	}
 	return respond(out), nil
+}
+
+// secureURL reports whether u is an https URL with a host.
+func secureURL(u string) bool {
+	p, err := url.Parse(u)
+	return err == nil && p.Scheme == "https" && p.Host != ""
 }
 
 // pending answers that the owner has not approved the code yet, with when to ask again.

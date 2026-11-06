@@ -67,6 +67,7 @@ type fakeBMW struct {
 	codeErr   error
 	vinsErr   error
 	verifiers []string
+	page      string // the complete verification page, if any
 }
 
 func (f *fakeBMW) DeviceCode(_ context.Context, clientID string) (BMWDevice, error) {
@@ -81,7 +82,8 @@ func (f *fakeBMW) DeviceCode(_ context.Context, clientID string) (BMWDevice, err
 	f.codes++
 	return BMWDevice{
 		DeviceCode: "device-code", Verifier: "verifier", UserCode: "ABCD-EFGH",
-		VerificationURI: "https://customer.bmwgroup.com/oneid/link", ExpiresIn: 5 * time.Minute, Interval: 5 * time.Second,
+		VerificationURI: "https://customer.bmwgroup.com/oneid/link", VerificationURIComplete: f.page,
+		ExpiresIn: 5 * time.Minute, Interval: 5 * time.Second,
 	}, nil
 }
 
@@ -236,6 +238,15 @@ func TestBMWRefusals(t *testing.T) {
 	}
 	wantError(t, body, codeSourceUnavailable)
 	e.bmws.codeErr = nil
+	for _, page := range []string{"http://customer.bmwgroup.com/oneid/link", "javascript:alert(1)"} {
+		e.bmws.page = page
+		resp, body := do(t, noFollow(), http.MethodPost, u+"/authorization", jsonType, clientBody(bmwClientID), c)
+		if resp.status != http.StatusBadGateway {
+			t.Errorf("verification page %q: %d %s", page, resp.status, body)
+		}
+		wantError(t, body, codeSourceUnavailable)
+	}
+	e.bmws.page = ""
 	resp, body = do(t, noFollow(), http.MethodPost, u+"/authorization", "text/plain", clientBody(bmwClientID), c)
 	if resp.status != http.StatusUnsupportedMediaType {
 		t.Errorf("not JSON: %d %s", resp.status, body)
