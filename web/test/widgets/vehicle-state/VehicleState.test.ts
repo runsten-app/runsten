@@ -725,7 +725,7 @@ describe('VehicleState', () => {
     const wheels = (w: Awaited<ReturnType<typeof mounted>>) =>
       w.findAll('[data-test="state-tyres"] .wheel').map((e) =>
         e
-          .findAll('dt, dd')
+          .findAll('dt, .pressure, .warning')
           .map((d) => plain(d.text()))
           .join(' '),
       )
@@ -741,6 +741,8 @@ describe('VehicleState', () => {
       'Rear right Unknown Fault',
     ])
     expect(plain(tile.find('.tyres-head .status-pill').text())).toBe('Needs attention')
+    // A tyre that warns in its tone's color.
+    expect(w.findAll('[data-test="state-tyres"] .wheel')[2]?.classes()).toContain('text-error')
     w.unmount()
     // A car that gives a warning per tyre, no pressure (a Volvo): the warnings, all OK.
     fetchHealth.mockResolvedValue({
@@ -754,7 +756,8 @@ describe('VehicleState', () => {
     // Its tyres alone, without doors: the tile is theirs.
     expect(plain(w.find('[data-test="openings"] h2').text())).toBe('Tyres')
     expect(wheels(w)).toEqual(['Front left OK', 'Front right OK', 'Rear left OK', 'Rear right OK'])
-    expect(plain(w.find('.tyres-head .status-pill').text())).toBe('Nothing to report')
+    // Fine: nothing said of them, no pill.
+    expect(w.find('.tyres-head .status-pill').exists()).toBe(false)
     w.unmount()
     // No tyres: no part, the tile the doors' alone.
     fetchHealth.mockResolvedValue({ ...health, tyres: null })
