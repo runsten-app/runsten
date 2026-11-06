@@ -60,12 +60,12 @@ export function intlLocale(l: Locale, languages: readonly string[], chosen: bool
     const region = regionOf(first)
     if (region) return `${l}-${region}`
   }
-  const own = languages.find((b) => base(b) === l)
-  if (own) return own
-  // A tag Runsten speaks through an alias keeps its own region, in the language spoken
-  // ("no-NO" → "nb-NO").
-  const aliased = languages.find((b) => spoken(b) === l)
-  const region = aliased && statedRegion(aliased)
+  // The first browser language that gives l: its own tag, or through an alias, l in the
+  // alias's region ("no-NO" → "nb-NO").
+  const tag = languages.find((b) => spoken(b) === l)
+  if (!tag) return l
+  if (base(tag) === l) return tag
+  const region = statedRegion(tag)
   return region ? `${l}-${region}` : l
 }
 

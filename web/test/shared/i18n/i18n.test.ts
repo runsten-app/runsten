@@ -42,6 +42,7 @@ describe('intlLocale', () => {
     { locale: 'nb', languages: ['no-NO'], want: 'nb-NO' },
     { locale: 'nb', languages: ['no-US'], want: 'nb-US' },
     { locale: 'nb', languages: ['nn'], want: 'nb' },
+    { locale: 'nb', languages: ['no-US', 'nb-NO'], want: 'nb-US' },
     { locale: 'en', languages: [], want: 'en' },
     // English as a fallback: the region of the browser's first language.
     { locale: 'en', languages: ['pl-PL'], want: 'en-PL' },
