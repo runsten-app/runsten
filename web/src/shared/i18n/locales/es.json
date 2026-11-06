@@ -145,6 +145,10 @@
       "cabin": "Habitáculo",
       "climateOn": "Climatización activada",
       "preconditioning": "Preacondicionamiento",
+      "climateAt": "Climatización a {temp}",
+      "heatingTo": "Calentando a {temp}",
+      "coolingTo": "Enfriando a {temp}",
+      "preconditioningTo": "Preacondicionando a {temp}",
       "batteryHeater": "Calefacción de la batería"
     }
   },
