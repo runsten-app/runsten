@@ -38,8 +38,10 @@ describe('intlLocale', () => {
     { locale: 'sv', languages: ['SV-fi'], want: 'SV-fi' },
     { locale: 'sv', languages: [], want: 'sv' },
     { locale: 'nb', languages: ['nb-NO'], want: 'nb-NO' },
-    // Norwegian said "no": the bare language, Intl's Bokmål.
-    { locale: 'nb', languages: ['no-NO'], want: 'nb' },
+    // Norwegian said "no", or Nynorsk: Bokmål, in the browser's region.
+    { locale: 'nb', languages: ['no-NO'], want: 'nb-NO' },
+    { locale: 'nb', languages: ['no-US'], want: 'nb-US' },
+    { locale: 'nb', languages: ['nn'], want: 'nb' },
     { locale: 'en', languages: [], want: 'en' },
     // English as a fallback: the region of the browser's first language.
     { locale: 'en', languages: ['pl-PL'], want: 'en-PL' },

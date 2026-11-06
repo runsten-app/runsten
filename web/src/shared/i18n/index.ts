@@ -60,7 +60,23 @@ export function intlLocale(l: Locale, languages: readonly string[], chosen: bool
     const region = regionOf(first)
     if (region) return `${l}-${region}`
   }
-  return languages.find((b) => base(b) === l) ?? l
+  const own = languages.find((b) => base(b) === l)
+  if (own) return own
+  // A tag Runsten speaks through an alias keeps its own region, in the language spoken
+  // ("no-NO" → "nb-NO").
+  const aliased = languages.find((b) => spoken(b) === l)
+  const region = aliased && statedRegion(aliased)
+  return region ? `${l}-${region}` : l
+}
+
+// statedRegion is the region a browser language names, if any ("no-US" → "US", "nn" →
+// undefined); undefined for a tag Intl does not read.
+function statedRegion(tag: string): string | undefined {
+  try {
+    return new Intl.Locale(tag).region
+  } catch {
+    return undefined
+  }
 }
 
 // regionOf is a browser language's region, the likeliest when it names none ("pl" → "PL");
