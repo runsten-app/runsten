@@ -13,10 +13,10 @@ function keys(o: object, prefix = ''): string[] {
 describe('initialLocale', () => {
   it.each([
     { stored: 'sv', languages: ['fr-FR'], want: 'sv' },
-    { stored: 'de', languages: ['fr-FR', 'en'], want: 'fr' },
-    { stored: null, languages: ['de-DE', 'sv-SE'], want: 'sv' },
+    { stored: 'pt', languages: ['fr-FR', 'en'], want: 'fr' },
+    { stored: null, languages: ['pt-PT', 'sv-SE'], want: 'sv' },
     { stored: null, languages: ['FR'], want: 'fr' },
-    { stored: null, languages: ['de-DE'], want: 'en' },
+    { stored: null, languages: ['pt-PT'], want: 'en' },
     { stored: null, languages: [], want: 'en' },
   ])('$stored $languages → $want', ({ stored, languages, want }) => {
     expect(initialLocale(stored, languages)).toBe(want)
@@ -32,20 +32,20 @@ describe('intlLocale', () => {
     { locale: 'sv', languages: [], want: 'sv' },
     { locale: 'en', languages: [], want: 'en' },
     // English as a fallback: the region of the browser's first language.
-    { locale: 'en', languages: ['nl-NL'], want: 'en-NL' },
-    { locale: 'en', languages: ['nl-BE', 'de-DE'], want: 'en-BE' },
-    { locale: 'en', languages: ['nl'], want: 'en-NL' },
+    { locale: 'en', languages: ['pl-PL'], want: 'en-PL' },
+    { locale: 'en', languages: ['pt-BR', 'pl-PL'], want: 'en-BR' },
+    { locale: 'en', languages: ['pl'], want: 'en-PL' },
     { locale: 'en', languages: ['x-invalid!'], want: 'en' },
     // A language spoken among the browser's: today's rule.
-    { locale: 'en', languages: ['nl-NL', 'en-US'], want: 'en-US' },
+    { locale: 'en', languages: ['pl-PL', 'en-US'], want: 'en-US' },
   ] as const)('$locale $languages → $want', ({ locale, languages, want }) => {
     expect(intlLocale(locale, languages, false)).toBe(want)
   })
 
   it.each([
-    { locale: 'en', languages: ['nl-NL'], want: 'en' },
-    { locale: 'fr', languages: ['nl-NL'], want: 'fr' },
-    { locale: 'en', languages: ['nl-NL', 'en-GB'], want: 'en-GB' },
+    { locale: 'en', languages: ['pl-PL'], want: 'en' },
+    { locale: 'fr', languages: ['pl-PL'], want: 'fr' },
+    { locale: 'en', languages: ['pl-PL', 'en-GB'], want: 'en-GB' },
   ] as const)('chosen $locale $languages → $want', ({ locale, languages, want }) => {
     expect(intlLocale(locale, languages, true)).toBe(want)
   })
