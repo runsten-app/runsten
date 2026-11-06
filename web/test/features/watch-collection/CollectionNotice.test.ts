@@ -57,6 +57,7 @@ describe('CollectionNotice', () => {
   it.each<[Locale, string, string]>([
     ['en', 'Re-authentication required', 'Since 06:30 · reason: refresh token expired'],
     ['fr', 'Nouvelle authentification requise', 'Depuis 06:30 · raison : refresh token expired'],
+    ['it', 'Nuova autenticazione necessaria', 'Da 06:30 · motivo: refresh token expired'],
     ['sv', 'Ny inloggning krävs', 'Sedan 06:30 · orsak: refresh token expired'],
   ])('asks to connect the Volvo ID again, in %s', async (locale, title, since) => {
     i18n.global.locale.value = locale
@@ -110,6 +111,7 @@ describe('CollectionNotice', () => {
   it.each<[Locale, string]>([
     ['en', "Not read: Volvo's API does not serve this vehicle's market"],
     ['fr', "Non lu : l'API de Volvo ne dessert pas le marché de ce véhicule"],
+    ['it', 'Non letto: l’API di Volvo non serve il mercato di questo veicolo'],
     ['sv', 'Läses inte: Volvos API betjänar inte det här fordonets marknad'],
   ])("tells a market Volvo's API does not serve, in %s", async (locale, title) => {
     i18n.global.locale.value = locale
@@ -137,7 +139,7 @@ describe('CollectionNotice', () => {
   })
 
   // Read from the messages: an instance may word them otherwise.
-  it.each<Locale>(['en', 'fr', 'sv'])(
+  it.each<Locale>(['en', 'fr', 'it', 'sv'])(
     'tells a vehicle the offer leaves unread, in %s',
     async (locale) => {
       i18n.global.locale.value = locale

@@ -11,6 +11,7 @@ describe('LocaleSelect', () => {
     expect(select.props('items')).toEqual([
       { value: 'en', title: 'English' },
       { value: 'fr', title: 'Français' },
+      { value: 'it', title: 'Italiano' },
       { value: 'sv', title: 'Svenska' },
     ])
     select.vm.$emit('update:modelValue', 'fr')
