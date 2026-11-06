@@ -295,6 +295,7 @@ describe('VehicleState', () => {
   it.each<[Locale, string, string]>([
     ['en', 'Unknown', 'Nothing read yet'],
     ['fr', 'Inconnu', "Rien n'a encore été relevé"],
+    ['nl', 'Onbekend', 'Nog niets uitgelezen'],
     ['sv', 'Okänt', 'Inget har lästs ännu'],
   ])('shows what was never read as unknown, in %s', async (locale, unknownText, never) => {
     i18n.global.locale.value = locale
@@ -313,6 +314,7 @@ describe('VehicleState', () => {
   it.each<[Locale, string, string]>([
     ['en', 'Battery capacity', 'Usable, from the variant'],
     ['fr', 'Capacité de la batterie', 'Utile, selon la variante'],
+    ['nl', 'Batterijcapaciteit', 'Bruikbaar, volgens de uitvoering'],
     ['sv', 'Batterikapacitet', 'Användbar, enligt varianten'],
   ])(
     'falls back on the variant where the car reports no capacity, in %s',

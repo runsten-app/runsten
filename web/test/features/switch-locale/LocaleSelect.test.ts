@@ -12,6 +12,7 @@ describe('LocaleSelect', () => {
       { value: 'en', title: 'English' },
       { value: 'fr', title: 'Français' },
       { value: 'nb', title: 'Norsk bokmål' },
+      { value: 'nl', title: 'Nederlands' },
       { value: 'sv', title: 'Svenska' },
     ])
     select.vm.$emit('update:modelValue', 'fr')
