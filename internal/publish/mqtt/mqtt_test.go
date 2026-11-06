@@ -336,10 +336,10 @@ func TestPublish(t *testing.T) {
 	if w := cl.Properties.Will; w.TopicName != "runsten/status" || string(w.Payload) != "offline" || !w.Retain || w.Qos != 1 {
 		t.Errorf("testament = %+v", w)
 	}
-	// online, and the 32 values of the state, the doors' included, and the 15 of the
+	// online, and the 33 values of the state, the doors' included, and the 15 of the
 	// health, the unknown ones empty
-	if n := len(b.takeAtLeast(t, 48)); n != 48 {
-		t.Errorf("%d messages on connection, want 48", n)
+	if n := len(b.takeAtLeast(t, 49)); n != 49 {
+		t.Errorf("%d messages on connection, want 49", n)
 	}
 
 	// Only the value that changed.
@@ -365,7 +365,7 @@ func TestPublish(t *testing.T) {
 	eventually(t, "reconnected", func() bool {
 		synced(t, p, nil)
 		again = append(again, b.take()...)
-		return len(again) >= 48
+		return len(again) >= 49
 	})
 	if s := st.statusOf(); s.Failure != publish.FailUnreachable || s.ConnectedAt.Before(connectedAt) {
 		t.Errorf("status after a loss = %+v", s)
@@ -414,7 +414,7 @@ func TestPublishDiscovery(t *testing.T) {
 	if n := len(b.retainedUnder("homeassistant/#")); n != 27 {
 		t.Errorf("%d configurations, want 27", n)
 	}
-	// Once it tells its climate, its 5 entities.
+	// Once it tells its climate, its 6 entities.
 	climate := core.Latest([]core.Record{{FetchedAt: t0, CheckedAt: t0, Snapshot: core.Snapshot{
 		Covers: core.FieldSoC | core.FieldEngine | core.FieldPosition | core.FieldClimate,
 		SoC:    core.Some(80.0, t0), Engine: core.Some(core.EngineStopped, t0),
@@ -425,7 +425,7 @@ func TestPublishDiscovery(t *testing.T) {
 	if err := p.Publish(context.Background(), account, vehicle); err != nil {
 		t.Fatal(err)
 	}
-	eventually(t, "climate configured", func() bool { return len(b.retainedUnder("homeassistant/#")) == 32 })
+	eventually(t, "climate configured", func() bool { return len(b.retainedUnder("homeassistant/#")) == 33 })
 	if got := b.retained()[state+"outside_temp_c"]; got != "4.5" {
 		t.Errorf("outside_temp_c = %q", got)
 	}

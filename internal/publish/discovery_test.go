@@ -103,7 +103,7 @@ func TestDiscovery(t *testing.T) {
 	m.Climate = false
 	m.Openings = 1 // the lock, the first part
 	removed := RemoveDiscovery(b, vehicle)
-	optional := []string{"/outside_temperature/", "/cabin_temperature/", "/climate/", "/preconditioning/", "/battery_heater/"}
+	optional := []string{"/outside_temperature/", "/cabin_temperature/", "/climate/", "/preconditioning/", "/battery_heater/", "/climate_setpoint/"}
 	for _, p := range parts() {
 		if p.topic != "locked" {
 			optional = append(optional, "/"+p.topic+"/")
@@ -126,7 +126,7 @@ func TestDiscovery(t *testing.T) {
 
 func TestRemoveState(t *testing.T) {
 	msgs := RemoveState(broker(true), vehicle)
-	if len(msgs) != 34+15 {
+	if len(msgs) != 35+15 {
 		t.Fatalf("%d messages", len(msgs))
 	}
 	for _, m := range msgs {
