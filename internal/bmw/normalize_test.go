@@ -162,6 +162,31 @@ func TestNormalizeBasicData(t *testing.T) {
 	if !s.PlugInHybrid() || s.ModelYear.V != 2024 {
 		t.Errorf("phev: %+v", s)
 	}
+	// Nothing of the sheet nor the capacity told: covered, unknown.
+	if s.Covers&(core.FieldCapacity|core.FieldSheet) != core.FieldCapacity|core.FieldSheet || s.CapacityKWh.OK || s.Sheet.OK {
+		t.Errorf("phev's sheet: %+v", s)
+	}
+}
+
+func TestNormalizeBasicDataSheet(t *testing.T) {
+	// The OpenAPI's brand of the i models, BMWi; the capacity a string, or a number.
+	for _, capacity := range []string{`"83.9"`, `83.9`} {
+		s := mustNormalize(t, BasicData, `{"brand":"BMWi","modelName":"i4 eDrive40","propulsionType":"BEV",
+			"steering":"LL","colourCode":"C4P","colourCodeRaw":"C4P1","hvsMaxEnergyAbsolute":`+capacity+`}`)
+		if s.Brand.V != "bmw" {
+			t.Errorf("brand: %+v", s.Brand)
+		}
+		if s.CapacityKWh != core.Some(83.9, time.Time{}) {
+			t.Errorf("capacity %s: %+v", capacity, s.CapacityKWh)
+		}
+		if s.Sheet.V != (core.Sheet{Colour: "C4P", Steering: core.LeftHand}) {
+			t.Errorf("sheet: %+v", s.Sheet)
+		}
+	}
+	s := mustNormalize(t, BasicData, `{"brand":"MINI","steering":"RL","colourCodeRaw":"B71","hvsMaxEnergyAbsolute":"0"}`)
+	if s.Sheet.V != (core.Sheet{Colour: "B71", Steering: core.RightHand}) || s.CapacityKWh.OK {
+		t.Errorf("right hand, raw colour, no capacity: %+v", s)
+	}
 }
 
 func TestFingerprintIgnoresTimestamps(t *testing.T) {

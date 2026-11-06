@@ -185,6 +185,9 @@ func TestSimulatorAPI(t *testing.T) {
 	if m.Brand.V != "bmw" || m.Family.V != "i4" || m.Trim.V != "edrive40" || m.ModelYear.V != 2024 || !m.BatteryElectric() {
 		t.Errorf("model: %+v", m)
 	}
+	if m.CapacityKWh.V != 83.9 || m.Sheet.V != (core.Sheet{Colour: "C4P", Steering: core.LeftHand}) {
+		t.Errorf("capacity and sheet: %+v %+v", m.CapacityKWh, m.Sheet)
+	}
 
 	// The container, created once, then found again.
 	id, err := s.EnsureContainer(ctx, tok.Access)

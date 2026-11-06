@@ -295,8 +295,11 @@ func (h *Handler) basicData(w http.ResponseWriter, r *http.Request) {
 	if f := strings.Fields(spec.Model); len(f) > 0 {
 		series = f[0]
 	}
-	if c.src.Brand() == "mini" {
+	switch {
+	case c.src.Brand() == "mini":
 		brand = "MINI"
+	case strings.HasPrefix(series, "i"):
+		brand = "BMWi" // the OpenAPI's brand of the i models
 	}
 	propulsion := "BEV"
 	if spec.PlugInHybrid {
@@ -309,7 +312,7 @@ func (h *Handler) basicData(w http.ResponseWriter, r *http.Request) {
 		"engine": "", "driveTrain": propulsion, "propulsionType": propulsion, "chargingModes": []string{"AC_TYPE2PLUG", "DC"},
 		"constructionDate":     strconv.Itoa(spec.ModelYear-1) + "-11-01T00:00:00.000Z",
 		"hvsMaxEnergyAbsolute": strconv.FormatFloat(spec.BatteryKWh, 'f', 1, 64), "simStatus": "ACTIVE",
-		"colourCode": "", "colourCodeRaw": "", "puStep": "", "fullSAList": "",
+		"colourCode": "C4P", "colourCodeRaw": "C4P", "puStep": "", "fullSAList": "",
 	})
 }
 

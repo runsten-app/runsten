@@ -2,8 +2,10 @@ package bmw
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -361,23 +363,44 @@ type basicData struct {
 	PropulsionType   string `json:"propulsionType"`
 	DriveTrain       string `json:"driveTrain"`
 	ConstructionDate string `json:"constructionDate"`
+	Steering         string `json:"steering"`
+	ColourCode       string `json:"colourCode"`
+	ColourCodeRaw    string `json:"colourCodeRaw"`
+	// HVSMaxEnergy is the high-voltage battery's capacity, in kWh, a string in CarData's
+	// OpenAPI; a number read too.
+	HVSMaxEnergy json.RawMessage `json:"hvsMaxEnergyAbsolute"`
 }
 
-// brands maps basicData's brand to the catalog's; another brand (a BMW motorcycle, a
-// Rolls-Royce) is absent.
-var brands = map[string]string{"BMW": "bmw", "BMW I": "bmw", "MINI": "mini"}
+// brands maps basicData's brand, upper-cased, to the catalog's: BMWi is the OpenAPI's
+// for the i models. Another brand (a BMW motorcycle, a Rolls-Royce) is absent.
+var brands = map[string]string{"BMW": "bmw", "BMWI": "bmw", "BMW I": "bmw", "MINI": "mini"}
+
+// steerings maps basicData's steering: LL and RL, BMW's codes (Linkslenker, Rechtslenker).
+var steerings = map[string]core.Steering{"LL": core.LeftHand, "RL": core.RightHand}
 
 // normalizeBasicData reads the model: the brand, the family and the trim from the model's
-// name (i4 eDrive40: i4 and edrive40), the powertrain, and the model year. Assumed: the
-// model year is the construction's, or the next one for a car built from July on, when
-// BMW's model year changes.
+// name (i4 eDrive40: i4 and edrive40), the powertrain, and the model year; the battery's
+// capacity; and the sheet: the colour, as BMW codes it, and the steering side. Assumed:
+// the model year is the construction's, or the next one for a car built from July on,
+// when BMW's model year changes; hvsMaxEnergyAbsolute is the gross capacity, as the
+// catalog's gross_kwh it is matched with.
 func normalizeBasicData(raw []byte) (core.Snapshot, error) {
 	var s core.Snapshot
 	var b basicData
 	if err := json.Unmarshal(raw, &b); err != nil {
 		return s, fmt.Errorf("normalize %s: %w", BasicData, err)
 	}
-	s.Covers |= core.FieldModel
+	s.Covers |= core.FieldModel | core.FieldCapacity | core.FieldSheet
+	if n, ok := kWh(b.HVSMaxEnergy); ok {
+		s.CapacityKWh = core.Some(n, time.Time{})
+	}
+	sheet := core.Sheet{
+		Colour:   strings.TrimSpace(cmp.Or(b.ColourCode, b.ColourCodeRaw)),
+		Steering: steerings[strings.ToUpper(strings.TrimSpace(b.Steering))],
+	}
+	if sheet != (core.Sheet{}) {
+		s.Sheet = core.Some(sheet, time.Time{})
+	}
 	if brand, ok := brands[strings.ToUpper(strings.TrimSpace(b.Brand))]; ok {
 		s.Brand = core.Some(brand, time.Time{})
 	}
@@ -403,6 +426,16 @@ func normalizeBasicData(raw []byte) (core.Snapshot, error) {
 		s.ModelYear = core.Some(y, time.Time{})
 	}
 	return s, nil
+}
+
+// kWh reads a capacity above zero, a JSON string or number.
+func kWh(raw json.RawMessage) (float64, bool) {
+	var str string
+	if json.Unmarshal(raw, &str) != nil {
+		str = string(raw)
+	}
+	n, err := strconv.ParseFloat(strings.TrimSpace(str), 64)
+	return n, err == nil && n > 0 && !math.IsInf(n, 0)
 }
 
 // NormalizeHealth converts a raw response of endpoint e into a health reading: the
