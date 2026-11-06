@@ -12,6 +12,7 @@ describe('LocaleSelect', () => {
       { value: 'en', title: 'English' },
       { value: 'fr', title: 'Français' },
       { value: 'sv', title: 'Svenska' },
+      { value: 'es', title: 'Español' },
     ])
     select.vm.$emit('update:modelValue', 'fr')
     expect(i18n.global.locale.value).toBe('fr')
