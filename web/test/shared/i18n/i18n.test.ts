@@ -3,6 +3,7 @@ import { i18n, initialLocale, intlLocale, localeChosen, setLocale } from '@/shar
 import de from '@/shared/i18n/locales/de.json'
 import en from '@/shared/i18n/locales/en.json'
 import fr from '@/shared/i18n/locales/fr.json'
+import nl from '@/shared/i18n/locales/nl.json'
 import sv from '@/shared/i18n/locales/sv.json'
 
 function keys(o: object, prefix = ''): string[] {
@@ -17,6 +18,7 @@ describe('initialLocale', () => {
     { stored: 'pt', languages: ['fr-FR', 'en'], want: 'fr' },
     { stored: null, languages: ['pt-PT', 'sv-SE'], want: 'sv' },
     { stored: null, languages: ['FR'], want: 'fr' },
+    { stored: null, languages: ['nl-BE', 'fr-BE'], want: 'nl' },
     { stored: null, languages: ['pt-PT'], want: 'en' },
     { stored: null, languages: [], want: 'en' },
   ])('$stored $languages → $want', ({ stored, languages, want }) => {
@@ -55,6 +57,7 @@ describe('intlLocale', () => {
 describe('messages', () => {
   it('have the same keys in every language', () => {
     expect(keys(fr).sort()).toEqual(keys(en).sort())
+    expect(keys(nl).sort()).toEqual(keys(en).sort())
     expect(keys(sv).sort()).toEqual(keys(en).sort())
     expect(keys(de).sort()).toEqual(keys(en).sort())
   })
