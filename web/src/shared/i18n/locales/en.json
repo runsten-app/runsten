@@ -140,7 +140,6 @@
       "version": "{version}: {status}"
     },
     "climate": {
-      "title": "Climate",
       "outside": "Outside",
       "cabin": "Cabin",
       "climateOn": "Climate on",

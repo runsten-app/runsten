@@ -140,7 +140,6 @@
       "version": "{version}: {status}"
     },
     "climate": {
-      "title": "Klima",
       "outside": "Außen",
       "cabin": "Innenraum",
       "climateOn": "Klimatisierung an",

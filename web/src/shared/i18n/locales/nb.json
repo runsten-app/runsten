@@ -140,7 +140,6 @@
       "version": "{version}: {status}"
     },
     "climate": {
-      "title": "Klima",
       "outside": "Ute",
       "cabin": "Kupé",
       "climateOn": "Klima på",

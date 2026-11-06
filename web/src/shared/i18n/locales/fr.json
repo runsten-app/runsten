@@ -140,7 +140,6 @@
       "version": "{version} : {status}"
     },
     "climate": {
-      "title": "Climatisation",
       "outside": "Extérieur",
       "cabin": "Habitacle",
       "climateOn": "Climatisation en marche",

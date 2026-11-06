@@ -209,8 +209,9 @@ const vehicleTile = computed(() => {
 
 // The climate, only while it runs: preconditioning first, which runs it too. Its setpoint
 // against the cabin's temperature tells which way it goes: half a degree apart or more,
-// it heats or cools; closer, it holds. Said in the state's line, for a glance, and under
-// the cabin's temperature.
+// it heats or cools; closer, it holds. Said in the headline, for a glance, and in the
+// vehicle's title, as each tile says in a pill what of it runs (the charge its status, the
+// battery its heater, the doors Sentry Mode).
 const climateRunning = computed(() => {
   const c = state.value?.climate
   const reading = c?.preconditioning?.value ? c.preconditioning : c?.on?.value ? c.on : null
@@ -341,7 +342,12 @@ const update = computed(() => {
     <v-row density="compact" class="tiles">
       <v-col cols="12">
         <v-card class="tile battery h-100">
-          <v-card-title tag="h2">{{ t('state.battery') }}</v-card-title>
+          <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
+            {{ t('state.battery') }}
+            <StatusPill v-if="batteryHeating" tone="success" :icon="mdiHeatingCoil" class="heater">
+              {{ t('state.climate.batteryHeater') }}
+            </StatusPill>
+          </v-card-title>
           <v-card-text class="tile-body">
             <dl class="hero-row">
               <ReadingItem
@@ -410,18 +416,11 @@ const update = computed(() => {
               />
               <div class="under-bar d-flex flex-wrap justify-space-between ga-2 mt-2">
                 <ReadingProvenance :reading="state.soc_pct" :now="now" :connection="connection" />
-                <span v-if="batteryHeating" class="heater">{{
-                  t('state.climate.batteryHeater')
-                }}</span>
                 <span v-if="state.charging.target_soc_pct" class="target">
                   {{ t('state.charging.target') }}
                   <strong>{{ quantity(state.charging.target_soc_pct, 'percent') }}</strong>
                 </span>
               </div>
-            </div>
-            <!-- Without a state of charge, no line under its bar to say it on. -->
-            <div v-if="batteryHeating && !state.soc_pct" class="under-bar">
-              <span class="heater">{{ t('state.climate.batteryHeater') }}</span>
             </div>
           </v-card-text>
         </v-card>
@@ -535,7 +534,17 @@ const update = computed(() => {
       <!-- The vehicle, its position on a map beside it where there is one. -->
       <v-col cols="12" :md="mapShown ? 6 : 12">
         <v-card class="tile h-100">
-          <v-card-title tag="h2">{{ t('state.vehicle') }}</v-card-title>
+          <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
+            {{ t('state.vehicle') }}
+            <StatusPill
+              v-if="climateRunning"
+              tone="success"
+              :icon="climateRunning.icon"
+              class="climate-running"
+            >
+              {{ climateRunning.value }}
+            </StatusPill>
+          </v-card-title>
           <v-card-text class="tile-body">
             <!-- The vendor's picture, when it gives one (a Volvo's). -->
             <VehiclePicture v-if="current" :vehicle="current" size="large" class="mb-2" />
@@ -568,22 +577,6 @@ const update = computed(() => {
                 :connection="connection"
                 :tile="vehicleTile"
                 class="cabin"
-              >
-                <span v-if="climateRunning" class="climate-running d-block mt-1">{{
-                  climateRunning.value
-                }}</span>
-              </ReadingItem>
-              <!-- Without the cabin's temperature, what runs says itself. -->
-              <ReadingItem
-                v-else-if="climateRunning"
-                :label="t('state.climate.title')"
-                :reading="climateRunning.reading"
-                :value="climateRunning.value"
-                :now="now"
-                :connection="connection"
-                :tile="vehicleTile"
-                size="small"
-                class="climate"
               />
               <!-- A source that tells its software (a Tesla); nothing for the others. -->
               <ReadingItem

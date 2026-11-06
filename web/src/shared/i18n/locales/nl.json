@@ -140,7 +140,6 @@
       "version": "{version}: {status}"
     },
     "climate": {
-      "title": "Klimaat",
       "outside": "Buiten",
       "cabin": "Interieur",
       "climateOn": "Klimaatregeling aan",

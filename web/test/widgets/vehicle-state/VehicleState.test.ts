@@ -532,8 +532,10 @@ describe('VehicleState', () => {
       windows: { ...at, value: { ...windows, front_left: 'open', rear_right: 'open' } },
     })
     expect(line(w)).toBe(
-      'Unlocked | Open: front left window and rear right window | Ajar: rear left door | Sentry Mode on',
+      'Unlocked | Open: front left window and rear right window | Ajar: rear left door',
     )
+    // Sentry Mode watching, in the tile's title, as each tile says what of it runs.
+    expect(plain(w.find('[data-test="openings"] h2 .sentry').text())).toBe('Sentry Mode on')
     expect(w.find('[data-test="openings"] .measured').text()).toBe('The car last measured 15:00')
     w.unmount()
     // The windows alone, the lock untold: no pill, and closed said of the windows only.
@@ -639,7 +641,8 @@ describe('VehicleState', () => {
     })
     expect(w.find('[data-test=activity-climate]').exists()).toBe(false)
     expect(w.find('.climate-running').exists()).toBe(false)
-    // Without the cabin's temperature, nor a state of charge: what runs still says itself.
+    // Without the cabin's temperature, nor a state of charge: what runs still says itself,
+    // in the titles of the vehicle and the battery.
     w.unmount()
     w = await mounted({
       ...state,
@@ -647,8 +650,8 @@ describe('VehicleState', () => {
       climate: { ...climate, cabin_temp_c: null },
     })
     expect(() => reading(w, 'Cabin')).toThrow()
-    expect(reading(w, 'Climate').value).toBe('Climate on')
-    expect(w.find('.heater').text()).toBe('Battery heating')
+    expect(plain(w.find('h2 .climate-running').text())).toBe('Climate on')
+    expect(plain(w.find('h2 .heater').text())).toBe('Battery heating')
     // A car without: neither the temperatures nor an Unknown in their place.
     w.unmount()
     w = await mounted(state)
@@ -656,7 +659,6 @@ describe('VehicleState', () => {
     expect(() => reading(w, 'Cabin')).toThrow()
     expect(w.find('.climate-running').exists()).toBe(false)
     expect(w.find('[data-test=activity-climate]').exists()).toBe(false)
-    expect(() => reading(w, 'Climate')).toThrow()
     expect(w.find('.heater').exists()).toBe(false)
   })
 
