@@ -348,7 +348,7 @@ func TestRefusals(t *testing.T) {
 
 	// Left unread: the subscription is closed.
 	f.clk.Advance(idleClose)
-	f.src.sweep()
+	f.src.sweep("")
 	if st := f.src.StreamState("c"); st != (StreamState{}) {
 		t.Errorf("unread subscription kept: %+v", st)
 	}
