@@ -431,12 +431,14 @@ const update = computed(() => {
         <v-card class="tile charging h-100" data-test="charging">
           <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
             {{ t('state.charging.title') }}
+            <!-- A pill only for what the charge does or has done: idle, or unknown, says nothing. -->
             <StatusPill
-              :tone="state.charging.status ? statusTones[state.charging.status.value] : 'neutral'"
+              v-if="state.charging.status && state.charging.status.value !== 'idle'"
+              :tone="statusTones[state.charging.status.value]"
               class="charging-status"
             >
               <span class="d-sr-only">{{ t('state.charging.status') }}:</span>
-              {{ label(state.charging.status, statusLabels) ?? f.unknown() }}
+              {{ statusLabels[state.charging.status.value] }}
             </StatusPill>
           </v-card-title>
           <v-card-text class="tile-body">

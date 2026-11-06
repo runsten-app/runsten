@@ -189,7 +189,10 @@ describe('VehicleState', () => {
       const w = await mounted(parked)
       const tile = w.find('.v-card[data-test="charging"]')
       expect(tile.find('h2').text()).toContain('Charging')
-      expect(plain(tile.find('.charging-status').text())).toMatch(/^Status: /)
+      // Idle says nothing worth a pill; done or scheduled does.
+      const pill = tile.find('.charging-status')
+      if (value === 'idle') expect(pill.exists()).toBe(false)
+      else expect(plain(pill.text())).toMatch(/^Status: /)
       expect(reading(w, 'Cable').value).toBe('Connected')
       expect(reading(w, 'Type').value).toBe('AC')
       // No power to tell while nothing charges, the target under the bar only.
@@ -304,7 +307,8 @@ describe('VehicleState', () => {
     // target (no bar to show it).
     expect(values).toHaveLength(8)
     expect(new Set(values)).toEqual(new Set([unknownText]))
-    expect(w.find('.charging-status').text()).toContain(unknownText)
+    // A status unknown says nothing worth a pill.
+    expect(w.find('.charging-status').exists()).toBe(false)
     expect(w.text()).toContain(never)
     expect(w.findAll('time')).toHaveLength(0)
     expect(w.find('a[target="_blank"]').exists()).toBe(false)
