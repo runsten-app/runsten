@@ -145,6 +145,10 @@
       "cabin": "Innenraum",
       "climateOn": "Klimatisierung an",
       "preconditioning": "Vorkonditionierung",
+      "climateAt": "Klimatisierung auf {temp}",
+      "heatingTo": "Heizt auf {temp}",
+      "coolingTo": "Kühlt auf {temp}",
+      "preconditioningTo": "Vorkonditionierung auf {temp}",
       "batteryHeater": "Batterieheizung"
     }
   },
