@@ -214,15 +214,17 @@ func (f *bmwFlows) end(account string, gen uint64) {
 	}
 }
 
-// drop forgets the account's flow, whichever it is: the connection is removed.
-// It waits for a completion being stored.
-func (f *bmwFlows) drop(account string) {
+// drop forgets the account's flow, whichever it is, and runs remove, the connection's
+// removal, both under the account's lock: a completion being stored is waited for, and
+// none, of this flow or a new one, is stored before remove is done.
+func (f *bmwFlows) drop(account string, remove func() error) error {
 	l := f.account(account)
 	l.Lock()
 	defer l.Unlock()
 	f.mu.Lock()
-	defer f.mu.Unlock()
 	delete(f.pending, account)
+	f.mu.Unlock()
+	return remove()
 }
 
 // commit runs store while the account's flow is still gen, under the account's lock, so
@@ -422,8 +424,7 @@ func (s *Server) postBMWToken(ctx context.Context, _ *struct{}) (*body[connectio
 
 func (s *Server) deleteBMW(ctx context.Context, _ *struct{}) (*struct{}, error) {
 	account := sessionFrom(ctx).AccountID
-	s.bmwFlows.drop(account)
-	if err := s.BMW.DeleteBMW(ctx, account); err != nil {
+	if err := s.bmwFlows.drop(account, func() error { return s.BMW.DeleteBMW(ctx, account) }); err != nil {
 		return nil, s.internal("BMW connection not deleted", err)
 	}
 	s.Log.Info("BMW connection deleted", "account", account)

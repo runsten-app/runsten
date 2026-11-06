@@ -416,7 +416,7 @@ func TestBMWFlowGenerations(t *testing.T) {
 		t.Fatalf("the new flow: %+v, %v, %v", next, retry, ok)
 	}
 	// Removed while it polls: nothing is stored.
-	f.drop("a")
+	_ = f.drop("a", func() error { return nil })
 	if ok, _ := f.commit("a", next.gen, func() error { stored = true; return nil }); ok || stored {
 		t.Error("committed after a removal")
 	}
@@ -446,7 +446,7 @@ func TestBMWCommitPerAccount(t *testing.T) {
 		t.Error("another account's start refused")
 	}
 	dropped := make(chan struct{})
-	go func() { f.drop("a"); close(dropped) }()
+	go func() { _ = f.drop("a", func() error { return nil }); close(dropped) }()
 	select {
 	case <-dropped:
 		t.Fatal("removed while its completion was being stored")
@@ -459,5 +459,37 @@ func TestBMWCommitPerAccount(t *testing.T) {
 	<-dropped
 	if _, _, ok := f.take("a", t0); ok {
 		t.Error("the flow outlived its removal")
+	}
+}
+
+// TestBMWRemovalOrdered: no completion, of a new flow either, is stored while the
+// connection is being removed.
+func TestBMWRemovalOrdered(t *testing.T) {
+	var f bmwFlows
+	t0 := time.Date(2026, 9, 28, 5, 0, 0, 0, time.UTC)
+	flow := bmwFlow{expires: t0.Add(5 * time.Minute), interval: 5 * time.Second, next: t0}
+	removing, release := make(chan struct{}), make(chan struct{})
+	removed := make(chan struct{})
+	go func() {
+		_ = f.drop("a", func() error { close(removing); <-release; return nil })
+		close(removed)
+	}()
+	<-removing
+	started := make(chan uint64)
+	go func() {
+		f.start("a", flow, t0)
+		fl, _, _ := f.take("a", t0)
+		started <- fl.gen
+	}()
+	select {
+	case <-started:
+		t.Fatal("a new flow started while the connection was being removed")
+	case <-time.After(50 * time.Millisecond):
+	}
+	close(release)
+	<-removed
+	gen := <-started
+	if ok, err := f.commit("a", gen, func() error { return nil }); !ok || err != nil {
+		t.Errorf("the new flow after the removal: %v, %v", ok, err)
 	}
 }
