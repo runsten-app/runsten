@@ -1233,12 +1233,18 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ReadingBool"
             - type: "null"
+        setpoint_c:
+          description: "The cabin temperature the climate is set to, in °C, whether it runs or not: above the cabin's, a climate running heats it; below, it cools it."
+          oneOf:
+            - $ref: "#/components/schemas/ReadingFloat64"
+            - type: "null"
       required:
         - outside_temp_c
         - cabin_temp_c
         - "on"
         - preconditioning
         - battery_heater
+        - setpoint_c
       type: object
     Collection:
       additionalProperties: false

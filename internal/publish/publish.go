@@ -133,6 +133,7 @@ func State(b Broker, vehicleID string, c core.Current) []Message {
 		{"climate", running(n.Climate, func(c core.Climate) core.Value[bool] { return c.On })},
 		{"preconditioning", running(n.Climate, func(c core.Climate) core.Value[bool] { return c.Preconditioning })},
 		{"battery_heater", running(n.Climate, func(c core.Climate) core.Value[bool] { return c.BatteryHeater })},
+		{"climate_setpoint_c", text(n.Climate.V.SetpointC, number)},
 	}
 	for _, p := range parts() {
 		values = append(values, struct{ name, payload string }{p.topic, text(p.value(n), str[string])})
