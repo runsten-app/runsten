@@ -215,17 +215,18 @@ var locks = map[string]bool{
 	"UNLOCKED": false, "SELECTIVE-LOCKED": false, "SELECTIVELOCKED": false,
 }
 
-// opening reads the descriptor's opening; at is moved to its time when later.
+// opening reads the descriptor's opening; at is moved to its time when later and the
+// value known, so that a word not read never dates what was.
 func opening(v values, k string, at *time.Time) (core.Value[core.Opening], bool) {
 	d, t, ok := v.get(k)
 	if !ok {
 		return core.Value[core.Opening]{}, false
 	}
-	if t.After(*at) {
-		*at = t
-	}
 	w, _ := d.text()
 	if o, ok := openings[strings.ToUpper(w)]; ok {
+		if t.After(*at) {
+			*at = t
+		}
 		return core.Some(o, t), true
 	}
 	return core.Value[core.Opening]{}, true
@@ -255,11 +256,11 @@ func doors(v values, s *core.Snapshot) {
 	}
 	if l, t, ok := v.get(DescLock); ok {
 		seen = true
-		if t.After(at) {
-			at = t
-		}
 		w, _ := l.text()
 		if locked, ok := locks[strings.ToUpper(w)]; ok {
+			if t.After(at) {
+				at = t
+			}
 			d.Locked = core.Some(locked, t)
 		}
 	}

@@ -301,6 +301,17 @@ func TestNormalizeDoorsAndWindows(t *testing.T) {
 		}
 	}
 
+	// A word not read, newer than every value read, does not date them.
+	s = mustNormalize(t, Stream, `{"telematicData":{
+		"vehicle.cabin.door.row1.driver.isOpen":{"value":"CLOSED","timestamp":"2026-10-01T08:00:00Z"},
+		"vehicle.body.hood.isOpen":{"value":"INVALID","timestamp":"2026-10-01T08:00:30Z"},
+		"vehicle.cabin.door.lock.status":{"value":"UNKNOWN","timestamp":"2026-10-01T08:00:40Z"},
+		"vehicle.cabin.window.row1.driver.status":{"value":"CLOSED","timestamp":"2026-10-01T08:00:00Z"},
+		"vehicle.cabin.sunroof.status":{"value":"INVALID","timestamp":"2026-10-01T08:00:50Z"}}}`)
+	if s.Doors.At != at(0) || s.Windows.At != at(0) || s.Doors.V.Hood.OK || s.Doors.V.Locked.OK {
+		t.Errorf("dated by a word not read: %+v %+v", s.Doors, s.Windows)
+	}
+
 	// Without one of them, neither is covered: the previous holds.
 	if s := mustNormalize(t, Stream, `{"telematicData":{}}`); s.Covers&(core.FieldDoors|core.FieldWindows) != 0 {
 		t.Errorf("covers %b", s.Covers)
