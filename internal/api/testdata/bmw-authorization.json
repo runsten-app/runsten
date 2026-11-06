@@ -1,0 +1,7 @@
+{
+  "user_code": "ABCD-EFGH",
+  "verification_uri": "https://customer.bmwgroup.com/oneid/link",
+  "verification_uri_complete": null,
+  "expires_at": "2026-09-28T05:05:00Z",
+  "interval": 5
+}

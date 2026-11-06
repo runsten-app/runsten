@@ -108,6 +108,13 @@ func TestRecognize(t *testing.T) {
 		{"XC40 2021 at a hybrid's capacity, read electric", with(phev("XC40", 2021, 10.7), func(r *Reading) { r.Powertrain = Electric }), ""},
 		{"XC40 2022 at an electric's capacity, read hybrid", phev("XC40", 2022, 78.012), ""},
 		{"Polestar 1, by its brand", Reading{Brand: Polestar, ModelYear: 2020, CapacityKWh: 34, Powertrain: PlugInHybrid}, "ps1-2020"},
+		// BMW's basicData tells the family (the model's first word) and the year, not the battery.
+		{"iX3 of the Neue Klasse", Reading{Brand: BMW, Family: "iX3", ModelYear: 2026, Powertrain: Electric}, "ix3-50-xdrive-2026"},
+		{"iX3 G08", Reading{Brand: BMW, Family: "iX3", ModelYear: 2023, Powertrain: Electric}, "ix3-2022"},
+		{"Cooper E and SE share a family: the capacity tells", Reading{Brand: Mini, Family: "Cooper", ModelYear: 2025, CapacityKWh: 54.2, Powertrain: Electric}, "cooper-se-2024"},
+		{"Cooper, capacity unknown", Reading{Brand: Mini, Family: "Cooper", ModelYear: 2025, Powertrain: Electric}, ""},
+		{"i4 eDrive35 of 2023", Reading{Brand: BMW, Family: "i4", ModelYear: 2023, CapacityKWh: 70.2, Powertrain: Electric}, "i4-edrive35-2023"},
+		{"i4 eDrive40 of 2023", Reading{Brand: BMW, Family: "i4", ModelYear: 2023, CapacityKWh: 83.9, Powertrain: Electric}, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

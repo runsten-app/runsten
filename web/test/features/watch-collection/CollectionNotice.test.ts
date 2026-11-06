@@ -286,6 +286,53 @@ describe('CollectionNotice', () => {
     expect(alert.text()).toContain(body)
   })
 
+  // bmw is the Polestar of the fixtures as a BMW, its collection patched.
+  function bmw(
+    patch: Partial<Vehicle> = {},
+    collection = {},
+    credential: Vehicle['connection']['credential'] = 'set',
+  ): Vehicle | undefined {
+    const v = shared(collection)
+    return v && { ...v, connection: { ...v.connection, provider: 'bmw', credential }, ...patch }
+  }
+
+  it.each<[string, Vehicle | undefined, string, string]>([
+    [
+      'its connection refused',
+      bmw({}, {}, 'refused'),
+      'Not read: BMW refused the connection',
+      "the client ID's subscription withdrawn in the portal",
+    ],
+    [
+      'its connection removed',
+      bmw({}, {}, 'missing'),
+      'Not read: no BMW connected',
+      'your BMW connection, which was removed',
+    ],
+    [
+      'no longer the main user',
+      bmw({ unshared_at: '2026-09-28T07:00:00Z' }),
+      "Not read: the BMW account is no longer the car's main user",
+      'no longer the main user of this car',
+    ],
+    [
+      'its calls of the day used up',
+      bmw({}, { quota: [{ api: 'bmw', until: '2026-09-28T09:00:00Z' }] }),
+      'Daily calls to BMW reached until 09:00',
+      'at most 40 calls a day to BMW',
+    ],
+    [
+      'a pause',
+      bmw({}, { paused_until: '2026-09-28T07:30:00Z' }),
+      'Paused by BMW until 07:30',
+      'BMW limited the number of calls.',
+    ],
+  ])('tells a BMW %s', async (_, v, title, body) => {
+    const alert = await notice(v)
+    expect(plain(alert.find('.v-alert-title').text())).toBe(title)
+    expect(alert.text()).toContain(body)
+  })
+
   // polestarId is the Polestar of the fixtures read with the Polestar ID.
   function polestarId(
     patch: Partial<Vehicle> = {},

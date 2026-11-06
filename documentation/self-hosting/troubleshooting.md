@@ -27,6 +27,7 @@ The **Connection** page of the web interface tells what the collector did on its
 - **Market not served**: the Volvo Cars API refuses the car, its market being one it does not serve ("Vehicle does not belong to allowed markets"). Nothing can be read of it: the collector marks it and no longer polls it. A new connection of the Volvo ID tries it again.
 - **Polestar credential refused**, **vehicle no longer shared**, **domain not granted**: the Data Portal refused the owner's credential (expired after its 90 days), no longer lets it read the car, or it lacks a domain ([Your Polestar](../guide/polestar.md#when-it-is-not-read)). The instance must reach `pc-api.polestar.com` over https.
 - **Tesla refresh token refused**, **vehicle no longer in the account**: the Tesla token was revoked or the car left the account ([Your Tesla](../guide/tesla.md#when-it-is-not-read)).
+- **BMW connection refused**, **stream held by another application**: BMW ended Runsten's access, or Home Assistant's CarData integration or evcc holds the account's only stream ([Your BMW or Mini](../guide/bmw.md#when-it-is-not-read)).
 - **Polestar ID refused**: the Polestar ID ended the session or refused the password; connect it again ([Your Polestar, with the Polestar ID](../guide/polestar-id.md#when-it-is-not-read)).
 - **Collector stopped**: no pass for 15 minutes. Look at `docker compose logs collector`.
 

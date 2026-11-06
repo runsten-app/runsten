@@ -1256,7 +1256,8 @@
     "brand": {
       "volvo": "Volvo",
       "polestar": "Polestar",
-      "tesla": "Tesla"
+      "tesla": "Tesla",
+      "bmw": "BMW"
     },
     "brandAttention": "needs your attention",
     "outcome": {
@@ -1319,7 +1320,12 @@
       "quotaTesla": "Daily calls to Tesla reached until {time}",
       "credentialRefusedPolestarId": "Not read: the Polestar ID refused the sign-in",
       "credentialMissingPolestarId": "Not read: no Polestar ID connected",
-      "unsharedPolestarId": "Not read: the car is no longer in the Polestar ID"
+      "unsharedPolestarId": "Not read: the car is no longer in the Polestar ID",
+      "credentialRefusedBmw": "Not read: BMW refused the connection",
+      "credentialMissingBmw": "Not read: no BMW connected",
+      "unsharedBmw": "Not read: the BMW account is no longer the car's main user",
+      "pausedBmw": "Paused by BMW until {time}",
+      "quotaBmw": "Daily calls to BMW reached until {time}"
     },
     "notice": {
       "reauth": {
@@ -1356,7 +1362,12 @@
       "credentialRefusedPolestarId": "The Polestar ID refused Runsten's sign-in for this car: the session ended, or the password changed. Connect your Polestar ID again on the connection page: what was read stays.",
       "credentialMissingPolestarId": "Runsten reads this Polestar with your Polestar ID, which was removed: connect it again on the connection page.",
       "unsharedPolestarId": "Your Polestar ID no longer lists this car: sold, or removed from the account. Should it come back, connect the Polestar ID again on the connection page: the car is read again.",
-      "quotaPolestarId": "Runsten makes at most 2,000 calls a day to the Polestar app's API per Polestar ID, to stay clear of its unpublished limits: they are used up. Reading resumes by itself."
+      "quotaPolestarId": "Runsten makes at most 2,000 calls a day to the Polestar app's API per Polestar ID, to stay clear of its unpublished limits: they are used up. Reading resumes by itself.",
+      "credentialRefusedBmw": "BMW refused the connection this car is read with: left unused for two weeks, or the client ID's subscription withdrawn in the portal. Connect again on the connection page: what was read stays.",
+      "credentialMissingBmw": "Runsten reads this car through your BMW connection, which was removed: connect again on the connection page.",
+      "unsharedBmw": "Your BMW account is no longer the main user of this car, or no longer lists it: sold, or changed owner. Should it come back, connect BMW again on the connection page: the car is read again.",
+      "pausedBmw": "BMW limited the number of calls. Reading resumes by itself.",
+      "quotaBmw": "Runsten makes at most 40 calls a day to BMW's API per connection, to leave a few of BMW's 50 to you: they are used up. The stream, which has no limit, is still read; the rest resumes by itself."
     },
     "facts": {
       "mode": "Polling mode",
@@ -1379,7 +1390,9 @@
       "noneDueToken": "None until a Tesla refresh token is given",
       "noneDueTeslaFleet": "None until the owner signs in with Tesla again",
       "noneDuePolestarId": "None until the Polestar ID is connected again",
-      "noneDueUnsharedPolestarId": "None: the car is no longer in the Polestar ID"
+      "noneDueUnsharedPolestarId": "None: the car is no longer in the Polestar ID",
+      "noneDueBmw": "None until BMW is connected again",
+      "noneDueUnsharedBmw": "None: the BMW account is no longer the car's main user"
     },
     "api": {
       "connectedVehicle": "vehicle data",
@@ -1388,7 +1401,8 @@
       "polestar": "Polestar Data Portal",
       "tesla": "Tesla Owner API",
       "teslaFleet": "Tesla Fleet API",
-      "polestarId": "Polestar app API"
+      "polestarId": "Polestar app API",
+      "bmw": "BMW CarData"
     },
     "failure": {
       "quota": "Quota reached",
@@ -1412,7 +1426,12 @@
       "tokenTesla": "No token from Tesla",
       "credentialRefusedTesla": "Tesla refresh token refused",
       "credentialRefusedTeslaFleet": "Tesla access withdrawn",
-      "credentialRefusedPolestarId": "Polestar ID refused"
+      "credentialRefusedPolestarId": "Polestar ID refused",
+      "streamHeld": "Stream held by another application (Home Assistant, evcc)",
+      "notFoundBmw": "Vehicle unknown to BMW",
+      "unavailableBmw": "BMW unreachable",
+      "tokenBmw": "No token from BMW",
+      "credentialRefusedBmw": "BMW connection refused"
     },
     "key": {
       "title": "Volvo key"
@@ -1438,6 +1457,14 @@
     "polestarId": {
       "title": "Polestar ID",
       "off": "The Polestar ID is not offered on this instance: your Polestars read with it are no longer read. What was read stays, and your connection is kept: they are read again once it is offered."
+    },
+    "bmw": {
+      "title": "BMW CarData",
+      "off": "BMW is not offered on this instance: your BMW and MINI cars read through it are no longer read. What was read stays, and your connection is kept: they are read again once it is offered."
+    },
+    "streamHeld": {
+      "text": "Another application holds BMW's stream: BMW allows one at a time per account, and it may be Home Assistant's CarData integration or evcc. Runsten reads nothing of the stream until it lets go. Stop that application, or let Runsten republish your car to your MQTT broker for Home Assistant instead:",
+      "mqtt": "MQTT settings"
     }
   },
   "apiKey": {
@@ -1989,6 +2016,73 @@
       "tooManyPending": "Too many sign-ins are pending on this instance. Try again in a few minutes.",
       "unavailable": "Runsten could not be reached. Try again in a moment.",
       "internal": "The Polestar ID could not be connected. Try again in a moment."
+    }
+  },
+  "bmw": {
+    "intro": "Runsten reads your BMW or MINI through BMW CarData, the official service BMW opens to owners, free of charge: the car pushes its readings (battery, range, charging, odometer, position) and Runsten receives them. You create your own client ID in the MyBMW or MyMINI portal; Runsten never asks for your BMW password, and never sends a command to the car.",
+    "beta": "BMW support is in beta: it was built from BMW's documentation, and is still to be checked on more cars.",
+    "guide": "Read the guide",
+    "newTab": "(opens in a new tab)",
+    "refused": {
+      "title": "Your BMW connection was refused",
+      "body": "BMW refused Runsten's connection on {time}: it was left unused for two weeks, or the client ID's subscription was withdrawn in the portal. Your cars are not read until you connect again; what was read stays."
+    },
+    "current": "Your client ID",
+    "last4": "Ending in {last4}",
+    "setAt": "Connected",
+    "reconnect": "Connect again",
+    "delete": {
+      "button": "Remove the connection",
+      "title": "Remove your BMW connection?",
+      "text": "Your BMW and MINI cars stay, with their history, but are no longer read until you connect again. Runsten erases its tokens; the client ID stays in the portal, where you can delete it.",
+      "error": "The connection could not be removed. Try again in a moment.",
+      "cancel": "Cancel",
+      "confirm": "Remove"
+    },
+    "steps": {
+      "title": "Create your client ID in BMW's portal",
+      "create": "On a computer, sign in to the MyBMW or MyMINI portal, open the “BMW CarData” tile and choose “Create CarData Client”.",
+      "subscribe": "Subscribe the client to both CarData API and CarData Streaming, one at a time: wait for the first to be confirmed before the second.",
+      "stream": "Then configure the stream: tick the data keys the guide lists, so that the car pushes them.",
+      "note": "Note the client ID right away, then paste it below. Never click “Authenticate device” in the portal: Runsten does it."
+    },
+    "label": "Client ID",
+    "help": "Runsten asks BMW for a code with it, which you approve on BMW's own page: your BMW password stays between you and BMW. Afterwards only the client ID's last four characters are shown.",
+    "save": "Get a code",
+    "cancel": "Cancel",
+    "cancelled": "Connection cancelled.",
+    "saved": "BMW connected: Runsten reads your cars from its next pass.",
+    "deleted": "BMW connection removed.",
+    "waiting": "Waiting for you to approve the code on BMW's page. Runsten asks BMW again every few seconds.",
+    "waitingUnreachable": "BMW did not answer: Runsten keeps trying, the code may still be approved.",
+    "code": {
+      "title": "Approve the code on BMW's page",
+      "open": "Open BMW's page in a new tab, sign in with your BMW or MINI account and approve this code.",
+      "label": "Your code",
+      "page": "BMW's page",
+      "expires": "Valid until {time}.",
+      "cancel": "Cancel"
+    },
+    "error": {
+      "summary": "BMW was not connected",
+      "required": "Paste the client ID.",
+      "spaces": "The client ID has no space: copy it again.",
+      "characters": "The client ID has only letters, digits and signs: copy it again.",
+      "tooShort": "The client ID has at least {min} characters: copy it whole.",
+      "tooLong": "The client ID has at most {max} characters: copy it alone.",
+      "clientRefused": "BMW does not know this client ID: check it in the portal, and that you copied all of it.",
+      "invalidBody": "This client ID was refused: copy it again.",
+      "expired": "The code expired, or none was waiting: get a new code.",
+      "refused": "BMW refused the connection: the code was declined, or BMW did not accept it. Get a new code.",
+      "scopeMissing": "The client ID is not subscribed to CarData API: in the portal, subscribe it to CarData API (and CarData Streaming), then get a new code. Nothing was connected.",
+      "noVehicle": "This BMW account is the main user of no vehicle, and only the main user can read a car: nothing was connected.",
+      "tooManyVehicles": "With this BMW account's cars, your account would have more vehicles than it may: nothing was connected.",
+      "notAdmitted": "Your account must take a step first, such as accepting terms: reload the page. Nothing was connected.",
+      "notOffered": "BMW is not offered on this instance.",
+      "bmwUnavailable": "BMW did not answer: nothing was connected. Try again in a moment.",
+      "tooManyPending": "Too many connections to BMW are pending on this instance. Try again in a few minutes.",
+      "unavailable": "Runsten could not be reached. Try again in a moment.",
+      "internal": "BMW could not be connected. Try again in a moment."
     }
   }
 }

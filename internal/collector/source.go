@@ -161,6 +161,10 @@ const (
 	// KindAsleep: the vehicle sleeps, or is out of reach, and was not woken. Not a
 	// failure: its Awake endpoints wait until it is seen awake.
 	KindAsleep
+	// KindStreamHeld: another client holds the provider's only connection to its stream
+	// (BMW CarData's, which Home Assistant or evcc may hold); the source tries again at its
+	// own pace, and the user is told.
+	KindStreamHeld
 )
 
 // SourceError is a refusal of a Source's provider. It holds neither the access nor the

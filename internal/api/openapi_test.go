@@ -238,6 +238,8 @@ var goldenRequests = map[string]string{
 	"connection.json":               "PUT /api/v1/connection/api-key",
 	"connection-polestar.json":      "PUT /api/v1/connection/polestar",
 	"connection-polestar-id.json":   "PUT /api/v1/connection/polestar-id/code",
+	"connection-bmw.json":           "POST /api/v1/connection/bmw/token",
+	"bmw-authorization.json":        "POST /api/v1/connection/bmw/authorization",
 	"vehicles.json":                 "GET /api/v1/vehicles",
 	"vehicle-reauth-required.json":  "GET /api/v1/vehicles/" + parked,
 	"state.json":                    "GET /api/v1/vehicles/" + car + "/state",

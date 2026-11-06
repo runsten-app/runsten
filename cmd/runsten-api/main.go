@@ -79,6 +79,11 @@
 //	                             https://polestarid.eu.polestar.com)
 //	RUNSTEN_POLESTAR_ID_API_URL  the Polestar app's API, which lists the owner's cars
 //	                             (default https://pc-api.polestar.com/eu-north-1/mystar-v2)
+//	RUNSTEN_BMW_AUTH_URL         BMW's customer authentication, which runs the device flow
+//	                             of the owner's CarData client ID when the flag source.bmw
+//	                             is on (default https://customer.bmwgroup.com/gcdm/oauth)
+//	RUNSTEN_BMW_API_URL          BMW CarData's API, which lists the owner's vehicles
+//	                             (default https://api-cardata.bmwgroup.com)
 //	RUNSTEN_AXIMOTE_BASE_URL     Aximote's public API, which the imports of a vehicle's
 //	                             history read with the user's token (default
 //	                             https://api.aximote.com)
@@ -120,6 +125,7 @@ import (
 	"runsten/internal/api"
 	"runsten/internal/auth"
 	"runsten/internal/aximote"
+	"runsten/internal/bmw"
 	"runsten/internal/catalog"
 	"runsten/internal/core"
 	"runsten/internal/derive"
@@ -179,6 +185,7 @@ type config struct {
 	polestarURL string
 	tesla       tesla.Hosts
 	polestarID  polestarid.Hosts
+	bmw         bmw.Hosts
 	app         volvo.AuthConfig
 	appURL      string
 	// secureCookies: the address users open is https.
@@ -339,6 +346,8 @@ func run(args []string) error {
 		PolestarID:         st,
 		PolestarIDAccounts: polestarIDAccounts{polestarid.NewClient(cfg.polestarID, hc)},
 		PolestarIDFlows:    oauth.NewFlows(clock.Real{}, flowTTL, maxPending),
+		BMW:                st,
+		BMWAccounts:        bmwAccounts{bmw.NewClient(cfg.bmw, hc)},
 		InstanceKey:        cfg.apiKey != "",
 		InstanceKeyLast4:   cfg.apiKey[max(0, len(cfg.apiKey)-4):],
 		ClientID:           cfg.app.ClientID,
@@ -514,6 +523,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		polestarURL: polestar.DefaultBaseURL,
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		polestarID:  polestarid.Hosts{Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL},
+		bmw:         bmw.Hosts{Auth: bmw.DefaultAuthURL, API: bmw.DefaultAPIURL},
 		app:         volvo.AuthConfig{Scopes: volvo.DefaultScopes()},
 		addr:        defaultAddr,
 		logLevel:    slog.LevelInfo,
@@ -545,6 +555,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.app.BaseURL, "RUNSTEN_AXIMOTE_BASE_URL": &cfg.aximoteURL,
 		"RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL, "RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
+		"RUNSTEN_BMW_AUTH_URL": &cfg.bmw.Auth, "RUNSTEN_BMW_API_URL": &cfg.bmw.API,
 	} {
 		if v := getenv(name); v != "" {
 			if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
@@ -795,6 +806,59 @@ func (p polestarIDAccounts) cars(ctx context.Context, tok polestarid.Tokens, err
 	return out, nil
 }
 
+// bmwAccounts runs BMW's device flow for the API, then lists the vehicles with the
+// access given.
+type bmwAccounts struct{ c *bmw.Client }
+
+func (b bmwAccounts) DeviceCode(ctx context.Context, clientID string) (api.BMWDevice, error) {
+	verifier, challenge := bmw.NewVerifier()
+	d, err := b.c.DeviceCode(ctx, clientID, challenge)
+	if err != nil {
+		return api.BMWDevice{}, bmwError(err)
+	}
+	return api.BMWDevice{
+		DeviceCode: d.DeviceCode, Verifier: verifier, UserCode: d.UserCode,
+		VerificationURI: d.VerificationURI, VerificationURIComplete: d.VerificationURIComplete,
+		ExpiresIn: d.ExpiresIn, Interval: d.Interval,
+	}, nil
+}
+
+func (b bmwAccounts) PollToken(ctx context.Context, clientID, deviceCode, verifier string) (api.BMWTokens, error) {
+	t, err := b.c.PollToken(ctx, clientID, deviceCode, verifier)
+	if err != nil {
+		return api.BMWTokens{}, bmwError(err)
+	}
+	return api.BMWTokens{Access: t.Access, Refresh: t.Refresh, GCID: t.GCID}, nil
+}
+
+func (b bmwAccounts) PrimaryVINs(ctx context.Context, access string) ([]string, error) {
+	ms, err := b.c.Mappings(ctx, access)
+	if err != nil {
+		return nil, bmwError(err)
+	}
+	var vins []string
+	for _, m := range ms {
+		if m.Primary {
+			vins = append(vins, m.VIN)
+		}
+	}
+	return vins, nil
+}
+
+// bmwOutcomes are what CarData's errors mean for the API's device flow.
+var bmwOutcomes = map[bmw.Kind]api.BMWOutcome{
+	bmw.KindPending: api.BMWPending, bmw.KindSlowDown: api.BMWSlowDown, bmw.KindExpired: api.BMWExpired,
+	bmw.KindDenied: api.BMWDenied, bmw.KindClientRefused: api.BMWClientRefused, bmw.KindScopeMissing: api.BMWScopeMissing,
+}
+
+func bmwError(err error) error {
+	var e *bmw.APIError
+	if errors.As(err, &e) {
+		return &api.BMWError{Outcome: bmwOutcomes[e.Kind], Err: err}
+	}
+	return err //nolint:wrapcheck // the client's, with its context
+}
+
 // aximoteVehicles lists an Aximote account's vehicles for the API.
 type aximoteVehicles struct{ c *aximote.Client }
 
@@ -823,6 +887,6 @@ func (a aximoteVehicles) AximoteVehicles(ctx context.Context, token string) ([]a
 // extension adds.
 func normalizers() derive.Normalizer {
 	return derive.Sources(append([]derive.Normalizer{
-		volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{},
+		volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{}, bmw.Normalizer{},
 	}, extensionNormalizers()...)...)
 }

@@ -1256,7 +1256,8 @@
     "brand": {
       "volvo": "Volvo",
       "polestar": "Polestar",
-      "tesla": "Tesla"
+      "tesla": "Tesla",
+      "bmw": "BMW"
     },
     "brandAttention": "trenger oppmerksomheten din",
     "outcome": {
@@ -1319,7 +1320,12 @@
       "quotaTesla": "Daglige kall til Tesla er brukt opp til {time}",
       "credentialRefusedPolestarId": "Ikke lest: Polestar ID avviste innloggingen",
       "credentialMissingPolestarId": "Ikke lest: ingen Polestar ID koblet til",
-      "unsharedPolestarId": "Ikke lest: bilen er ikke lenger i Polestar ID-en"
+      "unsharedPolestarId": "Ikke lest: bilen er ikke lenger i Polestar ID-en",
+      "credentialRefusedBmw": "Ikke lest: BMW avviste tilkoblingen",
+      "credentialMissingBmw": "Ikke lest: ingen BMW-tilkobling",
+      "unsharedBmw": "Ikke lest: BMW-kontoen er ikke lenger hovedbruker av bilen",
+      "pausedBmw": "Satt på pause av BMW til {time}",
+      "quotaBmw": "Daglige kall til BMW er brukt opp til {time}"
     },
     "notice": {
       "reauth": {
@@ -1356,7 +1362,12 @@
       "credentialRefusedPolestarId": "Polestar ID avviste Runstens innlogging for denne bilen: økten ble avsluttet, eller passordet er endret. Koble til Polestar ID-en din på nytt på tilkoblingssiden: det som er lest, blir værende.",
       "credentialMissingPolestarId": "Runsten leser denne Polestar-en med Polestar ID-en din, som er fjernet: koble den til på nytt på tilkoblingssiden.",
       "unsharedPolestarId": "Polestar ID-en din viser ikke lenger denne bilen: solgt, eller fjernet fra kontoen. Kommer den tilbake, kobler du til Polestar ID-en på nytt på tilkoblingssiden: da leses bilen igjen.",
-      "quotaPolestarId": "Runsten gjør høyst 2 000 kall om dagen til API-et i Polestar-appen per Polestar ID, for å holde seg unna de upubliserte grensene: de er brukt opp. Avlesningen fortsetter av seg selv."
+      "quotaPolestarId": "Runsten gjør høyst 2 000 kall om dagen til API-et i Polestar-appen per Polestar ID, for å holde seg unna de upubliserte grensene: de er brukt opp. Avlesningen fortsetter av seg selv.",
+      "credentialRefusedBmw": "BMW avviste tilkoblingen denne bilen leses med: ubrukt i to uker, eller abonnementet til client ID-en ble trukket tilbake i portalen. Koble til på nytt på tilkoblingssiden: det som er lest, blir værende.",
+      "credentialMissingBmw": "Runsten leser denne bilen via BMW-tilkoblingen din, som er fjernet: koble til på nytt på tilkoblingssiden.",
+      "unsharedBmw": "BMW-kontoen din er ikke lenger hovedbruker av denne bilen, eller viser den ikke lenger: solgt, eller byttet eier. Kommer den tilbake, kobler du til BMW på nytt på tilkoblingssiden: da leses bilen igjen.",
+      "pausedBmw": "BMW har begrenset antall kall. Avlesningen fortsetter av seg selv.",
+      "quotaBmw": "Runsten gjør høyst 40 kall om dagen til BMWs API per tilkobling, for å la deg beholde noen av BMWs 50: de er brukt opp. Strømmen, som ikke har noen grense, leses fortsatt; resten fortsetter av seg selv."
     },
     "facts": {
       "mode": "Avlesningsmodus",
@@ -1379,7 +1390,9 @@
       "noneDueToken": "Ingen før et Tesla refresh-token er oppgitt",
       "noneDueTeslaFleet": "Ingen før eieren logger inn med Tesla igjen",
       "noneDuePolestarId": "Ingen før Polestar ID-en er koblet til på nytt",
-      "noneDueUnsharedPolestarId": "Ingen: bilen er ikke lenger i Polestar ID-en"
+      "noneDueUnsharedPolestarId": "Ingen: bilen er ikke lenger i Polestar ID-en",
+      "noneDueBmw": "Ingen før BMW er koblet til på nytt",
+      "noneDueUnsharedBmw": "Ingen: BMW-kontoen er ikke lenger hovedbruker av bilen"
     },
     "api": {
       "connectedVehicle": "bildata",
@@ -1388,7 +1401,8 @@
       "polestar": "Polestar Data Portal",
       "tesla": "Tesla Owner API",
       "teslaFleet": "Tesla Fleet API",
-      "polestarId": "API-et i Polestar-appen"
+      "polestarId": "API-et i Polestar-appen",
+      "bmw": "BMW CarData"
     },
     "failure": {
       "quota": "Kvote nådd",
@@ -1412,7 +1426,12 @@
       "tokenTesla": "Ikke noe token fra Tesla",
       "credentialRefusedTesla": "Tesla refresh-token avvist",
       "credentialRefusedTeslaFleet": "Tesla-tilgang trukket tilbake",
-      "credentialRefusedPolestarId": "Polestar ID avvist"
+      "credentialRefusedPolestarId": "Polestar ID avvist",
+      "streamHeld": "Strømmen er opptatt av et annet program (Home Assistant, evcc)",
+      "notFoundBmw": "Bilen er ukjent for BMW",
+      "unavailableBmw": "Ingen kontakt med BMW",
+      "tokenBmw": "Ikke noe token fra BMW",
+      "credentialRefusedBmw": "BMW-tilkobling avvist"
     },
     "key": {
       "title": "Volvo-nøkkel"
@@ -1438,6 +1457,14 @@
     "polestarId": {
       "title": "Polestar ID",
       "off": "Polestar ID tilbys ikke på denne instansen: Polestar-bilene dine som leses med den, leses ikke lenger. Det som er lest, blir værende, og tilkoblingen din beholdes: de leses igjen når den tilbys."
+    },
+    "bmw": {
+      "title": "BMW CarData",
+      "off": "BMW tilbys ikke på denne instansen: BMW- og MINI-bilene dine som leses via den, leses ikke lenger. Det som er lest, blir værende, og tilkoblingen din beholdes: de leses igjen når BMW tilbys."
+    },
+    "streamHeld": {
+      "text": "Et annet program holder BMWs strøm: BMW tillater bare ett om gangen per konto, og det kan være CarData-integrasjonen i Home Assistant eller evcc. Runsten leser ingenting fra strømmen før det slipper den. Stopp det programmet, eller la Runsten i stedet publisere bilen din til MQTT-megleren din for Home Assistant:",
+      "mqtt": "MQTT-innstillinger"
     }
   },
   "apiKey": {
@@ -1989,6 +2016,73 @@
       "tooManyPending": "For mange innlogginger venter på denne instansen. Prøv igjen om noen minutter.",
       "unavailable": "Fikk ikke kontakt med Runsten. Prøv igjen om litt.",
       "internal": "Polestar ID-en kunne ikke kobles til. Prøv igjen om litt."
+    }
+  },
+  "bmw": {
+    "intro": "Runsten leser BMW-en eller MINI-en din via BMW CarData, den offisielle tjenesten BMW åpner gratis for eierne: bilen sender målingene sine (batteri, rekkevidde, lading, kilometerteller, posisjon), og Runsten mottar dem. Du lager din egen client ID i portalen MyBMW eller MyMINI; Runsten spør aldri om BMW-passordet ditt, og sender aldri en kommando til bilen.",
+    "beta": "BMW-støtten er i beta: den er bygget etter BMWs dokumentasjon og må fortsatt sjekkes på flere biler.",
+    "guide": "Les veiledningen",
+    "newTab": "(åpnes i en ny fane)",
+    "refused": {
+      "title": "BMW-tilkoblingen din ble avvist",
+      "body": "BMW avviste Runstens tilkobling {time}: ubrukt i to uker, eller abonnementet til client ID-en ble trukket tilbake i portalen. Bilene dine leses ikke før du kobler til på nytt; det som er lest, blir værende."
+    },
+    "current": "Client ID-en din",
+    "last4": "Slutter på {last4}",
+    "setAt": "Tilkoblet",
+    "reconnect": "Koble til på nytt",
+    "delete": {
+      "button": "Fjern tilkoblingen",
+      "title": "Fjerne BMW-tilkoblingen din?",
+      "text": "BMW- og MINI-bilene dine blir værende, med historikken, men leses ikke lenger før du kobler til på nytt. Runsten sletter tokenene sine; client ID-en blir stående i portalen, der du kan slette den.",
+      "error": "Tilkoblingen kunne ikke fjernes. Prøv igjen om litt.",
+      "cancel": "Avbryt",
+      "confirm": "Fjern"
+    },
+    "steps": {
+      "title": "Lag client ID-en din i BMWs portal",
+      "create": "Logg inn på portalen MyBMW eller MyMINI på en datamaskin, åpne flisen «BMW CarData» og velg «Create CarData Client».",
+      "subscribe": "Abonner med klienten på både CarData API og CarData Streaming, ett om gangen: vent på bekreftelsen av det første før du tar det andre.",
+      "stream": "Sett så opp strømmen: kryss av for datanøklene veiledningen lister, slik at bilen sender dem.",
+      "note": "Noter client ID-en med en gang, og lim den inn nedenfor. Aldri klikk «Authenticate device» i portalen: det gjør Runsten."
+    },
+    "label": "Client ID",
+    "help": "Med den ber Runsten BMW om en kode, som du godkjenner på BMWs egen side: BMW-passordet ditt blir mellom deg og BMW. Etterpå vises bare de fire siste tegnene i client ID-en.",
+    "save": "Hent en kode",
+    "cancel": "Avbryt",
+    "cancelled": "Tilkoblingen er avbrutt.",
+    "saved": "BMW er koblet til: Runsten leser bilene dine fra neste runde.",
+    "deleted": "BMW-tilkoblingen er fjernet.",
+    "waiting": "Venter på at du godkjenner koden på BMWs side. Runsten spør BMW på nytt med noen sekunders mellomrom.",
+    "waitingUnreachable": "BMW svarte ikke: Runsten prøver videre, koden kan fortsatt bli godkjent.",
+    "code": {
+      "title": "Godkjenn koden på BMWs side",
+      "open": "Åpne BMWs side i en ny fane, logg inn med BMW- eller MINI-kontoen din og godkjenn denne koden.",
+      "label": "Koden din",
+      "page": "BMWs side",
+      "expires": "Gyldig til {time}.",
+      "cancel": "Avbryt"
+    },
+    "error": {
+      "summary": "BMW ble ikke koblet til",
+      "required": "Lim inn client ID-en.",
+      "spaces": "Client ID-en har ingen mellomrom: kopier den på nytt.",
+      "characters": "Client ID-en har bare bokstaver, sifre og tegn: kopier den på nytt.",
+      "tooShort": "Client ID-en har minst {min} tegn: kopier hele.",
+      "tooLong": "Client ID-en har høyst {max} tegn: kopier bare den.",
+      "clientRefused": "BMW kjenner ikke denne client ID-en: sjekk den i portalen, og at du har kopiert hele.",
+      "invalidBody": "Denne client ID-en ble avvist: kopier den på nytt.",
+      "expired": "Koden har utløpt, eller ingen ventet: hent en ny kode.",
+      "refused": "BMW avviste tilkoblingen: koden ble avslått, eller BMW godtok den ikke. Hent en ny kode.",
+      "scopeMissing": "Client ID-en har ikke abonnement på CarData API: abonner på CarData API (og CarData Streaming) i portalen, og hent så en ny kode. Ingenting ble koblet til.",
+      "noVehicle": "Denne BMW-kontoen er hovedbruker av ingen bil, og bare hovedbrukeren kan lese en bil: ingenting ble koblet til.",
+      "tooManyVehicles": "Med bilene i denne BMW-kontoen ville kontoen din hatt flere biler enn den kan ha: ingenting ble koblet til.",
+      "notAdmitted": "Kontoen din må ta et steg først, for eksempel godta vilkår: last inn siden på nytt. Ingenting ble koblet til.",
+      "notOffered": "BMW tilbys ikke på denne instansen.",
+      "bmwUnavailable": "BMW svarte ikke: ingenting ble koblet til. Prøv igjen om litt.",
+      "tooManyPending": "For mange tilkoblinger til BMW venter på denne instansen. Prøv igjen om noen minutter.",
+      "unavailable": "Fikk ikke kontakt med Runsten. Prøv igjen om litt.",
+      "internal": "BMW kunne ikke kobles til. Prøv igjen om litt."
     }
   }
 }

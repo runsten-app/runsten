@@ -14,7 +14,12 @@ import {
 } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { collectionState, type CollectionState, type Vehicle } from '@/entities/vehicle'
+import {
+  collectionState,
+  streamHeldFor,
+  type CollectionState,
+  type Vehicle,
+} from '@/entities/vehicle'
 import { useCollectionText } from '@/features/watch-collection'
 import { useFormat } from '@/shared/lib'
 import { FactItem } from '@/shared/ui'
@@ -59,19 +64,23 @@ const nextRead = computed(() => {
     if (state.value.kind === 'market') return t('connection.facts.noneDueMarket')
     const provider = props.vehicle.connection.provider
     if (state.value.kind === 'credential')
-      return provider === 'tesla'
-        ? t('connection.facts.noneDueToken')
-        : provider === 'tesla_fleet'
-          ? t('connection.facts.noneDueTeslaFleet')
-          : provider === 'polestar_id'
-            ? t('connection.facts.noneDuePolestarId')
-            : t('connection.facts.noneDueCredential')
+      return provider === 'bmw'
+        ? t('connection.facts.noneDueBmw')
+        : provider === 'tesla'
+          ? t('connection.facts.noneDueToken')
+          : provider === 'tesla_fleet'
+            ? t('connection.facts.noneDueTeslaFleet')
+            : provider === 'polestar_id'
+              ? t('connection.facts.noneDuePolestarId')
+              : t('connection.facts.noneDueCredential')
     if (state.value.kind === 'unshared')
-      return provider === 'tesla' || provider === 'tesla_fleet'
-        ? t('connection.facts.noneDueUnsharedTesla')
-        : provider === 'polestar_id'
-          ? t('connection.facts.noneDueUnsharedPolestarId')
-          : t('connection.facts.noneDueUnshared')
+      return provider === 'bmw'
+        ? t('connection.facts.noneDueUnsharedBmw')
+        : provider === 'tesla' || provider === 'tesla_fleet'
+          ? t('connection.facts.noneDueUnsharedTesla')
+          : provider === 'polestar_id'
+            ? t('connection.facts.noneDueUnsharedPolestarId')
+            : t('connection.facts.noneDueUnshared')
     return t('connection.facts.noneDue')
   }
   return Date.parse(next) <= props.now ? t('connection.facts.due') : f.dateTime(next, props.now)
@@ -84,6 +93,12 @@ const failure = computed(() => {
     value: `${text.failure(l.kind, props.vehicle.connection.provider)} · ${f.dateTime(l.at, props.now)}`,
     where: where.join(' · '),
   }
+})
+// BMW lets one client read a car's stream at a time: while another holds it, nothing of the
+// stream is read, and the user is told what to do. Only while the failure is recent.
+const streamHeld = computed(() => {
+  const l = c.value?.last_failure
+  return l?.kind === 'stream_held' && props.now - Date.parse(l.at) < streamHeldFor
 })
 </script>
 
@@ -132,6 +147,12 @@ const failure = computed(() => {
           </p>
         </FactItem>
       </dl>
+      <p v-if="streamHeld" class="stream-held text-body-medium mt-4">
+        {{ t('connection.streamHeld.text') }}
+        <router-link :to="{ name: 'settingsIntegrations' }" class="mqtt">
+          {{ t('connection.streamHeld.mqtt') }}
+        </router-link>
+      </p>
     </v-card-text>
   </v-card>
 </template>

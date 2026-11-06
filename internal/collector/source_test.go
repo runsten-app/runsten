@@ -442,6 +442,19 @@ func TestSourceRefusals(t *testing.T) {
 			t.Errorf("%d calls, status %+v", len(src.calls[psBattery]), s)
 		}
 	})
+	t.Run("stream held by another client: told, no pause", func(t *testing.T) {
+		c, src, st, clk := newSourced(t, sourceTarget())
+		src.answer = func(Endpoint, int, time.Time) ([]byte, error) {
+			return nil, &SourceError{Kind: KindStreamHeld, Err: errors.New("connection refused: not authorized")}
+		}
+		poll(t, c)
+		clk.Advance(10 * time.Minute)
+		poll(t, c)
+		s := st.statuses[len(st.statuses)-1]
+		if len(src.calls[psBattery]) != 2 || !s.PausedUntil.IsZero() || s.Failure.Kind != FailStreamHeld {
+			t.Errorf("%d calls, status %+v", len(src.calls[psBattery]), s)
+		}
+	})
 	t.Run("no access: asked for again after a while", func(t *testing.T) {
 		c, src, st, clk := newSourced(t, sourceTarget())
 		src.loginErr = errors.New("dial tcp: connection refused")
