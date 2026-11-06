@@ -110,6 +110,8 @@ type bmwFlow struct {
 	expires  time.Time
 	interval time.Duration
 	next     time.Time
+	// polling: a request is asking BMW, until wait or end; another meanwhile waits.
+	polling bool
 }
 
 // bmwFlows are the device flows pending, one per account: a new one replaces the
@@ -142,16 +144,28 @@ func (f *bmwFlows) start(account string, fl bmwFlow, now time.Time) bool {
 	return true
 }
 
-// take returns the account's flow, if pending and not expired.
-func (f *bmwFlows) take(account string, now time.Time) (bmwFlow, bool) {
+// take returns the account's flow, if pending and not expired, and whether it may be
+// polled now: then it is reserved, until wait or end, so that two requests at once (two
+// tabs) never ask BMW together nor sooner than its interval. Otherwise retry is when to
+// ask again.
+func (f *bmwFlows) take(account string, now time.Time) (fl bmwFlow, retry time.Duration, ok bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	fl, ok := f.pending[account]
-	if ok && !now.Before(fl.expires) {
+	fl, ok = f.pending[account]
+	switch {
+	case ok && !now.Before(fl.expires):
 		delete(f.pending, account)
-		return bmwFlow{}, false
+		return bmwFlow{}, 0, false
+	case !ok:
+		return bmwFlow{}, 0, false
+	case fl.polling:
+		return fl, fl.interval, true
+	case now.Before(fl.next):
+		return fl, fl.next.Sub(now), true
 	}
-	return fl, ok
+	fl.polling = true
+	f.pending[account] = fl
+	return fl, 0, true
 }
 
 // wait sets when the account's flow may be polled again, interval its new interval.
@@ -159,7 +173,7 @@ func (f *bmwFlows) wait(account string, interval time.Duration, now time.Time) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if fl, ok := f.pending[account]; ok {
-		fl.interval, fl.next = interval, now.Add(interval)
+		fl.interval, fl.next, fl.polling = interval, now.Add(interval), false
 		f.pending[account] = fl
 	}
 }
@@ -267,12 +281,12 @@ func (s *Server) postBMWToken(ctx context.Context, _ *struct{}) (*body[connectio
 		return nil, err
 	}
 	now := s.Clock.Now()
-	fl, ok := s.bmwFlows.take(account, now)
+	fl, retry, ok := s.bmwFlows.take(account, now)
 	if !ok {
 		return nil, apiError(http.StatusBadRequest, codeAuthorizationExpired, "no code is waiting, or it expired: start again")
 	}
-	if now.Before(fl.next) {
-		return nil, pending(fl.next.Sub(now))
+	if retry > 0 {
+		return nil, pending(retry)
 	}
 	check, cancel := context.WithTimeout(ctx, keyCheckTimeout)
 	defer cancel()

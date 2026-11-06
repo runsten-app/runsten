@@ -376,3 +376,21 @@ func TestBMWFlag(t *testing.T) {
 		t.Errorf("DELETE, flag off: %d %s", resp.status, body)
 	}
 }
+
+// TestBMWConcurrentPolls: two requests at once (two tabs) ask BMW once; the other is
+// told to wait, and the flow polls again after the answer.
+func TestBMWConcurrentPolls(t *testing.T) {
+	var f bmwFlows
+	t0 := time.Date(2026, 9, 28, 5, 0, 0, 0, time.UTC)
+	f.start("a", bmwFlow{expires: t0.Add(5 * time.Minute), interval: 5 * time.Second, next: t0}, t0)
+	if _, retry, ok := f.take("a", t0); !ok || retry != 0 {
+		t.Fatalf("first: %v, %v", retry, ok)
+	}
+	if _, retry, ok := f.take("a", t0); !ok || retry != 5*time.Second {
+		t.Errorf("while polling: %v, %v", retry, ok)
+	}
+	f.wait("a", 5*time.Second, t0)
+	if _, retry, ok := f.take("a", t0.Add(5*time.Second)); !ok || retry != 0 {
+		t.Errorf("after the answer: %v, %v", retry, ok)
+	}
+}
