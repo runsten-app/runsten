@@ -444,7 +444,8 @@ func (b bmwStore) BMWCredential(ctx context.Context, accountID, connectionID str
 		return bmwsource.Credential{}, fmt.Errorf("bmw credential: %w", err)
 	}
 	return bmwsource.Credential{
-		ClientID: c.ClientID, GCID: c.GCID, Refresh: c.Refresh, ContainerID: c.ContainerID, SetAt: setAt,
+		ClientID: c.ClientID, GCID: c.GCID, Refresh: c.Refresh, ContainerID: c.ContainerID,
+		ContainerName: c.ContainerName, SetAt: setAt,
 	}, nil
 }
 
@@ -452,8 +453,8 @@ func (b bmwStore) RotateBMWToken(ctx context.Context, accountID, connectionID st
 	return b.st.RotateBMWToken(ctx, accountID, connectionID, setAt, token) //nolint:wrapcheck // the store's, with its context
 }
 
-func (b bmwStore) SetBMWContainer(ctx context.Context, accountID, connectionID string, setAt time.Time, containerID string) error {
-	return b.st.SetBMWContainer(ctx, accountID, connectionID, setAt, containerID) //nolint:wrapcheck // the store's, with its context
+func (b bmwStore) SetBMWContainer(ctx context.Context, accountID, connectionID string, setAt time.Time, containerID, name string) error {
+	return b.st.SetBMWContainer(ctx, accountID, connectionID, setAt, containerID, name) //nolint:wrapcheck // the store's, with its context
 }
 
 // extensions is what registerExtensions gets: the premium build's modules set the

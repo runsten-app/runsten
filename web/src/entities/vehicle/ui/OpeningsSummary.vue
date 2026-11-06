@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { mdiLock, mdiLockOpenVariant } from '@mdi/js'
+import { mdiCarDoor, mdiLock, mdiLockOpenVariant } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { reportLateAfter } from '../model/freshness'
@@ -47,18 +47,25 @@ const listed = (state: 'open' | 'ajar') => {
   return words.length ? f.list(words) : null
 }
 // What is open, then what is ajar; else closed, said only of what the vehicle told: all
-// closed needs both the doors and the windows (a Volvo reads them apart).
+// closed needs both the doors and the windows (a Volvo reads them apart). Each with its
+// icon, a car's door with its window, which the words tell already.
 const facts = computed(() => {
   const open = listed('open')
   const ajar = listed('ajar')
-  const out: string[] = []
-  if (open) out.push(t('state.openings.open', { list: open }))
-  if (ajar) out.push(t('state.openings.ajar', { list: ajar }))
+  const out: { text: string; icon: string }[] = []
+  if (open) out.push({ text: t('state.openings.open', { list: open }), icon: mdiCarDoor })
+  if (ajar) out.push({ text: t('state.openings.ajar', { list: ajar }), icon: mdiCarDoor })
+  if (out.length) return out
   const { doorsTold, windowsTold } = summary.value
-  if (!out.length && doorsTold && windowsTold) out.push(t('state.openings.allClosed'))
-  else if (!out.length && doorsTold) out.push(t('state.openings.doorsClosed'))
-  else if (!out.length && windowsTold) out.push(t('state.openings.windowsClosed'))
-  return out
+  const closed =
+    doorsTold && windowsTold
+      ? t('state.openings.allClosed')
+      : doorsTold
+        ? t('state.openings.doorsClosed')
+        : windowsTold
+          ? t('state.openings.windowsClosed')
+          : null
+  return closed ? [{ text: closed, icon: mdiCarDoor }] : []
 })
 const sentry = computed(() => !!props.doors?.value.sentry)
 
@@ -89,7 +96,9 @@ const measured = computed(() => {
       >
         {{ summary.locked ? t('state.openings.locked') : t('state.openings.unlocked') }}
       </StatusPill>
-      <span v-for="fact in facts" :key="fact" class="fact">{{ fact }}</span>
+      <span v-for="fact in facts" :key="fact.text" class="fact d-inline-flex align-center">
+        <v-icon :icon="fact.icon" size="16" aria-hidden="true" />{{ fact.text }}
+      </span>
       <span v-if="sentry && !sentryApart" class="fact sentry">{{
         t('state.openings.sentry')
       }}</span>
@@ -108,6 +117,7 @@ const measured = computed(() => {
   gap: 8px 16px;
 }
 .fact {
+  gap: 6px;
   font-size: 0.875rem;
   font-weight: 500;
 }

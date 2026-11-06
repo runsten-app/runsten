@@ -47,10 +47,10 @@ func TestBMW(t *testing.T) {
 	if err := s.RotateBMWToken(ctx, a, conn, t0, "refresh-token-a-2"); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetBMWContainer(ctx, a, conn, t0, "container-1"); err != nil {
+	if err := s.SetBMWContainer(ctx, a, conn, t0, "container-1", "runsten-1"); err != nil {
 		t.Fatal(err)
 	}
-	kept := BMWCredential{ClientID: given.ClientID, GCID: given.GCID, Refresh: "refresh-token-a-2", ContainerID: "container-1"}
+	kept := BMWCredential{ClientID: given.ClientID, GCID: given.GCID, Refresh: "refresh-token-a-2", ContainerID: "container-1", ContainerName: "runsten-1"}
 	if c, _, err := s.BMWCredential(ctx, a, conn); err != nil || c != kept {
 		t.Errorf("rotated: %+v, %v", c, err)
 	}
@@ -76,7 +76,7 @@ func TestBMW(t *testing.T) {
 	if err := s.RotateBMWToken(ctx, a, conn, t0, "refresh-token-a-3"); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetBMWContainer(ctx, a, conn, t0, "container-2"); err != nil {
+	if err := s.SetBMWContainer(ctx, a, conn, t0, "container-2", "runsten-2"); err != nil {
 		t.Fatal(err)
 	}
 	if c, at, err := s.BMWCredential(ctx, a, conn); err != nil || c != again || !at.Equal(t1) {

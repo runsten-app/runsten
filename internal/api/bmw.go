@@ -29,9 +29,9 @@ import (
 
 // BMWCredential is what a BMW connection holds: the client ID, the BMW account's GCID
 // (the stream's username), the refresh token, and the ID of Runsten's container, which
-// the collector creates.
+// the collector creates, and its name.
 type BMWCredential struct {
-	ClientID, GCID, Refresh, ContainerID string
+	ClientID, GCID, Refresh, ContainerID, ContainerName string
 }
 
 // BMWCredentials keeps the account's BMW connection. Every method is restricted to the

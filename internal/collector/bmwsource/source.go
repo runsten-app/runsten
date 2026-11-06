@@ -31,8 +31,9 @@ type Credential struct {
 	// GCID is the BMW account's: the stream's username.
 	GCID    string
 	Refresh string
-	// ContainerID is Runsten's container in the account; empty until created.
-	ContainerID string
+	// ContainerID is Runsten's container in the account, named ContainerName; empty until
+	// created.
+	ContainerID, ContainerName string
 	// SetAt is when the owner connected: a rotation replaces the refresh token of this
 	// connection only, never one the owner set since.
 	SetAt time.Time
@@ -46,7 +47,7 @@ type Store interface {
 	// which a refresh gave; a credential the owner set since is left alone.
 	RotateBMWToken(ctx context.Context, accountID, connectionID string, setAt time.Time, token string) error
 	// SetBMWContainer records the container of the credential set at setAt.
-	SetBMWContainer(ctx context.Context, accountID, connectionID string, setAt time.Time, containerID string) error
+	SetBMWContainer(ctx context.Context, accountID, connectionID string, setAt time.Time, containerID, name string) error
 }
 
 // Daily is the API's calls a day counted per connection: 40 of BMW's 50, the rest left to
@@ -91,6 +92,9 @@ type Source struct {
 	subs map[string]*subscription
 	// spent is when each connection may call the API again, its day's calls spent.
 	spent map[string]time.Time
+	// containerWait is when each connection may try again to set up its container, after
+	// a failure.
+	containerWait map[string]time.Time
 }
 
 // rotation is a refresh token given in exchange for the one of the credential set at
@@ -116,6 +120,7 @@ func New(client *bmw.Client, streamURL string, st Store, clk clock.Clock) *Sourc
 	return &Source{
 		client: client, store: st, clk: clk, streamURL: streamURL,
 		rotated: map[string]rotation{}, subs: map[string]*subscription{}, spent: map[string]time.Time{},
+		containerWait: map[string]time.Time{},
 	}
 }
 
@@ -182,9 +187,11 @@ func (s *Source) Login(ctx context.Context, accountID, connectionID string) (col
 		gcid = cred.GCID
 	}
 	s.subscribe(connectionID, gcid, tok.ID)
-	sess := &session{
-		src: s, accountID: accountID, connectionID: connectionID, token: tok.Access,
-		container: cred.ContainerID, setAt: cred.SetAt,
+	sess := &session{src: s, accountID: accountID, connectionID: connectionID, token: tok.Access, setAt: cred.SetAt}
+	if cred.ContainerName == bmw.ContainerName() {
+		// A container of a previous release lacks descriptors: the first read of the API
+		// replaces it.
+		sess.container = cred.ContainerID
 	}
 	ttl := tok.ExpiresIn - accessMargin
 	if ttl <= 0 {
@@ -344,6 +351,9 @@ type session struct {
 // errSpent: the day's calls of the API are spent, until 00:00 UTC.
 var errSpent = errors.New("bmw: the day's calls of the API are spent")
 
+// errContainerWait: setting up the container failed today, tried again from 00:00 UTC.
+var errContainerWait = errors.New("bmw: the container could not be set up today")
+
 // Fetch implements collector.Session.
 func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) ([]byte, error) {
 	e := bmw.Endpoint(ep)
@@ -430,7 +440,8 @@ func held(err error) bool {
 }
 
 // telematicData reads the container's values, creating Runsten's container first when
-// the connection has none, or again when the owner deleted it.
+// the connection has none or one of a previous release, or again when the owner deleted
+// it.
 func (s *session) telematicData(ctx context.Context, vin string) ([]byte, error) {
 	if s.container == "" {
 		if err := s.ensureContainer(ctx); err != nil {
@@ -448,13 +459,35 @@ func (s *session) telematicData(ctx context.Context, vin string) ([]byte, error)
 	return raw, err //nolint:wrapcheck // bmw's, which says what failed
 }
 
+// ensureContainer sets up the connection's container. It makes up to 3 calls (the list,
+// a deletion, the creation) that the collector counts as one: one that failed is not
+// tried again before the next day of BMW's quota, 00:00 UTC, so that its retries never
+// spend the day's calls unseen; the stream reads on. An access refused is not its
+// failure: the next access tries again.
 func (s *session) ensureContainer(ctx context.Context) error {
-	id, err := s.src.client.EnsureContainer(ctx, s.token)
+	now := s.src.clk.Now()
+	s.src.mu.Lock()
+	wait := s.src.containerWait[s.connectionID]
+	s.src.mu.Unlock()
+	if now.Before(wait) {
+		return &collector.SourceError{Kind: collector.KindNotAvailable, Err: errContainerWait}
+	}
+	ct, err := s.src.client.EnsureContainer(ctx, s.token)
 	if err != nil {
+		var e *bmw.APIError
+		if !errors.As(err, &e) || e.Kind != bmw.KindUnauthorized {
+			y, m, d := now.UTC().Date()
+			s.src.mu.Lock()
+			s.src.containerWait[s.connectionID] = time.Date(y, m, d+1, 0, 0, 0, 0, time.UTC)
+			s.src.mu.Unlock()
+		}
 		return err //nolint:wrapcheck // bmw's, which says what failed
 	}
-	s.container = id
-	if err := s.src.store.SetBMWContainer(ctx, s.accountID, s.connectionID, s.setAt, id); err != nil {
+	s.src.mu.Lock()
+	delete(s.src.containerWait, s.connectionID)
+	s.src.mu.Unlock()
+	s.container = ct.ID
+	if err := s.src.store.SetBMWContainer(ctx, s.accountID, s.connectionID, s.setAt, ct.ID, ct.Name); err != nil {
 		return fmt.Errorf("keep the bmw container: %w", err)
 	}
 	return nil

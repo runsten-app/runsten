@@ -3,6 +3,7 @@ package bmwsource
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -73,11 +74,11 @@ func (s *store) RotateBMWToken(_ context.Context, _, _ string, at time.Time, tok
 	return nil
 }
 
-func (s *store) SetBMWContainer(_ context.Context, _, _ string, at time.Time, id string) error {
+func (s *store) SetBMWContainer(_ context.Context, _, _ string, at time.Time, id, name string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if at.Equal(s.cred.SetAt) {
-		s.cred.ContainerID = id
+		s.cred.ContainerID, s.cred.ContainerName = id, name
 	}
 	return nil
 }
@@ -369,5 +370,57 @@ func TestPictureNotKept(t *testing.T) {
 	var se *collector.SourceError
 	if !errors.As(err, &se) || se.Kind != collector.KindNotAvailable || se.Status != http.StatusOK {
 		t.Errorf("%#v", err)
+	}
+}
+
+func TestContainerOfPreviousRelease(t *testing.T) {
+	f := newFixture(t)
+	// The connection's container was created by a previous release, with fewer
+	// descriptors: named runsten alone.
+	old, err := f.client.CreateContainer(t.Context(), f.login(t).(*session).token, "runsten", "Runsten, a data logger of the owner's vehicles", []string{bmw.DescSoC})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.st.cred.ContainerID = old.ID
+	sess := f.login(t)
+	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.TelematicData)); err != nil {
+		t.Fatal(err)
+	}
+	if c := f.st.cred; c.ContainerID == old.ID || c.ContainerName != bmw.ContainerName() {
+		t.Errorf("container kept: %+v", c)
+	}
+	cts, err := f.client.Containers(t.Context(), sess.(*session).token)
+	if err != nil || len(cts) != 1 || cts[0].ID != f.st.cred.ContainerID {
+		t.Errorf("containers %+v, %v: the previous one left", cts, err)
+	}
+
+	// Recorded: the next access reads it at once.
+	if again := f.login(t).(*session); again.container != f.st.cred.ContainerID {
+		t.Errorf("next access reads %q", again.container)
+	}
+}
+
+func TestContainerFailedOncePerDay(t *testing.T) {
+	f := newFixture(t)
+	sess := f.login(t)
+	// The account's 10 containers are other clients': Runsten's cannot be created.
+	for i := range 10 {
+		if _, err := f.client.CreateContainer(t.Context(), sess.(*session).token, fmt.Sprintf("other-%d", i), "another client", []string{bmw.DescSoC}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.TelematicData)); err == nil || kindOf(err) == collector.KindNotAvailable {
+		t.Fatalf("first try: %v", err)
+	}
+	// Not tried again the same day, the next access included: told not available.
+	for _, s := range []collector.Session{sess, f.login(t)} {
+		if _, err := s.Fetch(t.Context(), vin, collector.Endpoint(bmw.TelematicData)); !errors.Is(err, errContainerWait) || kindOf(err) != collector.KindNotAvailable {
+			t.Errorf("tried again the same day: %v", err)
+		}
+	}
+	// The next day, tried again.
+	f.clk.Advance(24 * time.Hour)
+	if _, err := f.login(t).Fetch(t.Context(), vin, collector.Endpoint(bmw.TelematicData)); errors.Is(err, errContainerWait) {
+		t.Errorf("not tried the next day: %v", err)
 	}
 }

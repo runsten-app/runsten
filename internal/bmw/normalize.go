@@ -192,6 +192,136 @@ func normalizeValues(v values, s *core.Snapshot) {
 	engine(v, s)
 	charging(v, s)
 	chargeDetails(v, s)
+	doors(v, s)
+	windows(v, s)
+	climate(v, s)
+}
+
+// openings maps the doors', the lids', the windows' and the sunroof's words (BMW's
+// catalogue), upper-cased; INVALID, UNKNOWN or another word is absent. The doors are
+// typed boolean in the catalogue, with the words as values: a boolean is read too
+// (assumed: true is open). INTERMEDIATE is a window or a lid half open: ajar.
+var openings = map[string]core.Opening{
+	"CLOSED": core.Closed, "FALSE": core.Closed, "ASN_ISFALSE": core.Closed,
+	"OPEN": core.Open, "TRUE": core.Open, "ASN_ISTRUE": core.Open,
+	"INTERMEDIATE": core.Ajar,
+}
+
+// locks maps door.lock.status: SECURED is locked with the alarm armed; SELECTIVE-LOCKED
+// (SELECTIVELOCKED in the catalogue's text) leaves the driver's door unlocked, after a
+// remote unlock: unlocked. INVALID and UNKNOWN are absent.
+var locks = map[string]bool{
+	"LOCKED": true, "SECURED": true,
+	"UNLOCKED": false, "SELECTIVE-LOCKED": false, "SELECTIVELOCKED": false,
+}
+
+// opening reads the descriptor's opening; at is moved to its time when later and the
+// value known, so that a word not read never dates what was.
+func opening(v values, k string, at *time.Time) (core.Value[core.Opening], bool) {
+	d, t, ok := v.get(k)
+	if !ok {
+		return core.Value[core.Opening]{}, false
+	}
+	w, _ := d.text()
+	if o, ok := openings[strings.ToUpper(w)]; ok {
+		if t.After(*at) {
+			*at = t
+		}
+		return core.Some(o, t), true
+	}
+	return core.Value[core.Opening]{}, true
+}
+
+// doors reads the doors, the hood, the trunk and the central lock, covered when the
+// response holds one of them; dated by the latest. The tank lid is not read: an electric
+// car has none, and the charging port's flap is no opening of the body.
+func doors(v values, s *core.Snapshot) {
+	var d core.Doors
+	var at time.Time
+	seen := false
+	for _, o := range []struct {
+		k string
+		v *core.Value[core.Opening]
+	}{
+		{DescDoorFrontLeft, &d.FrontLeft},
+		{DescDoorFrontRight, &d.FrontRight},
+		{DescDoorRearLeft, &d.RearLeft},
+		{DescDoorRearRight, &d.RearRight},
+		{DescHood, &d.Hood},
+		{DescTrunk, &d.Tailgate},
+	} {
+		if val, ok := opening(v, o.k, &at); ok {
+			*o.v, seen = val, true
+		}
+	}
+	if l, t, ok := v.get(DescLock); ok {
+		seen = true
+		w, _ := l.text()
+		if locked, ok := locks[strings.ToUpper(w)]; ok {
+			if t.After(at) {
+				at = t
+			}
+			d.Locked = core.Some(locked, t)
+		}
+	}
+	if !seen {
+		return
+	}
+	s.Covers |= core.FieldDoors
+	if d != (core.Doors{}) {
+		s.Doors = core.Some(d, at)
+	}
+}
+
+// windows reads the windows and the sunroof, covered when the response holds one of
+// them; dated by the latest.
+func windows(v values, s *core.Snapshot) {
+	var w core.Windows
+	var at time.Time
+	seen := false
+	for _, o := range []struct {
+		k string
+		v *core.Value[core.Opening]
+	}{
+		{DescWindowFrontLeft, &w.FrontLeft},
+		{DescWindowFrontRight, &w.FrontRight},
+		{DescWindowRearLeft, &w.RearLeft},
+		{DescWindowRearRight, &w.RearRight},
+		{DescSunroof, &w.Sunroof},
+	} {
+		if val, ok := opening(v, o.k, &at); ok {
+			*o.v, seen = val, true
+		}
+	}
+	if !seen {
+		return
+	}
+	s.Covers |= core.FieldWindows
+	if w != (core.Windows{}) {
+		s.Windows = core.Some(w, at)
+	}
+}
+
+// preconditionings maps preConditioning.activity, lower-cased: heating, cooling or
+// ventilating is preconditioning; standby (booked, not running) and inactive are not.
+var preconditionings = map[string]bool{
+	"heating": true, "cooling": true, "ventilation": true,
+	"standby": false, "inactive": false,
+}
+
+// climate reads the preconditioning. CarData tells neither the outside nor the cabin's
+// temperature, nor whether the climate runs otherwise (its catalogue has no such key):
+// they stay absent.
+func climate(v values, s *core.Snapshot) {
+	d, at, ok := v.get(DescPreconditioning)
+	if !ok {
+		return
+	}
+	s.Covers |= core.FieldClimate
+	w, _ := d.text()
+	if on, ok := preconditionings[strings.ToLower(w)]; ok {
+		s.Climate = core.Some(core.Climate{Preconditioning: core.Some(on, at)}, at)
+	}
 }
 
 // position reads the position: a latitude and a longitude with the same timestamp, which
