@@ -166,7 +166,9 @@ func (*Source) Spec() collector.SourceSpec {
 // refresh token given in exchange kept first. The stream is reconnected with its ID token
 // at the next read. It makes no call of the API, whose calls are counted.
 func (s *Source) Login(ctx context.Context, accountID, connectionID string) (collector.Session, time.Duration, error) {
-	s.sweep()
+	// Its own subscription is kept, idle or not: given the new ID token, it closes its
+	// connection before opening the next, and waits for the broker to free the slot.
+	s.sweep(connectionID)
 	cred, err := s.store.BMWCredential(ctx, accountID, connectionID)
 	if err != nil {
 		return nil, 0, fmt.Errorf("bmw credential: %w", err)
@@ -244,13 +246,14 @@ func (s *Source) subscribe(connectionID, gcid, idToken string) {
 	}
 }
 
-// sweep closes the subscriptions no session read for idleClose.
-func (s *Source) sweep() {
+// sweep closes the subscriptions no session read for idleClose, but the connection
+// keep's.
+func (s *Source) sweep(keep string) {
 	now := s.clk.Now()
 	var idle []*bmw.Subscription
 	s.mu.Lock()
 	for id, sub := range s.subs {
-		if now.Sub(sub.readAt) >= idleClose {
+		if id != keep && now.Sub(sub.readAt) >= idleClose {
 			idle = append(idle, sub.Subscription)
 			delete(s.subs, id)
 		}
@@ -278,7 +281,7 @@ func (s *Source) Run(ctx context.Context) {
 			}
 			return
 		case <-t.C:
-			s.sweep()
+			s.sweep("")
 		}
 	}
 }
