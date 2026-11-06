@@ -383,14 +383,46 @@ func TestBMWConcurrentPolls(t *testing.T) {
 	var f bmwFlows
 	t0 := time.Date(2026, 9, 28, 5, 0, 0, 0, time.UTC)
 	f.start("a", bmwFlow{expires: t0.Add(5 * time.Minute), interval: 5 * time.Second, next: t0}, t0)
-	if _, retry, ok := f.take("a", t0); !ok || retry != 0 {
+	fl, retry, ok := f.take("a", t0)
+	if !ok || retry != 0 {
 		t.Fatalf("first: %v, %v", retry, ok)
 	}
 	if _, retry, ok := f.take("a", t0); !ok || retry != 5*time.Second {
 		t.Errorf("while polling: %v, %v", retry, ok)
 	}
-	f.wait("a", 5*time.Second, t0)
+	f.wait("a", fl.gen, 5*time.Second, t0)
 	if _, retry, ok := f.take("a", t0.Add(5*time.Second)); !ok || retry != 0 {
 		t.Errorf("after the answer: %v, %v", retry, ok)
+	}
+}
+
+// TestBMWFlowGenerations: a request of a flow that was replaced, or removed, changes
+// nothing of the next, nor stores anything.
+func TestBMWFlowGenerations(t *testing.T) {
+	var f bmwFlows
+	t0 := time.Date(2026, 9, 28, 5, 0, 0, 0, time.UTC)
+	flow := bmwFlow{expires: t0.Add(5 * time.Minute), interval: 5 * time.Second, next: t0}
+	f.start("a", flow, t0)
+	old, _, _ := f.take("a", t0)
+	f.start("a", flow, t0) // started again while the old one polls
+	f.wait("a", old.gen, time.Minute, t0)
+	f.end("a", old.gen)
+	stored := false
+	if ok, err := f.commit("a", old.gen, func() error { stored = true; return nil }); ok || err != nil || stored {
+		t.Errorf("the old flow committed: %v, %v, %v", ok, err, stored)
+	}
+	next, retry, ok := f.take("a", t0)
+	if !ok || retry != 0 || next.gen == old.gen {
+		t.Fatalf("the new flow: %+v, %v, %v", next, retry, ok)
+	}
+	// Removed while it polls: nothing is stored.
+	f.drop("a")
+	if ok, _ := f.commit("a", next.gen, func() error { stored = true; return nil }); ok || stored {
+		t.Error("committed after a removal")
+	}
+	f.start("a", flow, t0)
+	cur, _, _ := f.take("a", t0)
+	if ok, err := f.commit("a", cur.gen, func() error { stored = true; return nil }); !ok || err != nil || !stored {
+		t.Errorf("the current flow: %v, %v, %v", ok, err, stored)
 	}
 }

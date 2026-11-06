@@ -6033,7 +6033,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`authorization_expired`: no code is waiting (none started, or the instance restarted), or it expired. `credential_refused`: the owner or BMW refused the authorization."
+          description: "`authorization_expired`: no code is waiting (none started, or the instance restarted), it expired, or the connection was removed or started again while the code was being approved. `credential_refused`: the owner or BMW refused the authorization."
         "401":
           content:
             application/json:

@@ -112,6 +112,9 @@ type bmwFlow struct {
 	next     time.Time
 	// polling: a request is asking BMW, until wait or end; another meanwhile waits.
 	polling bool
+	// gen tells this flow from the one that replaces it: a request of the previous one
+	// never changes, ends nor completes the next.
+	gen uint64
 }
 
 // bmwFlows are the device flows pending, one per account: a new one replaces the
@@ -120,6 +123,7 @@ type bmwFlows struct {
 	mu      sync.Mutex
 	pending map[string]bmwFlow
 	max     int // 0: bmwMaxFlows
+	gen     uint64
 }
 
 func (f *bmwFlows) start(account string, fl bmwFlow, now time.Time) bool {
@@ -140,6 +144,8 @@ func (f *bmwFlows) start(account string, fl bmwFlow, now time.Time) bool {
 	if _, ok := f.pending[account]; !ok && len(f.pending) >= limit {
 		return false
 	}
+	f.gen++
+	fl.gen = f.gen
 	f.pending[account] = fl
 	return true
 }
@@ -168,20 +174,42 @@ func (f *bmwFlows) take(account string, now time.Time) (fl bmwFlow, retry time.D
 	return fl, 0, true
 }
 
-// wait sets when the account's flow may be polled again, interval its new interval.
-func (f *bmwFlows) wait(account string, interval time.Duration, now time.Time) {
+// wait sets when the account's flow gen may be polled again, interval its new interval.
+func (f *bmwFlows) wait(account string, gen uint64, interval time.Duration, now time.Time) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if fl, ok := f.pending[account]; ok {
+	if fl, ok := f.pending[account]; ok && fl.gen == gen {
 		fl.interval, fl.next, fl.polling = interval, now.Add(interval), false
 		f.pending[account] = fl
 	}
 }
 
-func (f *bmwFlows) end(account string) {
+// end forgets the account's flow gen; one that replaced it stays.
+func (f *bmwFlows) end(account string, gen uint64) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if fl, ok := f.pending[account]; ok && fl.gen == gen {
+		delete(f.pending, account)
+	}
+}
+
+// drop forgets the account's flow, whichever it is: the connection is removed.
+func (f *bmwFlows) drop(account string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	delete(f.pending, account)
+}
+
+// commit runs store while the account's flow is still gen, under the flows' lock, so that
+// a removal (drop, then the credential erased) either comes after it and erases what it
+// stored, or before it and stores nothing. false: the flow was removed or replaced.
+func (f *bmwFlows) commit(account string, gen uint64, store func() error) (bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if fl, ok := f.pending[account]; !ok || fl.gen != gen {
+		return false, nil
+	}
+	return true, store()
 }
 
 type bmwJSON struct {
@@ -295,28 +323,29 @@ func (s *Server) postBMWToken(ctx context.Context, _ *struct{}) (*body[connectio
 	if errors.As(err, &be) {
 		switch be.Outcome {
 		case BMWPending:
-			s.bmwFlows.wait(account, fl.interval, now)
+			s.bmwFlows.wait(account, fl.gen, fl.interval, now)
 			return nil, pending(fl.interval)
 		case BMWSlowDown: // RFC 8628 §3.5: 5 seconds more from now on
-			s.bmwFlows.wait(account, fl.interval+5*time.Second, now)
+			s.bmwFlows.wait(account, fl.gen, fl.interval+5*time.Second, now)
 			return nil, pending(fl.interval + 5*time.Second)
 		case BMWExpired:
-			s.bmwFlows.end(account)
+			s.bmwFlows.end(account, fl.gen)
 			return nil, apiError(http.StatusBadRequest, codeAuthorizationExpired, "the code expired before it was approved: start again")
 		case BMWDenied, BMWClientRefused:
-			s.bmwFlows.end(account)
+			s.bmwFlows.end(account, fl.gen)
 			return nil, apiError(http.StatusBadRequest, codeCredentialRefused, "BMW refused the authorization")
 		case BMWUnavailable, BMWScopeMissing:
 		}
 	}
 	if err != nil {
 		// Tried again at the next request: the code may still be approved.
-		s.bmwFlows.wait(account, fl.interval, now)
+		s.bmwFlows.wait(account, fl.gen, fl.interval, now)
 		s.Log.Warn("BMW token not given", "err", err)
 		return nil, apiError(http.StatusBadGateway, codeSourceUnavailable, "BMW did not answer, try again later")
 	}
-	// The device code is spent: whatever happens next, the owner starts again.
-	s.bmwFlows.end(account)
+	// The device code is spent: whatever happens next, the owner starts again. The flow
+	// stays reserved until then, so that a removal meanwhile is seen.
+	defer s.bmwFlows.end(account, fl.gen)
 	vins, err := s.BMWAccounts.PrimaryVINs(check, tok.Access)
 	switch {
 	case errors.As(err, &be) && be.Outcome == BMWScopeMissing:
@@ -335,9 +364,16 @@ func (s *Server) postBMWToken(ctx context.Context, _ *struct{}) (*body[connectio
 		return nil, s.tooManyVehicles()
 	}
 	cred := BMWCredential{ClientID: fl.clientID, GCID: tok.GCID, Refresh: tok.Refresh}
-	id, err := s.BMW.SetBMW(ctx, account, cred, s.Clock.Now())
+	var id string
+	current, err := s.bmwFlows.commit(account, fl.gen, func() (err error) {
+		id, err = s.BMW.SetBMW(ctx, account, cred, s.Clock.Now())
+		return err //nolint:wrapcheck // wrapped by s.internal below
+	})
 	if err != nil {
 		return nil, s.internal("BMW connection not stored", err)
+	}
+	if !current {
+		return nil, apiError(http.StatusBadRequest, codeAuthorizationExpired, "the connection was removed or started again meanwhile")
 	}
 	if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
 		return nil, s.internal("vehicles not recorded", err)
@@ -352,7 +388,7 @@ func (s *Server) postBMWToken(ctx context.Context, _ *struct{}) (*body[connectio
 
 func (s *Server) deleteBMW(ctx context.Context, _ *struct{}) (*struct{}, error) {
 	account := sessionFrom(ctx).AccountID
-	s.bmwFlows.end(account)
+	s.bmwFlows.drop(account)
 	if err := s.BMW.DeleteBMW(ctx, account); err != nil {
 		return nil, s.internal("BMW connection not deleted", err)
 	}
@@ -384,8 +420,8 @@ func (s *Server) registerBMW(api huma.API) {
 			"account's identifier and the refresh token, sealed, never returned. It replaces a previous connection.",
 	}, "The connection.", map[int]string{
 		http.StatusUnauthorized: errUnauthorized,
-		http.StatusBadRequest: "`authorization_expired`: no code is waiting (none started, or the instance restarted), or it " +
-			"expired. `credential_refused`: the owner or BMW refused the authorization.",
+		http.StatusBadRequest: "`authorization_expired`: no code is waiting (none started, or the instance restarted), it " +
+			"expired, or the connection was removed or started again while the code was being approved. `credential_refused`: the owner or BMW refused the authorization.",
 		http.StatusForbidden: offered,
 		http.StatusConflict: "`authorization_pending`: not approved yet; ask again after `Retry-After`. `scope_missing`: the client " +
 			"ID lacks CarData's API subscription. `no_vehicle`: the BMW account is the primary user of no vehicle. " +
