@@ -144,6 +144,12 @@ func (*Source) Spec() collector.SourceSpec {
 				Endpoint: collector.Endpoint(bmw.ChargingHistory), API: bmw.Source, Optional: true,
 				Parked: collector.PaceDetails, Driving: collector.PaceDetails, Charging: collector.PaceDetails,
 			},
+			// The vehicle's picture, served by runsten-api: a call a day, an identical one
+			// stored once; optional, a vehicle may have none.
+			{
+				Endpoint: collector.Endpoint(bmw.Image), API: bmw.Source, Optional: true,
+				Parked: collector.PaceDetails, Driving: collector.PaceDetails, Charging: collector.PaceDetails,
+			},
 		},
 		Settled:   []collector.Endpoint{collector.Endpoint(bmw.Stream)},
 		Daily:     Daily,
@@ -361,6 +367,8 @@ func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) 
 		raw, err = s.src.client.BasicData(ctx, s.token, vin)
 	case bmw.ChargingHistory:
 		raw, err = s.src.client.ChargingHistory(ctx, s.token, vin, now.AddDate(0, 0, -historyDays), now)
+	case bmw.Image:
+		raw, err = s.src.client.Image(ctx, s.token, vin)
 	default:
 		return nil, fmt.Errorf("bmw: unknown endpoint %q", ep)
 	}
@@ -455,6 +463,12 @@ func (s *session) ensureContainer(ctx context.Context) error {
 // apiError tells the collector what a refusal of the API means. The day's calls spent,
 // the API is left alone until 00:00 UTC, and the stream reads on.
 func (s *session) apiError(err error, now time.Time) error {
+	var pe *bmw.PictureError
+	if errors.As(err, &pe) {
+		// BMW answered, without a picture kept: the endpoint's, tried again later, no
+		// failure told.
+		return &collector.SourceError{Kind: collector.KindNotAvailable, Status: pe.Status, Err: err}
+	}
 	var e *bmw.APIError
 	if errors.As(err, &e) && e.Kind == bmw.KindRateLimited {
 		y, m, d := now.UTC().Date()

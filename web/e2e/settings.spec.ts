@@ -151,7 +151,7 @@ test("Vehicle settings: a family the catalog lacks, from the bar's vehicle menu"
   )
   await expect(section.getByRole('radio')).toHaveCount(0)
   // Its sheet, the values its details tell, the rest folded; no picture from the simulator.
-  const sheet = section.getByRole('region', { name: 'Sheet' })
+  const sheet = section.getByRole('region', { name: 'Specifications' })
   await expect(sheet.locator('dt').first()).toHaveText('Colour')
   await expect(sheet.locator('dd').first()).toHaveText('Vapour Grey')
   await expect(sheet.locator('img')).toHaveCount(0)

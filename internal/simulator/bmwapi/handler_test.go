@@ -298,7 +298,7 @@ func TestVehicles(t *testing.T) {
 	}
 	_, body = s.get(t, tok, APIPrefix+"vehicles/"+vin+"/basicData")
 	b := body.(map[string]any)
-	if b["brand"] != "BMW" || b["modelName"] != "i4 eDrive40" || b["series"] != "i4" || b["propulsionType"] != "BEV" || b["hvsMaxEnergyAbsolute"] != "83.9" {
+	if b["brand"] != "BMWi" || b["modelName"] != "i4 eDrive40" || b["series"] != "i4" || b["propulsionType"] != "BEV" || b["hvsMaxEnergyAbsolute"] != "83.9" {
 		t.Errorf("basic data: %v", b)
 	}
 	s.src.brand = "mini"

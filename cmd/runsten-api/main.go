@@ -305,6 +305,7 @@ func run(args []string) error {
 		Sessions: sessions, AccessTokens: sessions,
 		Addresses:        addresses,
 		Pictures:         pictures{picture.New(pictureParams, hc, clock.Real{})},
+		StoredPictures:   storedPictures{st},
 		Reader:           st,
 		Settings:         st,
 		Models:           st,

@@ -3,11 +3,13 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
 	"runsten/internal/api"
 	"runsten/internal/collector"
+	"runsten/internal/core"
 )
 
 // TestEachResponse: the responses stored of the period, oldest first, as the provider
@@ -65,5 +67,44 @@ func TestEachResponse(t *testing.T) {
 	err := s.EachResponse(ctx, a, v, t0, t0.Add(time.Hour), func(api.Response) error { n++; return boom })
 	if !errors.Is(err, boom) || n != 1 {
 		t.Errorf("stopped: %v after %d", err, n)
+	}
+}
+
+// TestLatestResponse: the latest response of a kind, read within the account only.
+func TestLatestResponse(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, v := newVehicle(t, s, "token", "WBY31AW02RFR00001")
+	b, _ := newVehicle(t, s, "token-b", "WBY31AW02RFR00002")
+	t0 := time.Date(2026, 11, 6, 6, 0, 0, 0, time.UTC)
+	image := core.Kind{Source: "bmw", Endpoint: "image"}
+	if ok, err := s.HasResponse(ctx, a, v, image); err != nil || ok {
+		t.Fatalf("none yet: %v %v", ok, err)
+	}
+	if _, ok, err := s.LatestResponse(ctx, a, v, image); err != nil || ok {
+		t.Fatalf("none yet: %v %v", ok, err)
+	}
+	for i, payload := range []string{`{"type":"image/png","image":"AA=="}`, `{"type":"image/png","image":"AQ=="}`} {
+		_, err := s.SaveSnapshot(ctx, collector.Snapshot{
+			AccountID: a, VehicleID: v, Source: "bmw", Endpoint: "image",
+			FetchedAt: t0.Add(time.Duration(i) * time.Hour), Payload: []byte(payload), Hash: []byte(payload),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	r, ok, err := s.LatestResponse(ctx, a, v, image)
+	if err != nil || !ok || !r.FetchedAt.Equal(t0.Add(time.Hour)) || !strings.Contains(string(r.Payload), "AQ==") {
+		t.Errorf("latest: %+v %v %v", r, ok, err)
+	}
+	if ok, err := s.HasResponse(ctx, a, v, image); err != nil || !ok {
+		t.Errorf("has: %v %v", ok, err)
+	}
+	// Another kind, another account.
+	if ok, _ := s.HasResponse(ctx, a, v, core.Kind{Source: "bmw", Endpoint: "basic-data"}); ok {
+		t.Error("another kind")
+	}
+	if ok, err := s.HasResponse(ctx, b, v, image); err != nil || ok {
+		t.Errorf("another account: %v %v", ok, err)
 	}
 }

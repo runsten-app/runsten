@@ -246,6 +246,11 @@ func TestStreamAndAPI(t *testing.T) {
 	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.ChargingHistory)); err != nil {
 		t.Error(err)
 	}
+	if raw, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Image)); err != nil {
+		t.Error(err)
+	} else if p, err := bmw.DecodePicture(raw); err != nil || p.Type != "image/png" {
+		t.Errorf("picture: %v", err)
+	}
 	if _, err := sess.Fetch(t.Context(), "WBY31AW02RFR99999", collector.Endpoint(bmw.BasicData)); kindOf(err) != collector.KindUnshared {
 		t.Errorf("another VIN: %v", err)
 	}
@@ -353,5 +358,16 @@ func TestRefusals(t *testing.T) {
 	f.control(t, "revoke")
 	if _, _, err := f.src.Login(t.Context(), "a", "c"); kindOf(err) != collector.KindCredentialRefused {
 		t.Errorf("revoked: %v", err)
+	}
+}
+
+func TestPictureNotKept(t *testing.T) {
+	// BMW answered without a picture kept: the endpoint not given, with BMW's status, not
+	// a failure of the API.
+	s := &session{src: New(nil, "", nil, clock.Real{})}
+	err := s.apiError(&bmw.PictureError{Status: http.StatusOK, Err: errors.New("image: not an image")}, time.Date(2026, 11, 6, 22, 0, 0, 0, time.UTC))
+	var se *collector.SourceError
+	if !errors.As(err, &se) || se.Kind != collector.KindNotAvailable || se.Status != http.StatusOK {
+		t.Errorf("%#v", err)
 	}
 }

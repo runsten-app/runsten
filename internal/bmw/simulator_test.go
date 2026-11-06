@@ -185,6 +185,9 @@ func TestSimulatorAPI(t *testing.T) {
 	if m.Brand.V != "bmw" || m.Family.V != "i4" || m.Trim.V != "edrive40" || m.ModelYear.V != 2024 || !m.BatteryElectric() {
 		t.Errorf("model: %+v", m)
 	}
+	if m.CapacityKWh.V != 83.9 || m.Sheet.V != (core.Sheet{Colour: "C4P", Steering: core.LeftHand}) {
+		t.Errorf("capacity and sheet: %+v %+v", m.CapacityKWh, m.Sheet)
+	}
 
 	// The container, created once, then found again.
 	id, err := s.EnsureContainer(ctx, tok.Access)
@@ -226,6 +229,19 @@ func TestSimulatorAPI(t *testing.T) {
 	}
 	if _, err := s.ChargingHistory(ctx, tok.Access, vin, t0.Add(-30*24*time.Hour), t0); err != nil {
 		t.Errorf("charging history: %v", err)
+	}
+	raw, err = s.Image(ctx, tok.Access, vin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p, err := DecodePicture(raw); err != nil || p.Type != "image/png" || len(p.Data) == 0 {
+		t.Errorf("picture: %s %v", p.Type, err)
+	}
+	if u, err := UploadOf(Image, raw); err != nil || len(u.Fields) != 0 {
+		t.Errorf("picture's upload: %+v %v", u, err)
+	}
+	if _, err := s.Image(ctx, tok.Access, "WBY31AW02RFR99999"); kindOf(err) != KindUnshared {
+		t.Errorf("another VIN's picture: %v", err)
 	}
 	s.control(t, "quota?used=50")
 	if _, err := s.BasicData(ctx, tok.Access, vin); kindOf(err) != KindRateLimited {

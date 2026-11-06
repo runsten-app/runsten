@@ -45,7 +45,7 @@ describe('VehicleSettingsPage', () => {
     expect(
       tiles.map((t) => t.classes().find((c) => c === 'vehicle-sheet' || c === 'delete-vehicle')),
     ).toEqual([undefined, 'vehicle-sheet', 'delete-vehicle'])
-    expect(w.find('.vehicle-sheet h3').text()).toBe('Sheet')
+    expect(w.find('.vehicle-sheet h3').text()).toBe('Specifications')
     expect(w.find('.import-list').exists()).toBe(false)
     expect(mocks.fetchVariants).toHaveBeenCalledWith(ex30?.id)
     // The vehicle's tabs, none of them this page's.

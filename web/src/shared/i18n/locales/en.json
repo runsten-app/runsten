@@ -1055,7 +1055,7 @@
     "error": "The vehicle could not be loaded. Try again in a moment."
   },
   "vehicleSheet": {
-    "title": "Sheet",
+    "title": "Specifications",
     "name": "Name in the app",
     "colour": "Colour",
     "drive": "Drive",
