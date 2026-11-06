@@ -270,6 +270,7 @@ const (
 	FailUnshared          = "unshared"           // the vehicle is no longer shared with the credential
 	FailNotGranted        = "not_granted"        // the endpoint is not granted to the credential
 	FailAPIClosed         = "api_closed"         // the provider's API is closed to the credential
+	FailStreamHeld        = "stream_held"        // another client holds the provider's stream
 	FailOther             = "other"
 )
 

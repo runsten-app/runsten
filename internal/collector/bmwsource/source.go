@@ -289,8 +289,7 @@ func (s *Source) StreamState(connectionID string) StreamState {
 		return StreamState{}
 	}
 	up, err := sub.Up()
-	var se *bmw.StreamError
-	return StreamState{Up: up, Held: !up && errors.As(err, &se) && se.Code == bmw.RefusedNotAuthorized, Err: err}
+	return StreamState{Up: up, Held: !up && held(err), Err: err}
 }
 
 // Observe implements collector.Source: the stream's values and the container's tell
@@ -386,6 +385,11 @@ func (s *session) stream(ctx context.Context, vin string) ([]byte, error) {
 	try := sub.tried != idToken || !now.Before(sub.retryAt)
 	s.src.mu.Unlock()
 	if !try {
+		// Waiting to try again: a stream another client holds is told until then, rather
+		// than the values it left.
+		if up, lost := sub.Up(); !up && held(lost) {
+			return nil, &collector.SourceError{Kind: collector.KindStreamHeld, Err: lost}
+		}
 		return sub.Values(vin), nil
 	}
 	err := sub.Connect(ctx, idToken)
@@ -393,18 +397,28 @@ func (s *session) stream(ctx context.Context, vin string) ([]byte, error) {
 		return sub.Values(vin), nil
 	}
 	retry := streamRetry
-	var se *bmw.StreamError
-	if errors.As(err, &se) && se.Code == bmw.RefusedNotAuthorized {
+	if held(err) {
 		retry = heldRetry
 	}
 	s.src.mu.Lock()
 	sub.tried, sub.retryAt = idToken, now.Add(retry)
 	s.src.mu.Unlock()
-	if errors.As(err, &se) && se.Code == bmw.RefusedBadPassword {
+	var se *bmw.StreamError
+	switch {
+	case errors.As(err, &se) && se.Code == bmw.RefusedBadPassword:
 		// The ID token refused, or expired: a new access gives another.
 		return nil, &collector.SourceError{Kind: collector.KindUnauthorized, Err: err}
+	case held(err):
+		return nil, &collector.SourceError{Kind: collector.KindStreamHeld, Err: err}
 	}
 	return nil, err //nolint:wrapcheck // bmw's, which says what failed
+}
+
+// held reports whether err is the stream's refusal of a second connection: another
+// client holds the account's only one.
+func held(err error) bool {
+	var se *bmw.StreamError
+	return errors.As(err, &se) && se.Code == bmw.RefusedNotAuthorized
 }
 
 // telematicData reads the container's values, creating Runsten's container first when
