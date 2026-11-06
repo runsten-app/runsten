@@ -742,7 +742,7 @@ describe('VehicleState', () => {
     ])
     expect(plain(tile.find('.tyres-head .status-pill').text())).toBe('Needs attention')
     // A tyre that warns in its tone's color.
-    expect(w.findAll('[data-test="state-tyres"] .wheel')[2]?.classes()).toContain('text-error')
+    expect(w.findAll('[data-test="state-tyres"] .wheel')[2]?.classes()).toContain('text-warning')
     w.unmount()
     // A car that gives a warning per tyre, no pressure (a Volvo): the warnings, all OK.
     fetchHealth.mockResolvedValue({
