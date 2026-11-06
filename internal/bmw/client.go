@@ -112,7 +112,7 @@ type Mapping struct {
 
 // Container is a set of descriptors the API reads together.
 type Container struct {
-	ID, Name string
+	ID, Name, Purpose string
 }
 
 // Client calls CarData. Each method makes one request, and never retries: the caller
@@ -370,9 +370,10 @@ func (c *Client) Containers(ctx context.Context, token string) ([]Container, err
 	}
 	var resp struct {
 		Containers []struct {
-			ID    string `json:"containerId"`
-			Name  string `json:"name"`
-			State string `json:"state"`
+			ID      string `json:"containerId"`
+			Name    string `json:"name"`
+			Purpose string `json:"purpose"`
+			State   string `json:"state"`
 		} `json:"containers"`
 	}
 	if err := json.Unmarshal(raw, &resp); err != nil {
@@ -381,7 +382,7 @@ func (c *Client) Containers(ctx context.Context, token string) ([]Container, err
 	out := make([]Container, 0, len(resp.Containers))
 	for _, ct := range resp.Containers {
 		if !strings.EqualFold(ct.State, "DELETED") {
-			out = append(out, Container{ID: ct.ID, Name: ct.Name})
+			out = append(out, Container{ID: ct.ID, Name: ct.Name, Purpose: ct.Purpose})
 		}
 	}
 	return out, nil
@@ -403,8 +404,9 @@ func (c *Client) CreateContainer(ctx context.Context, token, name, purpose strin
 		return Container{}, err
 	}
 	var resp struct {
-		ID   string `json:"containerId"`
-		Name string `json:"name"`
+		ID      string `json:"containerId"`
+		Name    string `json:"name"`
+		Purpose string `json:"purpose"`
 	}
 	if err := json.Unmarshal(raw, &resp); err != nil {
 		return Container{}, fmt.Errorf("create container: %w", err)
@@ -412,7 +414,7 @@ func (c *Client) CreateContainer(ctx context.Context, token, name, purpose strin
 	if resp.ID == "" {
 		return Container{}, errors.New("create container: no containerId in the response")
 	}
-	return Container{ID: resp.ID, Name: resp.Name}, nil
+	return Container{ID: resp.ID, Name: resp.Name, Purpose: resp.Purpose}, nil
 }
 
 // DeleteContainer deletes the container of the ID.
@@ -427,7 +429,8 @@ func (c *Client) DeleteContainer(ctx context.Context, token, id string) error {
 
 // EnsureContainer returns Runsten's container of this release (ContainerName), created
 // with Descriptors when the account has none. Runsten's containers of another release
-// are deleted first: BMW allows 10 an account, and they cannot be changed. 1 call when it
+// are deleted first: BMW allows 10 an account, and they cannot be changed; a container is
+// Runsten's by its name and its purpose together, never by a prefix alone. 1 call when it
 // exists, 2 plus one per container replaced otherwise.
 func (c *Client) EnsureContainer(ctx context.Context, token string) (Container, error) {
 	cts, err := c.Containers(ctx, token)
@@ -441,13 +444,13 @@ func (c *Client) EnsureContainer(ctx context.Context, token string) (Container, 
 		}
 	}
 	for _, ct := range cts {
-		if isRunstenContainer(ct.Name) {
+		if isRunstenContainer(ct) {
 			if err := c.DeleteContainer(ctx, token, ct.ID); err != nil {
 				return Container{}, err
 			}
 		}
 	}
-	return c.CreateContainer(ctx, token, name, "Runsten, a data logger of the owner's vehicles", Descriptors())
+	return c.CreateContainer(ctx, token, name, containerPurpose, Descriptors())
 }
 
 func (c *Client) get(ctx context.Context, token, name, path string) ([]byte, error) {

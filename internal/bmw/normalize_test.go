@@ -345,10 +345,18 @@ func TestNormalizePreconditioning(t *testing.T) {
 
 func TestContainerName(t *testing.T) {
 	n := ContainerName()
-	if len(n) != len("runsten-")+8 || !isRunstenContainer(n) || !isRunstenContainer("runsten") {
+	ours := func(name string) Container { return Container{Name: name, Purpose: containerPurpose} }
+	if len(n) != len("runsten-")+8 || !isRunstenContainer(ours(n)) || !isRunstenContainer(ours("runsten")) {
 		t.Errorf("name %q", n)
 	}
-	if isRunstenContainer("runstenx") || isRunstenContainer("evcc") {
-		t.Error("another's container taken for Runsten's")
+	// Another client's, named alike or with another purpose, is never Runsten's.
+	for _, ct := range []Container{
+		ours("runstenx"), ours("evcc"), ours("runsten-custom"), ours("runsten-0123456789"),
+		{Name: n, Purpose: "my own"},
+		{Name: "runsten"},
+	} {
+		if isRunstenContainer(ct) {
+			t.Errorf("%+v taken for Runsten's", ct)
+		}
 	}
 }

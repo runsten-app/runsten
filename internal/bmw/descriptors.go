@@ -3,6 +3,7 @@ package bmw
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"regexp"
 	"slices"
 	"strings"
 )
@@ -74,8 +75,15 @@ func Descriptors() []string {
 }
 
 // containerPrefix begins the name of every container Runsten creates; the first ones
-// were named so alone.
-const containerPrefix = "runsten"
+// were named so alone. containerPurpose is the purpose they are all created with.
+const (
+	containerPrefix  = "runsten"
+	containerPurpose = "Runsten, a data logger of the owner's vehicles"
+)
+
+// runstenName matches the names Runsten gives its containers: runsten, the first ones,
+// then runsten- and 8 hexadecimal digits.
+var runstenName = regexp.MustCompile(`^runsten(-[0-9a-f]{8})?$`)
 
 // ContainerName is the name of Runsten's container: its prefix and 8 hexadecimal digits
 // of its descriptors' hash. A container cannot be changed once created (ADR 0045 §5):
@@ -86,7 +94,8 @@ func ContainerName() string {
 	return containerPrefix + "-" + hex.EncodeToString(sum[:4])
 }
 
-// isRunstenContainer tells a container Runsten created, of any release.
-func isRunstenContainer(name string) bool {
-	return name == containerPrefix || strings.HasPrefix(name, containerPrefix+"-")
+// isRunstenContainer tells a container Runsten created, of any release: a name of its
+// and its purpose, so that a container another client named alike is never taken.
+func isRunstenContainer(ct Container) bool {
+	return runstenName.MatchString(ct.Name) && ct.Purpose == containerPurpose
 }

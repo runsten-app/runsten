@@ -92,6 +92,9 @@ type Source struct {
 	subs map[string]*subscription
 	// spent is when each connection may call the API again, its day's calls spent.
 	spent map[string]time.Time
+	// containerWait is when each connection may try again to set up its container, after
+	// a failure.
+	containerWait map[string]time.Time
 }
 
 // rotation is a refresh token given in exchange for the one of the credential set at
@@ -117,6 +120,7 @@ func New(client *bmw.Client, streamURL string, st Store, clk clock.Clock) *Sourc
 	return &Source{
 		client: client, store: st, clk: clk, streamURL: streamURL,
 		rotated: map[string]rotation{}, subs: map[string]*subscription{}, spent: map[string]time.Time{},
+		containerWait: map[string]time.Time{},
 	}
 }
 
@@ -347,6 +351,9 @@ type session struct {
 // errSpent: the day's calls of the API are spent, until 00:00 UTC.
 var errSpent = errors.New("bmw: the day's calls of the API are spent")
 
+// errContainerWait: setting up the container failed today, tried again from 00:00 UTC.
+var errContainerWait = errors.New("bmw: the container could not be set up today")
+
 // Fetch implements collector.Session.
 func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) ([]byte, error) {
 	e := bmw.Endpoint(ep)
@@ -452,11 +459,33 @@ func (s *session) telematicData(ctx context.Context, vin string) ([]byte, error)
 	return raw, err //nolint:wrapcheck // bmw's, which says what failed
 }
 
+// ensureContainer sets up the connection's container. It makes up to 3 calls (the list,
+// a deletion, the creation) that the collector counts as one: one that failed is not
+// tried again before the next day of BMW's quota, 00:00 UTC, so that its retries never
+// spend the day's calls unseen; the stream reads on. An access refused is not its
+// failure: the next access tries again.
 func (s *session) ensureContainer(ctx context.Context) error {
+	now := s.src.clk.Now()
+	s.src.mu.Lock()
+	wait := s.src.containerWait[s.connectionID]
+	s.src.mu.Unlock()
+	if now.Before(wait) {
+		return &collector.SourceError{Kind: collector.KindNotAvailable, Err: errContainerWait}
+	}
 	ct, err := s.src.client.EnsureContainer(ctx, s.token)
 	if err != nil {
+		var e *bmw.APIError
+		if !errors.As(err, &e) || e.Kind != bmw.KindUnauthorized {
+			y, m, d := now.UTC().Date()
+			s.src.mu.Lock()
+			s.src.containerWait[s.connectionID] = time.Date(y, m, d+1, 0, 0, 0, 0, time.UTC)
+			s.src.mu.Unlock()
+		}
 		return err //nolint:wrapcheck // bmw's, which says what failed
 	}
+	s.src.mu.Lock()
+	delete(s.src.containerWait, s.connectionID)
+	s.src.mu.Unlock()
 	s.container = ct.ID
 	if err := s.src.store.SetBMWContainer(ctx, s.accountID, s.connectionID, s.setAt, ct.ID, ct.Name); err != nil {
 		return fmt.Errorf("keep the bmw container: %w", err)

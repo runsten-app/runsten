@@ -191,13 +191,16 @@ func TestSimulatorAPI(t *testing.T) {
 		t.Errorf("capacity and sheet: %+v %+v", m.CapacityKWh, m.Sheet)
 	}
 
-	// The container of a previous release, named runsten alone, and another client's.
-	old, err := s.CreateContainer(ctx, tok.Access, "runsten", "a previous release", []string{DescSoC})
+	// The container of a previous release, named runsten alone, and two of other clients,
+	// one named as Runsten's would be.
+	old, err := s.CreateContainer(ctx, tok.Access, "runsten", containerPurpose, []string{DescSoC})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.CreateContainer(ctx, tok.Access, "evcc", "another client", []string{DescSoC}); err != nil {
-		t.Fatal(err)
+	for _, name := range []string{"evcc", "runsten-0badc0de"} {
+		if _, err := s.CreateContainer(ctx, tok.Access, name, "another client", []string{DescSoC}); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// The container, created once in place of the previous release's, then found again.
@@ -212,7 +215,11 @@ func TestSimulatorAPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if names := []string{cts[0].Name, cts[len(cts)-1].Name}; len(cts) != 2 || names[0] != "evcc" || names[1] != ct.Name {
+	names := make([]string, len(cts))
+	for i, c := range cts {
+		names[i] = c.Name
+	}
+	if !slices.Equal(names, []string{"evcc", "runsten-0badc0de", ct.Name}) {
 		t.Errorf("containers %+v: the previous release's (%s) left", cts, old.ID)
 	}
 	if _, err := s.TelematicData(ctx, tok.Access, vin, old.ID); err == nil {
