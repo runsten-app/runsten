@@ -32,7 +32,7 @@ const facts = (w: ReturnType<typeof sheet>) =>
 describe('VehicleSheet', () => {
   it('shows what the source tells, the main values first, the rest folded', async () => {
     const w = sheet(volvo)
-    expect(w.find('h3').text()).toBe('Sheet')
+    expect(w.find('h3').text()).toBe('Specifications')
     expect(w.find('img').attributes('src')).toBe(`api/v1/vehicles/${xc40.id}/picture`)
     expect(w.find('img').attributes('alt')).toBe('')
     expect(facts(w)).toEqual([
