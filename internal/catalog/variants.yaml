@@ -1619,12 +1619,53 @@
       level: secondary
       for: [ac_max_kw, ac_option_kw]
 
-# Wikipedia tells 118.1 gross and 112.5 usable for the refreshed i7: ev-database's figures are kept (one source per figure, the page of the variant).
-- id: i7-m70-2026
+# The refreshed i7 (model year 2027, built from July 2026): BMW gives 112.5 kWh usable and
+# 250 kW for the 50 and 60 xDrive, Wikipedia 118.1 kWh gross; the M70 keeps its
+# ev-database page's figures (117 and 112.4). Their pages for the 50 and 60 xDrive were
+# not readable (3556, 3557).
+- id: i7-50-xdrive-2027
   brand: bmw
   family: i7
-  name: i7 M70 xDrive (2026 refresh)
-  years: [2026]
+  name: i7 50 xDrive (2027 refresh)
+  years: [2027]
+  gross_kwh: 118.1
+  net_kwh: 112.5
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 250
+  ambiguous_with: [i7-60-xdrive-2027, i7-m70-2027]
+  sources:
+    - url: https://newsroom.bmwgroup.com/americas/the-new-bmw-7-series_20261020102729809
+      level: manufacturer
+      for: [net_kwh, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/BMW_i7
+      level: secondary
+      for: [gross_kwh, ac_max_kw, ac_option_kw]
+
+- id: i7-60-xdrive-2027
+  brand: bmw
+  family: i7
+  name: i7 60 xDrive (2027 refresh)
+  years: [2027]
+  gross_kwh: 118.1
+  net_kwh: 112.5
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 250
+  ambiguous_with: [i7-m70-2027]
+  sources:
+    - url: https://newsroom.bmwgroup.com/americas/the-new-bmw-7-series_20261020102729809
+      level: manufacturer
+      for: [net_kwh, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/BMW_i7
+      level: secondary
+      for: [gross_kwh, ac_max_kw, ac_option_kw]
+
+- id: i7-m70-2027
+  brand: bmw
+  family: i7
+  name: i7 M70 xDrive (2027 refresh)
+  years: [2027]
   gross_kwh: 117
   net_kwh: 112.4
   ac_max_kw: 11
