@@ -121,6 +121,7 @@ describe('formatDuration', () => {
     [205, 216, 'en-GB', '3 hrs, 25 mins – 3 hrs, 36 mins'],
     [205, 216, 'fr-FR', '3 h et 25 min – 3 h et 36 min'],
     [205, 216, 'sv-SE', '3 tim, 25 min – 3 tim, 36 min'],
+    [205, 216, 'nb-NO', '3 t, 25 min – 3 t, 36 min'],
     [60, 60, 'en-GB', '1 hr'],
     [120, 120, 'fr-FR', '2 h'],
   ])('%s to %s min in %s → %s', (from, to, locale, want) => {
@@ -143,6 +144,7 @@ describe('formatDays', () => {
     [12 * 24 * 60 - 60, 13 * 24 * 60 + 60, 'en-GB', '12–13 days'],
     [12 * 24 * 60 - 60, 13 * 24 * 60 + 60, 'fr-FR', '12–13 jours'],
     [12 * 24 * 60 - 60, 13 * 24 * 60 + 60, 'sv-SE', '12–13 dygn'],
+    [12 * 24 * 60 - 60, 13 * 24 * 60 + 60, 'nb-NO', '12–13 døgn'],
     // Beyond a day, 20 hours count as one; but a min that may be a few hours stays 0.
     [20 * 60, 30 * 60, 'en-GB', '1 day'],
     [2 * 60, 25 * 60, 'en-GB', '0–1 days'],
