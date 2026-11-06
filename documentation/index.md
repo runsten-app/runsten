@@ -17,6 +17,7 @@ Runsten works end to end, but is young: expect changes between versions. For tho
 - **Volvo**, through the Volvo Cars API: [Your Volvo application](./self-hosting/volvo.md).
 - **Polestar**, through Polestar's Data Portal: [Your Polestar](./guide/polestar.md); outside the EU and the EEA, on a self-hosted instance, through the Polestar app's API (beta): [Your Polestar, with the Polestar ID](./guide/polestar-id.md).
 - **Tesla** (beta), through the Owner API of the Tesla app, as TeslaMate reads it: [Your Tesla](./guide/tesla.md).
+- **BMW and Mini** (beta), through BMW CarData, with a client ID of your own: [Your BMW or Mini](./guide/bmw.md).
 
 ## How it works
 
