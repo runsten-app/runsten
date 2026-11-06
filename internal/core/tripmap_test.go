@@ -1,6 +1,7 @@
 package core
 
 import (
+	"math/rand/v2"
 	"reflect"
 	"testing"
 	"time"
@@ -58,5 +59,63 @@ func TestMapTrips(t *testing.T) {
 	}
 	if m := MapTrips(nil, nil, at(1, 0), at(2, 0)); m.Spots != nil || m.Links != nil || m.Trips != 0 {
 		t.Errorf("no trip: %+v", m)
+	}
+}
+
+// The grid finds the spot a scan of every spot would: the nearest first end within reach,
+// the first added between equals, around the antimeridian and near the poles too.
+func TestSpotGridNearest(t *testing.T) {
+	r := rand.New(rand.NewPCG(1, 2)) //nolint:gosec // reproducible test data
+	for _, c := range []Position{{Lat: 45.76, Lon: 4.83}, {Lat: -33.9, Lon: 179.999}, {Lat: 0, Lon: -180}, {Lat: 78.2, Lon: 15.6}, {Lat: 89.99, Lon: 0}} {
+		g := newSpotGrid()
+		var firsts []Position
+		first := func(j int) Position { return firsts[j] }
+		for range 3000 {
+			// Within about a kilometer of c, some ends on the same spot as others.
+			p := Position{Lat: c.Lat + (r.Float64()-0.5)*0.02, Lon: c.Lon + (r.Float64()-0.5)*0.02}
+			if p.Lat > 90 {
+				p.Lat = 180 - p.Lat
+			}
+			if p.Lon >= 180 {
+				p.Lon -= 360
+			}
+			if len(firsts) > 0 && r.IntN(4) == 0 {
+				p = firsts[r.IntN(len(firsts))]
+			}
+			want, wantOK := 0, false
+			for j, f := range firsts {
+				if d := distanceM(p, f); d <= SpotRadiusM && (!wantOK || d < distanceM(p, firsts[want])) {
+					want, wantOK = j, true
+				}
+			}
+			got, ok := g.nearest(p, first)
+			if ok != wantOK || ok && got != want {
+				t.Fatalf("around %v, %v: got %d %v, want %d %v", c, p, got, ok, want, wantOK)
+			}
+			if !ok {
+				g.add(p, len(firsts))
+				firsts = append(firsts, p)
+			}
+		}
+	}
+}
+
+// A long history of scattered ends costs as much as its ends, not their square: each is
+// measured against the spots around it only.
+func TestSpotGridScattered(t *testing.T) {
+	g := newSpotGrid()
+	var firsts []Position
+	measured := 0
+	first := func(j int) Position { measured++; return firsts[j] }
+	for i := range 80_000 {
+		p := Position{Lat: 40 + float64(i%400)*0.005, Lon: float64(i/400) * 0.01}
+		if _, ok := g.nearest(p, first); ok {
+			t.Fatalf("%v gathered", p)
+		}
+		g.add(p, len(firsts))
+		firsts = append(firsts, p)
+	}
+	if measured > 10*len(firsts) {
+		t.Errorf("%d measures for %d spots", measured, len(firsts))
 	}
 }

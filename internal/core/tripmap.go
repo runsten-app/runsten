@@ -2,6 +2,7 @@ package core
 
 import (
 	"cmp"
+	"math"
 	"slices"
 	"time"
 )
@@ -52,20 +53,17 @@ func MapTrips(trips []Trip, places []Place, from, to time.Time) TripMap {
 	var out TripMap
 	var spots []*gather
 	byPlace := map[string]int{}
+	free := newSpotGrid()
 	spotOf := func(p Position) int {
 		place, at := PlaceAt(p, places)
-		i, ok := -1, false
+		var i int
+		var ok bool
 		if at {
 			i, ok = byPlace[place.ID]
 		} else {
 			// The nearest spot outside every place within reach, measured from its first
 			// end: a spot never creeps along a street.
-			best := 0.0
-			for j, g := range spots {
-				if d := distanceM(p, g.First); !g.Place.OK && d <= SpotRadiusM && (!ok || d < best) {
-					i, ok, best = j, true, d
-				}
-			}
+			i, ok = free.nearest(p, func(j int) Position { return spots[j].First })
 		}
 		if !ok {
 			i = len(spots)
@@ -73,6 +71,8 @@ func MapTrips(trips []Trip, places []Place, from, to time.Time) TripMap {
 			if at {
 				byPlace[place.ID] = i
 				g.Position, g.Place = place.Position, Value[Place]{V: place, OK: true}
+			} else {
+				free.add(p, i)
 			}
 			spots = append(spots, g)
 		}
@@ -140,4 +140,65 @@ func MapTrips(trips []Trip, places []Place, from, to time.Time) TripMap {
 		return cmp.Or(cmp.Compare(y.Trips, x.Trips), cmp.Compare(x.A, y.A), cmp.Compare(x.B, y.B))
 	})
 	return out
+}
+
+// spotGrid holds the spots outside every place by the cell of their first end, cells
+// SpotRadiusM high: an end is measured against the spots of the cells around it only, so
+// that a long history of scattered ends costs as much as its ends, not their square.
+type spotGrid struct {
+	cells map[[2]int][]int
+	all   []int // every spot, for the poles, where the cells around are most of a row
+	deg   float64
+	nLon  int
+}
+
+func newSpotGrid() *spotGrid {
+	deg := SpotRadiusM / (earthRadiusM * math.Pi / 180)
+	return &spotGrid{cells: map[[2]int][]int{}, deg: deg, nLon: int(math.Ceil(360 / deg))}
+}
+
+// cell is p's row and column; the columns wrap around the antimeridian.
+func (g *spotGrid) cell(p Position) (int, int) {
+	return int(math.Floor(p.Lat / g.deg)), g.wrap(int(math.Floor((p.Lon + 180) / g.deg)))
+}
+
+func (g *spotGrid) wrap(x int) int { return ((x % g.nLon) + g.nLon) % g.nLon }
+
+func (g *spotGrid) add(first Position, i int) {
+	y, x := g.cell(first)
+	g.cells[[2]int{y, x}] = append(g.cells[[2]int{y, x}], i)
+	g.all = append(g.all, i)
+}
+
+// nearest is the spot whose first end is the nearest to p within SpotRadiusM, the first
+// added between equals. Within the radius, an end is at most one row away from it, and as
+// many columns as a degree of longitude shrinks at the farther latitude, one more for
+// the rounding.
+func (g *spotGrid) nearest(p Position, first func(int) Position) (int, bool) {
+	best, bestD, ok := 0, 0.0, false
+	try := func(j int) {
+		if d := distanceM(p, first(j)); d <= SpotRadiusM && (!ok || d < bestD || d == bestD && j < best) {
+			best, bestD, ok = j, d, true
+		}
+	}
+	shrink := math.Cos((math.Abs(p.Lat) + g.deg) * math.Pi / 180)
+	k := 0
+	if shrink > 0.01 {
+		k = int(math.Ceil(1/shrink)) + 1
+	}
+	if k == 0 || 2*k+1 >= g.nLon {
+		for _, j := range g.all {
+			try(j)
+		}
+		return best, ok
+	}
+	y, x := g.cell(p)
+	for dy := -1; dy <= 1; dy++ {
+		for dx := -k; dx <= k; dx++ {
+			for _, j := range g.cells[[2]int{y + dy, g.wrap(x + dx)}] {
+				try(j)
+			}
+		}
+	}
+	return best, ok
 }
