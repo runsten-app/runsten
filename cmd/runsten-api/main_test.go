@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"runsten/internal/bmw"
 	"runsten/internal/flags"
 	"runsten/internal/platform/health"
 	"runsten/internal/polestar"
@@ -77,7 +78,8 @@ func TestLoadConfigOverrides(t *testing.T) {
 		"RUNSTEN_POLESTAR_BASE_URL": "http://localhost:8080/eu-north-1/data-portal/m2m", "RUNSTEN_UPDATE_CHECK": "true",
 		"RUNSTEN_FLAGS": "source.tesla=false, removed.flag=true", "RUNSTEN_POLESTAR_ID_AUTH_URL": "http://localhost:8080/polestar-id",
 		"RUNSTEN_POLESTAR_ID_API_URL": "http://localhost:8080/polestar-id/eu-north-1/mystar-v2",
-		"RUNSTEN_TESLAMATE_IMPORTS":   "1",
+		"RUNSTEN_BMW_AUTH_URL":        "http://localhost:8080/gcdm/oauth", "RUNSTEN_BMW_API_URL": "http://localhost:8080",
+		"RUNSTEN_TESLAMATE_IMPORTS": "1",
 	} {
 		m[k] = v
 	}
@@ -92,7 +94,8 @@ func TestLoadConfigOverrides(t *testing.T) {
 		cfg.polestarURL != "http://localhost:8080/eu-north-1/data-portal/m2m" || cfg.secureCookies ||
 		cfg.app.RedirectURI != "http://127.0.0.1:8081/auth/volvo/callback" || !cfg.updateCheck || cfg.teslaMateImports != 1 ||
 		!maps.Equal(cfg.flags, map[flags.Name]bool{flags.SourceTesla: false}) || !slices.Equal(cfg.unknownFlags, []string{"removed.flag"}) ||
-		cfg.polestarID != (polestarid.Hosts{Auth: "http://localhost:8080/polestar-id", API: "http://localhost:8080/polestar-id/eu-north-1/mystar-v2"}) {
+		cfg.polestarID != (polestarid.Hosts{Auth: "http://localhost:8080/polestar-id", API: "http://localhost:8080/polestar-id/eu-north-1/mystar-v2"}) ||
+		cfg.bmw != (bmw.Hosts{Auth: "http://localhost:8080/gcdm/oauth", API: "http://localhost:8080"}) {
 		t.Errorf("config = %+v", cfg)
 	}
 }

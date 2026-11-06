@@ -148,7 +148,7 @@ func (h *Handler) useDeviceCode(device, verifier string, now time.Time) ([]strin
 	switch {
 	case !ok:
 		return nil, "invalid_grant"
-	case now.Sub(g.issued) > codeLifetime:
+	case now.Sub(g.issued) > h.behavior.CodeLifetime:
 		delete(h.grants, device)
 		return nil, "expired_token"
 	case !g.lastPoll.IsZero() && now.Sub(g.lastPoll) < pollInterval:

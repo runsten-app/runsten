@@ -1,5 +1,6 @@
 import { api, unwrap } from '@/shared/api'
 import type {
+  BmwDevice,
   ConnectionSettings,
   PolestarCredentialUpdate,
   PolestarIdAuthorization,
@@ -50,4 +51,16 @@ export function setPolestarIdPassword(
 
 export async function deletePolestarId(): Promise<void> {
   await unwrap(api.DELETE('/connection/polestar-id'))
+}
+
+export function startBmwAuthorization(clientId: string): Promise<BmwDevice> {
+  return unwrap(api.POST('/connection/bmw/authorization', { body: { client_id: clientId } }))
+}
+
+export function pollBmwToken(): Promise<ConnectionSettings> {
+  return unwrap(api.POST('/connection/bmw/token'))
+}
+
+export async function deleteBmw(): Promise<void> {
+  await unwrap(api.DELETE('/connection/bmw'))
 }

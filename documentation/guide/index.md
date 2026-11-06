@@ -11,6 +11,7 @@ Runsten reads your car from its manufacturer:
 - **Volvo**, through the Volvo Cars API: a Volvo ID, and on some instances a key of your own ([Your Volvo key](#your-volvo-key)).
 - **Polestar**, through Polestar's Data Portal: a credential of your own ([Your Polestar](./polestar.md)); outside the EU and the EEA, on a self-hosted instance, through the Polestar app's API with your Polestar ID (beta, [Your Polestar, with the Polestar ID](./polestar-id.md)).
 - **Tesla** (beta), through the Owner API of the Tesla app: a refresh token of your Tesla account ([Your Tesla](./tesla.md)).
+- **BMW and Mini** (beta), through BMW CarData: a client ID of your own, approved with a code on BMW's page ([Your BMW or Mini](./bmw.md)).
 
 <Screen view="state" alt="The State tab: charge level, range, odometer and last position." />
 
@@ -43,6 +44,7 @@ The **Connection** page (in the menu under your name) tells whether Runsten read
 - **Polestar refused the credential**, **no Polestar credential given**, **the vehicle is no longer shared with the credential**, or **read in part**: a Polestar's credential expired, was removed, no longer reads the car, or lacks one of the five domains ([When it is not read](./polestar.md#when-it-is-not-read)).
 - **The Polestar ID refused the sign-in**, **no Polestar ID connected**, or **the car is no longer in the Polestar ID**: a Polestar read with the Polestar ID must be connected again ([When it is not read](./polestar-id.md#when-it-is-not-read)).
 - **Tesla refused the refresh token**, **no Tesla refresh token given**, or **the vehicle is no longer in the Tesla account**: a Tesla's token was revoked, removed, or the car left the account ([When it is not read](./tesla.md#when-it-is-not-read)).
+- **BMW refused the connection**, **no BMW connected**, or **the BMW account is no longer the car's main user**: a BMW's connection must be made again ([When it is not read](./bmw.md#when-it-is-not-read)); and **stream held by another application**: Home Assistant's CarData integration or evcc holds BMW's only stream ([One application on the stream](./bmw.md#one-application-on-the-stream)).
 - **The collector seems stopped**: nothing is read on the instance's side. Whoever runs the instance looks into it ([Troubleshooting](../self-hosting/troubleshooting.md#nothing-new-is-read)).
 
 ### Your Volvo key

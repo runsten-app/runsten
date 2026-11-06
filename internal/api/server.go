@@ -278,6 +278,10 @@ type Config struct {
 	PolestarID         PolestarIDCredentials
 	PolestarIDAccounts PolestarIDAccounts
 	PolestarIDFlows    *oauth.Flows
+	// BMW keeps the account's BMW CarData connection, and BMWAccounts runs its device
+	// flow and lists its vehicles.
+	BMW         BMWCredentials
+	BMWAccounts BMWAccounts
 	// TeslaMateImports is how many TeslaMate backups the instance reads at once; 0:
 	// DefaultTeslaMateImports. One where the API has little memory.
 	TeslaMateImports int
@@ -322,7 +326,9 @@ type Server struct {
 	// tokenLimiter bounds the rate of each access token's requests.
 	tokenLimiter *limiter
 	// teslaMate are the TeslaMate backups being read.
-	teslaMate   teslaMateImports
+	teslaMate teslaMateImports
+	// bmwFlows are BMW's device flows pending.
+	bmwFlows    bmwFlows
 	errorSchema *huma.Schema // the body of the errors
 }
 
@@ -370,6 +376,7 @@ func New(cfg Config) *Server {
 	s.registerPolestar(s.api)
 	s.registerTesla(s.api)
 	s.registerPolestarID(s.api)
+	s.registerBMW(s.api)
 	s.registerAccount(s.api)
 	s.registerTokens(s.api)
 	s.registerMQTT(s.api)

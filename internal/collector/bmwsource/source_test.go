@@ -319,14 +319,14 @@ func TestStreamHeld(t *testing.T) {
 	}
 
 	sess := f.login(t)
-	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream)); err == nil {
-		t.Error("held by another: no error")
+	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream)); kindOf(err) != collector.KindStreamHeld {
+		t.Errorf("held by another: %v", err)
 	}
 	if st := f.src.StreamState("c"); st.Up || !st.Held {
 		t.Errorf("stream state %+v", st)
 	}
-	// Not tried again for a while: the values held, without an error.
-	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream)); err != nil {
+	// Not tried again for a while: still told held, rather than the values it left.
+	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream)); kindOf(err) != collector.KindStreamHeld {
 		t.Errorf("before retrying: %v", err)
 	}
 	other.Close()
