@@ -1,6 +1,7 @@
 package core
 
 import (
+	"math"
 	"math/rand/v2"
 	"reflect"
 	"testing"
@@ -117,5 +118,28 @@ func TestSpotGridScattered(t *testing.T) {
 	}
 	if measured > 10*len(firsts) {
 		t.Errorf("%d measures for %d spots", measured, len(firsts))
+	}
+}
+
+// A spot across the antimeridian stays there: its ends' mean is taken from its first one.
+func TestMapTripsAntimeridian(t *testing.T) {
+	at := time.Date(2026, 9, 1, 8, 0, 0, 0, time.UTC)
+	east, west := Position{Lat: -16.5, Lon: 179.9995}, Position{Lat: -16.5, Lon: -179.9985}
+	away := Position{Lat: -16.6, Lon: 179.5}
+	trip := func(h int, from, to Position) Trip {
+		s := at.Add(time.Duration(h) * time.Hour)
+		return Trip{Start: Bounds{After: s, Before: s}, From: known(from), To: known(to)}
+	}
+	m := MapTrips([]Trip{trip(0, east, away), trip(1, away, west)}, nil, at, at.AddDate(0, 0, 1))
+	if len(m.Spots) != 2 {
+		t.Fatalf("%d spots", len(m.Spots))
+	}
+	if got := m.Spots[0].Position; math.Abs(got.Lon-(-179.9995)) > 1e-9 || got.Lat != -16.5 {
+		t.Errorf("spot at %v, want -16.5, -179.9995", got)
+	}
+	for _, lon := range []float64{-180, -179.5, 0, 179.5, 180, 540, -540} {
+		if w := wrapLon(lon); w < -180 || w >= 180 || math.Abs(math.Mod(w-lon, 360)) > 1e-9 {
+			t.Errorf("wrapLon(%v) = %v", lon, w)
+		}
 	}
 }

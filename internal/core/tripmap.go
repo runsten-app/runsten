@@ -47,8 +47,9 @@ type MapLink struct {
 func MapTrips(trips []Trip, places []Place, from, to time.Time) TripMap {
 	type gather struct {
 		MapSpot
-		sumLat, sumLon float64
-		n              int
+		sumLat float64
+		sumLon float64 // from First.Lon
+		n      int
 	}
 	var out TripMap
 	var spots []*gather
@@ -77,9 +78,11 @@ func MapTrips(trips []Trip, places []Place, from, to time.Time) TripMap {
 			spots = append(spots, g)
 		}
 		g := spots[i]
-		g.sumLat, g.sumLon, g.n = g.sumLat+p.Lat, g.sumLon+p.Lon, g.n+1
+		// The longitudes are summed from the first end's, so that a spot across the
+		// antimeridian stays there, never moved round the world to its mean.
+		g.sumLat, g.sumLon, g.n = g.sumLat+p.Lat, g.sumLon+wrapLon(p.Lon-g.First.Lon), g.n+1
 		if !g.Place.OK {
-			g.Position = Position{Lat: g.sumLat / float64(g.n), Lon: g.sumLon / float64(g.n)}
+			g.Position = Position{Lat: g.sumLat / float64(g.n), Lon: wrapLon(g.First.Lon + g.sumLon/float64(g.n))}
 		}
 		return i
 	}
@@ -201,4 +204,13 @@ func (g *spotGrid) nearest(p Position, first func(int) Position) (int, bool) {
 		}
 	}
 	return best, ok
+}
+
+// wrapLon brings a longitude, or a difference of two, into [-180, 180); one there already
+// is kept as is, never rounded through the shift.
+func wrapLon(lon float64) float64 {
+	if lon >= -180 && lon < 180 {
+		return lon
+	}
+	return math.Mod(math.Mod(lon+180, 360)+360, 360) - 180
 }
