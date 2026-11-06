@@ -10,7 +10,11 @@ describe('LocaleSelect', () => {
     const select = wrapper.findComponent({ name: 'VSelect' })
     expect(select.props('items')).toEqual([
       { value: 'en', title: 'English' },
+      { value: 'de', title: 'Deutsch' },
       { value: 'fr', title: 'Français' },
+      { value: 'it', title: 'Italiano' },
+      { value: 'nb', title: 'Norsk bokmål' },
+      { value: 'nl', title: 'Nederlands' },
       { value: 'sv', title: 'Svenska' },
       { value: 'es', title: 'Español' },
     ])

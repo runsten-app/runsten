@@ -14,7 +14,7 @@ func TestStateClimate(t *testing.T) {
 	snap := core.Snapshot{
 		Covers: core.FieldClimate, OutsideTempC: core.Some(-3.5, h(4, 0)), CabinTempC: core.Some(19.5, h(4, 0)),
 		Climate: core.Some(core.Climate{
-			On: core.Some(true, h(4, 0)), Preconditioning: core.Some(true, h(4, 0)),
+			On: core.Some(true, h(4, 0)), Preconditioning: core.Some(true, h(4, 0)), SetpointC: core.Some(21.5, h(4, 0)),
 		}, h(4, 0)),
 	}
 	e.reader.current[car] = []core.Record{{FetchedAt: h(5, 0), CheckedAt: h(5, 30), Snapshot: snap}}
@@ -31,7 +31,7 @@ func TestStateClimate(t *testing.T) {
 	}
 	for k, want := range map[string]string{
 		"outside_temp_c": reading("-3.5"), "cabin_temp_c": reading("19.5"),
-		"on": reading("true"), "preconditioning": reading("true"), "battery_heater": "null",
+		"on": reading("true"), "preconditioning": reading("true"), "battery_heater": "null", "setpoint_c": reading("21.5"),
 	} {
 		if got := string(st.Climate[k]); got != want {
 			t.Errorf("%s = %s, want %s", k, got, want)

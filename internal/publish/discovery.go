@@ -198,6 +198,7 @@ func entities() []entity {
 		climate(binary("climate", "Climate", "climate", "running", onOff(On, Off))),
 		climate(binary("preconditioning", "Preconditioning", "preconditioning", "running", onOff(On, Off))),
 		climate(binary("battery_heater", "Battery heater", "battery_heater", "running", onOff(On, Off))),
+		climate(sensor("climate_setpoint", "Climate setpoint", "climate_setpoint_c", "temperature", "°C", "")),
 		leftOpen,
 		openingsReadAt,
 		// Its position from the attributes of the location's JSON; an empty location

@@ -48,7 +48,9 @@ describe('HistoryLimitNotice', () => {
   it.each<[Locale, string]>([
     ['en', 'History shown from Saturday, 29 August 2026. The earlier trips'],
     ['fr', 'Historique affiché depuis le samedi 29 août 2026. Les trajets'],
+    ['nb', 'Historikken vises fra lørdag 29. august 2026. De tidligere turene'],
     ['sv', 'Historik visas från lördag 29 augusti 2026. Äldre resor'],
+    ['de', 'Verlauf ab Samstag, 29. August 2026 angezeigt. Ältere Fahrten'],
     ['es', 'Historial mostrado desde el sábado, 29 de agosto de 2026. Los viajes'],
   ])('tells from when the history is shown, in %s', async (locale, text) => {
     i18n.global.locale.value = locale

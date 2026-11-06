@@ -30,6 +30,7 @@ describe('FeatureUnavailable', () => {
     ['fr', 'stats'],
     ['sv', 'costs'],
     ['fr', 'mqtt'],
+    ['de', 'stats'],
     ['es', 'costs'],
   ])('names the function, in %s', async (locale, feature) => {
     i18n.global.locale.value = locale

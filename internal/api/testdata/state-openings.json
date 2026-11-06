@@ -35,7 +35,8 @@
     "cabin_temp_c": null,
     "on": null,
     "preconditioning": null,
-    "battery_heater": null
+    "battery_heater": null,
+    "setpoint_c": null
   },
   "software": null,
   "software_update": null,

@@ -88,6 +88,11 @@ const parts = computed(() =>
   .figure--hero .figure-unit {
     font-size: 24px;
   }
+  /* An unknown hero is a word, not a figure: at 80px "Onbekend" or "Unbekannt" would break
+     inside the word on a phone. */
+  .figure--hero.figure--unknown {
+    font-size: 56px;
+  }
   .figure--large,
   .figure--kpi {
     font-size: 28px;
