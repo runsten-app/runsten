@@ -54,8 +54,7 @@ const drawn = computed<MapLink[]>(() => {
   }))
 })
 
-// Every link, in words, for whoever cannot read the map; the journeys made again show.
-// A link driven once is on the map, not in the list shown.
+// The journeys made again show; every spot and link is in the folded list below.
 const frequent = computed(() => links.value.filter((l) => l.link.trips > 1).slice(0, 5))
 
 const shown = computed(() => !!map.value && map.value.trips + map.value.trips_without_position > 0)
@@ -103,17 +102,31 @@ const summary = computed(() => {
           </li>
         </ol>
       </template>
-      <!-- For screen readers and the keyboard: every link of the map, which they cannot
-           read; the list shown above holds the frequent ones only. -->
-      <ol v-if="links.length" class="d-sr-only" :aria-label="t('tripMap.every')">
-        <li v-for="l in links" :key="`${l.link.a}-${l.link.b}`">
-          {{ t('tripMap.between', { from: l.from, to: l.to }) }},
-          {{ t('tripMap.trips', l.link.trips) }}, {{ f.quantity(l.link.distance_km, 'km') }}
-          <template v-if="l.link.distance_unknown">
-            , {{ t('stats.trips.distanceUnknown', l.link.distance_unknown) }}
-          </template>
-        </li>
-      </ol>
+      <!-- What the map draws, in words, for whoever cannot read it: every spot with its
+           departures and arrivals, every link, those driven once too. Folded, so that the
+           frequent ones lead; a <details> opens from the keyboard. -->
+      <details v-if="map.spots.length" class="every mt-4">
+        <summary class="text-title-small">{{ t('tripMap.every') }}</summary>
+        <h3 class="text-title-small mt-3 mb-1">{{ t('tripMap.everySpots') }}</h3>
+        <ol class="spots">
+          <li v-for="(s, i) in map.spots" :key="i">
+            {{ named[i] }}: {{ t('tripMap.departures', s.departures) }},
+            {{ t('tripMap.arrivals', s.arrivals) }}
+          </li>
+        </ol>
+        <template v-if="links.length">
+          <h3 class="text-title-small mt-3 mb-1">{{ t('tripMap.everyJourneys') }}</h3>
+          <ol class="journeys">
+            <li v-for="l in links" :key="`${l.link.a}-${l.link.b}`">
+              {{ t('tripMap.between', { from: l.from, to: l.to }) }}:
+              {{ t('tripMap.trips', l.link.trips) }}, {{ f.quantity(l.link.distance_km, 'km') }}
+              <template v-if="l.link.distance_unknown">
+                , {{ t('stats.trips.distanceUnknown', l.link.distance_unknown) }}
+              </template>
+            </li>
+          </ol>
+        </template>
+      </details>
     </v-card-text>
   </v-card>
 </template>
@@ -132,6 +145,10 @@ const summary = computed(() => {
 }
 .frequent li + li {
   border-top: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.every summary {
+  cursor: pointer;
+  width: fit-content;
 }
 .route {
   min-width: 0;

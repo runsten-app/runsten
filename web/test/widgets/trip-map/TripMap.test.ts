@@ -78,11 +78,26 @@ describe('TripMap', () => {
     expect(w.find('.trip-map').text()).toContain('2 trips without a position are left out.')
   })
 
-  it('names every link for screen readers, those driven once too', async () => {
+  it('folds every spot with its departures and arrivals, and every link, those driven once too', async () => {
     const once = structuredClone(fixture) as Map
     once.links = [{ ...fixture.links[0], trips: 1 } as Map['links'][number]]
-    const every = (await mount(once)).find('.trip-map ol.d-sr-only')
-    expect(plain(every.text())).toBe('Maison de Tante Agathe ↔ 45.77970, 4.92700, 1 trip, 65 km')
+    // A spot reached by a round trip only: on the map without a line, in the list still.
+    once.spots.push({
+      ...fixture.spots[1],
+      position: { lat: 45.5, lon: 4.9 },
+      departures: 1,
+      arrivals: 1,
+    } as Map['spots'][number])
+    const every = (await mount(once)).find('.trip-map details.every')
+    expect(plain(every.find('summary').text())).toBe('Every spot and journey of the map')
+    expect(every.findAll('ol.spots li').map((li) => plain(li.text()))).toEqual([
+      'Maison de Tante Agathe: 1 departure, 1 arrival',
+      '45.77970, 4.92700: 1 departure, 1 arrival',
+      '45.50000, 4.90000: 1 departure, 1 arrival',
+    ])
+    expect(every.findAll('ol.journeys li').map((li) => plain(li.text()))).toEqual([
+      'Maison de Tante Agathe ↔ 45.77970, 4.92700: 1 trip, 65 km',
+    ])
   })
 
   it('says when the map could not be read', async () => {

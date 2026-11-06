@@ -242,7 +242,9 @@
     "withoutPosition": "Un trajet sans position est laissé de côté. | {n} trajets sans position sont laissés de côté.",
     "frequent": "Trajets les plus fréquents",
     "error": "La carte des trajets n'a pas pu être chargée. Réessayez dans un instant.",
-    "every": "Tous les trajets de la carte"
+    "every": "Tous les lieux et trajets de la carte",
+    "everySpots": "Lieux",
+    "everyJourneys": "Trajets"
   },
   "readingsCsv": {
     "download": "Télécharger tous les relevés (CSV)",

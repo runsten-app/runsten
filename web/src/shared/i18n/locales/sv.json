@@ -242,7 +242,9 @@
     "withoutPosition": "En resa utan position är utelämnad. | {n} resor utan position är utelämnade.",
     "frequent": "Vanligaste resorna",
     "error": "Kartan över resorna kunde inte laddas. Försök igen om en stund.",
-    "every": "Alla resor på kartan"
+    "every": "Alla platser och resor på kartan",
+    "everySpots": "Platser",
+    "everyJourneys": "Resor"
   },
   "readingsCsv": {
     "download": "Ladda ner alla avläsningar (CSV)",

@@ -242,7 +242,9 @@
     "withoutPosition": "One trip without a position is left out. | {n} trips without a position are left out.",
     "frequent": "Most frequent journeys",
     "error": "The map of the trips could not be loaded. Try again in a moment.",
-    "every": "Every journey of the map"
+    "every": "Every spot and journey of the map",
+    "everySpots": "Spots",
+    "everyJourneys": "Journeys"
   },
   "readingsCsv": {
     "download": "Download every reading (CSV)",
