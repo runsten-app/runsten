@@ -616,7 +616,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
-                size="small"
+                class="software"
               />
               <ReadingItem
                 v-if="update"
@@ -882,5 +882,12 @@ const update = computed(() => {
 }
 .osm {
   color: rgb(var(--v-theme-primary)) !important;
+}
+/* The software's version, large as the values beside it; on a phone, where half a tile
+   is narrow, small enough not to break inside it. */
+@media (max-width: 599.98px) {
+  .software :deep(.figure) {
+    font-size: 22px;
+  }
 }
 </style>
