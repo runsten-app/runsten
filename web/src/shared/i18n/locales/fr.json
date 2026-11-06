@@ -93,6 +93,7 @@
     "odometer": "Odomètre",
     "openings": {
       "title": "Portes et vitres",
+      "titleWithTyres": "Portes, vitres et pneus",
       "locked": "Verrouillée",
       "unlocked": "Déverrouillée",
       "allClosed": "Tout est fermé",

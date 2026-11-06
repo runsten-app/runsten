@@ -93,6 +93,7 @@
     "odometer": "Mätarställning",
     "openings": {
       "title": "Dörrar och fönster",
+      "titleWithTyres": "Dörrar, fönster och däck",
       "locked": "Låst",
       "unlocked": "Olåst",
       "allClosed": "Allt stängt",

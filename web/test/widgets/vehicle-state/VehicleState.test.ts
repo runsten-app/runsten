@@ -5,15 +5,21 @@ import { ApiError } from '@/shared/api'
 import { i18n, type Locale } from '@/shared/i18n'
 import { VehicleState } from '@/widgets/vehicle-state'
 import charging from '@fixtures/charging.json'
+import health from '@fixtures/health.json'
 import state from '@fixtures/state.json'
 import unknown from '@fixtures/state-unknown.json'
 import vehicle from '@fixtures/vehicle-model.json'
 import { mountWith } from '@test/utils'
 
-const { fetchVehicle, fetchVehicleState, fetchChargeInProgress } = vi.hoisted(() => ({
+const { fetchVehicle, fetchVehicleState, fetchChargeInProgress, fetchHealth } = vi.hoisted(() => ({
   fetchVehicle: vi.fn(),
   fetchVehicleState: vi.fn(),
   fetchChargeInProgress: vi.fn(),
+  fetchHealth: vi.fn(),
+}))
+vi.mock('@/entities/health', async (original) => ({
+  ...(await original<typeof import('@/entities/health')>()),
+  fetchHealth,
 }))
 vi.mock('@/entities/charge', async (original) => ({
   ...(await original<typeof import('@/entities/charge')>()),
@@ -36,6 +42,8 @@ beforeEach(() => {
   fetchVehicle.mockResolvedValue(noVariant)
   fetchChargeInProgress.mockReset()
   fetchChargeInProgress.mockResolvedValue(null)
+  fetchHealth.mockReset()
+  fetchHealth.mockResolvedValue({ ...health, tyres: null })
   vi.useFakeTimers({ now, toFake: ['Date'] })
 })
 afterEach(() => {
@@ -699,6 +707,60 @@ describe('VehicleState', () => {
       charging: { ...state.charging, status: { ...at, value: 'idle' }, power_w: null },
     })
     expect(pills(w)).toEqual([])
+  })
+
+  it('shows the tyres with the doors and windows, laid out as the wheels', async () => {
+    const at = state.charging.power_w
+    const doors = {
+      front_left: 'closed',
+      front_right: 'closed',
+      rear_left: 'closed',
+      rear_right: 'closed',
+      locked: true,
+      hood: 'closed',
+      tailgate: 'closed',
+      tank_lid: null,
+      sentry: null,
+    }
+    const wheels = (w: Awaited<ReturnType<typeof mounted>>) =>
+      w.findAll('[data-test="state-tyres"] .wheel').map((e) =>
+        e
+          .findAll('dt, dd')
+          .map((d) => plain(d.text()))
+          .join(' '),
+      )
+    fetchHealth.mockResolvedValue(health)
+    let w = await mounted({ ...state, doors: { ...at, value: doors } })
+    const tile = w.find('[data-test="openings"]')
+    expect(plain(tile.find('h2').text())).toBe('Doors, windows and tyres')
+    // Pressures in bar, a warning beside the one that is not OK; one rear tyre low.
+    expect(wheels(w)).toEqual([
+      'Front left 2.82 bar',
+      'Front right 2.8 bar',
+      'Rear left 2.48 bar Low',
+      'Rear right Unknown Fault',
+    ])
+    expect(plain(tile.find('.tyres-head .status-pill').text())).toBe('Needs attention')
+    w.unmount()
+    // A car that gives a warning per tyre, no pressure (a Volvo): the warnings, all OK.
+    fetchHealth.mockResolvedValue({
+      ...health,
+      tyres: {
+        ...health.tyres,
+        wheels: health.tyres.wheels.map((t) => ({ ...t, pressure_kpa: null, warning: 'ok' })),
+      },
+    })
+    w = await mounted(state)
+    // Its tyres alone, without doors: the tile is theirs.
+    expect(plain(w.find('[data-test="openings"] h2').text())).toBe('Tyres')
+    expect(wheels(w)).toEqual(['Front left OK', 'Front right OK', 'Rear left OK', 'Rear right OK'])
+    expect(plain(w.find('.tyres-head .status-pill').text())).toBe('Nothing to report')
+    w.unmount()
+    // No tyres: no part, the tile the doors' alone.
+    fetchHealth.mockResolvedValue({ ...health, tyres: null })
+    w = await mounted({ ...state, doors: { ...at, value: doors } })
+    expect(plain(w.find('[data-test="openings"] h2').text())).toBe('Doors and windows')
+    expect(w.find('[data-test="state-tyres"]').exists()).toBe(false)
   })
 
   it("tells the car's latest measure once it is older than half an hour", async () => {

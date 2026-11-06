@@ -93,6 +93,7 @@
     "odometer": "Kilometerteller",
     "openings": {
       "title": "Dører og vinduer",
+      "titleWithTyres": "Dører, vinduer og dekk",
       "locked": "Låst",
       "unlocked": "Ulåst",
       "allClosed": "Alt lukket",

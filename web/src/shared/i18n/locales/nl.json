@@ -93,6 +93,7 @@
     "odometer": "Kilometerstand",
     "openings": {
       "title": "Portieren en ramen",
+      "titleWithTyres": "Portieren, ramen en banden",
       "locked": "Vergrendeld",
       "unlocked": "Ontgrendeld",
       "allClosed": "Alles dicht",

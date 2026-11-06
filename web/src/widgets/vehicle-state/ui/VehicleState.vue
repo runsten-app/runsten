@@ -37,6 +37,7 @@ import {
 } from '@/entities/vehicle'
 import { useChargeInProgress } from '@/features/browse-charges'
 import { useVehicle } from '@/features/select-vehicle'
+import { useHealth } from '@/features/view-health'
 import { useUpdateText, useVehicleState } from '@/features/watch-vehicle-state'
 import { isApiError } from '@/shared/api'
 import { kilowatts, openStreetMapUrl, useFormat, useMapsOn, useNow, type Unit } from '@/shared/lib'
@@ -58,6 +59,8 @@ const f = useFormat()
 const mapsOn = useMapsOn()
 const now = useNow()
 const { state, isPending, error } = useVehicleState(() => props.vehicle)
+// The health, for its tyres beside the doors and windows: read apart, every hour.
+const { health } = useHealth(() => props.vehicle)
 const { vehicle: current } = useVehicle(() => props.vehicle)
 // Where the car reports no capacity (a Polestar of the Data Portal never does), the net
 // capacity of its variant, which the energies rest on: Unknown would read as a setup
@@ -288,7 +291,10 @@ const chargeActive = computed(() => {
   return charging.value || s === 'discharging' || s === 'error'
 })
 const chargeSize = computed(() => (chargeActive.value ? 'large' : 'small'))
-const hasOpenings = computed(() => !!(state.value?.doors || state.value?.windows))
+// The tile of the doors and windows, and of the tyres, for a car that tells any of them.
+const hasOpenings = computed(
+  () => !!(state.value?.doors || state.value?.windows || health.value?.tyres),
+)
 // A map of the position, in a tile of its own beside the vehicle's.
 const mapShown = computed(() => mapsOn.value && !!state.value?.position)
 
@@ -552,6 +558,7 @@ const update = computed(() => {
           :windows="state.windows"
           :now="now"
           :connection="connection"
+          :health="health ?? null"
           class="h-100"
         />
       </v-col>

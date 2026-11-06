@@ -93,6 +93,7 @@
     "odometer": "Odometer",
     "openings": {
       "title": "Doors and windows",
+      "titleWithTyres": "Doors, windows and tyres",
       "locked": "Locked",
       "unlocked": "Unlocked",
       "allClosed": "All closed",

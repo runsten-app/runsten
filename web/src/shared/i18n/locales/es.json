@@ -93,6 +93,7 @@
     "odometer": "Cuentakilómetros",
     "openings": {
       "title": "Puertas y ventanillas",
+      "titleWithTyres": "Puertas, ventanillas y neumáticos",
       "locked": "Bloqueado",
       "unlocked": "Desbloqueado",
       "allClosed": "Todo cerrado",

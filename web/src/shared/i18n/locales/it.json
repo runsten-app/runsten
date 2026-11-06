@@ -93,6 +93,7 @@
     "odometer": "Contachilometri",
     "openings": {
       "title": "Portiere e finestrini",
+      "titleWithTyres": "Portiere, finestrini e pneumatici",
       "locked": "Bloccato",
       "unlocked": "Sbloccato",
       "allClosed": "Tutto chiuso",

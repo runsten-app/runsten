@@ -93,6 +93,7 @@
     "odometer": "Kilometerstand",
     "openings": {
       "title": "Türen und Fenster",
+      "titleWithTyres": "Türen, Fenster und Reifen",
       "locked": "Verriegelt",
       "unlocked": "Entriegelt",
       "allClosed": "Alles geschlossen",
