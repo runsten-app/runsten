@@ -38,7 +38,7 @@ Issues and discussions of the project live in this repository's
   positions removed.
 - **Add or correct a vehicle variant**: a pull request on the catalog, see
   [Contributing a variant](documentation/contributing/variants.md).
-- **Translate**: the interface is in English, French and Swedish (`web/src/shared/i18n/locales/`).
+- **Translate**: the interface is in English, French, Swedish and Spanish (`web/src/shared/i18n/locales/`).
   Corrections by native speakers are especially welcome.
 - **Improve the documentation**: `documentation/` is the user guide published on the site.
 - **Write code**: fix a bug, or take an issue. For anything beyond a small fix, open an issue
@@ -63,7 +63,7 @@ What we look for in review:
 - **The rules of [`ARCHITECTURE.md`](ARCHITECTURE.md#rules-that-hold-it-together) hold**:
   dependencies point inward, time is injected, every table is isolated, the API's diff is
   reviewed as a contract.
-- **Accessible and translated** interface: axe passes, every text in the three languages.
+- **Accessible and translated** interface: axe passes, every text in the four languages.
 - **No speculative abstraction**, and no new dependency without a reason given.
 - **Nothing private**: no real VIN, token, API key or position, anywhere, fixtures included.
 

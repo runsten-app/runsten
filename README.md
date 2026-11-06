@@ -17,7 +17,7 @@ Runsten records the trips, charges and costs of your electric car, and shows the
 The name comes from runestones (*runsten* in Swedish), which often commemorated journeys: Runsten carves your car's trips in stone.
 
 - **A collector** polls the manufacturer's API and keeps every response as it came; trips and charges are worked out from them, including those that happened while nothing could be read, marked as reconstructed.
-- **A web interface**, on a phone as well as a desktop, in English, French and Swedish: the car's state, its trips and charges, their costs from your tariffs, statistics, and an estimate of the battery's capacity.
+- **A web interface**, on a phone as well as a desktop, in English, French, Swedish and Spanish: the car's state, its trips and charges, their costs from your tariffs, statistics, and an estimate of the battery's capacity.
 - **An API** (`/api/v1`) and **MQTT** publishing, with Home Assistant's discovery, for your own scripts and home automation.
 
 Status: **early development**. Expect changes between versions.

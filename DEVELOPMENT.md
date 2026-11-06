@@ -185,7 +185,7 @@ How tests are written here:
 
 - A slice in `web/src/features/<verb-noun>/` with its `index.ts`; TanStack Query lives in its
   `composables/`, its query keys in the entity's `model/queryKeys.ts`.
-- Every visible text in `shared/i18n/locales/` in English, French and Swedish, with the same keys. If you
+- Every visible text in `shared/i18n/locales/` in English, French, Swedish and Spanish, with the same keys. If you
   do not speak French or Swedish, write your best attempt and say so in the pull request.
 - Colors, fonts and radii come from the theme (`var(--v-…)`), never hard-coded.
 - A new view gets a `checkView` in `web/e2e/` (axe, CSP).
