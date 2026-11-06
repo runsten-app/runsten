@@ -8,5 +8,5 @@ Closes #
 
 - [ ] `task unit` passes
 - [ ] The API's diff (`api/openapi.yaml`, `internal/api/testdata/`) is intended, or there is none
-- [ ] Texts in English, French and Swedish, if the interface changed
+- [ ] Texts in English, French, Italian and Swedish, if the interface changed
 - [ ] No real VIN, token, API key or position, fixtures included

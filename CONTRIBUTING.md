@@ -38,7 +38,7 @@ Issues and discussions of the project live in this repository's
   positions removed.
 - **Add or correct a vehicle variant**: a pull request on the catalog, see
   [Contributing a variant](documentation/contributing/variants.md).
-- **Translate**: the interface is in English, French and Swedish (`web/src/shared/i18n/locales/`).
+- **Translate**: the interface is in English, French, Italian and Swedish (`web/src/shared/i18n/locales/`).
   Corrections by native speakers are especially welcome.
 - **Improve the documentation**: `documentation/` is the user guide published on the site.
 - **Write code**: fix a bug, or take an issue. For anything beyond a small fix, open an issue
