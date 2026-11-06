@@ -426,3 +426,38 @@ func TestBMWFlowGenerations(t *testing.T) {
 		t.Errorf("the current flow: %v, %v, %v", ok, err, stored)
 	}
 }
+
+// TestBMWCommitPerAccount: a completion being stored holds its own account only; the
+// removal of that account waits for it.
+func TestBMWCommitPerAccount(t *testing.T) {
+	var f bmwFlows
+	t0 := time.Date(2026, 9, 28, 5, 0, 0, 0, time.UTC)
+	flow := bmwFlow{expires: t0.Add(5 * time.Minute), interval: 5 * time.Second, next: t0}
+	f.start("a", flow, t0)
+	fl, _, _ := f.take("a", t0)
+	storing, release := make(chan struct{}), make(chan struct{})
+	done := make(chan bool)
+	go func() {
+		ok, _ := f.commit("a", fl.gen, func() error { close(storing); <-release; return nil })
+		done <- ok
+	}()
+	<-storing
+	if !f.start("b", flow, t0) {
+		t.Error("another account's start refused")
+	}
+	dropped := make(chan struct{})
+	go func() { f.drop("a"); close(dropped) }()
+	select {
+	case <-dropped:
+		t.Fatal("removed while its completion was being stored")
+	case <-time.After(50 * time.Millisecond):
+	}
+	close(release)
+	if !<-done {
+		t.Error("the completion was not stored")
+	}
+	<-dropped
+	if _, _, ok := f.take("a", t0); ok {
+		t.Error("the flow outlived its removal")
+	}
+}

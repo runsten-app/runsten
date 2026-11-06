@@ -124,9 +124,30 @@ type bmwFlows struct {
 	pending map[string]bmwFlow
 	max     int // 0: bmwMaxFlows
 	gen     uint64
+	// accounts orders, per account, what changes its connection: a flow started, its
+	// completion stored, the connection removed. Another account never waits on it.
+	accounts map[string]*sync.Mutex
+}
+
+// account returns the lock of account's connection.
+func (f *bmwFlows) account(account string) *sync.Mutex {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.accounts == nil {
+		f.accounts = map[string]*sync.Mutex{}
+	}
+	l, ok := f.accounts[account]
+	if !ok {
+		l = &sync.Mutex{}
+		f.accounts[account] = l
+	}
+	return l
 }
 
 func (f *bmwFlows) start(account string, fl bmwFlow, now time.Time) bool {
+	l := f.account(account)
+	l.Lock()
+	defer l.Unlock()
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.pending == nil {
@@ -194,19 +215,28 @@ func (f *bmwFlows) end(account string, gen uint64) {
 }
 
 // drop forgets the account's flow, whichever it is: the connection is removed.
+// It waits for a completion being stored.
 func (f *bmwFlows) drop(account string) {
+	l := f.account(account)
+	l.Lock()
+	defer l.Unlock()
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	delete(f.pending, account)
 }
 
-// commit runs store while the account's flow is still gen, under the flows' lock, so that
-// a removal (drop, then the credential erased) either comes after it and erases what it
-// stored, or before it and stores nothing. false: the flow was removed or replaced.
+// commit runs store while the account's flow is still gen, under the account's lock, so
+// that a removal (drop, then the credential erased) either comes after it and erases what
+// it stored, or before it and stores nothing, and a new start waits for it. false: the
+// flow was removed or replaced.
 func (f *bmwFlows) commit(account string, gen uint64, store func() error) (bool, error) {
+	l := f.account(account)
+	l.Lock()
+	defer l.Unlock()
 	f.mu.Lock()
-	defer f.mu.Unlock()
-	if fl, ok := f.pending[account]; !ok || fl.gen != gen {
+	fl, ok := f.pending[account]
+	f.mu.Unlock()
+	if !ok || fl.gen != gen {
 		return false, nil
 	}
 	return true, store()
@@ -364,19 +394,23 @@ func (s *Server) postBMWToken(ctx context.Context, _ *struct{}) (*body[connectio
 		return nil, s.tooManyVehicles()
 	}
 	cred := BMWCredential{ClientID: fl.clientID, GCID: tok.GCID, Refresh: tok.Refresh}
-	var id string
-	current, err := s.bmwFlows.commit(account, fl.gen, func() (err error) {
-		id, err = s.BMW.SetBMW(ctx, account, cred, s.Clock.Now())
-		return err //nolint:wrapcheck // wrapped by s.internal below
+	// The credential and the vehicles, together under the account's lock: a removal
+	// comes before both or after both.
+	var failed string
+	current, err := s.bmwFlows.commit(account, fl.gen, func() error {
+		id, err := s.BMW.SetBMW(ctx, account, cred, s.Clock.Now())
+		if err != nil {
+			failed = "BMW connection not stored"
+			return err //nolint:wrapcheck // wrapped by s.internal below
+		}
+		failed = "vehicles not recorded"
+		return oauth.AddVehicles(ctx, s.Enrollment, account, id, vins) //nolint:wrapcheck // wrapped by s.internal below
 	})
 	if err != nil {
-		return nil, s.internal("BMW connection not stored", err)
+		return nil, s.internal(failed, err)
 	}
 	if !current {
 		return nil, apiError(http.StatusBadRequest, codeAuthorizationExpired, "the connection was removed or started again meanwhile")
-	}
-	if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
-		return nil, s.internal("vehicles not recorded", err)
 	}
 	s.Log.Info("BMW connected", "account", account, "vehicles", len(vins))
 	out, err := s.connectionSettings(ctx, account)
