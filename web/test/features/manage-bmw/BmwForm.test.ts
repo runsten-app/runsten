@@ -164,6 +164,19 @@ describe('BmwForm', () => {
     expect(w().find('.approval').exists()).toBe(true)
   })
 
+  it('asks BMW nothing once left while the code was being asked for', async () => {
+    let give: (d: typeof device) => void = () => {}
+    api.startBmwAuthorization.mockReturnValue(new Promise((resolve) => (give = resolve)))
+    form(none)
+    await sendClientId()
+    w().unmount()
+    wrapper = undefined
+    give(device)
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(api.pollBmwToken).not.toHaveBeenCalled()
+  })
+
   it('cancels the wait, back to the field with what was typed, and asks BMW no more', async () => {
     api.pollBmwToken.mockRejectedValue(new ApiError(409, 'authorization_pending', '', 5))
     form(none)

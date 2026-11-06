@@ -174,4 +174,14 @@ describe('useBmwPolling', () => {
     await vi.advanceTimersByTimeAsync(60_000)
     expect(api.pollBmwToken).toHaveBeenCalledTimes(1)
   })
+
+  it('starts no wait once its scope ended, the code arriving after it', async () => {
+    const scope = effectScope()
+    const { result } = withSetup(() => scope.run(useBmwPolling))
+    scope.stop()
+    result?.begin(device)
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(api.pollBmwToken).not.toHaveBeenCalled()
+    expect(result?.phase.value).toBe('idle')
+  })
 })

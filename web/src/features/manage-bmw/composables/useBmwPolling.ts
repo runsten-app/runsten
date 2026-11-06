@@ -23,6 +23,9 @@ export function useBmwPolling() {
   const unreachable = ref(false)
   let timer: ReturnType<typeof setTimeout> | undefined
   let run = 0
+  // disposed: the page was left, perhaps while the code was being asked for; no wait
+  // starts after it, which would spend a later code of the same account.
+  let disposed = false
 
   function stop() {
     run++
@@ -67,6 +70,7 @@ export function useBmwPolling() {
 
   // begin waits for the owner's approval of the device's code.
   function begin(device: BmwDevice) {
+    if (disposed) return
     stop()
     phase.value = 'waiting'
     error.value = null
@@ -82,6 +86,9 @@ export function useBmwPolling() {
     unreachable.value = false
   }
 
-  onScopeDispose(stop)
+  onScopeDispose(() => {
+    disposed = true
+    stop()
+  })
   return { phase, error, unreachable, begin, cancel }
 }
