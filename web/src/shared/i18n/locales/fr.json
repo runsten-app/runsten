@@ -145,6 +145,10 @@
       "cabin": "Habitacle",
       "climateOn": "Climatisation en marche",
       "preconditioning": "Préconditionnement",
+      "climateAt": "Climatisation à {temp}",
+      "heatingTo": "Chauffage vers {temp}",
+      "coolingTo": "Refroidissement vers {temp}",
+      "preconditioningTo": "Préconditionnement à {temp}",
       "batteryHeater": "Batterie en chauffe"
     }
   },
