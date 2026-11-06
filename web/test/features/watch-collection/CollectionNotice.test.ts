@@ -139,7 +139,7 @@ describe('CollectionNotice', () => {
   })
 
   // Read from the messages: an instance may word them otherwise.
-  it.each<Locale>(['en', 'fr', 'it', 'sv'])(
+  it.each<Locale>(['en', 'fr', 'it', 'nl', 'sv'])(
     'tells a vehicle the offer leaves unread, in %s',
     async (locale) => {
       i18n.global.locale.value = locale

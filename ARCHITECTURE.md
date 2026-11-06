@@ -160,7 +160,7 @@ These are checked by tools, not by goodwill; a pull request that breaks one fail
   generated OpenAPI file change in the diff of any API change, and every response of the tests
   is validated against the spec.
 - **The front end is accessible.** axe runs on every view in the browser tests, with no rule
-  disabled; every text is translated in English, French, Italian and Swedish.
+  disabled; every text is translated in English, French, Italian, Dutch and Swedish.
 - **No secrets in the repository.** Tokens and keys are encrypted at rest and never logged;
   Trivy scans the tree for secrets.
 

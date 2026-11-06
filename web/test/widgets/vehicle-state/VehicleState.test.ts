@@ -296,6 +296,7 @@ describe('VehicleState', () => {
     ['en', 'Unknown', 'Nothing read yet'],
     ['fr', 'Inconnu', "Rien n'a encore été relevé"],
     ['it', 'Sconosciuto', 'Ancora nessuna lettura'],
+    ['nl', 'Onbekend', 'Nog niets uitgelezen'],
     ['sv', 'Okänt', 'Inget har lästs ännu'],
   ])('shows what was never read as unknown, in %s', async (locale, unknownText, never) => {
     i18n.global.locale.value = locale
@@ -315,6 +316,7 @@ describe('VehicleState', () => {
     ['en', 'Battery capacity', 'Usable, from the variant'],
     ['fr', 'Capacité de la batterie', 'Utile, selon la variante'],
     ['it', 'Capacità della batteria', 'Utile, secondo la versione'],
+    ['nl', 'Batterijcapaciteit', 'Bruikbaar, volgens de uitvoering'],
     ['sv', 'Batterikapacitet', 'Användbar, enligt varianten'],
   ])(
     'falls back on the variant where the car reports no capacity, in %s',
