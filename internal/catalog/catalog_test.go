@@ -29,8 +29,8 @@ func TestEmbeddedCatalog(t *testing.T) {
 	for _, v := range vs {
 		brands[v.Brand]++
 	}
-	if brands[Volvo] == 0 || brands[Polestar] == 0 || brands[Tesla] == 0 {
-		t.Errorf("brands = %v, want the three", brands)
+	if brands[Volvo] == 0 || brands[Polestar] == 0 || brands[Tesla] == 0 || brands[BMW] == 0 || brands[Mini] == 0 {
+		t.Errorf("brands = %v, want the five", brands)
 	}
 
 	vs[0].ID = "changed"
@@ -109,6 +109,38 @@ func TestAmbiguousPairs(t *testing.T) {
 		// No motor code is known for Polestar; the Single and Dual Motor share the battery.
 		{"ps2-lr-single-2021", "ps2-lr-dual-2021"},
 		{"ps2-lr-single-2024", "ps2-lr-dual-2025"},
+		// BMW: no motor code is known and no trim is listed (the model's name in basicData is
+		// not verified on a car yet), so the variants that share a battery are told apart by
+		// the user. A refresh that keeps the battery's gross capacity shares a model year
+		// with the model it replaces, as does the 2026 refresh of the iX1 and the Countryman.
+		{"i4-edrive35-2023", "i4-edrive35-2024"},
+		{"i4-edrive40-2022", "i4-edrive40-2024"},
+		{"i4-edrive40-2022", "i4-xdrive40-2024"},
+		{"i4-edrive40-2022", "i4-m50-2022"},
+		{"i4-edrive40-2022", "i4-m50-2024"},
+		{"i4-edrive40-2024", "i4-xdrive40-2024"},
+		{"i4-edrive40-2024", "i4-m50-2022"},
+		{"i4-edrive40-2024", "i4-m50-2024"},
+		{"i4-edrive40-2024", "i4-m60-2025"},
+		{"i4-xdrive40-2024", "i4-m50-2022"},
+		{"i4-xdrive40-2024", "i4-m50-2024"},
+		{"i4-xdrive40-2024", "i4-m60-2025"},
+		{"i4-m50-2022", "i4-m50-2024"},
+		{"i4-m50-2024", "i4-m60-2025"},
+		{"i5-edrive40-2024", "i5-xdrive40-2024"},
+		{"i5-edrive40-2024", "i5-m60-2024"},
+		{"i5-xdrive40-2024", "i5-m60-2024"},
+		{"i7-edrive50-2023", "i7-xdrive60-2023"},
+		{"i7-edrive50-2023", "i7-m70-2023"},
+		{"i7-xdrive60-2023", "i7-m70-2023"},
+		{"ix-xdrive50-2022", "ix-m60-2022"},
+		{"ix1-edrive20-2023", "ix1-xdrive30-2023"},
+		{"ix1-edrive20-2023", "ix1-edrive20-2026"},
+		{"ix1-xdrive30-2023", "ix1-edrive20-2026"},
+		{"ix2-edrive20-2024", "ix2-xdrive30-2024"},
+		{"countryman-e-2024", "countryman-se-all4-2024"},
+		{"countryman-e-2024", "countryman-se-all4-2026"},
+		{"countryman-se-all4-2024", "countryman-se-all4-2026"},
 	}
 	var got [][2]string
 	for _, v := range mustLoad(t).Variants() {

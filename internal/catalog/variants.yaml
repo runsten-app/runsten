@@ -1,10 +1,11 @@
-# Electric and plug-in hybrid variants of Volvo, Polestar and Tesla vehicles.
+# Electric and plug-in hybrid variants of Volvo, Polestar, Tesla, BMW and Mini vehicles.
 #
 # One entry per variant: a powertrain and battery over a range of model years. Its id is
 # stored by users once they choose it, so it never changes: correcting a figure keeps the
 # id, and an entry is corrected rather than removed.
 #
-# - family: exactly what the Volvo API returns in descriptions.model. Polestar families are
+# - family: exactly what the Volvo API returns in descriptions.model. BMW and Mini: the first
+#   word of basicData's modelName (i4, iX3, Cooper). Polestar families are
 #   provisional: no data source returns them yet. Tesla's: car_type as the Owner API's
 #   normalizer names it (Model 3, Model Y).
 # - trims: values of a vendor's trim badge (Tesla's trim_badging), lower case, sourced as
@@ -1373,6 +1374,549 @@
     - url: https://ev-database.org/car/3843/Tesla-Model-Y-Premium-AWD
       level: secondary
       for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# --- BMW i4 (G26) --------------------------------------------------------------------
+
+- id: i4-edrive35-2023
+  brand: bmw
+  family: i4
+  name: i4 eDrive35
+  years: [2023, 2024]
+  gross_kwh: 70.2
+  net_kwh: 67
+  ac_max_kw: 11
+  dc_max_kw: 180
+  ambiguous_with: [i4-edrive35-2024]
+  sources:
+    - url: https://ev-database.org/car/1785/BMW-i4-eDrive35
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: i4-edrive35-2024
+  brand: bmw
+  family: i4
+  name: i4 eDrive35 (2024 refresh)
+  years: [2024]
+  gross_kwh: 70.3
+  net_kwh: 67.1
+  ac_max_kw: 11
+  dc_max_kw: 180
+  sources:
+    - url: https://ev-database.org/car/2198/BMW-i4-eDrive35
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: i4-edrive40-2022
+  brand: bmw
+  family: i4
+  name: i4 eDrive40
+  years: [2022, 2024]
+  gross_kwh: 83.9
+  net_kwh: 80.7
+  ac_max_kw: 11
+  dc_max_kw: 207 # ev-database measured, BMW claims 205
+  ambiguous_with: [i4-edrive40-2024, i4-xdrive40-2024, i4-m50-2022, i4-m50-2024]
+  sources:
+    - url: https://ev-database.org/car/1252/BMW-i4-eDrive40
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: i4-edrive40-2024
+  brand: bmw
+  family: i4
+  name: i4 eDrive40 (2024 refresh)
+  years: [2024]
+  gross_kwh: 83.9
+  net_kwh: 81.3
+  ac_max_kw: 11
+  dc_max_kw: 205
+  ambiguous_with: [i4-xdrive40-2024, i4-m50-2022, i4-m50-2024, i4-m60-2025]
+  sources:
+    - url: https://ev-database.org/car/2199/BMW-i4-eDrive40
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3205/BMW-i4-eDrive40
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: i4-xdrive40-2024
+  brand: bmw
+  family: i4
+  name: i4 xDrive40
+  years: [2024]
+  gross_kwh: 83.9
+  net_kwh: 81.3
+  ac_max_kw: 11
+  dc_max_kw: 205
+  ambiguous_with: [i4-m50-2022, i4-m50-2024, i4-m60-2025]
+  sources:
+    - url: https://ev-database.org/car/2200/BMW-i4-xDrive40
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: i4-m50-2022
+  brand: bmw
+  family: i4
+  name: i4 M50
+  years: [2022, 2024]
+  gross_kwh: 83.9
+  net_kwh: 80.7
+  ac_max_kw: 11
+  dc_max_kw: 207 # ev-database measured, BMW claims 205
+  ambiguous_with: [i4-m50-2024]
+  sources:
+    - url: https://ev-database.org/car/1519/BMW-i4-M50
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: i4-m50-2024
+  brand: bmw
+  family: i4
+  name: i4 M50 (2024 refresh)
+  years: [2024, 2025]
+  gross_kwh: 83.9
+  net_kwh: 81.3
+  ac_max_kw: 11
+  dc_max_kw: 205
+  ambiguous_with: [i4-m60-2025]
+  sources:
+    - url: https://ev-database.org/car/2201/BMW-i4-M50
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: i4-m60-2025
+  brand: bmw
+  family: i4
+  name: i4 M60 xDrive
+  years: [2025]
+  gross_kwh: 83.9
+  net_kwh: 81.3
+  ac_max_kw: 11
+  dc_max_kw: 205
+  sources:
+    - url: https://ev-database.org/car/3207/BMW-i4-M60-xDrive
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+# --- BMW i5 (G60) --------------------------------------------------------------------
+
+# ev-database 206 kW measured DC, BMW claims 205.
+- id: i5-edrive40-2024
+  brand: bmw
+  family: i5
+  name: i5 eDrive40
+  years: [2024]
+  gross_kwh: 84.4
+  net_kwh: 81.2
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 206
+  ambiguous_with: [i5-xdrive40-2024, i5-m60-2024]
+  sources:
+    - url: https://ev-database.org/car/1906/BMW-i5-eDrive40-Sedan
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3112/BMW-i5-eDrive40-Sedan
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: i5-xdrive40-2024
+  brand: bmw
+  family: i5
+  name: i5 xDrive40
+  years: [2024]
+  gross_kwh: 84.4
+  net_kwh: 81.2
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 206
+  ambiguous_with: [i5-m60-2024]
+  sources:
+    - url: https://ev-database.org/car/2096/BMW-i5-xDrive40-Sedan
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3113/BMW-i5-xDrive40-Sedan
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: i5-m60-2024
+  brand: bmw
+  family: i5
+  name: i5 M60 xDrive
+  years: [2024]
+  gross_kwh: 84.4
+  net_kwh: 81.2
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 206
+  sources:
+    - url: https://ev-database.org/car/1907/BMW-i5-M60-xDrive-Sedan
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3114/BMW-i5-M60-xDrive-Sedan
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+# --- BMW i7 (G70) --------------------------------------------------------------------
+
+# ev-database tells the 22 kW AC maximum only; the 11 kW standard charger with the 22 kW option comes from the second source. DC: ev-database 200, BMW claims 195.
+- id: i7-edrive50-2023
+  brand: bmw
+  family: i7
+  name: i7 eDrive50
+  years: [2023, 2026]
+  gross_kwh: 105.7
+  net_kwh: 101.7
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 200
+  ambiguous_with: [i7-xdrive60-2023, i7-m70-2023]
+  sources:
+    - url: https://ev-database.org/car/1905/BMW-i7-eDrive50
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_option_kw, dc_max_kw]
+    - url: https://greencarscompare.com/global/car/bmw-i7-edrive50/charging/
+      level: secondary
+      for: [ac_max_kw, ac_option_kw]
+
+- id: i7-xdrive60-2023
+  brand: bmw
+  family: i7
+  name: i7 xDrive60
+  years: [2023, 2026]
+  gross_kwh: 105.7
+  net_kwh: 101.7
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 200
+  ambiguous_with: [i7-m70-2023]
+  sources:
+    - url: https://ev-database.org/car/1676/BMW-i7-xDrive60
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_option_kw, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/BMW_i7
+      level: secondary
+      for: [gross_kwh]
+    - url: https://greencarscompare.com/global/car/bmw-i7-edrive50/charging/
+      level: secondary
+      for: [ac_max_kw, ac_option_kw]
+
+- id: i7-m70-2023
+  brand: bmw
+  family: i7
+  name: i7 M70 xDrive
+  years: [2023, 2026]
+  gross_kwh: 105.7
+  net_kwh: 101.7
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 200
+  sources:
+    - url: https://ev-database.org/car/1838/BMW-i7-M70-xDrive
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_option_kw, dc_max_kw]
+    - url: https://greencarscompare.com/global/car/bmw-i7-edrive50/charging/
+      level: secondary
+      for: [ac_max_kw, ac_option_kw]
+
+# Wikipedia tells 118.1 gross and 112.5 usable for the refreshed i7: ev-database's figures are kept (one source per figure, the page of the variant).
+- id: i7-m70-2026
+  brand: bmw
+  family: i7
+  name: i7 M70 xDrive (2026 refresh)
+  years: [2026]
+  gross_kwh: 117
+  net_kwh: 112.4
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 250
+  sources:
+    - url: https://ev-database.org/car/3558/BMW-i7-M70-xDrive
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_option_kw, dc_max_kw]
+    - url: https://greencarscompare.com/global/car/bmw-i7-edrive50/charging/
+      level: secondary
+      for: [ac_max_kw, ac_option_kw]
+
+# --- BMW iX (I20) --------------------------------------------------------------------
+
+- id: ix-xdrive40-2022
+  brand: bmw
+  family: iX
+  name: iX xDrive40
+  years: [2022, 2025]
+  gross_kwh: 76.6
+  net_kwh: 71
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 148
+  sources:
+    - url: https://ev-database.org/car/1472/BMW-iX-xDrive40
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: ix-xdrive50-2022
+  brand: bmw
+  family: iX
+  name: iX xDrive50
+  years: [2022, 2025]
+  gross_kwh: 111.5
+  net_kwh: 105.2
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 195
+  ambiguous_with: [ix-m60-2022]
+  sources:
+    - url: https://ev-database.org/car/1473/BMW-iX-xDrive50
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: ix-m60-2022
+  brand: bmw
+  family: iX
+  name: iX M60
+  years: [2022, 2025]
+  gross_kwh: 111.5
+  net_kwh: 105.2
+  ac_max_kw: 11
+  dc_max_kw: 195
+  sources:
+    - url: https://ev-database.org/car/1590/BMW-iX-M60
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: ix-xdrive45-2025
+  brand: bmw
+  family: iX
+  name: iX xDrive45 (2025 refresh)
+  years: [2025]
+  gross_kwh: 100
+  net_kwh: 94.8
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 175
+  sources:
+    - url: https://ev-database.org/car/3109/BMW-iX-xDrive45
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: ix-xdrive60-2025
+  brand: bmw
+  family: iX
+  name: iX xDrive60 (2025 refresh)
+  years: [2025]
+  gross_kwh: 115
+  net_kwh: 109.1
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 195
+  sources:
+    - url: https://ev-database.org/car/3110/BMW-iX-xDrive60
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+# --- BMW iX1 and iX2 (U11, U10) ------------------------------------------------------
+
+- id: ix1-edrive20-2023
+  brand: bmw
+  family: iX1
+  name: iX1 eDrive20
+  years: [2023, 2026]
+  gross_kwh: 66.5
+  net_kwh: 64.7
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 128
+  ambiguous_with: [ix1-xdrive30-2023, ix1-edrive20-2026]
+  sources:
+    - url: https://ev-database.org/car/1996/BMW-iX1-eDrive20
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: ix1-xdrive30-2023
+  brand: bmw
+  family: iX1
+  name: iX1 xDrive30
+  years: [2023, 2026]
+  gross_kwh: 66.5
+  net_kwh: 64.7
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 128
+  ambiguous_with: [ix1-edrive20-2026]
+  sources:
+    - url: https://ev-database.org/car/1701/BMW-iX1-xDrive30
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: ix1-edrive20-2026
+  brand: bmw
+  family: iX1
+  name: iX1 eDrive20 (2026 refresh)
+  years: [2026]
+  gross_kwh: 66.5
+  net_kwh: 65.2
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 130
+  sources:
+    - url: https://ev-database.org/car/3458/BMW-iX1-eDrive20
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: ix2-edrive20-2024
+  brand: bmw
+  family: iX2
+  name: iX2 eDrive20
+  years: [2024, 2026]
+  gross_kwh: 66.5
+  net_kwh: 64.7
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 128
+  ambiguous_with: [ix2-xdrive30-2024]
+  sources:
+    - url: https://ev-database.org/car/2097/BMW-iX2-eDrive20
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: ix2-xdrive30-2024
+  brand: bmw
+  family: iX2
+  name: iX2 xDrive30
+  years: [2024, 2026]
+  gross_kwh: 66.5
+  net_kwh: 64.7
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 128
+  sources:
+    - url: https://ev-database.org/car/2040/BMW-iX2-xDrive30
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+# --- BMW iX3 (G08 and Neue Klasse) ---------------------------------------------------
+
+# ev-database 155 kW measured DC, BMW claims 150.
+- id: ix3-2022
+  brand: bmw
+  family: iX3
+  name: iX3 (G08)
+  years: [2022, 2025]
+  gross_kwh: 80
+  net_kwh: 74
+  ac_max_kw: 11
+  dc_max_kw: 155
+  sources:
+    - url: https://ev-database.org/car/1535/BMW-iX3
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: ix3-50-xdrive-2026
+  brand: bmw
+  family: iX3
+  name: iX3 50 xDrive (Neue Klasse)
+  years: [2026]
+  gross_kwh: 113.4
+  net_kwh: 108.7
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 400
+  sources:
+    - url: https://ev-database.org/car/3290/BMW-iX3-50-xDrive
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+# --- Mini Cooper, Aceman and Countryman (J01, J05, U25) ------------------------------
+
+- id: cooper-e-2024
+  brand: mini
+  family: Cooper
+  name: Cooper E (J01)
+  years: [2024]
+  gross_kwh: 40.7
+  net_kwh: 36.6
+  ac_max_kw: 11
+  dc_max_kw: 70
+  sources:
+    - url: https://ev-database.org/car/1997/Mini-Cooper-E
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: cooper-se-2024
+  brand: mini
+  family: Cooper
+  name: Cooper SE (J01)
+  years: [2024]
+  gross_kwh: 54.2
+  net_kwh: 49.2
+  ac_max_kw: 11
+  dc_max_kw: 95
+  sources:
+    - url: https://ev-database.org/car/1998/Mini-Cooper-SE
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: aceman-e-2024
+  brand: mini
+  family: Aceman
+  name: Aceman E
+  years: [2024]
+  gross_kwh: 42.5
+  net_kwh: 38.5
+  ac_max_kw: 11
+  dc_max_kw: 70
+  sources:
+    - url: https://ev-database.org/car/2190/Mini-Aceman-E
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: countryman-e-2024
+  brand: mini
+  family: Countryman
+  name: Countryman E
+  years: [2024, 2026]
+  gross_kwh: 66.5
+  net_kwh: 64.7
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 128
+  ambiguous_with: [countryman-se-all4-2024, countryman-se-all4-2026]
+  sources:
+    - url: https://ev-database.org/car/1994/Mini-Countryman-E
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: countryman-se-all4-2024
+  brand: mini
+  family: Countryman
+  name: Countryman SE ALL4
+  years: [2024, 2026]
+  gross_kwh: 66.5
+  net_kwh: 64.7
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 128
+  ambiguous_with: [countryman-se-all4-2026]
+  sources:
+    - url: https://ev-database.org/car/1995/Mini-Countryman-SE-ALL4
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: countryman-se-all4-2026
+  brand: mini
+  family: Countryman
+  name: Countryman SE ALL4 (2026 refresh)
+  years: [2026]
+  gross_kwh: 66.5
+  net_kwh: 65.2
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 128
+  sources:
+    - url: https://ev-database.org/car/3457/Mini-Countryman-SE-ALL4
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
 
 # --- Plug-in hybrids: Volvo SPA and CMA, Polestar 1 -------------------------------------
 #

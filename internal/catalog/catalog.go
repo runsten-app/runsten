@@ -1,5 +1,5 @@
-// Package catalog is the data sheet of the electric and plug-in hybrid Volvo, Polestar and
-// Tesla variants: battery
+// Package catalog is the data sheet of the electric and plug-in hybrid Volvo, Polestar,
+// Tesla, BMW and Mini variants: battery
 // capacities and charging powers, read from a sourced YAML file embedded in the binary,
 // and the recognition of a vehicle's variant from what the vendor API says of it.
 //
@@ -27,6 +27,8 @@ const (
 	Volvo    Brand = "volvo"
 	Polestar Brand = "polestar"
 	Tesla    Brand = "tesla"
+	BMW      Brand = "bmw"
+	Mini     Brand = "mini"
 )
 
 // readsCapacity reports whether the brand's sources tell the battery's capacity, which
