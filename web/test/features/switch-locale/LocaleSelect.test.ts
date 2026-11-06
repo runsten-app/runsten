@@ -13,6 +13,7 @@ describe('LocaleSelect', () => {
       { value: 'de', title: 'Deutsch' },
       { value: 'fr', title: 'Français' },
       { value: 'it', title: 'Italiano' },
+      { value: 'nb', title: 'Norsk bokmål' },
       { value: 'nl', title: 'Nederlands' },
       { value: 'sv', title: 'Svenska' },
     ])

@@ -4,10 +4,11 @@ import de from './locales/de.json'
 import en from './locales/en.json'
 import fr from './locales/fr.json'
 import it from './locales/it.json'
+import nb from './locales/nb.json'
 import nl from './locales/nl.json'
 import sv from './locales/sv.json'
 
-export const locales = ['en', 'de', 'fr', 'it', 'nl', 'sv'] as const
+export const locales = ['en', 'de', 'fr', 'it', 'nb', 'nl', 'sv'] as const
 export type Locale = (typeof locales)[number]
 
 // Each language is named in itself, whatever the current one.
@@ -16,6 +17,7 @@ export const localeNames: Record<Locale, string> = {
   de: 'Deutsch',
   fr: 'Français',
   it: 'Italiano',
+  nb: 'Norsk bokmål',
   nl: 'Nederlands',
   sv: 'Svenska',
 }
@@ -30,13 +32,23 @@ export function isLocale(s: string): s is Locale {
 // base is the language of a browser's tag ("sv-SE" → "sv").
 const base = (tag: string) => tag.toLowerCase().split('-')[0] ?? ''
 
+// Browsers often say Norwegian as "no" ("no-NO"), or Nynorsk ("nn"), whose readers take
+// Bokmål where Nynorsk is missing.
+const aliases: Record<string, Locale> = { no: 'nb', nn: 'nb' }
+
+// spoken is the language Runsten speaks for a browser's tag, if any ("no-NO" → "nb").
+function spoken(tag: string): Locale | undefined {
+  const b = base(tag)
+  return isLocale(b) ? b : aliases[b]
+}
+
 // initialLocale picks the stored choice, else the first browser language Runsten speaks
 // ("sv-SE" → "sv"), else English.
 export function initialLocale(stored: string | null, languages: readonly string[]): Locale {
   if (stored && isLocale(stored)) return stored
   for (const l of languages) {
-    const b = base(l)
-    if (isLocale(b)) return b
+    const s = spoken(l)
+    if (s) return s
   }
   return 'en'
 }
@@ -48,11 +60,27 @@ export function initialLocale(stored: string | null, languages: readonly string[
 // English ("pl-PL" or "pl" → "en-PL": 24-hour times, "1.234,5").
 export function intlLocale(l: Locale, languages: readonly string[], chosen: boolean): string {
   const first = languages[0]
-  if (!chosen && first && !languages.some((b) => isLocale(base(b)))) {
+  if (!chosen && first && !languages.some((b) => spoken(b))) {
     const region = regionOf(first)
     if (region) return `${l}-${region}`
   }
-  return languages.find((b) => base(b) === l) ?? l
+  // The first browser language that gives l: its own tag, or through an alias, l in the
+  // alias's region ("no-NO" → "nb-NO").
+  const tag = languages.find((b) => spoken(b) === l)
+  if (!tag) return l
+  if (base(tag) === l) return tag
+  const region = statedRegion(tag)
+  return region ? `${l}-${region}` : l
+}
+
+// statedRegion is the region a browser language names, if any ("no-US" → "US", "nn" →
+// undefined); undefined for a tag Intl does not read.
+function statedRegion(tag: string): string | undefined {
+  try {
+    return new Intl.Locale(tag).region
+  } catch {
+    return undefined
+  }
 }
 
 // regionOf is a browser language's region, the likeliest when it names none ("pl" → "PL");
@@ -75,7 +103,7 @@ export const i18n = createI18n({
   legacy: false,
   locale: initialLocale(stored, navigator.languages),
   fallbackLocale: 'en',
-  messages: { en, de, fr, it, nl, sv },
+  messages: { en, de, fr, it, nb, nl, sv },
 })
 
 export function setLocale(l: Locale) {
