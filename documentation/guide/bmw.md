@@ -42,10 +42,10 @@ The keys to tick, under the groups of the portal's catalogue:
 |---|---|
 | Ignition and movement | `vehicle.drivetrain.engine.isIgnitionOn`, `vehicle.isMoving` |
 | Battery and range | `vehicle.drivetrain.batteryManagement.header`, `vehicle.powertrain.electric.battery.stateOfCharge.displayed`, `vehicle.powertrain.electric.battery.stateOfCharge.target`, `vehicle.drivetrain.electricEngine.kombiRemainingElectricRange` |
-| Charging | `vehicle.drivetrain.electricEngine.charging.status`, `….charging.hvStatus`, `….charging.method`, `vehicle.body.chargingPort.status`, `vehicle.body.chargingPort.dcStatus`, `vehicle.powertrain.electric.battery.charging.power`, `….charging.acAmpere`, `….charging.acVoltage`, `….charging.phaseNumber`, `….charging.timeToFullyCharged` |
+| Charging | `vehicle.drivetrain.electricEngine.charging.status`, `vehicle.drivetrain.electricEngine.charging.hvStatus`, `vehicle.drivetrain.electricEngine.charging.method`, `vehicle.drivetrain.electricEngine.charging.acAmpere`, `vehicle.drivetrain.electricEngine.charging.acVoltage`, `vehicle.drivetrain.electricEngine.charging.phaseNumber`, `vehicle.drivetrain.electricEngine.charging.timeToFullyCharged`, `vehicle.powertrain.electric.battery.charging.power`, `vehicle.body.chargingPort.status`, `vehicle.body.chargingPort.dcStatus` |
 | Odometer | `vehicle.vehicle.travelledDistance` |
-| Position | `vehicle.cabin.infotainment.navigation.currentLocation.latitude` and `….longitude` |
-| Tyres | `vehicle.chassis.axle.row1.wheel.left.tire.pressure`, and the three other wheels |
+| Position | `vehicle.cabin.infotainment.navigation.currentLocation.latitude`, `vehicle.cabin.infotainment.navigation.currentLocation.longitude` |
+| Tyres | `vehicle.chassis.axle.row1.wheel.left.tire.pressure`, `vehicle.chassis.axle.row1.wheel.right.tire.pressure`, `vehicle.chassis.axle.row2.wheel.left.tire.pressure`, `vehicle.chassis.axle.row2.wheel.right.tire.pressure` |
 
 Not every car sends every key.
 
@@ -65,8 +65,8 @@ Runsten keeps the tokens BMW gives, encrypted, and only ever sends them to BMW. 
 
 Runsten reads the battery level and the target, the range, the charging (status, cable and type, power, current, voltage, phases, time left), the odometer, the position and the tyres' pressure, and the model of the car, which tells its variant when one fits ([Vehicle models](./vehicle-models.md)).
 
-- The **stream** is read at the collector's pace: every minute while the car is parked, every 15 seconds while it drives, every 30 seconds while it charges. It costs no call. A parked car that sleeps sends nothing: Runsten dates every value by the moment the car measured it, never by the moment it arrived.
-- The **API** is the safety net: a value the stream did not push, and what a restart of Runsten lost, once an hour; the model and the series of the car, once a day. About 28 calls a day with two cars. Runsten makes **40 calls a day at most** per connection, of the 50 BMW allows, to leave you a few of your own.
+- The **stream** is read at the collector's pace: every minute while the car is parked, every 15 seconds while it drives or charges (at best: a collector busy with many vehicles, or an instance's own policy, may read it less often). It costs no call. A parked car that sleeps sends nothing: Runsten dates every value by the moment the car measured it, never by the moment it arrived.
+- The **API** is the safety net: a value the stream did not push, and what a restart of Runsten lost, aimed at once an hour; the model of the car and its charging history, once a day. That is about 26 calls a day per car. Runsten makes **40 calls a day at most** per connection, of the 50 BMW allows, to leave you a few of your own: with two cars or more, the calls are spread over the day and the hourly reads come less often. The stream is not affected.
 
 A trip is worked out from the ignition, the odometer and the position, as BMW gives no trip of its own. When the car pushes its position often enough while it drives, the trip has a route; Runsten does not promise it before it has been seen on real cars.
 
