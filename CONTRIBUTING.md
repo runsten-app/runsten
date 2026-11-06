@@ -63,7 +63,7 @@ What we look for in review:
 - **The rules of [`ARCHITECTURE.md`](ARCHITECTURE.md#rules-that-hold-it-together) hold**:
   dependencies point inward, time is injected, every table is isolated, the API's diff is
   reviewed as a contract.
-- **Accessible and translated** interface: axe passes, every text in the three languages.
+- **Accessible and translated** interface: axe passes, every text in every language of the interface.
 - **No speculative abstraction**, and no new dependency without a reason given.
 - **Nothing private**: no real VIN, token, API key or position, anywhere, fixtures included.
 
