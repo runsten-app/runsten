@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "Niveau de charge",
+    "title": "Activité",
     "soc": "Niveau de charge",
     "driving": "Conduite",
     "charging": "Recharge",

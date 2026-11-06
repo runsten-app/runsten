@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "Laddningsnivå",
+    "title": "Aktivitet",
     "soc": "Laddningsnivå",
     "driving": "Körning",
     "charging": "Laddning",

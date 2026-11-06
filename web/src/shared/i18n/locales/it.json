@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "Stato di carica",
+    "title": "Attività",
     "soc": "Stato di carica",
     "driving": "In marcia",
     "charging": "In carica",

@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "Ladezustand",
+    "title": "Aktivität",
     "soc": "Ladezustand",
     "driving": "Fahren",
     "charging": "Laden",

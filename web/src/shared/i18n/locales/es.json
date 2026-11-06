@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "Nivel de carga",
+    "title": "Actividad",
     "soc": "Nivel de carga",
     "driving": "En marcha",
     "charging": "Cargando",

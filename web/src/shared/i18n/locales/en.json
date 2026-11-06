@@ -850,7 +850,7 @@
     }
   },
   "timeline": {
-    "title": "State of charge",
+    "title": "Activity",
     "soc": "State of charge",
     "driving": "Driving",
     "charging": "Charging",
