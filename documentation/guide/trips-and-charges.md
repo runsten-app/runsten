@@ -8,6 +8,10 @@ The **Trips** and **Charges** tabs list the events of a period, by day, newest f
 
 <Screen view="trips" alt="The Trips tab: the trips of a period, by day, under their totals." />
 
+## Where the car went
+
+Under the totals, the **Trips** tab draws the period on a map: where its trips started and ended, and a line between two spots for the trips between them, thicker the more often they were driven, either way. A month shows the daily commute as one thick line, a year the whole area the car drives in. The ends within a place's circle are that place; the others are gathered around the same address (within 250 m). Runsten reads where a trip starts and ends, not the road it took: the lines are straight. Below the map, the journeys made more than once, the most frequent first, with their trips and their distance. A trip without a position (a reconstructed one) is counted apart. The map is the API's `GET /vehicles/{vehicle}/trip-map`.
+
 ## Charges by place
 
 Beside the period, the **Charges** tab chooses a place: one of your places, **Elsewhere** (a position outside every place) or **No position**. The list, its totals, its chart and its CSV file then hold the charges of that place only: "at home, over the last three months, 412 kWh for €61.20 – €64.80". A charge without a position is at the place that takes those, if you marked one ([Places, tariffs and costs](./costs.md)), never a DC one. The place stays in the address of the page, with the period; in the statistics, selecting a place's bar opens the same list.

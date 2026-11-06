@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { defineAsyncComponent } from 'vue'
 import { mapsShown, mapTiles, type Position } from '@/shared/lib'
-import type { MapCircle, MapMarker } from './map/types'
+import type { MapCircle, MapLink, MapMarker, MapSpot } from './map/types'
 
 // MapView is a map, where the instance has tiles and the reader has not hidden the maps;
 // nothing otherwise. Leaflet is loaded on demand, out of the main bundle.
@@ -15,6 +15,9 @@ defineProps<{
   route?: boolean
   line?: Position[]
   pickable?: boolean
+  spots?: MapSpot[]
+  links?: MapLink[]
+  tall?: boolean
 }>()
 defineEmits<{ pick: [position: Position] }>()
 const tiles = mapTiles()
@@ -22,7 +25,19 @@ const tiles = mapTiles()
 
 <template>
   <div v-if="tiles && mapsShown" class="map-view">
-    <MapFrame :tiles :label :markers :circle :route :line :pickable @pick="$emit('pick', $event)" />
+    <MapFrame
+      :tiles
+      :label
+      :markers
+      :circle
+      :route
+      :line
+      :pickable
+      :spots
+      :links
+      :tall
+      @pick="$emit('pick', $event)"
+    />
     <p v-if="hint" class="text-body-small text-medium-emphasis mt-1">{{ hint }}</p>
   </div>
 </template>

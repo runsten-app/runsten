@@ -12,6 +12,7 @@ export function afterImportChange(queryClient: QueryClient, vehicle: string) {
     [
       importKeys.list(vehicle),
       tripKeys.lists(vehicle),
+      tripKeys.maps(vehicle),
       tripKeys.details(),
       chargeKeys.all(),
       chargeKeys.details(),

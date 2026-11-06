@@ -7,6 +7,7 @@ import { HistoryLimitNotice, useLimits } from '@/features/view-limits'
 import { AppShell } from '@/widgets/app-shell'
 import { PeriodTotals } from '@/widgets/period-totals'
 import { TripList } from '@/widgets/trip-list'
+import { TripMap } from '@/widgets/trip-map'
 
 defineProps<{ vehicle: string }>()
 const { t } = useI18n()
@@ -36,6 +37,7 @@ const { lacks } = useLimits()
     <template v-if="period.valid">
       <PeriodTotals kind="trips" :vehicle="vehicle" :from="period.from" :to="period.to" />
       <PeriodChart kind="trips" :vehicle="vehicle" :from="period.from" :to="period.to" :days />
+      <TripMap :vehicle="vehicle" :from="period.from" :to="period.to" />
       <TripList :vehicle="vehicle" :from="period.from" :to="period.to" />
     </template>
   </AppShell>

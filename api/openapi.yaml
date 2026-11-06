@@ -2288,6 +2288,70 @@ components:
         - price_per_kwh
         - entered_cost
       type: object
+    MapLink:
+      additionalProperties: false
+      properties:
+        a:
+          description: The index of a spot in spots, before b.
+          format: int64
+          minimum: 0
+          type: integer
+        b:
+          format: int64
+          minimum: 1
+          type: integer
+        distance_km:
+          description: The sum of the trips' known distances.
+          format: double
+          minimum: 0
+          type: number
+        distance_unknown:
+          description: The trips whose distance is unknown, left out of distance_km.
+          format: int64
+          minimum: 0
+          type: integer
+        trips:
+          format: int64
+          minimum: 1
+          type: integer
+      required:
+        - a
+        - b
+        - trips
+        - distance_km
+        - distance_unknown
+      type: object
+    MapSpot:
+      additionalProperties: false
+      properties:
+        address:
+          description: Outside every place, the street and town of one of the ends the spot gathers, as start_address of a trip; null at a place, without a geocoder, and until it answered.
+          type:
+            - string
+            - "null"
+        arrivals:
+          format: int64
+          minimum: 0
+          type: integer
+        departures:
+          format: int64
+          minimum: 0
+          type: integer
+        place:
+          description: The place, null outside every place.
+          oneOf:
+            - $ref: "#/components/schemas/PlaceRef"
+            - type: "null"
+        position:
+          $ref: "#/components/schemas/Position"
+          description: The place's position, else the mean of the ends the spot gathers.
+      required:
+        - position
+        - place
+        - address
+        - departures
+        - arrivals
+      type: object
     Model:
       additionalProperties: false
       properties:
@@ -4791,6 +4855,46 @@ components:
         - end
         - capacity_kwh
         - capacity_source
+      type: object
+    TripMap:
+      additionalProperties: false
+      properties:
+        from:
+          description: "The start of the period: the requested one, or the start of the first trip. Equal to to when the vehicle has no trip."
+          format: date-time
+          pattern: Z$
+          type: string
+        links:
+          description: The trips between two spots, either way, the most driven first. A trip back to the spot it left is none.
+          items:
+            $ref: "#/components/schemas/MapLink"
+          type: array
+        spots:
+          description: "Where the trips started and ended, the most visited first: a place, the ends within its circle, or else the ends within 250 m of the first one it gathered, around the same address. The first 50 have their address."
+          items:
+            $ref: "#/components/schemas/MapSpot"
+          type: array
+        to:
+          format: date-time
+          pattern: Z$
+          type: string
+        trips:
+          description: "The trips of the map: those that started in the period, both ends known."
+          format: int64
+          minimum: 0
+          type: integer
+        trips_without_position:
+          description: The trips of the period left out, an end unknown (a reconstructed trip has none).
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - from
+        - to
+        - trips
+        - trips_without_position
+        - spots
+        - links
       type: object
     TripStats:
       additionalProperties: false
@@ -8933,6 +9037,89 @@ paths:
       summary: The statistics of a vehicle over a period
       tags:
         - stats
+  /vehicles/{vehicle}/trip-map:
+    get:
+      description: "The ends of the trips that started in the period, gathered into spots, and the links between them: the same journey, driven day after day either way, is one link that counts its trips. A trip read by Runsten has its two ends only, never its path: a link is a straight line between two spots."
+      operationId: getTripMap
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+        - description: The start of the period [from, to). Without it, the period starts with the vehicle's first trip.
+          explode: false
+          in: query
+          name: from
+          schema:
+            description: The start of the period [from, to). Without it, the period starts with the vehicle's first trip.
+            examples:
+              - "2026-09-01T00:00:00+02:00"
+            format: date-time
+            type: string
+        - description: The end of the period, excluded; it must come after from. Without it, now.
+          explode: false
+          in: query
+          name: to
+          schema:
+            description: The end of the period, excluded; it must come after from. Without it, now.
+            examples:
+              - "2026-10-01T00:00:00+02:00"
+            format: date-time
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripMap"
+          description: The map.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_parameter`: `from` or `to`; the message names the parameter."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: Where a vehicle went over a period
+      tags:
+        - events
   /vehicles/{vehicle}/trips:
     get:
       description: Newest first, by `start.after` then `detected_at`. Figures are `null` when the readings do not give them. The events derived from the readings and those imported from another application (`imported`) come in one list.

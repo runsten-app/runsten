@@ -358,6 +358,7 @@ func New(cfg Config) *Server {
 	s.registerSheet(s.api)
 	s.registerDeletion(s.api)
 	s.registerStats(s.api)
+	s.registerTripMap(s.api)
 	s.registerBattery(s.api)
 	s.registerSoftware(s.api)
 	s.registerSeries(s.api)

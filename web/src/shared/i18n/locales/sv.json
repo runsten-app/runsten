@@ -229,6 +229,23 @@
     "end": "Inga fler resor.",
     "csv": "Ladda ner CSV"
   },
+  "tripMap": {
+    "title": "Vart fordonet har kört",
+    "label": "Karta över periodens resor",
+    "departures": "{n} avgång | {n} avgångar",
+    "arrivals": "{n} ankomst | {n} ankomster",
+    "between": "{from} ↔ {to}",
+    "trips": "{n} resa | {n} resor",
+    "spots": "{n} plats | {n} platser",
+    "links": "{n} sträcka | {n} sträckor",
+    "hint": "Runsten vet var en resa börjar och slutar, inte vägen: varje linje förbinder två platser, tjockare ju oftare den körts, åt ena eller andra hållet.",
+    "withoutPosition": "En resa utan position är utelämnad. | {n} resor utan position är utelämnade.",
+    "frequent": "Vanligaste resorna",
+    "error": "Kartan över resorna kunde inte laddas. Försök igen om en stund.",
+    "every": "Alla platser och resor på kartan",
+    "everySpots": "Platser",
+    "everyJourneys": "Resor"
+  },
   "readingsCsv": {
     "download": "Ladda ner alla avläsningar (CSV)",
     "tooLong": "Alla avläsningar: välj högst 31 dagar."

@@ -113,6 +113,7 @@ describe('ImportList', () => {
     )
     for (const k of [
       tripKeys.lists('v1'),
+      tripKeys.maps('v1'),
       tripKeys.details(),
       chargeKeys.all(),
       chargeKeys.details(),

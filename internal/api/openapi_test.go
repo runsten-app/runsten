@@ -260,6 +260,7 @@ var goldenRequests = map[string]string{
 	"stats.json":                    "GET /api/v1/vehicles/" + car + "/stats",
 	"stats-totals.json":             "GET /api/v1/vehicles/" + car + "/stats",
 	"stats-empty.json":              "GET /api/v1/vehicles/" + parked + "/stats",
+	"trip-map.json":                 "GET /api/v1/vehicles/" + car + "/trip-map",
 	"battery.json":                  "GET /api/v1/vehicles/" + car + "/battery",
 	"battery-empty.json":            "GET /api/v1/vehicles/" + car + "/battery",
 	"battery-rated.json":            "GET /api/v1/vehicles/" + car + "/battery",
