@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { i18n, initialLocale, intlLocale, localeChosen, setLocale } from '@/shared/i18n'
+import de from '@/shared/i18n/locales/de.json'
 import en from '@/shared/i18n/locales/en.json'
 import fr from '@/shared/i18n/locales/fr.json'
 import it_ from '@/shared/i18n/locales/it.json'
@@ -61,6 +62,7 @@ describe('messages', () => {
     expect(keys(it_).sort()).toEqual(keys(en).sort())
     expect(keys(nl).sort()).toEqual(keys(en).sort())
     expect(keys(sv).sort()).toEqual(keys(en).sort())
+    expect(keys(de).sort()).toEqual(keys(en).sort())
   })
 })
 

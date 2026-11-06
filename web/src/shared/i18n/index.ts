@@ -1,17 +1,19 @@
 import { ref } from 'vue'
 import { createI18n } from 'vue-i18n'
+import de from './locales/de.json'
 import en from './locales/en.json'
 import fr from './locales/fr.json'
 import it from './locales/it.json'
 import nl from './locales/nl.json'
 import sv from './locales/sv.json'
 
-export const locales = ['en', 'fr', 'it', 'nl', 'sv'] as const
+export const locales = ['en', 'de', 'fr', 'it', 'nl', 'sv'] as const
 export type Locale = (typeof locales)[number]
 
 // Each language is named in itself, whatever the current one.
 export const localeNames: Record<Locale, string> = {
   en: 'English',
+  de: 'Deutsch',
   fr: 'Français',
   it: 'Italiano',
   nl: 'Nederlands',
@@ -73,7 +75,7 @@ export const i18n = createI18n({
   legacy: false,
   locale: initialLocale(stored, navigator.languages),
   fallbackLocale: 'en',
-  messages: { en, fr, it, nl, sv },
+  messages: { en, de, fr, it, nl, sv },
 })
 
 export function setLocale(l: Locale) {
