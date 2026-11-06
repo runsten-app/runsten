@@ -20,6 +20,9 @@ const (
 	// SourcePolestarID: a Polestar is read through the Polestar app's API, with its
 	// owner's Polestar ID (ADR 0042).
 	SourcePolestarID Name = "source.polestar-id"
+	// SourceBMW: a BMW or a Mini is read through BMW CarData, with its owner's client ID
+	// (ADR 0045).
+	SourceBMW Name = "source.bmw"
 )
 
 // Flag is a flag's declaration.
@@ -49,6 +52,13 @@ func All() []Flag {
 				"its connection and its reads. Off by default: the Polestar app's API is unofficial, and many accounts " +
 				"read from one instance's addresses could have them blocked; a self-hosted instance turns it on.",
 			Remove: "when Polestar opens an official API to these cars, or the source is offered everywhere",
+		},
+		{
+			Name: SourceBMW, Default: true, Web: true,
+			Purpose: "BMW CarData as a source, for the BMWs and the Minis: its connection and its reads. On by default, " +
+				"the API being BMW's own; an instance may turn it off while the source is in beta, not seen yet on a " +
+				"real car.",
+			Remove: "once the source has been checked on real cars and is out of beta",
 		},
 	}
 }

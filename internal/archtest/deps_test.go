@@ -26,13 +26,13 @@ const module = "runsten"
 var allowed = map[string][]string{
 	// The binaries wire the adapters together. Only runsten-simulator knows the simulator.
 	"cmd/runsten-api": {
-		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/catalog", "internal/core",
+		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/bmw", "internal/catalog", "internal/core",
 		"internal/derive", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
 		"internal/platform", "internal/polestar", "internal/polestarid", "internal/release", "internal/store", "internal/tesla",
 		"internal/teslamate", "internal/volvo", "internal/volvoportal",
 	},
 	"cmd/runsten-collector": {
-		"net/http", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
+		"net/http", "internal/bmw", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
 		"internal/flags", "internal/oauth", "internal/platform", "internal/polestar", "internal/polestarid", "internal/publish",
 		"internal/store", "internal/tesla", "internal/volvo",
 	},
