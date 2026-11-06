@@ -232,6 +232,8 @@ type Config struct {
 	Addresses Addresses
 	// Pictures relays the vehicles' pictures; nil: none is given.
 	Pictures Pictures
+	// StoredPictures are those a source stores with its responses; nil: none is given.
+	StoredPictures StoredPictures
 	// Params are the derivation's: the statistics take their noise threshold of the
 	// state of charge.
 	Params core.Params

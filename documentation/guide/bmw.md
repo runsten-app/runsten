@@ -63,10 +63,10 @@ Runsten keeps the tokens BMW gives, encrypted, and only ever sends them to BMW. 
 
 ## What is read, and how often
 
-Runsten reads the battery level and the target, the range, the charging (status, cable and type, power, current, voltage, phases, time left), the odometer, the position and the tyres' pressure, and the model of the car, which tells its variant when one fits ([Vehicle models](./vehicle-models.md)).
+Runsten reads the battery level and the target, the range, the charging (status, cable and type, power, current, voltage, phases, time left), the odometer, the position and the tyres' pressure, and the model of the car with its battery capacity, which tell its variant when one fits ([Vehicle models](./vehicle-models.md)); its colour, as BMW codes it, and its steering side, in its settings; and BMW's picture of the car, beside it in the menu and on its state.
 
 - The **stream** is read at the collector's pace: every minute while the car is parked, every 15 seconds while it drives or charges (at best: a collector busy with many vehicles, or an instance's own policy, may read it less often). It costs no call. A parked car that sleeps sends nothing: Runsten dates every value by the moment the car measured it, never by the moment it arrived.
-- The **API** is the safety net: a value the stream did not push, and what a restart of Runsten lost, aimed at once an hour; the model of the car and its charging history, once a day. That is about 26 calls a day per car. Runsten makes **40 calls a day at most** per connection, of the 50 BMW allows, to leave you a few of your own: with two cars or more, the calls are spread over the day and the hourly reads come less often. The stream is not affected.
+- The **API** is the safety net: a value the stream did not push, and what a restart of Runsten lost, aimed at once an hour; the model of the car, its picture and its charging history, once a day. That is about 27 calls a day per car. Runsten makes **40 calls a day at most** per connection, of the 50 BMW allows, to leave you a few of your own: with two cars or more, the calls are spread over the day and the hourly reads come less often. The stream is not affected.
 
 A trip is worked out from the ignition, the odometer and the position, as BMW gives no trip of its own. When the car pushes its position often enough while it drives, the trip has a route; Runsten does not promise it before it has been seen on real cars.
 

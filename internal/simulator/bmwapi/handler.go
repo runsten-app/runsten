@@ -1,9 +1,9 @@
 // Package bmwapi exposes simulated vehicles as BMW CarData, the access BMW gives the
 // owner of a BMW or a Mini to their car's data (ADR 0045): the OAuth device flow of the
 // owner's client ID, the REST API (the account's vehicles, their basic data, containers
-// and the last value of their descriptors, the charging history) and the MQTT stream the
-// car pushes its changes to (Stream). The shapes are those of BMW's OpenAPI description
-// and of its streaming guide; none is checked on a real car yet.
+// and the last value of their descriptors, the charging history, the picture) and the
+// MQTT stream the car pushes its changes to (Stream). The shapes are those of BMW's
+// OpenAPI description and of its streaming guide; none is checked on a real car yet.
 //
 // One account, of GCID, is simulated, and its client ID is DevClientID. Faults are set
 // on demand under ControlPrefix: the day's quota spent, the refresh tokens revoked, the
@@ -156,6 +156,7 @@ func NewHandler(srcs []Source, clk clock.Clock, behavior Behavior) *Handler {
 	api.HandleFunc("GET "+APIPrefix+"vehicles/{vin}/basicData", h.basicData)
 	api.HandleFunc("GET "+APIPrefix+"vehicles/{vin}/telematicData", h.telematicData)
 	api.HandleFunc("GET "+APIPrefix+"vehicles/{vin}/chargingHistory", h.chargingHistory)
+	api.HandleFunc("GET "+APIPrefix+"vehicles/{vin}/image", h.image)
 	api.HandleFunc("POST "+APIPrefix+"containers", h.createContainer)
 	api.HandleFunc("GET "+APIPrefix+"containers", h.listContainers)
 	api.HandleFunc("GET "+APIPrefix+"containers/{id}", h.getContainer)

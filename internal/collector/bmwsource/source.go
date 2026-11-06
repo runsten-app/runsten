@@ -144,6 +144,12 @@ func (*Source) Spec() collector.SourceSpec {
 				Endpoint: collector.Endpoint(bmw.ChargingHistory), API: bmw.Source, Optional: true,
 				Parked: collector.PaceDetails, Driving: collector.PaceDetails, Charging: collector.PaceDetails,
 			},
+			// The vehicle's picture, served by runsten-api: a call a day, an identical one
+			// stored once; optional, a vehicle may have none.
+			{
+				Endpoint: collector.Endpoint(bmw.Image), API: bmw.Source, Optional: true,
+				Parked: collector.PaceDetails, Driving: collector.PaceDetails, Charging: collector.PaceDetails,
+			},
 		},
 		Settled:   []collector.Endpoint{collector.Endpoint(bmw.Stream)},
 		Daily:     Daily,
@@ -361,6 +367,8 @@ func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) 
 		raw, err = s.src.client.BasicData(ctx, s.token, vin)
 	case bmw.ChargingHistory:
 		raw, err = s.src.client.ChargingHistory(ctx, s.token, vin, now.AddDate(0, 0, -historyDays), now)
+	case bmw.Image:
+		raw, err = s.src.client.Image(ctx, s.token, vin)
 	default:
 		return nil, fmt.Errorf("bmw: unknown endpoint %q", ep)
 	}

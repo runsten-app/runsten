@@ -4306,7 +4306,7 @@ components:
           description: "A performance package (Tesla); false: none, or not told."
           type: boolean
         picture:
-          description: "Whether GET /vehicles/{vehicle}/picture gives a picture of the vehicle: its vendor links to one (Volvo)."
+          description: "Whether GET /vehicles/{vehicle}/picture gives a picture of the vehicle: its vendor links to one (Volvo), or one is stored (BMW)."
           type: boolean
         power_kw:
           description: The maximum power of the motors, or of the engine and motors together.
@@ -8742,7 +8742,7 @@ paths:
         - vehicles
   /vehicles/{vehicle}/picture:
     get:
-      description: "The vendor's picture of the vehicle from the outside, relayed by Runsten so that the browser calls no third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day. Only for a vehicle whose `sheet.picture` is true."
+      description: "The vendor's picture of the vehicle from the outside, relayed by Runsten so that the browser calls no third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day (Volvo); or the one the collector read with the owner's access and stored, as the vendor gives it (BMW). Only for a vehicle whose `sheet.picture` is true."
       operationId: getVehiclePicture
       parameters:
         - description: The vehicle ID.
@@ -8813,7 +8813,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`source_unavailable`: the vendor's CDN did not give the picture."
+          description: "`source_unavailable`: the vendor's CDN did not give the picture (a relayed one)."
       security:
         - session: []
         - sessionSecure: []

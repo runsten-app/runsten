@@ -246,6 +246,11 @@ func TestStreamAndAPI(t *testing.T) {
 	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.ChargingHistory)); err != nil {
 		t.Error(err)
 	}
+	if raw, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Image)); err != nil {
+		t.Error(err)
+	} else if p, err := bmw.DecodePicture(raw); err != nil || p.Type != "image/png" {
+		t.Errorf("picture: %v", err)
+	}
 	if _, err := sess.Fetch(t.Context(), "WBY31AW02RFR99999", collector.Endpoint(bmw.BasicData)); kindOf(err) != collector.KindUnshared {
 		t.Errorf("another VIN: %v", err)
 	}

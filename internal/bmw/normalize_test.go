@@ -232,3 +232,16 @@ func TestUploadOf(t *testing.T) {
 		t.Errorf("upload: %+v", u)
 	}
 }
+
+func TestDecodePicture(t *testing.T) {
+	for raw, ok := range map[string]bool{
+		`{"type":"image/png","image":"iVBORw0KGgo="}`: true,
+		`{"type":"text/html","image":"PGh0bWw+"}`:     false,
+		`{"type":"image/png","image":""}`:             false,
+		`not json`:                                    false,
+	} {
+		if _, err := DecodePicture([]byte(raw)); (err == nil) != ok {
+			t.Errorf("%s: %v", raw, err)
+		}
+	}
+}
