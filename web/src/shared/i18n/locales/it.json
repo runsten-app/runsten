@@ -145,6 +145,10 @@
       "cabin": "Abitacolo",
       "climateOn": "Climatizzazione attiva",
       "preconditioning": "Precondizionamento",
+      "climateAt": "Climatizzazione a {temp}",
+      "heatingTo": "Riscaldamento a {temp}",
+      "coolingTo": "Raffreddamento a {temp}",
+      "preconditioningTo": "Precondizionamento a {temp}",
       "batteryHeater": "Riscaldamento della batteria"
     }
   },
