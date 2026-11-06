@@ -13,6 +13,7 @@ describe('useFormat', () => {
   it.each<[Locale, string]>([
     ['en', 'Unknown'],
     ['fr', 'Inconnu'],
+    ['it', 'Sconosciuto'],
     ['nl', 'Onbekend'],
     ['sv', 'Okänt'],
   ])('shows a missing value as unknown in %s', (locale, unknown) => {
@@ -88,6 +89,8 @@ describe('useFormat', () => {
   it.each<[Locale, string, string, string]>([
     ['en', '€5.24 – €5.79', 'from €5.24 to €5.79', 'Free'],
     ['fr', '5,24–5,79 €', 'de 5,24 € à 5,79 €', 'Gratuit'],
+    // Italian's Intl joins a range with a hyphen, not an en dash.
+    ['it', '5,24-5,79 €', 'da 5,24 € a 5,79 €', 'Gratis'],
     ['nl', '€ 5,24-5,79', 'van € 5,24 tot € 5,79', 'Gratis'],
     ['sv', '5,24–5,79 €', 'från 5,24 € till 5,79 €', 'Gratis'],
   ])('shows the bounds of a cost in %s, and what a screen reader says', (l, text, spoken, free) => {
