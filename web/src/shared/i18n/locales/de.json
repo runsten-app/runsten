@@ -883,12 +883,6 @@
       "week": "7 T."
     }
   },
-  "recent": {
-    "title": "Letzte 30 Tage",
-    "chart": "Strecke pro Tag",
-    "stats": "Statistik ansehen",
-    "hint": "Die Strecke jedes Tages. Tippen Sie auf einen Tag, um seine Fahrten zu sehen."
-  },
   "chargeCurve": {
     "title": "Ladekurve",
     "power": "Leistung",

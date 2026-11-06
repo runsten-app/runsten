@@ -883,12 +883,6 @@
       "week": "7 g"
     }
   },
-  "recent": {
-    "title": "Ultimi 30 giorni",
-    "chart": "Distanza al giorno",
-    "stats": "Vedi le statistiche",
-    "hint": "La distanza di ogni giorno. Prema un giorno per vederne i viaggi."
-  },
   "chargeCurve": {
     "title": "Curva di ricarica",
     "power": "Potenza",

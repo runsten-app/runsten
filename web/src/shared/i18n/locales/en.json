@@ -883,12 +883,6 @@
       "week": "7 d"
     }
   },
-  "recent": {
-    "title": "Last 30 days",
-    "chart": "Distance by day",
-    "stats": "See the statistics",
-    "hint": "The distance of each day. Press a day to see its trips."
-  },
   "chargeCurve": {
     "title": "Charging curve",
     "power": "Power",

@@ -883,12 +883,6 @@
       "week": "7 d"
     }
   },
-  "recent": {
-    "title": "Laatste 30 dagen",
-    "chart": "Afstand per dag",
-    "stats": "Bekijk de statistieken",
-    "hint": "De afstand van elke dag. Druk op een dag om de ritten ervan te zien."
-  },
   "chargeCurve": {
     "title": "Laadcurve",
     "power": "Vermogen",

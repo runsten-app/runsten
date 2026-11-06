@@ -883,12 +883,6 @@
       "week": "7 d"
     }
   },
-  "recent": {
-    "title": "Siste 30 dager",
-    "chart": "Distanse per dag",
-    "stats": "Se statistikken",
-    "hint": "Distansen hver dag. Trykk på en dag for å se turene."
-  },
   "chargeCurve": {
     "title": "Ladekurve",
     "power": "Effekt",

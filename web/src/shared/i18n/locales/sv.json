@@ -883,12 +883,6 @@
       "week": "7 d"
     }
   },
-  "recent": {
-    "title": "Senaste 30 dagarna",
-    "chart": "Sträcka per dag",
-    "stats": "Visa statistiken",
-    "hint": "Sträckan för varje dag. Tryck på en dag för att se dess resor."
-  },
   "chargeCurve": {
     "title": "Laddkurva",
     "power": "Effekt",

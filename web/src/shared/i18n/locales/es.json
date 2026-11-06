@@ -883,12 +883,6 @@
       "week": "7 d"
     }
   },
-  "recent": {
-    "title": "Últimos 30 días",
-    "chart": "Distancia por día",
-    "stats": "Ver las estadísticas",
-    "hint": "La distancia de cada día. Seleccione un día para ver sus viajes."
-  },
   "chargeCurve": {
     "title": "Curva de carga",
     "power": "Potencia",
