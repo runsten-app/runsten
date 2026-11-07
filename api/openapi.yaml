@@ -8840,7 +8840,7 @@ paths:
         - vehicles
   /vehicles/{vehicle}/picture:
     get:
-      description: "The vendor's picture of the vehicle from the outside, relayed by Runsten so that the browser calls no third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day (Volvo; Tesla's configurator); or the one the collector read with the owner's access and stored, as the vendor gives it (BMW). Only for a vehicle whose `sheet.picture` is true."
+      description: "The vendor's picture of the vehicle from the outside, relayed by Runsten so that the browser calls no third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day (Volvo; Tesla's configurator, while the flag picture.tesla is on); or the one the collector read with the owner's access and stored, as the vendor gives it (BMW). Only for a vehicle whose `sheet.picture` is true."
       operationId: getVehiclePicture
       parameters:
         - description: The vehicle ID.

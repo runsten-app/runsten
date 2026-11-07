@@ -7,6 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"runsten/internal/core"
+	"runsten/internal/flags"
 )
 
 // Pictures relays the vendors' pictures of the vehicles, so that the browser calls no
@@ -117,7 +118,7 @@ func sheetOf(sh core.Sheet, picture bool) sheetJSON {
 // sheetFor gives the vehicle's sheet from its latest details; null when its source tells
 // none of it and no picture of it is stored.
 func (s *Server) sheetFor(ctx context.Context, v Vehicle, n core.Snapshot) (null[sheetJSON], error) {
-	picture := n.Sheet.OK && s.servesPicture(n.Sheet.V.Picture)
+	picture := n.Sheet.OK && s.relays(ctx, v, n.Sheet.V.Picture)
 	if !picture && s.StoredPictures != nil {
 		stored, err := s.StoredPictures.HasStoredPicture(ctx, sessionFrom(ctx).AccountID, v.ID)
 		if err != nil {
@@ -131,8 +132,13 @@ func (s *Server) sheetFor(ctx context.Context, v Vehicle, n core.Snapshot) (null
 	return known(sheetOf(n.Sheet.V, picture)), nil
 }
 
-func (s *Server) servesPicture(u string) bool {
-	return u != "" && s.Pictures != nil && s.Pictures.Serves(u)
+// relays tells whether the vehicle's picture is relayed from u: a Tesla's, drawn by
+// Tesla's configurator, only while the flag picture.tesla is on.
+func (s *Server) relays(ctx context.Context, v Vehicle, u string) bool {
+	if u == "" || s.Pictures == nil || !s.Pictures.Serves(u) {
+		return false
+	}
+	return !providerJSON(v.Provider).tesla() || s.enabled(ctx, flags.PictureTesla, sessionFrom(ctx).AccountID)
 }
 
 type pictureOutput struct {
@@ -152,7 +158,7 @@ func (s *Server) getPicture(ctx context.Context, in *vehicleInput) (*pictureOutp
 	}
 	// The URL is the vehicle's latest details', never the request's.
 	u := n.Sheet.V.Picture
-	if !n.Sheet.OK || !s.servesPicture(u) {
+	if !n.Sheet.OK || !s.relays(ctx, v, u) {
 		return s.storedPicture(ctx, v)
 	}
 	p, err := s.Pictures.Picture(ctx, u)
@@ -184,7 +190,8 @@ func (s *Server) registerSheet(api huma.API) {
 		OperationID: "getVehiclePicture", Method: http.MethodGet, Path: "/vehicles/{vehicle}/picture", Tags: []string{"vehicles"},
 		Summary: "A vehicle's picture",
 		Description: "The vendor's picture of the vehicle from the outside, relayed by Runsten so that the browser calls no " +
-			"third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day (Volvo; Tesla's configurator); or the one the " +
+			"third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day (Volvo; Tesla's configurator, while the " +
+			"flag picture.tesla is on); or the one the " +
 			"collector read with the owner's access and stored, as the vendor gives it (BMW). Only for a vehicle whose " +
 			"`sheet.picture` is true.",
 	}, "The picture.", map[int]string{

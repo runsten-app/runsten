@@ -117,3 +117,38 @@ func TestVehiclePicture(t *testing.T) {
 	}
 	wantError(t, body, "source_unavailable")
 }
+
+// TestTeslaPicture: a Tesla's picture is relayed only while picture.tesla is on for the
+// account; off, the vehicle has none.
+func TestTeslaPicture(t *testing.T) {
+	e, c := readerEnv(t)
+	for i, v := range e.reader.vehicles[account] {
+		if v.ID == car {
+			e.reader.vehicles[account][i].Provider = "tesla"
+		}
+	}
+	picture := func(t *testing.T) (bool, int) {
+		t.Helper()
+		_, body := get(t, noFollow(), e.api.URL+"/api/v1/vehicles/"+car, c)
+		var v struct {
+			Sheet *struct {
+				Picture bool `json:"picture"`
+			} `json:"sheet"`
+		}
+		if err := json.Unmarshal([]byte(body), &v); err != nil || v.Sheet == nil {
+			t.Fatalf("vehicle: %s, %v", body, err)
+		}
+		resp, _ := get(t, noFollow(), e.api.URL+"/api/v1/vehicles/"+car+"/picture", c)
+		return v.Sheet.Picture, resp.status
+	}
+	if got, status := picture(t); !got || status != http.StatusOK {
+		t.Errorf("on by default: %v, %d", got, status)
+	}
+	e.server.Flags = &accountFlags{off: account}
+	if got, status := picture(t); got || status != http.StatusNotFound {
+		t.Errorf("off: %v, %d", got, status)
+	}
+	if len(e.pictures.asked) != 1 {
+		t.Errorf("asked %v", e.pictures.asked)
+	}
+}
