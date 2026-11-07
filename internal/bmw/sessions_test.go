@@ -46,15 +46,24 @@ func TestNormalizeSessions(t *testing.T) {
 }
 
 func TestNormalizeSessionsKinds(t *testing.T) {
-	n := Normalizer{}
-	if _, err := n.NormalizeSessions(core.Kind{Source: "volvo", Endpoint: string(ChargingHistory)}, nil); err == nil {
-		t.Error("another source's response read")
-	}
-	got, err := n.NormalizeSessions(core.Kind{Source: Source, Endpoint: string(BasicData)}, []byte(`{}`))
-	if err != nil || got != nil {
-		t.Errorf("basic data: %v, %v", got, err)
-	}
-	if _, err := n.NormalizeSessions(core.Kind{Source: Source, Endpoint: string(ChargingHistory)}, []byte(`[`)); err == nil {
-		t.Error("an unreadable response read")
+	for _, tt := range []struct {
+		name    string
+		kind    core.Kind
+		raw     []byte
+		wantErr bool
+	}{
+		{"another source's response", core.Kind{Source: "volvo", Endpoint: string(ChargingHistory)}, nil, true},
+		{"another endpoint reads no session", core.Kind{Source: Source, Endpoint: string(BasicData)}, []byte(`{}`), false},
+		{"an unreadable response", core.Kind{Source: Source, Endpoint: string(ChargingHistory)}, []byte(`[`), true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Normalizer{}.NormalizeSessions(tt.kind, tt.raw)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("err = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got != nil {
+				t.Errorf("sessions = %v, want none", got)
+			}
+		})
 	}
 }
