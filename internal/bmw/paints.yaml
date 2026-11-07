@@ -1,0 +1,579 @@
+# BMW's and MINI's paints by the code CarData gives in basicData's colourCode (C4P), named as
+# BMW names them in English: the paints of the electric models in the catalog.
+#
+# - brand: the catalog's, bmw or mini: the same code may name two paints at BMW and at MINI.
+# - code: BMW's option code, three letters or digits, quoted when it is a number.
+# - name: as BMW's English documents print it. They write the standard metallic paints
+#   without "metallic" (Black Sapphire) and BMW Individual's and the Frozen paints with it,
+#   and this table keeps that. A paint offered as "M Brooklyn Grey" with the M Sport package
+#   keeps its own name; M Portimao Blue has no other.
+# - sources: every entry is backed by at least one; manufacturer for BMW's own documents
+#   (price lists, specification guides, catalogues of a market, or a dealer's copy of one),
+#   secondary for anything else. Only the code and its name are taken from them. An entry with
+#   one source says so in a comment.
+#
+# BMW publishes no table of its codes: these are the price lists' and catalogues' of the
+# markets, 2022 to 2026. A paint may have two codes (Frozen Pure Grey: X1F on the i4, C5A on
+# the others); both are listed. Left out: the i7's two-tone paints (3MY, SXB…), option codes of
+# a combination, and the iX3 (NA5)'s paints whose English name no source prints yet (C7T, C7U,
+# C7V: Polarized, Ocean Wave and Eucalyptus in the German list), and 490, BMW Individual's code
+# for a paint made to order, which names none. A code not here is shown as it is.
+
+# --- BMW ----------------------------------------------------------------------------------
+
+# Standard solid; Nordic lists write "Alpine White solid"
+- brand: bmw
+  code: "300"
+  name: Alpine White
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+    - url: https://bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%20i5%20Sedan%20(G60%20BEV),%20Hinnasto%209.1.2025.pdf.coredownload.pdf
+      level: manufacturer
+
+# Offered as "M Carbon Black" with the M Sport package (HK iX3, DE lists)
+- brand: bmw
+  code: "416"
+  name: Carbon Black
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2022-09/BMW%20iX3%20(G08)%20LCI%20-%20Sales%20literature%20-%20Catalogue%20-%20090122.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01072023_BMW_i7_seeria_G70_hinnakiri.pdf.asset.1696839916954.pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_iX3_Specification_Guide_G08.pdf.asset.1646282155035.pdf
+      level: manufacturer
+
+- brand: bmw
+  code: "475"
+  name: Black Sapphire
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%20i5%20Sedan%20(G60%20BEV),%20Hinnasto%209.1.2025.pdf.coredownload.pdf
+      level: manufacturer
+
+# Solid black
+- brand: bmw
+  code: "668"
+  name: Black
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/common/all-models/price-list-2022/01.04.2022-BMW-i4-G26-BEV-hinnakiri.pdf.asset.1645426647313.pdf
+      level: manufacturer
+    - url: https://www.bmw.fi/content/dam/bmw/marketNORDICS/bmw_fi/ladattavat/pricelist-july-2023/BMW%20i4%20(G26%20BEV),%20Hinnasto%201.7.2023.pdf.asset.1688456425834.pdf
+      level: manufacturer
+    - url: https://www.bmw.de/content/dam/bmw/marketDE/bmw_de/new-vehicles/pricelists/preisliste-bmwx1.pdf.coredownload.pdf
+      level: manufacturer
+
+- brand: bmw
+  code: A72
+  name: Cashmere Silver
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2022-09/BMW%20iX3%20(G08)%20LCI%20-%20Sales%20literature%20-%20Catalogue%20-%20090122.pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_iX3_Specification_Guide_G08.pdf.asset.1646282155035.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2022/01_11_2022_BMW_iX3_M_Sport_G08_hinnakiri.pdf.asset.1666933113126.pdf
+      level: manufacturer
+
+# AU writes "Sophisto Grey"
+- brand: bmw
+  code: A90
+  name: Sophisto Grey Brilliant Effect
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2022-09/BMW%20iX3%20(G08)%20LCI%20-%20Sales%20literature%20-%20Catalogue%20-%20090122.pdf
+      level: manufacturer
+    - url: https://www.bmw-birdautomotive.in/sites/default/files/2022-05/The%20BMW%20iX.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_iX3_Specification_Guide_G08.pdf.asset.1646282155035.pdf
+      level: manufacturer
+
+- brand: bmw
+  code: A96
+  name: Mineral White
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_iX3_Specification_Guide_G08.pdf.asset.1646282155035.pdf
+      level: manufacturer
+
+- brand: bmw
+  code: C1M
+  name: Phytonic Blue
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_iX3_Specification_Guide_G08.pdf.asset.1646282155035.pdf
+      level: manufacturer
+
+# One source, AU i4 launch guide only
+- brand: bmw
+  code: C1X
+  name: Sunset Orange
+  sources:
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+
+# Only with the M Sport package
+- brand: bmw
+  code: C31
+  name: M Portimao Blue
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+    - url: https://www.bmw.fi/content/dam/bmw/marketNORDICS/bmw_fi/ladattavat/pricelist-july-2023/BMW%20i4%20(G26%20BEV),%20Hinnasto%201.7.2023.pdf.asset.1688456425834.pdf
+      level: manufacturer
+
+# One source (BMW iX brochure hosted by an Indian dealer)
+- brand: bmw
+  code: C35
+  name: Blue Ridge Mountain
+  sources:
+    - url: https://www.bmw-birdautomotive.in/sites/default/files/2022-05/The%20BMW%20iX.pdf
+      level: manufacturer
+
+# BMW Individual
+- brand: bmw
+  code: C36
+  name: Dravit Grey metallic
+  sources:
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+    - url: https://www.bmw.fi/content/dam/bmw/marketNORDICS/bmw_fi/ladattavat/pricelist-july-2023/BMW%20i4%20(G26%20BEV),%20Hinnasto%201.7.2023.pdf.asset.1688456425834.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01072023_BMW_i7_seeria_G70_hinnakiri.pdf.asset.1696839916954.pdf
+      level: manufacturer
+
+- brand: bmw
+  code: C3C
+  name: Piemont Red
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2022-09/BMW%20iX3%20(G08)%20LCI%20-%20Sales%20literature%20-%20Catalogue%20-%20090122.pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_iX3_Specification_Guide_G08.pdf.asset.1646282155035.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2022/01_11_2022_BMW_iX3_M_Sport_G08_hinnakiri.pdf.asset.1666933113126.pdf
+      level: manufacturer
+
+# BMW Individual
+- brand: bmw
+  code: C3N
+  name: Storm Bay metallic
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://www.bmw-birdautomotive.in/sites/default/files/2022-05/The%20BMW%20iX.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2022/01032023_BMW_X1_U11_hinnakiri.pdf.asset.1677838287291.pdf
+      level: manufacturer
+
+# BMW Individual
+- brand: bmw
+  code: C3Z
+  name: Tanzanite Blue metallic
+  sources:
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%20i5%20Sedan%20(G60%20BEV),%20Hinnasto%209.1.2025.pdf.coredownload.pdf
+      level: manufacturer
+
+# DE lists: "Oxidgrau"
+- brand: bmw
+  code: C4A
+  name: Oxide Grey
+  sources:
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01072023_BMW_i7_seeria_G70_hinnakiri.pdf.asset.1696839916954.pdf
+      level: manufacturer
+    - url: https://bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%20i5%20Sedan%20(G60%20BEV),%20Hinnasto%209.1.2025.pdf.coredownload.pdf
+      level: manufacturer
+
+- brand: bmw
+  code: C4E
+  name: Sanremo Green
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2022/01032023_BMW_X1_U11_hinnakiri.pdf.asset.1677838287291.pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+
+# Code from DE price list, English name confirmed by Thai spec (no code there)
+- brand: bmw
+  code: C4F
+  name: Arctic Race Blue
+  sources:
+    - url: https://www.bmw.de/content/dam/bmw/marketDE/bmw_de/new-vehicles/pricelists/preisliste-bmwix.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://www.bmw.co.th/content/dam/bmw/marketTH/common/Brochure/2025/iX-20251030-01_EN_REV-Color.pdf.asset.1763711894392.pdf
+      level: manufacturer
+
+# Written "M Brooklyn Grey" when tied to the M Sport package
+- brand: bmw
+  code: C4P
+  name: Brooklyn Grey
+  sources:
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%20i5%20Sedan%20(G60%20BEV),%20Hinnasto%209.1.2025.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://www.bmw.co.th/content/dam/bmw/marketTH/bmw_co_th/Topics/Specs/i5-20240314-01_EN_edit.pdf.asset.1711337624852.pdf
+      level: manufacturer
+
+- brand: bmw
+  code: C4W
+  name: Skyscraper Grey
+  sources:
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/common/all-models/price-list-2022/01.04.2022-BMW-i4-G26-BEV-hinnakiri.pdf.asset.1645426647313.pdf
+      level: manufacturer
+    - url: https://www.bmw.fi/content/dam/bmw/marketNORDICS/bmw_fi/ladattavat/pricelist-july-2023/BMW%20i4%20(G26%20BEV),%20Hinnasto%201.7.2023.pdf.asset.1688456425834.pdf
+      level: manufacturer
+    - url: https://www.bmw.fi/content/dam/bmw/marketNORDICS/bmw_fi/ladattavat/BMW%20i4%20LCI%20(G26%20BEV),%20Hinnasto%2020.5.2025.pdf.coredownload.pdf
+      level: manufacturer
+
+# One source
+- brand: bmw
+  code: C55
+  name: Sparkling Copper Grey
+  sources:
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01072023_BMW_i7_seeria_G70_hinnakiri.pdf.asset.1696839916954.pdf
+      level: manufacturer
+
+# AU and India write "Aventurine Red metallic": III as the newer Nordic and Estonian lists, and as
+# CarData's colourDescription for C57 ("AVENTURINROT III METALLIC"). Individual on the i4 and iX.
+- brand: bmw
+  code: C57
+  name: Aventurine Red III
+  sources:
+    - url: https://www.bmw.fi/content/dam/bmw/marketNORDICS/bmw_fi/ladattavat/pricelist-july-2023/BMW%20i4%20(G26%20BEV),%20Hinnasto%201.7.2023.pdf.asset.1688456425834.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01072023_BMW_i7_seeria_G70_hinnakiri.pdf.asset.1696839916954.pdf
+      level: manufacturer
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+    - url: https://www.bmw-birdautomotive.in/sites/default/files/2022-05/The%20BMW%20iX.pdf
+      level: manufacturer
+
+# BMW Individual Frozen. Same name as X1F: BMW uses X1F on the i4 and C5A elsewhere
+- brand: bmw
+  code: C5A
+  name: Frozen Pure Grey metallic
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2022/01032023_BMW_X1_U11_hinnakiri.pdf.asset.1677838287291.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01072023_BMW_i7_seeria_G70_hinnakiri.pdf.asset.1696839916954.pdf
+      level: manufacturer
+    - url: https://bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%20i5%20Sedan%20(G60%20BEV),%20Hinnasto%209.1.2025.pdf.coredownload.pdf
+      level: manufacturer
+
+# BMW Individual
+- brand: bmw
+  code: C5L
+  name: Blue Bay Lagoon metallic
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2022/01032023_BMW_X1_U11_hinnakiri.pdf.asset.1677838287291.pdf
+      level: manufacturer
+
+- brand: bmw
+  code: C5Y
+  name: Cape York Green
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%20i5%20Sedan%20(G60%20BEV),%20Hinnasto%209.1.2025.pdf.coredownload.pdf
+      level: manufacturer
+
+# BMW Individual Frozen
+- brand: bmw
+  code: C64
+  name: Frozen Deep Grey metallic
+  sources:
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%20i5%20Sedan%20(G60%20BEV),%20Hinnasto%209.1.2025.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01072023_BMW_i7_seeria_G70_hinnakiri.pdf.asset.1696839916954.pdf
+      level: manufacturer
+
+- brand: bmw
+  code: C66
+  name: Utah Orange
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2022/01032023_BMW_X1_U11_hinnakiri.pdf.asset.1677838287291.pdf
+      level: manufacturer
+
+# HK writes "Space Silver"
+- brand: bmw
+  code: C67
+  name: Space Silver
+  sources:
+    - url: https://connect.bmwhk.com/sites/default/files/2023-05/BMW%20iX1%20(U11)%20E%20Catalogue%20(V1).pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2022/01032023_BMW_X1_U11_hinnakiri.pdf.asset.1677838287291.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01072023_BMW_i7_seeria_G70_hinnakiri.pdf.asset.1696839916954.pdf
+      level: manufacturer
+
+# Nordic: "Fire Red metallic"; Thai name-only source
+- brand: bmw
+  code: C68
+  name: Fire Red
+  sources:
+    - url: https://bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%20i5%20Sedan%20(G60%20BEV),%20Hinnasto%209.1.2025.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://www.bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%205-sarjan%20Sedan%20(G60),%20Hinnasto%201.3.2025.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://www.bmw.co.th/content/dam/bmw/marketTH/bmw_co_th/Topics/Specs/i5-20240314-01_EN_edit.pdf.asset.1711337624852.pdf
+      level: manufacturer
+
+# Same name as X1E; code C6R on iX1/iX2 (DE lists). Both documents are from one publisher
+- brand: bmw
+  code: C6R
+  name: Frozen Portimao Blue metallic
+  sources:
+    - url: https://www.bmw.de/content/dam/bmw/marketDE/bmw_de/new-vehicles/pricelists/preisliste-bmwx1.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://www.bmw.de/content/dam/bmw/marketDE/bmw_de/new-vehicles/pricelists/preisliste-bmwx2.pdf.coredownload.pdf
+      level: manufacturer
+
+# Code from DE price list, English name confirmed by Thai spec (no code there)
+- brand: bmw
+  code: C7A
+  name: Dune Grey
+  sources:
+    - url: https://www.bmw.de/content/dam/bmw/marketDE/bmw_de/new-vehicles/pricelists/preisliste-bmwix.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://www.bmw.co.th/content/dam/bmw/marketTH/common/Brochure/2025/iX-20251030-01_EN_REV-Color.pdf.asset.1763711894392.pdf
+      level: manufacturer
+
+# One source (DE price list)
+- brand: bmw
+  code: C7R
+  name: Night Dusk
+  sources:
+    - url: https://www.bmw.de/content/dam/bmw/marketDE/bmw_de/new-vehicles/pricelists/preisliste-bmwx1.pdf.coredownload.pdf
+      level: manufacturer
+
+# BMW Individual Frozen; DE lists, English wording as printed there
+- brand: bmw
+  code: C7W
+  name: Frozen Space Silver metallic
+  sources:
+    - url: https://www.bmw.de/content/dam/bmw/marketDE/bmw_de/new-vehicles/pricelists/preisliste-bmwiX3-50-xdrive.pdf.coredownload.pdf
+      level: manufacturer
+    - url: https://www.leebmann.de/wp-content/uploads/bmw-preislisten/preisliste-bmw7er.pdf
+      level: manufacturer
+
+# One source (DE price list), BMW Individual Frozen
+- brand: bmw
+  code: C7X
+  name: Frozen Ocean Wave Blue metallic
+  sources:
+    - url: https://www.bmw.de/content/dam/bmw/marketDE/bmw_de/new-vehicles/pricelists/preisliste-bmwiX3-50-xdrive.pdf.coredownload.pdf
+      level: manufacturer
+
+# One source (DE price list; DE spells it "Vancouver Green")
+- brand: bmw
+  code: C84
+  name: Vancouver Green
+  sources:
+    - url: https://www.leebmann.de/wp-content/uploads/bmw-preislisten/preisliste-bmw7er.pdf
+      level: manufacturer
+
+# One source (DE price list, iX2)
+- brand: bmw
+  code: U91
+  name: Frozen Black metallic
+  sources:
+    - url: https://www.bmw.de/content/dam/bmw/marketDE/bmw_de/new-vehicles/pricelists/preisliste-bmwx2.pdf.coredownload.pdf
+      level: manufacturer
+
+# BMW Individual Frozen
+- brand: bmw
+  code: X1E
+  name: Frozen Portimao Blue metallic
+  sources:
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/common/all-models/price-list-2022/01.04.2022-BMW-i4-G26-BEV-hinnakiri.pdf.asset.1645426647313.pdf
+      level: manufacturer
+    - url: https://bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%20i5%20Sedan%20(G60%20BEV),%20Hinnasto%209.1.2025.pdf.coredownload.pdf
+      level: manufacturer
+
+# BMW Individual Frozen; i4 code for the same name as C5A
+- brand: bmw
+  code: X1F
+  name: Frozen Pure Grey metallic
+  sources:
+    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
+      level: manufacturer
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/common/all-models/price-list-2022/01.04.2022-BMW-i4-G26-BEV-hinnakiri.pdf.asset.1645426647313.pdf
+      level: manufacturer
+    - url: https://www.bmw.fi/content/dam/bmw/marketNORDICS/bmw_fi/ladattavat/pricelist-july-2023/BMW%20i4%20(G26%20BEV),%20Hinnasto%201.7.2023.pdf.asset.1688456425834.pdf
+      level: manufacturer
+
+# BMW Individual Frozen
+- brand: bmw
+  code: X1G
+  name: Frozen Tanzanite Blue metallic
+  sources:
+    - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01072023_BMW_i7_seeria_G70_hinnakiri.pdf.asset.1696839916954.pdf
+      level: manufacturer
+    - url: https://www.leebmann.de/wp-content/uploads/bmw-preislisten/preisliste-bmw7er.pdf
+      level: manufacturer
+
+# --- MINI: the Cooper E and SE (J01), the Aceman (J05), the Countryman E and SE ALL4 (U25) ---
+
+- brand: mini
+  code: C3B
+  name: British Racing Green IV
+  sources:
+    - url: https://www.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-All-Electric-MINI-Cooper-(J01).pdf.asset.1709278606143.pdf
+      level: manufacturer
+    - url: https://garagedays.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-MINI-Countryman-(U25).pdf.asset.1709278606363.pdf
+      level: manufacturer
+    - url: https://www.mini.cz/content/dam/MINI/marketDSM_CZ/mini_cz/Pricelist/pricelist-2026/J05_0126_CZ_online.pdf.asset.1766152914178.pdf
+      level: manufacturer
+
+- brand: mini
+  code: C4R
+  name: Midnight Black II
+  sources:
+    - url: https://www.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-All-Electric-MINI-Cooper-(J01).pdf.asset.1709278606143.pdf
+      level: manufacturer
+    - url: https://garagedays.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-MINI-Countryman-(U25).pdf.asset.1709278606363.pdf
+      level: manufacturer
+    - url: https://www.mini.cz/content/dam/MINI/marketDSM_CZ/mini_cz/Pricelist/pricelist-2026/J05_0126_CZ_online.pdf.asset.1766152914178.pdf
+      level: manufacturer
+
+- brand: mini
+  code: C6A
+  name: Nanuq White
+  sources:
+    - url: https://www.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-All-Electric-MINI-Cooper-(J01).pdf.asset.1709278606143.pdf
+      level: manufacturer
+    - url: https://garagedays.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-MINI-Countryman-(U25).pdf.asset.1709278606363.pdf
+      level: manufacturer
+    - url: https://www.mini.cz/content/dam/MINI/marketDSM_CZ/mini_cz/Pricelist/pricelist-2026/J05_0126_CZ_online.pdf.asset.1766152914178.pdf
+      level: manufacturer
+
+- brand: mini
+  code: C6B
+  name: Melting Silver III
+  sources:
+    - url: https://www.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-All-Electric-MINI-Cooper-(J01).pdf.asset.1709278606143.pdf
+      level: manufacturer
+    - url: https://garagedays.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-MINI-Countryman-(U25).pdf.asset.1709278606363.pdf
+      level: manufacturer
+    - url: https://www.mini.cz/content/dam/MINI/marketDSM_CZ/mini_cz/Pricelist/pricelist-2026/J05_0126_CZ_online.pdf.asset.1766152914178.pdf
+      level: manufacturer
+
+- brand: mini
+  code: C6F
+  name: Indigo Sunset Blue
+  sources:
+    - url: https://www.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-All-Electric-MINI-Cooper-(J01).pdf.asset.1709278606143.pdf
+      level: manufacturer
+    - url: https://www.mini.cz/content/dam/MINI/marketDSM_CZ/mini_cz/Pricelist/pricelist-2026/J05_0126_CZ_online.pdf.asset.1766152914178.pdf
+      level: manufacturer
+
+- brand: mini
+  code: C6K
+  name: Blazing Blue
+  sources:
+    - url: https://www.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-All-Electric-MINI-Cooper-(J01).pdf.asset.1709278606143.pdf
+      level: manufacturer
+    - url: https://garagedays.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-MINI-Countryman-(U25).pdf.asset.1709278606363.pdf
+      level: manufacturer
+    - url: https://www.mini.cz/content/dam/MINI/marketDSM_CZ/mini_cz/Pricelist/pricelist-2026/J05_0126_CZ_online.pdf.asset.1766152914178.pdf
+      level: manufacturer
+
+- brand: mini
+  code: C6M
+  name: Ocean Wave Green
+  sources:
+    - url: https://www.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-All-Electric-MINI-Cooper-(J01).pdf.asset.1709278606143.pdf
+      level: manufacturer
+    - url: https://www.mini.cz/content/dam/MINI/marketDSM_CZ/mini_cz/Pricelist/pricelist-2026/J05_0126_CZ_online.pdf.asset.1766152914178.pdf
+      level: manufacturer
+
+# One source
+- brand: mini
+  code: C6N
+  name: Sunny Side Yellow
+  sources:
+    - url: https://www.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-All-Electric-MINI-Cooper-(J01).pdf.asset.1709278606143.pdf
+      level: manufacturer
+
+- brand: mini
+  code: C6P
+  name: Legend Grey
+  sources:
+    - url: https://www.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-All-Electric-MINI-Cooper-(J01).pdf.asset.1709278606143.pdf
+      level: manufacturer
+    - url: https://garagedays.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-MINI-Countryman-(U25).pdf.asset.1709278606363.pdf
+      level: manufacturer
+    - url: https://www.mini.cz/content/dam/MINI/marketDSM_CZ/mini_cz/Pricelist/pricelist-2026/J05_0126_CZ_online.pdf.asset.1766152914178.pdf
+      level: manufacturer
+
+# One source
+- brand: mini
+  code: C71
+  name: Smokey Green
+  sources:
+    - url: https://garagedays.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-MINI-Countryman-(U25).pdf.asset.1709278606363.pdf
+      level: manufacturer
+
+# One source
+- brand: mini
+  code: C72
+  name: Rebel Red
+  sources:
+    - url: https://www.mini.cz/content/dam/MINI/marketDSM_CZ/mini_cz/Pricelist/pricelist-2026/J05_0126_CZ_online.pdf.asset.1766152914178.pdf
+      level: manufacturer
+
+- brand: mini
+  code: C74
+  name: Chili Red II
+  sources:
+    - url: https://www.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-All-Electric-MINI-Cooper-(J01).pdf.asset.1709278606143.pdf
+      level: manufacturer
+    - url: https://garagedays.mini.it/content/dam/MINI/marketDSM_IT/mini_it/modelli/Listino-Nuova-MINI-Countryman-(U25).pdf.asset.1709278606363.pdf
+      level: manufacturer
+    - url: https://www.mini.cz/content/dam/MINI/marketDSM_CZ/mini_cz/Pricelist/pricelist-2026/J05_0126_CZ_online.pdf.asset.1766152914178.pdf
+      level: manufacturer

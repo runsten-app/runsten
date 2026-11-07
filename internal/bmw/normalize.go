@@ -2,7 +2,6 @@ package bmw
 
 import (
 	"bytes"
-	"cmp"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -510,7 +509,8 @@ var steerings = map[string]core.Steering{"LL": core.LeftHand, "RL": core.RightHa
 
 // normalizeBasicData reads the model: the brand, the family and the trim from the model's
 // name (i4 eDrive40: i4 and edrive40), the powertrain, and the model year; the battery's
-// capacity; and the sheet: the colour, as BMW codes it, and the steering side. Assumed:
+// capacity; and the sheet: the colour, named by paints.yaml or else as BMW codes it, and
+// the steering side. Assumed:
 // the model year is the construction's, or the next one for a car built from July on,
 // when BMW's model year changes; hvsMaxEnergyAbsolute is the gross capacity, as the
 // catalog's gross_kwh it is matched with.
@@ -524,15 +524,16 @@ func normalizeBasicData(raw []byte) (core.Snapshot, error) {
 	if n, ok := kWh(b.HVSMaxEnergy); ok {
 		s.CapacityKWh = core.Some(n, time.Time{})
 	}
+	brand, ok := brands[strings.ToUpper(strings.TrimSpace(b.Brand))]
+	if ok {
+		s.Brand = core.Some(brand, time.Time{})
+	}
 	sheet := core.Sheet{
-		Colour:   strings.TrimSpace(cmp.Or(b.ColourCode, b.ColourCodeRaw)),
+		Colour:   paintName(brand, b.ColourCode, b.ColourCodeRaw),
 		Steering: steerings[strings.ToUpper(strings.TrimSpace(b.Steering))],
 	}
 	if sheet != (core.Sheet{}) {
 		s.Sheet = core.Some(sheet, time.Time{})
-	}
-	if brand, ok := brands[strings.ToUpper(strings.TrimSpace(b.Brand))]; ok {
-		s.Brand = core.Some(brand, time.Time{})
 	}
 	if f := strings.Fields(b.ModelName); len(f) > 0 {
 		s.Family = core.Some(f[0], time.Time{})

@@ -179,13 +179,19 @@ func TestNormalizeBasicDataSheet(t *testing.T) {
 		if s.CapacityKWh != core.Some(83.9, time.Time{}) {
 			t.Errorf("capacity %s: %+v", capacity, s.CapacityKWh)
 		}
-		if s.Sheet.V != (core.Sheet{Colour: "C4P", Steering: core.LeftHand}) {
+		if s.Sheet.V != (core.Sheet{Colour: "Brooklyn Grey", Steering: core.LeftHand}) {
 			t.Errorf("sheet: %+v", s.Sheet)
 		}
 	}
-	s := mustNormalize(t, BasicData, `{"brand":"MINI","steering":"RL","colourCodeRaw":"B71","hvsMaxEnergyAbsolute":"0"}`)
-	if s.Sheet.V != (core.Sheet{Colour: "B71", Steering: core.RightHand}) || s.CapacityKWh.OK {
+	// A MINI's paint, named from the raw code when the code is not given.
+	s := mustNormalize(t, BasicData, `{"brand":"MINI","steering":"RL","colourCodeRaw":"C6A","hvsMaxEnergyAbsolute":"0"}`)
+	if s.Sheet.V != (core.Sheet{Colour: "Nanuq White", Steering: core.RightHand}) || s.CapacityKWh.OK {
 		t.Errorf("right hand, raw colour, no capacity: %+v", s)
+	}
+	// A code the table does not know is kept as BMW gives it.
+	s = mustNormalize(t, BasicData, `{"brand":"BMW","colourCode":"B71"}`)
+	if s.Sheet.V != (core.Sheet{Colour: "B71"}) {
+		t.Errorf("unknown code: %+v", s.Sheet)
 	}
 }
 
