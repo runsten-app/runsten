@@ -193,7 +193,8 @@
       "volvoCsv": "Importert fra Volvo Cars-appen",
       "volvoDataPortal": "Importert fra Volvo Data Portal",
       "other": "Importert fra {source}",
-      "teslamate": "Importert fra TeslaMate"
+      "teslamate": "Importert fra TeslaMate",
+      "aaosLogging": "Importert fra AAOS Logging"
     },
     "importedHelp": "Importert fra en annen app, fra før Runsten leste bilen: tidspunktene og tallene er den appens egne.",
     "importedTimesNote": "Tidspunktene er de appen oppga, på minuttet eller bedre: ikke noe intervall."
@@ -1743,6 +1744,35 @@
         "tooLarge": "Filene er for store: høyst 32 MB til sammen.",
         "network": "Fikk ikke kontakt med Runsten. Prøv igjen om litt.",
         "internal": "Filene kunne ikke importeres. Prøv igjen om litt."
+      }
+    },
+    "aaos": {
+      "title": "Importer fra AAOS Logging",
+      "beta": "Beta",
+      "intro": "AAOS Logging er en app for biler med Google innebygd (Volvo, Polestar, Renault …) som registrerer hver tur og synkroniserer den til Google Disk. Last ned bilens mappe i Google Disk, den ligger i AAOSLogging, når appen har synkronisert: Disk lager en ZIP-fil av den; velg den her. Bare turene fra før bilens første avlesning importeres, med spor, ladenivå og utetemperatur; appen registrerer ingen lading. Importerer du på nytt, erstattes de.",
+      "open": "Velg eksporten",
+      "link": "AAOS Logging på Google Play",
+      "newTab": "(åpnes i en ny fane)",
+      "file": {
+        "label": "Bilens mappe (ZIP)",
+        "hint": "ZIP-filen Google Disk lager av bilens mappe i AAOSLogging."
+      },
+      "clear": "Fjern: {file}",
+      "start": "Importer",
+      "cancel": "Avbryt",
+      "done": "Importen er ferdig",
+      "report": {
+        "imported": "Ingen tur importert. | Én tur importert. | {n} turer importert.",
+        "skipped": "Én utelatt: den starter etter bilens første avlesning ({date}). | {n} utelatt: de starter etter bilens første avlesning ({date}).",
+        "invalid": "Én tur utelatt, uavsluttet eller utenfor grensene. | {n} turer utelatt, uavsluttet eller utenfor grensene."
+      },
+      "error": {
+        "summary": "Eksporten ble ikke importert",
+        "required": "Velg ZIP-filen med bilens mappe.",
+        "file": "Dette er ikke en eksport fra AAOS Logging, eller den er ufullstendig: last ned bilens mappe i AAOSLogging fra Google Disk når appen har synkronisert, og velg ZIP-filen slik den er.",
+        "tooLarge": "Eksporten er for stor: høyst 512 MB.",
+        "network": "Fikk ikke kontakt med Runsten. Prøv igjen om litt.",
+        "internal": "Eksporten kunne ikke importeres. Prøv igjen om litt."
       }
     },
     "error": "Importene kunne ikke lastes inn. Prøv igjen om litt.",

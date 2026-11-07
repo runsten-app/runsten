@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
+
+	"runsten/internal/platform/httpserver"
 )
 
 // FileImports imports the files a user uploads, at once: the history another
@@ -25,6 +27,10 @@ type FileImports interface {
 	// ErrImportFile is a file that is not TeslaMate's backup, one wrapping
 	// ErrNoMatchingCar a backup without the VIN; nothing is written either way.
 	ImportTeslaMate(ctx context.Context, accountID, vehicleID, vin, currency string, r io.Reader) (FileImport, error)
+	// ImportAAOSLogging imports the trips of AAOS Logging's export, the ZIP r of size
+	// bytes. An error wrapping ErrImportFile is an upload that is not the export, or one
+	// incomplete: its message tells why, and nothing is written.
+	ImportAAOSLogging(ctx context.Context, accountID, vehicleID string, r io.ReaderAt, size int64) (FileImport, error)
 }
 
 // ErrImportFile is a file that is not the one expected.
@@ -61,13 +67,26 @@ type volvoDataPortalInput struct {
 // requireMultipart refuses a body that is not a multipart form, and bounds it: huma
 // applies no MaxBodyBytes to a multipart body.
 func (s *Server) requireMultipart(ctx huma.Context, next func(huma.Context)) {
-	r, w := unwrap(ctx)
-	if mt, _, err := mime.ParseMediaType(ctx.Header("Content-Type")); err != nil || mt != "multipart/form-data" {
-		writeError(w, http.StatusUnsupportedMediaType, codeUnsupportedMediaType, "multipart/form-data expected")
-		return
+	s.multipart(maxImportFiles, 0)(ctx, next)
+}
+
+// multipart refuses a body that is not a multipart form, and bounds it to limit bytes;
+// with idle, a sender may take as long as it needs, never pausing longer.
+func (s *Server) multipart(limit int64, idle time.Duration) func(huma.Context, func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		r, w := unwrap(ctx)
+		if mt, _, err := mime.ParseMediaType(ctx.Header("Content-Type")); err != nil || mt != "multipart/form-data" {
+			writeError(w, http.StatusUnsupportedMediaType, codeUnsupportedMediaType, "multipart/form-data expected")
+			return
+		}
+		if idle > 0 {
+			if err := httpserver.IdleReads(w, r, idle); err != nil {
+				s.Log.Warn("the deadlines of an upload are the server's", "err", err)
+			}
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, limit)
+		next(ctx)
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, maxImportFiles)
-	next(ctx)
 }
 
 // volvoDataPortalPath is the route of the import of the portal's files.
@@ -137,7 +156,99 @@ func (s *Server) registerFileImports(api huma.API) {
 		http.StatusConflict:             "`not_volvo`: the vehicle is not a Volvo (a Polestar, a Tesla); nothing is imported.",
 		http.StatusUnsupportedMediaType: "`unsupported_media_type`: the body is not `multipart/form-data`.",
 	})), s.importVolvoDataPortal)
-	// huma leaves a form open to other fields; the handler refuses them.
-	form := api.OpenAPI().Paths[volvoDataPortalPath].Post.RequestBody.Content["multipart/form-data"].Schema
-	form.AdditionalProperties = false
+	aaosOp := s.sessionOperation(huma.Operation{
+		OperationID: "importAAOSLogging", Method: http.MethodPost, Path: aaosLoggingPath,
+		Tags: []string{"events"}, Summary: "Import the export of AAOS Logging",
+		Description: "The trips AAOS Logging, an Android Automotive app, recorded and synced to its user's Google " +
+			"Drive, with their tracks: the ZIP Google Drive gives for the vehicle's folder (`AAOSLogging/<car>_<id>`). " +
+			"Its newest generation is read, every archive checked against its commit. Of any brand: the export " +
+			"names no VIN, it is imported into the vehicle chosen. Written at once: only what starts before the " +
+			"vehicle's first reading; a trip imported before, the same tripId, is replaced. At most 512 MiB.",
+		Middlewares: huma.Middlewares{s.multipart(maxAAOSLogging, teslaMateIdle)},
+	}, "What was imported.", writeErrors(map[int]string{
+		http.StatusBadRequest: "`invalid_body`: not a multipart form with the export, or more than 512 MiB. " +
+			"`invalid_file`: not AAOS Logging's export (not a ZIP, no commit of the Drive sync V3, the folders of " +
+			"several vehicles), or one incomplete (an archive missing, or not the commit's); the message tells why.",
+		http.StatusForbidden:            errCrossOrigin + " " + errSessionOnly,
+		http.StatusNotFound:             errVehicle,
+		http.StatusConflict:             "`import_active`: an export of the vehicle is being read; nothing is imported.",
+		http.StatusUnsupportedMediaType: "`unsupported_media_type`: the body is not `multipart/form-data`.",
+		http.StatusServiceUnavailable:   "`source_unavailable`: the instance is reading as many exports as it reads at once.",
+	}))
+	one := 1.0
+	aaosOp.Responses[strconv.Itoa(http.StatusServiceUnavailable)].Headers = map[string]*huma.Param{
+		"Retry-After": {
+			Description: "Seconds to wait before sending the export again.", Required: true,
+			Schema: &huma.Schema{Type: huma.TypeInteger, Minimum: &one},
+		},
+	}
+	huma.Register(api, aaosOp, s.importAAOSLogging)
+	// huma leaves a form open to other fields; the handlers refuse them.
+	for _, p := range []string{volvoDataPortalPath, aaosLoggingPath} {
+		api.OpenAPI().Paths[p].Post.RequestBody.Content["multipart/form-data"].Schema.AdditionalProperties = false
+	}
+}
+
+// aaosLoggingPath is the route of the import of AAOS Logging's export.
+const aaosLoggingPath = "/vehicles/{vehicle}/imports/aaos_logging"
+
+// maxAAOSLogging bounds AAOS Logging's export: its trips' telemetry, a sample every
+// second or so, makes it far larger than the portal's files.
+const maxAAOSLogging = 512 << 20
+
+// aaosLoggingImports is how many exports of AAOS Logging an instance reads at once: each
+// holds its trips, up to a gigabyte of day files inflated, until they are written.
+const aaosLoggingImports = 2
+
+type aaosLoggingFiles struct {
+	Export huma.FormFile `form:"export" required:"true" doc:"The ZIP Google Drive gives for the vehicle's folder of AAOS Logging, inside AAOSLogging, or for its Sync folder."`
+}
+
+type aaosLoggingInput struct {
+	Vehicle string `path:"vehicle" doc:"The vehicle ID."`
+	RawBody huma.MultipartFormFiles[aaosLoggingFiles]
+}
+
+func (s *Server) importAAOSLogging(ctx context.Context, in *aaosLoggingInput) (*body[fileImportJSON], error) {
+	files := in.RawBody.Data()
+	defer func() {
+		if files.Export.IsSet {
+			_ = files.Export.Close()
+		}
+	}()
+	v, err := s.accountVehicle(ctx, in.Vehicle)
+	if err != nil {
+		return nil, err
+	}
+	for name := range in.RawBody.Form.File {
+		if name != "export" {
+			return nil, apiError(http.StatusBadRequest, codeInvalidBody, "unknown field "+strconv.Quote(name))
+		}
+	}
+	for name := range in.RawBody.Form.Value {
+		return nil, apiError(http.StatusBadRequest, codeInvalidBody, "unknown field "+strconv.Quote(name))
+	}
+	ok, busy := s.aaosLogging.start(v.ID, aaosLoggingImports)
+	switch {
+	case busy:
+		return nil, huma.ErrorWithHeaders( //nolint:wrapcheck // the error of the contract, with its header
+			apiError(http.StatusServiceUnavailable, codeSourceUnavailable, "the instance is reading other exports: try again in a minute"),
+			http.Header{"Retry-After": {strconv.Itoa(teslaMateRetry)}})
+	case !ok:
+		return nil, apiError(http.StatusConflict, codeImportActive, "an import of this vehicle is already active")
+	}
+	defer s.aaosLogging.done(v.ID)
+	account := sessionFrom(ctx).AccountID
+	res, err := s.FileImports.ImportAAOSLogging(ctx, account, v.ID, files.Export, files.Export.Size)
+	switch {
+	case errors.Is(err, ErrImportFile):
+		return nil, apiError(http.StatusBadRequest, codeInvalidFile, err.Error())
+	case err != nil:
+		return nil, s.internal("import not written", err)
+	}
+	s.Log.Info("files imported", "account", account, "vehicle", v.ID, "source", "aaos_logging",
+		"imported", res.Imported, "skipped", res.Skipped, "invalid", res.Invalid)
+	return respond(fileImportJSON{
+		Source: "aaos_logging", Imported: res.Imported, Skipped: res.Skipped, Invalid: res.Invalid, Cutoff: res.Cutoff.UTC(),
+	}), nil
 }

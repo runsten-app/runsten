@@ -20,27 +20,34 @@ afterEach(() => {
 })
 
 async function mounted(volvo: boolean, tesla = false) {
-  wrapper = mountWith(ImportSources, { props: { vehicle: 'v1', volvo, tesla } }).wrapper
+  wrapper = mountWith(ImportSources, {
+    props: { vehicle: 'v1', volvo, tesla, aaos: !tesla },
+  }).wrapper
   await flushPromises()
   return wrapper
 }
 
 describe('ImportSources', () => {
-  it("offers Aximote and the Volvo Data Portal under one heading, the portal's form behind a button", async () => {
+  it("offers Aximote, the Volvo Data Portal and AAOS Logging under one heading, the files' forms behind a button", async () => {
     const w = await mounted(true)
     expect(w.find('h3').text()).toBe('Add history')
     expect(w.findAll('h4').map((h) => h.text())).toEqual([
       'Import from Aximote Beta',
       'Import from the Volvo Data Portal Beta',
+      'Import from AAOS Logging Beta',
     ])
-    // Before a first import, Aximote's form is open; the portal's waits.
+    // Before a first import, Aximote's form is open; the files' wait.
     expect(w.find('.import-form').exists()).toBe(true)
     expect(w.find('.portal-form').exists()).toBe(false)
+    expect(w.find('.aaos-form').exists()).toBe(false)
   })
 
-  it('offers Aximote alone to a vehicle that is not a Volvo', async () => {
+  it('offers no portal to a vehicle that is not a Volvo', async () => {
     const w = await mounted(false)
-    expect(w.findAll('h4').map((h) => h.text())).toEqual(['Import from Aximote Beta'])
+    expect(w.findAll('h4').map((h) => h.text())).toEqual([
+      'Import from Aximote Beta',
+      'Import from AAOS Logging Beta',
+    ])
     expect(w.find('.portal-import').exists()).toBe(false)
   })
 

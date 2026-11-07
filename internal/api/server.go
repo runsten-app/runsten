@@ -329,6 +329,8 @@ type Server struct {
 	tokenLimiter *limiter
 	// teslaMate are the TeslaMate backups being read.
 	teslaMate teslaMateImports
+	// aaosLogging are the exports of AAOS Logging being read, bounded as the backups.
+	aaosLogging teslaMateImports
 	// bmwFlows are BMW's device flows pending.
 	bmwFlows    bmwFlows
 	errorSchema *huma.Schema // the body of the errors

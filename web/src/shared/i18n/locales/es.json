@@ -193,7 +193,8 @@
       "volvoCsv": "Importado desde la aplicación Volvo Cars",
       "volvoDataPortal": "Importado desde Volvo Data Portal",
       "other": "Importado desde {source}",
-      "teslamate": "Importado desde TeslaMate"
+      "teslamate": "Importado desde TeslaMate",
+      "aaosLogging": "Importado desde AAOS Logging"
     },
     "importedHelp": "Importado de otra aplicación, de antes de que Runsten leyera el vehículo: sus horas y cifras son las de esa aplicación.",
     "importedTimesNote": "Las horas son las que indicó la aplicación, al minuto o con más precisión: sin intervalo."
@@ -1743,6 +1744,35 @@
         "tooLarge": "Los archivos son demasiado grandes: 32 MB como máximo en conjunto.",
         "network": "No se pudo acceder a Runsten. Inténtelo de nuevo en un momento.",
         "internal": "No se pudieron importar los archivos. Inténtelo de nuevo en un momento."
+      }
+    },
+    "aaos": {
+      "title": "Importar desde AAOS Logging",
+      "beta": "Beta",
+      "intro": "AAOS Logging es una aplicación para vehículos con Google integrado (Volvo, Polestar, Renault…) que registra cada viaje y lo sincroniza con su Google Drive. En Google Drive, descargue la carpeta del vehículo, dentro de AAOSLogging, una vez que la aplicación haya sincronizado: Drive genera un archivo ZIP; elíjalo aquí. Solo se importan los viajes anteriores a la primera lectura del vehículo, con sus recorridos, su nivel de carga y la temperatura exterior; la aplicación no registra las cargas. Volver a importar los reemplaza.",
+      "open": "Elegir la exportación",
+      "link": "AAOS Logging en Google Play",
+      "newTab": "(se abre en una pestaña nueva)",
+      "file": {
+        "label": "Carpeta del vehículo (ZIP)",
+        "hint": "El ZIP que genera Google Drive para la carpeta del vehículo, dentro de AAOSLogging."
+      },
+      "clear": "Quitar: {file}",
+      "start": "Importar",
+      "cancel": "Cancelar",
+      "done": "Importación terminada",
+      "report": {
+        "imported": "No se importó ningún viaje. | Se importó un viaje. | Se importaron {n} viajes.",
+        "skipped": "Uno omitido: empieza después de la primera lectura del vehículo ({date}). | {n} omitidos: empiezan después de la primera lectura del vehículo ({date}).",
+        "invalid": "Un viaje omitido, sin terminar o fuera de los límites. | {n} viajes omitidos, sin terminar o fuera de los límites."
+      },
+      "error": {
+        "summary": "No se importó la exportación",
+        "required": "Elija el ZIP de la carpeta del vehículo.",
+        "file": "Esta no es una exportación de AAOS Logging, o está incompleta: en Google Drive, descargue la carpeta del vehículo, dentro de AAOSLogging, una vez que la aplicación haya sincronizado, y elija el ZIP tal cual.",
+        "tooLarge": "La exportación es demasiado grande: 512 MB como máximo.",
+        "network": "No se pudo acceder a Runsten. Inténtelo de nuevo en un momento.",
+        "internal": "No se pudo importar la exportación. Inténtelo de nuevo en un momento."
       }
     },
     "error": "No se pudieron cargar las importaciones. Inténtelo de nuevo en un momento.",

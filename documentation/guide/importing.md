@@ -1,5 +1,5 @@
 ---
-description: "Import your car's trips and charges from before Runsten read it: a Tesla's from a TeslaMate backup, a Volvo's from the files of the Volvo Data Portal (EU Data Act), any car's from Aximote."
+description: "Import your car's trips and charges from before Runsten read it: a Tesla's from a TeslaMate backup, a Volvo's from the files of the Volvo Data Portal (EU Data Act), any car's from Aximote, a car with Google built-in's from AAOS Logging."
 ---
 
 # Importing your history
@@ -11,6 +11,7 @@ Runsten reads your car from the day you connect it. What came before may be in a
 | Tesla | [From TeslaMate](#from-teslamate), a backup of its database | drives with their tracks, charges |
 | Volvo | [From the Volvo Data Portal](#from-the-volvo-data-portal) (EU), its files | trips with their tracks, no charges |
 | Any brand | [From Aximote](#from-aximote), with a personal access token of its Pro offer | trips with their tracks, charges |
+| Any brand with Google built-in | [From AAOS Logging](#from-aaos-logging), its export on Google Drive | trips with their tracks, no charges |
 
 Every import is in **beta**: tell us if one of yours is refused, or if a trip or a charge looks wrong.
 
@@ -110,3 +111,24 @@ A trip still under way or a charge in progress is left out and counted as unfini
 
 - **Aximote refused the token**: it was mistyped, revoked, or the Pro offer ended. Create another one.
 - **Aximote kept failing**: try again later. When Aximote asks to wait, the import waits, then resumes where it stopped; a restart of Runsten resumes it too.
+
+### From AAOS Logging
+
+[AAOS Logging](https://play.google.com/store/apps/details?id=com.aaoslogging) is an app for cars with Google built-in (Android Automotive: Volvo, Polestar, Renault and others). It records each trip and the values the car gives the app (battery, range, temperatures…), and syncs them to your own Google Drive: no manufacturer account, in any country. Runsten reads that export. The import follows the format the app's developer documents ([aaos-drive](https://github.com/devmcage/aaos-drive), Drive sync V3, trip schema 17), and has not yet been tried on many real exports.
+
+1. In AAOS Logging, turn on the Google Drive sync, and let it sync: the app writes to `AAOSLogging/<car>_<id>/Sync/V3` on your Drive.
+2. In Google Drive, on the web, download the car's folder, `AAOSLogging/<car>_<id>`: Drive gives a ZIP file. Leave it as it is. Its `Sync` folder alone is enough, or its `Sync/V3` folder, or the `Commits` and `Artifacts` folders inside `V3` chosen together: the car's `Backup` folder is not read.
+3. In the vehicle's **Imported history**, under **Import from AAOS Logging**, press **Choose the export**, choose the ZIP, then **Import**.
+
+The import runs at once. A ZIP of 512 MiB at most. Runsten reads the newest generation the app synced, and checks every file of it against its commit, size and SHA-256: a folder downloaded while the app was still syncing, one with a file missing, or the whole `AAOSLogging` folder of several cars, is refused, and nothing is imported. Download it again once the app has synced, or the one car's folder.
+
+The export names no VIN: it is imported into the vehicle you import it from. The part shows on every vehicle but a Tesla, which has no Google built-in.
+
+#### What is imported
+
+- **Trips**: their exact times, the positions at both ends, the app's distance, the state of charge and the range the car estimated at both ends (the first and last samples telling them), the mean of the car's outside temperature, and the energy used: the battery's net energy over the trip, when the app measured or derived it and it is positive. A plug-in hybrid's trip keeps neither the range nor the energy: its range counts the fuel too, and the battery's energy is not all the trip used. No odometer: the app's distance comes from the odometer, the GPS or the speed, and is no odometer reading. No place names: Runsten names the positions as it names those it reads.
+- **Tracks**: the app's route of each trip, with its precise positions.
+- **No charges**: the app records trips only.
+- **Not imported, yet**: the app's other telemetry (tyre pressures, battery temperature, speed, power over the trip…) and its weather samples.
+
+A trip the app has not closed is left out and counted as unfinished. Importing again replaces the trips by the app's trip IDs.

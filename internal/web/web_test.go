@@ -345,7 +345,7 @@ func TestRelayUnavailable(t *testing.T) {
 	}
 }
 
-// TestLongUpload: the backup's upload outlasts the server's read deadline, which the
+// TestLongUpload: the upload of a backup or an export outlasts the server's read deadline, which the
 // relay lifts for it alone.
 func TestLongUpload(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -382,6 +382,9 @@ func TestLongUpload(t *testing.T) {
 	}
 	if got, err := send("/api/v1/vehicles/v/imports/teslamate"); err != nil || got != "200 OK first,then" {
 		t.Errorf("the backup: %q, %v", got, err)
+	}
+	if got, err := send("/api/v1/vehicles/v/imports/aaos_logging"); err != nil || got != "200 OK first,then" {
+		t.Errorf("AAOS Logging's export: %q, %v", got, err)
 	}
 	if got, err := send("/api/v1/vehicles/v/imports/volvo_data_portal"); err == nil && got == "200 OK first,then" {
 		t.Error("another upload outlasts the deadline")

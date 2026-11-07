@@ -193,7 +193,8 @@
       "volvoCsv": "Aus der Volvo Cars App importiert",
       "volvoDataPortal": "Aus dem Volvo Data Portal importiert",
       "other": "Aus {source} importiert",
-      "teslamate": "Aus TeslaMate importiert"
+      "teslamate": "Aus TeslaMate importiert",
+      "aaosLogging": "Aus AAOS Logging importiert"
     },
     "importedHelp": "Aus einer anderen App importiert, aus der Zeit, bevor Runsten das Fahrzeug gelesen hat: Zeiten und Zahlen stammen von dieser App.",
     "importedTimesNote": "Die Zeiten sind die der App, auf die Minute genau oder genauer: keine Spanne."
@@ -1743,6 +1744,35 @@
         "tooLarge": "Die Dateien sind zu groß: höchstens 32 MB zusammen.",
         "network": "Runsten war nicht erreichbar. Versuchen Sie es gleich noch einmal.",
         "internal": "Die Dateien konnten nicht importiert werden. Versuchen Sie es gleich noch einmal."
+      }
+    },
+    "aaos": {
+      "title": "Aus AAOS Logging importieren",
+      "beta": "Beta",
+      "intro": "AAOS Logging ist eine App für Autos mit integriertem Google (Volvo, Polestar, Renault…), die jede Fahrt aufzeichnet und mit Ihrem Google Drive synchronisiert. Laden Sie in Google Drive den Ordner des Autos herunter, er liegt in AAOSLogging, sobald die App synchronisiert hat: Drive erstellt daraus eine ZIP-Datei; wählen Sie sie hier aus. Importiert werden nur die Fahrten aus der Zeit vor dem ersten Messwert des Fahrzeugs, mit ihren Routen, dem Ladestand und der Außentemperatur; Ladevorgänge zeichnet die App nicht auf. Ein erneuter Import ersetzt sie.",
+      "open": "Export auswählen",
+      "link": "AAOS Logging bei Google Play",
+      "newTab": "(öffnet in einem neuen Tab)",
+      "file": {
+        "label": "Ordner des Autos (ZIP)",
+        "hint": "Die ZIP-Datei, die Google Drive für den Ordner des Autos in AAOSLogging erstellt."
+      },
+      "clear": "Entfernen: {file}",
+      "start": "Importieren",
+      "cancel": "Abbrechen",
+      "done": "Import abgeschlossen",
+      "report": {
+        "imported": "Keine Fahrt importiert. | Eine Fahrt importiert. | {n} Fahrten importiert.",
+        "skipped": "Eine ausgelassen: Sie beginnt nach dem ersten Messwert des Fahrzeugs ({date}). | {n} ausgelassen: Sie beginnen nach dem ersten Messwert des Fahrzeugs ({date}).",
+        "invalid": "Eine Fahrt ausgelassen, nicht beendet oder außerhalb der Grenzen. | {n} Fahrten ausgelassen, nicht beendet oder außerhalb der Grenzen."
+      },
+      "error": {
+        "summary": "Der Export wurde nicht importiert",
+        "required": "Wählen Sie die ZIP-Datei mit dem Ordner des Autos.",
+        "file": "Das ist kein Export von AAOS Logging, oder er ist unvollständig: Laden Sie in Google Drive den Ordner des Autos in AAOSLogging herunter, sobald die App synchronisiert hat, und wählen Sie die ZIP-Datei unverändert aus.",
+        "tooLarge": "Der Export ist zu groß: höchstens 512 MB.",
+        "network": "Runsten war nicht erreichbar. Versuchen Sie es gleich noch einmal.",
+        "internal": "Der Export konnte nicht importiert werden. Versuchen Sie es gleich noch einmal."
       }
     },
     "error": "Die Importe konnten nicht geladen werden. Versuchen Sie es gleich noch einmal.",

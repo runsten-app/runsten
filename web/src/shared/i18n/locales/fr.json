@@ -193,7 +193,8 @@
       "volvoCsv": "Importé de l'app Volvo Cars",
       "volvoDataPortal": "Importé du Volvo Data Portal",
       "other": "Importé de {source}",
-      "teslamate": "Importé de TeslaMate"
+      "teslamate": "Importé de TeslaMate",
+      "aaosLogging": "Importé d'AAOS Logging"
     },
     "importedHelp": "Importé d'une autre app, d'avant que Runsten ne lise le véhicule : ses heures et ses chiffres sont ceux de cette app.",
     "importedTimesNote": "Les heures sont celles que l'app a données, à la minute ou mieux : pas d'intervalle."
@@ -1743,6 +1744,35 @@
         "tooLarge": "Les fichiers sont trop gros : 32 Mo au plus à eux deux.",
         "network": "Runsten est injoignable. Réessayez dans un instant.",
         "internal": "Les fichiers n'ont pas pu être importés. Réessayez dans un instant."
+      }
+    },
+    "aaos": {
+      "title": "Importer depuis AAOS Logging",
+      "beta": "Bêta",
+      "intro": "AAOS Logging est une app pour les voitures avec Google intégré (Volvo, Polestar, Renault…) qui enregistre chaque trajet et le synchronise sur votre Google Drive. Dans Google Drive, téléchargez le dossier de la voiture, dans AAOSLogging, une fois l'app synchronisée : Drive donne un fichier ZIP ; choisissez-le ici. Seuls les trajets antérieurs à la première lecture du véhicule sont importés, avec leurs tracés, leur niveau de charge et la température extérieure ; l'app n'enregistre aucune recharge. Importer à nouveau les remplace.",
+      "open": "Choisir l'export",
+      "link": "AAOS Logging sur Google Play",
+      "newTab": "(s'ouvre dans un nouvel onglet)",
+      "file": {
+        "label": "Le dossier de la voiture (ZIP)",
+        "hint": "Le ZIP que Google Drive donne pour le dossier de la voiture, dans AAOSLogging."
+      },
+      "clear": "Retirer : {file}",
+      "start": "Importer",
+      "cancel": "Annuler",
+      "done": "Import terminé",
+      "report": {
+        "imported": "Aucun trajet importé. | Un trajet importé. | {n} trajets importés.",
+        "skipped": "Un laissé de côté : il commence après la première lecture du véhicule ({date}). | {n} laissés de côté : ils commencent après la première lecture du véhicule ({date}).",
+        "invalid": "Un trajet laissé de côté, inachevé ou hors limites. | {n} trajets laissés de côté, inachevés ou hors limites."
+      },
+      "error": {
+        "summary": "L'export n'a pas été importé",
+        "required": "Choisissez le ZIP du dossier de la voiture.",
+        "file": "Ce n'est pas l'export d'AAOS Logging, ou il est incomplet : dans Google Drive, téléchargez le dossier de la voiture, dans AAOSLogging, une fois l'app synchronisée, et choisissez le ZIP tel quel.",
+        "tooLarge": "L'export est trop gros : 512 Mo au plus.",
+        "network": "Runsten est injoignable. Réessayez dans un instant.",
+        "internal": "L'export n'a pas pu être importé. Réessayez dans un instant."
       }
     },
     "error": "Les imports n'ont pas pu être chargés. Réessayez dans un instant.",

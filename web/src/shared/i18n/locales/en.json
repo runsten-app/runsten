@@ -193,7 +193,8 @@
       "volvoCsv": "Imported from the Volvo Cars app",
       "volvoDataPortal": "Imported from the Volvo Data Portal",
       "other": "Imported from {source}",
-      "teslamate": "Imported from TeslaMate"
+      "teslamate": "Imported from TeslaMate",
+      "aaosLogging": "Imported from AAOS Logging"
     },
     "importedHelp": "Imported from another app, from before Runsten read the vehicle: its times and figures are that app's own.",
     "importedTimesNote": "The times are those the app gave, to the minute or better: no range."
@@ -1743,6 +1744,35 @@
         "tooLarge": "The files are too large: 32 MB at most together.",
         "network": "Runsten could not be reached. Try again in a moment.",
         "internal": "The files could not be imported. Try again in a moment."
+      }
+    },
+    "aaos": {
+      "title": "Import from AAOS Logging",
+      "beta": "Beta",
+      "intro": "AAOS Logging is an app for cars with Google built-in (Volvo, Polestar, Renault…) that records each trip and syncs it to your Google Drive. In Google Drive, download the car's folder, inside AAOSLogging, once the app has synced: Drive gives a ZIP file; choose it here. Only the trips from before the vehicle's first reading are imported, with their tracks, state of charge and outside temperature; the app records no charge. Importing again replaces them.",
+      "open": "Choose the export",
+      "link": "AAOS Logging on Google Play",
+      "newTab": "(opens in a new tab)",
+      "file": {
+        "label": "The car's folder (ZIP)",
+        "hint": "The ZIP Google Drive gives for the car's folder, inside AAOSLogging."
+      },
+      "clear": "Remove: {file}",
+      "start": "Import",
+      "cancel": "Cancel",
+      "done": "Import finished",
+      "report": {
+        "imported": "No trip imported. | One trip imported. | {n} trips imported.",
+        "skipped": "One left: it starts after the vehicle's first reading ({date}). | {n} left: they start after the vehicle's first reading ({date}).",
+        "invalid": "One trip left, unfinished or out of bounds. | {n} trips left, unfinished or out of bounds."
+      },
+      "error": {
+        "summary": "The export was not imported",
+        "required": "Choose the ZIP of the car's folder.",
+        "file": "This is not AAOS Logging's export, or it is incomplete: in Google Drive, download the car's folder, inside AAOSLogging, once the app has synced, and choose the ZIP as it is.",
+        "tooLarge": "The export is too large: 512 MB at most.",
+        "network": "Runsten could not be reached. Try again in a moment.",
+        "internal": "The export could not be imported. Try again in a moment."
       }
     },
     "error": "The imports could not be loaded. Try again in a moment.",

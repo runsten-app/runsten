@@ -211,6 +211,14 @@ linters:
               desc: the reader returns TeslaMate's values; importer converts them
             - pkg: runsten/internal/importer
               desc: outward dependency forbidden
+        # The reader of AAOS Logging's export returns its trips as they are.
+        aaoslogging-is-a-reader:
+          files: ["**/internal/aaoslogging/**"]
+          deny:
+            - pkg: runsten/internal/core
+              desc: the reader returns the app's values; importer converts them
+            - pkg: runsten/internal/importer
+              desc: outward dependency forbidden
         # The front end's server serves files and relays to runsten-api by URL: it knows
         # no business code, no storage and no secret.
         web-without-business:

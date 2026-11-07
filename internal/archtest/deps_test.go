@@ -29,7 +29,7 @@ var allowed = map[string][]string{
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/bmw", "internal/catalog", "internal/core",
 		"internal/derive", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
 		"internal/platform", "internal/polestar", "internal/polestarid", "internal/release", "internal/store", "internal/tesla",
-		"internal/teslamate", "internal/volvo", "internal/volvoportal",
+		"internal/teslamate", "internal/volvo", "internal/volvoportal", "internal/aaoslogging",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/bmw", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
@@ -73,7 +73,7 @@ var allowed = map[string][]string{
 	// values it converts, as it converts the Volvo Data Portal's files and TeslaMate's
 	// backup.
 	"internal/importer": {
-		"internal/aximote", "internal/core", "internal/platform/clock", "internal/teslamate", "internal/volvoportal",
+		"internal/aaoslogging", "internal/aximote", "internal/core", "internal/platform/clock", "internal/teslamate", "internal/volvoportal",
 	},
 	// What is published to an MQTT broker, built from the domain: neither network nor
 	// database; Home Assistant's discovery configurations are JSON.
@@ -91,7 +91,9 @@ var allowed = map[string][]string{
 	// The latest release on GitHub, compared with the one running.
 	"internal/release": {"net/http", "encoding/json", "internal/platform/clock"},
 	// The vendors' pictures of the vehicles, relayed to the browser.
-	"internal/picture":     {"net/http", "internal/platform/clock"},
+	"internal/picture": {"net/http", "internal/platform/clock"},
+	// AAOS Logging's export: JSON files in ZIPs.
+	"internal/aaoslogging": {"encoding/json"},
 	"internal/volvoportal": nil,
 	"internal/teslamate":   nil,
 	// It knows paho, as bmw does for CarData's stream: no other package.

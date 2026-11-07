@@ -193,7 +193,8 @@
       "volvoCsv": "Import uit de Volvo Cars-app",
       "volvoDataPortal": "Import uit Volvo Data Portal",
       "other": "Import uit {source}",
-      "teslamate": "Import uit TeslaMate"
+      "teslamate": "Import uit TeslaMate",
+      "aaosLogging": "Import uit AAOS Logging"
     },
     "importedHelp": "Geïmporteerd uit een andere app, van vóór Runsten het voertuig uitlas: de tijden en cijfers zijn die van die app.",
     "importedTimesNote": "De tijden zijn die van de app, tot op de minuut of nauwkeuriger: geen marge."
@@ -1743,6 +1744,35 @@
         "tooLarge": "De bestanden zijn te groot: samen hoogstens 32 MB.",
         "network": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
         "internal": "De bestanden konden niet worden geïmporteerd. Probeer het zo meteen opnieuw."
+      }
+    },
+    "aaos": {
+      "title": "Importeren uit AAOS Logging",
+      "beta": "Bèta",
+      "intro": "AAOS Logging is een app voor auto’s met Google ingebouwd (Volvo, Polestar, Renault…) die elke rit vastlegt en synchroniseert met uw Google Drive. Download in Google Drive de map van de auto, in AAOSLogging, zodra de app heeft gesynchroniseerd: Drive maakt er een ZIP-bestand van; kies dat hier. Alleen de ritten van vóór de eerste uitlezing van het voertuig worden geïmporteerd, met hun route, laadniveau en buitentemperatuur; de app legt geen laadsessies vast. Opnieuw importeren vervangt ze.",
+      "open": "Export kiezen",
+      "link": "AAOS Logging in Google Play",
+      "newTab": "(opent in een nieuw tabblad)",
+      "file": {
+        "label": "Map van de auto (ZIP)",
+        "hint": "Het ZIP-bestand dat Google Drive maakt van de map van de auto, in AAOSLogging."
+      },
+      "clear": "Verwijderen: {file}",
+      "start": "Importeren",
+      "cancel": "Annuleren",
+      "done": "Import voltooid",
+      "report": {
+        "imported": "Geen rit geïmporteerd. | Eén rit geïmporteerd. | {n} ritten geïmporteerd.",
+        "skipped": "Eén overgeslagen: die begint na de eerste uitlezing van het voertuig ({date}). | {n} overgeslagen: die beginnen na de eerste uitlezing van het voertuig ({date}).",
+        "invalid": "Eén rit overgeslagen, niet afgerond of buiten de grenzen. | {n} ritten overgeslagen, niet afgerond of buiten de grenzen."
+      },
+      "error": {
+        "summary": "De export is niet geïmporteerd",
+        "required": "Kies het ZIP-bestand van de map van de auto.",
+        "file": "Dit is geen export van AAOS Logging, of hij is onvolledig: download in Google Drive de map van de auto, in AAOSLogging, zodra de app heeft gesynchroniseerd, en kies het ZIP-bestand zoals het is.",
+        "tooLarge": "De export is te groot: hoogstens 512 MB.",
+        "network": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
+        "internal": "De export kon niet worden geïmporteerd. Probeer het zo meteen opnieuw."
       }
     },
     "error": "De imports konden niet worden geladen. Probeer het zo meteen opnieuw.",

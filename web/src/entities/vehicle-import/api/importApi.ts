@@ -72,6 +72,21 @@ export async function importVolvoDataPortal(
   )
 }
 
+// importAAOSLogging imports AAOS Logging's export: the ZIP Google Drive gives for the
+// car's folder. Written at once: the report comes back.
+export async function importAAOSLogging(vehicle: string, exported: File): Promise<FileImport> {
+  const form = new FormData()
+  form.append('export', exported)
+  return unwrap(
+    api.POST('/vehicles/{vehicle}/imports/aaos_logging', {
+      params: { path: { vehicle } },
+      // As the portal's: the form is sent as it is, and the browser sets its boundary.
+      body: form as unknown as { export: string },
+      bodySerializer: (b) => b as unknown as FormData,
+    }),
+  )
+}
+
 // isGzip tells a file gzip already compressed, by its first bytes.
 async function isGzip(file: Blob): Promise<boolean> {
   const head = new Uint8Array(await file.slice(0, 2).arrayBuffer())
