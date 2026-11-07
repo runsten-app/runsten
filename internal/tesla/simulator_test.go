@@ -119,6 +119,11 @@ func TestSimulatorDay(t *testing.T) {
 		math.Abs(snap.OdometerKm.V-18200) > 1e-3 || snap.Engine.V != core.EngineStopped || snap.Connection.V != core.Disconnected {
 		t.Errorf("parked: %+v", snap)
 	}
+	// Its picture: a Model 3 in Deep Blue, its Helix rims not drawn for the model, its first.
+	if want := "https://static-assets.tesla.com/configurator/compositor?bkba_opt=1&context=design_studio_2" +
+		"&model=m3&options=%24MT322%2C%24IBB1%2C%24PPSB%2C%24W38B&size=1920&view=FRONT34"; snap.Sheet.V.Picture != want {
+		t.Errorf("picture: %q, want %q", snap.Sheet.V.Picture, want)
+	}
 	// The template's version, as a real car read it, with the update it waited for.
 	if snap.Software.V != "2026.38.3.1" || !snap.SoftwareUpdate.OK {
 		t.Errorf("software: %+v, update %+v", snap.Software, snap.SoftwareUpdate)
