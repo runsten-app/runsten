@@ -141,6 +141,19 @@ describe('ChargeDetails', () => {
     ])
   })
 
+  it('takes the integrated power for the losses of a charge that barely moved the SoC', async () => {
+    const w = await mounted({
+      ...charge,
+      start_soc_pct: 66,
+      end_soc_pct: 66,
+      energy_soc_kwh: 0,
+      energy_power_kwh: 0.7,
+      energy_grid_kwh: 0.8,
+    })
+    expect(facts(w, 'energies')['Charging losses']).toBe('0.1 kWh')
+    expect(plain(w.find('.losses-share').text())).toBe('13% of the energy drawn from the grid')
+  })
+
   it('says no losses when the estimate exceeds the energy from the grid', async () => {
     const w = await mounted({ ...charge, energy_grid_kwh: 25 })
     expect(Object.keys(facts(w, 'energies'))).not.toContain('Charging losses')

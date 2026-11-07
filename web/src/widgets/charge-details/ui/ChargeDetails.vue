@@ -46,13 +46,27 @@ const placeRoute = computed(() => {
   return undefined
 })
 
+// minSoCRise is the API's: below it, the energy from the state of charge is noise, and
+// the cost rests on the integrated power when there is one.
+const minSoCRise = 2
+
+// batteryEnergy is the energy that reached the battery, as a cost would take it without
+// the grid's: the vehicle's measure; else the estimate from the state of charge, unless
+// it rose by less than minSoCRise and the power was integrated.
+function batteryEnergy(c: NonNullable<typeof charge.value>): number | null {
+  if (c.energy_measured_kwh !== null) return c.energy_measured_kwh
+  const rise =
+    c.start_soc_pct !== null && c.end_soc_pct !== null ? c.end_soc_pct - c.start_soc_pct : null
+  if (rise !== null && rise < minSoCRise && c.energy_power_kwh !== null) return c.energy_power_kwh
+  return c.energy_soc_kwh
+}
+
 // losses are the energy drawn from the grid that did not reach the battery, when the
-// vehicle's maker recorded the former: the battery's is the one a cost would rest on
-// otherwise, the vehicle's measure or else the estimate from the state of charge. None
-// when that estimate exceeds the grid's, an error of the estimate rather than a gain.
+// vehicle's maker recorded the former. None when the battery's estimate exceeds the
+// grid's, an error of the estimate rather than a gain.
 const losses = computed(() => {
   const c = charge.value
-  const battery = c?.energy_measured_kwh ?? c?.energy_soc_kwh ?? null
+  const battery = c ? batteryEnergy(c) : null
   if (!c || c.energy_grid_kwh === null || c.energy_grid_kwh <= 0 || battery === null) return null
   const kwh = c.energy_grid_kwh - battery
   if (kwh < 0) return null
