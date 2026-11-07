@@ -121,6 +121,7 @@
     "position": "Dernière position",
     "coordinates": "Coordonnées",
     "lastReported": "Dernière mesure de la voiture : {time}",
+    "silent": "Aucune nouvelle de la voiture depuis {time} : elle s'est peut-être arrêtée, ou sa connexion est coupée",
     "sleep": {
       "asleep": "Endormie",
       "offline": "Injoignable",

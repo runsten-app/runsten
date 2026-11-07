@@ -121,6 +121,7 @@
     "position": "Senaste position",
     "coordinates": "Koordinater",
     "lastReported": "Bilens senaste mätning {time}",
+    "silent": "Inget från bilen sedan {time}: den har kanske stannat eller tappat anslutningen",
     "sleep": {
       "asleep": "Sover",
       "offline": "Utom räckhåll",

@@ -26,6 +26,7 @@ import {
   ReadingItem,
   ReadingProvenance,
   reportLateAfter,
+  silentAfter,
   vehicleMode,
   type Cable,
   type ChargingStatus,
@@ -90,6 +91,14 @@ const reportedLate = computed(() => {
     c.target_soc_pct,
   ])
   return last && now.value - Date.parse(last) > reportLateAfter ? last : null
+})
+// Driving or charging, a car silent for long may have stopped, or lost its connection
+// (a stream that missed its end): said in place of its latest measure, rather than let
+// the mode above stand as current.
+const silent = computed(() => {
+  const last = reportedLate.value
+  const active = mode.value === 'driving' || mode.value === 'charging'
+  return active && last && now.value - Date.parse(last) > silentAfter ? last : null
 })
 const checkedStale = computed(() => {
   const c = state.value?.checked_at
@@ -360,7 +369,10 @@ const update = computed(() => {
         <v-chip v-if="checkedStale" size="small" variant="outlined">{{
           t('reading.stale')
         }}</v-chip>
-        <time v-if="reportedLate" :datetime="reportedLate" class="reported">{{
+        <time v-if="silent" :datetime="silent" class="silent" role="status" data-test="silent">{{
+          t('state.silent', { time: f.dateTime(silent, now) })
+        }}</time>
+        <time v-else-if="reportedLate" :datetime="reportedLate" class="reported">{{
           t('state.lastReported', { time: f.dateTime(reportedLate, now) })
         }}</time>
       </span>
@@ -778,6 +790,10 @@ const update = computed(() => {
 }
 .freshness {
   gap: 4px 10px;
+}
+.silent {
+  color: rgb(var(--v-theme-warning));
+  font-weight: 500;
 }
 /* Asleep, the freshness ends its line, under the actions; awake, it follows the mode, so
    that the line reads as one sentence rather than two ends. */

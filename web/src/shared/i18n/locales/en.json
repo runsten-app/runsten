@@ -121,6 +121,7 @@
     "position": "Last position",
     "coordinates": "Coordinates",
     "lastReported": "The car last measured {time}",
+    "silent": "Nothing from the car since {time}: it may have stopped, or lost its connection",
     "sleep": {
       "asleep": "Asleep",
       "offline": "Out of reach",

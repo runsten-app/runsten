@@ -121,6 +121,7 @@
     "position": "Siste posisjon",
     "coordinates": "Koordinater",
     "lastReported": "Bilen målte sist {time}",
+    "silent": "Ingenting fra bilen siden {time}: den har kanskje stoppet, eller mistet forbindelsen",
     "sleep": {
       "asleep": "I dvale",
       "offline": "Utenfor rekkevidde",

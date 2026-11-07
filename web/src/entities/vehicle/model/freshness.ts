@@ -29,6 +29,10 @@ export function isStale(
 // Beyond this, the vehicle's page tells when the car last measured them.
 export const reportLateAfter = 30 * 60_000
 
+// A car driving or charging that has measured nothing for this long may have stopped, or
+// lost its connection: its page no longer takes its mode for granted.
+export const silentAfter = 60 * 60_000
+
 type Reported = { reported_at: string | null } | null
 
 // lastReport is the car's latest own timestamp among the readings, null when none has one.
