@@ -117,6 +117,34 @@ describe('ChargeDetails', () => {
     )
   })
 
+  it('puts the energy the maker recorded from the grid first, with the losses', async () => {
+    const w = await mounted({
+      ...charge,
+      energy_grid_kwh: 30,
+      cost: { ...charge.cost, energy_kwh: 30, efficiency: null },
+    })
+    expect(facts(w, 'energies')).toEqual({
+      'Energy drawn from the grid (recorded by the maker)': '30 kWh',
+      // 30 − 26.4, the estimate from the state of charge.
+      'Charging losses': '3.6 kWh (12%)',
+      'Energy (from state of charge)': '26.4 kWh',
+      'Energy (from charging power)': '25.3 kWh',
+    })
+    expect(w.find('.energies .note').text()).toBe(
+      'The maker recorded the energy drawn from the grid, losses included: a cost estimated from a tariff rests on it. The losses are the difference with the energy that went into the battery, itself measured or estimated.',
+    )
+    expect(costNotes(w)).toEqual([
+      'Estimated from the tariff of Maison de Tante Agathe',
+      '30 kWh billed, as recorded by the maker',
+      'The exact time of the charge is not known: its cost lies within this range.',
+    ])
+  })
+
+  it('says no losses when the estimate exceeds the energy from the grid', async () => {
+    const w = await mounted({ ...charge, energy_grid_kwh: 25 })
+    expect(Object.keys(facts(w, 'energies'))).not.toContain('Charging losses')
+  })
+
   it('tells a reconstructed charge, both energies still shown', async () => {
     const w = await mounted(charges.items[1])
     expect(w.find('.reconstructed-note .event-when').text()).toBe(

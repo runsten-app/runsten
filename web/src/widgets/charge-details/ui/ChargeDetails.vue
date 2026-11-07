@@ -46,6 +46,22 @@ const placeRoute = computed(() => {
   return undefined
 })
 
+// losses are the energy drawn from the grid that did not reach the battery, when the
+// vehicle's maker recorded the former: the battery's is the one a cost would rest on
+// otherwise, the vehicle's measure or else the estimate from the state of charge. None
+// when that estimate exceeds the grid's, an error of the estimate rather than a gain.
+const losses = computed(() => {
+  const c = charge.value
+  const battery = c?.energy_measured_kwh ?? c?.energy_soc_kwh ?? null
+  if (!c || c.energy_grid_kwh === null || c.energy_grid_kwh <= 0 || battery === null) return null
+  const kwh = c.energy_grid_kwh - battery
+  if (kwh < 0) return null
+  return t('charge.lossesValue', {
+    energy: f.quantity(kwh, 'kWh'),
+    share: f.quantity((kwh / c.energy_grid_kwh) * 100, 'percent'),
+  })
+})
+
 const cost = computed(() => f.chargeCost(charge.value?.cost ?? null))
 // costNotes say where the cost comes from, and why it is a range: an estimate from a
 // tariff (billed energy, assumed efficiency) or what was entered.
@@ -58,7 +74,12 @@ const costNotes = computed(() => {
     // the first of the tariff.
     const ch = charge.value
     const place = ch?.place
-    if (place && (ch?.energy_measured_kwh !== null || ch?.energy_soc_kwh !== null))
+    if (
+      place &&
+      (ch?.energy_grid_kwh !== null ||
+        ch?.energy_measured_kwh !== null ||
+        ch?.energy_soc_kwh !== null)
+    )
       return [t('charge.cost.unpriced', { place: place.name })]
     return [t('charge.cost.unknown')]
   }
@@ -71,6 +92,8 @@ const costNotes = computed(() => {
     return notes
   }
   const notes = [t('charge.cost.tariff', { place: charge.value?.place?.name ?? '' })]
+  if (c.energy_kwh !== null && c.efficiency === null)
+    notes.push(t('charge.cost.grid', { energy: f.quantity(c.energy_kwh, 'kWh') }))
   if (c.energy_kwh !== null && c.efficiency !== null)
     notes.push(
       t('charge.cost.estimate', {
@@ -182,6 +205,12 @@ const costNotes = computed(() => {
           <v-card-text>
             <dl class="facts">
               <FactItem
+                v-if="charge.energy_grid_kwh !== null"
+                :label="t('charge.energyGrid')"
+                :value="f.quantity(charge.energy_grid_kwh, 'kWh')"
+              />
+              <FactItem v-if="losses" :label="t('charge.losses')" :value="losses" />
+              <FactItem
                 v-if="charge.energy_measured_kwh !== null"
                 :label="t('charge.energyMeasured')"
                 :value="f.quantity(charge.energy_measured_kwh, 'kWh')"
@@ -204,9 +233,11 @@ const costNotes = computed(() => {
               {{
                 charge.imported
                   ? t('charge.energyImportedNote')
-                  : charge.energy_measured_kwh !== null
-                    ? t('charge.energyMeasuredNote')
-                    : t('charge.energyNote')
+                  : charge.energy_grid_kwh !== null
+                    ? t('charge.energyGridNote')
+                    : charge.energy_measured_kwh !== null
+                      ? t('charge.energyMeasuredNote')
+                      : t('charge.energyNote')
               }}
             </p>
           </v-card-text>
