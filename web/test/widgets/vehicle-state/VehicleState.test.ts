@@ -801,6 +801,23 @@ describe('VehicleState', () => {
     expect(w.find('[data-test="silent"]').exists()).toBe(false)
     expect(w.find('.reported').text()).toBe('The car last measured 19:02')
     w.unmount()
+    // A charge's time left measured within the hour: the car still tells, nothing said.
+    const fresh = '2026-09-28T19:30:00Z'
+    w = await mounted({
+      ...state,
+      charging: {
+        ...state.charging,
+        time_left: {
+          value: { duration_s: 3600, to: 'full' },
+          reported_at: fresh,
+          fetched_at: fresh,
+          checked_at: fresh,
+        },
+      },
+    })
+    expect(w.find('[data-test="silent"]').exists()).toBe(false)
+    expect(w.find('.reported').text()).toBe('The car last measured 19:30')
+    w.unmount()
     // Within the hour: its latest measure only.
     vi.setSystemTime(Date.parse('2026-09-28T20:01:59Z'))
     w = await mounted(state)

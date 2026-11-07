@@ -89,6 +89,10 @@ const reportedLate = computed(() => {
     c.type,
     c.power_w,
     c.target_soc_pct,
+    c.current_a,
+    c.voltage_v,
+    c.phases,
+    c.time_left,
   ])
   return last && now.value - Date.parse(last) > reportLateAfter ? last : null
 })
