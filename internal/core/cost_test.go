@@ -203,6 +203,29 @@ func TestChargeCost(t *testing.T) {
 			}),
 		},
 		{
+			// The energy a BMW's maker recorded as drawn from the grid: billed as it is, no
+			// efficiency between, over the battery's measure. 31 kWh at 0.2289 = 7.0959 €.
+			name:    "the energy drawn from the grid",
+			pricing: with(pricing, func(p *Pricing) { p.Places = []Place{flatPlace()} }),
+			charge: with(fixture(), func(c *Charge) {
+				c.EnergyMeasuredKWh, c.EnergyGridKWh = val(8.8), val(31)
+			}),
+			want: known(Cost{
+				Currency: eur.V, Min: 710, Max: 710, Source: CostTariff, EnergyKWh: val(31), Place: known(flatPlace()),
+			}),
+		},
+		{
+			// The grid's energy is enough: a charge without an estimate of its own.
+			name:    "the energy drawn from the grid, without the battery's",
+			pricing: with(pricing, func(p *Pricing) { p.Places = []Place{flatPlace()} }),
+			charge: with(fixture(), func(c *Charge) {
+				c.EnergySoCKWh, c.EnergyGridKWh = Value[float64]{}, val(31)
+			}),
+			want: known(Cost{
+				Currency: eur.V, Min: 710, Max: 710, Source: CostTariff, EnergyKWh: val(31), Place: known(flatPlace()),
+			}),
+		},
+		{
 			// Nothing better than the SoC change: a reconstructed charge integrates no power.
 			name:    "a SoC rise below MinSoCRise, no power: the SoC change",
 			pricing: with(pricing, func(p *Pricing) { p.Places = []Place{flatPlace()} }),
