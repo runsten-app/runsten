@@ -48,14 +48,15 @@ func TestServes(t *testing.T) {
 	for u, want := range map[string]bool{
 		ext: true,
 		"https://wizz.volvocars.com/images/2026/416/x.png?client=connected-vehicle-api&w=1920": true,
-		"https://CAS.volvocars.com/x.png":        true,
-		"http://cas.volvocars.com/x.png":         false,
-		"https://cas.volvocars.com:8443/x.png":   false,
-		"https://user@cas.volvocars.com/x.png":   false,
-		"https://cas.volvocars.com.evil/x.png":   false,
-		"https://evil.example/cas.volvocars.com": false,
-		"":                                       false,
-		"::":                                     false,
+		"https://CAS.volvocars.com/x.png":                                            true,
+		"https://static-assets.tesla.com/configurator/compositor?model=my&size=1920": true,
+		"http://cas.volvocars.com/x.png":                                             false,
+		"https://cas.volvocars.com:8443/x.png":                                       false,
+		"https://user@cas.volvocars.com/x.png":                                       false,
+		"https://cas.volvocars.com.evil/x.png":                                       false,
+		"https://evil.example/cas.volvocars.com":                                     false,
+		"":                                                                           false,
+		"::":                                                                         false,
 	} {
 		if got := r.Serves(u); got != want {
 			t.Errorf("Serves(%q) = %v, want %v", u, got, want)
@@ -81,6 +82,15 @@ func TestPicture(t *testing.T) {
 	if want := "https://cas.volvocars.com/image/exterior/default.png?market=se&w=640&bg=00000000&fallback"; c.asked[0] != want {
 		t.Errorf("asked %s, want %s", c.asked[0], want)
 	}
+	// Tesla's configurator: its size.
+	const tesla = "https://static-assets.tesla.com/configurator/compositor?bkba_opt=1&model=my&options=%24MTY09&size=1920&view=FRONT34"
+	if _, err := r.Picture(context.Background(), tesla); err != nil {
+		t.Fatal(err)
+	}
+	if want := "https://static-assets.tesla.com/configurator/compositor?bkba_opt=1&model=my&options=%24MTY09&size=640&view=FRONT34"; c.asked[1] != want {
+		t.Errorf("asked %s, want %s", c.asked[1], want)
+	}
+	c.asked = c.asked[:1]
 	// Kept a day, then fetched again.
 	clk.Advance(23 * time.Hour)
 	if _, err := r.Picture(context.Background(), ext); err != nil || len(c.asked) != 1 {

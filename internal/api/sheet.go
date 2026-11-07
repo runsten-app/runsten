@@ -74,7 +74,7 @@ type sheetJSON struct {
 	ThirdRow          bool               `json:"third_row" doc:"A third row of seats (Tesla); false: none, or not told."`
 	Performance       bool               `json:"performance" doc:"A performance package (Tesla); false: none, or not told."`
 	FirstRegistration *string            `json:"first_registration" format:"date" doc:"The day the vehicle was first registered."`
-	Picture           bool               `json:"picture" doc:"Whether GET /vehicles/{vehicle}/picture gives a picture of the vehicle: its vendor links to one (Volvo), or one is stored (BMW)."`
+	Picture           bool               `json:"picture" doc:"Whether GET /vehicles/{vehicle}/picture gives a picture of the vehicle: its vendor links to one (Volvo), Tesla's configurator draws the car (Tesla), or one is stored (BMW)."`
 }
 
 // sheetOf gives the sheet a source told, nil when it told none. picture is whether its
@@ -184,7 +184,7 @@ func (s *Server) registerSheet(api huma.API) {
 		OperationID: "getVehiclePicture", Method: http.MethodGet, Path: "/vehicles/{vehicle}/picture", Tags: []string{"vehicles"},
 		Summary: "A vehicle's picture",
 		Description: "The vendor's picture of the vehicle from the outside, relayed by Runsten so that the browser calls no " +
-			"third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day (Volvo); or the one the " +
+			"third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day (Volvo; Tesla's configurator); or the one the " +
 			"collector read with the owner's access and stored, as the vendor gives it (BMW). Only for a vehicle whose " +
 			"`sheet.picture` is true.",
 	}, "The picture.", map[int]string{
