@@ -186,7 +186,7 @@ describe('ChargeDetails', () => {
       'Energy (from charging power)': '10.6 kWh',
       'Average power': '4.2 kW',
     })
-    expect(w.find('.energies .note').text()).toContain('is the one the app gave')
+    expect(w.find('.energies .note').text()).toContain('is the one the source gave')
     expect(costNotes(w)).toEqual(['As the app it was imported from gave it'])
     // Its cost is the app's, or its tariff's: none to enter.
     expect(w.find('.charge-cost-editor').exists()).toBe(false)

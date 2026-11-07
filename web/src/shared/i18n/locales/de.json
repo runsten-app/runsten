@@ -198,8 +198,8 @@
       "aaosLogging": "Aus AAOS Logging importiert",
       "bmw": "Aus BMW CarData importiert"
     },
-    "importedHelp": "Aus einer anderen App importiert, aus der Zeit, bevor Runsten das Fahrzeug gelesen hat: Zeiten und Zahlen stammen von dieser App.",
-    "importedTimesNote": "Die Zeiten sind die der App, auf die Minute genau oder genauer: keine Spanne."
+    "importedHelp": "Aus einer anderen App oder vom Hersteller importiert, aus der Zeit, bevor Runsten das Fahrzeug gelesen hat: Zeiten und Zahlen stammen von dieser Quelle.",
+    "importedTimesNote": "Die Zeiten sind die der Quelle, auf die Minute genau oder genauer: keine Spanne."
   },
   "period": {
     "from": "Von",
@@ -359,7 +359,7 @@
       "imported": "Wie von der App angegeben, aus der der Ladevorgang importiert wurde"
     },
     "averagePower": "Durchschnittliche Leistung",
-    "energyImportedNote": "Die Energie aus der Ladeleistung ist die von der App angegebene; die aus dem Ladezustand ist eine Schätzung von Runsten."
+    "energyImportedNote": "Die Energie aus der Ladeleistung ist die von der Quelle angegebene; die aus dem Ladezustand ist eine Schätzung von Runsten."
   },
   "chargeInProgress": {
     "label": "Läuft",

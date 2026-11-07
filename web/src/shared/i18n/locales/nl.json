@@ -198,8 +198,8 @@
       "aaosLogging": "Import uit AAOS Logging",
       "bmw": "Import uit BMW CarData"
     },
-    "importedHelp": "Geïmporteerd uit een andere app, van vóór Runsten het voertuig uitlas: de tijden en cijfers zijn die van die app.",
-    "importedTimesNote": "De tijden zijn die van de app, tot op de minuut of nauwkeuriger: geen marge."
+    "importedHelp": "Geïmporteerd uit een andere app of van de fabrikant, van vóór Runsten het voertuig uitlas: de tijden en cijfers zijn die van die bron.",
+    "importedTimesNote": "De tijden zijn die van de bron, tot op de minuut of nauwkeuriger: geen marge."
   },
   "period": {
     "from": "Van",
@@ -359,7 +359,7 @@
       "imported": "Zoals opgegeven door de app waaruit ze is geïmporteerd"
     },
     "averagePower": "Gemiddeld vermogen",
-    "energyImportedNote": "De energie uit het laadvermogen is die van de app; die uit het laadniveau is de schatting van Runsten."
+    "energyImportedNote": "De energie uit het laadvermogen is die van de bron; die uit het laadniveau is de schatting van Runsten."
   },
   "chargeInProgress": {
     "label": "Bezig",

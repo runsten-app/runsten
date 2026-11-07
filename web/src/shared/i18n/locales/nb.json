@@ -198,8 +198,8 @@
       "aaosLogging": "Importert fra AAOS Logging",
       "bmw": "Importert fra BMW CarData"
     },
-    "importedHelp": "Importert fra en annen app, fra før Runsten leste bilen: tidspunktene og tallene er den appens egne.",
-    "importedTimesNote": "Tidspunktene er de appen oppga, på minuttet eller bedre: ikke noe intervall."
+    "importedHelp": "Importert fra en annen app eller fra bilprodusenten, fra før Runsten leste bilen: tidspunktene og tallene er kildens egne.",
+    "importedTimesNote": "Tidspunktene er de kilden oppga, på minuttet eller bedre: ikke noe intervall."
   },
   "period": {
     "from": "Fra",
@@ -359,7 +359,7 @@
       "imported": "Slik appen den ble importert fra, oppga den"
     },
     "averagePower": "Gjennomsnittlig effekt",
-    "energyImportedNote": "Energien ut fra ladeeffekten er den appen oppga; den ut fra ladenivået er Runstens anslag."
+    "energyImportedNote": "Energien ut fra ladeeffekten er den kilden oppga; den ut fra ladenivået er Runstens anslag."
   },
   "chargeInProgress": {
     "label": "Pågår",

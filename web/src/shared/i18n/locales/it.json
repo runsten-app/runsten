@@ -198,8 +198,8 @@
       "aaosLogging": "Importato da AAOS Logging",
       "bmw": "Importato da BMW CarData"
     },
-    "importedHelp": "Importato da un’altra app, da prima che Runsten leggesse il veicolo: orari e valori sono quelli di quell’app.",
-    "importedTimesNote": "Gli orari sono quelli forniti dall’app, al minuto o più precisi: nessun intervallo."
+    "importedHelp": "Importato da un’altra app o dal costruttore, da prima che Runsten leggesse il veicolo: orari e valori sono quelli di quella fonte.",
+    "importedTimesNote": "Gli orari sono quelli forniti dalla fonte, al minuto o più precisi: nessun intervallo."
   },
   "period": {
     "from": "Dal",
@@ -359,7 +359,7 @@
       "imported": "Come indicato dall’app da cui è stata importata"
     },
     "averagePower": "Potenza media",
-    "energyImportedNote": "L’energia dalla potenza di ricarica è quella fornita dall’app; quella dallo stato di carica è la stima di Runsten."
+    "energyImportedNote": "L’energia dalla potenza di ricarica è quella fornita dalla fonte; quella dallo stato di carica è la stima di Runsten."
   },
   "chargeInProgress": {
     "label": "In corso",
