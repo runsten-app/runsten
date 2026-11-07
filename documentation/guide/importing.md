@@ -10,7 +10,7 @@ Runsten reads your car from the day you connect it. What came before may be in a
 |---|---|---|
 | Tesla | [From TeslaMate](#from-teslamate), a backup of its database | drives with their tracks, charges |
 | Volvo | [From the Volvo Data Portal](#from-the-volvo-data-portal) (EU), its files | trips with their tracks, no charges |
-| BMW, Mini | [The charging history](#bmw-and-mini), by itself at the connection | the last 30 days' charges, no trips |
+| BMW, Mini | [From BMW's charging history](#from-bmw-s-charging-history), by itself at the connection | the last 30 days' charges, no trips |
 | Any brand | [From Aximote](#from-aximote), with a personal access token of its Pro offer | trips with their tracks, charges |
 | Any brand with Google built-in | [From AAOS Logging](#from-aaos-logging), its export on Google Drive | trips with their tracks, no charges |
 
@@ -88,6 +88,8 @@ The import runs at once. Files of 32 MiB at most together: a year of waypoints i
 What the portal gives may be shorter than the period asked for: an owner found the last month missing. Fuel, regeneration and heading are given as 0 for an electric car: Runsten leaves them out. A trip that is unreadable or out of bounds (one that ends before it starts) is left out and counted in the report; a waypoint that is, is left out alone. Importing the same files again replaces the trips by their start time.
 
 ## BMW and Mini
+
+### From BMW's charging history
 
 BMW keeps the charging sessions of the last 30 days. When you [connect your BMW or Mini](./bmw.md), Runsten reads them with the rest, with nothing for you to do and no call beyond its daily ones, and imports those that ended before its first reading of the car as charges: a month of charges from the first day. The import is in **beta**, as BMW's support is: how BMW dates and counts its sessions is not yet checked on a real car.
 
