@@ -24,6 +24,7 @@ export {
   isStale,
   lastReport,
   reportLateAfter,
+  silentAfter,
   staleAfter,
 } from './model/freshness'
 export { vehicleLabel, vehicleLabels } from './model/label'

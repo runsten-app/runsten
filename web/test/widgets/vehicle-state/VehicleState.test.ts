@@ -776,4 +776,62 @@ describe('VehicleState', () => {
     expect(w.find('.reported').text()).toBe('The car last measured 19:02')
     expect(w.find('.reported').attributes('datetime')).toBe('2026-09-28T19:02:00Z')
   })
+
+  it('says a car charging or driving has told nothing for an hour, not a parked one', async () => {
+    vi.setSystemTime(Date.parse('2026-09-28T20:02:01Z'))
+    // Charging, its latest measure over an hour old: said in its place.
+    let w = await mounted(state)
+    expect(w.find('[data-test="silent"]').text()).toBe(
+      'Nothing from the car since 19:02: it may have stopped, or lost its connection',
+    )
+    expect(w.find('.reported').exists()).toBe(false)
+    w.unmount()
+    // Driving: the same.
+    const stopped = { ...state.charging.status, value: 'idle' }
+    const running = { ...state.engine, value: 'running' }
+    w = await mounted({
+      ...state,
+      engine: running,
+      charging: { ...state.charging, status: stopped },
+    })
+    expect(w.find('[data-test="silent"]').exists()).toBe(true)
+    w.unmount()
+    // Parked: a car may stay silent for days, its latest measure said only.
+    w = await mounted({ ...state, charging: { ...state.charging, status: stopped } })
+    expect(w.find('[data-test="silent"]').exists()).toBe(false)
+    expect(w.find('.reported').text()).toBe('The car last measured 19:02')
+    w.unmount()
+    // A charge's time left measured within the hour: the car still tells, nothing said.
+    const fresh = '2026-09-28T19:30:00Z'
+    w = await mounted({
+      ...state,
+      charging: {
+        ...state.charging,
+        time_left: {
+          value: { duration_s: 3600, to: 'full' },
+          reported_at: fresh,
+          fetched_at: fresh,
+          checked_at: fresh,
+        },
+      },
+    })
+    expect(w.find('[data-test="silent"]').exists()).toBe(false)
+    expect(w.find('.reported').text()).toBe('The car last measured 19:30')
+    w.unmount()
+    // Its cabin's temperature measured within the hour: the same.
+    w = await mounted({
+      ...state,
+      climate: {
+        ...state.climate,
+        cabin_temp_c: { value: 18, reported_at: fresh, fetched_at: fresh, checked_at: fresh },
+      },
+    })
+    expect(w.find('[data-test="silent"]').exists()).toBe(false)
+    w.unmount()
+    // Within the hour: its latest measure only.
+    vi.setSystemTime(Date.parse('2026-09-28T20:01:59Z'))
+    w = await mounted(state)
+    expect(w.find('[data-test="silent"]').exists()).toBe(false)
+    expect(w.find('.reported').exists()).toBe(true)
+  })
 })

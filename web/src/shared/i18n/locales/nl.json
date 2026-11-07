@@ -121,6 +121,7 @@
     "position": "Laatste positie",
     "coordinates": "Coördinaten",
     "lastReported": "Laatste meting van de auto: {time}",
+    "silent": "Niets van de auto sinds {time}: hij is misschien gestopt of heeft geen verbinding meer",
     "sleep": {
       "asleep": "Slaapt",
       "offline": "Onbereikbaar",

@@ -121,6 +121,7 @@
     "position": "Última posición",
     "coordinates": "Coordenadas",
     "lastReported": "Última medición del vehículo: {time}",
+    "silent": "Nada del vehículo desde {time}: quizá se ha detenido o ha perdido la conexión",
     "sleep": {
       "asleep": "En reposo",
       "offline": "Fuera de alcance",
