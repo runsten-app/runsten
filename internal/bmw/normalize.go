@@ -156,7 +156,7 @@ func Normalize(e Endpoint, raw []byte) (core.Snapshot, error) {
 	case BasicData:
 		return normalizeBasicData(raw)
 	case ChargingHistory:
-		// Stored for later (ADR 0045 §5): the energy each session drew from the grid.
+		// No reading: its sessions are read by NormalizeSessions.
 	}
 	return s, nil
 }

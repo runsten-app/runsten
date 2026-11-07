@@ -144,7 +144,8 @@ func (*Source) Spec() collector.SourceSpec {
 				Endpoint: collector.Endpoint(bmw.BasicData), API: bmw.Source,
 				Parked: collector.PaceDetails, Driving: collector.PaceDetails, Charging: collector.PaceDetails,
 			},
-			// Stored for later (ADR 0045 §5): optional, nothing is derived from it yet.
+			// The charging sessions of the last 30 days, with the energy each drew from the
+			// grid, which the charges take (ADR 0045 §5); optional.
 			{
 				Endpoint: collector.Endpoint(bmw.ChargingHistory), API: bmw.Source, Optional: true,
 				Parked: collector.PaceDetails, Driving: collector.PaceDetails, Charging: collector.PaceDetails,

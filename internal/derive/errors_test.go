@@ -35,6 +35,10 @@ func (s *scriptedStore) SaveDerivation(_ context.Context, _, _ string, _ time.Ti
 	return s.saveErr
 }
 
+func (s *scriptedStore) SaveChargeSessions(context.Context, string, string, string, []core.ChargeSession) error {
+	return nil
+}
+
 func TestStoreErrors(t *testing.T) {
 	boom := errors.New("boom")
 	for name, st := range map[string]*scriptedStore{

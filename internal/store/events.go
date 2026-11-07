@@ -107,6 +107,39 @@ func scanSnapshots(rows pgx.Rows) ([]derive.Snapshot, error) {
 	return out, err //nolint:wrapcheck // wrapped by inAccount
 }
 
+// SaveChargeSessions implements derive.Store. Of two sessions with the same start, the
+// later in sessions wins.
+func (s *Store) SaveChargeSessions(ctx context.Context, accountID, vehicleID, source string, sessions []core.ChargeSession) error {
+	if len(sessions) == 0 {
+		return nil
+	}
+	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		latest := map[time.Time]int{}
+		for i, c := range sessions {
+			latest[c.Start.UTC()] = i
+		}
+		for i, c := range sessions {
+			if latest[c.Start.UTC()] != i {
+				continue
+			}
+			pos := latLon(c.Position)
+			_, err := tx.Exec(ctx, `
+				INSERT INTO charge_sessions (account_id, vehicle_id, source, started_at, ended_at, energy_grid_kwh,
+					start_soc, end_soc, lat, lon, odometer_km)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				ON CONFLICT (vehicle_id, source, started_at) DO UPDATE SET ended_at = EXCLUDED.ended_at,
+					energy_grid_kwh = EXCLUDED.energy_grid_kwh, start_soc = EXCLUDED.start_soc, end_soc = EXCLUDED.end_soc,
+					lat = EXCLUDED.lat, lon = EXCLUDED.lon, odometer_km = EXCLUDED.odometer_km`,
+				accountID, vehicleID, source, c.Start, c.End, opt(c.EnergyGridKWh),
+				opt(c.StartSoC), opt(c.EndSoC), pos[0], pos[1], opt(c.OdometerKm))
+			if err != nil {
+				return fmt.Errorf("insert charge session: %w", err)
+			}
+		}
+		return nil
+	})
+}
+
 // SaveDerivation implements derive.Store.
 func (s *Store) SaveDerivation(ctx context.Context, accountID, vehicleID string, after time.Time, res core.Result) error {
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
@@ -456,7 +489,10 @@ const (
 		span_max_gap_s, span_duration_s, odometer_km, sources, energy_measured_kwh,
 		start_range_km, end_range_km, end_usable_soc, max_current_a, phases, outside_temp_c,
 		NULL::text AS source, NULL::text AS source_id, NULL::text AS address,
-		NULL::double precision AS average_power_kw, NULL::bigint AS cost_minor, NULL::text AS cost_currency
+		NULL::double precision AS average_power_kw, NULL::bigint AS cost_minor, NULL::text AS cost_currency,
+		(SELECT sum(s.energy_grid_kwh) FROM charge_sessions s
+			WHERE s.vehicle_id = charges.vehicle_id AND s.started_at <= charges.ended_before AND s.ended_at >= charges.started_after
+			AND s.started_at + (s.ended_at - s.started_at) / 2 BETWEEN charges.started_after AND charges.ended_before) AS energy_grid_kwh
 		FROM charges`
 	importedChargeColumns = `vehicle_id, imported_at, source || ':' || source_id, false,
 		started_at, started_at, ended_at, ended_at,
@@ -464,7 +500,7 @@ const (
 		capacity_kwh, capacity_source, NULL, NULL, NULL,
 		NULL, NULL, odometer_km, ARRAY[source], energy_measured_kwh,
 		start_range_km, end_range_km, end_usable_soc, max_current_a, phases, outside_temp_c,
-		source, source_id, address, average_power_kw, cost_minor, cost_currency
+		source, source_id, address, average_power_kw, cost_minor, cost_currency, NULL::double precision
 		FROM imported_charges`
 	derivedCharges = `(SELECT ` + derivedChargeColumns + `) charges`
 	chargeEvents   = `(SELECT ` + derivedChargeColumns + ` UNION ALL SELECT ` + importedChargeColumns + `) charges`
@@ -555,7 +591,7 @@ func scanChargesOf(ctx context.Context, tx pgx.Tx, relation, where string, args 
 			capacity_kwh, capacity_source, span_start_soc, span_end_soc, span_energy_kwh,
 			span_max_gap_s, span_duration_s, odometer_km, sources, energy_measured_kwh,
 			start_range_km, end_range_km, end_usable_soc, max_current_a, phases, outside_temp_c,
-			source, source_id, address, average_power_kw, cost_minor, cost_currency
+			source, source_id, address, average_power_kw, cost_minor, cost_currency, energy_grid_kwh
 		FROM `+relation+` WHERE `+where, args...)
 	if err != nil {
 		return nil, err //nolint:wrapcheck // wrapped by inAccount
@@ -563,7 +599,7 @@ func scanChargesOf(ctx context.Context, tx pgx.Tx, relation, where string, args 
 	var out []core.Charge
 	var c core.Charge
 	var typ, capSource, source, sourceID, addr, currency *string
-	var soc0, soc1, target, esoc, epow, emeas, range0, range1, usable1, lat, lon, capKWh, span0, span1, spanKWh, gapS, durS, odo, power, current, outside *float64
+	var soc0, soc1, target, esoc, epow, emeas, egrid, range0, range1, usable1, lat, lon, capKWh, span0, span1, spanKWh, gapS, durS, odo, power, current, outside *float64
 	var costMinor *int64
 	var phases *int
 	var sources []string
@@ -572,7 +608,7 @@ func scanChargesOf(ctx context.Context, tx pgx.Tx, relation, where string, args 
 		&typ, &soc0, &soc1, &target, &esoc, &epow, &lat, &lon, &capKWh, &capSource,
 		&span0, &span1, &spanKWh, &gapS, &durS, &odo, &sources, &emeas,
 		&range0, &range1, &usable1, &current, &phases, &outside,
-		&source, &sourceID, &addr, &power, &costMinor, &currency,
+		&source, &sourceID, &addr, &power, &costMinor, &currency, &egrid,
 	}, func() error {
 		ch := core.Charge{
 			DetectedAt: c.DetectedAt.UTC(), Reconstructed: c.Reconstructed,
@@ -582,7 +618,7 @@ func scanChargesOf(ctx context.Context, tx pgx.Tx, relation, where string, args 
 			Import:   importOf(source, sourceID, c.DetectedAt, addr, nil),
 			StartSoC: val(soc0), EndSoC: val(soc1), TargetSoC: val(target),
 			StartRangeKm: val(range0), EndRangeKm: val(range1), EndUsableSoC: val(usable1),
-			EnergySoCKWh: val(esoc), EnergyPowerKWh: val(epow), EnergyMeasuredKWh: val(emeas),
+			EnergySoCKWh: val(esoc), EnergyPowerKWh: val(epow), EnergyMeasuredKWh: val(emeas), EnergyGridKWh: val(egrid),
 			Position: position(lat, lon),
 			Span:     span(span0, span1, spanKWh, gapS, durS), OdometerKm: val(odo),
 			Capacity: capacity(capKWh, capSource), AveragePowerKW: val(power),
