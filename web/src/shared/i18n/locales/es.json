@@ -1749,13 +1749,13 @@
     "aaos": {
       "title": "Importar desde AAOS Logging",
       "beta": "Beta",
-      "intro": "AAOS Logging es una aplicación para coches con Google integrado (Volvo, Polestar, Renault…) que registra cada viaje y lo sincroniza con su Google Drive. En Google Drive, descargue la carpeta del coche, dentro de AAOSLogging, una vez que la aplicación haya sincronizado: Drive genera un archivo ZIP; elíjalo aquí. Solo se importan los viajes anteriores a la primera lectura del vehículo, con sus recorridos, su nivel de carga y la temperatura exterior; la aplicación no registra las cargas. Volver a importar los reemplaza.",
+      "intro": "AAOS Logging es una aplicación para vehículos con Google integrado (Volvo, Polestar, Renault…) que registra cada viaje y lo sincroniza con su Google Drive. En Google Drive, descargue la carpeta del vehículo, dentro de AAOSLogging, una vez que la aplicación haya sincronizado: Drive genera un archivo ZIP; elíjalo aquí. Solo se importan los viajes anteriores a la primera lectura del vehículo, con sus recorridos, su nivel de carga y la temperatura exterior; la aplicación no registra las cargas. Volver a importar los reemplaza.",
       "open": "Elegir la exportación",
       "link": "AAOS Logging en Google Play",
       "newTab": "(se abre en una pestaña nueva)",
       "file": {
-        "label": "Carpeta del coche (ZIP)",
-        "hint": "El ZIP que genera Google Drive para la carpeta del coche, dentro de AAOSLogging."
+        "label": "Carpeta del vehículo (ZIP)",
+        "hint": "El ZIP que genera Google Drive para la carpeta del vehículo, dentro de AAOSLogging."
       },
       "clear": "Quitar: {file}",
       "start": "Importar",
@@ -1768,8 +1768,8 @@
       },
       "error": {
         "summary": "No se importó la exportación",
-        "required": "Elija el ZIP de la carpeta del coche.",
-        "file": "Esta no es una exportación de AAOS Logging, o está incompleta: en Google Drive, descargue la carpeta del coche, dentro de AAOSLogging, una vez que la aplicación haya sincronizado, y elija el ZIP tal cual.",
+        "required": "Elija el ZIP de la carpeta del vehículo.",
+        "file": "Esta no es una exportación de AAOS Logging, o está incompleta: en Google Drive, descargue la carpeta del vehículo, dentro de AAOSLogging, una vez que la aplicación haya sincronizado, y elija el ZIP tal cual.",
         "tooLarge": "La exportación es demasiado grande: 512 MB como máximo.",
         "network": "No se pudo acceder a Runsten. Inténtelo de nuevo en un momento.",
         "internal": "No se pudo importar la exportación. Inténtelo de nuevo en un momento."
