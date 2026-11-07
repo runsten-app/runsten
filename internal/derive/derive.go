@@ -39,8 +39,14 @@ type Store interface {
 	// and records res.Cursor, atomically.
 	SaveDerivation(ctx context.Context, accountID, vehicleID string, after time.Time, res core.Result) error
 	// SaveChargeSessions records the charging sessions the vehicle's maker recorded,
-	// as source reads them: a session already recorded, by its start, is replaced.
-	SaveChargeSessions(ctx context.Context, accountID, vehicleID, source string, sessions []core.ChargeSession) error
+	// as source reads them: a session already recorded, by its start, is replaced. A
+	// session recorded for the first time that ended at or before the vehicle's first
+	// snapshot, which no derived charge can hold, is imported as a charge
+	// (core.ChargeSession.Imported, on capacity), in the same transaction: the month a
+	// maker keeps is the owner's from the connection, and an import deleted since is not
+	// brought back.
+	SaveChargeSessions(ctx context.Context, accountID, vehicleID, source string, sessions []core.ChargeSession,
+		capacity core.Value[core.Capacity]) error
 }
 
 // Normalizer reads the stored responses of the sources it knows into snapshots. derive
@@ -297,7 +303,7 @@ func (d *Deriver) run(ctx context.Context, accountID, vehicleID string, c core.C
 	}
 	// The sessions first: saved after the events, a failure would leave the cursor
 	// advanced past the responses that hold them, never read again but by a rebuild.
-	if err := d.sessions(ctx, accountID, vehicleID, c.From); err != nil {
+	if err := d.sessions(ctx, accountID, vehicleID, c.From, core.CapacityOf(core.Latest(records).Snapshot, d.p, net)); err != nil {
 		return core.Result{}, err
 	}
 	res := core.Derive(records, c, d.p, net)
@@ -310,8 +316,9 @@ func (d *Deriver) run(ctx context.Context, accountID, vehicleID string, c core.C
 // sessions records the charging sessions of the responses fetched after from, and of
 // the latest one of each kind fetched at or before it: a response holds the sessions of
 // the last days (30 for a BMW), so that one more read of it changes nothing, and a
-// rebuild records them all again.
-func (d *Deriver) sessions(ctx context.Context, accountID, vehicleID string, from time.Time) error {
+// rebuild records them all again. Those imported as charges rest on capacity, the
+// vehicle's at its latest readings.
+func (d *Deriver) sessions(ctx context.Context, accountID, vehicleID string, from time.Time, capacity core.Value[core.Capacity]) error {
 	sn, ok := d.norm.(SessionNormalizer)
 	if !ok {
 		return nil
@@ -340,7 +347,7 @@ func (d *Deriver) sessions(ctx context.Context, accountID, vehicleID string, fro
 		bySource[s.Kind.Source] = append(bySource[s.Kind.Source], got...)
 	}
 	for _, src := range sources {
-		if err := d.st.SaveChargeSessions(ctx, accountID, vehicleID, src, bySource[src]); err != nil {
+		if err := d.st.SaveChargeSessions(ctx, accountID, vehicleID, src, bySource[src], capacity); err != nil {
 			return fmt.Errorf("save charge sessions: %w", err)
 		}
 	}

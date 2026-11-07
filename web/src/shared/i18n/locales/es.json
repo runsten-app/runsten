@@ -195,7 +195,8 @@
       "volvoDataPortal": "Importado desde Volvo Data Portal",
       "other": "Importado desde {source}",
       "teslamate": "Importado desde TeslaMate",
-      "aaosLogging": "Importado desde AAOS Logging"
+      "aaosLogging": "Importado desde AAOS Logging",
+      "bmw": "Importado desde BMW CarData"
     },
     "importedHelp": "Importado de otra aplicación, de antes de que Runsten leyera el vehículo: sus horas y cifras son las de esa aplicación.",
     "importedTimesNote": "Las horas son las que indicó la aplicación, al minuto o con más precisión: sin intervalo."

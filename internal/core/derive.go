@@ -450,10 +450,14 @@ func diff(a, b Value[float64]) Value[float64] {
 // reading after its settle window, which may be a confirmation that an incremental
 // derivation saw earlier than a rebuild (a run of identical responses grows), and a
 // change of the details in between would give them different energies.
-func (d *detector) capacity() Value[Capacity] {
-	s := d.st.snap
-	if d.p.Capacity == CapacityCatalogNet && d.net != nil {
-		if kwh, ok := d.net(s); ok {
+func (d *detector) capacity() Value[Capacity] { return CapacityOf(d.st.snap, d.p, d.net) }
+
+// CapacityOf is the battery capacity an energy estimate of the vehicle whose readings
+// s holds rests on, as p.Capacity says: the net one when net knows it, else the API's;
+// unknown without either. net may be nil.
+func CapacityOf(s Snapshot, p Params, net NetCapacity) Value[Capacity] {
+	if p.Capacity == CapacityCatalogNet && net != nil {
+		if kwh, ok := net(s); ok {
 			return Value[Capacity]{V: Capacity{KWh: kwh, Source: CapacityCatalogNet}, OK: true}
 		}
 	}

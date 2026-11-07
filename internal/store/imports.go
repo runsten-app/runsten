@@ -101,46 +101,56 @@ func saveImport(ctx context.Context, tx pgx.Tx, accountID, vehicleID string, tri
 				res.Skipped++
 				continue
 			}
-			pos := latLon(c.Position)
-			kwh, source := capacityColumns(c.Capacity)
-			imp := c.Import.V
-			var costMinor *int64
-			var currency *string
-			if p := c.PaidCost; p.OK {
-				costMinor, currency = &p.V.Minor, &p.V.Currency
-			}
-			_, err := tx.Exec(ctx, `
-				INSERT INTO imported_charges (account_id, vehicle_id, source, source_id, started_at, ended_at,
-					charge_type, start_soc, end_soc, energy_kwh, energy_soc_kwh, capacity_kwh, capacity_source,
-					average_power_kw, cost_minor, cost_currency, lat, lon, address,
-					start_range_km, end_range_km, end_usable_soc, energy_measured_kwh, max_current_a, phases,
-					outside_temp_c, odometer_km)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
-					$20, $21, $22, $23, $24, $25, $26, $27)
-				ON CONFLICT (vehicle_id, source, source_id) DO UPDATE SET imported_at = now(),
-					started_at = EXCLUDED.started_at, ended_at = EXCLUDED.ended_at, charge_type = EXCLUDED.charge_type,
-					start_soc = EXCLUDED.start_soc, end_soc = EXCLUDED.end_soc, energy_kwh = EXCLUDED.energy_kwh,
-					energy_soc_kwh = EXCLUDED.energy_soc_kwh, capacity_kwh = EXCLUDED.capacity_kwh,
-					capacity_source = EXCLUDED.capacity_source, average_power_kw = EXCLUDED.average_power_kw,
-					cost_minor = EXCLUDED.cost_minor, cost_currency = EXCLUDED.cost_currency,
-					lat = EXCLUDED.lat, lon = EXCLUDED.lon, address = EXCLUDED.address,
-					start_range_km = EXCLUDED.start_range_km, end_range_km = EXCLUDED.end_range_km,
-					end_usable_soc = EXCLUDED.end_usable_soc, energy_measured_kwh = EXCLUDED.energy_measured_kwh,
-					max_current_a = EXCLUDED.max_current_a, phases = EXCLUDED.phases,
-					outside_temp_c = EXCLUDED.outside_temp_c, odometer_km = EXCLUDED.odometer_km`,
-				accountID, vehicleID, imp.Source, imp.SourceID, c.Start.After, c.End.Before,
-				opt(c.Type), opt(c.StartSoC), opt(c.EndSoC), opt(c.EnergyPowerKWh), opt(c.EnergySoCKWh), kwh, source,
-				opt(c.AveragePowerKW), costMinor, currency, pos[0], pos[1], nonEmpty(imp.StartAddress),
-				opt(c.StartRangeKm), opt(c.EndRangeKm), opt(c.EndUsableSoC), opt(c.EnergyMeasuredKWh),
-				opt(c.MaxCurrentA), opt(c.Phases), opt(c.OutsideTempC), opt(c.OdometerKm))
-			if err != nil {
-				return fmt.Errorf("imported charge: %w", err)
+			if err := insertImportedCharge(ctx, tx, accountID, vehicleID, c); err != nil {
+				return err
 			}
 			res.Saved++
 		}
 		return nil
 	}()
 	return res, err
+}
+
+// insertImportedCharge writes the imported charge c, replacing the one of the same
+// source and ID, which keeps its id.
+func insertImportedCharge(ctx context.Context, tx pgx.Tx, accountID, vehicleID string, c core.Charge) error {
+	pos := latLon(c.Position)
+	kwh, source := capacityColumns(c.Capacity)
+	imp := c.Import.V
+	var costMinor *int64
+	var currency *string
+	if p := c.PaidCost; p.OK {
+		costMinor, currency = &p.V.Minor, &p.V.Currency
+	}
+	_, err := tx.Exec(ctx, `
+		INSERT INTO imported_charges (account_id, vehicle_id, source, source_id, started_at, ended_at,
+			charge_type, start_soc, end_soc, energy_kwh, energy_soc_kwh, capacity_kwh, capacity_source,
+			average_power_kw, cost_minor, cost_currency, lat, lon, address,
+			start_range_km, end_range_km, end_usable_soc, energy_measured_kwh, max_current_a, phases,
+			outside_temp_c, odometer_km, energy_grid_kwh)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
+			$20, $21, $22, $23, $24, $25, $26, $27, $28)
+		ON CONFLICT (vehicle_id, source, source_id) DO UPDATE SET imported_at = now(),
+			started_at = EXCLUDED.started_at, ended_at = EXCLUDED.ended_at, charge_type = EXCLUDED.charge_type,
+			start_soc = EXCLUDED.start_soc, end_soc = EXCLUDED.end_soc, energy_kwh = EXCLUDED.energy_kwh,
+			energy_soc_kwh = EXCLUDED.energy_soc_kwh, capacity_kwh = EXCLUDED.capacity_kwh,
+			capacity_source = EXCLUDED.capacity_source, average_power_kw = EXCLUDED.average_power_kw,
+			cost_minor = EXCLUDED.cost_minor, cost_currency = EXCLUDED.cost_currency,
+			lat = EXCLUDED.lat, lon = EXCLUDED.lon, address = EXCLUDED.address,
+			start_range_km = EXCLUDED.start_range_km, end_range_km = EXCLUDED.end_range_km,
+			end_usable_soc = EXCLUDED.end_usable_soc, energy_measured_kwh = EXCLUDED.energy_measured_kwh,
+			max_current_a = EXCLUDED.max_current_a, phases = EXCLUDED.phases,
+			outside_temp_c = EXCLUDED.outside_temp_c, odometer_km = EXCLUDED.odometer_km,
+			energy_grid_kwh = EXCLUDED.energy_grid_kwh`,
+		accountID, vehicleID, imp.Source, imp.SourceID, c.Start.After, c.End.Before,
+		opt(c.Type), opt(c.StartSoC), opt(c.EndSoC), opt(c.EnergyPowerKWh), opt(c.EnergySoCKWh), kwh, source,
+		opt(c.AveragePowerKW), costMinor, currency, pos[0], pos[1], nonEmpty(imp.StartAddress),
+		opt(c.StartRangeKm), opt(c.EndRangeKm), opt(c.EndUsableSoC), opt(c.EnergyMeasuredKWh),
+		opt(c.MaxCurrentA), opt(c.Phases), opt(c.OutsideTempC), opt(c.OdometerKm), opt(c.EnergyGridKWh))
+	if err != nil {
+		return fmt.Errorf("imported charge: %w", err)
+	}
+	return nil
 }
 
 func nonEmpty(s string) *string {

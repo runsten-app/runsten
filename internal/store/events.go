@@ -108,12 +108,22 @@ func scanSnapshots(rows pgx.Rows) ([]derive.Snapshot, error) {
 }
 
 // SaveChargeSessions implements derive.Store. Of two sessions with the same start, the
-// later in sessions wins.
-func (s *Store) SaveChargeSessions(ctx context.Context, accountID, vehicleID, source string, sessions []core.ChargeSession) error {
+// later in sessions wins. The cutoff of the imports is SaveImport's, the vehicle's first
+// snapshot, but a session must have ended by it: one still in progress then overlaps the
+// charge derived from that snapshot on. Without a snapshot, nothing is imported.
+func (s *Store) SaveChargeSessions(ctx context.Context, accountID, vehicleID, source string, sessions []core.ChargeSession,
+	capacity core.Value[core.Capacity],
+) error {
 	if len(sessions) == 0 {
 		return nil
 	}
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		var cutoff *time.Time
+		var now time.Time
+		err := tx.QueryRow(ctx, `SELECT min(fetched_at), now() FROM snapshots WHERE vehicle_id = $1`, vehicleID).Scan(&cutoff, &now)
+		if err != nil {
+			return fmt.Errorf("cutoff: %w", err)
+		}
 		latest := map[time.Time]int{}
 		for i, c := range sessions {
 			latest[c.Start.UTC()] = i
@@ -123,17 +133,25 @@ func (s *Store) SaveChargeSessions(ctx context.Context, accountID, vehicleID, so
 				continue
 			}
 			pos := latLon(c.Position)
-			_, err := tx.Exec(ctx, `
+			var first bool
+			err := tx.QueryRow(ctx, `
 				INSERT INTO charge_sessions (account_id, vehicle_id, source, started_at, ended_at, energy_grid_kwh,
 					start_soc, end_soc, lat, lon, odometer_km)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 				ON CONFLICT (vehicle_id, source, started_at) DO UPDATE SET ended_at = EXCLUDED.ended_at,
 					energy_grid_kwh = EXCLUDED.energy_grid_kwh, start_soc = EXCLUDED.start_soc, end_soc = EXCLUDED.end_soc,
-					lat = EXCLUDED.lat, lon = EXCLUDED.lon, odometer_km = EXCLUDED.odometer_km`,
+					lat = EXCLUDED.lat, lon = EXCLUDED.lon, odometer_km = EXCLUDED.odometer_km
+				RETURNING old.started_at IS NULL`,
 				accountID, vehicleID, source, c.Start, c.End, opt(c.EnergyGridKWh),
-				opt(c.StartSoC), opt(c.EndSoC), pos[0], pos[1], opt(c.OdometerKm))
+				opt(c.StartSoC), opt(c.EndSoC), pos[0], pos[1], opt(c.OdometerKm)).Scan(&first)
 			if err != nil {
 				return fmt.Errorf("insert charge session: %w", err)
+			}
+			if !first || cutoff == nil || c.End.After(*cutoff) {
+				continue
+			}
+			if err := insertImportedCharge(ctx, tx, accountID, vehicleID, c.Imported(source, capacity, now)); err != nil {
+				return err
 			}
 		}
 		return nil
@@ -500,7 +518,7 @@ const (
 		capacity_kwh, capacity_source, NULL, NULL, NULL,
 		NULL, NULL, odometer_km, ARRAY[source], energy_measured_kwh,
 		start_range_km, end_range_km, end_usable_soc, max_current_a, phases, outside_temp_c,
-		source, source_id, address, average_power_kw, cost_minor, cost_currency, NULL::double precision
+		source, source_id, address, average_power_kw, cost_minor, cost_currency, energy_grid_kwh
 		FROM imported_charges`
 	derivedCharges = `(SELECT ` + derivedChargeColumns + `) charges`
 	chargeEvents   = `(SELECT ` + derivedChargeColumns + ` UNION ALL SELECT ` + importedChargeColumns + `) charges`

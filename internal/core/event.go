@@ -1,6 +1,9 @@
 package core
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 // Bounds is the interval in which an instant lies. Polling only brackets transitions:
 // the vehicle started (or stopped) somewhere between the last reading that showed the
@@ -141,6 +144,28 @@ type ChargeSession struct {
 	StartSoC, EndSoC Value[float64]
 	Position         Value[Position]
 	OdometerKm       Value[float64]
+}
+
+// Imported is the session as a charge imported from source (ADR 0030) at at, for a
+// session no derived charge can hold, Runsten not reading the vehicle then: its exact
+// times, identified by its start in Unix seconds, and its energy from the state of
+// charge rests on capacity, as a derived charge's.
+func (s ChargeSession) Imported(source string, capacity Value[Capacity], at time.Time) Charge {
+	c := Charge{
+		DetectedAt: at.UTC(),
+		Start:      Bounds{After: s.Start.UTC(), Before: s.Start.UTC()},
+		End:        Bounds{After: s.End.UTC(), Before: s.End.UTC()},
+		Sources:    []string{source},
+		Import: Some(Import{
+			Source: source, SourceID: strconv.FormatInt(s.Start.Unix(), 10), ImportedAt: at.UTC(),
+		}, at),
+		StartSoC: s.StartSoC, EndSoC: s.EndSoC, EnergyGridKWh: s.EnergyGridKWh,
+		Position: s.Position, OdometerKm: s.OdometerKm,
+	}
+	if e := energy(s.EndSoC, s.StartSoC, capacity); e.OK {
+		c.EnergySoCKWh, c.Capacity = e, capacity
+	}
+	return c
 }
 
 // SoftwareVersion is a version of the vehicle's software, from when it was first read.
