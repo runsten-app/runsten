@@ -102,11 +102,11 @@ describe('TripDetails', () => {
     const w = await mounted(imported)
     const note = w.find('.imported-note')
     expect(note.find('.imported').text()).toBe('Imported from Aximote')
-    expect(note.text()).toContain("its times and figures are that app's own")
+    expect(note.text()).toContain("its times and figures are that source's own")
     expect(w.find('.reconstructed-note').exists()).toBe(false)
     expect(facts(w, 'when')).toEqual({ Start: '17:02', End: '17:41', Duration: '39 mins' })
     expect(w.find('.when .note').text()).toBe(
-      'The times are those the app gave, to the minute or better: no range.',
+      'The times are those the source gave, to the minute or better: no range.',
     )
     expect(w.find('.figures .note').text()).toBe('The energy is the one the app gave.')
     // No temperature from the app: none said, not an Unknown.

@@ -198,8 +198,8 @@
       "aaosLogging": "Imported from AAOS Logging",
       "bmw": "Imported from BMW CarData"
     },
-    "importedHelp": "Imported from another app, from before Runsten read the vehicle: its times and figures are that app's own.",
-    "importedTimesNote": "The times are those the app gave, to the minute or better: no range."
+    "importedHelp": "Imported from another app or from the car's maker, from before Runsten read the vehicle: its times and figures are that source's own.",
+    "importedTimesNote": "The times are those the source gave, to the minute or better: no range."
   },
   "period": {
     "from": "From",
@@ -359,7 +359,7 @@
       "imported": "As the app it was imported from gave it"
     },
     "averagePower": "Average power",
-    "energyImportedNote": "The energy from the charging power is the one the app gave; the one from the state of charge is Runsten's estimate."
+    "energyImportedNote": "The energy from the charging power is the one the source gave; the one from the state of charge is Runsten's estimate."
   },
   "chargeInProgress": {
     "label": "In progress",

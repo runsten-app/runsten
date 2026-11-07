@@ -198,8 +198,8 @@
       "aaosLogging": "Importado desde AAOS Logging",
       "bmw": "Importado desde BMW CarData"
     },
-    "importedHelp": "Importado de otra aplicación, de antes de que Runsten leyera el vehículo: sus horas y cifras son las de esa aplicación.",
-    "importedTimesNote": "Las horas son las que indicó la aplicación, al minuto o con más precisión: sin intervalo."
+    "importedHelp": "Importado de otra aplicación o del fabricante, de antes de que Runsten leyera el vehículo: sus horas y cifras son las de esa fuente.",
+    "importedTimesNote": "Las horas son las que indicó la fuente, al minuto o con más precisión: sin intervalo."
   },
   "period": {
     "from": "Desde",
@@ -359,7 +359,7 @@
       "imported": "Tal como lo indicó la aplicación de la que se importó"
     },
     "averagePower": "Potencia media",
-    "energyImportedNote": "La energía según la potencia de carga es la que indicó la aplicación; la calculada a partir del nivel de carga es la estimación de Runsten."
+    "energyImportedNote": "La energía según la potencia de carga es la que indicó la fuente; la calculada a partir del nivel de carga es la estimación de Runsten."
   },
   "chargeInProgress": {
     "label": "En curso",
