@@ -24,8 +24,8 @@ func TestChargeSessions(t *testing.T) {
 		}
 	}
 	res := core.Result{
-		Charges: []core.Charge{charge(t0), charge(t0.Add(24 * time.Hour)), charge(t0.Add(48 * time.Hour))},
-		Cursor:  core.Cursor{Settled: t0.Add(72 * time.Hour), From: t0},
+		Charges: []core.Charge{charge(t0), charge(t0.Add(24 * time.Hour)), charge(t0.Add(48 * time.Hour)), charge(t0.Add(72 * time.Hour))},
+		Cursor:  core.Cursor{Settled: t0.Add(96 * time.Hour), From: t0},
 	}
 	if err := s.SaveDerivation(ctx, a, v, time.Time{}, res); err != nil {
 		t.Fatal(err)
@@ -41,6 +41,10 @@ func TestChargeSessions(t *testing.T) {
 		session(t0.Add(26*time.Hour), 6*time.Hour, 30),
 		// The third: corrected below.
 		session(t0.Add(48*time.Hour+time.Minute), 3*time.Hour, 40),
+		// The fourth: one of its two sessions without an energy, so none for the charge,
+		// rather than a part of it.
+		session(t0.Add(72*time.Hour+5*time.Minute), time.Hour, 10),
+		{Start: t0.Add(74 * time.Hour), End: t0.Add(75 * time.Hour)},
 	}
 	if err := s.SaveChargeSessions(ctx, a, v, "bmw", sessions); err != nil {
 		t.Fatal(err)
@@ -51,10 +55,10 @@ func TestChargeSessions(t *testing.T) {
 		t.Fatal(err)
 	}
 	charges, err := s.Charges(ctx, a, v)
-	if err != nil || len(charges) != 3 {
+	if err != nil || len(charges) != 4 {
 		t.Fatalf("charges = %+v, %v", charges, err)
 	}
-	for i, want := range []core.Value[float64]{some(22), {}, some(42)} {
+	for i, want := range []core.Value[float64]{some(22), {}, some(42), {}} {
 		if got := charges[i].EnergyGridKWh; got != want {
 			t.Errorf("charge %d: energy from the grid %+v, want %+v", i, got, want)
 		}

@@ -98,7 +98,8 @@ type Charge struct {
 	EnergyMeasuredKWh Value[float64]
 	// EnergyGridKWh is the energy the vehicle's maker recorded as drawn from the grid over
 	// the charge (a BMW's chargingHistory), losses included: the sum of the sessions
-	// (ChargeSession) whose middle falls within [Start.After, End.Before]. The derivation
+	// (ChargeSession) whose middle falls within [Start.After, End.Before], unknown when
+	// one of them has no energy: a part would bill too little. The derivation
 	// never sets it: the store reads it with the charge, the sessions coming a day later.
 	EnergyGridKWh Value[float64]
 	// Span is the stretch of that integral a battery capacity estimate rests on. Absent

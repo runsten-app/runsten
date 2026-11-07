@@ -490,7 +490,7 @@ const (
 		start_range_km, end_range_km, end_usable_soc, max_current_a, phases, outside_temp_c,
 		NULL::text AS source, NULL::text AS source_id, NULL::text AS address,
 		NULL::double precision AS average_power_kw, NULL::bigint AS cost_minor, NULL::text AS cost_currency,
-		(SELECT sum(s.energy_grid_kwh) FROM charge_sessions s
+		(SELECT CASE WHEN count(s.energy_grid_kwh) = count(*) THEN sum(s.energy_grid_kwh) END FROM charge_sessions s
 			WHERE s.vehicle_id = charges.vehicle_id AND s.started_at <= charges.ended_before AND s.ended_at >= charges.started_after
 			AND s.started_at + (s.ended_at - s.started_at) / 2 BETWEEN charges.started_after AND charges.ended_before) AS energy_grid_kwh
 		FROM charges`
