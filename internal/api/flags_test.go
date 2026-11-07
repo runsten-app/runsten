@@ -25,13 +25,19 @@ func (f *accountFlags) Enabled(_ context.Context, _ flags.Name, accountID string
 func TestFlags(t *testing.T) {
 	e, c := readerEnv(t)
 	base := e.api.URL + "/api/v1/"
+	web := 0
+	for _, f := range flags.All() {
+		if f.Web {
+			web++
+		}
+	}
 	session := func(t *testing.T, c *http.Cookie) map[string]bool {
 		t.Helper()
 		resp, body := get(t, noFollow(), base+"session", c)
 		var sess struct {
 			Flags map[string]bool `json:"flags"`
 		}
-		if err := json.Unmarshal([]byte(body), &sess); err != nil || resp.status != http.StatusOK || len(sess.Flags) != len(flags.All()) {
+		if err := json.Unmarshal([]byte(body), &sess); err != nil || resp.status != http.StatusOK || len(sess.Flags) != web {
 			t.Fatalf("session: %d %s", resp.status, body)
 		}
 		return sess.Flags
@@ -56,7 +62,7 @@ func TestFlags(t *testing.T) {
 		t.Error("source.tesla off for another account")
 	}
 	// Each flag the front end reads, for the session's account only.
-	if n := len(flags.All()); len(f.asked) != 2*n || f.asked[0] != account || f.asked[n-1] != account || f.asked[n] == account {
+	if n := web; len(f.asked) != 2*n || f.asked[0] != account || f.asked[n-1] != account || f.asked[n] == account {
 		t.Errorf("asked about %v", f.asked)
 	}
 }

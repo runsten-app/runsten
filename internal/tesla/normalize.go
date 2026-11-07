@@ -293,6 +293,7 @@ func sheet(c *vehicleConfig, vs *vehicleState, s *core.Snapshot) {
 		Wheels:      word(c.WheelType),
 		Performance: word(c.PerformancePackage) != "" && word(c.PerformancePackage) != "Base",
 		ThirdRow:    word(c.ThirdRowSeats) != "",
+		Picture:     pictureURL(c),
 	}
 	// RoofColorGlass: the colour without its prefix.
 	if r, ok := strings.CutPrefix(sh.RoofColour, "Roof Color "); ok {

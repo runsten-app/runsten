@@ -23,6 +23,8 @@ const (
 	// SourceBMW: a BMW or a Mini is read through BMW CarData, with its owner's client ID
 	// (ADR 0045).
 	SourceBMW Name = "source.bmw"
+	// PictureTesla: a Tesla's picture, as Tesla's configurator draws it, relayed.
+	PictureTesla Name = "picture.tesla"
 )
 
 // Flag is a flag's declaration.
@@ -59,6 +61,13 @@ func All() []Flag {
 				"the API being BMW's own; an instance may turn it off while the source is in beta, not seen yet on a " +
 				"real car.",
 			Remove: "once the source has been checked on real cars and is out of beta",
+		},
+		{
+			Name: PictureTesla, Default: true,
+			Purpose: "A Tesla's picture, drawn by Tesla's configurator in its colour and on its rims, and relayed. On by " +
+				"default; an instance may turn it off, the configurator's endpoint being undocumented: Tesla may " +
+				"change it, or object to its use.",
+			Remove: "when Tesla's API gives a picture of the car, or an owner's own picture replaces it",
 		},
 	}
 }

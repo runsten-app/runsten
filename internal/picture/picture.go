@@ -38,10 +38,11 @@ type Params struct {
 }
 
 // DefaultParams are the relay's for the pictures Volvo's details link to, read on
-// cas.volvocars.com and wizz.volvocars.com (2026-10).
+// cas.volvocars.com and wizz.volvocars.com (2026-10), and for Tesla's configurator,
+// which renders a Tesla's (internal/tesla).
 func DefaultParams() Params {
 	return Params{
-		Hosts: []string{"cas.volvocars.com", "wizz.volvocars.com"},
+		Hosts: []string{"cas.volvocars.com", "wizz.volvocars.com", "static-assets.tesla.com"},
 		Width: 640, MaxSize: 4 << 20, MaxBytes: 32 << 20, TTL: 24 * time.Hour,
 		FrontTimeout: 5 * time.Second,
 	}
@@ -166,8 +167,9 @@ func (r *Relay) best(ctx context.Context, u string) (pic Picture, keep bool, err
 	return pic, missing, err
 }
 
-// sized replaces the URL's w with the relay's width, leaving the rest of its query as it
-// is: the CDN's parameters include one without a value (fallback).
+// sized replaces the URL's width with the relay's, leaving the rest of its query as it
+// is: Volvo's parameters include one without a value (fallback). The width is Volvo's
+// w, or Tesla's size.
 func (r *Relay) sized(u string) string {
 	base, query, ok := strings.Cut(u, "?")
 	if !ok || r.p.Width <= 0 {
@@ -175,8 +177,10 @@ func (r *Relay) sized(u string) string {
 	}
 	parts := strings.Split(query, "&")
 	for i, p := range parts {
-		if strings.HasPrefix(p, "w=") {
-			parts[i] = fmt.Sprintf("w=%d", r.p.Width)
+		for _, key := range []string{"w=", "size="} {
+			if strings.HasPrefix(p, key) {
+				parts[i] = fmt.Sprintf("%s%d", key, r.p.Width)
+			}
 		}
 	}
 	return base + "?" + strings.Join(parts, "&")

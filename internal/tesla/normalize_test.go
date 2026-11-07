@@ -115,9 +115,12 @@ func TestNormalizeFixture(t *testing.T) {
 			FrontLeft: core.Some(core.Closed, at), FrontRight: core.Some(core.Closed, at),
 			RearLeft: core.Some(core.Closed, at), RearRight: core.Some(core.Closed, at),
 		}, at),
-		// RoofColorGlass, Base and None as Tesla writes them; rhd false.
+		// RoofColorGlass, Base and None as Tesla writes them; rhd false. The picture: a
+		// Model Y in Deep Blue, on dark 20-inch rims.
 		Sheet: core.Some(core.Sheet{
 			Name: "Demo", Colour: "Deep Blue", RoofColour: "Glass", Wheels: "HelixV220Dark", Steering: core.LeftHand,
+			Picture: "https://static-assets.tesla.com/configurator/compositor?bkba_opt=1&context=design_studio_2" +
+				"&model=my&options=%24MTY09%2C%24INPB0%2C%24PPSB%2C%24WY20P&size=1920&view=FRONT34",
 		}, at),
 	}
 	n := Normalizer{}
