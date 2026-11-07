@@ -329,7 +329,7 @@
     "energyMeasured": "Energi (målt av bilen)",
     "energyGrid": "Energi fra strømnettet (registrert av produsenten)",
     "losses": "Ladetap",
-    "lossesValue": "{energy} ({share})",
+    "lossesShare": "{share} av energien fra strømnettet",
     "energyMeasuredNote": "Bilen målte energien som gikk inn i batteriet: en kostnad anslått ut fra en tariff bygger på den. De to andre er anslag, til sammenligning.",
     "energyGridNote": "Produsenten registrerte energien fra strømnettet, tap inkludert: en kostnad anslått ut fra en tariff bygger på den. Tapet er forskjellen fra energien som gikk inn i batteriet, som selv er målt eller anslått.",
     "position": "Posisjon",

@@ -329,7 +329,7 @@
     "energyMeasured": "Energia (misurata dal veicolo)",
     "energyGrid": "Energia prelevata dalla rete (registrata dal costruttore)",
     "losses": "Perdite di ricarica",
-    "lossesValue": "{energy} ({share})",
+    "lossesShare": "{share} dell’energia prelevata dalla rete",
     "energyMeasuredNote": "Il veicolo ha misurato l’energia entrata nella batteria: un costo stimato da una tariffa si basa su questa. Le altre due sono stime, per confronto.",
     "energyGridNote": "Il costruttore ha registrato l’energia prelevata dalla rete, perdite comprese: un costo stimato da una tariffa si basa su questa. Le perdite sono la differenza con l’energia entrata nella batteria, a sua volta misurata o stimata.",
     "position": "Posizione",

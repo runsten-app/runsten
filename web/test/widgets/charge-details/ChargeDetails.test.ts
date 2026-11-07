@@ -126,10 +126,11 @@ describe('ChargeDetails', () => {
     expect(facts(w, 'energies')).toEqual({
       'Energy drawn from the grid (recorded by the maker)': '30 kWh',
       // 30 − 26.4, the estimate from the state of charge.
-      'Charging losses': '3.6 kWh (12%)',
+      'Charging losses': '3.6 kWh',
       'Energy (from state of charge)': '26.4 kWh',
       'Energy (from charging power)': '25.3 kWh',
     })
+    expect(plain(w.find('.losses-share').text())).toBe('12% of the energy drawn from the grid')
     expect(w.find('.energies .note').text()).toBe(
       'The maker recorded the energy drawn from the grid, losses included: a cost estimated from a tariff rests on it. The losses are the difference with the energy that went into the battery, itself measured or estimated.',
     )

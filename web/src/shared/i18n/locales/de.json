@@ -329,7 +329,7 @@
     "energyMeasured": "Energie (vom Fahrzeug gemessen)",
     "energyGrid": "Aus dem Netz bezogene Energie (vom Hersteller erfasst)",
     "losses": "Ladeverluste",
-    "lossesValue": "{energy} ({share})",
+    "lossesShare": "{share} der aus dem Netz bezogenen Energie",
     "energyMeasuredNote": "Das Fahrzeug hat die in seine Batterie geladene Energie gemessen: Darauf beruhen aus einem Tarif geschätzte Kosten. Die beiden anderen Werte sind Schätzungen, zum Vergleich.",
     "energyGridNote": "Der Hersteller hat die aus dem Netz bezogene Energie erfasst, Verluste inbegriffen: Darauf beruhen aus einem Tarif geschätzte Kosten. Die Verluste sind die Differenz zur in die Batterie geladenen Energie, die selbst gemessen oder geschätzt ist.",
     "position": "Position",

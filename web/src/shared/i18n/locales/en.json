@@ -329,7 +329,7 @@
     "energyMeasured": "Energy (measured by the vehicle)",
     "energyGrid": "Energy drawn from the grid (recorded by the maker)",
     "losses": "Charging losses",
-    "lossesValue": "{energy} ({share})",
+    "lossesShare": "{share} of the energy drawn from the grid",
     "energyMeasuredNote": "The vehicle measured the energy into its battery: a cost estimated from a tariff rests on it. The two others are estimates, for comparison.",
     "energyGridNote": "The maker recorded the energy drawn from the grid, losses included: a cost estimated from a tariff rests on it. The losses are the difference with the energy that went into the battery, itself measured or estimated.",
     "position": "Position",

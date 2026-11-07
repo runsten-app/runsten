@@ -56,10 +56,12 @@ const losses = computed(() => {
   if (!c || c.energy_grid_kwh === null || c.energy_grid_kwh <= 0 || battery === null) return null
   const kwh = c.energy_grid_kwh - battery
   if (kwh < 0) return null
-  return t('charge.lossesValue', {
+  return {
     energy: f.quantity(kwh, 'kWh'),
-    share: f.quantity((kwh / c.energy_grid_kwh) * 100, 'percent'),
-  })
+    share: t('charge.lossesShare', {
+      share: f.quantity((kwh / c.energy_grid_kwh) * 100, 'percent'),
+    }),
+  }
 })
 
 const cost = computed(() => f.chargeCost(charge.value?.cost ?? null))
@@ -209,7 +211,11 @@ const costNotes = computed(() => {
                 :label="t('charge.energyGrid')"
                 :value="f.quantity(charge.energy_grid_kwh, 'kWh')"
               />
-              <FactItem v-if="losses" :label="t('charge.losses')" :value="losses" />
+              <FactItem v-if="losses" :label="t('charge.losses')" :value="losses.energy">
+                <span class="losses-share d-block text-body-medium text-medium-emphasis mt-1">
+                  {{ losses.share }}
+                </span>
+              </FactItem>
               <FactItem
                 v-if="charge.energy_measured_kwh !== null"
                 :label="t('charge.energyMeasured')"

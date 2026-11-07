@@ -329,7 +329,7 @@
     "energyMeasured": "Energie (gemeten door het voertuig)",
     "energyGrid": "Energie van het net (geregistreerd door de fabrikant)",
     "losses": "Laadverliezen",
-    "lossesValue": "{energy} ({share})",
+    "lossesShare": "{share} van de energie van het net",
     "energyMeasuredNote": "Het voertuig heeft de energie gemeten die in zijn batterij is gegaan: een kostenschatting op basis van een tarief gaat daarvan uit. De andere twee zijn schattingen, ter vergelijking.",
     "energyGridNote": "De fabrikant heeft de energie van het net geregistreerd, verliezen inbegrepen: een kostenschatting op basis van een tarief gaat daarvan uit. De verliezen zijn het verschil met de energie die in de batterij is gegaan, zelf gemeten of geschat.",
     "position": "Positie",
