@@ -56,6 +56,14 @@
 //	                            https://cnepmob.volvocars.com)
 //	RUNSTEN_POLESTAR_ID_PCCS_URL the Polestar app's gRPC of the charge limit (default
 //	                            https://api.pccs-prod.plstr.io)
+//	RUNSTEN_BMW_AUTH_URL        BMW's customer authentication, which refreshes the tokens
+//	                            of the connections with a CarData client ID (default
+//	                            https://customer.bmwgroup.com/gcdm/oauth)
+//	RUNSTEN_BMW_API_URL         BMW CarData's API, which reads their cars when the flag
+//	                            source.bmw is on (default https://api-cardata.bmwgroup.com)
+//	RUNSTEN_BMW_STREAM_URL      BMW CarData's MQTT stream (default
+//	                            tls://customer.streaming-cardata.bmwgroup.com:9000;
+//	                            tcp:// for the simulator)
 //	RUNSTEN_TOKEN_MARGIN        refresh an access token this long before it expires
 //	                            (default 2m)
 //	RUNSTEN_TOKEN_KEEPALIVE     refresh an idle connection whose refresh token is older
@@ -112,8 +120,10 @@ import (
 	"syscall"
 	"time"
 
+	"runsten/internal/bmw"
 	"runsten/internal/catalog"
 	"runsten/internal/collector"
+	"runsten/internal/collector/bmwsource"
 	"runsten/internal/collector/polestaridsource"
 	"runsten/internal/collector/polestarsource"
 	"runsten/internal/collector/teslasource"
@@ -144,6 +154,8 @@ type config struct {
 	polestarURL  string
 	tesla        tesla.Hosts
 	polestarID   polestarid.Hosts
+	bmw          bmw.Hosts
+	bmwStream    string
 	clientID     string
 	clientSecret string
 	accessToken  string
@@ -338,6 +350,7 @@ func run(args []string) error {
 		"polestar_base_url", cfg.polestarURL, "tesla_api_url", cfg.tesla.API, "tesla_auth_url", cfg.tesla.Auth,
 		"polestar_id_auth_url", cfg.polestarID.Auth, "polestar_id_api_url", cfg.polestarID.API,
 		"polestar_id_discovery_url", cfg.polestarID.Discovery, "polestar_id_pccs_url", cfg.polestarID.PCCS,
+		"bmw_auth_url", cfg.bmw.Auth, "bmw_api_url", cfg.bmw.API, "bmw_stream_url", cfg.bmwStream,
 		"daily_quota", cfg.quota.Daily, "quota_per_user", cfg.quota.PerUser, "instance_key", cfg.apiKey != "",
 		"mqtt_private_brokers", cfg.privateBrokers)
 	der := variants{
@@ -361,6 +374,19 @@ func run(args []string) error {
 	// choice (ADR 0042).
 	c.SetGate(polestarid.Source, func(ctx context.Context, account string) bool {
 		return features.Enabled(ctx, flags.SourcePolestarID, account)
+	})
+	bmwSource := bmwsource.New(bmw.NewClient(cfg.bmw, hc), cfg.bmwStream, bmwStore{st}, clk)
+	// The subscriptions to the stream, closed when the collector stops: BMW allows one per
+	// account, which a collector restarted at once would find taken otherwise.
+	bmwCtx, stopBMW := context.WithCancel(ctx)
+	bmwDone := make(chan struct{})
+	go func() { defer close(bmwDone); bmwSource.Run(bmwCtx) }()
+	defer func() { stopBMW(); <-bmwDone }()
+	c.AddSource(bmwSource, st)
+	// BMW's too, on by default: an instance may turn it off while it is in beta (ADR 0045
+	// §8).
+	c.SetGate(bmw.Source, func(ctx context.Context, account string) bool {
+		return features.Enabled(ctx, flags.SourceBMW, account)
 	})
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
@@ -407,6 +433,28 @@ func (p polestarIDStore) PolestarIDCredential(ctx context.Context, accountID, co
 
 func (p polestarIDStore) RotatePolestarIDToken(ctx context.Context, accountID, connectionID string, setAt time.Time, token string) error {
 	return p.st.RotatePolestarIDToken(ctx, accountID, connectionID, setAt, token) //nolint:wrapcheck // the store's, with its context
+}
+
+// bmwStore keeps the BMW connections' credentials in the store.
+type bmwStore struct{ st *store.Store }
+
+func (b bmwStore) BMWCredential(ctx context.Context, accountID, connectionID string) (bmwsource.Credential, error) {
+	c, setAt, err := b.st.BMWCredential(ctx, accountID, connectionID)
+	if err != nil {
+		return bmwsource.Credential{}, fmt.Errorf("bmw credential: %w", err)
+	}
+	return bmwsource.Credential{
+		ClientID: c.ClientID, GCID: c.GCID, Refresh: c.Refresh, ContainerID: c.ContainerID,
+		ContainerName: c.ContainerName, SetAt: setAt,
+	}, nil
+}
+
+func (b bmwStore) RotateBMWToken(ctx context.Context, accountID, connectionID string, setAt time.Time, token string) error {
+	return b.st.RotateBMWToken(ctx, accountID, connectionID, setAt, token) //nolint:wrapcheck // the store's, with its context
+}
+
+func (b bmwStore) SetBMWContainer(ctx context.Context, accountID, connectionID string, setAt time.Time, containerID, name string) error {
+	return b.st.SetBMWContainer(ctx, accountID, connectionID, setAt, containerID, name) //nolint:wrapcheck // the store's, with its context
 }
 
 // extensions is what registerExtensions gets: the premium build's modules set the
@@ -468,6 +516,8 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 			Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL,
 			Discovery: polestarid.DefaultDiscoveryURL, PCCS: polestarid.DefaultPCCSURL,
 		},
+		bmw:        bmw.Hosts{Auth: bmw.DefaultAuthURL, API: bmw.DefaultAPIURL},
+		bmwStream:  bmw.DefaultStreamURL,
 		tokens:     oauth.DefaultParams(),
 		tick:       10 * time.Second,
 		intervals:  collector.DefaultIntervals(),
@@ -531,6 +581,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
 		"RUNSTEN_POLESTAR_ID_DISCOVERY_URL": &cfg.polestarID.Discovery, "RUNSTEN_POLESTAR_ID_PCCS_URL": &cfg.polestarID.PCCS,
+		"RUNSTEN_BMW_AUTH_URL": &cfg.bmw.Auth, "RUNSTEN_BMW_API_URL": &cfg.bmw.API,
 	} {
 		if v := getenv(name); v != "" {
 			if u, err := url.Parse(v); err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
@@ -538,6 +589,12 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 			}
 			*dst = v
 		}
+	}
+	if v := getenv("RUNSTEN_BMW_STREAM_URL"); v != "" {
+		if u, err := url.Parse(v); err != nil || (u.Scheme != "tls" && u.Scheme != "tcp") || u.Port() == "" {
+			errs = append(errs, fmt.Errorf("RUNSTEN_BMW_STREAM_URL %q: tls:// or tcp:// URL with a port expected", v))
+		}
+		cfg.bmwStream = v
 	}
 	if cfg.authURL == "" {
 		cfg.authURL = volvo.AuthURL(cfg.clientID)
@@ -594,6 +651,6 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 // extension adds.
 func normalizers() derive.Normalizer {
 	return derive.Sources(append([]derive.Normalizer{
-		volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{},
+		volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{}, bmw.Normalizer{},
 	}, extensionNormalizers()...)...)
 }

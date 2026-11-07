@@ -13,6 +13,7 @@ export {
   collectorStoppedAfter,
   needsAttention,
   notGrantedFor,
+  streamHeldFor,
   type Collection,
   type CollectionFailure,
   type CollectionState,

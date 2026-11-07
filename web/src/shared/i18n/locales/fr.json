@@ -93,6 +93,7 @@
     "odometer": "Odomètre",
     "openings": {
       "title": "Portes et vitres",
+      "titleWithTyres": "Portes, vitres et pneus",
       "locked": "Verrouillée",
       "unlocked": "Déverrouillée",
       "allClosed": "Tout est fermé",
@@ -140,11 +141,14 @@
       "version": "{version} : {status}"
     },
     "climate": {
-      "title": "Climatisation",
       "outside": "Extérieur",
       "cabin": "Habitacle",
       "climateOn": "Climatisation en marche",
       "preconditioning": "Préconditionnement",
+      "climateAt": "Climatisation à {temp}",
+      "heatingTo": "Chauffage vers {temp}",
+      "coolingTo": "Refroidissement vers {temp}",
+      "preconditioningTo": "Préconditionnement à {temp}",
       "batteryHeater": "Batterie en chauffe"
     }
   },
@@ -229,6 +233,23 @@
     "moreFailed": "La suite des trajets n'a pas pu être chargée. Réessayez.",
     "end": "Il n'y a pas d'autre trajet.",
     "csv": "Télécharger en CSV"
+  },
+  "tripMap": {
+    "title": "Où le véhicule est allé",
+    "label": "Carte des trajets de la période",
+    "departures": "{n} départ | {n} départs",
+    "arrivals": "{n} arrivée | {n} arrivées",
+    "between": "{from} ↔ {to}",
+    "trips": "{n} trajet | {n} trajets",
+    "spots": "{n} lieu | {n} lieux",
+    "links": "{n} liaison | {n} liaisons",
+    "hint": "Runsten connaît le départ et l'arrivée d'un trajet, pas son parcours : chaque ligne relie deux lieux, d'autant plus épaisse qu'elle a été parcourue souvent, dans un sens ou dans l'autre.",
+    "withoutPosition": "Un trajet sans position est laissé de côté. | {n} trajets sans position sont laissés de côté.",
+    "frequent": "Trajets les plus fréquents",
+    "error": "La carte des trajets n'a pas pu être chargée. Réessayez dans un instant.",
+    "every": "Tous les lieux et trajets de la carte",
+    "everySpots": "Lieux",
+    "everyJourneys": "Trajets"
   },
   "readingsCsv": {
     "download": "Télécharger tous les relevés (CSV)",
@@ -830,7 +851,7 @@
     }
   },
   "timeline": {
-    "title": "Niveau de charge",
+    "title": "Activité",
     "soc": "Niveau de charge",
     "driving": "Conduite",
     "charging": "Recharge",
@@ -862,12 +883,6 @@
       "day": "24 h",
       "week": "7 j"
     }
-  },
-  "recent": {
-    "title": "30 derniers jours",
-    "chart": "Distance par jour",
-    "stats": "Voir les statistiques",
-    "hint": "La distance de chaque jour. Appuyez sur un jour pour voir ses trajets."
   },
   "chargeCurve": {
     "title": "Courbe de charge",
@@ -1242,7 +1257,8 @@
     "brand": {
       "volvo": "Volvo",
       "polestar": "Polestar",
-      "tesla": "Tesla"
+      "tesla": "Tesla",
+      "bmw": "BMW"
     },
     "brandAttention": "demande votre attention",
     "outcome": {
@@ -1305,7 +1321,12 @@
       "quotaTesla": "Appels du jour à Tesla atteints jusqu'à {time}",
       "credentialRefusedPolestarId": "Non lue : le Polestar ID a refusé la connexion",
       "credentialMissingPolestarId": "Non lue : aucun Polestar ID connecté",
-      "unsharedPolestarId": "Non lue : la voiture n'est plus dans le Polestar ID"
+      "unsharedPolestarId": "Non lue : la voiture n'est plus dans le Polestar ID",
+      "credentialRefusedBmw": "Non lu : BMW a refusé la connexion",
+      "credentialMissingBmw": "Non lu : aucune connexion BMW",
+      "unsharedBmw": "Non lu : le compte BMW n'est plus l'utilisateur principal de la voiture",
+      "pausedBmw": "En pause par BMW jusqu'à {time}",
+      "quotaBmw": "Appels du jour à BMW atteints jusqu'à {time}"
     },
     "notice": {
       "reauth": {
@@ -1342,7 +1363,12 @@
       "credentialRefusedPolestarId": "Le Polestar ID a refusé la connexion de Runsten pour cette voiture : la session a pris fin, ou le mot de passe a changé. Reconnectez votre Polestar ID sur la page de connexion : ce qui a été lu reste.",
       "credentialMissingPolestarId": "Runsten lit cette Polestar avec votre Polestar ID, qui a été retiré : reconnectez-le sur la page de connexion.",
       "unsharedPolestarId": "Votre Polestar ID ne liste plus cette voiture : vendue, ou retirée du compte. Si elle revient, reconnectez le Polestar ID sur la page de connexion : la voiture est lue à nouveau.",
-      "quotaPolestarId": "Runsten fait au plus 2 000 appels par jour à l'API de l'app Polestar par Polestar ID, pour rester loin de ses limites non publiées : ils sont épuisés. La lecture reprend d'elle-même."
+      "quotaPolestarId": "Runsten fait au plus 2 000 appels par jour à l'API de l'app Polestar par Polestar ID, pour rester loin de ses limites non publiées : ils sont épuisés. La lecture reprend d'elle-même.",
+      "credentialRefusedBmw": "BMW a refusé la connexion avec laquelle cette voiture est lue : restée inutilisée pendant deux semaines, ou souscription du client ID retirée dans le portail. Reconnectez-vous sur la page Connexion : ce qui a été lu reste.",
+      "credentialMissingBmw": "Runsten lit cette voiture par votre connexion BMW, qui a été retirée : reconnectez-vous sur la page Connexion.",
+      "unsharedBmw": "Votre compte BMW n'est plus l'utilisateur principal de cette voiture, ou ne la liste plus : vendue, ou changée de propriétaire. Si elle revient, reconnectez BMW sur la page Connexion : la voiture est lue à nouveau.",
+      "pausedBmw": "BMW a limité le nombre d'appels. La lecture reprend d'elle-même.",
+      "quotaBmw": "Runsten fait au plus 40 appels par jour à l'API de BMW par connexion, pour vous en laisser quelques-uns des 50 de BMW : ils sont épuisés. Le flux, qui n'a pas de limite, est toujours lu ; le reste reprend de lui-même."
     },
     "facts": {
       "mode": "Mode de lecture",
@@ -1365,7 +1391,9 @@
       "noneDueToken": "Aucune tant qu'aucun jeton Tesla n'est donné",
       "noneDueTeslaFleet": "Aucune tant que le propriétaire ne s'est pas reconnecté avec Tesla",
       "noneDuePolestarId": "Aucune avant la reconnexion du Polestar ID",
-      "noneDueUnsharedPolestarId": "Aucune : la voiture n'est plus dans le Polestar ID"
+      "noneDueUnsharedPolestarId": "Aucune : la voiture n'est plus dans le Polestar ID",
+      "noneDueBmw": "Aucune avant la reconnexion de BMW",
+      "noneDueUnsharedBmw": "Aucune : le compte BMW n'est plus l'utilisateur principal de la voiture"
     },
     "api": {
       "connectedVehicle": "données du véhicule",
@@ -1374,7 +1402,8 @@
       "polestar": "Data Portal de Polestar",
       "tesla": "Owner API de Tesla",
       "teslaFleet": "Fleet API de Tesla",
-      "polestarId": "API de l'app Polestar"
+      "polestarId": "API de l'app Polestar",
+      "bmw": "BMW CarData"
     },
     "failure": {
       "quota": "Quota atteint",
@@ -1398,7 +1427,12 @@
       "tokenTesla": "Aucun jeton de Tesla",
       "credentialRefusedTesla": "Jeton Tesla refusé",
       "credentialRefusedTeslaFleet": "Accès Tesla retiré",
-      "credentialRefusedPolestarId": "Polestar ID refusé"
+      "credentialRefusedPolestarId": "Polestar ID refusé",
+      "streamHeld": "Flux tenu par une autre application (Home Assistant, evcc)",
+      "notFoundBmw": "Véhicule inconnu de BMW",
+      "unavailableBmw": "BMW injoignable",
+      "tokenBmw": "Aucun jeton de BMW",
+      "credentialRefusedBmw": "Connexion BMW refusée"
     },
     "key": {
       "title": "Clé Volvo"
@@ -1424,6 +1458,14 @@
     "polestarId": {
       "title": "Polestar ID",
       "off": "Le Polestar ID n'est pas proposé sur cette instance : vos Polestar lues avec lui ne sont plus lues. Ce qui a été lu reste, et votre connexion est gardée : elles sont lues à nouveau dès qu'il l'est."
+    },
+    "bmw": {
+      "title": "BMW CarData",
+      "off": "BMW n'est pas proposé sur cette instance : vos BMW et MINI lues par lui ne sont plus lues. Ce qui a été lu reste, et votre connexion est gardée : elles sont lues à nouveau dès qu'il l'est."
+    },
+    "streamHeld": {
+      "text": "Une autre application tient le flux de BMW : BMW n'en autorise qu'une à la fois par compte, et ce peut être l'intégration CarData de Home Assistant ou evcc. Runsten ne lit rien du flux tant qu'elle ne le lâche pas. Arrêtez cette application, ou laissez plutôt Runsten republier votre voiture sur votre broker MQTT pour Home Assistant :",
+      "mqtt": "Réglages MQTT"
     }
   },
   "apiKey": {
@@ -2004,6 +2046,73 @@
       "tooManyPending": "Trop de connexions sont en attente sur cette instance. Réessayez dans quelques minutes.",
       "unavailable": "Runsten n'a pas pu être joint. Réessayez dans un instant.",
       "internal": "Le Polestar ID n'a pas pu être connecté. Réessayez dans un instant."
+    }
+  },
+  "bmw": {
+    "intro": "Runsten lit votre BMW ou votre MINI par BMW CarData, le service officiel que BMW ouvre gratuitement à ses propriétaires : la voiture envoie ses relevés (batterie, autonomie, charge, compteur, position) et Runsten les reçoit. Vous créez votre propre client ID dans le portail MyBMW ou MyMINI ; Runsten ne demande jamais votre mot de passe BMW et n'envoie jamais de commande à la voiture.",
+    "beta": "La prise en charge de BMW est en bêta : elle a été conçue d'après la documentation de BMW et reste à vérifier sur d'autres voitures.",
+    "guide": "Lire le guide",
+    "newTab": "(s'ouvre dans un nouvel onglet)",
+    "refused": {
+      "title": "Votre connexion BMW a été refusée",
+      "body": "BMW a refusé la connexion de Runsten le {time} : restée inutilisée pendant deux semaines, ou souscription du client ID retirée dans le portail. Vos voitures ne sont plus lues tant que vous ne vous reconnectez pas ; ce qui a été lu reste."
+    },
+    "current": "Votre client ID",
+    "last4": "Se terminant par {last4}",
+    "setAt": "Connecté",
+    "reconnect": "Se reconnecter",
+    "delete": {
+      "button": "Retirer la connexion",
+      "title": "Retirer votre connexion BMW ?",
+      "text": "Vos BMW et vos MINI restent, avec leur historique, mais ne sont plus lues tant que vous ne vous reconnectez pas. Runsten efface ses jetons ; le client ID reste dans le portail, où vous pouvez le supprimer.",
+      "error": "La connexion n'a pas pu être retirée. Réessayez dans un instant.",
+      "cancel": "Annuler",
+      "confirm": "Retirer"
+    },
+    "steps": {
+      "title": "Créer votre client ID dans le portail de BMW",
+      "create": "Sur un ordinateur, connectez-vous au portail MyBMW ou MyMINI, ouvrez la tuile « BMW CarData » et choisissez « Create CarData Client ».",
+      "subscribe": "Souscrivez le client à CarData API et à CarData Streaming, l'un après l'autre : attendez la confirmation du premier avant le second.",
+      "stream": "Configurez ensuite le flux : cochez les clés de données que le guide liste, pour que la voiture les envoie.",
+      "note": "Notez le client ID tout de suite, puis collez-le ci-dessous. Ne cliquez jamais sur « Authenticate device » dans le portail : Runsten s'en charge."
+    },
+    "label": "Client ID",
+    "help": "Runsten demande avec lui un code à BMW, que vous validez sur la page de BMW : votre mot de passe BMW reste entre vous et BMW. Ensuite, seuls les quatre derniers caractères du client ID sont montrés.",
+    "save": "Obtenir un code",
+    "cancel": "Annuler",
+    "cancelled": "Connexion annulée.",
+    "saved": "BMW connecté : Runsten lit vos voitures dès son prochain passage.",
+    "deleted": "Connexion BMW retirée.",
+    "waiting": "En attente de votre validation du code sur la page de BMW. Runsten interroge de nouveau BMW toutes les quelques secondes.",
+    "waitingUnreachable": "BMW n'a pas répondu : Runsten continue d'essayer, le code peut encore être validé.",
+    "code": {
+      "title": "Validez le code sur la page de BMW",
+      "open": "Ouvrez la page de BMW dans un nouvel onglet, connectez-vous avec votre compte BMW ou MINI et validez ce code.",
+      "label": "Votre code",
+      "page": "Page de BMW",
+      "expires": "Valable jusqu'à {time}.",
+      "cancel": "Annuler"
+    },
+    "error": {
+      "summary": "BMW n'a pas été connecté",
+      "required": "Collez le client ID.",
+      "spaces": "Le client ID n'a pas d'espace : copiez-le à nouveau.",
+      "characters": "Le client ID n'a que des lettres, des chiffres et des signes : copiez-le à nouveau.",
+      "tooShort": "Le client ID a au moins {min} caractères : copiez-le en entier.",
+      "tooLong": "Le client ID a au plus {max} caractères : copiez-le seul.",
+      "clientRefused": "BMW ne connaît pas ce client ID : vérifiez-le dans le portail, et que vous l'avez copié en entier.",
+      "invalidBody": "Ce client ID a été refusé : copiez-le à nouveau.",
+      "expired": "Le code a expiré, ou aucun n'attendait : obtenez un nouveau code.",
+      "refused": "BMW a refusé la connexion : le code a été refusé, ou BMW ne l'a pas accepté. Obtenez un nouveau code.",
+      "scopeMissing": "Le client ID n'a pas la souscription à CarData API : dans le portail, souscrivez-le à CarData API (et à CarData Streaming), puis obtenez un nouveau code. Rien n'a été connecté.",
+      "noVehicle": "Ce compte BMW n'est l'utilisateur principal d'aucun véhicule, et seul l'utilisateur principal peut lire une voiture : rien n'a été connecté.",
+      "tooManyVehicles": "Avec les voitures de ce compte BMW, votre compte aurait plus de véhicules qu'il ne peut : rien n'a été connecté.",
+      "notAdmitted": "Votre compte doit d'abord franchir une étape, comme accepter des conditions : rechargez la page. Rien n'a été connecté.",
+      "notOffered": "BMW n'est pas proposé sur cette instance.",
+      "bmwUnavailable": "BMW n'a pas répondu : rien n'a été connecté. Réessayez dans un instant.",
+      "tooManyPending": "Trop de connexions à BMW sont en attente sur cette instance. Réessayez dans quelques minutes.",
+      "unavailable": "Runsten n'a pas pu être joint. Réessayez dans un instant.",
+      "internal": "BMW n'a pas pu être connecté. Réessayez dans un instant."
     }
   }
 }

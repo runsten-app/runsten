@@ -257,6 +257,9 @@ type Climate struct {
 	Preconditioning Value[bool]
 	// BatteryHeater is the battery being heated.
 	BatteryHeater Value[bool]
+	// SetpointC is the cabin temperature the climate is set to, in °C, whether it runs or
+	// not: with the cabin's, it tells whether a climate running heats or cools.
+	SetpointC Value[float64]
 }
 
 // Opening is whether a door, a window or a lid is open.

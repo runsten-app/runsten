@@ -5,6 +5,12 @@ export const tripKeys = {
   lists: (vehicle: string) => ['trips', vehicle] as const,
   list: (vehicle: string, from?: string, to?: string) =>
     ['trips', vehicle, from ?? null, to ?? null] as const,
+  // Every map of every vehicle: what a change of a place touches.
+  allMaps: () => ['trip-map'] as const,
+  // The maps of a vehicle, apart from its lists: they hold no page of trips.
+  maps: (vehicle: string) => ['trip-map', vehicle] as const,
+  map: (vehicle: string, from?: string, to?: string) =>
+    ['trip-map', vehicle, from ?? null, to ?? null] as const,
   detail: (vehicle: string, id: string) => ['trip', vehicle, id] as const,
   track: (vehicle: string, id: string) => ['trip', vehicle, id, 'track'] as const,
 }

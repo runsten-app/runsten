@@ -17,12 +17,13 @@ Runsten works end to end, but is young: expect changes between versions. For tho
 - **Volvo**, through the Volvo Cars API: [Your Volvo application](./self-hosting/volvo.md).
 - **Polestar**, through Polestar's Data Portal: [Your Polestar](./guide/polestar.md); outside the EU and the EEA, on a self-hosted instance, through the Polestar app's API (beta): [Your Polestar, with the Polestar ID](./guide/polestar-id.md).
 - **Tesla** (beta), through the Owner API of the Tesla app, as TeslaMate reads it: [Your Tesla](./guide/tesla.md).
+- **BMW and Mini** (beta), through BMW CarData, with a client ID of your own: [Your BMW or Mini](./guide/bmw.md).
 
 ## How it works
 
 - **The collector** polls the manufacturer's API (the Volvo Cars API, Polestar's Data Portal, Tesla's Owner API): every 10 minutes while the car is parked, every minute while it drives or charges; a Tesla at its own pace, so that it can sleep. It stores every response as it came, and the Volvo ID tokens, the Polestar credential and the Tesla refresh token encrypted.
 - **Trips and charges** are worked out from those responses. A trip or a charge that happened while nothing could be read (an outage of the API, an exhausted quota) is still found, from the odometer or the state of charge, and marked as **reconstructed**. Since the responses are kept, the whole history can be worked out again after an update that improves it.
-- **The web interface** shows the car's state, its trips and charges, their costs from your tariffs, statistics and an estimate of the battery's capacity. It works on a phone as well as a desktop, in English, French and Swedish, light or dark; on a phone, it installs on the home screen like an app ([Installing it on a phone](./guide/index.md#installing-it-on-a-phone)).
+- **The web interface** shows the car's state, its trips and charges, their costs from your tariffs, statistics and an estimate of the battery's capacity. It works on a phone as well as a desktop, in English, French, German, Italian, Dutch, Norwegian, Spanish and Swedish, light or dark; on a phone, it installs on the home screen like an app ([Installing it on a phone](./guide/index.md#installing-it-on-a-phone)).
 - **The API** (`/api/v1`) serves the same data to your own scripts.
 
 ## Figures you can trust

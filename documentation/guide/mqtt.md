@@ -62,6 +62,7 @@ Under `<prefix>/vehicles/<vehicle id>/`, where the prefix is `runsten` by defaul
 | `credential_expires_at` | a Polestar's only: when its credential expires at the latest, in RFC 3339, UTC; empty without one |
 | `outside_temp_c`, `cabin_temp_c` | a Tesla's only: the temperature outside and in the cabin, in °C |
 | `climate`, `preconditioning`, `battery_heater` | a Tesla's only: `on` or `off`, whether the climate runs, the car preconditions, or heats its battery |
+| `climate_setpoint_c` | a Tesla's only: the cabin temperature its climate is set to, in °C, whether it runs or not |
 | `locked` | `locked` or `unlocked` |
 | `door_front_left`, `door_front_right`, `door_rear_left`, `door_rear_right`, `hood`, `tailgate`, `tank_lid` | `closed`, `ajar` (not fully shut) or `open` |
 | `window_front_left`, `window_front_right`, `window_rear_left`, `window_rear_right`, `sunroof` | `closed`, `ajar` (open a crack) or `open` |
@@ -110,6 +111,7 @@ With discovery on, each vehicle is a device named after the name you gave a Tesl
 | Credential expiry | sensor, timestamp, diagnostic (a Polestar's only) | `credential_expires_at` |
 | Outside temperature, Cabin temperature | sensor, temperature, °C (a Tesla's only) | `outside_temp_c`, `cabin_temp_c` |
 | Climate, Preconditioning, Battery heater | binary sensor, running (a Tesla's only) | `climate`, `preconditioning`, `battery_heater` |
+| Climate setpoint | sensor, temperature, °C (a Tesla's only) | `climate_setpoint_c` |
 | Lock | binary sensor, lock: on unlocked | `locked` |
 | Door front left, front right, rear left, rear right | binary sensor, door: on open or ajar | `door_…` |
 | Hood, Tailgate, Tank lid | binary sensor, opening | `hood`, `tailgate`, `tank_lid` |

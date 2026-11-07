@@ -13,6 +13,10 @@ export const collectorStoppedAfter = 15 * 60_000
 // interval, then tried again: the failure tells it for as long.
 export const notGrantedFor = 24 * 60 * 60_000
 
+// The collector tries BMW's stream again at every pass: a stream another client held is
+// only still held while its failure is this recent.
+export const streamHeldFor = 60 * 60_000
+
 // CollectionState is what the user is told of the reading of a vehicle, the worst first:
 // the account's offer leaves it unread, the instance without the provider's application,
 // the grant lost, no application key it may be

@@ -226,6 +226,10 @@ func (c *Collector) sourceFailed(ctx context.Context, t Target, vs *vehicleState
 		c.log.Warn("access rejected again", append(args, "retry_in", c.iv.Parked.String())...)
 		vs.failure = Failure{At: now, Endpoint: ep, Status: se.Status, Kind: FailRejected}
 		return
+	case KindStreamHeld:
+		c.logOnce(t, "stream held by another client: tried again later", append(args, "err", err)...)
+		vs.failure = Failure{At: now, Endpoint: ep, Status: se.Status, Kind: FailStreamHeld}
+		return
 	case KindOther:
 	}
 	if ep == "" {

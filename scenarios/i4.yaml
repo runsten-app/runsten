@@ -1,7 +1,8 @@
 # The BMW of demonstration: an i4 eDrive40 of 2024, served on BMW CarData (brand bmw),
 # read with the simulator's client ID (bmwapi.DevClientID) through the device flow, which
-# the simulated owner approves by themselves. Home to work and back, then an AC charge at
-# home.
+# the simulated owner approves by themselves. Home to work and back, locked but the sunroof
+# left open, then an AC charge at home: for the doors and windows, and the warning of a
+# car left open.
 #
 # What CarData gives differs from the other sources: the car pushes its changes to an
 # MQTT stream (SIM_BMW_STREAM_ADDR), each value with its own timestamp, and the API
@@ -33,5 +34,5 @@ steps:
   - drive: { to: work, distanceKm: 14, duration: 30m }
   - park: { duration: 9h }
   - drive: { to: home, distanceKm: 15, duration: 35m }
-  - park: { duration: 1h }
+  - park: { duration: 1h, open: [sunroof] }
   - charge: { type: AC, powerKW: 11, untilSoc: 80 }

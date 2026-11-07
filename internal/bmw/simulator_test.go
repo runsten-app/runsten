@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 	"time"
 
@@ -53,6 +54,7 @@ func newSim(t *testing.T) *sim {
 		st: vehicle.State{
 			SoC: 64.2, OdometerKm: 21034.6, TargetSoC: 80,
 			Position: vehicle.Position{Lat: 50.8270, Lon: 4.3720, Heading: 91},
+			Locked:   true, Open: 1 << slices.Index(vehicle.Openings(), "sunroof"),
 		},
 	}
 	clk := clock.NewManual(t0)
@@ -185,17 +187,46 @@ func TestSimulatorAPI(t *testing.T) {
 	if m.Brand.V != "bmw" || m.Family.V != "i4" || m.Trim.V != "edrive40" || m.ModelYear.V != 2024 || !m.BatteryElectric() {
 		t.Errorf("model: %+v", m)
 	}
+	if m.CapacityKWh.V != 83.9 || m.Sheet.V != (core.Sheet{Colour: "C4P", Steering: core.LeftHand}) {
+		t.Errorf("capacity and sheet: %+v %+v", m.CapacityKWh, m.Sheet)
+	}
 
-	// The container, created once, then found again.
-	id, err := s.EnsureContainer(ctx, tok.Access)
+	// The container of a previous release, named runsten alone, and two of other clients,
+	// one named as Runsten's would be.
+	old, err := s.CreateContainer(ctx, tok.Access, "runsten", containerPurpose, []string{DescSoC})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if again, err := s.EnsureContainer(ctx, tok.Access); err != nil || again != id {
-		t.Errorf("container again: %q %v, want %q", again, err, id)
+	for _, name := range []string{"evcc", "runsten-0badc0de"} {
+		if _, err := s.CreateContainer(ctx, tok.Access, name, "another client", []string{DescSoC}); err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	raw, err = s.TelematicData(ctx, tok.Access, vin, id)
+	// The container, created once in place of the previous release's, then found again.
+	ct, err := s.EnsureContainer(ctx, tok.Access)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again, err := s.EnsureContainer(ctx, tok.Access); err != nil || again != ct || ct.Name != ContainerName() {
+		t.Errorf("container again: %+v %v, want %+v", again, err, ct)
+	}
+	cts, err := s.Containers(ctx, tok.Access)
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := make([]string, len(cts))
+	for i, c := range cts {
+		names[i] = c.Name
+	}
+	if !slices.Equal(names, []string{"evcc", "runsten-0badc0de", ct.Name}) {
+		t.Errorf("containers %+v: the previous release's (%s) left", cts, old.ID)
+	}
+	if _, err := s.TelematicData(ctx, tok.Access, vin, old.ID); err == nil {
+		t.Error("the previous release's container still read")
+	}
+
+	raw, err = s.TelematicData(ctx, tok.Access, vin, ct.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,6 +240,10 @@ func TestSimulatorAPI(t *testing.T) {
 	if snap.Position.V != (core.Position{Lat: 50.827, Lon: 4.372}) || snap.Engine.V != core.EngineStopped ||
 		snap.Charging.V != core.ChargingIdle || snap.Connection.V != core.Disconnected {
 		t.Errorf("state: %+v", snap)
+	}
+	if d := snap.Doors.V; !d.Locked.V || d.FrontLeft.V != core.Closed || d.Tailgate.V != core.Closed ||
+		snap.Windows.V.Sunroof.V != core.Open || !snap.Open() || snap.Climate.V.Preconditioning != core.Some(false, snap.Climate.At) {
+		t.Errorf("openings and climate: %+v %+v %+v", snap.Doors, snap.Windows, snap.Climate)
 	}
 	h, err := NormalizeHealth(TelematicData, raw)
 	if err != nil || h.Tyres[core.FrontLeft].PressureKPa.V != 250 || h.Tyres[core.RearRight].PressureKPa.V != 270 {
@@ -226,6 +261,19 @@ func TestSimulatorAPI(t *testing.T) {
 	}
 	if _, err := s.ChargingHistory(ctx, tok.Access, vin, t0.Add(-30*24*time.Hour), t0); err != nil {
 		t.Errorf("charging history: %v", err)
+	}
+	raw, err = s.Image(ctx, tok.Access, vin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p, err := DecodePicture(raw); err != nil || p.Type != "image/png" || len(p.Data) == 0 {
+		t.Errorf("picture: %s %v", p.Type, err)
+	}
+	if u, err := UploadOf(Image, raw); err != nil || len(u.Fields) != 0 {
+		t.Errorf("picture's upload: %+v %v", u, err)
+	}
+	if _, err := s.Image(ctx, tok.Access, "WBY31AW02RFR99999"); kindOf(err) != KindUnshared {
+		t.Errorf("another VIN's picture: %v", err)
 	}
 	s.control(t, "quota?used=50")
 	if _, err := s.BasicData(ctx, tok.Access, vin); kindOf(err) != KindRateLimited {

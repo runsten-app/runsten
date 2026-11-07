@@ -17,14 +17,21 @@ vi.mock('@/entities/session/extensions', () => ({
   },
 }))
 
-// The flags, as the session gives them: source.tesla on and source.polestar-id off, their
-// defaults, unless a test turns them over.
-const flag = vi.hoisted(() => ({ tesla: true, polestarId: false }))
+// The flags, as the session gives them: source.tesla on, source.polestar-id and source.bmw
+// off (BMW's is on in the app, but the other tests have three tabs), unless a test turns
+// them over.
+const flag = vi.hoisted(() => ({ tesla: true, polestarId: false, bmw: false }))
 vi.mock('@/features/view-flags', async () => {
   const { computed } = await import('vue')
   return {
     useFlag: (name: string) =>
-      computed(() => (name === 'source.polestar-id' ? flag.polestarId : flag.tesla)),
+      computed(() =>
+        name === 'source.polestar-id'
+          ? flag.polestarId
+          : name === 'source.bmw'
+            ? flag.bmw
+            : flag.tesla,
+      ),
   }
 })
 
@@ -56,6 +63,7 @@ const selfHosted: ConnectionSettings = {
   polestar: null,
   tesla: null,
   polestar_id: null,
+  bmw: null,
 }
 // The hosted offer: no instance key, the account gives its own.
 const hosted: ConnectionSettings = {
@@ -67,6 +75,7 @@ const hosted: ConnectionSettings = {
   polestar: null,
   tesla: null,
   polestar_id: null,
+  bmw: null,
 }
 
 const items = vehicles.items as Vehicle[]
@@ -75,6 +84,7 @@ const plain = (s: string) => s.replace(/\s+/g, ' ').trim()
 beforeEach(() => {
   flag.tesla = true
   flag.polestarId = false
+  flag.bmw = false
   mocks.fetchVehicles.mockReset()
   mocks.fetchVehicles.mockResolvedValue(items)
   mocks.fetchConnection.mockReset()
@@ -696,5 +706,124 @@ describe('ConnectionPage', () => {
     const tesla = w.find('#connection-panel-tesla')
     expect(tesla.find('.fleet').exists()).toBe(true)
     expect(tesla.find('#tesla-refresh-token').exists()).toBe(false)
+  })
+
+  describe('BMW', () => {
+    const bmwCar = (collection: Partial<NonNullable<Vehicle['collection']>> = {}): Vehicle => {
+      const [car] = items
+      if (!car?.collection) throw new Error('fixture')
+      return {
+        ...car,
+        id: 'bmw-1',
+        connection: { ...car.connection, provider: 'bmw', credential: 'set', api_key: null },
+        collection: { ...car.collection, quota: [], last_failure: null, ...collection },
+      }
+    }
+
+    it('has a tab, marked beta, while its flag is on, with its form and no dot', async () => {
+      flag.bmw = true
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
+        'Volvo needs your attention',
+        'Polestar needs your attention',
+        'Tesla Beta',
+        'BMW Beta',
+      ])
+      await w.findAll('[role="tab"]')[3]?.trigger('click')
+      await vi.waitFor(() => expect(w.find('#connection-panel-bmw .bmw-form').exists()).toBe(true))
+      const panel = w.find('#connection-panel-bmw')
+      expect(panel.findAll('h2').map((h) => plain(h.text()))).toEqual(['BMW CarData Beta'])
+      expect(panel.find('#bmw-client-id').exists()).toBe(true)
+      expect(panel.find('.bmw-off').exists()).toBe(false)
+    })
+
+    it('opens from the hash', async () => {
+      flag.bmw = true
+      const { w } = await pageAt('/connection#bmw')
+      expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('BMW')
+    })
+
+    it('has no tab while its flag is off, and nothing of BMW is connected', async () => {
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).not.toContain('BMW Beta')
+      expect(w.find('#connection-panel-bmw').exists()).toBe(false)
+    })
+
+    it('keeps its tab while its flag is off for an account that connected it, and says why', async () => {
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        bmw: { last4: 'c1d0', set_at: '2026-09-28T05:00:20Z', refused_at: null },
+      })
+      const { w } = await pageAt('/connection#bmw')
+      const panel = w.find('#connection-panel-bmw')
+      expect(panel.find('.bmw-off').text()).toContain('BMW is not offered on this instance')
+      expect(panel.find('.bmw-form').exists()).toBe(false)
+    })
+
+    it('reads a BMW in its tab, whatever the flag, as the vehicle it was opened from', async () => {
+      mocks.fetchVehicles.mockResolvedValue([bmwCar()])
+      const w = await page({ vehicle: 'bmw-1' })
+      expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('BMW')
+      const v = w.find('#connection-panel-bmw .vehicle-collection')
+      expect(v.find('.state').text()).toBe('Read normally')
+      expect(w.find('#connection-panel-bmw .bmw-off').exists()).toBe(true)
+    })
+
+    it('tells a BMW whose connection was refused', async () => {
+      flag.bmw = true
+      mocks.fetchVehicles.mockResolvedValue([
+        {
+          ...bmwCar(),
+          connection: { ...bmwCar().connection, credential: 'refused' },
+          collection: { ...bmwCar().collection, next_read_at: null } as Vehicle['collection'],
+        },
+      ])
+      const w = await page({ vehicle: 'bmw-1' })
+      const v = w.find('#connection-panel-bmw .vehicle-collection')
+      expect(v.find('.state').text()).toBe('Not read: BMW refused the connection')
+      expect(facts(v.find('dl'))).toMatchObject({
+        'Next reading': 'None until BMW is connected again',
+      })
+      expect(w.find('[role="tab"][aria-selected="true"] .attention').exists()).toBe(true)
+    })
+
+    it('tells a stream another application holds, and leads to the MQTT settings', async () => {
+      flag.bmw = true
+      mocks.fetchVehicles.mockResolvedValue([
+        bmwCar({
+          last_failure: {
+            at: '2026-09-28T07:04:00Z',
+            endpoint: 'stream',
+            status: null,
+            kind: 'stream_held',
+          },
+        }),
+      ])
+      const w = await page({ vehicle: 'bmw-1' })
+      const v = w.find('#connection-panel-bmw .vehicle-collection')
+      expect(facts(v.find('dl'))['Latest failure']).toContain(
+        'Stream held by another application (Home Assistant, evcc)',
+      )
+      const hint = v.find('.stream-held')
+      expect(hint.text()).toContain('BMW allows one at a time')
+      expect(hint.text()).toContain('republish your car to your MQTT broker')
+      expect(hint.find('a.mqtt').attributes('href')).toBe('/settings/integrations')
+    })
+
+    it('stops telling a stream held once its failure is old', async () => {
+      flag.bmw = true
+      mocks.fetchVehicles.mockResolvedValue([
+        bmwCar({
+          last_failure: {
+            at: '2026-09-28T05:00:00Z',
+            endpoint: 'stream',
+            status: null,
+            kind: 'stream_held',
+          },
+        }),
+      ])
+      const w = await page({ vehicle: 'bmw-1' })
+      expect(w.find('#connection-panel-bmw .stream-held').exists()).toBe(false)
+    })
   })
 })

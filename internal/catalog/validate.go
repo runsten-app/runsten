@@ -46,8 +46,8 @@ func (v Variant) validate() error {
 	if !idPattern.MatchString(v.ID) {
 		errs = append(errs, fmt.Errorf("id %q: lowercase words joined by hyphens expected", v.ID))
 	}
-	if v.Brand != Volvo && v.Brand != Polestar && v.Brand != Tesla {
-		errs = append(errs, fmt.Errorf("brand %q: volvo, polestar or tesla expected", v.Brand))
+	if !slices.Contains([]Brand{Volvo, Polestar, Tesla, BMW, Mini}, v.Brand) {
+		errs = append(errs, fmt.Errorf("brand %q: volvo, polestar, tesla, bmw or mini expected", v.Brand))
 	}
 	if v.Family == "" || v.Name == "" {
 		errs = append(errs, errors.New("family and name are required"))

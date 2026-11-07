@@ -251,6 +251,75 @@ components:
         - excluded
         - months
       type: object
+    Bmw:
+      additionalProperties: false
+      properties:
+        last4:
+          description: "The last four characters of the client ID, to find it again in the MyBMW or MyMINI portal: the tokens are never returned."
+          type: string
+        refused_at:
+          description: "When BMW refused the connection (the refresh token unused for two weeks, or the client ID's subscription withdrawn in the portal): its vehicles are not read until the owner connects again. null: not refused."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        set_at:
+          description: When the owner connected.
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - last4
+        - set_at
+        - refused_at
+      type: object
+    BmwClient:
+      additionalProperties: false
+      properties:
+        client_id:
+          description: The client ID created in the MyBMW or MyMINI portal (BMW CarData), with both of CarData's subscriptions.
+          maxLength: 128
+          minLength: 8
+          pattern: ^[!-~]+$
+          type: string
+      required:
+        - client_id
+      type: object
+    BmwDevice:
+      additionalProperties: false
+      properties:
+        expires_at:
+          description: "When the code expires: the owner starts again after it."
+          format: date-time
+          pattern: Z$
+          type: string
+        interval:
+          description: Seconds between two requests of POST /connection/bmw/token.
+          format: int64
+          minimum: 1
+          type: integer
+        user_code:
+          description: The code to enter on BMW's page.
+          minLength: 1
+          type: string
+        verification_uri:
+          description: BMW's page, where the owner signs in and enters the code.
+          format: uri
+          type: string
+        verification_uri_complete:
+          description: BMW's page with the code already filled in; null when BMW gives none.
+          format: uri
+          type:
+            - string
+            - "null"
+      required:
+        - user_code
+        - verification_uri
+        - verification_uri_complete
+        - expires_at
+        - interval
+      type: object
     Bounds:
       additionalProperties: false
       properties:
@@ -1233,12 +1302,18 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ReadingBool"
             - type: "null"
+        setpoint_c:
+          description: "The cabin temperature the climate is set to, in °C, whether it runs or not: above the cabin's, a climate running heats it; below, it cools it."
+          oneOf:
+            - $ref: "#/components/schemas/ReadingFloat64"
+            - type: "null"
       required:
         - outside_temp_c
         - cabin_temp_c
         - "on"
         - preconditioning
         - battery_heater
+        - setpoint_c
       type: object
     Collection:
       additionalProperties: false
@@ -1316,7 +1391,7 @@ components:
             - string
             - "null"
         credential:
-          description: "The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account; a Polestar ID's session ended, or its password refused); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla, /connection/polestar-id/code or /password). null for a Volvo connection."
+          description: "The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account; a Polestar ID's session ended, or its password refused); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla, /connection/polestar-id/code or /password, POST /connection/bmw/token). null for a Volvo connection."
           oneOf:
             - enum:
                 - set
@@ -1325,13 +1400,14 @@ components:
               type: string
             - type: "null"
         provider:
-          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it."
+          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData."
           enum:
             - volvo
             - polestar
             - tesla
             - polestar_id
             - tesla_fleet
+            - bmw
           type: string
         reauth_at:
           description: When the grant was found lost; null while active.
@@ -1377,6 +1453,11 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ApiKey"
             - type: "null"
+        bmw:
+          description: "The account's BMW CarData connection, which reads its BMWs and Minis (the flag source.bmw); null: none."
+          oneOf:
+            - $ref: "#/components/schemas/Bmw"
+            - type: "null"
         client_id:
           description: "The client ID of the instance's Volvo application (RUNSTEN_VOLVO_CLIENT_ID): the Volvo IDs connect through it, and its secret, never returned, refreshes the tokens."
           type: string
@@ -1415,6 +1496,7 @@ components:
         - polestar
         - tesla
         - polestar_id
+        - bmw
       type: object
     Cost:
       additionalProperties: false
@@ -1798,6 +1880,8 @@ components:
             - rate_limited
             - not_tesla
             - no_matching_car
+            - authorization_pending
+            - scope_missing
             - internal
           type: string
         message:
@@ -1872,7 +1956,7 @@ components:
             - string
             - "null"
         kind:
-          description: "quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). credential_refused: Polestar's Data Portal refused the connection's credential. unshared: the vehicle is no longer shared with the credential (unshared_at). not_granted: the credential was not granted the endpoint's domain, left out for a day. api_closed: the vendor's API is closed to the connection's credential (Tesla's Owner API, which sends to its Fleet API). other: another refusal."
+          description: "quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). credential_refused: Polestar's Data Portal refused the connection's credential. unshared: the vehicle is no longer shared with the credential (unshared_at). not_granted: the credential was not granted the endpoint's domain, left out for a day. api_closed: the vendor's API is closed to the connection's credential (Tesla's Owner API, which sends to its Fleet API). stream_held: another client holds the vendor's only connection to its stream (BMW CarData's, which Home Assistant or evcc may hold): its values are not read until it lets go. other: another refusal."
           enum:
             - quota
             - rate_limited
@@ -1886,6 +1970,7 @@ components:
             - unshared
             - not_granted
             - api_closed
+            - stream_held
             - other
           type: string
         status:
@@ -2287,6 +2372,70 @@ components:
         - windows_per_version
         - price_per_kwh
         - entered_cost
+      type: object
+    MapLink:
+      additionalProperties: false
+      properties:
+        a:
+          description: The index of a spot in spots, before b.
+          format: int64
+          minimum: 0
+          type: integer
+        b:
+          format: int64
+          minimum: 1
+          type: integer
+        distance_km:
+          description: The sum of the trips' known distances.
+          format: double
+          minimum: 0
+          type: number
+        distance_unknown:
+          description: The trips whose distance is unknown, left out of distance_km.
+          format: int64
+          minimum: 0
+          type: integer
+        trips:
+          format: int64
+          minimum: 1
+          type: integer
+      required:
+        - a
+        - b
+        - trips
+        - distance_km
+        - distance_unknown
+      type: object
+    MapSpot:
+      additionalProperties: false
+      properties:
+        address:
+          description: Outside every place, the street and town of one of the ends the spot gathers, as start_address of a trip; null at a place, without a geocoder, and until it answered.
+          type:
+            - string
+            - "null"
+        arrivals:
+          format: int64
+          minimum: 0
+          type: integer
+        departures:
+          format: int64
+          minimum: 0
+          type: integer
+        place:
+          description: The place, null outside every place.
+          oneOf:
+            - $ref: "#/components/schemas/PlaceRef"
+            - type: "null"
+        position:
+          $ref: "#/components/schemas/Position"
+          description: The place's position, else the mean of the ends the spot gathers.
+      required:
+        - position
+        - place
+        - address
+        - departures
+        - arrivals
       type: object
     Model:
       additionalProperties: false
@@ -4030,6 +4179,9 @@ components:
           additionalProperties: false
           description: "The feature flags the web interface reads, evaluated for the session's account: a function shipped off or on, which the instance, or the account, turns over. Made to go: a flag is removed once on everywhere."
           properties:
+            source.bmw:
+              description: "BMW CarData as a source, for the BMWs and the Minis: its connection and its reads. On by default, the API being BMW's own; an instance may turn it off while the source is in beta, not seen yet on a real car."
+              type: boolean
             source.polestar-id:
               description: "The Polestar ID as a source, for the Polestars the Data Portal does not read (outside the EU/EEA): its connection and its reads. Off by default: the Polestar app's API is unofficial, and many accounts read from one instance's addresses could have them blocked; a self-hosted instance turns it on."
               type: boolean
@@ -4039,6 +4191,7 @@ components:
           required:
             - source.tesla
             - source.polestar-id
+            - source.bmw
           type: object
         limits:
           description: "What the account's offer hides, as of now; null: nothing, the whole history is shown. Only an instance that limits its accounts sets it."
@@ -4153,7 +4306,7 @@ components:
           description: "A performance package (Tesla); false: none, or not told."
           type: boolean
         picture:
-          description: "Whether GET /vehicles/{vehicle}/picture gives a picture of the vehicle: its vendor links to one (Volvo)."
+          description: "Whether GET /vehicles/{vehicle}/picture gives a picture of the vehicle: its vendor links to one (Volvo), or one is stored (BMW)."
           type: boolean
         power_kw:
           description: The maximum power of the motors, or of the engine and motors together.
@@ -4791,6 +4944,46 @@ components:
         - end
         - capacity_kwh
         - capacity_source
+      type: object
+    TripMap:
+      additionalProperties: false
+      properties:
+        from:
+          description: "The start of the period: the requested one, or the start of the first trip. Equal to to when the vehicle has no trip."
+          format: date-time
+          pattern: Z$
+          type: string
+        links:
+          description: The trips between two spots, either way, the most driven first. A trip back to the spot it left is none.
+          items:
+            $ref: "#/components/schemas/MapLink"
+          type: array
+        spots:
+          description: "Where the trips started and ended, the most visited first: a place, the ends within its circle, or else the ends within 250 m of the first one it gathered, around the same address. The first 50 have their address."
+          items:
+            $ref: "#/components/schemas/MapSpot"
+          type: array
+        to:
+          format: date-time
+          pattern: Z$
+          type: string
+        trips:
+          description: "The trips of the map: those that started in the period, both ends known."
+          format: int64
+          minimum: 0
+          type: integer
+        trips_without_position:
+          description: The trips of the period left out, an end unknown (a reconstructed trip has none).
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - from
+        - to
+        - trips
+        - trips_without_position
+        - spots
+        - links
       type: object
     TripStats:
       additionalProperties: false
@@ -5726,6 +5919,161 @@ paths:
         - session: []
         - sessionSecure: []
       summary: Give the account's application key
+      tags:
+        - connection
+  /connection/bmw:
+    delete:
+      description: The client ID and the tokens are erased, and a flow pending forgotten. The vehicles stay, with their history, and are no longer read until the owner connects again.
+      operationId: deleteBMW
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Remove the account's BMW connection
+      tags:
+        - connection
+  /connection/bmw/authorization:
+    post:
+      description: "BMW gives a code, which the owner enters on BMW's page, signed in to their MyBMW or MyMINI account, within its lifetime. Runsten keeps the device code and its PKCE verifier in memory, one flow per account: a new start replaces the previous. Then POST /connection/bmw/token, every `interval` seconds, until it connects."
+      operationId: postBMWAuthorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BmwClient"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BmwDevice"
+          description: The code to enter.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `credential_refused`: BMW does not know the client ID."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: BMW is not offered to the account (the flag `source.bmw`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: BMW did not answer."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: too many flows are pending on the instance."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Start BMW's device flow with the owner's client ID
+      tags:
+        - connection
+  /connection/bmw/token:
+    post:
+      description: "Asks BMW once, no sooner than its interval, whether the owner approved the code. Approved, the vehicles the BMW account is the primary user of are listed and added to the account, and the connection stored: the client ID, the account's identifier and the refresh token, sealed, never returned. It replaces a previous connection."
+      operationId: postBMWToken
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionSettings"
+          description: The connection.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`authorization_expired`: no code is waiting (none started, or the instance restarted), it expired, or the connection was removed or started again while the code was being approved. `credential_refused`: the owner or BMW refused the authorization."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: BMW is not offered to the account (the flag `source.bmw`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`authorization_pending`: not approved yet; ask again after `Retry-After`. `scope_missing`: the client ID lacks CarData's API subscription. `no_vehicle`: the BMW account is the primary user of no vehicle. `too_many_vehicles`: the account would have more vehicles than the instance lets it have. Nothing is stored but while pending, and the code is spent once approved."
+          headers:
+            Retry-After:
+              description: Seconds to wait before asking again, while `authorization_pending`.
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: BMW did not answer; nothing is stored, the code may still be approved."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Connect the account's BMW once the owner approved the code
       tags:
         - connection
   /connection/polestar:
@@ -8473,7 +8821,7 @@ paths:
         - vehicles
   /vehicles/{vehicle}/picture:
     get:
-      description: "The vendor's picture of the vehicle from the outside, relayed by Runsten so that the browser calls no third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day. Only for a vehicle whose `sheet.picture` is true."
+      description: "The vendor's picture of the vehicle from the outside, relayed by Runsten so that the browser calls no third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day (Volvo); or the one the collector read with the owner's access and stored, as the vendor gives it (BMW). Only for a vehicle whose `sheet.picture` is true."
       operationId: getVehiclePicture
       parameters:
         - description: The vehicle ID.
@@ -8544,7 +8892,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`source_unavailable`: the vendor's CDN did not give the picture."
+          description: "`source_unavailable`: the vendor's CDN did not give the picture (a relayed one)."
       security:
         - session: []
         - sessionSecure: []
@@ -9012,6 +9360,89 @@ paths:
       summary: The statistics of a vehicle over a period
       tags:
         - stats
+  /vehicles/{vehicle}/trip-map:
+    get:
+      description: "The ends of the trips that started in the period, gathered into spots, and the links between them: the same journey, driven day after day either way, is one link that counts its trips. A trip read by Runsten has its two ends only, never its path: a link is a straight line between two spots."
+      operationId: getTripMap
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+        - description: The start of the period [from, to). Without it, the period starts with the vehicle's first trip.
+          explode: false
+          in: query
+          name: from
+          schema:
+            description: The start of the period [from, to). Without it, the period starts with the vehicle's first trip.
+            examples:
+              - "2026-09-01T00:00:00+02:00"
+            format: date-time
+            type: string
+        - description: The end of the period, excluded; it must come after from. Without it, now.
+          explode: false
+          in: query
+          name: to
+          schema:
+            description: The end of the period, excluded; it must come after from. Without it, now.
+            examples:
+              - "2026-10-01T00:00:00+02:00"
+            format: date-time
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripMap"
+          description: The map.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_parameter`: `from` or `to`; the message names the parameter."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: Where a vehicle went over a period
+      tags:
+        - events
   /vehicles/{vehicle}/trips:
     get:
       description: Newest first, by `start.after` then `detected_at`. Figures are `null` when the readings do not give them. The events derived from the readings and those imported from another application (`imported`) come in one list.

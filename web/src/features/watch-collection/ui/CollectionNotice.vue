@@ -10,8 +10,8 @@ import { byProvider, useCollectionText } from '../composables/useCollectionText'
 // CollectionNotice warns, on every page of a vehicle, that nothing new is read of it,
 // and why: the instance without a Volvo application, which its administrator sets; the
 // grant lost, with the way to connect again; no application key it may be
-// read with, which the connection page takes; the Polestar credential or the Tesla refresh
-// token refused or removed, or the vehicle no longer shared with it, or a domain it was not
+// read with, which the connection page takes; the Polestar credential, the Tesla refresh
+// token or the BMW connection refused or removed, or the vehicle no longer shared with it, or a domain it was not
 // granted, which the connection page takes too; the vehicle's market not served by Volvo's API, which no one
 // here can change; the collector stopped; a pause or a quota,
 // which end by themselves; the account's offer leaving it unread (unread: the session's
@@ -41,6 +41,7 @@ function body(s: CollectionState): string {
         volvo: t('connection.notice.paused'),
         polestar: t('connection.notice.pausedPolestar'),
         tesla: t('connection.notice.pausedTesla'),
+        bmw: t('connection.notice.pausedBmw'),
       })
     case 'market':
       return t('connection.notice.market')
@@ -52,6 +53,7 @@ function body(s: CollectionState): string {
             tesla: t('connection.notice.credentialRefusedTesla'),
             polestarId: t('connection.notice.credentialRefusedPolestarId'),
             teslaFleet: t('connection.notice.credentialRefusedTeslaFleet'),
+            bmw: t('connection.notice.credentialRefusedBmw'),
           })
         : byProvider(provider.value, {
             volvo: t('connection.notice.credentialMissing'),
@@ -59,6 +61,7 @@ function body(s: CollectionState): string {
             tesla: t('connection.notice.credentialMissingTesla'),
             polestarId: t('connection.notice.credentialMissingPolestarId'),
             teslaFleet: t('connection.notice.credentialMissingTeslaFleet'),
+            bmw: t('connection.notice.credentialMissingBmw'),
           })
     case 'unshared':
       return byProvider(provider.value, {
@@ -67,6 +70,7 @@ function body(s: CollectionState): string {
         tesla: t('connection.notice.unsharedTesla'),
         polestarId: t('connection.notice.unsharedPolestarId'),
         teslaFleet: t('connection.notice.unsharedTeslaFleet'),
+        bmw: t('connection.notice.unsharedBmw'),
       })
     case 'notGranted':
       return t('connection.notice.notGranted', { endpoint: s.endpoint ?? f.unknown() })
@@ -77,6 +81,7 @@ function body(s: CollectionState): string {
       if (provider.value === 'polestar') return t('connection.notice.quotaPolestar')
       if (provider.value === 'tesla_fleet') return t('connection.notice.quotaTeslaFleet')
       if (provider.value === 'polestar_id') return t('connection.notice.quotaPolestarId')
+      if (provider.value === 'bmw') return t('connection.notice.quotaBmw')
       if (provider.value === 'tesla') return t('connection.notice.quotaTesla')
       return connection.value?.api_key === 'own'
         ? t('connection.notice.quotaOwnKey')

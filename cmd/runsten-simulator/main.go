@@ -198,7 +198,7 @@ func run() error {
 	for _, prefix := range []string{teslaapi.APIPrefix, teslaapi.AuthPrefix, teslaapi.ControlPrefix} {
 		mux.Handle(prefix, th)
 	}
-	bh := bmwapi.NewHandler(bmw, clk, cfg.bmw)
+	bh := bmwapi.NewHandler(bmw, clk, cfg.bmw.Scaled(cfg.speed))
 	for _, prefix := range []string{bmwapi.AuthPrefix, bmwapi.APIPrefix, bmwapi.ControlPrefix} {
 		mux.Handle(prefix, bh)
 	}

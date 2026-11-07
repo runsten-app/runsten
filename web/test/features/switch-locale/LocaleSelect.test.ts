@@ -10,12 +10,17 @@ describe('LocaleSelect', () => {
     const select = wrapper.findComponent({ name: 'VSelect' })
     expect(select.props('items')).toEqual([
       { value: 'en', title: 'English' },
+      { value: 'de', title: 'Deutsch' },
+      { value: 'es', title: 'Español' },
       { value: 'fr', title: 'Français' },
+      { value: 'it', title: 'Italiano' },
+      { value: 'nb', title: 'Norsk bokmål' },
+      { value: 'nl', title: 'Nederlands' },
       { value: 'sv', title: 'Svenska' },
     ])
     select.vm.$emit('update:modelValue', 'fr')
     expect(i18n.global.locale.value).toBe('fr')
-    select.vm.$emit('update:modelValue', 'de')
+    select.vm.$emit('update:modelValue', 'pt')
     expect(i18n.global.locale.value).toBe('fr')
     i18n.global.locale.value = 'en'
   })

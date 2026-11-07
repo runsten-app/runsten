@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"runsten/internal/bmw"
 	"runsten/internal/collector"
 	"runsten/internal/flags"
 	"runsten/internal/oauth"
@@ -56,7 +57,8 @@ func TestLoadConfigDefaults(t *testing.T) {
 		cfg.tick != 10*time.Second ||
 		cfg.intervals != collector.DefaultIntervals() || cfg.quota != collector.DefaultQuota() || cfg.logLevel != slog.LevelInfo ||
 		cfg.tokens != oauth.DefaultParams() || cfg.clientID != "id" || cfg.clientSecret != "secret" || cfg.clockSpeed != 1 ||
-		!cfg.privateBrokers || len(cfg.flags) != 0 {
+		!cfg.privateBrokers || len(cfg.flags) != 0 ||
+		cfg.bmw != (bmw.Hosts{Auth: bmw.DefaultAuthURL, API: bmw.DefaultAPIURL}) || cfg.bmwStream != bmw.DefaultStreamURL {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -78,6 +80,9 @@ func TestLoadConfigOverrides(t *testing.T) {
 		"RUNSTEN_POLESTAR_ID_API_URL":       "http://localhost:8080/polestar-id/eu-north-1/mystar-v2",
 		"RUNSTEN_POLESTAR_ID_DISCOVERY_URL": "http://localhost:8080/polestar-id/cnepmob",
 		"RUNSTEN_POLESTAR_ID_PCCS_URL":      "http://localhost:8080",
+		"RUNSTEN_BMW_AUTH_URL":              "http://localhost:8080/gcdm/oauth",
+		"RUNSTEN_BMW_API_URL":               "http://localhost:8080",
+		"RUNSTEN_BMW_STREAM_URL":            "tcp://localhost:9000",
 	} {
 		m[k] = v
 	}
@@ -95,7 +100,9 @@ func TestLoadConfigOverrides(t *testing.T) {
 		cfg.polestarID != (polestarid.Hosts{
 			Auth: "http://localhost:8080/polestar-id", API: "http://localhost:8080/polestar-id/eu-north-1/mystar-v2",
 			Discovery: "http://localhost:8080/polestar-id/cnepmob", PCCS: "http://localhost:8080",
-		}) {
+		}) ||
+		cfg.bmw != (bmw.Hosts{Auth: "http://localhost:8080/gcdm/oauth", API: "http://localhost:8080"}) ||
+		cfg.bmwStream != "tcp://localhost:9000" {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -109,6 +116,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_VOLVO_QUOTA_PER_USER": "maybe", "RUNSTEN_MQTT_PRIVATE_BROKERS": "sometimes",
 		"RUNSTEN_POLESTAR_BASE_URL": "polestar", "RUNSTEN_FLAGS": "source.tesla=sometimes",
 		"RUNSTEN_POLESTAR_ID_API_URL": "mystar", "RUNSTEN_POLESTAR_ID_PCCS_URL": "pccs",
+		"RUNSTEN_BMW_API_URL": "cardata", "RUNSTEN_BMW_STREAM_URL": "https://streaming.example:9000",
 	}), connect)
 	if err == nil {
 		t.Fatal("error expected")
@@ -119,7 +127,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_VOLVO_AUTH_URL", "RUNSTEN_TOKEN_KEEPALIVE", "RUNSTEN_HEALTH_ADDR", "RUNSTEN_ACCESS_RESTRICTED",
 		"RUNSTEN_DEV_CLOCK_SPEED", "RUNSTEN_VOLVO_DAILY_QUOTA", "RUNSTEN_VOLVO_QUOTA_PER_USER",
 		"RUNSTEN_MQTT_PRIVATE_BROKERS", "RUNSTEN_POLESTAR_BASE_URL", "RUNSTEN_FLAGS", "RUNSTEN_POLESTAR_ID_API_URL",
-		"RUNSTEN_POLESTAR_ID_PCCS_URL",
+		"RUNSTEN_POLESTAR_ID_PCCS_URL", "RUNSTEN_BMW_API_URL", "RUNSTEN_BMW_STREAM_URL",
 	} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("the error should mention %s: %v", want, err)

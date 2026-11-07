@@ -35,7 +35,32 @@ const (
 	DescTyreFrontRight = "vehicle.chassis.axle.row1.wheel.right.tire.pressure"
 	DescTyreRearLeft   = "vehicle.chassis.axle.row2.wheel.left.tire.pressure"
 	DescTyreRearRight  = "vehicle.chassis.axle.row2.wheel.right.tire.pressure"
+
+	DescDoorFrontLeft    = "vehicle.cabin.door.row1.driver.isOpen"
+	DescDoorFrontRight   = "vehicle.cabin.door.row1.passenger.isOpen"
+	DescDoorRearLeft     = "vehicle.cabin.door.row2.driver.isOpen"
+	DescDoorRearRight    = "vehicle.cabin.door.row2.passenger.isOpen"
+	DescHood             = "vehicle.body.hood.isOpen"
+	DescTrunk            = "vehicle.body.trunk.isOpen"
+	DescLock             = "vehicle.cabin.door.lock.status"
+	DescWindowFrontLeft  = "vehicle.cabin.window.row1.driver.status"
+	DescWindowFrontRight = "vehicle.cabin.window.row1.passenger.status"
+	DescWindowRearLeft   = "vehicle.cabin.window.row2.driver.status"
+	DescWindowRearRight  = "vehicle.cabin.window.row2.passenger.status"
+	DescSunroof          = "vehicle.cabin.sunroof.status"
+	DescPreconditioning  = "vehicle.vehicle.preConditioning.activity"
 )
+
+// openingDescs are the descriptors of the openings, by the name of vehicle.Openings():
+// all but the tank lid, which an electric BMW has none of.
+var openingDescs = map[string]string{
+	"front_left_door": DescDoorFrontLeft, "front_right_door": DescDoorFrontRight,
+	"rear_left_door": DescDoorRearLeft, "rear_right_door": DescDoorRearRight,
+	"hood": DescHood, "tailgate": DescTrunk,
+	"front_left_window": DescWindowFrontLeft, "front_right_window": DescWindowFrontRight,
+	"rear_left_window": DescWindowRearLeft, "rear_right_window": DescWindowRearRight,
+	"sunroof": DescSunroof,
+}
 
 // Descriptors returns every descriptor the simulator gives, sorted: those the owner ticks
 // in the portal for the stream, and puts in a container for the API.
@@ -44,7 +69,10 @@ func Descriptors() []string {
 		DescSoC, DescTargetSoC, DescChargingStatus, DescHVStatus, DescChargingPower, DescChargingMethod,
 		DescACAmpere, DescACVoltage, DescPhaseNumber, DescTimeToFull, DescPortStatus, DescPortDCStatus,
 		DescOdometer, DescLatitude, DescLongitude, DescHeading, DescRange, DescIsMoving, DescIgnition,
-		DescTyreFrontLeft, DescTyreFrontRight, DescTyreRearLeft, DescTyreRearRight,
+		DescTyreFrontLeft, DescTyreFrontRight, DescTyreRearLeft, DescTyreRearRight, DescLock, DescPreconditioning,
+	}
+	for _, k := range openingDescs {
+		d = append(d, k)
 	}
 	sort.Strings(d)
 	return d
@@ -87,6 +115,21 @@ func render(spec vehicle.Spec, st vehicle.State, now time.Time) map[string]value
 		DescTyreFrontLeft: {250, "kPa"}, DescTyreFrontRight: {250, "kPa"},
 		DescTyreRearLeft: {270, "kPa"}, DescTyreRearRight: {270, "kPa"},
 	}
+
+	// The catalogue's words, OPEN or CLOSED, for the doors as for the windows, though it
+	// types the doors boolean: how a car writes them is assumed. The car never
+	// preconditions in the simulation.
+	for name, k := range openingDescs {
+		v[k] = value{"CLOSED", ""}
+		if st.IsOpen(name) {
+			v[k] = value{"OPEN", ""}
+		}
+	}
+	v[DescLock] = value{"UNLOCKED", ""}
+	if st.Locked {
+		v[DescLock] = value{"LOCKED", ""}
+	}
+	v[DescPreconditioning] = value{"inactive", ""}
 
 	port, dcPort := "DISCONNECTED", "DISCONNECTED"
 	status, hv, method := "NOCHARGING", "NOT_CHARGING", "NOCHARGING"

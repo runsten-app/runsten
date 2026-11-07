@@ -162,6 +162,31 @@ func TestNormalizeBasicData(t *testing.T) {
 	if !s.PlugInHybrid() || s.ModelYear.V != 2024 {
 		t.Errorf("phev: %+v", s)
 	}
+	// Nothing of the sheet nor the capacity told: covered, unknown.
+	if s.Covers&(core.FieldCapacity|core.FieldSheet) != core.FieldCapacity|core.FieldSheet || s.CapacityKWh.OK || s.Sheet.OK {
+		t.Errorf("phev's sheet: %+v", s)
+	}
+}
+
+func TestNormalizeBasicDataSheet(t *testing.T) {
+	// The OpenAPI's brand of the i models, BMWi; the capacity a string, or a number.
+	for _, capacity := range []string{`"83.9"`, `83.9`} {
+		s := mustNormalize(t, BasicData, `{"brand":"BMWi","modelName":"i4 eDrive40","propulsionType":"BEV",
+			"steering":"LL","colourCode":"C4P","colourCodeRaw":"C4P1","hvsMaxEnergyAbsolute":`+capacity+`}`)
+		if s.Brand.V != "bmw" {
+			t.Errorf("brand: %+v", s.Brand)
+		}
+		if s.CapacityKWh != core.Some(83.9, time.Time{}) {
+			t.Errorf("capacity %s: %+v", capacity, s.CapacityKWh)
+		}
+		if s.Sheet.V != (core.Sheet{Colour: "C4P", Steering: core.LeftHand}) {
+			t.Errorf("sheet: %+v", s.Sheet)
+		}
+	}
+	s := mustNormalize(t, BasicData, `{"brand":"MINI","steering":"RL","colourCodeRaw":"B71","hvsMaxEnergyAbsolute":"0"}`)
+	if s.Sheet.V != (core.Sheet{Colour: "B71", Steering: core.RightHand}) || s.CapacityKWh.OK {
+		t.Errorf("right hand, raw colour, no capacity: %+v", s)
+	}
 }
 
 func TestFingerprintIgnoresTimestamps(t *testing.T) {
@@ -205,5 +230,133 @@ func TestUploadOf(t *testing.T) {
 	if !u.At.Equal(time.Date(2026, 10, 1, 8, 5, 0, 0, time.UTC)) ||
 		!slices.Equal(u.Fields, []string{DescSoC, DescOdometer}) {
 		t.Errorf("upload: %+v", u)
+	}
+}
+
+func TestDecodePicture(t *testing.T) {
+	for raw, ok := range map[string]bool{
+		`{"type":"image/png","image":"iVBORw0KGgo="}`: true,
+		`{"type":"text/html","image":"PGh0bWw+"}`:     false,
+		`{"type":"image/png","image":""}`:             false,
+		`not json`:                                    false,
+	} {
+		if _, err := DecodePicture([]byte(raw)); (err == nil) != ok {
+			t.Errorf("%s: %v", raw, err)
+		}
+	}
+}
+
+func TestNormalizeDoorsAndWindows(t *testing.T) {
+	at := func(sec int) time.Time { return time.Date(2026, 10, 1, 8, 0, sec, 0, time.UTC) }
+	s := mustNormalize(t, Stream, `{"telematicData":{
+		"vehicle.cabin.door.row1.driver.isOpen":{"value":"CLOSED","timestamp":"2026-10-01T08:00:00Z"},
+		"vehicle.cabin.door.row1.passenger.isOpen":{"value":"OPEN","timestamp":"2026-10-01T08:00:00Z"},
+		"vehicle.cabin.door.row2.driver.isOpen":{"value":false,"timestamp":"2026-10-01T08:00:00Z"},
+		"vehicle.cabin.door.row2.passenger.isOpen":{"value":"INVALID","timestamp":"2026-10-01T08:00:00Z"},
+		"vehicle.body.hood.isOpen":{"value":"CLOSED","timestamp":"2026-10-01T08:00:00Z"},
+		"vehicle.body.trunk.isOpen":{"value":"INTERMEDIATE","timestamp":"2026-10-01T08:00:10Z"},
+		"vehicle.cabin.door.lock.status":{"value":"SECURED","timestamp":"2026-10-01T08:00:05Z"},
+		"vehicle.cabin.window.row1.driver.status":{"value":"INTERMEDIATE","timestamp":"2026-10-01T08:00:00Z"},
+		"vehicle.cabin.window.row2.passenger.status":{"value":"CLOSED","timestamp":"2026-10-01T08:00:00Z"},
+		"vehicle.cabin.sunroof.status":{"value":"OPEN","timestamp":"2026-10-01T08:00:20Z"}}}`)
+	if s.Covers != core.FieldDoors|core.FieldWindows {
+		t.Errorf("covers %b", s.Covers)
+	}
+	wantDoors := core.Doors{
+		Locked:    core.Some(true, at(5)),
+		FrontLeft: core.Some(core.Closed, at(0)), FrontRight: core.Some(core.Open, at(0)),
+		RearLeft: core.Some(core.Closed, at(0)), // a boolean read too
+		Hood:     core.Some(core.Closed, at(0)), Tailgate: core.Some(core.Ajar, at(10)),
+	}
+	if s.Doors != core.Some(wantDoors, at(10)) {
+		t.Errorf("doors %+v", s.Doors)
+	}
+	wantWindows := core.Windows{
+		FrontLeft: core.Some(core.Ajar, at(0)), RearRight: core.Some(core.Closed, at(0)),
+		Sunroof: core.Some(core.Open, at(20)),
+	}
+	if s.Windows != core.Some(wantWindows, at(20)) {
+		t.Errorf("windows %+v", s.Windows)
+	}
+	if !s.Open() {
+		t.Error("not open")
+	}
+
+	for _, c := range []struct {
+		word   string
+		locked core.Value[bool]
+	}{
+		{"LOCKED", core.Some(true, at(0))},
+		{"UNLOCKED", core.Some(false, at(0))},
+		{"SELECTIVE-LOCKED", core.Some(false, at(0))}, // the driver's door unlocked
+		{"UNKNOWN", core.Value[bool]{}},
+	} {
+		s := mustNormalize(t, Stream, `{"telematicData":{
+			"vehicle.cabin.door.lock.status":{"value":"`+c.word+`","timestamp":"2026-10-01T08:00:00Z"}}}`)
+		if s.Covers != core.FieldDoors || s.Doors.V.Locked != c.locked {
+			t.Errorf("%s: %+v covers %b", c.word, s.Doors, s.Covers)
+		}
+		if c.word == "UNKNOWN" && s.Doors.OK {
+			t.Errorf("%s: doors told %+v", c.word, s.Doors)
+		}
+	}
+
+	// A word not read, newer than every value read, does not date them.
+	s = mustNormalize(t, Stream, `{"telematicData":{
+		"vehicle.cabin.door.row1.driver.isOpen":{"value":"CLOSED","timestamp":"2026-10-01T08:00:00Z"},
+		"vehicle.body.hood.isOpen":{"value":"INVALID","timestamp":"2026-10-01T08:00:30Z"},
+		"vehicle.cabin.door.lock.status":{"value":"UNKNOWN","timestamp":"2026-10-01T08:00:40Z"},
+		"vehicle.cabin.window.row1.driver.status":{"value":"CLOSED","timestamp":"2026-10-01T08:00:00Z"},
+		"vehicle.cabin.sunroof.status":{"value":"INVALID","timestamp":"2026-10-01T08:00:50Z"}}}`)
+	if s.Doors.At != at(0) || s.Windows.At != at(0) || s.Doors.V.Hood.OK || s.Doors.V.Locked.OK {
+		t.Errorf("dated by a word not read: %+v %+v", s.Doors, s.Windows)
+	}
+
+	// Without one of them, neither is covered: the previous holds.
+	if s := mustNormalize(t, Stream, `{"telematicData":{}}`); s.Covers&(core.FieldDoors|core.FieldWindows) != 0 {
+		t.Errorf("covers %b", s.Covers)
+	}
+}
+
+func TestNormalizePreconditioning(t *testing.T) {
+	at := time.Date(2026, 10, 1, 8, 0, 0, 0, time.UTC)
+	for _, c := range []struct {
+		word string
+		want core.Value[core.Climate]
+	}{
+		{"heating", core.Some(core.Climate{Preconditioning: core.Some(true, at)}, at)},
+		{"COOLING", core.Some(core.Climate{Preconditioning: core.Some(true, at)}, at)},
+		{"ventilation", core.Some(core.Climate{Preconditioning: core.Some(true, at)}, at)},
+		{"standby", core.Some(core.Climate{Preconditioning: core.Some(false, at)}, at)},
+		{"inactive", core.Some(core.Climate{Preconditioning: core.Some(false, at)}, at)},
+		{"", core.Value[core.Climate]{}},
+	} {
+		s := mustNormalize(t, Stream, `{"telematicData":{
+			"vehicle.vehicle.preConditioning.activity":{"value":"`+c.word+`","timestamp":"2026-10-01T08:00:00Z"}}}`)
+		if s.Covers != core.FieldClimate || s.Climate != c.want {
+			t.Errorf("%q: %+v covers %b", c.word, s.Climate, s.Covers)
+		}
+		// CarData tells no temperature.
+		if s.OutsideTempC.OK || s.CabinTempC.OK {
+			t.Errorf("%q: temperatures %+v %+v", c.word, s.OutsideTempC, s.CabinTempC)
+		}
+	}
+}
+
+func TestContainerName(t *testing.T) {
+	n := ContainerName()
+	ours := func(name string) Container { return Container{Name: name, Purpose: containerPurpose} }
+	if len(n) != len("runsten-")+8 || !isRunstenContainer(ours(n)) || !isRunstenContainer(ours("runsten")) {
+		t.Errorf("name %q", n)
+	}
+	// Another client's, named alike or with another purpose, is never Runsten's.
+	for _, ct := range []Container{
+		ours("runstenx"), ours("evcc"), ours("runsten-custom"), ours("runsten-0123456789"),
+		{Name: n, Purpose: "my own"},
+		{Name: "runsten"},
+	} {
+		if isRunstenContainer(ct) {
+			t.Errorf("%+v taken for Runsten's", ct)
+		}
 	}
 }

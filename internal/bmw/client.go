@@ -49,6 +49,9 @@ const apiVersion = "v1"
 // maxBody caps the size of a response read (a charging history of 30 days is a few KiB).
 const maxBody = 1 << 20
 
+// MaxImage caps the size of the vehicle's picture, as the relay of the vendors' others.
+const MaxImage = 4 << 20
+
 // Endpoint is a kind of response read for a vehicle.
 type Endpoint string
 
@@ -63,6 +66,8 @@ const (
 	BasicData Endpoint = "basic-data"
 	// ChargingHistory is the charging sessions of the last 30 days, from the API.
 	ChargingHistory Endpoint = "charging-history"
+	// Image is BMW's picture of the vehicle, from the API, kept as a Picture's JSON.
+	Image Endpoint = "image"
 )
 
 // Hosts are the addresses of the authentication and of the API, without a trailing slash
@@ -107,7 +112,7 @@ type Mapping struct {
 
 // Container is a set of descriptors the API reads together.
 type Container struct {
-	ID, Name string
+	ID, Name, Purpose string
 }
 
 // Client calls CarData. Each method makes one request, and never retries: the caller
@@ -278,7 +283,86 @@ func (c *Client) ChargingHistory(ctx context.Context, token, vin string, from, t
 	return c.get(ctx, token, string(ChargingHistory), "/customers/vehicles/"+url.PathEscape(vin)+"/chargingHistory?"+q.Encode())
 }
 
-// Containers lists the account's containers.
+// Picture is the vehicle's picture as Image stores it: the API answers the image itself,
+// which the collector's store, of JSON responses, keeps in base64.
+type Picture struct {
+	// Type is the image's media type, sniffed from its bytes: image/png, image/jpeg or
+	// image/webp.
+	Type string `json:"type"`
+	Data []byte `json:"image"`
+}
+
+// PictureError is an answer of Image that holds no picture Runsten keeps: not an image
+// of a known type, larger than MaxImage, or unreadable. BMW answered, with Status: the
+// vehicle gives no picture, not a failure of the API.
+type PictureError struct {
+	Status int
+	Err    error
+}
+
+func (e *PictureError) Error() string { return e.Err.Error() }
+func (e *PictureError) Unwrap() error { return e.Err }
+
+// pictureTypes are the media types of a picture kept.
+var pictureTypes = map[string]bool{"image/png": true, "image/jpeg": true, "image/webp": true}
+
+// Image returns the raw response of the vehicle's picture: a Picture's JSON, the picture
+// scaled down to PictureWidth when wider (fit), so that what is stored every day stays
+// small. Assumed: one picture from the outside, within MaxImage (BMW's OpenAPI tells
+// neither the size nor the type, */*).
+func (c *Client) Image(ctx context.Context, token, vin string) ([]byte, error) {
+	name := string(Image)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.api+"/customers/vehicles/"+url.PathEscape(vin)+"/image", http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", name, err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("x-version", apiVersion)
+	req.Header.Set("Accept", "image/png, image/jpeg, image/webp, application/json;q=0.5")
+	resp, err := c.hc.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", name, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, MaxImage+1))
+	if err != nil {
+		return nil, fmt.Errorf("%s: read: %w", name, err)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return nil, newAPIError(name, apiCall, resp.StatusCode, body)
+	}
+	if len(body) > MaxImage {
+		return nil, &PictureError{Status: resp.StatusCode, Err: fmt.Errorf("%s: larger than %d bytes", name, MaxImage)}
+	}
+	mt := http.DetectContentType(body)
+	if !pictureTypes[mt] {
+		return nil, &PictureError{Status: resp.StatusCode, Err: fmt.Errorf("%s: not an image: %s", name, mt)}
+	}
+	body, err = fit(body, mt)
+	if err != nil {
+		return nil, &PictureError{Status: resp.StatusCode, Err: fmt.Errorf("%s: %w", name, err)}
+	}
+	raw, err := json.Marshal(Picture{Type: mt, Data: body})
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", name, err)
+	}
+	return raw, nil
+}
+
+// DecodePicture reads an Image response.
+func DecodePicture(raw []byte) (Picture, error) {
+	var p Picture
+	if err := json.Unmarshal(raw, &p); err != nil {
+		return p, fmt.Errorf("%s: %w", Image, err)
+	}
+	if !pictureTypes[p.Type] || len(p.Data) == 0 {
+		return p, fmt.Errorf("%s: no image of a known type", Image)
+	}
+	return p, nil
+}
+
+// Containers lists the account's active containers: BMW keeps a deleted one listed,
+// DELETED, until it purges it.
 func (c *Client) Containers(ctx context.Context, token string) ([]Container, error) {
 	raw, err := c.get(ctx, token, "containers", "/customers/containers")
 	if err != nil {
@@ -286,8 +370,10 @@ func (c *Client) Containers(ctx context.Context, token string) ([]Container, err
 	}
 	var resp struct {
 		Containers []struct {
-			ID   string `json:"containerId"`
-			Name string `json:"name"`
+			ID      string `json:"containerId"`
+			Name    string `json:"name"`
+			Purpose string `json:"purpose"`
+			State   string `json:"state"`
 		} `json:"containers"`
 	}
 	if err := json.Unmarshal(raw, &resp); err != nil {
@@ -295,7 +381,9 @@ func (c *Client) Containers(ctx context.Context, token string) ([]Container, err
 	}
 	out := make([]Container, 0, len(resp.Containers))
 	for _, ct := range resp.Containers {
-		out = append(out, Container{ID: ct.ID, Name: ct.Name})
+		if !strings.EqualFold(ct.State, "DELETED") {
+			out = append(out, Container{ID: ct.ID, Name: ct.Name, Purpose: ct.Purpose})
+		}
 	}
 	return out, nil
 }
@@ -316,8 +404,9 @@ func (c *Client) CreateContainer(ctx context.Context, token, name, purpose strin
 		return Container{}, err
 	}
 	var resp struct {
-		ID   string `json:"containerId"`
-		Name string `json:"name"`
+		ID      string `json:"containerId"`
+		Name    string `json:"name"`
+		Purpose string `json:"purpose"`
 	}
 	if err := json.Unmarshal(raw, &resp); err != nil {
 		return Container{}, fmt.Errorf("create container: %w", err)
@@ -325,29 +414,43 @@ func (c *Client) CreateContainer(ctx context.Context, token, name, purpose strin
 	if resp.ID == "" {
 		return Container{}, errors.New("create container: no containerId in the response")
 	}
-	return Container{ID: resp.ID, Name: resp.Name}, nil
+	return Container{ID: resp.ID, Name: resp.Name, Purpose: resp.Purpose}, nil
 }
 
-// ContainerName is the name of the container Runsten creates for itself.
-const ContainerName = "runsten"
+// DeleteContainer deletes the container of the ID.
+func (c *Client) DeleteContainer(ctx context.Context, token, id string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, c.api+"/customers/containers/"+url.PathEscape(id), http.NoBody)
+	if err != nil {
+		return fmt.Errorf("delete container: %w", err)
+	}
+	_, err = c.do(req, token, "delete container")
+	return err
+}
 
-// EnsureContainer returns the ID of the account's container named ContainerName,
-// created with Descriptors when there is none: 1 or 2 calls.
-func (c *Client) EnsureContainer(ctx context.Context, token string) (string, error) {
+// EnsureContainer returns Runsten's container of this release (ContainerName), created
+// with Descriptors when the account has none. Runsten's containers of another release
+// are deleted first: BMW allows 10 an account, and they cannot be changed; a container is
+// Runsten's by its name and its purpose together, never by a prefix alone. 1 call when it
+// exists, 2 plus one per container replaced otherwise.
+func (c *Client) EnsureContainer(ctx context.Context, token string) (Container, error) {
 	cts, err := c.Containers(ctx, token)
 	if err != nil {
-		return "", err
+		return Container{}, err
 	}
+	name := ContainerName()
 	for _, ct := range cts {
-		if ct.Name == ContainerName {
-			return ct.ID, nil
+		if ct.Name == name {
+			return ct, nil
 		}
 	}
-	ct, err := c.CreateContainer(ctx, token, ContainerName, "Runsten, a data logger of the owner's vehicles", Descriptors())
-	if err != nil {
-		return "", err
+	for _, ct := range cts {
+		if isRunstenContainer(ct) {
+			if err := c.DeleteContainer(ctx, token, ct.ID); err != nil {
+				return Container{}, err
+			}
+		}
 	}
-	return ct.ID, nil
+	return c.CreateContainer(ctx, token, name, containerPurpose, Descriptors())
 }
 
 func (c *Client) get(ctx context.Context, token, name, path string) ([]byte, error) {
@@ -389,6 +492,9 @@ func send(hc *http.Client, req *http.Request, name string, k call) ([]byte, erro
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return nil, newAPIError(name, k, resp.StatusCode, body)
+	}
+	if resp.StatusCode == http.StatusNoContent {
+		return nil, nil
 	}
 	if !json.Valid(body) {
 		return nil, fmt.Errorf("%s: invalid JSON response", name)

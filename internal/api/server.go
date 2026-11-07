@@ -232,6 +232,8 @@ type Config struct {
 	Addresses Addresses
 	// Pictures relays the vehicles' pictures; nil: none is given.
 	Pictures Pictures
+	// StoredPictures are those a source stores with its responses; nil: none is given.
+	StoredPictures StoredPictures
 	// Params are the derivation's: the statistics take their noise threshold of the
 	// state of charge.
 	Params core.Params
@@ -278,6 +280,10 @@ type Config struct {
 	PolestarID         PolestarIDCredentials
 	PolestarIDAccounts PolestarIDAccounts
 	PolestarIDFlows    *oauth.Flows
+	// BMW keeps the account's BMW CarData connection, and BMWAccounts runs its device
+	// flow and lists its vehicles.
+	BMW         BMWCredentials
+	BMWAccounts BMWAccounts
 	// TeslaMateImports is how many TeslaMate backups the instance reads at once; 0:
 	// DefaultTeslaMateImports. One where the API has little memory.
 	TeslaMateImports int
@@ -322,7 +328,9 @@ type Server struct {
 	// tokenLimiter bounds the rate of each access token's requests.
 	tokenLimiter *limiter
 	// teslaMate are the TeslaMate backups being read.
-	teslaMate   teslaMateImports
+	teslaMate teslaMateImports
+	// bmwFlows are BMW's device flows pending.
+	bmwFlows    bmwFlows
 	errorSchema *huma.Schema // the body of the errors
 }
 
@@ -358,6 +366,7 @@ func New(cfg Config) *Server {
 	s.registerSheet(s.api)
 	s.registerDeletion(s.api)
 	s.registerStats(s.api)
+	s.registerTripMap(s.api)
 	s.registerBattery(s.api)
 	s.registerSoftware(s.api)
 	s.registerSeries(s.api)
@@ -369,6 +378,7 @@ func New(cfg Config) *Server {
 	s.registerPolestar(s.api)
 	s.registerTesla(s.api)
 	s.registerPolestarID(s.api)
+	s.registerBMW(s.api)
 	s.registerAccount(s.api)
 	s.registerTokens(s.api)
 	s.registerMQTT(s.api)

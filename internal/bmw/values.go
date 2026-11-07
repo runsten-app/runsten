@@ -99,7 +99,7 @@ func UploadOf(e Endpoint, raw []byte) (Upload, error) {
 				u.Fields = append(u.Fields, k)
 			}
 		}
-	case ChargingHistory:
+	case ChargingHistory, Image:
 	}
 	slices.Sort(u.Fields)
 	return u, nil

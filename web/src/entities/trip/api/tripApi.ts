@@ -1,5 +1,5 @@
 import { api, downloadPath, unwrap } from '@/shared/api'
-import type { Trip, TripPage, TripTrack } from '../model/Trip'
+import type { Trip, TripMap, TripPage, TripTrack } from '../model/Trip'
 
 export type PageQuery = { from?: string; to?: string; cursor?: string }
 
@@ -15,6 +15,13 @@ export function fetchTripTrack(vehicle: string, id: string): Promise<TripTrack> 
   return unwrap(
     api.GET('/vehicles/{vehicle}/trips/{id}/track', { params: { path: { vehicle, id } } }),
   )
+}
+
+export function fetchTripMap(
+  vehicle: string,
+  query: { from?: string; to?: string } = {},
+): Promise<TripMap> {
+  return unwrap(api.GET('/vehicles/{vehicle}/trip-map', { params: { path: { vehicle }, query } }))
 }
 
 // tripsCsvPath is where the browser downloads the trips of a period as a CSV file.

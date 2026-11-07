@@ -57,7 +57,11 @@ describe('CollectionNotice', () => {
   it.each<[Locale, string, string]>([
     ['en', 'Re-authentication required', 'Since 06:30 · reason: refresh token expired'],
     ['fr', 'Nouvelle authentification requise', 'Depuis 06:30 · raison : refresh token expired'],
+    ['it', 'Nuova autenticazione necessaria', 'Da 06:30 · motivo: refresh token expired'],
+    ['nb', 'Ny autentisering kreves', 'Siden 06:30 · årsak: refresh token expired'],
     ['sv', 'Ny inloggning krävs', 'Sedan 06:30 · orsak: refresh token expired'],
+    ['de', 'Erneute Anmeldung erforderlich', 'Seit 06:30 · Grund: refresh token expired'],
+    ['es', 'Reautenticación necesaria', 'Desde 6:30 · motivo: refresh token expired'],
   ])('asks to connect the Volvo ID again, in %s', async (locale, title, since) => {
     i18n.global.locale.value = locale
     const alert = await notice(lost)
@@ -110,7 +114,11 @@ describe('CollectionNotice', () => {
   it.each<[Locale, string]>([
     ['en', "Not read: Volvo's API does not serve this vehicle's market"],
     ['fr', "Non lu : l'API de Volvo ne dessert pas le marché de ce véhicule"],
+    ['it', 'Non letto: l’API di Volvo non serve il mercato di questo veicolo'],
+    ['nb', 'Ikke lest: Volvos API betjener ikke markedet til denne bilen'],
     ['sv', 'Läses inte: Volvos API betjänar inte det här fordonets marknad'],
+    ['de', 'Nicht gelesen: Die API von Volvo bedient den Markt dieses Fahrzeugs nicht'],
+    ['es', 'No se lee: la API de Volvo no cubre el mercado de este vehículo'],
   ])("tells a market Volvo's API does not serve, in %s", async (locale, title) => {
     i18n.global.locale.value = locale
     const alert = await notice(unserved)
@@ -137,7 +145,7 @@ describe('CollectionNotice', () => {
   })
 
   // Read from the messages: an instance may word them otherwise.
-  it.each<Locale>(['en', 'fr', 'sv'])(
+  it.each<Locale>(['en', 'de', 'es', 'fr', 'it', 'nb', 'nl', 'sv'])(
     'tells a vehicle the offer leaves unread, in %s',
     async (locale) => {
       i18n.global.locale.value = locale
@@ -273,6 +281,53 @@ describe('CollectionNotice', () => {
       'Tesla limited the number of calls.',
     ],
   ])('tells a Tesla %s', async (_, v, title, body) => {
+    const alert = await notice(v)
+    expect(plain(alert.find('.v-alert-title').text())).toBe(title)
+    expect(alert.text()).toContain(body)
+  })
+
+  // bmw is the Polestar of the fixtures as a BMW, its collection patched.
+  function bmw(
+    patch: Partial<Vehicle> = {},
+    collection = {},
+    credential: Vehicle['connection']['credential'] = 'set',
+  ): Vehicle | undefined {
+    const v = shared(collection)
+    return v && { ...v, connection: { ...v.connection, provider: 'bmw', credential }, ...patch }
+  }
+
+  it.each<[string, Vehicle | undefined, string, string]>([
+    [
+      'its connection refused',
+      bmw({}, {}, 'refused'),
+      'Not read: BMW refused the connection',
+      "the client ID's subscription withdrawn in the portal",
+    ],
+    [
+      'its connection removed',
+      bmw({}, {}, 'missing'),
+      'Not read: no BMW connected',
+      'your BMW connection, which was removed',
+    ],
+    [
+      'no longer the main user',
+      bmw({ unshared_at: '2026-09-28T07:00:00Z' }),
+      "Not read: the BMW account is no longer the car's main user",
+      'no longer the main user of this car',
+    ],
+    [
+      'its calls of the day used up',
+      bmw({}, { quota: [{ api: 'bmw', until: '2026-09-28T09:00:00Z' }] }),
+      'Daily calls to BMW reached until 09:00',
+      'at most 40 calls a day to BMW',
+    ],
+    [
+      'a pause',
+      bmw({}, { paused_until: '2026-09-28T07:30:00Z' }),
+      'Paused by BMW until 07:30',
+      'BMW limited the number of calls.',
+    ],
+  ])('tells a BMW %s', async (_, v, title, body) => {
     const alert = await notice(v)
     expect(plain(alert.find('.v-alert-title').text())).toBe(title)
     expect(alert.text()).toContain(body)

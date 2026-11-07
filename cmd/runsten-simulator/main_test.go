@@ -55,7 +55,9 @@ func TestLoadConfigOverrides(t *testing.T) {
 	}})
 	if cfg.addr != ":9000" || cfg.speed != 60 || cfg.driveUpload != 30*time.Second || cfg.logLevel != slog.LevelDebug ||
 		cfg.databaseURL != "postgres://sim@db/sim" || cfg.tesla != (teslaapi.Behavior{SleepAfter: 0, TokenTTL: time.Hour}) || cfg.bmwStreamAddr != ":1884" ||
-		cfg.bmw != (bmwapi.Behavior{TokenTTL: 10 * time.Minute, ApproveAfter: bmwapi.DefaultBehavior().ApproveAfter, SendEvery: 0}) {
+		cfg.bmw != (bmwapi.Behavior{
+			TokenTTL: 10 * time.Minute, ApproveAfter: bmwapi.DefaultBehavior().ApproveAfter, CodeLifetime: bmwapi.DefaultBehavior().CodeLifetime,
+		}) {
 		t.Errorf("config = %+v", cfg)
 	}
 	if !reflect.DeepEqual(limits, volvoapi.Limits{DailyQuota: 0, PerMinute: 5, TokenTTL: 30 * time.Minute, Keys: []string{"key-a", "key-b"}}) {

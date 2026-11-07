@@ -31,8 +31,9 @@ type Credential struct {
 	// GCID is the BMW account's: the stream's username.
 	GCID    string
 	Refresh string
-	// ContainerID is Runsten's container in the account; empty until created.
-	ContainerID string
+	// ContainerID is Runsten's container in the account, named ContainerName; empty until
+	// created.
+	ContainerID, ContainerName string
 	// SetAt is when the owner connected: a rotation replaces the refresh token of this
 	// connection only, never one the owner set since.
 	SetAt time.Time
@@ -46,7 +47,7 @@ type Store interface {
 	// which a refresh gave; a credential the owner set since is left alone.
 	RotateBMWToken(ctx context.Context, accountID, connectionID string, setAt time.Time, token string) error
 	// SetBMWContainer records the container of the credential set at setAt.
-	SetBMWContainer(ctx context.Context, accountID, connectionID string, setAt time.Time, containerID string) error
+	SetBMWContainer(ctx context.Context, accountID, connectionID string, setAt time.Time, containerID, name string) error
 }
 
 // Daily is the API's calls a day counted per connection: 40 of BMW's 50, the rest left to
@@ -91,6 +92,9 @@ type Source struct {
 	subs map[string]*subscription
 	// spent is when each connection may call the API again, its day's calls spent.
 	spent map[string]time.Time
+	// containerWait is when each connection may try again to set up its container, after
+	// a failure.
+	containerWait map[string]time.Time
 }
 
 // rotation is a refresh token given in exchange for the one of the credential set at
@@ -116,6 +120,7 @@ func New(client *bmw.Client, streamURL string, st Store, clk clock.Clock) *Sourc
 	return &Source{
 		client: client, store: st, clk: clk, streamURL: streamURL,
 		rotated: map[string]rotation{}, subs: map[string]*subscription{}, spent: map[string]time.Time{},
+		containerWait: map[string]time.Time{},
 	}
 }
 
@@ -144,6 +149,12 @@ func (*Source) Spec() collector.SourceSpec {
 				Endpoint: collector.Endpoint(bmw.ChargingHistory), API: bmw.Source, Optional: true,
 				Parked: collector.PaceDetails, Driving: collector.PaceDetails, Charging: collector.PaceDetails,
 			},
+			// The vehicle's picture, served by runsten-api: a call a day, an identical one
+			// stored once; optional, a vehicle may have none.
+			{
+				Endpoint: collector.Endpoint(bmw.Image), API: bmw.Source, Optional: true,
+				Parked: collector.PaceDetails, Driving: collector.PaceDetails, Charging: collector.PaceDetails,
+			},
 		},
 		Settled:   []collector.Endpoint{collector.Endpoint(bmw.Stream)},
 		Daily:     Daily,
@@ -155,7 +166,9 @@ func (*Source) Spec() collector.SourceSpec {
 // refresh token given in exchange kept first. The stream is reconnected with its ID token
 // at the next read. It makes no call of the API, whose calls are counted.
 func (s *Source) Login(ctx context.Context, accountID, connectionID string) (collector.Session, time.Duration, error) {
-	s.sweep()
+	// Its own subscription is kept, idle or not: given the new ID token, it closes its
+	// connection before opening the next, and waits for the broker to free the slot.
+	s.sweep(connectionID)
 	cred, err := s.store.BMWCredential(ctx, accountID, connectionID)
 	if err != nil {
 		return nil, 0, fmt.Errorf("bmw credential: %w", err)
@@ -176,9 +189,11 @@ func (s *Source) Login(ctx context.Context, accountID, connectionID string) (col
 		gcid = cred.GCID
 	}
 	s.subscribe(connectionID, gcid, tok.ID)
-	sess := &session{
-		src: s, accountID: accountID, connectionID: connectionID, token: tok.Access,
-		container: cred.ContainerID, setAt: cred.SetAt,
+	sess := &session{src: s, accountID: accountID, connectionID: connectionID, token: tok.Access, setAt: cred.SetAt}
+	if cred.ContainerName == bmw.ContainerName() {
+		// A container of a previous release lacks descriptors: the first read of the API
+		// replaces it.
+		sess.container = cred.ContainerID
 	}
 	ttl := tok.ExpiresIn - accessMargin
 	if ttl <= 0 {
@@ -231,13 +246,14 @@ func (s *Source) subscribe(connectionID, gcid, idToken string) {
 	}
 }
 
-// sweep closes the subscriptions no session read for idleClose.
-func (s *Source) sweep() {
+// sweep closes the subscriptions no session read for idleClose, but the connection
+// keep's.
+func (s *Source) sweep(keep string) {
 	now := s.clk.Now()
 	var idle []*bmw.Subscription
 	s.mu.Lock()
 	for id, sub := range s.subs {
-		if now.Sub(sub.readAt) >= idleClose {
+		if id != keep && now.Sub(sub.readAt) >= idleClose {
 			idle = append(idle, sub.Subscription)
 			delete(s.subs, id)
 		}
@@ -265,7 +281,7 @@ func (s *Source) Run(ctx context.Context) {
 			}
 			return
 		case <-t.C:
-			s.sweep()
+			s.sweep("")
 		}
 	}
 }
@@ -289,8 +305,7 @@ func (s *Source) StreamState(connectionID string) StreamState {
 		return StreamState{}
 	}
 	up, err := sub.Up()
-	var se *bmw.StreamError
-	return StreamState{Up: up, Held: !up && errors.As(err, &se) && se.Code == bmw.RefusedNotAuthorized, Err: err}
+	return StreamState{Up: up, Held: !up && held(err), Err: err}
 }
 
 // Observe implements collector.Source: the stream's values and the container's tell
@@ -339,6 +354,9 @@ type session struct {
 // errSpent: the day's calls of the API are spent, until 00:00 UTC.
 var errSpent = errors.New("bmw: the day's calls of the API are spent")
 
+// errContainerWait: setting up the container failed today, tried again from 00:00 UTC.
+var errContainerWait = errors.New("bmw: the container could not be set up today")
+
 // Fetch implements collector.Session.
 func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) ([]byte, error) {
 	e := bmw.Endpoint(ep)
@@ -362,6 +380,8 @@ func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) 
 		raw, err = s.src.client.BasicData(ctx, s.token, vin)
 	case bmw.ChargingHistory:
 		raw, err = s.src.client.ChargingHistory(ctx, s.token, vin, now.AddDate(0, 0, -historyDays), now)
+	case bmw.Image:
+		raw, err = s.src.client.Image(ctx, s.token, vin)
 	default:
 		return nil, fmt.Errorf("bmw: unknown endpoint %q", ep)
 	}
@@ -386,6 +406,11 @@ func (s *session) stream(ctx context.Context, vin string) ([]byte, error) {
 	try := sub.tried != idToken || !now.Before(sub.retryAt)
 	s.src.mu.Unlock()
 	if !try {
+		// Waiting to try again: a stream another client holds is told until then, rather
+		// than the values it left.
+		if up, lost := sub.Up(); !up && held(lost) {
+			return nil, &collector.SourceError{Kind: collector.KindStreamHeld, Err: lost}
+		}
 		return sub.Values(vin), nil
 	}
 	err := sub.Connect(ctx, idToken)
@@ -393,22 +418,33 @@ func (s *session) stream(ctx context.Context, vin string) ([]byte, error) {
 		return sub.Values(vin), nil
 	}
 	retry := streamRetry
-	var se *bmw.StreamError
-	if errors.As(err, &se) && se.Code == bmw.RefusedNotAuthorized {
+	if held(err) {
 		retry = heldRetry
 	}
 	s.src.mu.Lock()
 	sub.tried, sub.retryAt = idToken, now.Add(retry)
 	s.src.mu.Unlock()
-	if errors.As(err, &se) && se.Code == bmw.RefusedBadPassword {
+	var se *bmw.StreamError
+	switch {
+	case errors.As(err, &se) && se.Code == bmw.RefusedBadPassword:
 		// The ID token refused, or expired: a new access gives another.
 		return nil, &collector.SourceError{Kind: collector.KindUnauthorized, Err: err}
+	case held(err):
+		return nil, &collector.SourceError{Kind: collector.KindStreamHeld, Err: err}
 	}
 	return nil, err //nolint:wrapcheck // bmw's, which says what failed
 }
 
+// held reports whether err is the stream's refusal of a second connection: another
+// client holds the account's only one.
+func held(err error) bool {
+	var se *bmw.StreamError
+	return errors.As(err, &se) && se.Code == bmw.RefusedNotAuthorized
+}
+
 // telematicData reads the container's values, creating Runsten's container first when
-// the connection has none, or again when the owner deleted it.
+// the connection has none or one of a previous release, or again when the owner deleted
+// it.
 func (s *session) telematicData(ctx context.Context, vin string) ([]byte, error) {
 	if s.container == "" {
 		if err := s.ensureContainer(ctx); err != nil {
@@ -426,13 +462,35 @@ func (s *session) telematicData(ctx context.Context, vin string) ([]byte, error)
 	return raw, err //nolint:wrapcheck // bmw's, which says what failed
 }
 
+// ensureContainer sets up the connection's container. It makes up to 3 calls (the list,
+// a deletion, the creation) that the collector counts as one: one that failed is not
+// tried again before the next day of BMW's quota, 00:00 UTC, so that its retries never
+// spend the day's calls unseen; the stream reads on. An access refused is not its
+// failure: the next access tries again.
 func (s *session) ensureContainer(ctx context.Context) error {
-	id, err := s.src.client.EnsureContainer(ctx, s.token)
+	now := s.src.clk.Now()
+	s.src.mu.Lock()
+	wait := s.src.containerWait[s.connectionID]
+	s.src.mu.Unlock()
+	if now.Before(wait) {
+		return &collector.SourceError{Kind: collector.KindNotAvailable, Err: errContainerWait}
+	}
+	ct, err := s.src.client.EnsureContainer(ctx, s.token)
 	if err != nil {
+		var e *bmw.APIError
+		if !errors.As(err, &e) || e.Kind != bmw.KindUnauthorized {
+			y, m, d := now.UTC().Date()
+			s.src.mu.Lock()
+			s.src.containerWait[s.connectionID] = time.Date(y, m, d+1, 0, 0, 0, 0, time.UTC)
+			s.src.mu.Unlock()
+		}
 		return err //nolint:wrapcheck // bmw's, which says what failed
 	}
-	s.container = id
-	if err := s.src.store.SetBMWContainer(ctx, s.accountID, s.connectionID, s.setAt, id); err != nil {
+	s.src.mu.Lock()
+	delete(s.src.containerWait, s.connectionID)
+	s.src.mu.Unlock()
+	s.container = ct.ID
+	if err := s.src.store.SetBMWContainer(ctx, s.accountID, s.connectionID, s.setAt, ct.ID, ct.Name); err != nil {
 		return fmt.Errorf("keep the bmw container: %w", err)
 	}
 	return nil
@@ -441,6 +499,12 @@ func (s *session) ensureContainer(ctx context.Context) error {
 // apiError tells the collector what a refusal of the API means. The day's calls spent,
 // the API is left alone until 00:00 UTC, and the stream reads on.
 func (s *session) apiError(err error, now time.Time) error {
+	var pe *bmw.PictureError
+	if errors.As(err, &pe) {
+		// BMW answered, without a picture kept: the endpoint's, tried again later, no
+		// failure told.
+		return &collector.SourceError{Kind: collector.KindNotAvailable, Status: pe.Status, Err: err}
+	}
 	var e *bmw.APIError
 	if errors.As(err, &e) && e.Kind == bmw.KindRateLimited {
 		y, m, d := now.UTC().Date()

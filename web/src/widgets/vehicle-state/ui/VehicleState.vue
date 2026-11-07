@@ -1,14 +1,23 @@
 <script setup lang="ts">
 import {
-  mdiAccessPointNetworkOff,
-  mdiBatteryCharging,
-  mdiCar,
-  mdiHelpCircleOutline,
+  mdiCarSeat,
+  mdiCctv,
+  mdiChip,
+  mdiCounter,
+  mdiEvPlugCcs2,
+  mdiEvPlugType2,
+  mdiEvStation,
+  mdiPowerPlug,
+  mdiPowerPlugOff,
+  mdiThermometer,
+  mdiFan,
+  mdiHeatingCoil,
+  mdiHeatWave,
+  mdiLightningBolt,
   mdiOpenInNew,
-  mdiParking,
-  mdiSleep,
+  mdiSnowflake,
 } from '@mdi/js'
-import { computed, useId } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   detailsStaleAfter,
@@ -28,18 +37,20 @@ import {
 } from '@/entities/vehicle'
 import { useChargeInProgress } from '@/features/browse-charges'
 import { useVehicle } from '@/features/select-vehicle'
+import { useHealth } from '@/features/view-health'
 import { useUpdateText, useVehicleState } from '@/features/watch-vehicle-state'
 import { isApiError } from '@/shared/api'
 import { kilowatts, openStreetMapUrl, useFormat, useMapsOn, useNow, type Unit } from '@/shared/lib'
 import { LevelBar, MapView, StatusPill, TileFigure } from '@/shared/ui'
-import OpeningsLine from './OpeningsLine.vue'
+import { extensionSleepActions } from '../extensions'
+import OpeningsTile from './OpeningsTile.vue'
 
 // Verdandi: the current state of a vehicle, each value with how fresh it is. Each tile says
 // once when its values were checked and since when they hold, those of its first value;
-// a value that differs says its own. The battery comes first, with the charge as one line
-// under its bar; a charge running, discharging or failing takes a tile of its own beside
-// it. The aside slot takes the column beside the vehicle's tile (the state of charge over
-// the last days).
+// a value that differs says its own. A vehicle asleep or out of reach says it first, in a
+// band of its own above the tiles. The battery comes first, across; then the charge beside
+// the doors and windows, the vehicle beside its position on a map; the aside slot ends the
+// grid, across (what the vehicle did over the last days).
 const props = defineProps<{ vehicle: string }>()
 
 const { t } = useI18n()
@@ -48,6 +59,8 @@ const f = useFormat()
 const mapsOn = useMapsOn()
 const now = useNow()
 const { state, isPending, error } = useVehicleState(() => props.vehicle)
+// The health, for its tyres beside the doors and windows: read apart, every hour.
+const { health } = useHealth(() => props.vehicle)
 const { vehicle: current } = useVehicle(() => props.vehicle)
 // Where the car reports no capacity (a Polestar of the Data Portal never does), the net
 // capacity of its variant, which the energies rest on: Unknown would read as a setup
@@ -84,22 +97,16 @@ const checkedStale = computed(() => {
 })
 
 // A car that sleeps (a Tesla) is left alone: its values are those it had when it fell
-// asleep, which the line says rather than let them look late. Awake, nothing to say.
+// asleep, which a band above the tiles says rather than let them look late, with what a
+// downstream build offers to do about it (wake it up). Awake, nothing to say.
 const sleep = computed(() => {
   const s = state.value?.sleep
   return s && s.value !== 'awake' ? (s as Reading<Exclude<Sleep, 'awake'>>) : null
 })
-const sleepIcons = { asleep: mdiSleep, offline: mdiAccessPointNetworkOff }
 const sleepLabels = computed(() => ({
   asleep: t('state.sleep.asleep'),
   offline: t('state.sleep.offline'),
 }))
-
-const modeIcons = {
-  parked: mdiParking,
-  driving: mdiCar,
-  charging: mdiBatteryCharging,
-}
 
 const errorMessage = computed(() =>
   isApiError(error.value, 'not_found') ? t('vehicle.notFound') : t('state.error'),
@@ -169,6 +176,18 @@ const typeLabels = computed<Record<CurrentChargeType, string>>(() => ({
   DC: 'DC',
   none: t('charging.type.none'),
 }))
+// The icons that lead the labels of the values looked for at a glance: the plug of the
+// charge's type (Type 2 on AC, CCS on DC), the cable in or out.
+const typeIcons: Record<CurrentChargeType, string> = {
+  AC: mdiEvPlugType2,
+  DC: mdiEvPlugCcs2,
+  none: mdiEvStation,
+}
+const cableIcons: Record<Cable, string> = {
+  connected: mdiPowerPlug,
+  disconnected: mdiPowerPlugOff,
+  fault: mdiPowerPlugOff,
+}
 
 // The charging status is the tile's title pill: done and charging are good news, an
 // error is one; the rest is said plainly.
@@ -198,10 +217,13 @@ const openCharge = computed(() =>
     : null,
 )
 
-// The reading whose times a tile shows once: its first known value.
+// The reading whose times a tile shows once: its first known value shown.
 const chargingTile = computed(() => {
   const c = state.value?.charging
-  return c ? (c.power_w ?? c.type ?? c.cable ?? c.target_soc_pct ?? null) : null
+  if (!c) return null
+  // While nothing charges, its power is not shown: the status dates the tile.
+  const first = chargeActive.value ? (c.power_w ?? c.status) : c.status
+  return first ?? c.type ?? c.cable ?? c.target_soc_pct ?? null
 })
 const vehicleTile = computed(() => {
   const s = state.value
@@ -209,78 +231,72 @@ const vehicleTile = computed(() => {
   return s.odometer_km ?? s.climate.outside_temp_c ?? s.climate.cabin_temp_c ?? s.software ?? null
 })
 
-// The climate, said under the cabin's temperature only while it runs: preconditioning
-// first, which runs it too.
+// The climate, only while it runs: preconditioning first, which runs it too. Its setpoint
+// against the cabin's temperature tells which way it goes: half a degree apart or more,
+// it heats or cools; closer, it holds. Said in the headline, for a glance, and in the
+// vehicle's title, as each tile says in a pill what of it runs (the charge its status, the
+// battery its heater, the doors Sentry Mode).
 const climateRunning = computed(() => {
   const c = state.value?.climate
-  if (c?.preconditioning?.value)
-    return { reading: c.preconditioning, value: t('state.climate.preconditioning') }
-  if (c?.on?.value) return { reading: c.on, value: t('state.climate.climateOn') }
-  return null
+  const reading = c?.preconditioning?.value ? c.preconditioning : c?.on?.value ? c.on : null
+  if (!c || !reading) return null
+  const setpoint = c.setpoint_c?.value ?? null
+  const cabin = c.cabin_temp_c?.value ?? null
+  const gap = setpoint !== null && cabin !== null ? setpoint - cabin : 0
+  const way = gap >= 0.5 ? 'heating' : gap <= -0.5 ? 'cooling' : 'holding'
+  const temp = setpoint !== null ? f.quantity(setpoint, 'celsius') : null
+  let value: string
+  if (reading === c.preconditioning)
+    value = temp
+      ? t('state.climate.preconditioningTo', { temp })
+      : t('state.climate.preconditioning')
+  else if (!temp) value = t('state.climate.climateOn')
+  else if (way === 'heating') value = t('state.climate.heatingTo', { temp })
+  else if (way === 'cooling') value = t('state.climate.coolingTo', { temp })
+  else value = t('state.climate.climateAt', { temp })
+  return { reading, value, icon: climateIcons[way] }
 })
+const climateIcons = { heating: mdiHeatWave, cooling: mdiSnowflake, holding: mdiFan }
 // The battery heated (a Tesla's, in the cold), said only while it is.
 const batteryHeating = computed(() => !!state.value?.climate.battery_heater?.value)
 
-// A charge that needs looking at gets its own tile, its figures large; otherwise (idle,
-// done, scheduled, unknown) one line under the battery's bar says it. The engine is not
+// What runs while the car stands or drives, said in the headline, each in a pill, so that
+// a glance tells what the car is spending its battery on: the charge (its power, or its
+// status when it discharges or fails), the climate, the battery heated, Sentry Mode. The
+// tiles below keep the details.
+const activities = computed(() => {
+  const s = state.value
+  if (!s) return []
+  const out: { key: string; icon: string; text: string }[] = []
+  const status = s.charging.status?.value
+  if (chargeActive.value) {
+    const parts = status && status !== 'charging' ? [statusLabels.value[status]] : []
+    if (power.value) parts.push(power.value.value ?? '')
+    if (parts.length) out.push({ key: 'charge', icon: mdiLightningBolt, text: parts.join(' · ') })
+  }
+  if (climateRunning.value)
+    out.push({ key: 'climate', icon: climateRunning.value.icon, text: climateRunning.value.value })
+  if (batteryHeating.value)
+    out.push({ key: 'heater', icon: mdiHeatingCoil, text: t('state.climate.batteryHeater') })
+  if (s.doors?.value.sentry)
+    out.push({ key: 'sentry', icon: mdiCctv, text: t('state.openings.sentry') })
+  return out
+})
+
+// A charge running, discharging or failing shows its power, large; otherwise (idle, done,
+// scheduled, unknown) its tile says its status and the cable, small. The engine is not
 // shown: the mode's pill above says it, read from it.
 const chargeActive = computed(() => {
   const s = state.value?.charging.status?.value
   return charging.value || s === 'discharging' || s === 'error'
 })
-const chargeTitle = useId()
-// The line's facts. The target is the bar's, unless no state of charge draws one.
-const chargeFacts = computed(() => {
-  type Fact = { key: string; label: string; reading: Reading | null; value: string | null }
-  const s = state.value
-  if (!s) return []
-  const c = s.charging
-  const facts: Fact[] = [
-    {
-      key: 'cable',
-      label: t('state.charging.cable'),
-      reading: c.cable,
-      value: label(c.cable, cableLabels.value),
-    },
-    {
-      key: 'type',
-      label: t('state.charging.type'),
-      reading: c.type,
-      value: label(c.type, typeLabels.value),
-    },
-  ]
-  if (!s.soc_pct)
-    facts.push({
-      key: 'target',
-      label: t('state.charging.target'),
-      reading: c.target_soc_pct,
-      value: quantity(c.target_soc_pct, 'percent'),
-    })
-  return facts.map((x) => ({
-    ...x,
-    stale: !!x.reading && isStale(x.reading.checked_at, now.value, connection.value),
-  }))
-})
-// The reading whose times the line shows: its first value shown, the status first (the
-// line shows no power).
-const chargeLineTile = computed(() => {
-  const s = state.value
-  if (!s) return null
-  const c = s.charging
-  return c.status ?? c.cable ?? c.type ?? (s.soc_pct ? null : c.target_soc_pct)
-})
-// The line says when its values were checked only where the battery's line does not
-// already say it, as a value does in its tile.
-const chargeOwn = computed(() => {
-  const r = chargeLineTile.value
-  const soc = state.value?.soc_pct
-  if (!r) return false
-  if (!soc) return true
-  return (
-    f.age(r.checked_at, now.value) !== f.age(soc.checked_at, now.value) ||
-    f.dateTime(r.fetched_at, now.value) !== f.dateTime(soc.fetched_at, now.value)
-  )
-})
+const chargeSize = computed(() => (chargeActive.value ? 'large' : 'small'))
+// The tile of the doors and windows, and of the tyres, for a car that tells any of them.
+const hasOpenings = computed(
+  () => !!(state.value?.doors || state.value?.windows || health.value?.tyres),
+)
+// A map of the position, in a tile of its own beside the vehicle's.
+const mapShown = computed(() => mapsOn.value && !!state.value?.position)
 
 // The update waiting for the software (a Tesla's): its status, the version it brings, its
 // progress while it downloads or installs, and when it is set to install.
@@ -303,35 +319,62 @@ const update = computed(() => {
       {{ t('state.refreshFailed') }}
     </v-alert>
 
-    <div class="meta d-flex flex-wrap align-center">
-      <StatusPill :icon="mode ? modeIcons[mode] : mdiHelpCircleOutline" class="mode">
-        {{ mode ? modeLabels[mode] : t('state.mode.unknown') }}
-      </StatusPill>
-      <span v-if="sleep" class="sleep d-inline-flex flex-wrap align-center ga-2">
-        <StatusPill :icon="sleepIcons[sleep.value]">{{ sleepLabels[sleep.value] }}</StatusPill>
-        <time :datetime="sleep.fetched_at">{{
-          t('reading.since', { time: f.dateTime(sleep.fetched_at, now) })
-        }}</time>
-        <span>{{
-          sleep.value === 'asleep' ? t('state.sleep.leftAlone') : t('state.sleep.unreachable')
+    <!-- What the vehicle is doing, before any value: its mode, and its sleep when it sleeps,
+         large; what runs (charge, climate, battery heater, Sentry) and how fresh the values are, small, beside it. Tinted
+         only while it sleeps or is out of reach, which explains the values below. -->
+    <header class="headline" :class="sleep?.value" data-test="headline">
+      <p class="headline-title">
+        <!-- Asleep, a mode unknown is not worth saying: the sleep says it all. -->
+        <span v-if="mode || !sleep" class="mode">{{
+          mode ? modeLabels[mode] : t('state.mode.unknown')
         }}</span>
-      </span>
-      <span>
+        <span v-if="sleep" class="sleep" role="status">
+          <span v-if="mode" aria-hidden="true" class="sep"> · </span>
+          <strong>{{ sleepLabels[sleep.value] }}</strong
+          >{{ ' '
+          }}<time :datetime="sleep.fetched_at">{{
+            t('reading.since', { time: f.dateTime(sleep.fetched_at, now) })
+          }}</time>
+        </span>
+      </p>
+      <span v-for="a in activities" :key="a.key" class="activity" :data-test="`activity-${a.key}`">
+        <v-icon :icon="a.icon" size="16" aria-hidden="true" />{{ a.text }}</span
+      >
+      <div v-if="sleep && extensionSleepActions.length" class="sleep-actions">
+        <component
+          :is="action"
+          v-for="(action, i) in extensionSleepActions"
+          :key="i"
+          :vehicle="vehicle"
+          :sleep="sleep.value"
+        />
+      </div>
+      <span v-if="sleep" class="sleep-note">{{
+        sleep.value === 'asleep' ? t('state.sleep.leftAlone') : t('state.sleep.unreachable')
+      }}</span>
+      <span class="freshness d-inline-flex flex-wrap align-center">
         <time v-if="state.checked_at" :datetime="state.checked_at">{{
           t('state.lastChecked', { age: f.age(state.checked_at, now) })
         }}</time>
         <template v-else>{{ t('state.neverChecked') }}</template>
+        <v-chip v-if="checkedStale" size="small" variant="outlined">{{
+          t('reading.stale')
+        }}</v-chip>
+        <time v-if="reportedLate" :datetime="reportedLate" class="reported">{{
+          t('state.lastReported', { time: f.dateTime(reportedLate, now) })
+        }}</time>
       </span>
-      <v-chip v-if="checkedStale" size="small" variant="outlined">{{ t('reading.stale') }}</v-chip>
-      <time v-if="reportedLate" :datetime="reportedLate" class="reported">{{
-        t('state.lastReported', { time: f.dateTime(reportedLate, now) })
-      }}</time>
-    </div>
+    </header>
 
     <v-row density="compact" class="tiles">
-      <v-col cols="12" :md="chargeActive ? 7 : 12">
+      <v-col cols="12">
         <v-card class="tile battery h-100">
-          <v-card-title tag="h2">{{ t('state.battery') }}</v-card-title>
+          <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
+            {{ t('state.battery') }}
+            <StatusPill v-if="batteryHeating" tone="success" :icon="mdiHeatingCoil" class="heater">
+              {{ t('state.climate.batteryHeater') }}
+            </StatusPill>
+          </v-card-title>
           <v-card-text class="tile-body">
             <dl class="hero-row">
               <ReadingItem
@@ -400,77 +443,35 @@ const update = computed(() => {
               />
               <div class="under-bar d-flex flex-wrap justify-space-between ga-2 mt-2">
                 <ReadingProvenance :reading="state.soc_pct" :now="now" :connection="connection" />
-                <span v-if="batteryHeating" class="heater">{{
-                  t('state.climate.batteryHeater')
-                }}</span>
                 <span v-if="state.charging.target_soc_pct" class="target">
                   {{ t('state.charging.target') }}
                   <strong>{{ quantity(state.charging.target_soc_pct, 'percent') }}</strong>
                 </span>
               </div>
             </div>
-            <!-- Without a state of charge, no line under its bar to say it on. -->
-            <div v-if="batteryHeating && !state.soc_pct" class="under-bar">
-              <span class="heater">{{ t('state.climate.batteryHeater') }}</span>
-            </div>
-            <section
-              v-if="!chargeActive"
-              class="charge-line"
-              data-test="charging"
-              :aria-labelledby="chargeTitle"
-            >
-              <div class="d-flex flex-wrap align-center charge-row">
-                <h3 :id="chargeTitle" class="charge-title">{{ t('state.charging.title') }}</h3>
-                <StatusPill
-                  :tone="
-                    state.charging.status ? statusTones[state.charging.status.value] : 'neutral'
-                  "
-                  class="charging-status"
-                >
-                  <span class="d-sr-only">{{ t('state.charging.status') }}:</span>
-                  {{ label(state.charging.status, statusLabels) ?? f.unknown() }}
-                </StatusPill>
-                <dl class="facts d-flex flex-wrap">
-                  <div
-                    v-for="fact in chargeFacts"
-                    :key="fact.key"
-                    class="reading fact"
-                    :class="{ stale: fact.stale }"
-                  >
-                    <dt class="label">{{ fact.label }}</dt>
-                    <dd class="value" :class="{ unknown: fact.value === null }">
-                      {{ fact.value ?? f.unknown() }}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-              <ReadingProvenance
-                v-if="chargeOwn && chargeLineTile"
-                :reading="chargeLineTile"
-                :now="now"
-                :connection="connection"
-                class="mt-2"
-              />
-            </section>
           </v-card-text>
         </v-card>
       </v-col>
 
-      <v-col v-if="chargeActive" cols="12" md="5">
-        <v-card class="tile h-100" data-test="charging">
+      <!-- The charge and the doors and windows, side by side; the charge across without them. -->
+      <v-col cols="12" :md="hasOpenings ? 6 : 12">
+        <v-card class="tile charging h-100" data-test="charging">
           <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
             {{ t('state.charging.title') }}
+            <!-- A pill only for what the charge does or has done: idle, or unknown, says nothing. -->
             <StatusPill
-              :tone="state.charging.status ? statusTones[state.charging.status.value] : 'neutral'"
+              v-if="state.charging.status && state.charging.status.value !== 'idle'"
+              :tone="statusTones[state.charging.status.value]"
               class="charging-status"
             >
               <span class="d-sr-only">{{ t('state.charging.status') }}:</span>
-              {{ label(state.charging.status, statusLabels) ?? f.unknown() }}
+              {{ statusLabels[state.charging.status.value] }}
             </StatusPill>
           </v-card-title>
           <v-card-text class="tile-body">
             <dl class="fields">
               <ReadingItem
+                v-if="chargeActive"
                 :label="t('state.charging.power')"
                 :reading="power?.reading ?? null"
                 :value="power?.value ?? null"
@@ -492,19 +493,23 @@ const update = computed(() => {
               />
               <ReadingItem
                 :label="t('state.charging.type')"
+                :icon="state.charging.type ? typeIcons[state.charging.type.value] : mdiEvStation"
                 :reading="state.charging.type"
                 :value="label(state.charging.type, typeLabels)"
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"
+                :size="chargeSize"
               />
               <ReadingItem
                 :label="t('state.charging.cable')"
+                :icon="state.charging.cable ? cableIcons[state.charging.cable.value] : mdiPowerPlug"
                 :reading="state.charging.cable"
                 :value="label(state.charging.cable, cableLabels)"
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"
+                :size="chargeSize"
               />
               <ReadingItem
                 v-if="!state.soc_pct"
@@ -514,6 +519,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"
+                :size="chargeSize"
               />
               <!-- A setting the owner made (a Tesla's, some Volvos'), said only when told. -->
               <ReadingItem
@@ -545,16 +551,39 @@ const update = computed(() => {
           </v-card-text>
         </v-card>
       </v-col>
+      <!-- A source that tells its doors and windows; nothing for the others. -->
+      <v-col v-if="hasOpenings" cols="12" md="6">
+        <OpeningsTile
+          :doors="state.doors"
+          :windows="state.windows"
+          :now="now"
+          :connection="connection"
+          :health="health ?? null"
+          class="h-100"
+        />
+      </v-col>
 
-      <v-col cols="12" :md="$slots.aside ? 5 : 12">
+      <!-- The vehicle, its position on a map beside it where there is one. -->
+      <v-col cols="12" :md="mapShown ? 6 : 12">
         <v-card class="tile h-100">
-          <v-card-title tag="h2">{{ t('state.vehicle') }}</v-card-title>
+          <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
+            {{ t('state.vehicle') }}
+            <StatusPill
+              v-if="climateRunning"
+              tone="success"
+              :icon="climateRunning.icon"
+              class="climate-running"
+            >
+              {{ climateRunning.value }}
+            </StatusPill>
+          </v-card-title>
           <v-card-text class="tile-body">
             <!-- The vendor's picture, when it gives one (a Volvo's). -->
             <VehiclePicture v-if="current" :vehicle="current" size="large" class="mb-2" />
             <dl class="fields">
               <ReadingItem
                 :label="t('state.odometer')"
+                :icon="mdiCounter"
                 :reading="state.odometer_km"
                 :value="quantity(state.odometer_km, 'km')"
                 :now="now"
@@ -565,6 +594,7 @@ const update = computed(() => {
               <ReadingItem
                 v-if="state.climate.outside_temp_c"
                 :label="t('state.climate.outside')"
+                :icon="mdiThermometer"
                 :reading="state.climate.outside_temp_c"
                 :value="quantity(state.climate.outside_temp_c, 'celsius')"
                 :now="now"
@@ -575,39 +605,25 @@ const update = computed(() => {
               <ReadingItem
                 v-if="state.climate.cabin_temp_c"
                 :label="t('state.climate.cabin')"
+                :icon="mdiCarSeat"
                 :reading="state.climate.cabin_temp_c"
                 :value="quantity(state.climate.cabin_temp_c, 'celsius')"
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
                 class="cabin"
-              >
-                <span v-if="climateRunning" class="climate-running d-block mt-1">{{
-                  climateRunning.value
-                }}</span>
-              </ReadingItem>
-              <!-- Without the cabin's temperature, what runs says itself. -->
-              <ReadingItem
-                v-else-if="climateRunning"
-                :label="t('state.climate.title')"
-                :reading="climateRunning.reading"
-                :value="climateRunning.value"
-                :now="now"
-                :connection="connection"
-                :tile="vehicleTile"
-                size="small"
-                class="climate"
               />
               <!-- A source that tells its software (a Tesla); nothing for the others. -->
               <ReadingItem
                 v-if="state.software"
                 :label="t('state.software')"
+                :icon="mdiChip"
                 :reading="state.software"
                 :value="state.software.value"
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
-                size="small"
+                class="software"
               />
               <ReadingItem
                 v-if="update"
@@ -639,34 +655,6 @@ const update = computed(() => {
               :now="now"
               :connection="connection"
             />
-            <!-- A source that tells its doors and windows; nothing for the others. -->
-            <OpeningsLine
-              v-if="state.doors || state.windows"
-              :doors="state.doors"
-              :windows="state.windows"
-              :now="now"
-              :connection="connection"
-            />
-            <template v-if="state.position && mapsOn">
-              <MapView
-                :label="t('state.map')"
-                :markers="[{ position: state.position.value, label: t('state.position') }]"
-              />
-              <!-- With a map, the map is the position; its coordinates and times, small. -->
-              <dl class="position-line">
-                <div class="reading coordinates">
-                  <dt class="d-sr-only">{{ t('state.coordinates') }}</dt>
-                  <dd>
-                    <span class="value">{{ f.coordinates(state.position.value) }}</span>
-                    <ReadingProvenance
-                      :reading="state.position"
-                      :now="now"
-                      :connection="connection"
-                    />
-                  </dd>
-                </div>
-              </dl>
-            </template>
             <div v-if="state.position && !mapsOn" class="footer">
               <v-btn
                 :href="openStreetMapUrl(state.position.value)"
@@ -683,7 +671,33 @@ const update = computed(() => {
         </v-card>
       </v-col>
 
-      <v-col v-if="$slots.aside" cols="12" md="7">
+      <v-col v-if="mapShown && state.position" cols="12" md="6">
+        <v-card class="tile position h-100" data-test="position">
+          <v-card-title tag="h2">{{ t('state.position') }}</v-card-title>
+          <v-card-text class="tile-body">
+            <MapView
+              :label="t('state.map')"
+              :markers="[{ position: state.position.value, label: t('state.position') }]"
+            />
+            <!-- The map is the position; its coordinates and times, small. -->
+            <dl class="position-line footer">
+              <div class="reading coordinates">
+                <dt class="d-sr-only">{{ t('state.coordinates') }}</dt>
+                <dd>
+                  <span class="value">{{ f.coordinates(state.position.value) }}</span>
+                  <ReadingProvenance
+                    :reading="state.position"
+                    :now="now"
+                    :connection="connection"
+                  />
+                </dd>
+              </div>
+            </dl>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col v-if="$slots.aside" cols="12">
         <slot name="aside" />
       </v-col>
     </v-row>
@@ -691,15 +705,115 @@ const update = computed(() => {
 </template>
 
 <style scoped>
-.meta {
-  gap: 8px 14px;
-  margin: -4px 0 12px;
-  font-size: 0.8125rem;
-  color: rgb(var(--v-theme-text-secondary));
-}
 .tile {
   display: flex;
   flex-direction: column;
+}
+/* The headline: the vehicle's state in one line, its mode, its climate running and how
+   fresh the values are, together on the left. Asleep, it takes a second line for why the
+   values are old, its actions at the end of the first, and is tinted, so that it reads
+   before the values it explains. */
+.headline {
+  display: flex;
+  flex-wrap: wrap;
+  /* Its texts of three sizes on one line: on their baseline. */
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: -4px 0 12px;
+  padding: 4px 0;
+}
+.headline > * {
+  order: 2;
+}
+.headline.asleep,
+.headline.offline {
+  /* The actions' button beside the title: centered on it. */
+  align-items: center;
+  margin-top: 0;
+  padding: 12px 18px;
+  border-radius: var(--v-tile-radius);
+  background: rgba(var(--v-theme-secondary), 0.12);
+  border: 1px solid rgba(var(--v-theme-secondary), 0.28);
+}
+.headline.offline {
+  background: rgb(var(--v-theme-surface-variant));
+  border-color: rgb(var(--v-theme-line));
+}
+.headline-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.headline.asleep .headline-title,
+.headline.offline .headline-title {
+  flex: 1 1 14rem;
+}
+.headline-title .sep {
+  white-space: pre;
+  color: rgb(var(--v-theme-text-secondary));
+}
+.headline-title strong {
+  font-weight: 600;
+}
+.headline-title time {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: rgb(var(--v-theme-text-secondary));
+}
+.activity {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+/* Inline, so that its text keeps the line's baseline; the icon sits on it. */
+.activity .v-icon {
+  vertical-align: -3px;
+  margin-right: 4px;
+}
+.sleep-note,
+.freshness {
+  font-size: 0.8125rem;
+  color: rgb(var(--v-theme-text-secondary));
+}
+.freshness {
+  gap: 4px 10px;
+}
+/* Asleep, the freshness ends its line, under the actions; awake, it follows the mode, so
+   that the line reads as one sentence rather than two ends. */
+.headline.asleep > .freshness,
+.headline.offline > .freshness {
+  margin-left: auto;
+}
+/* Asleep: the actions end the first line; the climate, why the values are old and their
+   freshness make the second, under the title. */
+.headline.asleep > .sleep-actions,
+.headline.offline > .sleep-actions {
+  order: 1;
+}
+.headline.asleep > .headline-title,
+.headline.offline > .headline-title {
+  order: 0;
+}
+.headline.asleep > .sleep-note,
+.headline.offline > .sleep-note {
+  flex: 1 1 auto;
+}
+.headline.asleep::after,
+.headline.offline::after {
+  content: '';
+  order: 1;
+  flex-basis: 100%;
+  height: 0;
+}
+.sleep-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* Its actions all showing nothing (a vehicle they do not concern): no gap left for them. */
+.sleep-actions:empty {
+  display: none;
 }
 .tile-body {
   display: flex;
@@ -707,10 +821,12 @@ const update = computed(() => {
   gap: 18px;
   flex: 1 1 auto;
 }
+/* The figures on one baseline, the last line of each item: their boxes' bottoms would
+   not be, the space under the baseline growing with the figure's size. */
 .hero-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: last baseline;
   gap: 16px 32px;
 }
 .fields {
@@ -752,41 +868,6 @@ const update = computed(() => {
   line-height: 1.4;
   color: rgb(var(--v-theme-text-secondary));
 }
-.charge-line {
-  padding: 12px 16px;
-  border-radius: var(--v-control-radius);
-  background: rgb(var(--v-theme-surface-variant));
-}
-.charge-row {
-  gap: 8px 16px;
-}
-.charge-title {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.4;
-}
-.facts {
-  margin: 0;
-  gap: 4px 20px;
-  font-size: 0.875rem;
-}
-.fact {
-  display: flex;
-  gap: 6px;
-}
-.fact .label {
-  color: rgb(var(--v-theme-text-secondary));
-}
-.fact dd {
-  margin: 0;
-  font-weight: 500;
-}
-.fact dd.unknown,
-.fact.stale dd {
-  font-weight: 400;
-  color: rgb(var(--v-theme-text-secondary));
-}
 .no-capacity {
   min-width: 7rem;
 }
@@ -808,5 +889,12 @@ const update = computed(() => {
 }
 .osm {
   color: rgb(var(--v-theme-primary)) !important;
+}
+/* The software's version, large as the values beside it; on a phone, where half a tile
+   is narrow, small enough not to break inside it. */
+@media (max-width: 599.98px) {
+  .software :deep(.figure) {
+    font-size: 22px;
+  }
 }
 </style>

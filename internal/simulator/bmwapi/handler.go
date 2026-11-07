@@ -1,9 +1,9 @@
 // Package bmwapi exposes simulated vehicles as BMW CarData, the access BMW gives the
 // owner of a BMW or a Mini to their car's data (ADR 0045): the OAuth device flow of the
 // owner's client ID, the REST API (the account's vehicles, their basic data, containers
-// and the last value of their descriptors, the charging history) and the MQTT stream the
-// car pushes its changes to (Stream). The shapes are those of BMW's OpenAPI description
-// and of its streaming guide; none is checked on a real car yet.
+// and the last value of their descriptors, the charging history, the picture) and the
+// MQTT stream the car pushes its changes to (Stream). The shapes are those of BMW's
+// OpenAPI description and of its streaming guide; none is checked on a real car yet.
 //
 // One account, of GCID, is simulated, and its client ID is DevClientID. Faults are set
 // on demand under ControlPrefix: the day's quota spent, the refresh tokens revoked, the
@@ -59,6 +59,10 @@ type Behavior struct {
 	TokenTTL time.Duration
 	// ApproveAfter is how long after a device code the simulated owner has approved it.
 	ApproveAfter time.Duration
+	// CodeLifetime is how long a device code lasts on the simulated clock: BMW's 5
+	// minutes, which its client is told in real time, the owner entering it in real
+	// time. An accelerated simulation lengthens it as much (Scaled).
+	CodeLifetime time.Duration
 	// SendEvery is how often at most the car sends a descriptor that changes all along
 	// a drive or a charge (the SoC, the odometer, the position, the range): unknown on
 	// the real car, to measure (ADR 0045 §9). The others are sent at each change.
@@ -67,7 +71,16 @@ type Behavior struct {
 
 // DefaultBehavior returns the assumptions used without explicit configuration.
 func DefaultBehavior() Behavior {
-	return Behavior{TokenTTL: time.Hour, ApproveAfter: 10 * time.Second, SendEvery: 30 * time.Second}
+	return Behavior{TokenTTL: time.Hour, ApproveAfter: 10 * time.Second, CodeLifetime: codeLifetime, SendEvery: 30 * time.Second}
+}
+
+// Scaled is b for a simulation at speed times real time: the device code lasts its real
+// lifetime.
+func (b Behavior) Scaled(speed float64) Behavior {
+	if speed > 1 {
+		b.CodeLifetime = time.Duration(float64(codeLifetime) * speed)
+	}
+	return b
 }
 
 // known is a descriptor's last value the car sent, and when.
@@ -143,6 +156,7 @@ func NewHandler(srcs []Source, clk clock.Clock, behavior Behavior) *Handler {
 	api.HandleFunc("GET "+APIPrefix+"vehicles/{vin}/basicData", h.basicData)
 	api.HandleFunc("GET "+APIPrefix+"vehicles/{vin}/telematicData", h.telematicData)
 	api.HandleFunc("GET "+APIPrefix+"vehicles/{vin}/chargingHistory", h.chargingHistory)
+	api.HandleFunc("GET "+APIPrefix+"vehicles/{vin}/image", h.image)
 	api.HandleFunc("POST "+APIPrefix+"containers", h.createContainer)
 	api.HandleFunc("GET "+APIPrefix+"containers", h.listContainers)
 	api.HandleFunc("GET "+APIPrefix+"containers/{id}", h.getContainer)
@@ -282,8 +296,11 @@ func (h *Handler) basicData(w http.ResponseWriter, r *http.Request) {
 	if f := strings.Fields(spec.Model); len(f) > 0 {
 		series = f[0]
 	}
-	if c.src.Brand() == "mini" {
+	switch {
+	case c.src.Brand() == "mini":
 		brand = "MINI"
+	case strings.HasPrefix(series, "i"):
+		brand = "BMWi" // the OpenAPI's brand of the i models
 	}
 	propulsion := "BEV"
 	if spec.PlugInHybrid {
@@ -296,7 +313,7 @@ func (h *Handler) basicData(w http.ResponseWriter, r *http.Request) {
 		"engine": "", "driveTrain": propulsion, "propulsionType": propulsion, "chargingModes": []string{"AC_TYPE2PLUG", "DC"},
 		"constructionDate":     strconv.Itoa(spec.ModelYear-1) + "-11-01T00:00:00.000Z",
 		"hvsMaxEnergyAbsolute": strconv.FormatFloat(spec.BatteryKWh, 'f', 1, 64), "simStatus": "ACTIVE",
-		"colourCode": "", "colourCodeRaw": "", "puStep": "", "fullSAList": "",
+		"colourCode": "C4P", "colourCodeRaw": "C4P", "puStep": "", "fullSAList": "",
 	})
 }
 

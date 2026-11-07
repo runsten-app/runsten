@@ -3,6 +3,7 @@ package bmwsource
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -73,11 +74,11 @@ func (s *store) RotateBMWToken(_ context.Context, _, _ string, at time.Time, tok
 	return nil
 }
 
-func (s *store) SetBMWContainer(_ context.Context, _, _ string, at time.Time, id string) error {
+func (s *store) SetBMWContainer(_ context.Context, _, _ string, at time.Time, id, name string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if at.Equal(s.cred.SetAt) {
-		s.cred.ContainerID = id
+		s.cred.ContainerID, s.cred.ContainerName = id, name
 	}
 	return nil
 }
@@ -246,6 +247,11 @@ func TestStreamAndAPI(t *testing.T) {
 	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.ChargingHistory)); err != nil {
 		t.Error(err)
 	}
+	if raw, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Image)); err != nil {
+		t.Error(err)
+	} else if p, err := bmw.DecodePicture(raw); err != nil || p.Type != "image/png" {
+		t.Errorf("picture: %v", err)
+	}
 	if _, err := sess.Fetch(t.Context(), "WBY31AW02RFR99999", collector.Endpoint(bmw.BasicData)); kindOf(err) != collector.KindUnshared {
 		t.Errorf("another VIN: %v", err)
 	}
@@ -319,14 +325,14 @@ func TestStreamHeld(t *testing.T) {
 	}
 
 	sess := f.login(t)
-	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream)); err == nil {
-		t.Error("held by another: no error")
+	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream)); kindOf(err) != collector.KindStreamHeld {
+		t.Errorf("held by another: %v", err)
 	}
 	if st := f.src.StreamState("c"); st.Up || !st.Held {
 		t.Errorf("stream state %+v", st)
 	}
-	// Not tried again for a while: the values held, without an error.
-	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream)); err != nil {
+	// Not tried again for a while: still told held, rather than the values it left.
+	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream)); kindOf(err) != collector.KindStreamHeld {
 		t.Errorf("before retrying: %v", err)
 	}
 	other.Close()
@@ -342,7 +348,7 @@ func TestRefusals(t *testing.T) {
 
 	// Left unread: the subscription is closed.
 	f.clk.Advance(idleClose)
-	f.src.sweep()
+	f.src.sweep("")
 	if st := f.src.StreamState("c"); st != (StreamState{}) {
 		t.Errorf("unread subscription kept: %+v", st)
 	}
@@ -353,5 +359,68 @@ func TestRefusals(t *testing.T) {
 	f.control(t, "revoke")
 	if _, _, err := f.src.Login(t.Context(), "a", "c"); kindOf(err) != collector.KindCredentialRefused {
 		t.Errorf("revoked: %v", err)
+	}
+}
+
+func TestPictureNotKept(t *testing.T) {
+	// BMW answered without a picture kept: the endpoint not given, with BMW's status, not
+	// a failure of the API.
+	s := &session{src: New(nil, "", nil, clock.Real{})}
+	err := s.apiError(&bmw.PictureError{Status: http.StatusOK, Err: errors.New("image: not an image")}, time.Date(2026, 11, 6, 22, 0, 0, 0, time.UTC))
+	var se *collector.SourceError
+	if !errors.As(err, &se) || se.Kind != collector.KindNotAvailable || se.Status != http.StatusOK {
+		t.Errorf("%#v", err)
+	}
+}
+
+func TestContainerOfPreviousRelease(t *testing.T) {
+	f := newFixture(t)
+	// The connection's container was created by a previous release, with fewer
+	// descriptors: named runsten alone.
+	old, err := f.client.CreateContainer(t.Context(), f.login(t).(*session).token, "runsten", "Runsten, a data logger of the owner's vehicles", []string{bmw.DescSoC})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.st.cred.ContainerID = old.ID
+	sess := f.login(t)
+	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.TelematicData)); err != nil {
+		t.Fatal(err)
+	}
+	if c := f.st.cred; c.ContainerID == old.ID || c.ContainerName != bmw.ContainerName() {
+		t.Errorf("container kept: %+v", c)
+	}
+	cts, err := f.client.Containers(t.Context(), sess.(*session).token)
+	if err != nil || len(cts) != 1 || cts[0].ID != f.st.cred.ContainerID {
+		t.Errorf("containers %+v, %v: the previous one left", cts, err)
+	}
+
+	// Recorded: the next access reads it at once.
+	if again := f.login(t).(*session); again.container != f.st.cred.ContainerID {
+		t.Errorf("next access reads %q", again.container)
+	}
+}
+
+func TestContainerFailedOncePerDay(t *testing.T) {
+	f := newFixture(t)
+	sess := f.login(t)
+	// The account's 10 containers are other clients': Runsten's cannot be created.
+	for i := range 10 {
+		if _, err := f.client.CreateContainer(t.Context(), sess.(*session).token, fmt.Sprintf("other-%d", i), "another client", []string{bmw.DescSoC}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.TelematicData)); err == nil || kindOf(err) == collector.KindNotAvailable {
+		t.Fatalf("first try: %v", err)
+	}
+	// Not tried again the same day, the next access included: told not available.
+	for _, s := range []collector.Session{sess, f.login(t)} {
+		if _, err := s.Fetch(t.Context(), vin, collector.Endpoint(bmw.TelematicData)); !errors.Is(err, errContainerWait) || kindOf(err) != collector.KindNotAvailable {
+			t.Errorf("tried again the same day: %v", err)
+		}
+	}
+	// The next day, tried again.
+	f.clk.Advance(24 * time.Hour)
+	if _, err := f.login(t).Fetch(t.Context(), vin, collector.Endpoint(bmw.TelematicData)); errors.Is(err, errContainerWait) {
+		t.Errorf("not tried the next day: %v", err)
 	}
 }
