@@ -16,9 +16,8 @@
 # markets, 2022 to 2026. A paint may have two codes (Frozen Pure Grey: X1F on the i4, C5A on
 # the others); both are listed. Left out: the i7's two-tone paints (3MY, SXB…), option codes of
 # a combination, and the iX3 (NA5)'s paints whose English name no source prints yet (C7T, C7U,
-# C7V: Polarized, Ocean Wave and Eucalyptus in the German list). A code not here is shown as it
-# is.
-
+# C7V: Polarized, Ocean Wave and Eucalyptus in the German list), and 490, BMW Individual's code
+# for a paint made to order, which names none. A code not here is shown as it is.
 
 # --- BMW ----------------------------------------------------------------------------------
 
@@ -61,16 +60,6 @@
     - url: https://www.bmw.ee/content/dam/bmw/marketEE/bmw_ee/pricelists-brochures/2023/01.07.2023_BMW_i5_sedan_G60BEV_hinnakiri.pdf.coredownload.pdf
       level: manufacturer
     - url: https://bmw.fi/content/dam/bmw/marketNORDICS/common/finansiering/2025/BMW%20i5%20Sedan%20(G60%20BEV),%20Hinnasto%209.1.2025.pdf.coredownload.pdf
-      level: manufacturer
-
-# Generic code for a customer-specified Individual colour, not a single paint (AU: "BMW Individual Special Paintwork")
-- brand: bmw
-  code: "490"
-  name: BMW Individual special paint
-  sources:
-    - url: https://bmw.com.au/content/dam/bmw/marketAU/common/images/BMW_i4_Specification_Guide_G26.pdf.asset.1646282088622.pdf
-      level: manufacturer
-    - url: https://www.bmw.de/content/dam/bmw/marketDE/bmw_de/new-vehicles/pricelists/preisliste-bmwiX3-50-xdrive.pdf.coredownload.pdf
       level: manufacturer
 
 # Solid black
