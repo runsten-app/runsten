@@ -599,7 +599,7 @@ components:
               type: string
             - type: "null"
         cost:
-          description: "What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without an energy to rest on (energy_measured_kwh, else energy_soc_kwh, or energy_power_kwh for a rise of the state of charge below 2 points), or when the tariff has no version for a part of the charge's window."
+          description: "What the charge cost: entered by the user, or for an imported charge what the application says it cost in the account's currency; or else estimated from the tariff of its place. null when unknown: without the account's currency, outside every place without an entered or imported cost, without an energy to rest on (energy_grid_kwh, else energy_measured_kwh, else energy_soc_kwh, or energy_power_kwh for a rise of the state of charge below 2 points), or when the tariff has no version for a part of the charge's window."
           oneOf:
             - $ref: "#/components/schemas/Cost"
             - type: "null"
@@ -613,6 +613,13 @@ components:
           description: When the event ended.
         end_soc_pct:
           format: double
+          type:
+            - number
+            - "null"
+        energy_grid_kwh:
+          description: "The energy the vehicle's maker recorded as drawn from the grid over the charge, losses included (a BMW's charging history): a measurement, which the cost bills as it is, no efficiency between. The sum of the maker's sessions whose middle falls within [start.after, end.before]. null for a vehicle whose maker records none (Volvo, Polestar, Tesla), an imported charge, and until the maker's history is read, once a day."
+          format: double
+          minimum: 0
           type:
             - number
             - "null"
@@ -710,6 +717,7 @@ components:
         - energy_soc_kwh
         - energy_power_kwh
         - energy_measured_kwh
+        - energy_grid_kwh
         - average_power_kw
         - max_current_a
         - phases
@@ -1516,13 +1524,13 @@ components:
             - USD
           type: string
         efficiency:
-          description: "For a tariff, the assumed share of the energy drawn from the grid that reaches the battery: the place's, or else the default of the settings (default_efficiency: ac for AC and unknown types, dc for DC). null for an entered or imported cost."
+          description: "For a tariff, the assumed share of the energy drawn from the grid that reaches the battery: the place's, or else the default of the settings (default_efficiency: ac for AC and unknown types, dc for DC). null for an entered or imported cost, and for a tariff's on energy_grid_kwh, which none stands between."
           format: double
           type:
             - number
             - "null"
         energy_kwh:
-          description: "The billed energy. For a tariff, an estimate: energy_soc_kwh (itself an estimate) over efficiency. For an entered cost, the energy entered with it, as read on the receipt; null if none was, and for an imported cost."
+          description: "The billed energy. For a tariff, the charge's energy_grid_kwh when its maker recorded it; else an estimate: energy_measured_kwh or energy_soc_kwh (itself an estimate) over efficiency. For an entered cost, the energy entered with it, as read on the receipt; null if none was, and for an imported cost."
           format: double
           type:
             - number

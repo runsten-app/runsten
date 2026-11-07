@@ -149,8 +149,8 @@ type costJSON struct {
 	MaxMinor int64            `json:"max_minor" minimum:"0" doc:"The highest amount the charge may have cost."`
 	Source   costSourceJSON   `json:"source" doc:"tariff: estimated from the tariff of the charge's place. entered: the amount the user entered for the charge, which replaces the tariff's. imported: what the application an imported charge comes from says it cost, in the account's currency, which replaces the tariff's too."`
 	// The two estimates behind a tariff's cost are said as such.
-	EnergyKWh  *float64 `json:"energy_kwh" doc:"The billed energy. For a tariff, an estimate: energy_soc_kwh (itself an estimate) over efficiency. For an entered cost, the energy entered with it, as read on the receipt; null if none was, and for an imported cost."`
-	Efficiency *float64 `json:"efficiency" doc:"For a tariff, the assumed share of the energy drawn from the grid that reaches the battery: the place's, or else the default of the settings (default_efficiency: ac for AC and unknown types, dc for DC). null for an entered or imported cost."`
+	EnergyKWh  *float64 `json:"energy_kwh" doc:"The billed energy. For a tariff, the charge's energy_grid_kwh when its maker recorded it; else an estimate: energy_measured_kwh or energy_soc_kwh (itself an estimate) over efficiency. For an entered cost, the energy entered with it, as read on the receipt; null if none was, and for an imported cost."`
+	Efficiency *float64 `json:"efficiency" doc:"For a tariff, the assumed share of the energy drawn from the grid that reaches the battery: the place's, or else the default of the settings (default_efficiency: ac for AC and unknown types, dc for DC). null for an entered or imported cost, and for a tariff's on energy_grid_kwh, which none stands between."`
 	Note       *string  `json:"note" doc:"The note entered with the cost; null for a tariff, and without a note."`
 }
 
