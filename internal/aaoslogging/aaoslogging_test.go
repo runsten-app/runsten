@@ -47,7 +47,7 @@ func trip(id string, at int64) map[string]any {
 	}
 	return map[string]any{
 		"tripId": id, "localId": 1, "startedAt": at, "endedAt": at + 600000, "storageUnitSystem": "metric",
-		"distanceKm": 8.4, "energyKwh": 1.35, "energySource": "vehicle_sensor", "averageSpeedKph": 50.0,
+		"distanceKm": 8.4, "energyKwh": 1.35, "energySource": "vehicle_sensor", "vehicleType": "ELECTRIC", "averageSpeedKph": 50.0,
 		"startLat": 57.7, "startLon": 11.97, "endLat": 57.72, "endLon": 12.0, "weather": nil,
 		"weatherSamples": []any{map[string]any{"temperatureC": 9.0, "capturedAt": at}},
 		// Out of order, as nothing in the contract sorts them; one sample without the SoC.
@@ -172,7 +172,7 @@ func TestRead(t *testing.T) {
 	}
 	tr := exp.Trips[1]
 	if !tr.Start.Equal(time.UnixMilli(start)) || tr.End == nil || !tr.End.Equal(time.UnixMilli(start+600000)) ||
-		*tr.DistanceKm != 8.4 || *tr.EnergyKWh != 1.35 || tr.EnergySource != "vehicle_sensor" ||
+		*tr.DistanceKm != 8.4 || *tr.EnergyKWh != 1.35 || tr.EnergySource != "vehicle_sensor" || tr.VehicleType != "ELECTRIC" ||
 		*tr.StartLat != 57.7 || *tr.EndLon != 12.0 {
 		t.Errorf("%+v", tr)
 	}
@@ -188,12 +188,18 @@ func TestRead(t *testing.T) {
 	}
 }
 
-// The ZIP of the Sync folder alone, or of V3, is read the same.
+// The ZIP of the Sync folder alone, of V3, or of V3's Commits and Artifacts chosen
+// together (Drive then names no folder above them), is read the same.
 func TestReadSubfolder(t *testing.T) {
-	for _, prefix := range []string{"Sync/", ""} {
+	for _, prefix := range []string{"Sync/", "", "-"} {
 		files := map[string][]byte{}
 		for name, data := range export(2, nil) {
-			files[prefix+strings.TrimPrefix(name, root)] = data
+			name = strings.TrimPrefix(name, root)
+			if prefix == "-" {
+				files[strings.TrimPrefix(name, "V3/")] = data
+			} else {
+				files[prefix+name] = data
+			}
 		}
 		if exp, err := read(folder(files)); err != nil || len(exp.Trips) != 3 {
 			t.Errorf("%q: %v", prefix, err)

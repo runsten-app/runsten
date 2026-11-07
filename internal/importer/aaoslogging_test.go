@@ -57,6 +57,20 @@ func TestConvertAAOSTrip(t *testing.T) {
 		it.Trip.To.V != (core.Position{Lat: 57.72, Lon: 12}) {
 		t.Errorf("the ends from the route: %+v %+v", it.Trip.From, it.Trip.To)
 	}
+	for _, class := range []string{"HYBRID", "FUEL", "UNKNOWN"} {
+		hybrid := valid()
+		hybrid.VehicleType = class
+		// Its range is fuel's too, its battery's energy not all it used: neither is kept.
+		if it, ok := convertAAOSTrip(hybrid, t0); !ok || it.Trip.EnergyKWh.OK || it.Trip.StartRangeKm.OK ||
+			it.Trip.EndRangeKm.OK || it.Trip.StartSoC.V != 80 || it.Trip.DistanceKm.V != 8.4 {
+			t.Errorf("%s: %+v", class, it.Trip)
+		}
+	}
+	electric := valid()
+	electric.VehicleType = "ELECTRIC"
+	if it, ok := convertAAOSTrip(electric, t0); !ok || it.Trip.EnergyKWh.V != 1.35 || it.Trip.StartRangeKm.V != 310 {
+		t.Errorf("ELECTRIC: %+v", it.Trip)
+	}
 	bare := aaoslogging.Trip{ID: "x", Start: start, End: &end}
 	if it, ok := convertAAOSTrip(bare, t0); !ok || it.Track != nil || it.Trip.From.OK || it.Trip.StartSoC.OK ||
 		it.Trip.EnergyKWh.OK || it.Trip.OutsideTempC.OK {

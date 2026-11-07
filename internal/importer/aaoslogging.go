@@ -53,7 +53,9 @@ var aaosEnergySources = []string{"vehicle_sensor", "derived_battery_energy", "mi
 // last samples telling them, its outside temperature their mean. Its energy is the
 // battery's net one, kept only when positive and of a known source: a trip that gained
 // energy, downhill, would read as none consumed. The app's distance is no odometer: the
-// trip has none.
+// trip has none. A trip of a hybrid, or of a car the app could not class, keeps neither
+// range nor energy: its range is fuel's and the battery's together, and its battery's
+// energy over its distance would read as all it consumed, the engine's left out.
 func convertAAOSTrip(t aaoslogging.Trip, at time.Time) (ImportedTrip, bool) {
 	if t.End == nil || t.End.Before(t.Start) {
 		return ImportedTrip{}, false
@@ -82,13 +84,16 @@ func convertAAOSTrip(t aaoslogging.Trip, at time.Time) (ImportedTrip, bool) {
 	if trip.DistanceKm, ok = nonNegative(t.DistanceKm, at); !ok {
 		return ImportedTrip{}, false
 	}
-	if e := t.EnergyKWh; e != nil && finite(*e) && *e > 0 && slices.Contains(aaosEnergySources, t.EnergySource) {
+	electric := t.VehicleType == "" || t.VehicleType == "ELECTRIC"
+	if e := t.EnergyKWh; electric && e != nil && finite(*e) && *e > 0 && slices.Contains(aaosEnergySources, t.EnergySource) {
 		trip.EnergyKWh = core.Some(*e, at)
 	}
 	samples := slices.Clone(t.Telemetry)
 	slices.SortStableFunc(samples, func(a, b aaoslogging.Sample) int { return a.At.Compare(b.At) })
 	trip.StartSoC, trip.EndSoC = ends(samples, at, func(s aaoslogging.Sample) *float64 { return s.BatteryPercent }, 0, 100)
-	trip.StartRangeKm, trip.EndRangeKm = ends(samples, at, func(s aaoslogging.Sample) *float64 { return s.RangeKm }, 0, 5000)
+	if electric {
+		trip.StartRangeKm, trip.EndRangeKm = ends(samples, at, func(s aaoslogging.Sample) *float64 { return s.RangeKm }, 0, 5000)
+	}
 	var sum float64
 	var n int
 	for _, s := range samples {

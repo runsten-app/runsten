@@ -1,6 +1,7 @@
 // Package aaoslogging reads the export of AAOS Logging, an Android Automotive app that
 // records a car's trips and syncs them to its user's Google Drive: the ZIP Google Drive
-// gives for the car's folder (AAOSLogging/<car>_<id>), or for its Sync or V3 folder. It
+// gives for the car's folder (AAOSLogging/<car>_<id>), for its Sync or V3 folder, or for
+// the Commits and Artifacts folders of V3 chosen together. It
 // returns the trips as they are, in the app's units, and knows no business code.
 //
 // The format is the app's Drive sync V3, documented by its developer's Home Assistant
@@ -40,8 +41,11 @@ type Trip struct {
 	// included: negative when it gained. EnergySource tells where it comes from:
 	// vehicle_sensor, derived_battery_energy, mixed_vehicle_sensor_and_derived or
 	// unknown (or empty).
-	EnergyKWh          *float64
-	EnergySource       string
+	EnergyKWh    *float64
+	EnergySource string
+	// VehicleType is the app's class of the car on this trip: ELECTRIC, HYBRID, FUEL
+	// or UNKNOWN; empty in the exports before it.
+	VehicleType        string
 	StartLat, StartLon *float64 // decimal degrees
 	EndLat, EndLon     *float64
 	Telemetry          []Sample // as recorded, not sorted
@@ -116,7 +120,9 @@ func Read(r io.ReaderAt, size int64) (*Export, error) {
 		name := strings.TrimPrefix(f.Name, "./")
 		files[name] = f
 		dir, base := path.Split(name)
-		root, ok := strings.CutSuffix(dir, "V3/Commits/")
+		// root is the V3 folder, whose name is not in the ZIP when its Commits and
+		// Artifacts are downloaded alone.
+		root, ok := strings.CutSuffix(dir, "Commits/")
 		if !ok || (root != "" && !strings.HasSuffix(root, "/")) {
 			continue
 		}
@@ -137,7 +143,7 @@ func Read(r io.ReaderAt, size int64) (*Export, error) {
 	case len(roots) > 1:
 		return nil, formatErr("it holds the folders of %d vehicles: download one vehicle's folder", len(roots))
 	case len(newest) == 0:
-		return nil, formatErr("no V3/Commits/commit-….json: download the vehicle's folder, synced with AAOS Logging's Drive sync V3")
+		return nil, formatErr("no Commits/commit-….json: download the vehicle's folder, synced with AAOS Logging's Drive sync V3")
 	case len(newest) > 1:
 		return nil, formatErr("two commits of the same sequence")
 	}
@@ -156,7 +162,7 @@ func Read(r io.ReaderAt, size int64) (*Export, error) {
 		if a.LogicalType != "day_archive" && a.LogicalType != "month_archive" {
 			continue
 		}
-		f, ok := files[head.root+a.RelativePath]
+		f, ok := files[head.root+strings.TrimPrefix(a.RelativePath, "V3/")]
 		if !ok {
 			return nil, formatErr("%s is missing: download the vehicle's whole folder once AAOS Logging has synced it", a.RelativePath)
 		}
@@ -269,6 +275,7 @@ type rawTrip struct {
 	DistanceKm        *float64 `json:"distanceKm"`
 	EnergyKwh         *float64 `json:"energyKwh"`
 	EnergySource      *string  `json:"energySource"`
+	VehicleType       *string  `json:"vehicleType"`
 	StartLat          *float64 `json:"startLat"`
 	StartLon          *float64 `json:"startLon"`
 	EndLat            *float64 `json:"endLat"`
@@ -366,6 +373,9 @@ func convert(rt rawTrip) (Trip, error) {
 	}
 	if rt.EnergySource != nil {
 		t.EnergySource = *rt.EnergySource
+	}
+	if rt.VehicleType != nil {
+		t.VehicleType = *rt.VehicleType
 	}
 	for _, s := range rt.Telemetry {
 		if s.RecordedAt <= 0 {
