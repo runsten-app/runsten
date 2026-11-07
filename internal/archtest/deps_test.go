@@ -84,8 +84,8 @@ var allowed = map[string][]string{
 	"internal/polestar":   {"net/http", "encoding/json", "internal/core"},
 	"internal/tesla":      {"net/http", "encoding/json", "internal/core"},
 	"internal/polestarid": {"net/http", "encoding/json", "google.golang.org/protobuf", "internal/core"},
-	// CarData's REST and its MQTT stream.
-	"internal/bmw":               {"net/http", "encoding/json", "github.com/eclipse/paho.mqtt.golang", "internal/core"},
+	// CarData's REST and its MQTT stream; the YAML decoder for its embedded paints' names.
+	"internal/bmw":               {"net/http", "encoding/json", "github.com/eclipse/paho.mqtt.golang", "go.yaml.in/yaml/v3", "internal/core"},
 	"internal/geocode/nominatim": {"net/http", "encoding/json", "internal/core"},
 	"internal/aximote":           {"net/http", "encoding/json"},
 	// The latest release on GitHub, compared with the one running.
