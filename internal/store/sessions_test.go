@@ -49,6 +49,7 @@ func TestChargeSessions(t *testing.T) {
 		session(t0.Add(72*time.Hour+5*time.Minute), time.Hour, 10),
 		{Start: t0.Add(74 * time.Hour), End: t0.Add(75 * time.Hour)},
 	}
+	// Without a snapshot, the vehicle was never read: no cutoff, nothing imported.
 	if err := s.SaveChargeSessions(ctx, a, v, "bmw", sessions, core.Value[core.Capacity]{}); err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +58,6 @@ func TestChargeSessions(t *testing.T) {
 	if err := s.SaveChargeSessions(ctx, a, v, "bmw", fix, core.Value[core.Capacity]{}); err != nil {
 		t.Fatal(err)
 	}
-	// Without a snapshot, the vehicle was never read: no cutoff, nothing imported.
 	charges, err := s.Charges(ctx, a, v)
 	if err != nil || len(charges) != 4 {
 		t.Fatalf("charges = %+v, %v", charges, err)
