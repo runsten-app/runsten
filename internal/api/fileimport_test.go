@@ -236,6 +236,35 @@ func TestImportAAOSLogging(t *testing.T) {
 		ct, body, c); resp.status != http.StatusOK {
 		t.Errorf("a Polestar: %d %s", resp.status, out)
 	}
+
+	t.Run("one at a time per vehicle", func(t *testing.T) {
+		e.server.aaosLogging.start(car, aaosLoggingImports)
+		defer e.server.aaosLogging.done(car)
+		body, ct := form(t, map[string]string{"export": export})
+		resp, out := do(t, noFollow(), http.MethodPost, url, ct, body, c)
+		if resp.status != http.StatusConflict {
+			t.Errorf("%d %s", resp.status, out)
+		}
+		wantError(t, out, codeImportActive)
+	})
+	t.Run("a few per instance", func(t *testing.T) {
+		for _, v := range []string{"v1", "v2"} {
+			e.server.aaosLogging.start(v, aaosLoggingImports)
+			defer e.server.aaosLogging.done(v)
+		}
+		body, ct := form(t, map[string]string{"export": export})
+		resp, out := do(t, noFollow(), http.MethodPost, url, ct, body, c)
+		if resp.status != http.StatusServiceUnavailable || resp.header.Get("Retry-After") != "60" {
+			t.Errorf("%d %v %s", resp.status, resp.header, out)
+		}
+		wantError(t, out, codeSourceUnavailable)
+	})
+	// The slots are given back, whatever the import did.
+	body, ct = form(t, map[string]string{"export": export})
+	if resp, out := do(t, noFollow(), http.MethodPost, url, ct, body, c); resp.status != http.StatusOK {
+		t.Errorf("after: %d %s", resp.status, out)
+	}
+	body, ct = form(t, map[string]string{"export": export})
 	e.files.err = errors.New("boom")
 	if resp, out := do(t, noFollow(), http.MethodPost, url, ct, body, c); resp.status != http.StatusInternalServerError {
 		t.Errorf("failing: %d %s", resp.status, out)

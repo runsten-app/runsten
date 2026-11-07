@@ -8483,6 +8483,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
           description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`import_active`: an export of the vehicle is being read; nothing is imported."
         "415":
           content:
             application/json:
@@ -8495,6 +8501,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
           description: "`internal`: an internal failure, without detail; the cause is logged."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: the instance is reading as many exports as it reads at once."
+          headers:
+            Retry-After:
+              description: Seconds to wait before sending the export again.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
       security:
         - session: []
         - sessionSecure: []

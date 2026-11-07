@@ -82,13 +82,18 @@ func (e *FormatError) Error() string { return "not an export of AAOS Logging: " 
 func formatErr(format string, a ...any) error { return &FormatError{Reason: fmt.Sprintf(format, a...)} }
 
 // The bounds of what is read, as the developer's integration's: an artifact of at most
-// 128 MiB, an archive of at most 10,000 files and 512 MiB once inflated.
+// 128 MiB, an archive of at most 10,000 files and 512 MiB once inflated. And an export of
+// at most 1 GiB of day files once inflated, all its archives together: its trips are held
+// in memory until the last is read, by a process that serves the rest of the API.
 const (
 	maxManifest      = 16 << 20
 	maxArtifact      = 128 << 20
 	maxArchiveFiles  = 10_000
 	maxArchiveInflat = 512 << 20
 )
+
+// maxExportInflat is a variable for the tests alone.
+var maxExportInflat uint64 = 1 << 30
 
 var (
 	commitName   = regexp.MustCompile(`^commit-(\d{20})-([A-Za-z0-9_-]+)\.json$`)
@@ -158,6 +163,7 @@ func Read(r io.ReaderAt, size int64) (*Export, error) {
 	}
 	exp := &Export{VehicleID: man.VehicleID, DatasetID: man.DatasetID, Generation: man.GenerationSequence}
 	seen := map[string]bool{}
+	left := maxExportInflat
 	for _, a := range man.Artifacts {
 		if a.LogicalType != "day_archive" && a.LogicalType != "month_archive" {
 			continue
@@ -176,7 +182,7 @@ func Read(r io.ReaderAt, size int64) (*Export, error) {
 		if sum := sha256.Sum256(data); hex.EncodeToString(sum[:]) != a.SHA256 {
 			return nil, formatErr("%s: its SHA-256 is not the commit's", a.RelativePath)
 		}
-		trips, err := readArchive(data, a, man.DatasetID)
+		trips, err := readArchive(data, a, man.DatasetID, &left)
 		if err != nil {
 			return nil, err
 		}
@@ -294,8 +300,9 @@ type rawTrip struct {
 }
 
 // readArchive reads the trips of a day or month archive, in memory: a member's name is
-// never a path on disk.
-func readArchive(data []byte, a artifact, datasetID string) ([]Trip, error) {
+// never a path on disk. left is what the export may still inflate; it takes what the
+// archive does.
+func readArchive(data []byte, a artifact, datasetID string, left *uint64) ([]Trip, error) {
 	z, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return nil, formatErr("%s: not a ZIP file", a.RelativePath)
@@ -319,6 +326,10 @@ func readArchive(data []byte, a artifact, datasetID string) ([]Trip, error) {
 		if inflated += f.UncompressedSize64; inflated > maxArchiveInflat {
 			return nil, formatErr("%s: more than %d MiB once inflated", a.RelativePath, maxArchiveInflat>>20)
 		}
+		if f.UncompressedSize64 > *left {
+			return nil, formatErr("more than %d MiB of trips once inflated", maxExportInflat>>20)
+		}
+		*left -= f.UncompressedSize64
 		raw, err := readMember(f, maxArtifact)
 		if err != nil {
 			return nil, err

@@ -207,6 +207,17 @@ func TestReadSubfolder(t *testing.T) {
 	}
 }
 
+// The trips of all the archives together are bounded, beyond each archive's bound.
+func TestReadTooLarge(t *testing.T) {
+	defer func(v uint64) { maxExportInflat = v }(maxExportInflat)
+	b := folder(export(2, nil))
+	maxExportInflat = 4000 // less than the fixture's two day files, more than one
+	var fe *FormatError
+	if _, err := read(b); !errors.As(err, &fe) || !strings.Contains(err.Error(), "once inflated") {
+		t.Errorf("%v", err)
+	}
+}
+
 func TestReadRefused(t *testing.T) {
 	without := func(match string) map[string][]byte {
 		files := export(2, nil)
