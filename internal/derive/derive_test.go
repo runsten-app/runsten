@@ -46,6 +46,8 @@ type memVehicle struct {
 	cursor  core.Cursor
 	// sessions are the charging sessions recorded, by source and start.
 	sessions map[string]map[time.Time]core.ChargeSession
+	// sessionCapacity is the capacity the latest sessions were given.
+	sessionCapacity core.Value[core.Capacity]
 }
 
 func newMemStore(targets ...collector.Target) *memStore {
@@ -120,8 +122,11 @@ func (m *memStore) SnapshotsBetween(_ context.Context, _, vehicleID string, from
 	return out[:min(limit, len(out))], nil
 }
 
-func (m *memStore) SaveChargeSessions(_ context.Context, _, vehicleID, source string, sessions []core.ChargeSession) error {
+func (m *memStore) SaveChargeSessions(_ context.Context, _, vehicleID, source string, sessions []core.ChargeSession,
+	capacity core.Value[core.Capacity],
+) error {
 	v := m.vehicle(vehicleID)
+	v.sessionCapacity = capacity
 	if v.sessions == nil {
 		v.sessions = map[string]map[time.Time]core.ChargeSession{}
 	}

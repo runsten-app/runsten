@@ -57,6 +57,7 @@ func TestLoadConfigOverrides(t *testing.T) {
 		cfg.databaseURL != "postgres://sim@db/sim" || cfg.tesla != (teslaapi.Behavior{SleepAfter: 0, TokenTTL: time.Hour}) || cfg.bmwStreamAddr != ":1884" ||
 		cfg.bmw != (bmwapi.Behavior{
 			TokenTTL: 10 * time.Minute, ApproveAfter: bmwapi.DefaultBehavior().ApproveAfter, CodeLifetime: bmwapi.DefaultBehavior().CodeLifetime,
+			PastDays: bmwapi.DefaultBehavior().PastDays,
 		}) {
 		t.Errorf("config = %+v", cfg)
 	}

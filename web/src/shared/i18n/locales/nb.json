@@ -195,7 +195,8 @@
       "volvoDataPortal": "Importert fra Volvo Data Portal",
       "other": "Importert fra {source}",
       "teslamate": "Importert fra TeslaMate",
-      "aaosLogging": "Importert fra AAOS Logging"
+      "aaosLogging": "Importert fra AAOS Logging",
+      "bmw": "Importert fra BMW CarData"
     },
     "importedHelp": "Importert fra en annen app, fra før Runsten leste bilen: tidspunktene og tallene er den appens egne.",
     "importedTimesNote": "Tidspunktene er de appen oppga, på minuttet eller bedre: ikke noe intervall."

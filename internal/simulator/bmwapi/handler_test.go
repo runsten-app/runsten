@@ -408,7 +408,7 @@ func TestChargingHistory(t *testing.T) {
 		t.Errorf("hv status: %v", v)
 	}
 	tok := s.signIn(t, allScopes)["access_token"].(string)
-	q := "?from=" + url.QueryEscape(t0.Add(-24*time.Hour).Format(time.RFC3339)) + "&to=" + url.QueryEscape(t0.Add(24*time.Hour).Format(time.RFC3339))
+	q := "?from=" + url.QueryEscape(t0.Format(time.RFC3339)) + "&to=" + url.QueryEscape(t0.Add(24*time.Hour).Format(time.RFC3339))
 	status, body := s.get(t, tok, APIPrefix+"vehicles/"+vin+"/chargingHistory"+q)
 	data, _ := body.(map[string]any)["data"].([]any)
 	if len(data) != 1 {
@@ -418,6 +418,39 @@ func TestChargingHistory(t *testing.T) {
 	if c["startTime"] != float64(t0.Unix()) || c["displayedStartSoc"] != 64.0 || c["displayedSoc"] != 77.0 ||
 		c["energyConsumedFromPowerGridKwh"] != 12.22 || c["mileage"] != 21034.0 || c["totalChargingDurationSec"] != 3600.0 {
 		t.Errorf("session: %v", c)
+	}
+}
+
+// TestPastSessions: the history already holds the sessions of the month before the start,
+// newest first, all ended before it.
+func TestPastSessions(t *testing.T) {
+	s := newServer(t)
+	tok := s.signIn(t, allScopes)["access_token"].(string)
+	q := "?from=" + url.QueryEscape(t0.AddDate(0, 0, -31).Format(time.RFC3339)) + "&to=" + url.QueryEscape(t0.Format(time.RFC3339))
+	status, body := s.get(t, tok, APIPrefix+"vehicles/"+vin+"/chargingHistory"+q)
+	data, _ := body.(map[string]any)["data"].([]any)
+	if len(data) != 10 {
+		t.Fatalf("sessions: %d %v", status, body)
+	}
+	latest, oldest := data[0].(map[string]any), data[9].(map[string]any)
+	if want := time.Date(2026, 9, 25, 20, 0, 0, 0, time.UTC); latest["startTime"] != float64(want.Unix()) {
+		t.Errorf("latest: %v", latest)
+	}
+	if want := time.Date(2026, 8, 29, 20, 0, 0, 0, time.UTC); oldest["startTime"] != float64(want.Unix()) ||
+		oldest["mileage"] != float64(21034-45*30) {
+		t.Errorf("oldest: %v", oldest)
+	}
+	// 45 % of the usable 80.7 kWh, over 0.9.
+	if latest["displayedStartSoc"] != 35.0 || latest["displayedSoc"] != 80.0 || latest["energyConsumedFromPowerGridKwh"] != 40.35 ||
+		latest["endTime"].(float64) > float64(t0.Unix()) {
+		t.Errorf("latest: %v", latest)
+	}
+
+	// None without past days.
+	b := DefaultBehavior()
+	b.PastDays = 0
+	if h := NewHandler([]Source{parked()}, clock.NewManual(t0), b); len(h.cars[0].history) != 0 {
+		t.Errorf("history: %+v", h.cars[0].history)
 	}
 }
 

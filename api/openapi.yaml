@@ -617,7 +617,7 @@ components:
             - number
             - "null"
         energy_grid_kwh:
-          description: "The energy the vehicle's maker recorded as drawn from the grid over the charge, losses included (a BMW's charging history): a measurement, which the cost bills as it is, no efficiency between. The sum of the maker's sessions whose middle falls within [start.after, end.before]. null for a vehicle whose maker records none (Volvo, Polestar, Tesla), an imported charge, when one of the sessions has none, and until the maker's history is read, once a day."
+          description: "The energy the vehicle's maker recorded as drawn from the grid over the charge, losses included (a BMW's charging history): a measurement, which the cost bills as it is, no efficiency between. The sum of the maker's sessions whose middle falls within [start.after, end.before]; for a charge imported from that history at the connection (its sources bmw, imported), its session's. null for a vehicle whose maker records none (Volvo, Polestar, Tesla), a charge imported from another application, when one of the sessions has none, and until the maker's history is read, once a day."
           format: double
           minimum: 0
           type:

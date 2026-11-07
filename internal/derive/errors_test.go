@@ -35,7 +35,7 @@ func (s *scriptedStore) SaveDerivation(_ context.Context, _, _ string, _ time.Ti
 	return s.saveErr
 }
 
-func (s *scriptedStore) SaveChargeSessions(context.Context, string, string, string, []core.ChargeSession) error {
+func (s *scriptedStore) SaveChargeSessions(context.Context, string, string, string, []core.ChargeSession, core.Value[core.Capacity]) error {
 	return s.sessionsErr
 }
 

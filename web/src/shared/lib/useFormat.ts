@@ -150,6 +150,8 @@ export function useFormat() {
           return t('event.importedFrom.teslamate')
         case 'aaos_logging':
           return t('event.importedFrom.aaosLogging')
+        case 'bmw':
+          return t('event.importedFrom.bmw')
         default:
           return t('event.importedFrom.other', { source })
       }

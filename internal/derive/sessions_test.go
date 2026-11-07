@@ -26,9 +26,13 @@ func TestSessions(t *testing.T) {
 		{Kind: kind, FetchedAt: day.AddDate(0, 0, 1), CheckedAt: day.AddDate(0, 0, 1), Payload: []byte(`{"data": [` +
 			session(1790100000, "7") + `, ` + session(1790000000, "11") + `]}`)},
 	}
-	d := New(st, Sources(volvo.Normalizer{}, bmw.Normalizer{}), core.DefaultParams(), nil, quiet)
+	d := New(st, Sources(volvo.Normalizer{}, bmw.Normalizer{}), core.DefaultParams(), netOf(75), quiet)
 	if _, err := d.Rebuild(context.Background(), "a", "v"); err != nil {
 		t.Fatal(err)
+	}
+	// Those imported as charges rest on the vehicle's capacity, as its derived charges.
+	if c := v.sessionCapacity; !c.OK || c.V != (core.Capacity{KWh: 75, Source: core.CapacityCatalogNet}) {
+		t.Errorf("capacity = %+v", c)
 	}
 	got := v.sessions[bmw.Source]
 	if len(got) != 2 {
@@ -49,6 +53,13 @@ func TestSessions(t *testing.T) {
 	if st2.vehicle("v").sessions != nil {
 		t.Error("sessions recorded without a SessionNormalizer")
 	}
+}
+
+// netOf is a catalog that gives every vehicle a net capacity of kwh.
+type netOf float64
+
+func (n netOf) NetCapacity(context.Context, string, string) (core.NetCapacity, error) {
+	return func(core.Snapshot) (float64, bool) { return float64(n), true }, nil
 }
 
 // TestSessionsFailFirst: sessions that cannot be saved leave the events and the cursor

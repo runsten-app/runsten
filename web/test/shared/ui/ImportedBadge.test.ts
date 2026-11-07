@@ -10,6 +10,7 @@ describe('ImportedBadge', () => {
     ['volvo_data_portal', 'Imported from the Volvo Data Portal'],
     ['teslamate', 'Imported from TeslaMate'],
     ['aaos_logging', 'Imported from AAOS Logging'],
+    ['bmw', 'Imported from BMW CarData'],
     ['carbook', 'Imported from carbook'],
   ])('names the app of %s', (source, text) => {
     const { wrapper } = mountWith(ImportedBadge, { props: { source } })
