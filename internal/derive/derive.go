@@ -295,12 +295,14 @@ func (d *Deriver) run(ctx context.Context, accountID, vehicleID string, c core.C
 			return core.Result{}, fmt.Errorf("net capacity: %w", err)
 		}
 	}
+	// The sessions first: saved after the events, a failure would leave the cursor
+	// advanced past the responses that hold them, never read again but by a rebuild.
+	if err := d.sessions(ctx, accountID, vehicleID, c.From); err != nil {
+		return core.Result{}, err
+	}
 	res := core.Derive(records, c, d.p, net)
 	if err := d.st.SaveDerivation(ctx, accountID, vehicleID, c.Settled, res); err != nil {
 		return core.Result{}, fmt.Errorf("save events: %w", err)
-	}
-	if err := d.sessions(ctx, accountID, vehicleID, c.From); err != nil {
-		return core.Result{}, err
 	}
 	return res, nil
 }

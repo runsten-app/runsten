@@ -2,6 +2,7 @@ package derive
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -47,5 +48,20 @@ func TestSessions(t *testing.T) {
 	}
 	if st2.vehicle("v").sessions != nil {
 		t.Error("sessions recorded without a SessionNormalizer")
+	}
+}
+
+// TestSessionsFailFirst: sessions that cannot be saved leave the events and the cursor
+// as they were, so that the next update reads the same responses again.
+func TestSessionsFailFirst(t *testing.T) {
+	boom := errors.New("boom")
+	kind := core.Kind{Source: bmw.Source, Endpoint: string(bmw.ChargingHistory)}
+	st := &scriptedStore{sessionsErr: boom, snaps: []Snapshot{{Kind: kind, Payload: []byte(`{"data": []}`)}}}
+	d := New(st, Sources(volvo.Normalizer{}, bmw.Normalizer{}), core.DefaultParams(), nil, quiet)
+	if err := d.Update(context.Background(), "a", "v"); !errors.Is(err, boom) {
+		t.Errorf("err = %v", err)
+	}
+	if st.saved != nil {
+		t.Error("events saved before the sessions")
 	}
 }
