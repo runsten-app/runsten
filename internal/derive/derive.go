@@ -28,7 +28,7 @@ type Snapshot struct {
 type Store interface {
 	// DerivationCursor returns where the vehicle's derivation resumes; zero if it never ran.
 	DerivationCursor(ctx context.Context, accountID, vehicleID string) (core.Cursor, error)
-	// SnapshotsSince returns the snapshots of the kinds fetched after from, and the latest
+	// SnapshotsSince returns, oldest first, the snapshots of the kinds fetched after from, and the latest
 	// one of each kind fetched at or before it (the one still valid at from).
 	SnapshotsSince(ctx context.Context, accountID, vehicleID string, from time.Time, kinds []core.Kind) ([]Snapshot, error)
 	// SnapshotsBetween returns, oldest first and at most limit of them, the snapshots of
