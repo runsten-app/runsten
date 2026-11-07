@@ -44,6 +44,8 @@ type memVehicle struct {
 	trips   []core.Trip
 	charges []core.Charge
 	cursor  core.Cursor
+	// sessions are the charging sessions recorded, by source and start.
+	sessions map[string]map[time.Time]core.ChargeSession
 }
 
 func newMemStore(targets ...collector.Target) *memStore {
@@ -116,6 +118,20 @@ func (m *memStore) SnapshotsBetween(_ context.Context, _, vehicleID string, from
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].FetchedAt.Before(out[j].FetchedAt) })
 	return out[:min(limit, len(out))], nil
+}
+
+func (m *memStore) SaveChargeSessions(_ context.Context, _, vehicleID, source string, sessions []core.ChargeSession) error {
+	v := m.vehicle(vehicleID)
+	if v.sessions == nil {
+		v.sessions = map[string]map[time.Time]core.ChargeSession{}
+	}
+	if v.sessions[source] == nil {
+		v.sessions[source] = map[time.Time]core.ChargeSession{}
+	}
+	for _, s := range sessions {
+		v.sessions[source][s.Start] = s
+	}
+	return nil
 }
 
 func (m *memStore) SaveDerivation(_ context.Context, _, vehicleID string, after time.Time, res core.Result) error {

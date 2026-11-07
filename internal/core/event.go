@@ -96,6 +96,12 @@ type Charge struct {
 	// EnergyMeasuredKWh is the energy the vehicle measured into its battery over the
 	// charge, from its own counter (EnergyAddedKWh), when it has one.
 	EnergyMeasuredKWh Value[float64]
+	// EnergyGridKWh is the energy the vehicle's maker recorded as drawn from the grid over
+	// the charge (a BMW's chargingHistory), losses included: the sum of the sessions
+	// (ChargeSession) whose middle falls within [Start.After, End.Before], unknown when
+	// one of them has no energy: a part would bill too little. The derivation
+	// never sets it: the store reads it with the charge, the sessions coming a day later.
+	EnergyGridKWh Value[float64]
 	// Span is the stretch of that integral a battery capacity estimate rests on. Absent
 	// when no two of the charge's power readings follow each other below MaxSpanSoC: a
 	// reconstructed charge, or a vehicle that reports no charging power.
@@ -123,6 +129,18 @@ type Charge struct {
 	// cost.
 	AveragePowerKW Value[float64]
 	PaidCost       Value[Amount]
+}
+
+// ChargeSession is a charging session the vehicle's maker recorded, which Runsten reads
+// beside its readings (a BMW's chargingHistory): its own start and end, the energy it
+// drew from the grid, and what else it tells. A charge Runsten derived takes the
+// energies of the sessions whose middle falls within its window (Charge.EnergyGridKWh).
+type ChargeSession struct {
+	Start, End       time.Time
+	EnergyGridKWh    Value[float64]
+	StartSoC, EndSoC Value[float64]
+	Position         Value[Position]
+	OdometerKm       Value[float64]
 }
 
 // SoftwareVersion is a version of the vehicle's software, from when it was first read.

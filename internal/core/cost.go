@@ -210,10 +210,12 @@ type Cost struct {
 	Min, Max int64
 	Source   CostSource
 	Place    Value[Place] // the place of the charge
-	// EnergyKWh is the billed energy: estimated from the tariff, as read on the receipt
-	// for an entered cost (unknown if not given).
+	// EnergyKWh is the billed energy: for a tariff, the one the vehicle's maker recorded
+	// as drawn from the grid, else an estimate; as read on the receipt for an entered cost
+	// (unknown if not given).
 	EnergyKWh Value[float64]
-	// Efficiency is the one applied to estimate EnergyKWh; unknown for an entered cost.
+	// Efficiency is the one applied to estimate EnergyKWh; unknown for an entered cost,
+	// and for an energy drawn from the grid, which none stands between.
 	Efficiency Value[float64]
 	Note       string
 }
@@ -252,7 +254,8 @@ const minorEpsilon = 1e-6
 
 // ChargeCost is the cost of a charge. An entered cost replaces the tariff's, and so does
 // the cost an imported charge's source gives, in the account's currency. Otherwise
-// the billed energy is the charge's (chargeEnergy) over the efficiency, somewhere in
+// the billed energy is the one the vehicle's maker recorded as drawn from the grid
+// (EnergyGridKWh), else the charge's (chargeEnergy) over the efficiency, somewhere in
 // [Start.After, End.Before]: the minimum fills the cheapest price segments first, the
 // maximum the dearest, each segment holding at most the maximum power times its
 // duration. Without a
@@ -283,22 +286,38 @@ func (pr Pricing) ChargeCost(c Charge, entered Value[EnteredCost]) Value[Cost] {
 		cost.Min, cost.Max, cost.Source = p.V.Minor, p.V.Minor, CostImported
 		return known(cost)
 	}
-	charged := pr.chargeEnergy(c)
-	if !atPlace || !charged.OK {
+	if !atPlace {
 		return Value[Cost]{}
 	}
-	eta := pr.efficiency(c, place)
-	energy := charged.V / eta
+	energy, eta := pr.billedEnergy(c, place)
+	if !energy.OK {
+		return Value[Cost]{}
+	}
 
 	from, to := span(c)
 	segs := place.Prices().Segments(from, to)
 	if !covers(segs, from, to) {
 		return Value[Cost]{}
 	}
-	lo, hi := allocate(segs, energy, pr.maxPower(c, place))
+	lo, hi := allocate(segs, energy.V, pr.maxPower(c, place))
 	cost.Min, cost.Max = round(lo, hi, pr.Currency.V.MinorDigits)
-	cost.Source, cost.EnergyKWh, cost.Efficiency = CostTariff, known(energy), known(eta)
+	cost.Source, cost.EnergyKWh, cost.Efficiency = CostTariff, energy, eta
 	return known(cost)
+}
+
+// billedEnergy is the energy a tariff bills for a charge at place: the one drawn from
+// the grid when the vehicle's maker recorded it, a measurement no efficiency stands
+// between; else the charge's energy (chargeEnergy) over the efficiency, which it gives.
+func (pr Pricing) billedEnergy(c Charge, place Place) (energy, eta Value[float64]) {
+	if c.EnergyGridKWh.OK {
+		return c.EnergyGridKWh, Value[float64]{}
+	}
+	charged := pr.chargeEnergy(c)
+	if !charged.OK {
+		return Value[float64]{}, Value[float64]{}
+	}
+	e := pr.efficiency(c, place)
+	return known(charged.V / e), known(e)
 }
 
 // Unpriced tells whether the cost of a charge is unknown for want of a price only: it is
@@ -307,11 +326,14 @@ func (pr Pricing) ChargeCost(c Charge, entered Value[EnteredCost]) Value[Cost] {
 // place, whose tariff from an earlier day would give the charge a cost.
 func (pr Pricing) Unpriced(c Charge, entered Value[EnteredCost]) (Place, bool) {
 	paid := c.PaidCost.OK && c.PaidCost.V.Currency == pr.Currency.V.Code
-	if !pr.Currency.OK || entered.OK || paid || !pr.chargeEnergy(c).OK {
+	if !pr.Currency.OK || entered.OK || paid {
 		return Place{}, false
 	}
 	place, ok := PlaceOf(c, pr.Places)
 	if !ok {
+		return Place{}, false
+	}
+	if e, _ := pr.billedEnergy(c, place); !e.OK {
 		return Place{}, false
 	}
 	from, to := span(c)

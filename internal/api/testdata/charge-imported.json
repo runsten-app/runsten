@@ -21,6 +21,7 @@
   "energy_soc_kwh": 12.8,
   "energy_power_kwh": 10.6,
   "energy_measured_kwh": null,
+  "energy_grid_kwh": null,
   "average_power_kw": 4.2,
   "max_current_a": null,
   "phases": null,

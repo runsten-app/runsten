@@ -28,7 +28,7 @@ type Snapshot struct {
 type Store interface {
 	// DerivationCursor returns where the vehicle's derivation resumes; zero if it never ran.
 	DerivationCursor(ctx context.Context, accountID, vehicleID string) (core.Cursor, error)
-	// SnapshotsSince returns the snapshots of the kinds fetched after from, and the latest
+	// SnapshotsSince returns, oldest first, the snapshots of the kinds fetched after from, and the latest
 	// one of each kind fetched at or before it (the one still valid at from).
 	SnapshotsSince(ctx context.Context, accountID, vehicleID string, from time.Time, kinds []core.Kind) ([]Snapshot, error)
 	// SnapshotsBetween returns, oldest first and at most limit of them, the snapshots of
@@ -38,6 +38,9 @@ type Store interface {
 	// SaveDerivation replaces the events detected after the given time with those of res
 	// and records res.Cursor, atomically.
 	SaveDerivation(ctx context.Context, accountID, vehicleID string, after time.Time, res core.Result) error
+	// SaveChargeSessions records the charging sessions the vehicle's maker recorded,
+	// as source reads them: a session already recorded, by its start, is replaced.
+	SaveChargeSessions(ctx context.Context, accountID, vehicleID, source string, sessions []core.ChargeSession) error
 }
 
 // Normalizer reads the stored responses of the sources it knows into snapshots. derive
@@ -63,6 +66,15 @@ type Normalizer interface {
 	// SleepKinds returns the kinds of response telling whether the vehicle sleeps
 	// (core.FieldSleep), read by Normalize; none for a source that does not tell it.
 	SleepKinds() []core.Kind
+}
+
+// SessionNormalizer is a Normalizer of a source whose maker records the charging
+// sessions (a BMW's chargingHistory), which the derivation records beside the events.
+type SessionNormalizer interface {
+	// SessionKinds returns the kinds of response holding the sessions.
+	SessionKinds() []core.Kind
+	// NormalizeSessions reads a stored response of kind k into sessions.
+	NormalizeSessions(k core.Kind, raw []byte) ([]core.ChargeSession, error)
 }
 
 // Sources returns a Normalizer of the responses of every source norms knows, each read
@@ -95,6 +107,28 @@ func (s sources) StateKinds() []core.Kind { return s.kinds(Normalizer.StateKinds
 func (s sources) HealthKinds() []core.Kind { return s.kinds(Normalizer.HealthKinds) }
 
 func (s sources) SleepKinds() []core.Kind { return s.kinds(Normalizer.SleepKinds) }
+
+func (s sources) SessionKinds() []core.Kind { return s.kinds(sessionKinds) }
+
+// sessionKinds are n's SessionKinds; none when it reads no session.
+func sessionKinds(n Normalizer) []core.Kind {
+	if sn, ok := n.(SessionNormalizer); ok {
+		return sn.SessionKinds()
+	}
+	return nil
+}
+
+func (s sources) NormalizeSessions(k core.Kind, raw []byte) ([]core.ChargeSession, error) {
+	i, ok := s.bySource[k.Source]
+	if !ok {
+		return nil, fmt.Errorf("normalize sessions: unknown source %q", k.Source)
+	}
+	sn, ok := s.norms[i].(SessionNormalizer)
+	if !ok {
+		return nil, nil
+	}
+	return sn.NormalizeSessions(k, raw) //nolint:wrapcheck // the source's, which names it
+}
 
 func (s sources) kinds(of func(Normalizer) []core.Kind) []core.Kind {
 	var out []core.Kind
@@ -261,11 +295,56 @@ func (d *Deriver) run(ctx context.Context, accountID, vehicleID string, c core.C
 			return core.Result{}, fmt.Errorf("net capacity: %w", err)
 		}
 	}
+	// The sessions first: saved after the events, a failure would leave the cursor
+	// advanced past the responses that hold them, never read again but by a rebuild.
+	if err := d.sessions(ctx, accountID, vehicleID, c.From); err != nil {
+		return core.Result{}, err
+	}
 	res := core.Derive(records, c, d.p, net)
 	if err := d.st.SaveDerivation(ctx, accountID, vehicleID, c.Settled, res); err != nil {
 		return core.Result{}, fmt.Errorf("save events: %w", err)
 	}
 	return res, nil
+}
+
+// sessions records the charging sessions of the responses fetched after from, and of
+// the latest one of each kind fetched at or before it: a response holds the sessions of
+// the last days (30 for a BMW), so that one more read of it changes nothing, and a
+// rebuild records them all again.
+func (d *Deriver) sessions(ctx context.Context, accountID, vehicleID string, from time.Time) error {
+	sn, ok := d.norm.(SessionNormalizer)
+	if !ok {
+		return nil
+	}
+	kinds := sn.SessionKinds()
+	if len(kinds) == 0 {
+		return nil
+	}
+	snaps, err := d.st.SnapshotsSince(ctx, accountID, vehicleID, from, kinds)
+	if err != nil {
+		return fmt.Errorf("snapshots: %w", err)
+	}
+	bySource := map[string][]core.ChargeSession{}
+	var sources []string
+	for _, s := range snaps {
+		got, err := sn.NormalizeSessions(s.Kind, s.Payload)
+		if err != nil {
+			d.log.Warn("unreadable snapshot", "vehicle", vehicleID, "source", s.Kind.Source, "endpoint", s.Kind.Endpoint,
+				"fetched_at", s.FetchedAt, "err", err)
+			continue
+		}
+		if _, seen := bySource[s.Kind.Source]; !seen {
+			sources = append(sources, s.Kind.Source)
+		}
+		// Oldest response first: a later one replaces what an earlier one said.
+		bySource[s.Kind.Source] = append(bySource[s.Kind.Source], got...)
+	}
+	for _, src := range sources {
+		if err := d.st.SaveChargeSessions(ctx, accountID, vehicleID, src, bySource[src]); err != nil {
+			return fmt.Errorf("save charge sessions: %w", err)
+		}
+	}
+	return nil
 }
 
 // records returns the normalized snapshots fetched after from, and the latest one of

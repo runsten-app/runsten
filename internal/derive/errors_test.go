@@ -13,9 +13,9 @@ import (
 
 // scriptedStore fails where told to, and serves fixed snapshots.
 type scriptedStore struct {
-	cursorErr, snapErr, saveErr error
-	snaps                       []Snapshot
-	saved                       *core.Result
+	cursorErr, snapErr, saveErr, sessionsErr error
+	snaps                                    []Snapshot
+	saved                                    *core.Result
 }
 
 func (s *scriptedStore) DerivationCursor(context.Context, string, string) (core.Cursor, error) {
@@ -33,6 +33,10 @@ func (s *scriptedStore) SnapshotsBetween(context.Context, string, string, time.T
 func (s *scriptedStore) SaveDerivation(_ context.Context, _, _ string, _ time.Time, res core.Result) error {
 	s.saved = &res
 	return s.saveErr
+}
+
+func (s *scriptedStore) SaveChargeSessions(context.Context, string, string, string, []core.ChargeSession) error {
+	return s.sessionsErr
 }
 
 func TestStoreErrors(t *testing.T) {

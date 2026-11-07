@@ -46,6 +46,38 @@ const placeRoute = computed(() => {
   return undefined
 })
 
+// minSoCRise is the API's: below it, the energy from the state of charge is noise, and
+// the cost rests on the integrated power when there is one.
+const minSoCRise = 2
+
+// batteryEnergy is the energy that reached the battery, as a cost would take it without
+// the grid's: the vehicle's measure; else the estimate from the state of charge, unless
+// it rose by less than minSoCRise and the power was integrated.
+function batteryEnergy(c: NonNullable<typeof charge.value>): number | null {
+  if (c.energy_measured_kwh !== null) return c.energy_measured_kwh
+  const rise =
+    c.start_soc_pct !== null && c.end_soc_pct !== null ? c.end_soc_pct - c.start_soc_pct : null
+  if (rise !== null && rise < minSoCRise && c.energy_power_kwh !== null) return c.energy_power_kwh
+  return c.energy_soc_kwh
+}
+
+// losses are the energy drawn from the grid that did not reach the battery, when the
+// vehicle's maker recorded the former. None when the battery's estimate exceeds the
+// grid's, an error of the estimate rather than a gain.
+const losses = computed(() => {
+  const c = charge.value
+  const battery = c ? batteryEnergy(c) : null
+  if (!c || c.energy_grid_kwh === null || c.energy_grid_kwh <= 0 || battery === null) return null
+  const kwh = c.energy_grid_kwh - battery
+  if (kwh < 0) return null
+  return {
+    energy: f.quantity(kwh, 'kWh'),
+    share: t('charge.lossesShare', {
+      share: f.quantity((kwh / c.energy_grid_kwh) * 100, 'percent'),
+    }),
+  }
+})
+
 const cost = computed(() => f.chargeCost(charge.value?.cost ?? null))
 // costNotes say where the cost comes from, and why it is a range: an estimate from a
 // tariff (billed energy, assumed efficiency) or what was entered.
@@ -58,7 +90,12 @@ const costNotes = computed(() => {
     // the first of the tariff.
     const ch = charge.value
     const place = ch?.place
-    if (place && (ch?.energy_measured_kwh !== null || ch?.energy_soc_kwh !== null))
+    if (
+      place &&
+      (ch?.energy_grid_kwh !== null ||
+        ch?.energy_measured_kwh !== null ||
+        ch?.energy_soc_kwh !== null)
+    )
       return [t('charge.cost.unpriced', { place: place.name })]
     return [t('charge.cost.unknown')]
   }
@@ -71,6 +108,8 @@ const costNotes = computed(() => {
     return notes
   }
   const notes = [t('charge.cost.tariff', { place: charge.value?.place?.name ?? '' })]
+  if (c.energy_kwh !== null && c.efficiency === null)
+    notes.push(t('charge.cost.grid', { energy: f.quantity(c.energy_kwh, 'kWh') }))
   if (c.energy_kwh !== null && c.efficiency !== null)
     notes.push(
       t('charge.cost.estimate', {
@@ -182,6 +221,16 @@ const costNotes = computed(() => {
           <v-card-text>
             <dl class="facts">
               <FactItem
+                v-if="charge.energy_grid_kwh !== null"
+                :label="t('charge.energyGrid')"
+                :value="f.quantity(charge.energy_grid_kwh, 'kWh')"
+              />
+              <FactItem v-if="losses" :label="t('charge.losses')" :value="losses.energy">
+                <span class="losses-share d-block text-body-medium text-medium-emphasis mt-1">
+                  {{ losses.share }}
+                </span>
+              </FactItem>
+              <FactItem
                 v-if="charge.energy_measured_kwh !== null"
                 :label="t('charge.energyMeasured')"
                 :value="f.quantity(charge.energy_measured_kwh, 'kWh')"
@@ -204,9 +253,11 @@ const costNotes = computed(() => {
               {{
                 charge.imported
                   ? t('charge.energyImportedNote')
-                  : charge.energy_measured_kwh !== null
-                    ? t('charge.energyMeasuredNote')
-                    : t('charge.energyNote')
+                  : charge.energy_grid_kwh !== null
+                    ? t('charge.energyGridNote')
+                    : charge.energy_measured_kwh !== null
+                      ? t('charge.energyMeasuredNote')
+                      : t('charge.energyNote')
               }}
             </p>
           </v-card-text>

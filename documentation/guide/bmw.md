@@ -81,6 +81,10 @@ CarData has no key for the outside or cabin temperature, nor for the car's softw
 
 A trip is worked out from the ignition, the odometer and the position, as BMW gives no trip of its own. When the car pushes its position often enough while it drives, the trip has a route; Runsten does not promise it before it has been seen on real cars.
 
+### Charging history
+
+BMW keeps the charging sessions of the last 30 days, with the **energy each one drew from the grid**, losses included: a measurement that no Volvo, Polestar or Tesla gives. Runsten reads them once a day and gives each charge the energy of the sessions that took place within it. The charge then shows the energy drawn from the grid and the **losses**, its difference with the energy the battery took (itself measured or estimated), and its cost rests on that energy as it is, with no assumed efficiency ([Places, tariffs and costs](./costs.md)). A charge has it the day after it ends at the latest. How BMW dates and counts its sessions is not yet checked on a real car.
+
 ## One application on the stream
 
 BMW allows **one connection at a time to the stream**, per BMW account. **Runsten and another application cannot both read it**: the Home Assistant CarData integration, evcc or any other client of your BMW account. While another holds it, the Connection page says **Stream held by another application** under the car's latest failure, and Runsten reads nothing of the stream: it only has the API's hourly values.
