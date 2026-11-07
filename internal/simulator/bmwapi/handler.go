@@ -67,11 +67,18 @@ type Behavior struct {
 	// a drive or a charge (the SoC, the odometer, the position, the range): unknown on
 	// the real car, to measure (ADR 0045 §9). The others are sent at each change.
 	SendEvery time.Duration
+	// PastDays is how many days before the simulator's start the charging history
+	// already holds (pastSessions): BMW keeps about 30, which a car connected for the
+	// first time has.
+	PastDays int
 }
 
 // DefaultBehavior returns the assumptions used without explicit configuration.
 func DefaultBehavior() Behavior {
-	return Behavior{TokenTTL: time.Hour, ApproveAfter: 10 * time.Second, CodeLifetime: codeLifetime, SendEvery: 30 * time.Second}
+	return Behavior{
+		TokenTTL: time.Hour, ApproveAfter: 10 * time.Second, CodeLifetime: codeLifetime, SendEvery: 30 * time.Second,
+		PastDays: 30,
+	}
 }
 
 // Scaled is b for a simulation at speed times real time: the device code lasts its real
@@ -148,6 +155,7 @@ func NewHandler(srcs []Source, clk clock.Clock, behavior Behavior) *Handler {
 			panic("bmwapi: duplicate VIN " + src.VIN())
 		}
 		c := &car{src: src, known: map[string]known{}, pending: map[string]bool{}}
+		c.history = pastSessions(src, clk.Now(), behavior.PastDays)
 		h.cars = append(h.cars, c)
 		h.byVIN[src.VIN()] = c
 	}
@@ -225,6 +233,30 @@ func (c *car) follow(st vehicle.State, now time.Time) {
 		c.history = append(c.history, s)
 		c.charge = nil
 	}
+}
+
+// pastSessions are the car's charging sessions over the days before start, the history
+// BMW already holds when the simulation starts: an evening charge at home every third
+// day, from 35 to 80 %, all ended by midnight before start, where the car stands at
+// start, its odometer 45 km a day back.
+func pastSessions(src Source, start time.Time, days int) []session {
+	st, spec := src.StateAt(start), src.ReportAt(start).Spec
+	usable := spec.UsableKWh
+	if usable == 0 {
+		usable = spec.BatteryKWh
+	}
+	midnight := start.UTC().Truncate(24 * time.Hour)
+	var out []session
+	for back := days - days%3; back >= 1; back -= 3 {
+		from := midnight.AddDate(0, 0, -back).Add(20 * time.Hour)
+		s := session{
+			start: from, end: from.Add(4 * time.Hour), startSoC: 35, endSoC: 80, addedKWh: 0.45 * usable,
+			mileageKm: max(0, int(st.OdometerKm)-45*back), lat: st.Position.Lat, lon: st.Position.Lon,
+		}
+		s.averageKW = s.addedKWh / chargingEfficiency / 4
+		out = append(out, s)
+	}
+	return out
 }
 
 // chargingEfficiency turns the energy a charge put into the battery into the energy it
