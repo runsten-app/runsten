@@ -4,19 +4,27 @@
 [![release](https://img.shields.io/github/v/release/runsten-app/runsten?include_prereleases&sort=semver)](https://github.com/runsten-app/runsten/releases)
 [![licence](https://img.shields.io/github/license/runsten-app/runsten)](LICENSE)
 
-> Open source data logger for Volvo and Polestar EVs.
+> Open source data logger for electric cars: Volvo, Polestar, Tesla, BMW and Mini, with more makes to come.
 
 **[runsten.app](https://runsten.app)** · [Documentation](https://runsten.app/docs/) · [Self-hosting](https://runsten.app/docs/self-hosting/)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://runsten.app/screens/state-dark-desktop.png">
-  <img alt="The state of a vehicle in Runsten: state of charge, range, charging, odometer and last position" src="https://runsten.app/screens/state-light-desktop.png">
+  <source media="(prefers-color-scheme: dark)" srcset=".github/readme/vehicles-dark.png">
+  <img alt="Runsten's State page of a Tesla, its vehicle menu open on a Tesla, a BMW, a Polestar and a Volvo of the same account" src=".github/readme/vehicles-light.png">
 </picture>
 
-Runsten records the trips, charges and costs of your electric car, and shows them as a history and as statistics. It reads the car from its manufacturer (the Volvo Cars API; Polestar's Data Portal, Tesla's Owner API and BMW CarData, in beta), on a server of your own.
+Runsten records the trips, charges and costs of your electric cars, and shows them as a history and as statistics. It reads each car from its manufacturer, on a server of your own:
+
+- **Volvo**, through the Volvo Cars API;
+- **Polestar**, through Polestar's Data Portal (or, outside the EU and the EEA, the Polestar app's API, in beta);
+- **Tesla**, through the Owner API of the Tesla app (beta);
+- **BMW and Mini**, through BMW CarData (beta).
+
+Other makes will follow. One account follows several vehicles, of one make or of several: a Volvo and a Tesla in the same garage are each read from their own manufacturer, and switched between from the bar of every page.
+
 The name comes from runestones (*runsten* in Swedish), which often commemorated journeys: Runsten carves your car's trips in stone.
 
-- **A collector** polls the manufacturer's API and keeps every response as it came; trips and charges are worked out from them, including those that happened while nothing could be read, marked as reconstructed.
+- **A collector** polls each manufacturer's API and keeps every response as it came; trips and charges are worked out from them, including those that happened while nothing could be read, marked as reconstructed.
 - **A web interface**, on a phone as well as a desktop, in English, French, German, Italian, Dutch, Norwegian, Spanish and Swedish: the car's state, its trips and charges, their costs from your tariffs, statistics, and an estimate of the battery's capacity.
 - **An API** (`/api/v1`) and **MQTT** publishing, with Home Assistant's discovery, for your own scripts and home automation.
 
@@ -29,7 +37,7 @@ The [documentation](https://runsten.app/docs/) covers [installing](https://runst
 
 ## Development
 
-A simulator of the Volvo API makes it possible to work without a car. [`DEVELOPMENT.md`](DEVELOPMENT.md) explains how to set Runsten up, run and test it, and how releases are made; [`ARCHITECTURE.md`](ARCHITECTURE.md) how the code is organized; [`CONTRIBUTING.md`](CONTRIBUTING.md) how to propose a change. In short:
+A simulator plays the API of every supported make (Volvo, Polestar, Tesla, BMW), so that you can work without a car. [`DEVELOPMENT.md`](DEVELOPMENT.md) explains how to set Runsten up, run and test it, and how releases are made; [`ARCHITECTURE.md`](ARCHITECTURE.md) how the code is organized; [`CONTRIBUTING.md`](CONTRIBUTING.md) how to propose a change. In short:
 
 ```sh
 task web-install     # once: the front end's dependencies (Node of web/.nvmrc)
@@ -43,4 +51,4 @@ task unit            # format, lint, tests and build, before a pull request
 
 ---
 
-Runsten is an independent project, not affiliated with Volvo Car Corporation or Polestar. "Volvo" and "Polestar" are trademarks of their respective owners.
+Runsten is an independent project, not affiliated with Volvo Car Corporation, Polestar, Tesla or the BMW Group. "Volvo", "Polestar", "Tesla", "BMW" and "MINI" are trademarks of their respective owners.
