@@ -42,6 +42,11 @@ type Params struct {
 	// estimate. MinUnpluggedCharge 0: every rise is a charge.
 	MinUnpluggedCharge time.Duration
 	MaxUnpluggedRise   float64
+	// MaxCableDelay is how long after a reading of the SoC without the cable a reading of
+	// the cable is still the cable of that SoC: a source may read them apart, in the same
+	// pass (the Polestar ID's telematics, then its gRPC's battery). Assumption: a pass
+	// reads its endpoints within a minute. 0: only the cable read with the SoC.
+	MaxCableDelay time.Duration
 	// ResumeBeforeArrival: the engine running again after a stop, before any new position
 	// was read, continues the same trip (a short stop) instead of starting another.
 	ResumeBeforeArrival bool
@@ -63,6 +68,7 @@ func DefaultParams() Params {
 		MaxChargePause:      24 * time.Hour,
 		MinUnpluggedCharge:  30 * time.Minute,
 		MaxUnpluggedRise:    3,
+		MaxCableDelay:       time.Minute,
 		ResumeBeforeArrival: true,
 		VehicleTimestamps:   true,
 		Capacity:            CapacityCatalogNet,
@@ -139,7 +145,7 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 			d.settleCharge(pt)
 			d.stepTrip(pt, prev)
 			d.expireResumable(pt)
-			d.stepCharge(pt, prev)
+			d.stepCharge(pt, prev, ps[i+1:])
 			d.stepSoftware(pt)
 		}
 		d.track(pt)
@@ -263,6 +269,7 @@ func chargeCurrent(ps []point, from, to time.Time) (current Value[float64], phas
 type point struct {
 	at      time.Time
 	row     time.Time // FetchedAt of the record
+	checked time.Time // CheckedAt of the record, its FetchedAt when it was never checked again
 	confirm bool
 	source  string
 	snap    Snapshot
@@ -275,9 +282,10 @@ func points(records []Record) []point {
 			continue
 		}
 		f, c := r.FetchedAt.UTC(), r.CheckedAt.UTC()
-		ps = append(ps, point{at: f, row: f, source: r.Source, snap: r.Snapshot})
+		c = later(f, c)
+		ps = append(ps, point{at: f, row: f, checked: c, source: r.Source, snap: r.Snapshot})
 		if c.After(f) {
-			ps = append(ps, point{at: c, row: f, confirm: true, source: r.Source, snap: r.Snapshot})
+			ps = append(ps, point{at: c, row: f, checked: c, confirm: true, source: r.Source, snap: r.Snapshot})
 		}
 	}
 	sort.SliceStable(ps, func(i, j int) bool {
@@ -295,21 +303,30 @@ func points(records []Record) []point {
 
 // state is the latest known value of every field.
 type state struct {
-	snap Snapshot
-	seen [fieldCount]time.Time // last reading of each field
-	row  [fieldCount]time.Time // FetchedAt of the record holding each field
+	snap    Snapshot
+	seen    [fieldCount]time.Time // last reading of each field
+	row     [fieldCount]time.Time // FetchedAt of the record holding each field
+	checked [fieldCount]time.Time // CheckedAt of the record holding each field
 }
 
 func (s *state) apply(p point) {
 	s.snap.merge(p.snap)
 	for c := p.snap.Covers; c != 0; c &= c - 1 {
 		i := c.index()
-		s.seen[i], s.row[i] = p.at, p.row
+		s.seen[i], s.row[i], s.checked[i] = p.at, p.row, p.checked
 	}
 }
 
 func (s *state) seenAt(f Field) time.Time { return s.seen[f.index()] }
 func (s *state) rowAt(f Field) time.Time  { return s.row[f.index()] }
+
+// readSince reports whether the field's value was read at t or later: at its reading, or
+// at a check of its record, the same response read again. A check stands for itself,
+// though it is replayed only at the record's latest one: the response read again held
+// the same value all along.
+func (s *state) readSince(f Field, t time.Time) bool {
+	return !s.seen[f.index()].IsZero() && !s.checked[f.index()].Before(t)
+}
 
 // energyRun follows the SoC down to the end of a trip: it keeps the lowest reading
 // until the vehicle charges or the SoC clearly rises.

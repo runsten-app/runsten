@@ -2,6 +2,7 @@ package derive
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -108,4 +109,72 @@ func TestPolestarIDDay(t *testing.T) {
 		t.Errorf("charge: target %+v, current %+v", ch.TargetSoC, ch.MaxCurrentA)
 	}
 	checkRebuildOf(t, st, d, "p")
+}
+
+// TestPolestarIDParkedReestimate: a parked Polestar read through the Polestar ID, its
+// battery estimating its level again, 65 → 67 % in five minutes. The telematics tell the
+// SoC without the cable, the gRPC's battery read right after tells the cable: the rise is
+// no charge when that cable reads disconnected, as before it, whether its response
+// changed or not. Without the gRPC (not granted), the rise stays a charge. Derived after
+// each pass, as the collector does, and checked against a rebuild.
+func TestPolestarIDParkedReestimate(t *testing.T) {
+	telematics := func(soc int, at time.Time) string {
+		return fmt.Sprintf(`{"data":{"carTelematicsV2":{"battery":[{"vin":"LPSYCZRE5RL000014",`+
+			`"batteryChargeLevelPercentage":%d,"estimatedDistanceToEmptyKm":%d,"chargingStatusV2":"CHARGING_STATUS_V2_IDLE",`+
+			`"timestamp":{"seconds":"%d","nanos":0}}],"odometer":[],"health":[]}}}`, soc, soc*4, at.Unix())
+	}
+	battery := func(soc int, cable string, at time.Time) string {
+		level := ""
+		if soc > 0 {
+			level = fmt.Sprintf(`"batteryChargeLevelPercentage":%d,`, soc)
+		}
+		return fmt.Sprintf(`{"battery":{%s"chargerConnectionStatus":"CHARGER_CONNECTION_STATUS_%s",`+
+			`"chargingStatus":"CHARGING_STATUS_IDLE","timestamp":{"seconds":"%d","nanos":0}}}`, level, cable, at.Unix())
+	}
+	tests := []struct {
+		name string
+		// battery is the gRPC's response of a pass with the SoC soc, "" when not read.
+		battery func(soc int, at time.Time) string
+		charges int
+	}{
+		{"the battery tells the SoC", func(soc int, at time.Time) string { return battery(soc, "DISCONNECTED", at) }, 0},
+		{"the battery's response unchanged", func(_ int, at time.Time) string { return battery(0, "DISCONNECTED", at) }, 0},
+		{"the battery connected", func(soc int, at time.Time) string { return battery(soc, "CONNECTED", at) }, 1},
+		{"the battery not granted", func(int, time.Time) string { return "" }, 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			st := newMemStore()
+			d := New(st, Sources(volvo.Normalizer{}, polestarid.Normalizer{}), core.DefaultParams(), idCatalog{}, quiet)
+			save := func(ep polestarid.Endpoint, at time.Time, raw string) {
+				t.Helper()
+				hash, err := polestarid.Fingerprint([]byte(raw))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := st.SaveSnapshot(context.Background(), collector.Snapshot{
+					AccountID: "a", VehicleID: "p", Source: polestarid.Source, Endpoint: collector.Endpoint(ep),
+					FetchedAt: at, Payload: []byte(raw), Hash: hash,
+				}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			start := time.Date(2026, 11, 5, 22, 0, 0, 0, time.UTC)
+			// A pass every five minutes, the telematics then the battery two seconds after.
+			for i, soc := range []int{65, 65, 65, 67, 67, 67} {
+				at := start.Add(time.Duration(i) * 5 * time.Minute)
+				save(polestarid.Telematics, at, telematics(soc, at))
+				if raw := tt.battery(soc, at.Add(2*time.Second)); raw != "" {
+					save(polestarid.Battery, at.Add(2*time.Second), raw)
+				}
+				if err := d.Update(context.Background(), "a", "p"); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if v := st.vehicle("p"); len(v.charges) != tt.charges {
+				t.Errorf("%d charges, want %d: %+v", len(v.charges), tt.charges, v.charges)
+			}
+			checkRebuildOf(t, st, d, "p")
+		})
+	}
 }

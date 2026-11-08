@@ -1809,6 +1809,17 @@ func parked(soc float64, c Connection, at int) Snapshot {
 	}
 }
 
+// telematics is a reading of the SoC without the cable, as the Polestar ID's GraphQL
+// gives it.
+func telematics(soc float64, at int) Snapshot {
+	return Snapshot{Covers: FieldSoC | FieldCharging, SoC: Some(soc, m(at)), Charging: Some(ChargingIdle, m(at))}
+}
+
+// battery is a reading of the cable alone, as the Polestar ID's gRPC gives it apart.
+func battery(c Connection, at int) Snapshot {
+	return Snapshot{Covers: FieldConnection, Connection: Some(c, m(at))}
+}
+
 func powertrain(p Powertrain) Snapshot {
 	return Snapshot{Covers: FieldModel, Powertrain: Some(p, time.Time{})}
 }
@@ -2001,6 +2012,78 @@ func TestUnpluggedRise(t *testing.T) {
 				rec(0, 0, parked(65, Disconnected, 0)),
 				rec(60, 60, Snapshot{Covers: FieldSoC, SoC: Some(65.0, m(60))}),
 				rec(70, 70, parked(67, Disconnected, 70)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			// The Polestar ID: the telematics tell the SoC, the gRPC's battery the cable,
+			// read right after in the same pass, its response changed with the SoC.
+			name: "the cable read apart, right after the rise",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+				rec(71, 71, battery(Disconnected, 71)),
+			},
+		},
+		{
+			name: "the cable read apart, at the same time as the rise",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+				rec(70, 70, battery(Disconnected, 70)),
+			},
+		},
+		{
+			// The battery's response unchanged: its checks are the readings, only the
+			// latest of them kept.
+			name: "the cable read apart, its response unchanged since before the rise",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 71, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+			},
+		},
+		{
+			name: "the cable read apart, connected right after the rise",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+				rec(71, 71, battery(Connected, 71)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			// The gRPC no longer read (not granted, a call failed): an older cable does not
+			// stand in for the one of the rise.
+			name: "the cable read apart, not read again",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			name: "the cable read apart, too long after the rise",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+				rec(72, 72, battery(Disconnected, 72)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			name: "the cable read apart, not waited for",
+			p:    func(p *Params) { p.MaxCableDelay = 0 },
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+				rec(70, 70, battery(Disconnected, 70)),
 			},
 			want: charge(60, 70, 65, 67),
 		},
