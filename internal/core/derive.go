@@ -156,8 +156,9 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		// Never settle on the last readings: a reading stored later may bear their time.
 		groupEnd := lastOfTime && i < len(ps)-1
 		// Nor during an installation: replayed from after its start, it would lose it.
+		// Nor while a cable read later may undo a charge.
 		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil && d.resumable == nil &&
-			d.installing.Before.IsZero() {
+			d.installing.Before.IsZero() && (d.awaitingCable.IsZero() || pt.at.After(d.awaitingCable.Add(d.p.MaxCableDelay))) {
 			d.res.Cursor = Cursor{Settled: pt.at, From: d.st.rowAt(FieldOdometer)}
 		}
 	}
@@ -386,6 +387,9 @@ type detector struct {
 	ended  *endedCharge
 	// resumable is the latest charge, ended with the cable connected, while it may resume.
 	resumable *chargeBuilder
+	// awaitingCable is the latest rise of the SoC decided without its cable, none read
+	// after it yet: one read within MaxCableDelay may still undo the charge.
+	awaitingCable time.Time
 }
 
 // stepSoftware reports a version of the software read for the first time: one that

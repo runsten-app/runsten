@@ -2077,6 +2077,20 @@ func TestUnpluggedRise(t *testing.T) {
 			want: charge(60, 70, 65, 67),
 		},
 		{
+			// Derived before the cable comes, the charge made up ends, takes its place and
+			// is released; the cursor waits for the cable all the same.
+			name: "the cable read apart, after the charge it undoes has ended",
+			p:    func(p *Params) { p.MaxCableDelay = 10 * time.Minute },
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 72, telematics(67, 70)),
+				rec(73, 73, loc(home, m(73))),
+				rec(74, 74, capacity(75)),
+				rec(75, 75, battery(Disconnected, 75)),
+			},
+		},
+		{
 			name: "the cable read apart, not waited for",
 			p:    func(p *Params) { p.MaxCableDelay = 0 },
 			records: []Record{

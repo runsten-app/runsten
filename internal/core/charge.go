@@ -218,8 +218,9 @@ func (d *detector) onPlug(p point, prev state, next []point, rise float64) bool 
 // gRPC's battery): the decision waits for the cable that follows, read in the same pass,
 // or for a check of an older response, read again after p unchanged. Absent when none
 // comes in time (an optional endpoint not granted, a call that failed): the rise is then
-// a charge, as it was before the cable was read apart. Readings stored later revise the
-// decision: a charge reconstructed keeps the cursor before p.
+// a charge, as it was before the cable was read apart. None read yet, the cable may still
+// come: the cursor stays before p until MaxCableDelay is over (awaitingCable), so that
+// the derivation that reads it decides again.
 func (d *detector) cableOf(p point, next []point) Value[Connection] {
 	if p.snap.Covers&FieldConnection != 0 {
 		return p.snap.Connection
@@ -237,6 +238,7 @@ func (d *detector) cableOf(p point, next []point) Value[Connection] {
 		}
 		return q.snap.Connection
 	}
+	d.awaitingCable = p.at
 	return Value[Connection]{}
 }
 
