@@ -1937,6 +1937,97 @@ func TestHybridReconstructedCharges(t *testing.T) {
 	}
 }
 
+// A battery electric vehicle's SoC rising by a few points between two readings that both
+// say the cable is disconnected, a few minutes apart, is its battery estimating its level
+// again: no charge. Further apart, by more, or the cable read connected on either side,
+// it stays one.
+func TestUnpluggedRise(t *testing.T) {
+	charge := func(start, at int, startSoC, endSoC float64) []Charge {
+		return []Charge{{
+			DetectedAt: m(at), Reconstructed: true, Start: Bounds{m(start), m(at)}, End: Bounds{m(start), m(at)},
+			StartSoC: val(startSoC), EndSoC: val(endSoC), EnergySoCKWh: val((endSoC - startSoC) * 0.75),
+		}}
+	}
+	tests := []struct {
+		name    string
+		p       func(*Params)
+		records []Record
+		want    []Charge
+	}{
+		{
+			// A parked Polestar 2: 65 → 67 % in ten minutes, read again every ten.
+			name: "disconnected on both sides, ten minutes apart",
+			records: []Record{
+				rec(0, 60, parked(65, Disconnected, 0)),
+				rec(70, 120, parked(67, Disconnected, 70)),
+			},
+		},
+		{
+			name: "disconnected on both sides, ten minutes apart, by more than a few points",
+			records: []Record{
+				rec(0, 60, parked(40, Disconnected, 0)),
+				rec(70, 70, parked(60, Disconnected, 70)),
+			},
+			want: charge(60, 70, 40, 60),
+		},
+		{
+			name: "disconnected on both sides, half an hour apart",
+			records: []Record{
+				rec(0, 30, parked(65, Disconnected, 0)),
+				rec(60, 60, parked(67, Disconnected, 60)),
+			},
+			want: charge(30, 60, 65, 67),
+		},
+		{
+			name: "connected before",
+			records: []Record{
+				rec(0, 60, parked(65, Connected, 0)),
+				rec(70, 70, parked(67, Disconnected, 70)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			name: "connected since",
+			records: []Record{
+				rec(0, 60, parked(65, Disconnected, 0)),
+				rec(70, 70, parked(67, Connected, 70)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			// The cable read with an older SoC tells nothing of the one before the rise.
+			name: "the cable read before the previous SoC",
+			records: []Record{
+				rec(0, 0, parked(65, Disconnected, 0)),
+				rec(60, 60, Snapshot{Covers: FieldSoC, SoC: Some(65.0, m(60))}),
+				rec(70, 70, parked(67, Disconnected, 70)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			name: "the rule turned off",
+			p:    func(p *Params) { p.MinUnpluggedCharge = 0 },
+			records: []Record{
+				rec(0, 60, parked(65, Disconnected, 0)),
+				rec(70, 70, parked(67, Disconnected, 70)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := DefaultParams()
+			if tt.p != nil {
+				tt.p(&p)
+			}
+			records := append([]Record{rec(0, 0, capacity(75)), rec(0, 0, powertrain(Electric))}, tt.records...)
+			checkCharges(t, Derive(records, Cursor{}, p, nil).Charges, tt.want)
+			_, charges := deriveIncrementally(records, p)
+			checkCharges(t, charges, tt.want)
+		})
+	}
+}
+
 // climate is a reading of the climate block: the outside temperature, recorded by the
 // vehicle at ts.
 func climate(outside float64, ts time.Time) Snapshot {

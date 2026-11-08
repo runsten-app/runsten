@@ -32,6 +32,16 @@ type Params struct {
 	// charge stops at dusk and starts again in the morning, 16 hours later in a Belgian
 	// December; after a longer pause, a day without sun, a new charge starts. 0: never.
 	MaxChargePause time.Duration
+	// MinUnpluggedCharge and MaxUnpluggedRise tell a battery electric vehicle's battery
+	// estimating its level again from a charge: a rise of the SoC of at most
+	// MaxUnpluggedRise points, between two readings that both say the cable is
+	// disconnected and are less than MinUnpluggedCharge apart, is not a charge (seen on a
+	// parked Polestar 2: 65 → 67 % in ten minutes). Assumptions: a charge plugged in and
+	// unplugged between two such readings would have been read charging, the parked
+	// interval being 10 minutes; a larger rise is a fast charge unseen rather than an
+	// estimate. MinUnpluggedCharge 0: every rise is a charge.
+	MinUnpluggedCharge time.Duration
+	MaxUnpluggedRise   float64
 	// ResumeBeforeArrival: the engine running again after a stop, before any new position
 	// was read, continues the same trip (a short stop) instead of starting another.
 	ResumeBeforeArrival bool
@@ -51,6 +61,8 @@ func DefaultParams() Params {
 		MaxSpanSoC:          95,
 		SettleWindow:        15 * time.Minute,
 		MaxChargePause:      24 * time.Hour,
+		MinUnpluggedCharge:  30 * time.Minute,
+		MaxUnpluggedRise:    3,
 		ResumeBeforeArrival: true,
 		VehicleTimestamps:   true,
 		Capacity:            CapacityCatalogNet,
