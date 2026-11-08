@@ -208,15 +208,17 @@ func (d *detector) onPlug(p point, prev state, next []point, rise float64) bool 
 	c := d.cableOf(p, next)
 	unplugged := c.OK && c.V == Disconnected &&
 		prev.snap.Connection.OK && prev.snap.Connection.V == Disconnected &&
-		prev.readSince(FieldConnection, prev.seenAt(FieldSoC))
+		!prev.seenAt(FieldConnection).Before(prev.seenAt(FieldSoC))
 	return !unplugged || rise > d.p.MaxUnpluggedRise || p.at.Sub(prev.seenAt(FieldSoC)) >= d.p.MinUnpluggedCharge
 }
 
 // cableOf returns the cable read with the SoC of p: p's own reading when it tells the
-// cable, else the first reading after p that does, when its response was fetched within
-// MaxCableDelay of p. A source may read them apart (the Polestar ID's telematics, then its
-// gRPC's battery): the decision waits for the cable that follows, read in the same pass,
-// or for a check of an older response, read again after p unchanged. Absent when none
+// cable, else the first reading after p that does, when its response was fetched at p or
+// within MaxCableDelay after it. A source may read them apart (the Polestar ID's
+// telematics, then its gRPC's battery): the decision waits for the cable that follows,
+// read in the same pass. A check of a response fetched before p is an older reading: the
+// store keeps only a run's latest check, which tells not whether one came in time (the
+// gRPC's battery tells the SoC too, so that a rise changes its response). Absent when none
 // comes in time (an optional endpoint not granted, a call that failed): the rise is then
 // a charge, as it was before the cable was read apart. None read yet, the cable may still
 // come: the cursor stays before p until MaxCableDelay is over (awaitingCable), so that
@@ -233,7 +235,7 @@ func (d *detector) cableOf(p point, next []point) Value[Connection] {
 		if q.snap.Covers&FieldConnection == 0 {
 			continue
 		}
-		if q.row.After(p.at.Add(d.p.MaxCableDelay)) {
+		if q.row.Before(p.at) || q.row.After(p.at.Add(d.p.MaxCableDelay)) {
 			return Value[Connection]{}
 		}
 		return q.snap.Connection

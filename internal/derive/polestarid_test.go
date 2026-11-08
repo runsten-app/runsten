@@ -114,9 +114,10 @@ func TestPolestarIDDay(t *testing.T) {
 // TestPolestarIDParkedReestimate: a parked Polestar read through the Polestar ID, its
 // battery estimating its level again, 65 → 67 % in five minutes. The telematics tell the
 // SoC without the cable, the gRPC's battery read right after tells the cable: the rise is
-// no charge when that cable reads disconnected, as before it, whether its response
-// changed or not. Without the gRPC (not granted), the rise stays a charge. Derived after
-// each pass, as the collector does, and checked against a rebuild.
+// no charge when that cable reads disconnected, as before it. A battery response
+// unchanged since before the rise (no SoC in it) is an older reading, and without the
+// gRPC (not granted) there is none: the rise stays a charge. Derived after each pass, as
+// the collector does, and checked against a rebuild.
 func TestPolestarIDParkedReestimate(t *testing.T) {
 	telematics := func(soc int, at time.Time) string {
 		return fmt.Sprintf(`{"data":{"carTelematicsV2":{"battery":[{"vin":"LPSYCZRE5RL000014",`+
@@ -138,7 +139,7 @@ func TestPolestarIDParkedReestimate(t *testing.T) {
 		charges int
 	}{
 		{"the battery tells the SoC", func(soc int, at time.Time) string { return battery(soc, "DISCONNECTED", at) }, 0},
-		{"the battery's response unchanged", func(_ int, at time.Time) string { return battery(0, "DISCONNECTED", at) }, 0},
+		{"the battery's response unchanged", func(_ int, at time.Time) string { return battery(0, "DISCONNECTED", at) }, 1},
 		{"the battery connected", func(soc int, at time.Time) string { return battery(soc, "CONNECTED", at) }, 1},
 		{"the battery not granted", func(int, time.Time) string { return "" }, 1},
 	}

@@ -2036,14 +2036,15 @@ func TestUnpluggedRise(t *testing.T) {
 			},
 		},
 		{
-			// The battery's response unchanged: its checks are the readings, only the
-			// latest of them kept.
+			// A response fetched before the rise, checked again after it: an older reading.
+			// Only its latest check is kept, which tells not whether one came in time.
 			name: "the cable read apart, its response unchanged since before the rise",
 			records: []Record{
 				rec(0, 60, telematics(65, 0)),
 				rec(0, 71, battery(Disconnected, 0)),
 				rec(70, 70, telematics(67, 70)),
 			},
+			want: charge(60, 70, 65, 67),
 		},
 		{
 			name: "the cable read apart, connected right after the rise",
