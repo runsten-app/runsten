@@ -1820,6 +1820,11 @@ func battery(c Connection, at int) Snapshot {
 	return Snapshot{Covers: FieldConnection, Connection: Some(c, m(at))}
 }
 
+// charger is another reading of the cable alone, with the power.
+func charger(c Connection, at int) Snapshot {
+	return Snapshot{Covers: FieldConnection | FieldPower, Connection: Some(c, m(at)), PowerW: Some(0.0, m(at))}
+}
+
 func powertrain(p Powertrain) Snapshot {
 	return Snapshot{Covers: FieldModel, Powertrain: Some(p, time.Time{})}
 }
@@ -2045,6 +2050,19 @@ func TestUnpluggedRise(t *testing.T) {
 				rec(70, 70, telematics(67, 70)),
 			},
 			want: charge(60, 70, 65, 67),
+		},
+		{
+			// Two responses tell the cable: the older one's latest check comes before the
+			// other's, fetched in time.
+			name: "the cable read apart, right after an older response checked again",
+			p:    func(p *Params) { p.MaxCableDelay = 5 * time.Minute },
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 71, battery(Disconnected, 0)),
+				rec(60, 60, charger(Disconnected, 60)),
+				rec(70, 70, telematics(67, 70)),
+				rec(72, 72, charger(Disconnected, 72)),
+			},
 		},
 		{
 			name: "the cable read apart, connected right after the rise",
