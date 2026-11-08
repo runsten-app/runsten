@@ -28,7 +28,25 @@ vi.mock('@/features/view-flags', async () => {
   }
 })
 
+// The extensions' choices and mentions: none in the public build, some in a test.
+const ext = vi.hoisted(() => ({
+  choices: [] as unknown[],
+  mentions: null as Record<string, string> | null,
+}))
+vi.mock('@/pages/home/extensions', async () => {
+  const { ref } = await import('vue')
+  return {
+    extensionChoices: ext.choices,
+    get extensionMakeMentions() {
+      const m = ext.mentions
+      return m && (() => ref(m))
+    },
+  }
+})
+
 beforeEach(() => {
+  ext.choices.length = 0
+  ext.mentions = null
   flag.tesla = true
   flag.bmw = true
   fetchVehicles.mockReset()
@@ -147,6 +165,17 @@ describe('HomePage', () => {
     expect(wrapper.find('a.tesla').exists()).toBe(true)
     expect(wrapper.find('a.bmw').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('BMW')
+  })
+
+  it("shows the extensions' choices after the makes, and their mentions", async () => {
+    ext.choices.push({ template: '<button class="none-of-these">None of these</button>' })
+    ext.mentions = { tesla: 'Plus offered' }
+    fetchVehicles.mockResolvedValue([])
+    const { wrapper } = await home()
+    expect(wrapper.find('a.tesla').text()).toBe('I have a Tesla (beta) · Plus offered')
+    expect(wrapper.find('a.polestar').text()).toBe('I have a Polestar')
+    const buttons = wrapper.findAll('.v-empty-state__actions a, .v-empty-state__actions button')
+    expect(buttons.at(-1)?.classes()).toContain('none-of-these')
   })
 
   it('says when the vehicles cannot be loaded', async () => {

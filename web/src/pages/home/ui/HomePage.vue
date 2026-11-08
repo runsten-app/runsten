@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { mdiCarOff } from '@mdi/js'
-import { computed, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useConnectionSettings } from '@/features/manage-api-key'
 import { useFlag } from '@/features/view-flags'
 import { useVehicles } from '@/features/select-vehicle'
 import { AppShell } from '@/widgets/app-shell'
+import { extensionChoices, extensionMakeMentions, type HomeMake } from '../extensions'
 
 // Home leads to the first vehicle of the account; without one, it asks which car, Volvo,
 // Polestar, Tesla or BMW, choices of equal weight, and says how Runsten reads each one
@@ -16,7 +17,8 @@ import { AppShell } from '@/widgets/app-shell'
 // Polestar, a Tesla or a BMW leads to the Connection page's tab of its brand, which takes
 // its credential, its refresh token or its client ID. On an instance without a Volvo
 // application, the Volvo is left out; the Tesla, while the flag source.tesla is off for the
-// account; the BMW, while source.bmw is.
+// account; the BMW, while source.bmw is. A downstream build may add its own choices after
+// the makes, and a mention on a make's button (extensions.ts).
 const { t, locale } = useI18n()
 const router = useRouter()
 const { vehicles, isPending, error } = useVehicles()
@@ -27,6 +29,20 @@ const bmwOn = useFlag('source.bmw')
 const keyMissing = computed(
   () => !!connection.value && !connection.value.instance_key && !connection.value.api_key,
 )
+const mentions = extensionMakeMentions?.() ?? ref<Partial<Record<HomeMake, string>>>({})
+
+// choose is a make's button's label, with its mention if any.
+function choose(make: HomeMake): string {
+  const label = {
+    volvo: t('home.choose.volvo'),
+    polestar: t('home.choose.polestar'),
+    tesla: t('home.choose.tesla'),
+    bmw: t('home.choose.bmw'),
+  }[make]
+  const mention = mentions.value[make]
+  return mention ? `${label} · ${mention}` : label
+}
+
 const text = computed(() => {
   const makes = [
     ...(noVolvo.value ? [] : [keyMissing.value ? t('home.empty.volvoKey') : t('home.empty.volvo')]),
@@ -58,7 +74,7 @@ watchEffect(() => {
           color="primary"
           variant="flat"
           class="volvo"
-          >{{ t('home.choose.volvo') }}</v-btn
+          >{{ choose('volvo') }}</v-btn
         >
         <!-- A full page load: the Volvo ID flow is served by runsten-api. -->
         <v-btn
@@ -67,14 +83,14 @@ watchEffect(() => {
           color="primary"
           variant="flat"
           class="volvo"
-          >{{ t('home.choose.volvo') }}</v-btn
+          >{{ choose('volvo') }}</v-btn
         >
         <v-btn
           :to="{ name: 'connection', hash: '#polestar' }"
           color="primary"
           variant="flat"
           class="polestar"
-          >{{ t('home.choose.polestar') }}</v-btn
+          >{{ choose('polestar') }}</v-btn
         >
         <v-btn
           v-if="teslaOn"
@@ -82,7 +98,7 @@ watchEffect(() => {
           color="primary"
           variant="flat"
           class="tesla"
-          >{{ t('home.choose.tesla') }}</v-btn
+          >{{ choose('tesla') }}</v-btn
         >
         <v-btn
           v-if="bmwOn"
@@ -90,8 +106,9 @@ watchEffect(() => {
           color="primary"
           variant="flat"
           class="bmw"
-          >{{ t('home.choose.bmw') }}</v-btn
+          >{{ choose('bmw') }}</v-btn
         >
+        <component :is="choice" v-for="(choice, i) in extensionChoices" :key="i" />
       </template>
     </v-empty-state>
   </AppShell>
