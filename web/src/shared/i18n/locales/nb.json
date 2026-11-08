@@ -34,17 +34,20 @@
     "error": "Bilene kunne ikke lastes inn. Prøv igjen om litt.",
     "empty": {
       "title": "Ingen bil ennå",
-      "keyText": "Hvilken bil har du? Runsten leser en Volvo med nøkkelen til en Volvo-applikasjon du oppretter, og deretter Volvo ID-en din; en Polestar med legitimasjon fra Polestars Data Portal; en Tesla med et refresh-token fra Tesla-kontoen din.",
-      "text": "Hvilken bil har du? Runsten leser en Volvo via Volvo ID-en din, en Polestar via legitimasjon fra Polestars Data Portal, en Tesla via et refresh-token fra Tesla-kontoen din.",
-      "noVolvoText": "Runsten leser en Polestar med legitimasjon fra Polestars Data Portal, en Tesla med et refresh-token fra Tesla-kontoen din. Denne instansen er ikke satt opp til å lese en Volvo.",
-      "keyTextNoTesla": "Hvilken bil har du? Runsten leser en Volvo med nøkkelen til en Volvo-applikasjon du oppretter, og deretter Volvo ID-en din; en Polestar med legitimasjon fra Polestars Data Portal.",
-      "textNoTesla": "Hvilken bil har du? Runsten leser en Volvo via Volvo ID-en din, en Polestar via legitimasjon fra Polestars Data Portal.",
-      "polestarText": "Runsten leser en Polestar med legitimasjon fra Polestars Data Portal. Denne instansen er ikke satt opp til å lese en Volvo."
+      "ask": "Hvilken bil har du?",
+      "reads": "Runsten leser {makes}.",
+      "volvo": "en Volvo via Volvo ID-en din",
+      "volvoKey": "en Volvo med nøkkelen til en Volvo-applikasjon du oppretter, og deretter Volvo ID-en din",
+      "polestar": "en Polestar med legitimasjon fra Polestars Data Portal",
+      "tesla": "en Tesla med et refresh-token fra Tesla-kontoen din",
+      "bmw": "en BMW eller MINI med en klient-ID du oppretter i MyBMW- eller MyMINI-portalen",
+      "noVolvo": "Denne instansen er ikke satt opp til å lese en Volvo."
     },
     "choose": {
       "volvo": "Jeg har en Volvo",
       "polestar": "Jeg har en Polestar",
-      "tesla": "Jeg har en Tesla (beta)"
+      "tesla": "Jeg har en Tesla (beta)",
+      "bmw": "Jeg har en BMW eller MINI (beta)"
     }
   },
   "vehicle": {

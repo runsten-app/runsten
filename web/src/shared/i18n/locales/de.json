@@ -34,17 +34,20 @@
     "error": "Die Fahrzeuge konnten nicht geladen werden. Versuchen Sie es gleich noch einmal.",
     "empty": {
       "title": "Noch kein Fahrzeug",
-      "keyText": "Welches Auto fahren Sie? Runsten liest einen Volvo mit dem Schlüssel einer Volvo-Anwendung, die Sie selbst anlegen, und dann mit Ihrer Volvo ID; einen Polestar mit Zugangsdaten aus dem Data Portal von Polestar; einen Tesla mit einem Refresh-Token Ihres Tesla-Kontos.",
-      "text": "Welches Auto fahren Sie? Runsten liest einen Volvo über Ihre Volvo ID, einen Polestar über Zugangsdaten aus dem Data Portal von Polestar, einen Tesla über ein Refresh-Token Ihres Tesla-Kontos.",
-      "noVolvoText": "Runsten liest einen Polestar mit Zugangsdaten aus dem Data Portal von Polestar, einen Tesla mit einem Refresh-Token Ihres Tesla-Kontos. Diese Instanz ist nicht dafür eingerichtet, einen Volvo zu lesen.",
-      "keyTextNoTesla": "Welches Auto fahren Sie? Runsten liest einen Volvo mit dem Schlüssel einer Volvo-Anwendung, die Sie selbst anlegen, und dann mit Ihrer Volvo ID; einen Polestar mit Zugangsdaten aus dem Data Portal von Polestar.",
-      "textNoTesla": "Welches Auto fahren Sie? Runsten liest einen Volvo über Ihre Volvo ID, einen Polestar über Zugangsdaten aus dem Data Portal von Polestar.",
-      "polestarText": "Runsten liest einen Polestar mit Zugangsdaten aus dem Data Portal von Polestar. Diese Instanz ist nicht dafür eingerichtet, einen Volvo zu lesen."
+      "ask": "Welches Auto fahren Sie?",
+      "reads": "Runsten liest {makes}.",
+      "volvo": "einen Volvo über Ihre Volvo ID",
+      "volvoKey": "einen Volvo mit dem Schlüssel einer Volvo-Anwendung, die Sie selbst anlegen, und dann mit Ihrer Volvo ID",
+      "polestar": "einen Polestar mit Zugangsdaten aus dem Data Portal von Polestar",
+      "tesla": "einen Tesla mit einem Refresh-Token Ihres Tesla-Kontos",
+      "bmw": "einen BMW oder MINI mit einer Client-ID, die Sie im MyBMW- oder MyMINI-Portal anlegen",
+      "noVolvo": "Diese Instanz ist nicht dafür eingerichtet, einen Volvo zu lesen."
     },
     "choose": {
       "volvo": "Ich fahre einen Volvo",
       "polestar": "Ich fahre einen Polestar",
-      "tesla": "Ich fahre einen Tesla (Beta)"
+      "tesla": "Ich fahre einen Tesla (Beta)",
+      "bmw": "Ich fahre einen BMW oder MINI (Beta)"
     }
   },
   "vehicle": {
