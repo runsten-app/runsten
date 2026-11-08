@@ -34,17 +34,20 @@
     "error": "Impossibile caricare i veicoli. Riprovi tra qualche istante.",
     "empty": {
       "title": "Ancora nessun veicolo",
-      "keyText": "Qual è la Sua auto? Runsten legge una Volvo con la chiave di un’applicazione Volvo creata da Lei, poi con il Suo Volvo ID; una Polestar con una credenziale del Data Portal di Polestar; una Tesla con un refresh token del Suo account Tesla.",
-      "text": "Qual è la Sua auto? Runsten legge una Volvo tramite il Suo Volvo ID, una Polestar tramite una credenziale del Data Portal di Polestar, una Tesla tramite un refresh token del Suo account Tesla.",
-      "noVolvoText": "Runsten legge una Polestar con una credenziale del Data Portal di Polestar, una Tesla con un refresh token del Suo account Tesla. Questa istanza non è configurata per leggere una Volvo.",
-      "keyTextNoTesla": "Qual è la Sua auto? Runsten legge una Volvo con la chiave di un’applicazione Volvo creata da Lei, poi con il Suo Volvo ID; una Polestar con una credenziale del Data Portal di Polestar.",
-      "textNoTesla": "Qual è la Sua auto? Runsten legge una Volvo tramite il Suo Volvo ID, una Polestar tramite una credenziale del Data Portal di Polestar.",
-      "polestarText": "Runsten legge una Polestar con una credenziale del Data Portal di Polestar. Questa istanza non è configurata per leggere una Volvo."
+      "ask": "Qual è la Sua auto?",
+      "reads": "Runsten legge {makes}.",
+      "volvo": "una Volvo tramite il Suo Volvo ID",
+      "volvoKey": "una Volvo con la chiave di un’applicazione Volvo creata da Lei, poi con il Suo Volvo ID",
+      "polestar": "una Polestar con una credenziale del Data Portal di Polestar",
+      "tesla": "una Tesla con un refresh token del Suo account Tesla",
+      "bmw": "una BMW o una MINI con un client ID creato da Lei nel portale MyBMW o MyMINI",
+      "noVolvo": "Questa istanza non è configurata per leggere una Volvo."
     },
     "choose": {
       "volvo": "Ho una Volvo",
       "polestar": "Ho una Polestar",
-      "tesla": "Ho una Tesla (beta)"
+      "tesla": "Ho una Tesla (beta)",
+      "bmw": "Ho una BMW o una MINI (beta)"
     }
   },
   "vehicle": {

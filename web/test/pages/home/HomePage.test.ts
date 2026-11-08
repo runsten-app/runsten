@@ -18,15 +18,19 @@ vi.mock('@/entities/connection', async (original) => ({
   fetchConnection,
 }))
 
-// The flag source.tesla, as the session gives it: on unless a test turns it off.
-const flag = vi.hoisted(() => ({ tesla: true }))
+// The flags source.tesla and source.bmw, as the session gives them: on unless a test turns
+// one off.
+const flag = vi.hoisted(() => ({ tesla: true, bmw: true }))
 vi.mock('@/features/view-flags', async () => {
   const { computed } = await import('vue')
-  return { useFlag: () => computed(() => flag.tesla) }
+  return {
+    useFlag: (name: string) => computed(() => (name === 'source.bmw' ? flag.bmw : flag.tesla)),
+  }
 })
 
 beforeEach(() => {
   flag.tesla = true
+  flag.bmw = true
   fetchVehicles.mockReset()
   fetchConnection.mockReset()
   // Self-hosting: the instance's key reads the vehicles.
@@ -59,7 +63,7 @@ describe('HomePage', () => {
     expect(window.history.length).toBe(1)
   })
 
-  it('asks which car without a vehicle, Volvo, Polestar or Tesla', async () => {
+  it('asks which car without a vehicle, Volvo, Polestar, Tesla or BMW', async () => {
     fetchVehicles.mockResolvedValue([])
     const { wrapper, router } = await home()
     expect(wrapper.text()).toContain('No vehicle yet')
@@ -76,8 +80,17 @@ describe('HomePage', () => {
     const tesla = wrapper.find('a.tesla')
     expect(tesla.attributes('href')).toBe('/connection#tesla')
     expect(tesla.text()).toBe('I have a Tesla (beta)')
+    // A BMW's or a MINI's client ID, in its own tab.
+    const bmw = wrapper.find('a.bmw')
+    expect(bmw.attributes('href')).toBe('/connection#bmw')
+    expect(bmw.text()).toBe('I have a BMW or MINI (beta)')
+    // How each is read, listed as English lists.
+    expect(wrapper.text()).toContain(
+      "Runsten reads a Volvo through your Volvo ID, a Polestar with a credential of Polestar's Data Portal, a Tesla with a refresh token of your Tesla account, and a BMW or a MINI with a client ID you create in the MyBMW or MyMINI portal.",
+    )
     // Choices of equal weight.
-    for (const b of [volvo, polestar, tesla]) expect(b.classes()).toContain('v-btn--variant-flat')
+    for (const b of [volvo, polestar, tesla, bmw])
+      expect(b.classes()).toContain('v-btn--variant-flat')
     expect(router.currentRoute.value.name).toBe('home')
   })
 
@@ -125,6 +138,15 @@ describe('HomePage', () => {
     expect(wrapper.find('a.polestar').exists()).toBe(true)
     expect(wrapper.find('a.tesla').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('Tesla')
+  })
+
+  it('leaves the BMW out while its flag is off', async () => {
+    flag.bmw = false
+    fetchVehicles.mockResolvedValue([])
+    const { wrapper } = await home()
+    expect(wrapper.find('a.tesla').exists()).toBe(true)
+    expect(wrapper.find('a.bmw').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('BMW')
   })
 
   it('says when the vehicles cannot be loaded', async () => {

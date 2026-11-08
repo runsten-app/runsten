@@ -34,17 +34,20 @@
     "error": "De voertuigen konden niet worden geladen. Probeer het zo meteen opnieuw.",
     "empty": {
       "title": "Nog geen voertuig",
-      "keyText": "Welke auto heeft u? Runsten leest een Volvo uit met de sleutel van een Volvo-applicatie die u zelf aanmaakt, en daarna uw Volvo ID; een Polestar met een credential van het Data Portal van Polestar; een Tesla met een refreshtoken van uw Tesla-account.",
-      "text": "Welke auto heeft u? Runsten leest een Volvo uit via uw Volvo ID, een Polestar via een credential van het Data Portal van Polestar, een Tesla via een refreshtoken van uw Tesla-account.",
-      "noVolvoText": "Runsten leest een Polestar uit met een credential van het Data Portal van Polestar, een Tesla met een refreshtoken van uw Tesla-account. Deze instantie is niet ingesteld om een Volvo uit te lezen.",
-      "keyTextNoTesla": "Welke auto heeft u? Runsten leest een Volvo uit met de sleutel van een Volvo-applicatie die u zelf aanmaakt, en daarna uw Volvo ID; een Polestar met een credential van het Data Portal van Polestar.",
-      "textNoTesla": "Welke auto heeft u? Runsten leest een Volvo uit via uw Volvo ID, een Polestar via een credential van het Data Portal van Polestar.",
-      "polestarText": "Runsten leest een Polestar uit met een credential van het Data Portal van Polestar. Deze instantie is niet ingesteld om een Volvo uit te lezen."
+      "ask": "Welke auto heeft u?",
+      "reads": "Runsten leest {makes} uit.",
+      "volvo": "een Volvo via uw Volvo ID",
+      "volvoKey": "een Volvo met de sleutel van een Volvo-applicatie die u zelf aanmaakt, en daarna uw Volvo ID",
+      "polestar": "een Polestar met een credential van het Data Portal van Polestar",
+      "tesla": "een Tesla met een refreshtoken van uw Tesla-account",
+      "bmw": "een BMW of MINI met een client-ID die u aanmaakt in het MyBMW- of MyMINI-portaal",
+      "noVolvo": "Deze instantie is niet ingesteld om een Volvo uit te lezen."
     },
     "choose": {
       "volvo": "Ik heb een Volvo",
       "polestar": "Ik heb een Polestar",
-      "tesla": "Ik heb een Tesla (bèta)"
+      "tesla": "Ik heb een Tesla (bèta)",
+      "bmw": "Ik heb een BMW of MINI (bèta)"
     }
   },
   "vehicle": {
