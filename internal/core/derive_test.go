@@ -1809,6 +1809,22 @@ func parked(soc float64, c Connection, at int) Snapshot {
 	}
 }
 
+// telematics is a reading of the SoC without the cable, as the Polestar ID's GraphQL
+// gives it.
+func telematics(soc float64, at int) Snapshot {
+	return Snapshot{Covers: FieldSoC | FieldCharging, SoC: Some(soc, m(at)), Charging: Some(ChargingIdle, m(at))}
+}
+
+// battery is a reading of the cable alone, as the Polestar ID's gRPC gives it apart.
+func battery(c Connection, at int) Snapshot {
+	return Snapshot{Covers: FieldConnection, Connection: Some(c, m(at))}
+}
+
+// charger is another reading of the cable alone, with the power.
+func charger(c Connection, at int) Snapshot {
+	return Snapshot{Covers: FieldConnection | FieldPower, Connection: Some(c, m(at)), PowerW: Some(0.0, m(at))}
+}
+
 func powertrain(p Powertrain) Snapshot {
 	return Snapshot{Covers: FieldModel, Powertrain: Some(p, time.Time{})}
 }
@@ -2001,6 +2017,106 @@ func TestUnpluggedRise(t *testing.T) {
 				rec(0, 0, parked(65, Disconnected, 0)),
 				rec(60, 60, Snapshot{Covers: FieldSoC, SoC: Some(65.0, m(60))}),
 				rec(70, 70, parked(67, Disconnected, 70)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			// The Polestar ID: the telematics tell the SoC, the gRPC's battery the cable,
+			// read right after in the same pass, its response changed with the SoC.
+			name: "the cable read apart, right after the rise",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+				rec(71, 71, battery(Disconnected, 71)),
+			},
+		},
+		{
+			name: "the cable read apart, at the same time as the rise",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+				rec(70, 70, battery(Disconnected, 70)),
+			},
+		},
+		{
+			// A response fetched before the rise, checked again after it: an older reading.
+			// Only its latest check is kept, which tells not whether one came in time.
+			name: "the cable read apart, its response unchanged since before the rise",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 71, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			// Two responses tell the cable: the older one's latest check comes before the
+			// other's, fetched in time.
+			name: "the cable read apart, right after an older response checked again",
+			p:    func(p *Params) { p.MaxCableDelay = 5 * time.Minute },
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 71, battery(Disconnected, 0)),
+				rec(60, 60, charger(Disconnected, 60)),
+				rec(70, 70, telematics(67, 70)),
+				rec(72, 72, charger(Disconnected, 72)),
+			},
+		},
+		{
+			name: "the cable read apart, connected right after the rise",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+				rec(71, 71, battery(Connected, 71)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			// The gRPC no longer read (not granted, a call failed): an older cable does not
+			// stand in for the one of the rise.
+			name: "the cable read apart, not read again",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			name: "the cable read apart, too long after the rise",
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+				rec(72, 72, battery(Disconnected, 72)),
+			},
+			want: charge(60, 70, 65, 67),
+		},
+		{
+			// Derived before the cable comes, the charge made up ends, takes its place and
+			// is released; the cursor waits for the cable all the same.
+			name: "the cable read apart, after the charge it undoes has ended",
+			p:    func(p *Params) { p.MaxCableDelay = 10 * time.Minute },
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 72, telematics(67, 70)),
+				rec(73, 73, loc(home, m(73))),
+				rec(74, 74, capacity(75)),
+				rec(75, 75, battery(Disconnected, 75)),
+			},
+		},
+		{
+			name: "the cable read apart, not waited for",
+			p:    func(p *Params) { p.MaxCableDelay = 0 },
+			records: []Record{
+				rec(0, 60, telematics(65, 0)),
+				rec(0, 60, battery(Disconnected, 0)),
+				rec(70, 70, telematics(67, 70)),
+				rec(70, 70, battery(Disconnected, 70)),
 			},
 			want: charge(60, 70, 65, 67),
 		},

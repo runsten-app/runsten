@@ -42,6 +42,11 @@ type Params struct {
 	// estimate. MinUnpluggedCharge 0: every rise is a charge.
 	MinUnpluggedCharge time.Duration
 	MaxUnpluggedRise   float64
+	// MaxCableDelay is how long after a reading of the SoC without the cable a reading of
+	// the cable is still the cable of that SoC: a source may read them apart, in the same
+	// pass (the Polestar ID's telematics, then its gRPC's battery). Assumption: a pass
+	// reads its endpoints within a minute. 0: only the cable read with the SoC.
+	MaxCableDelay time.Duration
 	// ResumeBeforeArrival: the engine running again after a stop, before any new position
 	// was read, continues the same trip (a short stop) instead of starting another.
 	ResumeBeforeArrival bool
@@ -63,6 +68,7 @@ func DefaultParams() Params {
 		MaxChargePause:      24 * time.Hour,
 		MinUnpluggedCharge:  30 * time.Minute,
 		MaxUnpluggedRise:    3,
+		MaxCableDelay:       time.Minute,
 		ResumeBeforeArrival: true,
 		VehicleTimestamps:   true,
 		Capacity:            CapacityCatalogNet,
@@ -139,7 +145,7 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 			d.settleCharge(pt)
 			d.stepTrip(pt, prev)
 			d.expireResumable(pt)
-			d.stepCharge(pt, prev)
+			d.stepCharge(pt, prev, ps[i+1:])
 			d.stepSoftware(pt)
 		}
 		d.track(pt)
@@ -150,8 +156,9 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		// Never settle on the last readings: a reading stored later may bear their time.
 		groupEnd := lastOfTime && i < len(ps)-1
 		// Nor during an installation: replayed from after its start, it would lose it.
+		// Nor while a cable read later may undo a charge.
 		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil && d.resumable == nil &&
-			d.installing.Before.IsZero() {
+			d.installing.Before.IsZero() && (d.awaitingCable.IsZero() || pt.at.After(d.awaitingCable.Add(d.p.MaxCableDelay))) {
 			d.res.Cursor = Cursor{Settled: pt.at, From: d.st.rowAt(FieldOdometer)}
 		}
 	}
@@ -369,6 +376,9 @@ type detector struct {
 	ended  *endedCharge
 	// resumable is the latest charge, ended with the cable connected, while it may resume.
 	resumable *chargeBuilder
+	// awaitingCable is the latest rise of the SoC decided without its cable, none read
+	// after it yet: one read within MaxCableDelay may still undo the charge.
+	awaitingCable time.Time
 }
 
 // stepSoftware reports a version of the software read for the first time: one that

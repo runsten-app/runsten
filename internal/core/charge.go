@@ -127,7 +127,7 @@ func (cb *chargeBuilder) closeSpan() {
 // before the cable is disconnected, a trip, a reconstructed charge or MaxChargePause
 // goes on with it rather than starting another. A solar charge stops and starts again
 // with the sun, the cable connected all along.
-func (d *detector) stepCharge(p point, prev state) {
+func (d *detector) stepCharge(p point, prev state, next []point) {
 	if p.snap.Covers&(FieldSoC|FieldCharging|FieldConnection) == 0 {
 		return
 	}
@@ -140,7 +140,7 @@ func (d *detector) stepCharge(p point, prev state) {
 			d.resumeCharge(p)
 		} else if active {
 			d.startCharge(p, prev)
-		} else if rise := diff(s.SoC, prev.snap.SoC); d.trip == nil && !p.confirm && rise.OK && rise.V >= d.p.MinChargeSoC && d.onPlug(p, prev, rise.V) {
+		} else if rise := diff(s.SoC, prev.snap.SoC); d.trip == nil && !p.confirm && rise.OK && rise.V >= d.p.MinChargeSoC && d.onPlug(p, prev, next, rise.V) {
 			d.reconstructCharge(p, prev)
 		}
 	case active:
@@ -197,17 +197,52 @@ func (d *detector) startCharge(p point, prev state) {
 // and the cable was read disconnected with the previous SoC and with the new one, less
 // than MinUnpluggedCharge apart: its battery estimating its level again. A longer gap or
 // a larger rise keeps the charge, which may have been made out of reach (a fast charge on
-// the way, unplugged before the next reading).
-func (d *detector) onPlug(p point, prev state, rise float64) bool {
-	c := p.snap.Connection
-	read := p.snap.Covers&FieldConnection != 0 && c.OK
+// the way, unplugged before the next reading). The cable read with a SoC is the one read
+// at the same time or after it: in the same response, or in the next that tells it
+// (cableOf), never an older one.
+func (d *detector) onPlug(p point, prev state, next []point, rise float64) bool {
 	if d.st.snap.PlugInHybrid() {
-		return read && c.V == Connected
+		c := p.snap.Connection
+		return p.snap.Covers&FieldConnection != 0 && c.OK && c.V == Connected
 	}
-	unplugged := read && c.V == Disconnected &&
+	c := d.cableOf(p, next)
+	unplugged := c.OK && c.V == Disconnected &&
 		prev.snap.Connection.OK && prev.snap.Connection.V == Disconnected &&
 		!prev.seenAt(FieldConnection).Before(prev.seenAt(FieldSoC))
 	return !unplugged || rise > d.p.MaxUnpluggedRise || p.at.Sub(prev.seenAt(FieldSoC)) >= d.p.MinUnpluggedCharge
+}
+
+// cableOf returns the cable read with the SoC of p: p's own reading when it tells the
+// cable, else the first reading after p that does, when its response was fetched at p or
+// within MaxCableDelay after it. A source may read them apart (the Polestar ID's
+// telematics, then its gRPC's battery): the decision waits for the cable that follows,
+// read in the same pass. A check of a response fetched before p is an older reading,
+// passed over: the store keeps only a run's latest check, which tells not whether one
+// came in time (the gRPC's battery tells the SoC too, so that a rise changes its
+// response). Absent when none
+// comes in time (an optional endpoint not granted, a call that failed): the rise is then
+// a charge, as it was before the cable was read apart. None read yet, the cable may still
+// come: the cursor stays before p until MaxCableDelay is over (awaitingCable), so that
+// the derivation that reads it decides again.
+func (d *detector) cableOf(p point, next []point) Value[Connection] {
+	if p.snap.Covers&FieldConnection != 0 {
+		return p.snap.Connection
+	}
+	if d.p.MaxCableDelay <= 0 {
+		return Value[Connection]{}
+	}
+	// A reading of the same time follows p: the SoC is sorted before the cable.
+	for _, q := range next {
+		if q.snap.Covers&FieldConnection == 0 || q.row.Before(p.at) {
+			continue
+		}
+		if q.row.After(p.at.Add(d.p.MaxCableDelay)) {
+			return Value[Connection]{}
+		}
+		return q.snap.Connection
+	}
+	d.awaitingCable = p.at
+	return Value[Connection]{}
 }
 
 // reconstructCharge opens a charge that was not seen: the SoC rose since its previous
