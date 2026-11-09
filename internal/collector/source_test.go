@@ -576,6 +576,51 @@ func TestSourceLocal(t *testing.T) {
 	}
 }
 
+// TestSourceLocalUnchanged: the source's memory read again, the same byte for byte, is
+// not saved, which would confirm its values at that time; a new push is, even of the
+// same values.
+func TestSourceLocalUnchanged(t *testing.T) {
+	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+	src := newFakeSource(clk)
+	src.local = psBattery
+	push := "pushed at 06:00"
+	src.answer = func(ep Endpoint, _ int, _ time.Time) ([]byte, error) {
+		if ep == psBattery {
+			return []byte(push), nil
+		}
+		return []byte("parked"), nil
+	}
+	st := &sourceStore{memStore: memStore{targets: []Target{sourceTarget()}}}
+	c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+	c.AddSource(src, st)
+	battery := func() (n int) {
+		for _, sn := range st.saved {
+			if sn.Endpoint == psBattery {
+				n++
+			}
+		}
+		return n
+	}
+	for range 3 {
+		poll(t, c)
+		clk.Advance(DefaultIntervals().Parked)
+	}
+	if n := len(src.calls[psBattery]); n != 3 {
+		t.Fatalf("read %d times", n)
+	}
+	if n := battery(); n != 1 {
+		t.Errorf("%d responses saved of one push read 3 times", n)
+	}
+	if vs := c.vehicles[sourceTarget().VehicleID]; !vs.readAt.Equal(clk.Now().Add(-DefaultIntervals().Parked)) {
+		t.Errorf("read at %v: the reads that saved nothing are reads", vs.readAt)
+	}
+	push = "pushed again at 06:20"
+	poll(t, c)
+	if n := battery(); n != 2 {
+		t.Errorf("%d responses saved, the new push not among them", n)
+	}
+}
+
 // TestSourceLogs: what measures a provider on real vehicles is logged, never the VIN: each
 // new upload with its age and the time since the previous, the fields when they change,
 // an access rejected with its age, a rate limit with the calls of the last minute.

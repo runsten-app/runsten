@@ -356,6 +356,8 @@ type vehicleState struct {
 	failure                 Failure
 	// uploads is the latest upload of each endpoint of a Source, for the logs.
 	uploads map[Endpoint]uploadSeen
+	// local is the latest response of each Local endpoint (EndpointSpec.Local).
+	local map[Endpoint][]byte
 	// idleSince is since when the vehicle is seen parked and awake, zero otherwise;
 	// sleepUntil, the end of its sleep window (SourceSpec.Sleep).
 	idleSince, sleepUntil time.Time
@@ -646,7 +648,7 @@ func (c *Collector) pollVehicle(ctx context.Context, t Target) (saved bool) {
 	vs, ok := c.vehicles[t.VehicleID]
 	if !ok {
 		// everything is due on the first pass
-		vs = &vehicleState{next: map[Endpoint]time.Time{}, missing: map[Endpoint]time.Time{}, uploads: map[Endpoint]uploadSeen{}}
+		vs = &vehicleState{next: map[Endpoint]time.Time{}, missing: map[Endpoint]time.Time{}, uploads: map[Endpoint]uploadSeen{}, local: map[Endpoint][]byte{}}
 		c.vehicles[t.VehicleID] = vs
 	}
 	defer func() { c.report(ctx, t, vs) }()

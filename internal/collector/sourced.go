@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"strings"
@@ -89,6 +90,13 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 		if err != nil {
 			c.sourceFailed(ctx, t, vs, src, spec.Endpoint, now, err)
 			continue
+		}
+		if spec.Local {
+			if bytes.Equal(raw, vs.local[spec.Endpoint]) {
+				vs.readAt = now // read, with nothing new to save
+				continue
+			}
+			vs.local[spec.Endpoint] = raw
 		}
 		saved = c.read(ctx, t, vs, src, spec.Endpoint, now, raw) || saved
 	}
