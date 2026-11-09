@@ -74,6 +74,8 @@ const axles = computed<Axle[]>(() => [
 const byMonth = computed(() => chosen.value === 'year')
 const keyOf = (iso: string) => (byMonth.value ? f.dayKey(iso).slice(0, 7) : f.dayKey(iso))
 const labelOf = (key: string) => (byMonth.value ? f.calendarMonth(`${key}-01`) : f.calendarDay(key))
+// The interval of each reading, once for both axles.
+const groups = computed(() => readings.value.map((r) => keyOf(r.at)))
 
 function chartOf(a: Axle) {
   const lines: Series[] = [
@@ -99,38 +101,46 @@ function chartOf(a: Axle) {
       color: color('chart-3'),
       dashed: true,
     })
-  const keys: string[] = []
-  for (const r of readings.value) {
-    const k = keyOf(r.at)
-    if (!keys.includes(k)) keys.push(k)
+  // One pass over the readings: the lowest and highest of each tyre per interval.
+  type Extent = { low: number | null; high: number | null }
+  const widen = (e: Extent, v: number | null) => {
+    if (v === null) return
+    const b = bar(v)
+    e.low = e.low === null ? b : Math.min(e.low, b)
+    e.high = e.high === null ? b : Math.max(e.high, b)
   }
-  const of = (k: string, v: (r: TyreReading) => number | null) =>
-    readings.value
-      .filter((r) => keyOf(r.at) === k)
-      .map(v)
-      .filter((x): x is number => x !== null)
-      .map(bar)
-  const low = (xs: number[]) => (xs.length ? Math.min(...xs) : null)
-  const high = (xs: number[]) => (xs.length ? Math.max(...xs) : null)
+  const intervals = new Map<string, { left: Extent; right: Extent }>()
+  readings.value.forEach((r, i) => {
+    const k = groups.value[i] ?? ''
+    let g = intervals.get(k)
+    if (!g) {
+      g = { left: { low: null, high: null }, right: { low: null, high: null } }
+      intervals.set(k, g)
+    }
+    widen(g.left, a.left(r))
+    widen(g.right, a.right(r))
+  })
+  const keys = [...intervals.keys()]
+  const extents = [...intervals.values()]
   const table: Series[] = [
     {
       label: t('health.chart.leftLow'),
-      data: keys.map((k) => low(of(k, a.left))),
+      data: extents.map((e) => e.left.low),
       color: color('chart-1'),
     },
     {
       label: t('health.chart.leftHigh'),
-      data: keys.map((k) => high(of(k, a.left))),
+      data: extents.map((e) => e.left.high),
       color: color('chart-1'),
     },
     {
       label: t('health.chart.rightLow'),
-      data: keys.map((k) => low(of(k, a.right))),
+      data: extents.map((e) => e.right.low),
       color: color('chart-2'),
     },
     {
       label: t('health.chart.rightHigh'),
-      data: keys.map((k) => high(of(k, a.right))),
+      data: extents.map((e) => e.right.high),
       color: color('chart-2'),
     },
   ]

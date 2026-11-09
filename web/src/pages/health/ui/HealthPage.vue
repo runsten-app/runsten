@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from 'vue'
+import { computed, defineAsyncComponent, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   activeWarnings,
@@ -43,6 +43,9 @@ const openings = computed(() => {
   const s = state.value
   return s && (s.doors || s.windows) ? s : null
 })
+// Once opened, the pressures' chart stays mounted when folded: Vuetify would otherwise
+// drop it on closing, and opening it again would draw it all again.
+const pressuresOpened = ref(false)
 const known = computed(() => (health.value?.checked_at ? health.value : null))
 // The page's answer first, under its title: what needs attention, named, or nothing to
 // report in what the vehicle tells. Then how fresh it is.
@@ -85,9 +88,13 @@ const verdict = computed(() => {
     <template v-else>
       <HealthTiles :health="known" />
       <!-- Folded: the pressures over time are for the curious; opened, the chart loads. -->
-      <v-expansion-panels v-if="hasPressures(known)" class="pressures mt-3">
+      <v-expansion-panels
+        v-if="hasPressures(known)"
+        class="pressures mt-3"
+        @update:model-value="pressuresOpened = true"
+      >
         <v-expansion-panel :title="t('health.chart.history')">
-          <v-expansion-panel-text>
+          <v-expansion-panel-text :eager="pressuresOpened">
             <TyreChart :vehicle="vehicle" />
           </v-expansion-panel-text>
         </v-expansion-panel>

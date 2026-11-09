@@ -1,5 +1,6 @@
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { VExpansionPanelText } from 'vuetify/components'
 import { HealthPage } from '@/pages/health'
 import battery from '@fixtures/battery.json'
 import openingsState from '@fixtures/state-openings.json'
@@ -100,6 +101,9 @@ describe('HealthPage', () => {
     expect(mocks.fetchTyres).not.toHaveBeenCalled()
     await w.find('.pressures button').trigger('click')
     await vi.waitFor(() => expect(w.findAll('.chart-frame')).toHaveLength(2))
+    // Folded again, the chart stays mounted (eager): opening it again draws nothing anew.
+    // jsdom ends no transition, which is when Vuetify would drop it: the prop says it.
+    expect(w.findComponent(VExpansionPanelText).props('eager')).toBe(true)
     // The fixture needs attention: the dot's description follows the label.
     expect(w.find('.v-tab[aria-current="page"]').text()).toBe('Health Needs attention')
   })
