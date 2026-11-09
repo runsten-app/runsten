@@ -1318,7 +1318,9 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 			soc, e, km = 62-float64(i-60)/5, EngineRunning, 12400+float64(i-60)
 		case i >= 100 && i < 300:
 			soc, km = 54, 12440
-		case i >= 300 && i < 400: // an unseen trip: only the odometer reveals it
+		case i >= 300 && i < 310: // an unseen trip: only the odometer reveals it
+			soc, km = 50, 12460
+		case i >= 310 && i < 400: // and still rising before it settled: it went on
 			soc, km = 50, 12470
 		case i >= 400: // charging
 			soc, km = min(50+float64(i-400)/5, 80), 12470
@@ -1335,7 +1337,7 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 		}
 		add(i, charging(soc, 7000, AC))
 		day[len(day)-1].snap.Charging = Some(st, time.Time{})
-		if i%60 == 0 || i == 100 {
+		if i%60 == 0 || i == 100 || i == 310 {
 			add(i, odo(km))
 		}
 		if i == 100 {
@@ -1390,6 +1392,9 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 	if len(full.Trips) != 2 || len(full.Charges) != 1 || !full.Trips[1].Reconstructed {
 		t.Fatalf("full derivation: %+v", full)
 	}
+	if full.Trips[1].End.Before != m(310) {
+		t.Errorf("the unseen trip ends %v, not after the odometer rose again", full.Trips[1].End.Before)
+	}
 	// Each event takes the capacity of the readings that end it: the catalog's before the
 	// change, even for the reconstructed trip, which only settles after it.
 	netCap := Value[Capacity]{V: Capacity{KWh: 64, Source: CapacityCatalogNet}, OK: true}
@@ -1411,6 +1416,42 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 	}
 	if cursor.Settled.IsZero() || cursor.From.After(cursor.Settled) {
 		t.Errorf("cursor %+v", cursor)
+	}
+}
+
+// A reconstructed trip whose odometer rises again before it settles went on: it ends
+// after that reading at the earliest, at the vehicle's timestamp of it when trusted; a
+// rise after it settled is another trip. A car that pushes its odometer on the way
+// without its engine (a BMW) is read so.
+func TestReconstructedTripGoesOn(t *testing.T) {
+	stamped := func(km float64, at int) Snapshot {
+		return Snapshot{Covers: FieldOdometer, OdometerKm: Some(km, m(at))}
+	}
+	records := []Record{
+		rec(0, 0, stamped(100, 0)),
+		rec(10, 10, stamped(102, 9)),  // reveals the trip
+		rec(13, 13, stamped(104, 12)), // still on the way
+		rec(14, 30, stamped(104, 13)), // parked
+		rec(40, 40, stamped(106, 39)), // after the settle window: another trip
+	}
+	for _, stamps := range []bool{true, false} {
+		p := DefaultParams()
+		p.VehicleTimestamps = stamps
+		res := Derive(records, Cursor{}, p, nil)
+		if len(res.Trips) != 2 {
+			t.Fatalf("stamps %v: %d trips: %+v", stamps, len(res.Trips), res.Trips)
+		}
+		first, second := res.Trips[0], res.Trips[1]
+		end, end2 := m(13), m(40)
+		if stamps {
+			end, end2 = m(12), m(39)
+		}
+		if !first.Reconstructed || first.Start.After != m(0) || first.End.Before != end || first.DistanceKm != val(4) {
+			t.Errorf("stamps %v: first trip %+v", stamps, first)
+		}
+		if second.Start.After != m(30) || second.End.Before != end2 || second.DistanceKm != val(2) {
+			t.Errorf("stamps %v: second trip %+v", stamps, second)
+		}
 	}
 }
 
