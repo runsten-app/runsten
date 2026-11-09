@@ -113,9 +113,13 @@ type sourceStore struct {
 	memStore
 	refused  map[string]time.Time // credentials refused, by connection: the setAt refused
 	unshared []string
+	saveErr  error // what SaveSnapshot answers; nil: it saves
 }
 
 func (s *sourceStore) SaveSnapshot(_ context.Context, sn Snapshot) (bool, error) {
+	if s.saveErr != nil {
+		return false, s.saveErr
+	}
 	s.saved = append(s.saved, sn)
 	return true, nil
 }
@@ -577,47 +581,61 @@ func TestSourceLocal(t *testing.T) {
 }
 
 // TestSourceLocalUnchanged: the source's memory read again, the same byte for byte, is
-// not saved, which would confirm its values at that time; a new push is, even of the
-// same values.
+// not saved, which would confirm its values at that time; a push of the same values
+// newly timestamped is, as one of new values; a response the store failed to save is
+// saved at its next read.
 func TestSourceLocalUnchanged(t *testing.T) {
-	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
-	src := newFakeSource(clk)
-	src.local = psBattery
-	push := "pushed at 06:00"
-	src.answer = func(ep Endpoint, _ int, _ time.Time) ([]byte, error) {
-		if ep == psBattery {
-			return []byte(push), nil
-		}
-		return []byte("parked"), nil
-	}
-	st := &sourceStore{memStore: memStore{targets: []Target{sourceTarget()}}}
-	c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
-	c.AddSource(src, st)
-	battery := func() (n int) {
-		for _, sn := range st.saved {
-			if sn.Endpoint == psBattery {
-				n++
+	const (
+		first   = `{"odometer":{"value":100,"timestamp":"06:00"}}`
+		stamped = `{"odometer":{"value":100,"timestamp":"06:20"}}`
+		rose    = `{"odometer":{"value":102,"timestamp":"06:23"}}`
+	)
+	for _, tc := range []struct {
+		name  string
+		reads []string // the stream's response at each parked interval
+		fail  int      // the read whose save fails, from 1; 0: none
+		want  int      // the responses saved
+	}{
+		{"the same bytes read again", []string{first, first, first}, 0, 1},
+		{"the same value newly timestamped", []string{first, first, stamped}, 0, 2},
+		{"a new value", []string{first, rose, rose}, 0, 2},
+		{"a save failed, then the same bytes", []string{first, first}, 1, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+			src := newFakeSource(clk)
+			src.local = psBattery
+			read := 0
+			src.answer = func(ep Endpoint, _ int, _ time.Time) ([]byte, error) {
+				if ep == psBattery {
+					return []byte(tc.reads[read]), nil
+				}
+				return []byte("parked"), nil
 			}
-		}
-		return n
-	}
-	for range 3 {
-		poll(t, c)
-		clk.Advance(DefaultIntervals().Parked)
-	}
-	if n := len(src.calls[psBattery]); n != 3 {
-		t.Fatalf("read %d times", n)
-	}
-	if n := battery(); n != 1 {
-		t.Errorf("%d responses saved of one push read 3 times", n)
-	}
-	if vs := c.vehicles[sourceTarget().VehicleID]; !vs.readAt.Equal(clk.Now().Add(-DefaultIntervals().Parked)) {
-		t.Errorf("read at %v: the reads that saved nothing are reads", vs.readAt)
-	}
-	push = "pushed again at 06:20"
-	poll(t, c)
-	if n := battery(); n != 2 {
-		t.Errorf("%d responses saved, the new push not among them", n)
+			st := &sourceStore{memStore: memStore{targets: []Target{sourceTarget()}}}
+			c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+			c.AddSource(src, st)
+			for read = range tc.reads {
+				st.saveErr = nil
+				if read+1 == tc.fail {
+					st.saveErr = errors.New("store down")
+				}
+				poll(t, c)
+				clk.Advance(DefaultIntervals().Parked)
+			}
+			n := 0
+			for _, sn := range st.saved {
+				if sn.Endpoint == psBattery {
+					n++
+				}
+			}
+			if n != tc.want {
+				t.Errorf("%d responses saved, want %d", n, tc.want)
+			}
+			if vs := c.vehicles[sourceTarget().VehicleID]; tc.fail == 0 && !vs.readAt.Equal(clk.Now().Add(-DefaultIntervals().Parked)) {
+				t.Errorf("read at %v: the reads that saved nothing are reads", vs.readAt)
+			}
+		})
 	}
 }
 

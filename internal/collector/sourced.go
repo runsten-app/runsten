@@ -91,14 +91,15 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 			c.sourceFailed(ctx, t, vs, src, spec.Endpoint, now, err)
 			continue
 		}
-		if spec.Local {
-			if bytes.Equal(raw, vs.local[spec.Endpoint]) {
-				vs.readAt = now // read, with nothing new to save
-				continue
-			}
-			vs.local[spec.Endpoint] = raw
+		if spec.Local && bytes.Equal(raw, vs.local[spec.Endpoint]) {
+			vs.readAt = now // read, with nothing new to save
+			continue
 		}
-		saved = c.read(ctx, t, vs, src, spec.Endpoint, now, raw) || saved
+		ok := c.read(ctx, t, vs, src, spec.Endpoint, now, raw)
+		if ok && spec.Local {
+			vs.local[spec.Endpoint] = raw // a response not saved is saved at its next read
+		}
+		saved = ok || saved
 	}
 	return saved
 }
