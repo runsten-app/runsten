@@ -1455,6 +1455,41 @@ func TestReconstructedTripGoesOn(t *testing.T) {
 	}
 }
 
+// A reconstructed trip that goes on takes the capacity of the reading that extends it,
+// and a position read before that reading was on the way: no arrival, nor a bound of
+// its end.
+func TestReconstructedTripGoesOnArrival(t *testing.T) {
+	stamped := func(km float64, at int) Snapshot {
+		return Snapshot{Covers: FieldOdometer, OdometerKm: Some(km, m(at))}
+	}
+	records := []Record{
+		rec(0, 0, stamped(100, 0)),
+		rec(0, 0, loc(home, m(0))),
+		rec(0, 0, capacity(66)),
+		rec(10, 10, stamped(102, 9)), // reveals the trip
+		rec(11, 11, loc(work, m(11))),
+		rec(11, 11, capacity(70)),
+		rec(13, 13, stamped(104, 12)), // still on the way
+		rec(14, 30, stamped(104, 13)),
+	}
+	for _, stamps := range []bool{true, false} {
+		p := DefaultParams()
+		p.VehicleTimestamps = stamps
+		res := Derive(records, Cursor{}, p, nil)
+		if len(res.Trips) != 1 {
+			t.Fatalf("stamps %v: %d trips: %+v", stamps, len(res.Trips), res.Trips)
+		}
+		tr := res.Trips[0]
+		end := m(13)
+		if stamps {
+			end = m(12)
+		}
+		if tr.End.Before != end || tr.To.OK || tr.Capacity.V.KWh != 70 {
+			t.Errorf("stamps %v: ends before %v at %+v, on %+v", stamps, tr.End.Before, tr.To, tr.Capacity)
+		}
+	}
+}
+
 // An event's sources are those of the readings from its start to its end, never of
 // the readings before it.
 func TestSources(t *testing.T) {
