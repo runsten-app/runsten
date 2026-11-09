@@ -2170,12 +2170,34 @@ func TestSoCDip(t *testing.T) {
 			},
 		},
 		{
+			// The level is the last reading of it, not the first.
+			name: "back to its level read again before the dip",
+			records: []Record{
+				rec(0, 0, parked(67, Connected, 0)),
+				rec(30, 30, parked(67, Connected, 30)),
+				rec(40, 40, parked(65, Connected, 40)),
+				rec(50, 50, parked(67, Connected, 50)),
+			},
+		},
+		{
 			name: "back below its level",
 			records: []Record{
 				rec(0, 0, parked(67, Connected, 0)),
 				rec(10, 10, parked(64, Connected, 10)),
 				rec(20, 20, parked(66, Connected, 20)),
 			},
+		},
+		{
+			// After a dip back below its level, a second dip's level is the new one.
+			name: "a second dip, then above its level",
+			records: []Record{
+				rec(0, 0, parked(67, Connected, 0)),
+				rec(5, 5, parked(64, Connected, 5)),
+				rec(10, 10, parked(66, Connected, 10)),
+				rec(15, 15, parked(63, Connected, 15)),
+				rec(20, 20, parked(67, Connected, 20)),
+			},
+			want: charge(15, 20, 63, 67),
 		},
 		{
 			name: "above its level",
