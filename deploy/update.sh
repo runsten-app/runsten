@@ -14,8 +14,9 @@
 # then, when a note asks for it, rebuilds the trips and charges. Nothing is changed
 # before the question, nor when the images cannot be pulled.
 #
-# Needs bash, curl and Docker Compose. Reads GitHub: the API for the latest release,
-# raw.githubusercontent.com for the files.
+# Needs bash, curl and Docker Compose. Reads GitHub: the redirect of releases/latest for the
+# latest release (not the API, whose unauthenticated requests are limited to 60 an hour
+# per IP), raw.githubusercontent.com for the files.
 set -euo pipefail
 
 repo=runsten-app/runsten
@@ -74,9 +75,11 @@ running() {
 	[[ $version =~ $semver ]] && echo "$version" || true
 }
 
+# The latest release, read from where releases/latest redirects: …/releases/tag/vX.Y.Z.
 latest() {
-	curl -fsSL "https://api.github.com/repos/$repo/releases/latest" |
-		sed -n 's/^ *"tag_name": *"v\([^"]*\)".*/\1/p' | head -n 1
+	local url
+	url=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "$releases/latest") || return 1
+	echo "${url##*/tag/v}"
 }
 
 # The update notes of a release: the bullets of its updating.md's section, one a line.
@@ -138,8 +141,8 @@ main() {
 
 	current=$(running)
 	if [ -z "$target" ] || $check; then
-		newest=$(latest)
-		[[ $newest =~ $semver ]] || fail "cannot read the latest release from GitHub"
+		newest=$(latest) || true
+		[[ $newest =~ $semver ]] || fail "cannot read the latest release from $releases/latest; name the release to update to: deploy/update.sh X.Y.Z"
 		target=${target:-$newest}
 	fi
 
