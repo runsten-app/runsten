@@ -114,6 +114,11 @@ describe('HealthPage', () => {
     await flushPromises()
     expect(w.findComponent(VExpansionPanelText).props('eager')).toBe(false)
     expect(mocks.fetchTyres).not.toHaveBeenCalled()
+    // Back to the first one: folded too, its chart not mounted until opened again.
+    props.vehicle = vehicle
+    await flushPromises()
+    expect(w.findComponent(VExpansionPanelText).props('eager')).toBe(false)
+    expect(w.findAll('.chart-frame')).toHaveLength(0)
     // The fixture needs attention: the dot's description follows the label.
     expect(w.find('.v-tab[aria-current="page"]').text()).toBe('Health Needs attention')
   })

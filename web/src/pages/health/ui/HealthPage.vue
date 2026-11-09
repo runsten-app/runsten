@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref } from 'vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   activeWarnings,
@@ -44,9 +44,14 @@ const openings = computed(() => {
   return s && (s.doors || s.windows) ? s : null
 })
 // Once opened, the pressures' chart stays mounted when folded: Vuetify would otherwise
-// drop it on closing, and opening it again would draw it all again. Opened for this
-// vehicle only: another one's panel starts folded and loads nothing until opened.
-const pressuresOpenedFor = ref<string | null>(null)
+// drop it on closing, and opening it again would draw it all again. Another vehicle's
+// panel starts folded and loads nothing until opened, coming back to this one too.
+const pressuresOpened = ref(false)
+watch(
+  () => props.vehicle,
+  () => (pressuresOpened.value = false),
+  { flush: 'sync' },
+)
 const known = computed(() => (health.value?.checked_at ? health.value : null))
 // The page's answer first, under its title: what needs attention, named, or nothing to
 // report in what the vehicle tells. Then how fresh it is.
@@ -93,10 +98,10 @@ const verdict = computed(() => {
         v-if="hasPressures(known)"
         :key="vehicle"
         class="pressures mt-3"
-        @update:model-value="(v: unknown) => v != null && (pressuresOpenedFor = vehicle)"
+        @update:model-value="(v: unknown) => v != null && (pressuresOpened = true)"
       >
         <v-expansion-panel :title="t('health.chart.history')">
-          <v-expansion-panel-text :eager="pressuresOpenedFor === vehicle">
+          <v-expansion-panel-text :eager="pressuresOpened">
             <TyreChart :vehicle="vehicle" />
           </v-expansion-panel-text>
         </v-expansion-panel>
