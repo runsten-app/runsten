@@ -1667,7 +1667,25 @@
     "title": "Dina data",
     "export": {
       "help": "Ladda ner allt ditt konto innehåller, även fordonens råa avläsningar, som en enda JSON-fil.",
-      "button": "Ladda ner mina data"
+      "button": "Ladda ner mina data",
+      "zip": {
+        "title": "Ett ZIP-arkiv, byggt i bakgrunden",
+        "help": "Samma data, zippad av ett bakgrundsjobb, hur lång tid det än tar: för ett konto som blivit för stort för en direkt nedladdning. Arkivet sparas tills ett nytt efterfrågas.",
+        "build": "Bygg ett ZIP-arkiv",
+        "again": "Bygg ett nytt arkiv",
+        "progress": "Bygger arkivet",
+        "waiting": "Nytt försök {time}.",
+        "download": "Ladda ner ZIP-filen ({size})",
+        "held": "Byggd {time}.",
+        "failed": "Arkivet kunde inte byggas.",
+        "kilobytes": "{n} kB",
+        "megabytes": "{n} MB",
+        "error": {
+          "active": "En export av det här kontot byggs redan.",
+          "unavailable": "Runsten kan inte nås. Försök igen om en stund.",
+          "internal": "Arkivet kunde inte byggas. Försök igen om en stund."
+        }
+      }
     }
   },
   "imports": {

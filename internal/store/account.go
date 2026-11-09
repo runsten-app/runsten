@@ -67,6 +67,7 @@ var exportTables = []exportTable{
 var notExported = map[string]string{
 	"derivation_cursors": "where the derivation resumes: rebuilt from the snapshots",
 	"schema_migrations":  "the schema's bookkeeping, no account's",
+	"account_exports":    "the export's own bookkeeping, and the archive it built: the export is the document",
 }
 
 // ExportAccount implements api.Accounts: writes to w, as one JSON document, every row

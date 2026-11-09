@@ -27,7 +27,7 @@ var allowed = map[string][]string{
 	// The binaries wire the adapters together. Only runsten-simulator knows the simulator.
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/bmw", "internal/catalog", "internal/core",
-		"internal/derive", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
+		"internal/derive", "internal/exporter", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
 		"internal/platform", "internal/polestar", "internal/polestarid", "internal/release", "internal/store", "internal/tesla",
 		"internal/teslamate", "internal/volvo", "internal/volvoportal", "internal/aaoslogging",
 	},
@@ -75,6 +75,11 @@ var allowed = map[string][]string{
 	"internal/importer": {
 		"internal/aaoslogging", "internal/aximote", "internal/core", "internal/platform/clock", "internal/teslamate", "internal/volvoportal",
 	},
+	// The export worker builds an account's archive from the account's export: it
+	// declares its Store, which holds the archive, and never knows the database.
+	"internal/exporter": {
+		"internal/api", "internal/platform/clock",
+	},
 	// What is published to an MQTT broker, built from the domain: neither network nor
 	// database; Home Assistant's discovery configurations are JSON.
 	"internal/publish": {"encoding/json", "internal/core"},
@@ -104,7 +109,7 @@ var allowed = map[string][]string{
 	// The Polestar credential is sealed as one JSON value.
 	"internal/store": {
 		"encoding/json", "github.com/jackc/pgx/v5", "internal/api", "internal/auth", "internal/collector", "internal/core", "internal/derive",
-		"internal/geocode", "internal/importer", "internal/oauth", "internal/platform/secretbox", "internal/publish",
+		"internal/exporter", "internal/geocode", "internal/importer", "internal/oauth", "internal/platform/secretbox", "internal/publish",
 		"internal/volvo",
 	},
 	"internal/debugui": {"net/http", "encoding/json", "internal/collector", "internal/platform/clock", "internal/volvo"},

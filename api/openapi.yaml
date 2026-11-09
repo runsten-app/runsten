@@ -46,6 +46,68 @@ components:
       required:
         - items
       type: object
+    AccountExport:
+      additionalProperties: false
+      properties:
+        bytes:
+          description: "The archive's size in bytes. 0: not held."
+          format: int64
+          minimum: 0
+          type: integer
+        created_at:
+          format: date-time
+          pattern: Z$
+          type: string
+        ended_at:
+          description: "null: still active."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        error:
+          description: "Why the export failed. internal: Runsten failed, see its logs. null: not failed."
+          oneOf:
+            - enum:
+                - internal
+              type: string
+            - type: "null"
+        id:
+          format: uuid
+          type: string
+        not_before:
+          description: "Not built before: a failure is retried."
+          format: date-time
+          pattern: Z$
+          type: string
+        status:
+          description: "pending: waiting for the export worker. running: the archive is being built; a restart builds it again. done: held, downloaded with GET /account/export.zip. failed: over; ask for another."
+          enum:
+            - pending
+            - running
+            - done
+            - failed
+          type: string
+      required:
+        - id
+        - status
+        - error
+        - bytes
+        - created_at
+        - not_before
+        - ended_at
+      type: object
+    AccountExportState:
+      additionalProperties: false
+      properties:
+        export:
+          description: "The account's export; null: none yet."
+          oneOf:
+            - $ref: "#/components/schemas/AccountExport"
+            - type: "null"
+      required:
+        - export
+      type: object
     AccountLimits:
       additionalProperties: false
       properties:
@@ -1883,6 +1945,7 @@ components:
             - source_unavailable
             - authorization_expired
             - import_active
+            - export_active
             - invalid_file
             - insufficient_scope
             - rate_limited
@@ -5628,6 +5691,146 @@ paths:
         - sessionSecure: []
         - accessToken: []
       summary: Export all the account's data
+      tags:
+        - account
+  /account/export-job:
+    get:
+      description: "How it stands: pending, running, or over; held once built, downloaded with `GET /account/export.zip`."
+      operationId: getAccountExport
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountExportState"
+          description: "The account's export; null: none yet."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: The account's export
+      tags:
+        - account
+    post:
+      description: "Creates the account's export, which runs in the background: the whole of its data (the document of `GET /account/export`), zipped, built however long it takes however big it is. Its progress is read with `GET /account/export-job`; once done, the archive is held until it is asked for again, downloaded with `GET /account/export.zip`. Open to every account, whatever its offer."
+      operationId: startAccountExport
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountExport"
+          description: The export, pending.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: this operation requires a session, never an access token."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`export_active`: an export of the account is pending or running."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Build the account's data as a ZIP archive
+      tags:
+        - account
+  /account/export.zip:
+    get:
+      description: "The archive the export worker built: the whole of the account's data zipped, written as it is read. `GET /account/export-job` tells when it is held."
+      operationId: downloadAccountExport
+      responses:
+        "200":
+          content:
+            application/zip:
+              schema:
+                contentMediaType: application/octet-stream
+                format: binary
+                type: string
+          description: The archive, as an attachment (Content-Disposition), named after the day.
+          headers:
+            Content-Disposition:
+              description: attachment, with a file name such as runsten-account-2026-10-01.zip.
+              required: true
+              schema:
+                type: string
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no export is held, none asked for or one still being built."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: Download the account's data as a ZIP archive
       tags:
         - account
   /charge-costs/orphans:

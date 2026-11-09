@@ -1667,7 +1667,25 @@
     "title": "Sus datos",
     "export": {
       "help": "Descargue todo lo que contiene su cuenta, incluidas las lecturas en bruto de sus vehículos, en un único archivo JSON.",
-      "button": "Descargar mis datos"
+      "button": "Descargar mis datos",
+      "zip": {
+        "title": "Un archivo ZIP, construido en segundo plano",
+        "help": "Los mismos datos, comprimidos por una tarea en segundo plano, tarden lo que tarde: para una cuenta que ha crecido demasiado para la descarga directa. El archivo se conserva hasta pedir otro.",
+        "build": "Construir un archivo ZIP",
+        "again": "Construir otro archivo",
+        "progress": "Construyendo el archivo",
+        "waiting": "Reintento a las {time}.",
+        "download": "Descargar el ZIP ({size})",
+        "held": "Construido {time}.",
+        "failed": "El archivo no se pudo construir.",
+        "kilobytes": "{n} kB",
+        "megabytes": "{n} MB",
+        "error": {
+          "active": "Ya se está construyendo una exportación de esta cuenta.",
+          "unavailable": "Runsten no está accesible. Inténtelo de nuevo en un momento.",
+          "internal": "El archivo no se pudo construir. Inténtelo de nuevo en un momento."
+        }
+      }
     }
   },
   "imports": {

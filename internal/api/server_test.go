@@ -218,6 +218,7 @@ type env struct {
 	settings *memSettings
 	brokers  *memBrokers
 	jobs     *memImportJobs
+	exports  *memAccountExports
 	aximote  *fakeAximote
 	files    *fakeFileImports
 	pictures *fakePictures
@@ -237,7 +238,7 @@ func newEnv(t *testing.T, maxFlows int) *env {
 // the simulator accepts (nil: any).
 func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []string) *env {
 	t.Helper()
-	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, bmw: &memBMW{}, bmws: &fakeBMW{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}, stored: &fakeStoredPictures{}}
+	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, bmw: &memBMW{}, bmws: &fakeBMW{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, exports: &memAccountExports{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}, stored: &fakeStoredPictures{}}
 	e.reader = newMemReader(e.settings)
 	var handler http.Handler
 	e.api = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { handler.ServeHTTP(w, r) }))
@@ -279,7 +280,7 @@ func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []strin
 		Tesla: e.tesla, TeslaVehicles: teslaSim(t, e.clk, teslaVIN).client,
 		PolestarID: e.polestarID, PolestarIDAccounts: e.polestarIDs, PolestarIDFlows: oauth.NewFlows(e.clk, flowTTL, maxFlows),
 		BMW: e.bmw, BMWAccounts: e.bmws,
-		InstanceKeyLast4: instanceKey[max(0, len(instanceKey)-4):], Brokers: e.brokers, ImportJobs: e.jobs, Aximote: e.aximote, FileImports: e.files,
+		InstanceKeyLast4: instanceKey[max(0, len(instanceKey)-4):], Brokers: e.brokers, ImportJobs: e.jobs, AccountExports: e.exports, Aximote: e.aximote, FileImports: e.files,
 		Pictures: e.pictures, StoredPictures: e.stored, Params: readerParams(), CostParams: core.DefaultCostParams(), CapacityParams: core.DefaultCapacityParams(),
 		Catalog: mustCatalog(t), Clock: e.clk, Log: quiet,
 	})

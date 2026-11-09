@@ -1667,7 +1667,25 @@
     "title": "Dataene dine",
     "export": {
       "help": "Last ned alt kontoen din inneholder, også de rå avlesningene av bilene dine, som én JSON-fil.",
-      "button": "Last ned dataene mine"
+      "button": "Last ned dataene mine",
+      "zip": {
+        "title": "Et ZIP-arkiv, bygget i bakgrunnen",
+        "help": "De samme dataene, zippet av en bakgrunnsjobb, uansett hvor lang tid det tar: for en konto som er blitt for stor for direkte nedlasting. Arkivet beholdes til det blir bedt om et nytt.",
+        "build": "Bygg et ZIP-arkiv",
+        "again": "Bygg et nytt arkiv",
+        "progress": "Bygger arkivet",
+        "waiting": "Nytt forsøk {time}.",
+        "download": "Last ned ZIP-en ({size})",
+        "held": "Bygget {time}.",
+        "failed": "Arkivet kunne ikke bygges.",
+        "kilobytes": "{n} kB",
+        "megabytes": "{n} MB",
+        "error": {
+          "active": "En eksport av denne kontoen bygges allerede.",
+          "unavailable": "Runsten er ikke tilgjengelig. Prøv igjen om et øyeblikk.",
+          "internal": "Arkivet kunne ikke bygges. Prøv igjen om et øyeblikk."
+        }
+      }
     }
   },
   "imports": {

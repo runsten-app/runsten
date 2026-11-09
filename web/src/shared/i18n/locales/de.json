@@ -1667,7 +1667,25 @@
     "title": "Ihre Daten",
     "export": {
       "help": "Laden Sie alles herunter, was Ihr Konto enthält, einschließlich der Rohdaten Ihrer Fahrzeuge, als eine JSON-Datei.",
-      "button": "Meine Daten herunterladen"
+      "button": "Meine Daten herunterladen",
+      "zip": {
+        "title": "Ein ZIP-Archiv, im Hintergrund erstellt",
+        "help": "Dieselben Daten, von einem Hintergrundjob gezippt, so lange es dauert: für ein Konto, das zu groß für den Download geworden ist. Das Archiv bleibt, bis ein neues angefordert wird.",
+        "build": "ZIP-Archiv erstellen",
+        "again": "Ein weiteres Archiv erstellen",
+        "progress": "Archiv wird erstellt",
+        "waiting": "Um {time} erneut versucht.",
+        "download": "ZIP herunterladen ({size})",
+        "held": "Erstellt {time}.",
+        "failed": "Das Archiv konnte nicht erstellt werden.",
+        "kilobytes": "{n} kB",
+        "megabytes": "{n} MB",
+        "error": {
+          "active": "Für dieses Konto wird bereits ein Export erstellt.",
+          "unavailable": "Runsten ist nicht erreichbar. Versuchen Sie es gleich noch einmal.",
+          "internal": "Das Archiv konnte nicht erstellt werden. Versuchen Sie es gleich noch einmal."
+        }
+      }
     }
   },
   "imports": {
