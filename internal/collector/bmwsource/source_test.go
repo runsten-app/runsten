@@ -340,11 +340,12 @@ func TestStreamHeld(t *testing.T) {
 
 	// Within the handover, taken for a previous collector stopping: not told, and tried
 	// again every streamRetry.
-	for i := 0; time.Duration(i)*streamRetry < handover; i++ {
+	start := f.clk.Now()
+	for f.clk.Now().Sub(start) < handover {
 		if err := stream(); err != nil {
-			t.Fatalf("held within the handover, try %d: %v", i, err)
+			t.Fatalf("held %v within the handover: %v", f.clk.Now().Sub(start), err)
 		}
-		f.clk.Advance(streamRetry)
+		f.clk.Advance(min(streamRetry, handover-f.clk.Now().Sub(start)))
 	}
 	// Past it, another client: told, and tried again every heldRetry.
 	if err := stream(); kindOf(err) != collector.KindStreamHeld {
