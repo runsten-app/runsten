@@ -73,6 +73,12 @@ const (
 	// heldRetry after one another client holds (Home Assistant, evcc).
 	streamRetry = time.Minute
 	heldRetry   = 5 * time.Minute
+	// handover is how long after its creation a subscription refused as held is taken for
+	// a previous collector still holding the stream, while it stops: a rolling deployment
+	// starts the next before it stops the previous (seen in production: the slot freed
+	// at once by its clean disconnection, under a minute later). Tried again every
+	// streamRetry meanwhile, and not told to the owner.
+	handover = 5 * time.Minute
 	// historyDays is how far back the charging history is read: BMW keeps about 30 days.
 	historyDays = 30
 )
@@ -109,6 +115,7 @@ type rotation struct {
 type subscription struct {
 	*bmw.Subscription
 	idToken string
+	since   time.Time // when the source created it
 	readAt  time.Time // when a session last read it
 	retryAt time.Time // when to try connecting again, after a failure
 	tried   string    // the ID token of the last failure
@@ -237,7 +244,7 @@ func (s *Source) subscribe(connectionID, gcid, idToken string) {
 		old, sub = sub.Subscription, nil
 	}
 	if sub == nil {
-		sub = &subscription{Subscription: bmw.NewSubscription(s.streamURL, gcid)}
+		sub = &subscription{Subscription: bmw.NewSubscription(s.streamURL, gcid), since: s.clk.Now()}
 		s.subs[connectionID] = sub
 	}
 	sub.idToken, sub.readAt = idToken, s.clk.Now()
@@ -405,11 +412,12 @@ func (s *session) stream(ctx context.Context, vin string) ([]byte, error) {
 	sub.readAt = now
 	idToken := sub.idToken
 	try := sub.tried != idToken || !now.Before(sub.retryAt)
+	handing := now.Sub(sub.since) < handover
 	s.src.mu.Unlock()
 	if !try {
 		// Waiting to try again: a stream another client holds is told until then, rather
 		// than the values it left.
-		if up, lost := sub.Up(); !up && held(lost) {
+		if up, lost := sub.Up(); !up && held(lost) && !handing {
 			return nil, &collector.SourceError{Kind: collector.KindStreamHeld, Err: lost}
 		}
 		return sub.Values(vin), nil
@@ -419,7 +427,7 @@ func (s *session) stream(ctx context.Context, vin string) ([]byte, error) {
 		return sub.Values(vin), nil
 	}
 	retry := streamRetry
-	if held(err) {
+	if held(err) && !handing {
 		retry = heldRetry
 	}
 	s.src.mu.Lock()
@@ -427,6 +435,9 @@ func (s *session) stream(ctx context.Context, vin string) ([]byte, error) {
 	s.src.mu.Unlock()
 	var se *bmw.StreamError
 	switch {
+	case held(err) && handing:
+		// Most likely the previous collector, stopping: what was received, nothing yet.
+		return sub.Values(vin), nil
 	case errors.As(err, &se) && se.Code == bmw.RefusedBadPassword:
 		// The ID token refused, or expired: a new access gives another.
 		return nil, &collector.SourceError{Kind: collector.KindUnauthorized, Err: err}

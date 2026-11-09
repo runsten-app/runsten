@@ -313,9 +313,10 @@ func TestStreamReconnects(t *testing.T) {
 	}
 }
 
-func TestStreamHeld(t *testing.T) {
-	f := newFixture(t)
-	// Another client of the account holds the stream (Home Assistant's integration).
+// holdStream connects another client of the account to the stream: Home Assistant's
+// integration, or the previous collector of a rolling deployment.
+func holdStream(t *testing.T, f *fixture) *bmw.Subscription {
+	t.Helper()
 	tok, err := f.client.Refresh(t.Context(), bmwapi.DevClientID, f.st.cred.Refresh)
 	if err != nil {
 		t.Fatal(err)
@@ -325,21 +326,55 @@ func TestStreamHeld(t *testing.T) {
 	if err := other.Connect(t.Context(), tok.ID); err != nil {
 		t.Fatal(err)
 	}
+	return other
+}
 
+func TestStreamHeld(t *testing.T) {
+	f := newFixture(t)
+	other := holdStream(t, f)
 	sess := f.login(t)
-	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream)); kindOf(err) != collector.KindStreamHeld {
-		t.Errorf("held by another: %v", err)
+	stream := func() error {
+		_, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream))
+		return err
+	}
+
+	// Within the handover, taken for a previous collector stopping: not told, and tried
+	// again every streamRetry.
+	for i := 0; time.Duration(i)*streamRetry < handover; i++ {
+		if err := stream(); err != nil {
+			t.Fatalf("held within the handover, try %d: %v", i, err)
+		}
+		f.clk.Advance(streamRetry)
+	}
+	// Past it, another client: told, and tried again every heldRetry.
+	if err := stream(); kindOf(err) != collector.KindStreamHeld {
+		t.Errorf("held past the handover: %v", err)
 	}
 	if st := f.src.StreamState("c"); st.Up || !st.Held {
 		t.Errorf("stream state %+v", st)
 	}
-	// Not tried again for a while: still told held, rather than the values it left.
-	if _, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream)); kindOf(err) != collector.KindStreamHeld {
+	f.clk.Advance(streamRetry)
+	if err := stream(); kindOf(err) != collector.KindStreamHeld {
 		t.Errorf("before retrying: %v", err)
 	}
 	other.Close()
 	time.Sleep(100 * time.Millisecond)
 	f.clk.Advance(heldRetry)
+	streamed(t, sess, func(s core.Snapshot) bool { return s.SoC.OK })
+}
+
+func TestStreamHandedOver(t *testing.T) {
+	// The previous collector of a rolling deployment holds the stream, then stops: the
+	// stream is read a streamRetry later, the owner told nothing.
+	f := newFixture(t)
+	previous := holdStream(t, f)
+	sess := f.login(t)
+	if raw, err := sess.Fetch(t.Context(), vin, collector.Endpoint(bmw.Stream)); err != nil || string(raw) != `{"telematicData":{}}` {
+		t.Fatalf("held by the previous collector: %s, %v", raw, err)
+	}
+	previous.Close()
+	time.Sleep(100 * time.Millisecond)
+	f.clk.Advance(streamRetry)
 	streamed(t, sess, func(s core.Snapshot) bool { return s.SoC.OK })
 }
 
