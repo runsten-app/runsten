@@ -58,7 +58,9 @@ func newSim(t *testing.T) *sim {
 		},
 	}
 	clk := clock.NewManual(t0)
-	h := bmwapi.NewHandler([]bmwapi.Source{c}, clk, bmwapi.DefaultBehavior())
+	b := bmwapi.DefaultBehavior()
+	b.CurrentOnSubscribe = true // the stream's values read at once, as some integrations report
+	h := bmwapi.NewHandler([]bmwapi.Source{c}, clk, b)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	return &sim{
@@ -187,7 +189,8 @@ func TestSimulatorAPI(t *testing.T) {
 	if m.Brand.V != "bmw" || m.Family.V != "i4" || m.Trim.V != "edrive40" || m.ModelYear.V != 2024 || !m.BatteryElectric() {
 		t.Errorf("model: %+v", m)
 	}
-	if m.CapacityKWh.V != 83.9 || m.Sheet.V != (core.Sheet{Colour: "Brooklyn Grey", Steering: core.LeftHand}) {
+	// No capacity, as a real car's basic data: the catalog's.
+	if m.CapacityKWh.OK || m.Sheet.V != (core.Sheet{Colour: "Brooklyn Grey", Steering: core.LeftHand}) {
 		t.Errorf("capacity and sheet: %+v %+v", m.CapacityKWh, m.Sheet)
 	}
 

@@ -71,6 +71,11 @@ type Behavior struct {
 	// already holds (pastSessions): BMW keeps about 30, which a car connected for the
 	// first time has.
 	PastDays int
+	// CurrentOnSubscribe sends a new subscription the cars' current values at once, as
+	// integrations of CarData reported. A real car seen on the stream sent nothing on any
+	// of its subscriptions, hours long, until its next change (ADR 0045 §9): off by
+	// default, the container's values being read at the subscription's start instead.
+	CurrentOnSubscribe bool
 }
 
 // DefaultBehavior returns the assumptions used without explicit configuration.
@@ -338,14 +343,16 @@ func (h *Handler) basicData(w http.ResponseWriter, r *http.Request) {
 	if spec.PlugInHybrid {
 		propulsion = "PHEV"
 	}
+	// The fields a real car's basic data holds (ADR 0045 §9), with the vehicle's VIN: no
+	// hvsMaxEnergyAbsolute, colourCode nor puStep, which CarData's OpenAPI lists. Their
+	// values are assumed.
 	writeJSON(w, http.StatusOK, map[string]any{
-		"vin": c.src.VIN(), "brand": brand, "isTelematicsCapable": true, "modelName": spec.Model,
-		"series": series, "modelRange": series, "modelKey": "", "bodyType": "", "numberOfDoors": 4,
-		"hasNavi": true, "headUnit": "MGU", "hasSunRoof": false, "countryCodeISO": "BE", "steering": "LL",
-		"engine": "", "driveTrain": propulsion, "propulsionType": propulsion, "chargingModes": []string{"AC_TYPE2PLUG", "DC"},
-		"constructionDate":     strconv.Itoa(spec.ModelYear-1) + "-11-01T00:00:00.000Z",
-		"hvsMaxEnergyAbsolute": strconv.FormatFloat(spec.BatteryKWh, 'f', 1, 64), "simStatus": "ACTIVE",
-		"colourCode": "C4P", "colourCodeRaw": "C4P", "puStep": "", "fullSAList": "",
+		"vin": c.src.VIN(), "brand": brand, "modelName": spec.Model, "series": series, "seriesDevt": "",
+		"modelKey": "", "bodyType": "", "numberOfDoors": 4, "hasNavi": true, "headUnit": "MGU",
+		"hasSunRoof": false, "countryCode": "BE", "steering": "LL", "engine": "", "driveTrain": propulsion,
+		"propulsionType": propulsion, "chargingModes": []string{"AC_TYPE2PLUG", "DC"},
+		"constructionDate": strconv.Itoa(spec.ModelYear-1) + "-11-01T00:00:00.000+0000", "simStatus": "ACTIVE",
+		"colourCodeRAW": "C4P", "colourDescription": "BROOKLYN GRAU METALLIC", "saList": "",
 	})
 }
 

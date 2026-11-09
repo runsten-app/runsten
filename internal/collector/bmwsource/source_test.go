@@ -98,7 +98,9 @@ func newFixture(t *testing.T) *fixture {
 	t.Helper()
 	c := &car{st: vehicle.State{SoC: 64.2, OdometerKm: 21034.6, TargetSoC: 80, Position: vehicle.Position{Lat: 50.827, Lon: 4.372}}}
 	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
-	h := bmwapi.NewHandler([]bmwapi.Source{c}, clk, bmwapi.DefaultBehavior())
+	b := bmwapi.DefaultBehavior()
+	b.CurrentOnSubscribe = true // the stream's values read at once, as some integrations report
+	h := bmwapi.NewHandler([]bmwapi.Source{c}, clk, b)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 
