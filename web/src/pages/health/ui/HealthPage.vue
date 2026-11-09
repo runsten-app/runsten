@@ -44,8 +44,9 @@ const openings = computed(() => {
   return s && (s.doors || s.windows) ? s : null
 })
 // Once opened, the pressures' chart stays mounted when folded: Vuetify would otherwise
-// drop it on closing, and opening it again would draw it all again.
-const pressuresOpened = ref(false)
+// drop it on closing, and opening it again would draw it all again. Opened for this
+// vehicle only: another one's panel starts folded and loads nothing until opened.
+const pressuresOpenedFor = ref<string | null>(null)
 const known = computed(() => (health.value?.checked_at ? health.value : null))
 // The page's answer first, under its title: what needs attention, named, or nothing to
 // report in what the vehicle tells. Then how fresh it is.
@@ -90,11 +91,12 @@ const verdict = computed(() => {
       <!-- Folded: the pressures over time are for the curious; opened, the chart loads. -->
       <v-expansion-panels
         v-if="hasPressures(known)"
+        :key="vehicle"
         class="pressures mt-3"
-        @update:model-value="pressuresOpened = true"
+        @update:model-value="(v: unknown) => v != null && (pressuresOpenedFor = vehicle)"
       >
         <v-expansion-panel :title="t('health.chart.history')">
-          <v-expansion-panel-text :eager="pressuresOpened">
+          <v-expansion-panel-text :eager="pressuresOpenedFor === vehicle">
             <TyreChart :vehicle="vehicle" />
           </v-expansion-panel-text>
         </v-expansion-panel>

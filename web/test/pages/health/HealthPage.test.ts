@@ -1,5 +1,6 @@
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { reactive } from 'vue'
 import { VExpansionPanelText } from 'vuetify/components'
 import { HealthPage } from '@/pages/health'
 import battery from '@fixtures/battery.json'
@@ -50,10 +51,10 @@ beforeEach(() => {
 
 const vehicle = vehicles.items[0]?.id ?? ''
 
-async function mounted() {
+async function mounted(props = { vehicle }) {
   const router = testRouter()
   await router.push(`/vehicles/${vehicle}/health`)
-  const { wrapper } = mountWith(HealthPage, { router, props: { vehicle } })
+  const { wrapper } = mountWith(HealthPage, { router, props })
   await flushPromises()
   return wrapper
 }
@@ -89,7 +90,8 @@ describe('HealthPage', () => {
   })
 
   it('shows the tiles and the pressures, in its own tab', async () => {
-    const w = await mounted()
+    const props = reactive({ vehicle })
+    const w = await mounted(props)
     expect(w.find('.v-main h1').text()).toBe('Health')
     // The answer under the title: what needs attention, named, then how fresh it is.
     expect(w.find('.verdict').text()).toMatch(
@@ -104,6 +106,14 @@ describe('HealthPage', () => {
     // Folded again, the chart stays mounted (eager): opening it again draws nothing anew.
     // jsdom ends no transition, which is when Vuetify would drop it: the prop says it.
     expect(w.findComponent(VExpansionPanelText).props('eager')).toBe(true)
+    await w.find('.pressures button').trigger('click')
+    expect(w.findComponent(VExpansionPanelText).props('eager')).toBe(true)
+    // Another vehicle's panel starts folded, and loads nothing until opened.
+    mocks.fetchTyres.mockClear()
+    props.vehicle = 'other'
+    await flushPromises()
+    expect(w.findComponent(VExpansionPanelText).props('eager')).toBe(false)
+    expect(mocks.fetchTyres).not.toHaveBeenCalled()
     // The fixture needs attention: the dot's description follows the label.
     expect(w.find('.v-tab[aria-current="page"]').text()).toBe('Health Needs attention')
   })
