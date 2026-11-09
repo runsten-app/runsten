@@ -550,7 +550,7 @@
         "unit": "%/giorno",
         "summary": "Perdita in sosta: {average} in media nel periodo.",
         "none": "Nessuna perdita in sosta nota in questo periodo.",
-        "hint": "Lo stato di carica perso tra un evento e l’altro, al giorno: significativo su più settimane, non su una notte."
+        "hint": "Lo stato di carica perso tra un evento e l’altro, al giorno: significativo su più settimane, non su una notte. Un giorno con meno di 12 ore di sosta non ha valore."
       },
       "byDistance": {
         "title": "Viaggi per distanza",

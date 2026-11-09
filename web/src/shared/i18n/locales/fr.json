@@ -550,7 +550,7 @@
         "unit": "%/jour",
         "summary": "Perte à l’arrêt : {average} en moyenne sur la période.",
         "none": "Aucune perte à l’arrêt connue sur cette période.",
-        "hint": "La charge perdue entre deux événements, par jour : parlante sur des semaines, pas sur une nuit."
+        "hint": "La charge perdue entre deux événements, par jour : parlante sur des semaines, pas sur une nuit. Un jour à l’arrêt moins de 12 heures n’en a pas."
       },
       "byDistance": {
         "title": "Trajets par distance",

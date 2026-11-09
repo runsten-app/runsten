@@ -550,7 +550,7 @@
         "unit": "%/dag",
         "summary": "Verlies bij stilstand: gemiddeld {average} over de periode.",
         "none": "Geen verlies bij stilstand bekend in deze periode.",
-        "hint": "Het laadniveau dat tussen gebeurtenissen verloren ging, per dag: zinvol over weken, niet over één nacht."
+        "hint": "Het laadniveau dat tussen gebeurtenissen verloren ging, per dag: zinvol over weken, niet over één nacht. Een dag met minder dan 12 uur stilstand heeft er geen."
       },
       "byDistance": {
         "title": "Ritten naar afstand",

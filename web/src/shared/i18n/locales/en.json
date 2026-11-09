@@ -550,7 +550,7 @@
         "unit": "%/day",
         "summary": "Loss while parked: {average} on average over the period.",
         "none": "No loss while parked known in this period.",
-        "hint": "The state of charge lost between events, per day: meaningful over weeks, not over a night."
+        "hint": "The state of charge lost between events, per day: meaningful over weeks, not over a night. A day parked less than 12 hours has none."
       },
       "byDistance": {
         "title": "Trips by distance",

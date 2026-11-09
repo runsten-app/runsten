@@ -280,7 +280,7 @@ func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []strin
 		PolestarID: e.polestarID, PolestarIDAccounts: e.polestarIDs, PolestarIDFlows: oauth.NewFlows(e.clk, flowTTL, maxFlows),
 		BMW: e.bmw, BMWAccounts: e.bmws,
 		InstanceKeyLast4: instanceKey[max(0, len(instanceKey)-4):], Brokers: e.brokers, ImportJobs: e.jobs, Aximote: e.aximote, FileImports: e.files,
-		Pictures: e.pictures, StoredPictures: e.stored, Params: core.DefaultParams(), CostParams: core.DefaultCostParams(), CapacityParams: core.DefaultCapacityParams(),
+		Pictures: e.pictures, StoredPictures: e.stored, Params: readerParams(), CostParams: core.DefaultCostParams(), CapacityParams: core.DefaultCapacityParams(),
 		Catalog: mustCatalog(t), Clock: e.clk, Log: quiet,
 	})
 	handler = checkedAPI(t, e.server)
@@ -734,4 +734,12 @@ func TestRedirect(t *testing.T) {
 	if client(r.RemoteAddr) != "pipe" {
 		t.Errorf("client of an address without port: %q", client(r.RemoteAddr))
 	}
+}
+
+// readerParams are the default parameters, but a rate of the loss while parked whatever
+// the parked time: the fixtures' days are parked a few hours.
+func readerParams() core.Params {
+	p := core.DefaultParams()
+	p.MinParkedForRate = 0
+	return p
 }

@@ -63,6 +63,13 @@ type Params struct {
 	VehicleTimestamps bool
 	// Capacity is the battery capacity that turns a change of SoC into energy.
 	Capacity CapacitySource
+	// MinParkedForRate is the parked time below which the loss while parked gives no rate
+	// (ParkedStats' SoCLossPctPerDay and PowerW), in a period, a bucket or a band of
+	// temperature. The SoC has a resolution of one point, and a car may lose a few just
+	// after a drive: 5 points over 10 hours parked, on a day of several trips, made 12 % a
+	// day. Assumption: from half a day parked, a point more or less moves the rate by 2
+	// points a day at most. 0: any time.
+	MinParkedForRate time.Duration
 }
 
 // DefaultParams returns the parameters used without explicit configuration.
@@ -80,6 +87,7 @@ func DefaultParams() Params {
 		ResumeBeforeArrival: true,
 		VehicleTimestamps:   true,
 		Capacity:            CapacityCatalogNet,
+		MinParkedForRate:    12 * time.Hour,
 	}
 }
 
