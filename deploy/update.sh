@@ -76,9 +76,11 @@ running() {
 }
 
 # The latest release, read from where releases/latest redirects: …/releases/tag/vX.Y.Z.
+# The redirect is read, not followed: the release's page need not answer. A GET, as a
+# proxy may refuse a HEAD.
 latest() {
 	local url
-	url=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "$releases/latest") || return 1
+	url=$(curl -fsS -o /dev/null -w '%{redirect_url}' "$releases/latest") || return 1
 	echo "${url##*/tag/v}"
 }
 
