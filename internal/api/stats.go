@@ -104,9 +104,9 @@ type ParkedStatsFields struct {
 	SoCLossPct     float64 `json:"soc_loss_pct" minimum:"0" doc:"The state of charge lost while parked, in points. A rise below the noise threshold counts as 0."`
 	SoCLossUnknown int     `json:"soc_loss_unknown" minimum:"0" doc:"The intervals whose loss is unknown: no state of charge at one end, or a rise that only a charge explains."`
 	// An average: null over nothing.
-	SoCLossPctPerDay *float64 `json:"soc_loss_pct_per_day" doc:"soc_loss_pct over the time of the intervals whose loss is known, per day. The state of charge has a resolution of one point: meaningful over weeks, not over a night. null without such time."`
+	SoCLossPctPerDay *float64 `json:"soc_loss_pct_per_day" doc:"soc_loss_pct over the time of the intervals whose loss is known, per day. The state of charge has a resolution of one point: meaningful over weeks, not over a night. null when that time is under 12 hours."`
 	// An average: null over nothing.
-	PowerW      *float64 `json:"power_w" doc:"The mean power lost while parked, in W: the energy of the state of charge lost (the loss × the battery capacity of the event before, else after, as its capacity_kwh) over the time of the intervals whose loss and capacity are both known. An estimate, as soc_loss_pct_per_day. null without such time."`
+	PowerW      *float64 `json:"power_w" doc:"The mean power lost while parked, in W: the energy of the state of charge lost (the loss × the battery capacity of the event before, else after, as its capacity_kwh) over the time of the intervals whose loss and capacity are both known. An estimate, as soc_loss_pct_per_day. null when that time is under 12 hours."`
 	SleepReadS  int64    `json:"sleep_read_s" minimum:"0" doc:"The part of time_s the vehicle's responses told whether it slept over, from the fetch of each to its latest confirmation (a Tesla's state, read without waking it); 0 for a vehicle that does not tell it (Volvo, Polestar)."`
 	AsleepS     int64    `json:"asleep_s" minimum:"0" doc:"The part of sleep_read_s they told it asleep or out of reach."`
 	AsleepShare *float64 `json:"asleep_share" minimum:"0" maximum:"1" doc:"asleep_s over sleep_read_s: the share of the parked time the vehicle slept, as far as it was read. null without sleep_read_s."`

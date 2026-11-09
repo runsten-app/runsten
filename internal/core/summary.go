@@ -112,11 +112,12 @@ type ParkedStats struct {
 	SoCLossPct     float64
 	SoCLossUnknown int // intervals without a SoC at both ends, or with a charge between
 	// SoCLossPctPerDay is SoCLossPct over the time of the intervals with a known loss:
-	// unknown without such time.
+	// unknown when that time is under Params.MinParkedForRate.
 	SoCLossPctPerDay Value[float64]
 	// PowerW is the mean power lost, in W: the energy of the SoC lost (the loss × the
 	// battery capacity of the event before, else after) over the time of the intervals
-	// whose loss and capacity are both known. Unknown without such time.
+	// whose loss and capacity are both known. Unknown when that time is under
+	// Params.MinParkedForRate.
 	PowerW Value[float64]
 	// SleepRead is the part of Time the readings told the vehicle's sleep state over
 	// (SleepSpans), and Asleep the part of it they told it asleep or out of reach: none
@@ -458,14 +459,14 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, slee
 		odo = accs[i].odometerFrom(odo)
 	}
 	s := Summary{
-		Totals: total.stats(), TripsByDistance: dist.result(), TripsByTemperature: temp.result(),
-		ParkedByTemperature: parkedTemp.result(), ChargesByTemperature: chargeTemp.result(),
+		Totals: total.stats(p.MinParkedForRate), TripsByDistance: dist.result(), TripsByTemperature: temp.result(),
+		ParkedByTemperature: parkedTemp.result(p.MinParkedForRate), ChargesByTemperature: chargeTemp.result(),
 		ChargesBySoC: bySoC, ChargesByPlace: byPlace.result(),
 	}
 	if len(bounds) > 0 {
 		s.Buckets = make([]BucketStats, len(bounds))
 		for i, b := range bounds {
-			s.Buckets[i] = BucketStats{Start: b.Start, End: b.End, Stats: accs[i].stats()}
+			s.Buckets[i] = BucketStats{Start: b.Start, End: b.End, Stats: accs[i].stats(p.MinParkedForRate)}
 		}
 	}
 	return s, nil
@@ -499,7 +500,7 @@ func (d *distanceAcc) add(t Trip) {
 func (d *distanceAcc) result() TripsByDistance {
 	out := TripsByDistance{Bands: make([]DistanceBand, len(d.bands)), LeftOut: d.leftOut}
 	for i := range d.bands {
-		s := d.bands[i].stats().Trips
+		s := d.bands[i].stats(0).Trips
 		b := DistanceBand{Count: s.Count, ConsumptionKWhPer100km: s.ConsumptionKWhPer100km}
 		if i > 0 {
 			b.MinKm = distanceLimits[i-1]
@@ -585,7 +586,7 @@ func (a *temperatureAcc) result() TripsByTemperature {
 	a.bands.each(func(minC float64, b *temperatureBandAcc) {
 		band := TemperatureBand{MinC: minC}
 		if b != nil {
-			s := b.stats().Trips
+			s := b.stats(0).Trips
 			band.Count, band.DistanceKm, band.DistanceUnknown = s.Count, s.DistanceKm, s.DistanceUnknown
 			band.ConsumptionKWhPer100km = s.ConsumptionKWhPer100km
 			band.Speed = rate(b.speedKm, b.speedTime)
@@ -610,12 +611,12 @@ func (a *parkedTempAcc) add(iv parkedInterval) {
 	a.bands.at(i).parked(iv)
 }
 
-func (a *parkedTempAcc) result() ParkedByTemperature {
+func (a *parkedTempAcc) result(minRate time.Duration) ParkedByTemperature {
 	out := ParkedByTemperature{Bands: []ParkedBand{}, LeftOut: a.leftOut}
 	a.bands.each(func(minC float64, b *acc) {
 		band := ParkedBand{MinC: minC}
 		if b != nil {
-			band.ParkedStats = b.stats().Parked
+			band.ParkedStats = b.stats(minRate).Parked
 		}
 		out.Bands = append(out.Bands, band)
 	})
@@ -959,15 +960,17 @@ func highest(a, b Value[float64]) Value[float64] {
 	return a
 }
 
-func (a *acc) stats() Stats {
+// stats are the sums of a; the rates of the loss while parked need minRate of parked
+// time.
+func (a *acc) stats(minRate time.Duration) Stats {
 	s := a.s
 	if a.consKm > 0 {
 		s.Trips.ConsumptionKWhPer100km = Value[float64]{V: a.consKWh * 100 / a.consKm, OK: true}
 	}
-	if a.lossTime > 0 {
+	if a.lossTime > 0 && a.lossTime >= minRate {
 		s.Parked.SoCLossPctPerDay = Value[float64]{V: s.Parked.SoCLossPct / a.lossTime.Hours() * 24, OK: true}
 	}
-	if a.powerTime > 0 {
+	if a.powerTime > 0 && a.powerTime >= minRate {
 		s.Parked.PowerW = Value[float64]{V: a.lossKWh * 1000 / a.powerTime.Hours(), OK: true}
 	}
 	if s.Parked.SleepRead > 0 {

@@ -550,7 +550,7 @@
         "unit": "%/dag",
         "summary": "Förlust vid parkering: {average} i genomsnitt under perioden.",
         "none": "Ingen känd förlust vid parkering under perioden.",
-        "hint": "Laddningsnivån som förlorats mellan händelser, per dag: meningsfull över veckor, inte över en natt."
+        "hint": "Laddningsnivån som förlorats mellan händelser, per dag: meningsfull över veckor, inte över en natt. En dag med mindre än 12 timmars parkering har inget värde."
       },
       "byDistance": {
         "title": "Resor efter sträcka",

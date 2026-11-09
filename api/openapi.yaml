@@ -2896,7 +2896,7 @@ components:
           format: double
           type: number
         power_w:
-          description: "The mean power lost while parked, in W: the energy of the state of charge lost (the loss × the battery capacity of the event before, else after, as its capacity_kwh) over the time of the intervals whose loss and capacity are both known. An estimate, as soc_loss_pct_per_day. null without such time."
+          description: "The mean power lost while parked, in W: the energy of the state of charge lost (the loss × the battery capacity of the event before, else after, as its capacity_kwh) over the time of the intervals whose loss and capacity are both known. An estimate, as soc_loss_pct_per_day. null when that time is under 12 hours."
           format: double
           type:
             - number
@@ -2912,7 +2912,7 @@ components:
           minimum: 0
           type: number
         soc_loss_pct_per_day:
-          description: "soc_loss_pct over the time of the intervals whose loss is known, per day. The state of charge has a resolution of one point: meaningful over weeks, not over a night. null without such time."
+          description: "soc_loss_pct over the time of the intervals whose loss is known, per day. The state of charge has a resolution of one point: meaningful over weeks, not over a night. null when that time is under 12 hours."
           format: double
           type:
             - number
@@ -2979,7 +2979,7 @@ components:
           minimum: 0
           type: integer
         power_w:
-          description: "The mean power lost while parked, in W: the energy of the state of charge lost (the loss × the battery capacity of the event before, else after, as its capacity_kwh) over the time of the intervals whose loss and capacity are both known. An estimate, as soc_loss_pct_per_day. null without such time."
+          description: "The mean power lost while parked, in W: the energy of the state of charge lost (the loss × the battery capacity of the event before, else after, as its capacity_kwh) over the time of the intervals whose loss and capacity are both known. An estimate, as soc_loss_pct_per_day. null when that time is under 12 hours."
           format: double
           type:
             - number
@@ -2995,7 +2995,7 @@ components:
           minimum: 0
           type: number
         soc_loss_pct_per_day:
-          description: "soc_loss_pct over the time of the intervals whose loss is known, per day. The state of charge has a resolution of one point: meaningful over weeks, not over a night. null without such time."
+          description: "soc_loss_pct over the time of the intervals whose loss is known, per day. The state of charge has a resolution of one point: meaningful over weeks, not over a night. null when that time is under 12 hours."
           format: double
           type:
             - number

@@ -550,7 +550,7 @@
         "unit": "%/día",
         "summary": "Pérdida en estacionamiento: {average} en promedio en el período.",
         "none": "Ninguna pérdida en estacionamiento conocida en este período.",
-        "hint": "El nivel de carga perdido entre eventos, por día: significativo a lo largo de semanas, no de una noche."
+        "hint": "El nivel de carga perdido entre eventos, por día: significativo a lo largo de semanas, no de una noche. Un día con menos de 12 horas de estacionamiento no tiene valor."
       },
       "byDistance": {
         "title": "Viajes por distancia",

@@ -850,13 +850,23 @@ func TestSummarizeParked(t *testing.T) {
 			trips: []Trip{
 				drive(evening.Add(-time.Hour), evening, 10, 2, 80, 72),
 				drive(morning, morning.Add(time.Hour), 10, 2, 74, 71),
-				drive(morning.Add(3*time.Hour), morning.Add(4*time.Hour), 10, 2, 70, 68),
+				drive(morning.Add(14*time.Hour), morning.Add(15*time.Hour), 10, 2, 70, 68),
 			},
 			want: ParkedStats{
-				Intervals: 2, Time: parked + 115*time.Minute, SoCLossPct: 1, SoCLossUnknown: 1,
-				SoCLossPctPerDay: perDay(1, 115*time.Minute),
+				Intervals: 2, Time: parked + 12*time.Hour + 55*time.Minute, SoCLossPct: 1, SoCLossUnknown: 1,
+				SoCLossPctPerDay: perDay(1, 12*time.Hour+55*time.Minute),
 			},
 			perDay: []int{0, 2},
+		},
+		{
+			// 3 points over 2 hours parked would be 36 % a day.
+			name: "under MinParkedForRate: no rate",
+			trips: []Trip{
+				drive(morning, morning.Add(time.Hour), 10, 2, 74, 71),
+				drive(morning.Add(3*time.Hour), morning.Add(4*time.Hour), 10, 2, 68, 66),
+			},
+			want:   ParkedStats{Intervals: 1, Time: 115 * time.Minute, SoCLossPct: 3},
+			perDay: []int{0, 1},
 		},
 		{
 			name: "unknown SoC at one end",
