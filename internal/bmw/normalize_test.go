@@ -188,6 +188,15 @@ func TestNormalizeBasicDataSheet(t *testing.T) {
 	if s.Sheet.V != (core.Sheet{Colour: "Nanuq White", Steering: core.RightHand}) || s.CapacityKWh.OK {
 		t.Errorf("right hand, raw colour, no capacity: %+v", s)
 	}
+	// The fields of a real car's basic data (ADR 0045 §9), with values of the simulator's:
+	// colourCodeRAW alone, as BMW spells it, and no capacity.
+	s = mustNormalize(t, BasicData, `{"brand":"BMWi","modelName":"i4 eDrive40","series":"i4","seriesDevt":"",
+		"propulsionType":"BEV","driveTrain":"BEV","steering":"LL","colourCodeRAW":"C4P",
+		"colourDescription":"BROOKLYN GRAU METALLIC","constructionDate":"2022-11-01T00:00:00.000+0000","countryCode":"BE"}`)
+	if s.Sheet.V != (core.Sheet{Colour: "Brooklyn Grey", Steering: core.LeftHand}) || s.CapacityKWh.OK ||
+		s.Covers&core.FieldCapacity == 0 || s.ModelYear.V != 2023 || s.Family.V != "i4" {
+		t.Errorf("a real car's fields: %+v", s)
+	}
 	// A code the table does not know is kept as BMW gives it.
 	s = mustNormalize(t, BasicData, `{"brand":"BMW","colourCode":"B71"}`)
 	if s.Sheet.V != (core.Sheet{Colour: "B71"}) {
@@ -229,12 +238,16 @@ func TestFingerprintIgnoresTimestamps(t *testing.T) {
 func TestUploadOf(t *testing.T) {
 	u, err := UploadOf(Stream, []byte(`{"telematicData":{
 		"vehicle.vehicle.travelledDistance":{"value":1,"timestamp":"2026-10-01T08:00:00Z"},
-		"vehicle.drivetrain.batteryManagement.header":{"value":1,"timestamp":"2026-10-01T08:05:00Z"}}}`))
+		"vehicle.drivetrain.batteryManagement.header":{"value":1,"timestamp":"2026-10-01T08:05:00Z"},
+		"vehicle.drivetrain.electricEngine.charging.hvStatus":{"value":"INVALID","timestamp":"2026-10-01T09:00:00Z"},
+		"vehicle.isMoving":{"value":null,"timestamp":"2026-10-01T09:00:00Z"}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
+	// The container stamps null and INVALID with its response's time, as a real car's
+	// did: not the car's upload.
 	if !u.At.Equal(time.Date(2026, 10, 1, 8, 5, 0, 0, time.UTC)) ||
-		!slices.Equal(u.Fields, []string{DescSoC, DescOdometer}) {
+		!slices.Equal(u.Fields, []string{DescSoC, DescHVStatus, DescIsMoving, DescOdometer}) {
 		t.Errorf("upload: %+v", u)
 	}
 }
