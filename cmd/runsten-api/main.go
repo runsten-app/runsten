@@ -130,6 +130,7 @@ import (
 	"runsten/internal/catalog"
 	"runsten/internal/core"
 	"runsten/internal/derive"
+	"runsten/internal/exporter"
 	"runsten/internal/flags"
 	"runsten/internal/flags/eval"
 	"runsten/internal/geocode"
@@ -230,13 +231,15 @@ func run(args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), probeTimeout)
 		defer cancel()
 		return health.Probe(ctx, &http.Client{Timeout: probeTimeout}, addr) //nolint:wrapcheck // already has context
+	case len(args) >= 1 && args[0] == "export":
+		return exportCommand(args[1:], os.Getenv, os.Stderr)
 	case len(args) >= 2 && args[0] == "import" && args[1] == "teslamate":
 		return importTeslaMate(args[2:], os.Getenv, os.Stdin, os.Stderr)
 	case len(args) == 3 && args[0] == "user" && (args[1] == "create" || args[1] == "password"):
 		return userCommand(args[1], args[2], os.Getenv, os.Stdin, os.Stderr)
 	case len(args) > 0:
-		return fmt.Errorf("unknown command %q (expected: user create <name>, user password <name>, %s, healthcheck, "+
-			"or none to serve)", args, importTeslaMateUsage)
+		return fmt.Errorf("unknown command %q (expected: user create <name>, user password <name>, %s, %s, healthcheck, "+
+			"or none to serve)", args, exportUsage, importTeslaMateUsage)
 	}
 	cfg, err := loadConfig(os.Getenv)
 	if err != nil {
@@ -318,6 +321,7 @@ func run(args []string) error {
 		FileImports:      fileImports{importer.NewFiles(st, clock.Real{})},
 		TeslaMateImports: cfg.teslaMateImports,
 		Accounts:         st,
+		AccountExports:   st,
 		Flags:            features,
 		// The readings' CSV file: the responses as stored, each source's private fields
 		// left out.
@@ -367,6 +371,9 @@ func run(args []string) error {
 		go geocode.New(st, cfg.geocoder, clock.Real{}, cfg.geocode, log).Run(ctx)
 	}
 	go importer.New(st, ax, clock.Real{}, importer.DefaultParams(), log).Run(ctx)
+	// The export worker builds the accounts' ZIP archives out of the request, of the
+	// same document the API streams, with the tables an extension may add meanwhile.
+	go exporter.New(st, st, func() []api.ExportTable { return handler.ExportTables }, clock.Real{}, exporter.DefaultParams(), log).Run(ctx)
 	httpserver.WarnIfExposed(log, cfg.addr, cfg.restricted,
 		"listening beyond this machine over plain http: put an https reverse proxy in front of runsten-api, passwords and session cookies travel in clear text otherwise")
 	if ok, err := st.HasUsers(ctx); err != nil {

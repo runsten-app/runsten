@@ -91,6 +91,18 @@ func (s *Store) CreateAccount(ctx context.Context) (string, error) {
 	return s.scalar(ctx, "SELECT runsten_create_account()")
 }
 
+// AccountExists reports whether the account is of the database.
+func (s *Store) AccountExists(ctx context.Context, accountID string) (bool, error) {
+	var found bool
+	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		return tx.QueryRow(ctx, `SELECT EXISTS (SELECT FROM accounts WHERE id = $1)`, accountID).Scan(&found) //nolint:wrapcheck // wrapped by inAccount
+	})
+	if err != nil {
+		return false, fmt.Errorf("account: %w", err)
+	}
+	return found, nil
+}
+
 // SingleAccount returns the instance's single account, creating it if needed. It
 // fails on a multi-account instance.
 func (s *Store) SingleAccount(ctx context.Context) (string, error) {

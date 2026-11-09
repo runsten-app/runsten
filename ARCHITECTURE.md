@@ -46,7 +46,7 @@ All Go, one module (`runsten`), one Docker image each, under `cmd/`:
 | Binary | Role |
 |---|---|
 | `runsten-collector` | Polls the Volvo API for every account, stores snapshots, derives trips and charges after each pass, publishes to MQTT. Subcommands: `rebuild`, `connect`, `healthcheck`. |
-| `runsten-api` | Sign-in, sessions and access tokens, the Volvo ID connection (OAuth with PKCE), the JSON API `/api/v1`, health. Also runs the reverse-geocoding worker. Subcommands: `user create`, `user password`, `healthcheck`. |
+| `runsten-api` | Sign-in, sessions and access tokens, the Volvo ID connection (OAuth with PKCE), the JSON API `/api/v1`, health. Also runs the reverse-geocoding worker and the export worker. Subcommands: `user create`, `user password`, `export`, `healthcheck`. |
 | `runsten-web` | Serves the built front end with a strict CSP, and relays `/api/` and `/auth/` to `runsten-api` at the same origin. Holds no session, database or secret. |
 | `runsten-simulator` | A fake Volvo API and Volvo ID driven by YAML scenarios, with quotas, outages and token expiry. For development and tests only: nobody needs a car to work on Runsten. |
 
