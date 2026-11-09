@@ -133,6 +133,9 @@ func (s *Store) SaveChargeSessions(ctx context.Context, accountID, vehicleID, so
 				continue
 			}
 			pos := latLon(c.Position)
+			// first: the session was inserted, not updated. xmax is 0 on a row just
+			// inserted and the locking transaction's on one updated by ON CONFLICT;
+			// RETURNING old would say it too, but only from PostgreSQL 18.
 			var first bool
 			err := tx.QueryRow(ctx, `
 				INSERT INTO charge_sessions (account_id, vehicle_id, source, started_at, ended_at, energy_grid_kwh,
@@ -141,7 +144,7 @@ func (s *Store) SaveChargeSessions(ctx context.Context, accountID, vehicleID, so
 				ON CONFLICT (vehicle_id, source, started_at) DO UPDATE SET ended_at = EXCLUDED.ended_at,
 					energy_grid_kwh = EXCLUDED.energy_grid_kwh, start_soc = EXCLUDED.start_soc, end_soc = EXCLUDED.end_soc,
 					lat = EXCLUDED.lat, lon = EXCLUDED.lon, odometer_km = EXCLUDED.odometer_km
-				RETURNING old.started_at IS NULL`,
+				RETURNING xmax = 0`,
 				accountID, vehicleID, source, c.Start, c.End, opt(c.EnergyGridKWh),
 				opt(c.StartSoC), opt(c.EndSoC), pos[0], pos[1], opt(c.OdometerKm)).Scan(&first)
 			if err != nil {
