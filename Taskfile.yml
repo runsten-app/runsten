@@ -29,6 +29,11 @@ vars:
   DB_PORT: 55432
   DB_ADMIN: postgres://postgres:runsten@localhost:{{.DB_PORT}}/postgres?sslmode=disable
   DB_DEV: postgres://postgres:runsten@localhost:{{.DB_PORT}}/runsten?sslmode=disable
+  # The oldest PostgreSQL supported, which task test-norace runs on: a syntax of a newer
+  # release only (RETURNING old, PostgreSQL 18) fails there.
+  POSTGRES_OLDEST: postgres:17-alpine@sha256:3540c0362c809df084ffac0ae69fe794515f9de92692f02178bcdce0ef0302ac
+  DB_OLDEST_NAME: runsten-postgres-oldest
+  DB_OLDEST_PORT: 55433
 
   # Local MQTT broker of the development stack (run-mqtt), with deploy/mosquitto's
   # configuration. Pinned in compose.yaml too (its mqtt profile): update them together.
@@ -220,12 +225,16 @@ tasks:
 
   # The race detector and coverage change the generated code: a bug may show only in a
   # plain build (an unspecified evaluation order did, in store.eventPage). This pass runs
-  # the tests as the binaries are built, in about half the time of task test.
+  # the tests as the binaries are built, in about half the time of task test. It runs them
+  # on the oldest PostgreSQL supported (POSTGRES_OLDEST), task test on the newest.
   test-norace:
-    desc: Tests without race detector nor coverage, as the binaries are compiled
+    desc: Tests without race detector nor coverage, as the binaries are compiled, on the oldest PostgreSQL supported
     cmds:
       - task: db-up
-      - RUNSTEN_TEST_DATABASE_URL="{{.DB_ADMIN}}" {{.GO}} test -count=1 ./...
+        vars: { DB_NAME: "{{.DB_OLDEST_NAME}}", DB_PORT: "{{.DB_OLDEST_PORT}}", POSTGRES: "{{.POSTGRES_OLDEST}}" }
+      - >-
+        RUNSTEN_TEST_DATABASE_URL="postgres://postgres:runsten@localhost:{{.DB_OLDEST_PORT}}/postgres?sslmode=disable"
+        {{.GO}} test -count=1 ./...
 
   cover:
     desc: Check the coverage threshold on internal/
