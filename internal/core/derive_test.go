@@ -2144,6 +2144,82 @@ func TestUnpluggedRise(t *testing.T) {
 	}
 }
 
+// A parked SoC read lower once and back to its level within half an hour is a wrong
+// reading, whatever the cable says: no charge. Back above the level, or after longer,
+// it stays one.
+func TestSoCDip(t *testing.T) {
+	charge := func(start, at int, startSoC, endSoC float64) []Charge {
+		return []Charge{{
+			DetectedAt: m(at), Reconstructed: true, Start: Bounds{m(start), m(at)}, End: Bounds{m(start), m(at)},
+			StartSoC: val(startSoC), EndSoC: val(endSoC), EnergySoCKWh: val((endSoC - startSoC) * 0.75),
+		}}
+	}
+	tests := []struct {
+		name    string
+		p       func(*Params)
+		records []Record
+		want    []Charge
+	}{
+		{
+			// A parked Polestar 3, its cable connected, read every ten minutes.
+			name: "back to its level ten minutes later",
+			records: []Record{
+				rec(0, 0, parked(67, Connected, 0)),
+				rec(10, 10, parked(65, Connected, 10)),
+				rec(20, 20, parked(67, Connected, 20)),
+			},
+		},
+		{
+			name: "back below its level",
+			records: []Record{
+				rec(0, 0, parked(67, Connected, 0)),
+				rec(10, 10, parked(64, Connected, 10)),
+				rec(20, 20, parked(66, Connected, 20)),
+			},
+		},
+		{
+			name: "above its level",
+			records: []Record{
+				rec(0, 0, parked(67, Connected, 0)),
+				rec(10, 10, parked(65, Connected, 10)),
+				rec(20, 20, parked(70, Connected, 20)),
+			},
+			want: charge(10, 20, 65, 70),
+		},
+		{
+			name: "back after half an hour",
+			records: []Record{
+				rec(0, 0, parked(67, Connected, 0)),
+				rec(10, 20, parked(65, Connected, 10)),
+				rec(30, 30, parked(67, Connected, 30)),
+			},
+			want: charge(20, 30, 65, 67),
+		},
+		{
+			name: "the rule turned off",
+			p:    func(p *Params) { p.MaxSoCDip = 0 },
+			records: []Record{
+				rec(0, 0, parked(67, Connected, 0)),
+				rec(10, 10, parked(65, Connected, 10)),
+				rec(20, 20, parked(67, Connected, 20)),
+			},
+			want: charge(10, 20, 65, 67),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := DefaultParams()
+			if tt.p != nil {
+				tt.p(&p)
+			}
+			records := append([]Record{rec(0, 0, capacity(75)), rec(0, 0, powertrain(Electric))}, tt.records...)
+			checkCharges(t, Derive(records, Cursor{}, p, nil).Charges, tt.want)
+			_, charges := deriveIncrementally(records, p)
+			checkCharges(t, charges, tt.want)
+		})
+	}
+}
+
 // climate is a reading of the climate block: the outside temperature, recorded by the
 // vehicle at ts.
 func climate(outside float64, ts time.Time) Snapshot {

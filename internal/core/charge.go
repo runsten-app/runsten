@@ -140,7 +140,8 @@ func (d *detector) stepCharge(p point, prev state, next []point) {
 			d.resumeCharge(p)
 		} else if active {
 			d.startCharge(p, prev)
-		} else if rise := diff(s.SoC, prev.snap.SoC); d.trip == nil && !p.confirm && rise.OK && rise.V >= d.p.MinChargeSoC && d.onPlug(p, prev, next, rise.V) {
+		} else if rise := diff(s.SoC, prev.snap.SoC); d.trip == nil && !p.confirm && rise.OK && rise.V >= d.p.MinChargeSoC && d.onPlug(p, prev, next, rise.V) &&
+			!d.levels.recovered(s.SoC.V, p.at, d.p.MaxSoCDip) {
 			d.reconstructCharge(p, prev)
 		}
 	case active:
