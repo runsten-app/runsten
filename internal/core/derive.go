@@ -47,6 +47,13 @@ type Params struct {
 	// pass (the Polestar ID's telematics, then its gRPC's battery). Assumption: a pass
 	// reads its endpoints within a minute. 0: only the cable read with the SoC.
 	MaxCableDelay time.Duration
+	// MaxSoCDip is how long a dip of the SoC while parked may last and be a wrong reading:
+	// a rise back to at most the level read before the dip, that level read less than
+	// MaxSoCDip before the rise, is no charge (seen on a parked Polestar 3, its cable
+	// connected: 67, 65, 67 % ten minutes apart, the range unchanged). Assumption: a
+	// battery loses no points to come back to them within half an hour without a charge
+	// read. 0: every rise is a charge.
+	MaxSoCDip time.Duration
 	// ResumeBeforeArrival: the engine running again after a stop, before any new position
 	// was read, continues the same trip (a short stop) instead of starting another.
 	ResumeBeforeArrival bool
@@ -69,6 +76,7 @@ func DefaultParams() Params {
 		MinUnpluggedCharge:  30 * time.Minute,
 		MaxUnpluggedRise:    3,
 		MaxCableDelay:       time.Minute,
+		MaxSoCDip:           30 * time.Minute,
 		ResumeBeforeArrival: true,
 		VehicleTimestamps:   true,
 		Capacity:            CapacityCatalogNet,
@@ -139,6 +147,7 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 	ps := points(records)
 	for i, pt := range ps {
 		prev := d.st
+		d.levels.observe(pt, &d.st)
 		d.st.apply(pt)
 		live := pt.at.After(from.Settled)
 		if live {
@@ -158,7 +167,8 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 		// Nor during an installation: replayed from after its start, it would lose it.
 		// Nor while a cable read later may undo a charge.
 		if live && groupEnd && d.trip == nil && d.charge == nil && d.ended == nil && d.resumable == nil &&
-			d.installing.Before.IsZero() && (d.awaitingCable.IsZero() || pt.at.After(d.awaitingCable.Add(d.p.MaxCableDelay))) {
+			d.installing.Before.IsZero() && (d.awaitingCable.IsZero() || pt.at.After(d.awaitingCable.Add(d.p.MaxCableDelay))) &&
+			!d.levels.dipping(d.st.snap.SoC, pt.at, d.p.MaxSoCDip) {
 			d.res.Cursor = Cursor{Settled: pt.at, From: d.st.rowAt(FieldOdometer)}
 		}
 	}
@@ -379,6 +389,43 @@ type detector struct {
 	// awaitingCable is the latest rise of the SoC decided without its cable, none read
 	// after it yet: one read within MaxCableDelay may still undo the charge.
 	awaitingCable time.Time
+	// levels are the latest two levels of the SoC: a rise back to the first may end a dip.
+	levels socLevels
+}
+
+// socLevel is a level of the SoC and when it was last read.
+type socLevel struct {
+	soc  Value[float64]
+	seen time.Time
+}
+
+// socLevels are the level of the SoC before the latest change (last) and the one before
+// it (first): with the SoC read now, 67, 65 and 67 % for a dip.
+type socLevels struct{ first, last socLevel }
+
+// observe notes the level p leaves, when p reads another SoC than st holds.
+func (l *socLevels) observe(p point, st *state) {
+	n, o := p.snap.SoC, st.snap.SoC
+	if p.snap.Covers&FieldSoC == 0 || !n.OK || !o.OK || n.V == o.V {
+		return
+	}
+	l.first, l.last = l.last, socLevel{soc: o, seen: st.seenAt(FieldSoC)}
+}
+
+// recovered tells whether soc, read at at, only returns to the level read before a dip
+// that began less than maxDip before.
+func (l *socLevels) recovered(soc float64, at time.Time, maxDip time.Duration) bool {
+	f := l.first
+	return maxDip > 0 && f.soc.OK && l.last.soc.OK && l.last.soc.V < f.soc.V &&
+		soc <= f.soc.V && at.Sub(f.seen) < maxDip
+}
+
+// dipping tells whether the SoC read is below the level read less than maxDip before:
+// a rise back to it may still come and undo a charge, so the cursor waits, so that the
+// derivation that reads the rise also reads the level before the dip.
+func (l *socLevels) dipping(soc Value[float64], at time.Time, maxDip time.Duration) bool {
+	f := l.last
+	return maxDip > 0 && soc.OK && f.soc.OK && soc.V < f.soc.V && at.Sub(f.seen) < maxDip
 }
 
 // stepSoftware reports a version of the software read for the first time: one that
