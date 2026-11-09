@@ -197,6 +197,12 @@ func TestNormalizeBasicDataSheet(t *testing.T) {
 		s.Covers&core.FieldCapacity == 0 || s.ModelYear.V != 2023 || s.Family.V != "i4" {
 		t.Errorf("a real car's fields: %+v", s)
 	}
+	// A construction date's day is the one it was written for, whatever its offset: built
+	// on the 1st of July, the next model year.
+	s = mustNormalize(t, BasicData, `{"brand":"BMW","constructionDate":"2022-07-01T00:00:00.000+0200"}`)
+	if s.ModelYear.V != 2023 {
+		t.Errorf("built on the 1st of July at +0200: model year %+v", s.ModelYear)
+	}
 	// A code the table does not know is kept as BMW gives it.
 	s = mustNormalize(t, BasicData, `{"brand":"BMW","colourCode":"B71"}`)
 	if s.Sheet.V != (core.Sheet{Colour: "B71"}) {

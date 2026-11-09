@@ -74,9 +74,15 @@ func parseValues(e Endpoint, raw []byte) (values, error) {
 // offset without a colon (basicData's constructionDate, 2022-11-01T00:00:00.000+0000 on
 // a real car); zero if it does not read.
 func stampOf(s string) time.Time {
+	return parseStamp(s).UTC()
+}
+
+// parseStamp reads a timestamp as stampOf does, in its own offset: a date's day is the
+// one it was written for.
+func parseStamp(s string) time.Time {
 	for _, layout := range []string{time.RFC3339Nano, "2006-01-02T15:04:05.999999999-0700"} {
 		if t, err := time.Parse(layout, s); err == nil {
-			return t.UTC()
+			return t
 		}
 	}
 	return time.Time{}
@@ -555,7 +561,7 @@ func normalizeBasicData(raw []byte) (core.Snapshot, error) {
 	case strings.TrimSpace(p) != "":
 		s.Powertrain = core.Some(core.OtherPowertrain, time.Time{})
 	}
-	if built := stampOf(b.ConstructionDate); !built.IsZero() {
+	if built := parseStamp(b.ConstructionDate); !built.IsZero() {
 		y := built.Year()
 		if built.Month() >= time.July {
 			y++
