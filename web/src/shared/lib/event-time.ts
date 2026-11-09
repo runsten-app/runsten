@@ -5,9 +5,17 @@ export type Bounds = { after: string; before: string }
 const minute = 60_000
 const hour = 60 * minute
 
-// dayKey is the day of a time in the reader's time zone, as YYYY-MM-DD.
+// dayKey is the day of a time in the reader's time zone, as YYYY-MM-DD. Its formatter is
+// made once per time zone: building one costs far more than formatting, and a chart asks
+// the day of thousands of readings.
+const dayFormats = new Map<string | undefined, Intl.DateTimeFormat>()
 export function dayKey(iso: string, timeZone?: string): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date(iso))
+  let format = dayFormats.get(timeZone)
+  if (!format) {
+    format = new Intl.DateTimeFormat('en-CA', { timeZone })
+    dayFormats.set(timeZone, format)
+  }
+  return format.format(new Date(iso))
 }
 
 // formatDay names a day, as the heading of the events that started on it.
