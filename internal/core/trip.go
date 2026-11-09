@@ -63,6 +63,16 @@ func (d *detector) stepTrip(p point, prev state) {
 			return
 		}
 		d.resumeTrip(tb, p)
+	case tb.t.Reconstructed && p.snap.Covers&FieldOdometer != 0 && prev.snap.OdometerKm.OK && s.OdometerKm.OK &&
+		s.OdometerKm.V > prev.snap.OdometerKm.V:
+		// The odometer rose again before the trip settled: it went on (a car pushing its
+		// odometer on the way, without its engine, as a BMW), and ended after this reading
+		// at the earliest. Its distance already ran to the last reading; its capacity is
+		// the one of this reading, and a position read before it was on the way, no
+		// arrival.
+		tb.stopAt, tb.endLimit, tb.hints = p.at, p.at, []time.Time{s.OdometerKm.At}
+		tb.t.Capacity = d.capacity()
+		tb.t.To, tb.arrived, tb.departureRow = Value[Position]{}, false, prev.rowAt(FieldPosition)
 	}
 	if tb := d.trip; tb != nil && tb.phase == tripEnding {
 		tb.checkArrival(&d.st, d.p.VehicleTimestamps, d.narrow(tb.endLimit, tb.t.End.After, tb.hints...))

@@ -56,9 +56,14 @@ type server struct {
 
 func newServer(t *testing.T) *server {
 	t.Helper()
+	return newServerWith(t, DefaultBehavior())
+}
+
+func newServerWith(t *testing.T, b Behavior) *server {
+	t.Helper()
 	src := parked()
 	clk := clock.NewManual(t0)
-	h := NewHandler([]Source{src}, clk, DefaultBehavior())
+	h := NewHandler([]Source{src}, clk, b)
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	return &server{Server: srv, clk: clk, h: h, src: src}
@@ -298,8 +303,11 @@ func TestVehicles(t *testing.T) {
 	}
 	_, body = s.get(t, tok, APIPrefix+"vehicles/"+vin+"/basicData")
 	b := body.(map[string]any)
-	if b["brand"] != "BMWi" || b["modelName"] != "i4 eDrive40" || b["series"] != "i4" || b["propulsionType"] != "BEV" || b["hvsMaxEnergyAbsolute"] != "83.9" {
+	if b["brand"] != "BMWi" || b["modelName"] != "i4 eDrive40" || b["series"] != "i4" || b["propulsionType"] != "BEV" || b["colourCodeRAW"] != "C4P" {
 		t.Errorf("basic data: %v", b)
+	}
+	if _, ok := b["hvsMaxEnergyAbsolute"]; ok {
+		t.Errorf("a capacity, which a real car's basic data lacks: %v", b)
 	}
 	s.src.brand = "mini"
 	if _, body := s.get(t, tok, APIPrefix+"vehicles/"+vin+"/basicData"); body.(map[string]any)["brand"] != "MINI" {

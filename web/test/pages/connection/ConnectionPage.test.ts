@@ -815,7 +815,8 @@ describe('ConnectionPage', () => {
       mocks.fetchVehicles.mockResolvedValue([
         bmwCar({
           last_failure: {
-            at: '2026-09-28T05:00:00Z',
+            // Older than streamHeldFor: the collector tells a stream held every minute.
+            at: '2026-09-28T06:59:59Z',
             endpoint: 'stream',
             status: null,
             kind: 'stream_held',

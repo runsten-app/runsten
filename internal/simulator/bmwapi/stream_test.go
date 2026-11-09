@@ -85,8 +85,15 @@ func (sub *subscriber) next(t *testing.T) map[string]any {
 	}
 }
 
+// currentOnSubscribe is the behavior that sends the current values on subscribing.
+func currentOnSubscribe() Behavior {
+	b := DefaultBehavior()
+	b.CurrentOnSubscribe = true
+	return b
+}
+
 func TestStream(t *testing.T) {
-	s := newServer(t)
+	s := newServerWith(t, currentOnSubscribe())
 	addr := s.startStream(t)
 	tokens := s.signIn(t, allScopes)
 	id := tokens["id_token"].(string)
@@ -155,7 +162,7 @@ func TestStream(t *testing.T) {
 }
 
 func TestStreamRefusals(t *testing.T) {
-	s := newServer(t)
+	s := newServerWith(t, currentOnSubscribe())
 	addr := s.startStream(t)
 	apiOnly := s.signIn(t, "openid "+ScopeAPI)["id_token"].(string)
 	if _, err := connect(t, addr, GCID, apiOnly); err == nil {
@@ -185,6 +192,24 @@ func TestStreamRefusals(t *testing.T) {
 			case <-time.After(200 * time.Millisecond):
 			}
 		}
+	}
+}
+
+// A real car sends nothing on subscribing: only its next change (ADR 0045 §9).
+func TestStreamNothingOnSubscribe(t *testing.T) {
+	s := newServer(t)
+	addr := s.startStream(t)
+	sub, err := connect(t, addr, GCID, s.signIn(t, allScopes)["id_token"].(string))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := sub.subscribe(t, GCID+"/+"); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case m := <-sub.msgs:
+		t.Errorf("received on subscribing: %v", m)
+	case <-time.After(300 * time.Millisecond):
 	}
 }
 

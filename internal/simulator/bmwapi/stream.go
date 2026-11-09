@@ -27,8 +27,8 @@ import (
 //     even with a valid token;
 //   - the connection is closed when the ID token it was opened with expires;
 //   - a client may subscribe to its own topics only, <GCID>/<VIN> or <GCID>/+;
-//   - on subscribing, it is sent the car's current values (assumed: reported by the
-//     integrations, not by BMW).
+//   - on subscribing, it is sent nothing until the car's next change, as a real car;
+//     with Behavior.CurrentOnSubscribe, the car's current values at once.
 type Stream struct {
 	h   *Handler
 	srv *mochi.Server
@@ -198,11 +198,11 @@ func (k *hook) OnACLCheck(_ *mochi.Client, topic string, write bool) bool {
 
 func (k *hook) OnDisconnect(cl *mochi.Client, _ error, _ bool) { k.s.release(cl) }
 
-// OnSubscribed sends the cars' current values, once the subscription is in place. mochi
-// calls it for a refused filter too: nothing is sent unless one was granted (a reason
-// code below 0x80).
+// OnSubscribed sends the cars' current values, once the subscription is in place, with
+// Behavior.CurrentOnSubscribe. mochi calls it for a refused filter too: nothing is sent
+// unless one was granted (a reason code below 0x80).
 func (k *hook) OnSubscribed(_ *mochi.Client, _ packets.Packet, codes []byte) {
-	if !slices.ContainsFunc(codes, func(c byte) bool { return c < 0x80 }) {
+	if !k.s.h.behavior.CurrentOnSubscribe || !slices.ContainsFunc(codes, func(c byte) bool { return c < 0x80 }) {
 		return
 	}
 	go func() {

@@ -37,7 +37,12 @@ type EndpointSpec struct {
 	// awake, and out of its sleep window (SourceSpec.Sleep).
 	Awake bool
 	// Local: it reads what the source already holds (what a stream pushed), without a
-	// call to the provider. It is not counted in the budget, nor held back by it.
+	// call to the provider. It is not counted in the budget, nor held back by it. A
+	// response the same, byte for byte, as the previous one read of it is not saved:
+	// reading the source's memory again confirms nothing of the vehicle, which may be
+	// driving without having pushed since (seen on a BMW: its odometer, pushed every 3
+	// minutes on the way, taken for unchanged until the next push, squeezed each trip
+	// into seconds). A push of the same values, newly timestamped, is saved.
 	Local bool
 }
 

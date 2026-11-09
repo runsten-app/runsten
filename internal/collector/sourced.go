@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"strings"
@@ -90,7 +91,15 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 			c.sourceFailed(ctx, t, vs, src, spec.Endpoint, now, err)
 			continue
 		}
-		saved = c.read(ctx, t, vs, src, spec.Endpoint, now, raw) || saved
+		if spec.Local && bytes.Equal(raw, vs.local[spec.Endpoint]) {
+			vs.readAt = now // read, with nothing new to save
+			continue
+		}
+		ok := c.read(ctx, t, vs, src, spec.Endpoint, now, raw)
+		if ok && spec.Local {
+			vs.local[spec.Endpoint] = raw // a response not saved is saved at its next read
+		}
+		saved = ok || saved
 	}
 	return saved
 }

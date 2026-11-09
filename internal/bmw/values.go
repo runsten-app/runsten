@@ -74,6 +74,14 @@ type Upload struct {
 	Fields []string  // the descriptors it holds, sorted; the basic data's fields
 }
 
+// told reports whether d is a value the car told: the container gives null for a
+// descriptor the car never sent, and INVALID for some (charging.hvStatus on a real car),
+// both stamped with the time of the response, not the car's.
+func told(d datum) bool {
+	s, ok := d.text()
+	return ok && s != "" && s != "INVALID"
+}
+
 // UploadOf reads the upload a response of e carries.
 func UploadOf(e Endpoint, raw []byte) (Upload, error) {
 	var u Upload
@@ -84,7 +92,7 @@ func UploadOf(e Endpoint, raw []byte) (Upload, error) {
 			return u, err
 		}
 		for k, d := range v {
-			if at := stampOf(d.Timestamp); at.After(u.At) {
+			if at := stampOf(d.Timestamp); at.After(u.At) && told(d) {
 				u.At = at
 			}
 			u.Fields = append(u.Fields, k)

@@ -70,13 +70,22 @@ func parseValues(e Endpoint, raw []byte) (values, error) {
 	return v.TelematicData, nil
 }
 
-// stampOf reads a value's timestamp, ISO 8601 in UTC; zero if it does not read.
+// stampOf reads a value's timestamp, ISO 8601: RFC 3339 (the values'), or with its
+// offset without a colon (basicData's constructionDate, 2022-11-01T00:00:00.000+0000 on
+// a real car); zero if it does not read.
 func stampOf(s string) time.Time {
-	t, err := time.Parse(time.RFC3339Nano, s)
-	if err != nil {
-		return time.Time{}
+	return parseStamp(s).UTC()
+}
+
+// parseStamp reads a timestamp as stampOf does, in its own offset: a date's day is the
+// one it was written for.
+func parseStamp(s string) time.Time {
+	for _, layout := range []string{time.RFC3339Nano, "2006-01-02T15:04:05.999999999-0700"} {
+		if t, err := time.Parse(layout, s); err == nil {
+			return t
+		}
 	}
-	return t.UTC()
+	return time.Time{}
 }
 
 // text reads a value as a string: CarData writes some as strings, others as JSON values,
@@ -493,10 +502,13 @@ type basicData struct {
 	DriveTrain       string `json:"driveTrain"`
 	ConstructionDate string `json:"constructionDate"`
 	Steering         string `json:"steering"`
-	ColourCode       string `json:"colourCode"`
-	ColourCodeRaw    string `json:"colourCodeRaw"`
+	// ColourCode is the OpenAPI's; a real car gave colourCodeRAW alone (ADR 0045 §9),
+	// which encoding/json matches whatever its case.
+	ColourCode    string `json:"colourCode"`
+	ColourCodeRaw string `json:"colourCodeRAW"`
 	// HVSMaxEnergy is the high-voltage battery's capacity, in kWh, a string in CarData's
-	// OpenAPI; a number read too.
+	// OpenAPI; a number read too. A real car's basic data had none (ADR 0045 §9): its
+	// capacity is then the catalog's.
 	HVSMaxEnergy json.RawMessage `json:"hvsMaxEnergyAbsolute"`
 }
 
@@ -549,7 +561,7 @@ func normalizeBasicData(raw []byte) (core.Snapshot, error) {
 	case strings.TrimSpace(p) != "":
 		s.Powertrain = core.Some(core.OtherPowertrain, time.Time{})
 	}
-	if built := stampOf(b.ConstructionDate); !built.IsZero() {
+	if built := parseStamp(b.ConstructionDate); !built.IsZero() {
 		y := built.Year()
 		if built.Month() >= time.July {
 			y++

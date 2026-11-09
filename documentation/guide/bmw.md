@@ -50,7 +50,7 @@ The keys to tick, under the groups of the portal's catalogue:
 | Windows | `vehicle.cabin.window.row1.driver.status`, `vehicle.cabin.window.row1.passenger.status`, `vehicle.cabin.window.row2.driver.status`, `vehicle.cabin.window.row2.passenger.status`, `vehicle.cabin.sunroof.status` |
 | Climate | `vehicle.vehicle.preConditioning.activity` |
 
-Not every car sends every key.
+Not every car sends every key. Some send neither the ignition nor the movement, even through the API (seen on an i4): Runsten then finds each trip from the odometer the car sends on the way, as a span of time, without the moment it set off.
 
 ::: tip Connected before Runsten read the doors
 If you connected your BMW before Runsten read its doors, windows, locks and climate, tick the keys of the last three rows in the portal: the stream sends them from then on. Nothing else to do: Runsten replaces the set of keys it reads through the API by itself, once, at its next hourly read.
