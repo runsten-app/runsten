@@ -1666,25 +1666,22 @@
   "account": {
     "title": "Dina data",
     "export": {
-      "help": "Ladda ner allt ditt konto innehåller, även fordonens råa avläsningar, som en enda JSON-fil.",
+      "help": "Allt ditt konto innehåller, även fordonens råa avläsningar, i ett ZIP-arkiv med en JSON-fil. Det förbereds i bakgrunden, hur stort kontot än är, och sparas sedan i en vecka, eller tills du ber om ett nytt.",
       "button": "Ladda ner mina data",
       "zip": {
-        "title": "Ett ZIP-arkiv, byggt i bakgrunden",
-        "help": "Samma data, zippad av ett bakgrundsjobb, hur lång tid det än tar: för ett konto som blivit för stort för en direkt nedladdning. Arkivet sparas i en vecka, eller tills ett nytt efterfrågas.",
-        "build": "Bygg ett ZIP-arkiv",
-        "again": "Bygg ett nytt arkiv",
-        "progress": "Bygger arkivet",
+        "again": "Förbered ett nytt arkiv",
+        "progress": "Förbereder arkivet",
         "written": "{size} skrivet hittills.",
         "waiting": "Nästa försök: {time}.",
-        "download": "Ladda ner ZIP-filen ({size})",
-        "held": "Byggd {time}. Sparas till {until}.",
-        "failed": "Arkivet kunde inte byggas.",
+        "download": "Ladda ner ({size})",
+        "held": "Förberett {time}. Sparas till {until}.",
+        "failed": "Arkivet kunde inte förberedas.",
         "kilobytes": "{n} kB",
         "megabytes": "{n} MB",
         "error": {
-          "active": "En export av det här kontot byggs redan.",
+          "active": "Ett arkiv för det här kontot förbereds redan.",
           "unavailable": "Runsten kan inte nås. Försök igen om en stund.",
-          "internal": "Arkivet kunde inte byggas. Försök igen om en stund."
+          "internal": "Arkivet kunde inte förberedas. Försök igen om en stund."
         }
       }
     }

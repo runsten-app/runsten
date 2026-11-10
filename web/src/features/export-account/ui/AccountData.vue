@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { mdiDownload, mdiFolderZipOutline } from '@mdi/js'
+import { mdiDownload } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { exportPath, exportZipPath, isExportActive, type AccountExport } from '@/entities/session'
+import { exportZipPath, isExportActive, type AccountExport } from '@/entities/session'
 import { isApiError } from '@/shared/api'
 import { useFormat, useNow } from '@/shared/lib'
 import { useAccountExport } from '../composables/useAccountExport'
 
-// AccountData downloads all the account's data, whatever its offer. The JSON document
-// comes as it is; the ZIP archive is built in the background — an account that has
-// outgrown a request is still had — and held a few days, until its expires_at, or
-// until the next one is asked for. The slot adds buttons after both.
+// AccountData downloads all the account's data, whatever its offer, as a ZIP archive of
+// its JSON document: prepared in the background, however big the account, then held a
+// few days, until its expires_at, or until the next one is asked for. The slot adds
+// buttons after it.
 const { t } = useI18n()
 const f = useFormat()
 const now = useNow()
@@ -59,73 +59,63 @@ async function build() {
 <template>
   <div class="account-data">
     <p class="text-body-medium mb-4">{{ t('account.export.help') }}</p>
-    <div class="d-flex flex-wrap ga-2">
-      <v-btn :href="exportPath" download :prepend-icon="mdiDownload" variant="tonal" class="export">
-        {{ t('account.export.button') }}
-      </v-btn>
+    <div class="d-flex flex-wrap align-center ga-2">
+      <template v-if="exportJob && active">
+        <v-progress-circular
+          indeterminate
+          size="24"
+          :aria-label="t('account.export.zip.progress')"
+        />
+        <p class="text-body-medium building">
+          {{ t('account.export.zip.progress') }}
+        </p>
+        <p v-if="size" class="text-body-medium text-medium-emphasis written">
+          {{ t('account.export.zip.written', { size }) }}
+        </p>
+        <p v-if="waiting" class="text-body-medium text-medium-emphasis waiting">
+          {{ t('account.export.zip.waiting', { time: f.dateTime(exportJob.not_before, now) }) }}
+        </p>
+      </template>
+      <template v-else-if="held">
+        <v-btn
+          :href="exportZipPath"
+          download
+          :prepend-icon="mdiDownload"
+          variant="tonal"
+          class="archive-download"
+        >
+          {{ t('account.export.zip.download', { size }) }}
+        </v-btn>
+        <span class="text-body-small text-medium-emphasis held-at">
+          {{
+            t('account.export.zip.held', {
+              time: f.dateTime(builtAt, now),
+              until: f.dateTime(exportJob?.expires_at ?? '', now),
+            })
+          }}
+        </span>
+        <v-btn variant="text" class="archive-start" @click="build">
+          {{ t('account.export.zip.again') }}
+        </v-btn>
+      </template>
+      <template v-else>
+        <v-btn
+          :prepend-icon="mdiDownload"
+          variant="tonal"
+          :loading="starting"
+          class="archive-start"
+          @click="build"
+        >
+          {{ failed ? t('account.export.zip.again') : t('account.export.button') }}
+        </v-btn>
+        <span v-if="failed" class="text-body-small text-error failure">
+          {{ t('account.export.zip.failed') }}
+        </span>
+      </template>
       <slot />
     </div>
-
-    <div class="archive mt-6">
-      <h4 class="text-title-medium mb-2">{{ t('account.export.zip.title') }}</h4>
-      <p class="text-body-medium mb-4">{{ t('account.export.zip.help') }}</p>
-      <div class="d-flex flex-wrap align-center ga-2">
-        <template v-if="exportJob && active">
-          <v-progress-circular
-            indeterminate
-            size="24"
-            :aria-label="t('account.export.zip.progress')"
-          />
-          <p class="text-body-medium building">
-            {{ t('account.export.zip.progress') }}
-          </p>
-          <p v-if="size" class="text-body-medium text-medium-emphasis written">
-            {{ t('account.export.zip.written', { size }) }}
-          </p>
-          <p v-if="waiting" class="text-body-medium text-medium-emphasis waiting">
-            {{ t('account.export.zip.waiting', { time: f.dateTime(exportJob.not_before, now) }) }}
-          </p>
-        </template>
-        <template v-else-if="held">
-          <v-btn
-            :href="exportZipPath"
-            download
-            :prepend-icon="mdiDownload"
-            variant="tonal"
-            class="archive-download"
-          >
-            {{ t('account.export.zip.download', { size }) }}
-          </v-btn>
-          <span class="text-body-small text-medium-emphasis held-at">
-            {{
-              t('account.export.zip.held', {
-                time: f.dateTime(builtAt, now),
-                until: f.dateTime(exportJob?.expires_at ?? '', now),
-              })
-            }}
-          </span>
-          <v-btn variant="text" class="archive-start ms-2" @click="build">
-            {{ t('account.export.zip.again') }}
-          </v-btn>
-        </template>
-        <template v-else>
-          <v-btn
-            :prepend-icon="mdiFolderZipOutline"
-            variant="tonal"
-            :loading="starting"
-            class="archive-start"
-            @click="build"
-          >
-            {{ failed ? t('account.export.zip.again') : t('account.export.zip.build') }}
-          </v-btn>
-          <span v-if="failed" class="text-body-small text-error failure">
-            {{ t('account.export.zip.failed') }}
-          </span>
-        </template>
-      </div>
-      <p v-if="error" role="alert" class="text-body-small text-error mt-2 error-message">
-        {{ error }}
-      </p>
-    </div>
+    <p v-if="error" role="alert" class="text-body-small text-error mt-2 error-message">
+      {{ error }}
+    </p>
   </div>
 </template>

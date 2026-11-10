@@ -1666,25 +1666,22 @@
   "account": {
     "title": "Sus datos",
     "export": {
-      "help": "Descargue todo lo que contiene su cuenta, incluidas las lecturas en bruto de sus vehículos, en un único archivo JSON.",
+      "help": "Todo lo que contiene su cuenta, incluidas las lecturas en bruto de sus vehículos, en un archivo ZIP con un fichero JSON. Se prepara en segundo plano, sea cual sea el tamaño de la cuenta, y se conserva una semana, o hasta que pida otro.",
       "button": "Descargar mis datos",
       "zip": {
-        "title": "Un archivo ZIP, construido en segundo plano",
-        "help": "Los mismos datos, comprimidos por una tarea en segundo plano, tarden lo que tarde: para una cuenta que ha crecido demasiado para la descarga directa. El archivo se conserva una semana, o hasta pedir otro.",
-        "build": "Construir un archivo ZIP",
-        "again": "Construir otro archivo",
-        "progress": "Construyendo el archivo",
+        "again": "Preparar un nuevo archivo",
+        "progress": "Preparando el archivo",
         "written": "{size} escritos hasta ahora.",
         "waiting": "Próximo intento: {time}.",
-        "download": "Descargar el ZIP ({size})",
-        "held": "Construido {time}. Disponible hasta {until}.",
-        "failed": "El archivo no se pudo construir.",
+        "download": "Descargar ({size})",
+        "held": "Preparado {time}. Disponible hasta {until}.",
+        "failed": "No se ha podido preparar el archivo.",
         "kilobytes": "{n} kB",
         "megabytes": "{n} MB",
         "error": {
-          "active": "Ya se está construyendo una exportación de esta cuenta.",
+          "active": "Ya se está preparando un archivo de esta cuenta.",
           "unavailable": "Runsten no está accesible. Inténtelo de nuevo en un momento.",
-          "internal": "El archivo no se pudo construir. Inténtelo de nuevo en un momento."
+          "internal": "No se ha podido preparar el archivo. Inténtelo de nuevo en un momento."
         }
       }
     }

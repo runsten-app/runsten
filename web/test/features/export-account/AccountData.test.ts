@@ -49,25 +49,20 @@ async function build(w: VueWrapper) {
 }
 
 describe('AccountData', () => {
-  it('downloads the export through a link, saved by the browser', async () => {
-    const { wrapper } = await mounted()
-    const link = wrapper.find('a.export')
-    expect(link.attributes('href')).toBe('api/v1/account/export')
-    expect(link.attributes()).toHaveProperty('download')
-    expect(link.text()).toBe('Download my data')
-  })
-
   it('shows what the slot adds after the download', async () => {
+    api.fetchAccountExport.mockResolvedValue(null)
     const { wrapper } = mountWith({
       render: () => h(AccountData, null, () => h('button', { class: 'extension-action' }, 'More')),
     })
-    const row = wrapper.find('a.export').element.parentElement
+    await flushPromises()
+    const row = wrapper.find('.archive-start').element.parentElement
     expect(row?.lastElementChild?.className).toBe('extension-action')
   })
 
-  it('builds a ZIP archive in the background, none held yet', async () => {
+  it('prepares the archive in the background, none held yet', async () => {
     const { wrapper, queryClient } = await mounted()
-    expect(wrapper.find('.archive-start').text()).toBe('Build a ZIP archive')
+    expect(wrapper.find('.archive-start').text()).toBe('Download my data')
+    expect(wrapper.find('a').exists()).toBe(false)
 
     api.startAccountExport.mockResolvedValue(job('pending'))
     await build(wrapper)
@@ -77,7 +72,7 @@ describe('AccountData', () => {
 
   it('shows the building of the archive while the worker works', async () => {
     const { wrapper } = await mounted(job('running'))
-    expect(wrapper.find('.building').text()).toBe('Building the archive')
+    expect(wrapper.find('.building').text()).toBe('Preparing the archive')
     expect(wrapper.find('.written').exists()).toBe(false)
     expect(wrapper.find('a.archive-download').exists()).toBe(false)
   })
@@ -92,8 +87,8 @@ describe('AccountData', () => {
     const link = wrapper.find('a.archive-download')
     expect(link.attributes('href')).toBe('api/v1/account/export.zip')
     expect(link.attributes()).toHaveProperty('download')
-    expect(link.text()).toBe('Download the ZIP (2.0 MB)')
-    expect(wrapper.find('.held-at').text()).toMatch(/^Built .+\. Kept until .*2026.*\.$/)
+    expect(link.text()).toBe('Download (2.0 MB)')
+    expect(wrapper.find('.held-at').text()).toMatch(/^Prepared .+\. Kept until .*2026.*\.$/)
     // The user asks for another: the one held is replaced.
     api.startAccountExport.mockResolvedValue(job('pending'))
     await build(wrapper)
@@ -102,8 +97,8 @@ describe('AccountData', () => {
 
   it('tells of a failed build, and builds another one', async () => {
     const { wrapper } = await mounted(job('failed'))
-    expect(wrapper.find('.failure').text()).toBe('The archive could not be built.')
-    expect(wrapper.find('.archive-start').text()).toBe('Build another archive')
+    expect(wrapper.find('.failure').text()).toBe('The archive could not be prepared.')
+    expect(wrapper.find('.archive-start').text()).toBe('Prepare a new archive')
   })
 
   it('tells of a failure to start, and does not crash', async () => {
@@ -113,7 +108,7 @@ describe('AccountData', () => {
     )
     await build(wrapper)
     expect(wrapper.find('.error-message').text()).toBe(
-      'An export of this account is already being built.',
+      'An archive of this account is already being prepared.',
     )
   })
 

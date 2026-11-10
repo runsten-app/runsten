@@ -1,5 +1,4 @@
 export {
-  exportPath,
   exportZipPath,
   fetchSession,
   fetchAccountExport,

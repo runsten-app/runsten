@@ -14,13 +14,9 @@ export async function signOut(): Promise<void> {
   await unwrap(api.DELETE('/session'))
 }
 
-// exportPath is where the browser downloads the account's export, relative to the
-// document like every call: a link, not a fetch, so that the browser saves the file
-// as it comes.
-export const exportPath = 'api/v1/account/export'
-
 // exportZipPath is where the browser downloads the account's export as the ZIP
-// archive the export worker built: a link, like exportPath, held once built.
+// archive the export worker built: a link, not a fetch, so that the browser saves the
+// file as it comes; held once built.
 export const exportZipPath = 'api/v1/account/export.zip'
 
 // fetchAccountExport reads the account's export; null when it has none.

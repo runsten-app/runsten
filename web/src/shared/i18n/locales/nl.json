@@ -1666,25 +1666,22 @@
   "account": {
     "title": "Uw gegevens",
     "export": {
-      "help": "Download alles wat uw account bevat, inclusief de ruwe uitlezingen van uw voertuigen, als één JSON-bestand.",
+      "help": "Alles wat uw account bevat, inclusief de ruwe uitlezingen van uw voertuigen, in een ZIP-archief met één JSON-bestand. Het wordt op de achtergrond voorbereid, hoe groot het account ook is, en daarna een week bewaard, of tot u om een nieuw vraagt.",
       "button": "Mijn gegevens downloaden",
       "zip": {
-        "title": "Een ZIP-archief, op de achtergrond gemaakt",
-        "help": "Dezelfde gegevens, gezipt door een achtergrondtaak, hoe lang het ook duurt: voor een account dat te groot is geworden om direct te downloaden. Het archief blijft een week bewaard, of tot er om een ander gevraagd wordt.",
-        "build": "ZIP-archief maken",
-        "again": "Nog een archief maken",
-        "progress": "Het archief wordt gemaakt",
+        "again": "Nieuw archief voorbereiden",
+        "progress": "Archief wordt voorbereid",
         "written": "{size} tot nu toe geschreven.",
         "waiting": "Volgende poging: {time}.",
-        "download": "De ZIP downloaden ({size})",
-        "held": "Gemaakt {time}. Bewaard tot {until}.",
-        "failed": "Het archief kon niet gemaakt worden.",
+        "download": "Downloaden ({size})",
+        "held": "Voorbereid {time}. Bewaard tot {until}.",
+        "failed": "Het archief kon niet worden voorbereid.",
         "kilobytes": "{n} kB",
         "megabytes": "{n} MB",
         "error": {
-          "active": "Er wordt al een export van dit account gemaakt.",
+          "active": "Er wordt al een archief van dit account voorbereid.",
           "unavailable": "Runsten is niet bereikbaar. Probeer het over een moment opnieuw.",
-          "internal": "Het archief kon niet gemaakt worden. Probeer het over een moment opnieuw."
+          "internal": "Het archief kon niet worden voorbereid. Probeer het zo opnieuw."
         }
       }
     }

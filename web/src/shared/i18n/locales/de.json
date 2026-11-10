@@ -1666,25 +1666,22 @@
   "account": {
     "title": "Ihre Daten",
     "export": {
-      "help": "Laden Sie alles herunter, was Ihr Konto enthält, einschließlich der Rohdaten Ihrer Fahrzeuge, als eine JSON-Datei.",
+      "help": "Alles, was Ihr Konto enthält, einschließlich der Rohdaten Ihrer Fahrzeuge, als ZIP-Archiv mit einer JSON-Datei. Es wird im Hintergrund vorbereitet, wie groß das Konto auch ist, und dann eine Woche aufbewahrt oder bis Sie ein neues anfordern.",
       "button": "Meine Daten herunterladen",
       "zip": {
-        "title": "Ein ZIP-Archiv, im Hintergrund erstellt",
-        "help": "Dieselben Daten, von einem Hintergrundjob gezippt, so lange es dauert: für ein Konto, das zu groß für den Download geworden ist. Das Archiv bleibt eine Woche erhalten oder bis ein neues angefordert wird.",
-        "build": "ZIP-Archiv erstellen",
-        "again": "Ein weiteres Archiv erstellen",
-        "progress": "Archiv wird erstellt",
+        "again": "Neues Archiv vorbereiten",
+        "progress": "Archiv wird vorbereitet",
         "written": "{size} bisher geschrieben.",
         "waiting": "Nächster Versuch: {time}.",
-        "download": "ZIP herunterladen ({size})",
-        "held": "Erstellt {time}. Verfügbar bis {until}.",
-        "failed": "Das Archiv konnte nicht erstellt werden.",
+        "download": "Herunterladen ({size})",
+        "held": "Vorbereitet {time}. Verfügbar bis {until}.",
+        "failed": "Das Archiv konnte nicht vorbereitet werden.",
         "kilobytes": "{n} kB",
         "megabytes": "{n} MB",
         "error": {
-          "active": "Für dieses Konto wird bereits ein Export erstellt.",
+          "active": "Ein Archiv dieses Kontos wird bereits vorbereitet.",
           "unavailable": "Runsten ist nicht erreichbar. Versuchen Sie es gleich noch einmal.",
-          "internal": "Das Archiv konnte nicht erstellt werden. Versuchen Sie es gleich noch einmal."
+          "internal": "Das Archiv konnte nicht vorbereitet werden. Versuchen Sie es gleich noch einmal."
         }
       }
     }

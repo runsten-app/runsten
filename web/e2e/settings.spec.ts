@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import { inflateRawSync } from 'node:zlib'
 import type { Page } from '@playwright/test'
 import { checkView, exclusive, expect, signIn, test, user, vehicleId } from './support'
 
@@ -379,19 +380,37 @@ test('Vehicle settings: the model, then the variant of a Polestar', async ({ pag
   await expect(variants.getByRole('radio')).toHaveCount(2)
 })
 
-// The account's data: the export is downloaded whole.
+// unzip reads the only entry of a ZIP archive: its central directory, found from the end
+// of the archive, gives the entry's place and size; the entry is deflated.
+function unzip(zip: Buffer): { name: string; data: string } {
+  const end = zip.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]))
+  const central = zip.readUInt32LE(end + 16)
+  const size = zip.readUInt32LE(central + 20)
+  const nameLength = zip.readUInt16LE(central + 28)
+  const local = zip.readUInt32LE(central + 42)
+  const name = zip.toString('utf8', central + 46, central + 46 + nameLength)
+  const start = local + 30 + zip.readUInt16LE(local + 26) + zip.readUInt16LE(local + 28)
+  return { name, data: inflateRawSync(zip.subarray(start, start + size)).toString('utf8') }
+}
+
+// The account's data: an archive prepared in the background, then downloaded whole.
 test("Settings: the account's data, downloaded", async ({ page }, testInfo) => {
   await signIn(page)
   await page.goto('/settings/account')
   await expect(page.getByRole('heading', { level: 2 })).toHaveText('Account')
   await checkView(page, testInfo, 'settings-account')
   const section = page.getByRole('region', { name: 'Your data' })
+  await section.getByRole('button', { name: 'Download my data' }).click()
+  // The export worker prepares it: the page follows it until the download is offered.
+  const link = section.getByRole('link', { name: /^Download \(/ })
+  await expect(link).toBeVisible({ timeout: 60_000 })
   const download = page.waitForEvent('download')
-  await section.getByRole('link', { name: 'Download my data' }).click()
+  await link.click()
   const file = await download
-  expect(file.suggestedFilename()).toMatch(/^runsten-account-\d{4}-\d{2}-\d{2}\.json$/)
-  const path = await file.path()
-  const exported = JSON.parse(await readFile(path, 'utf8')) as {
+  expect(file.suggestedFilename()).toMatch(/^runsten-account-\d{4}-\d{2}-\d{2}\.zip$/)
+  const entry = unzip(await readFile(await file.path()))
+  expect(entry.name).toMatch(/^runsten-account-\d{4}-\d{2}-\d{2}\.json$/)
+  const exported = JSON.parse(entry.data) as {
     format: string
     tables: { name: string; rows: unknown[] }[]
   }

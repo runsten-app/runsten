@@ -1666,25 +1666,22 @@
   "account": {
     "title": "Your data",
     "export": {
-      "help": "Download everything your account holds, the raw readings of your vehicles included, as one JSON file.",
+      "help": "Everything your account holds, the raw readings of your vehicles included, as a ZIP archive of one JSON file. It is prepared in the background, however big the account, then kept a week, or until you ask for another.",
       "button": "Download my data",
       "zip": {
-        "title": "A ZIP archive, built in the background",
-        "help": "The same data, zipped by a background job however long it takes: for an account that has outgrown the download. The archive is kept for a week, or until the next one is asked for.",
-        "build": "Build a ZIP archive",
-        "again": "Build another archive",
-        "progress": "Building the archive",
+        "again": "Prepare a new archive",
+        "progress": "Preparing the archive",
         "written": "{size} written so far.",
         "waiting": "Next attempt: {time}.",
-        "download": "Download the ZIP ({size})",
-        "held": "Built {time}. Kept until {until}.",
-        "failed": "The archive could not be built.",
+        "download": "Download ({size})",
+        "held": "Prepared {time}. Kept until {until}.",
+        "failed": "The archive could not be prepared.",
         "kilobytes": "{n} kB",
         "megabytes": "{n} MB",
         "error": {
-          "active": "An export of this account is already being built.",
+          "active": "An archive of this account is already being prepared.",
           "unavailable": "Runsten cannot be reached. Try again in a moment.",
-          "internal": "The archive could not be built. Try again in a moment."
+          "internal": "The archive could not be prepared. Try again in a moment."
         }
       }
     }
