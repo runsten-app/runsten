@@ -128,19 +128,24 @@ func TestProductsVehicleAndData(t *testing.T) {
 func TestProductsKeepsVehiclesOnly(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		// A Powerwall has no VIN, and an energy site's id is no number; an id beyond
-		// float64's exact integers without id_s.
+		// float64's exact integers without id_s, as a number then as a string with an escape.
 		_, _ = w.Write([]byte(`{"response": [
 			{"energy_site_id": 42, "resource_type": "battery"},
 			{"id": "STE20230101-00001", "energy_site_id": 43, "resource_type": "wall_connector"},
-			{"id": 12345678901234567891, "vin": "5YJ3E1EA7KF000001"}
-		], "count": 3}`))
+			{"id": 12345678901234567891, "vin": "5YJ3E1EA7KF000001"},
+			{"id": "1234567890123456789\u0030", "vin": "5YJ3E1EA7KF000002"}
+		], "count": 4}`))
 	}))
 	t.Cleanup(srv.Close)
 	ps, err := NewClient(Hosts{API: srv.URL}, srv.Client()).Products(context.Background(), token)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []Product{{ID: "12345678901234567891", VIN: "5YJ3E1EA7KF000001"}}; !reflect.DeepEqual(ps, want) {
+	want := []Product{
+		{ID: "12345678901234567891", VIN: "5YJ3E1EA7KF000001"},
+		{ID: "12345678901234567890", VIN: "5YJ3E1EA7KF000002"},
+	}
+	if !reflect.DeepEqual(ps, want) {
 		t.Errorf("products = %+v", ps)
 	}
 }
