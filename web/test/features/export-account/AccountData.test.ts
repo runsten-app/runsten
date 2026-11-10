@@ -20,6 +20,7 @@ const job = (status: AccountExport['status'], bytes = 0): AccountExport => ({
   created_at: '2026-10-01T08:00:00Z',
   not_before: '2026-10-01T08:00:00Z',
   ended_at: status === 'done' || status === 'failed' ? '2026-10-01T08:05:00Z' : null,
+  expires_at: status === 'done' ? '2026-10-08T08:05:00Z' : null,
 })
 
 let wrapper: VueWrapper | undefined
@@ -77,7 +78,13 @@ describe('AccountData', () => {
   it('shows the building of the archive while the worker works', async () => {
     const { wrapper } = await mounted(job('running'))
     expect(wrapper.find('.building').text()).toBe('Building the archive')
+    expect(wrapper.find('.written').exists()).toBe(false)
     expect(wrapper.find('a.archive-download').exists()).toBe(false)
+  })
+
+  it('tells how much of the archive is written', async () => {
+    const { wrapper } = await mounted(job('running', 3 * 1024 * 1024))
+    expect(wrapper.find('.written').text()).toBe('3.0 MB written so far.')
   })
 
   it('holds the archive once built: downloaded as a link', async () => {
@@ -86,7 +93,7 @@ describe('AccountData', () => {
     expect(link.attributes('href')).toBe('api/v1/account/export.zip')
     expect(link.attributes()).toHaveProperty('download')
     expect(link.text()).toBe('Download the ZIP (2.0 MB)')
-    expect(wrapper.find('.held-at').text()).toContain('Built')
+    expect(wrapper.find('.held-at').text()).toMatch(/^Built .+\. Kept until .*2026.*\.$/)
     // The user asks for another: the one held is replaced.
     api.startAccountExport.mockResolvedValue(job('pending'))
     await build(wrapper)

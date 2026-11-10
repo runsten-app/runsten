@@ -9,8 +9,8 @@ import { useAccountExport } from '../composables/useAccountExport'
 
 // AccountData downloads all the account's data, whatever its offer. The JSON document
 // comes as it is; the ZIP archive is built in the background — an account that has
-// outgrown a request is still had — and held until the next one is asked for. The
-// slot adds buttons after both.
+// outgrown a request is still had — and held a few days, until its expires_at, or
+// until the next one is asked for. The slot adds buttons after both.
 const { t } = useI18n()
 const f = useFormat()
 const now = useNow()
@@ -79,6 +79,9 @@ async function build() {
           <p class="text-body-medium building">
             {{ t('account.export.zip.progress') }}
           </p>
+          <p v-if="size" class="text-body-medium text-medium-emphasis written">
+            {{ t('account.export.zip.written', { size }) }}
+          </p>
           <p v-if="waiting" class="text-body-medium text-medium-emphasis waiting">
             {{ t('account.export.zip.waiting', { time: f.dateTime(exportJob.not_before, now) }) }}
           </p>
@@ -94,7 +97,12 @@ async function build() {
             {{ t('account.export.zip.download', { size }) }}
           </v-btn>
           <span class="text-body-small text-medium-emphasis held-at">
-            {{ t('account.export.zip.held', { time: f.dateTime(builtAt, now) }) }}
+            {{
+              t('account.export.zip.held', {
+                time: f.dateTime(builtAt, now),
+                until: f.dateTime(exportJob?.expires_at ?? '', now),
+              })
+            }}
           </span>
           <v-btn variant="text" class="archive-start ms-2" @click="build">
             {{ t('account.export.zip.again') }}
