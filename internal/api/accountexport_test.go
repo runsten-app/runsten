@@ -52,17 +52,17 @@ func (m *memAccountExports) LatestAccountExport(_ context.Context, accountID str
 	return e, ok, nil
 }
 
-func (m *memAccountExports) OpenAccountExport(_ context.Context, accountID string) (io.ReadCloser, error) {
+func (m *memAccountExports) OpenAccountExport(_ context.Context, accountID string) (AccountExport, io.ReadSeeker, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.readErr != nil {
-		return nil, m.readErr
+		return AccountExport{}, nil, m.readErr
 	}
 	e, ok := m.ex[accountID]
 	if !ok || e.Status != ExportDone {
-		return nil, fmt.Errorf("%w: the account's export is not held", ErrNotFound)
+		return AccountExport{}, nil, fmt.Errorf("%w: the account's export is not held", ErrNotFound)
 	}
-	return io.NopCloser(strings.NewReader(string(m.zip))), nil
+	return e, strings.NewReader(string(m.zip)), nil
 }
 
 // done ends the account's export as the worker does: its archive is held.
@@ -70,7 +70,7 @@ func (m *memAccountExports) done(accountID string, bytes int64, at time.Time) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	e := m.ex[accountID]
-	e.Status, e.Bytes, e.EndedAt = ExportDone, bytes, at
+	e.Status, e.Bytes, e.EndedAt, e.ExpiresAt = ExportDone, bytes, at, at.Add(7*24*time.Hour)
 	m.ex[accountID] = e
 }
 
@@ -118,7 +118,11 @@ func TestAccountExportJob(t *testing.T) {
 		}
 	}
 
-	// Downloads come as an attachment, of the day's name.
+	if !strings.Contains(read, `"expires_at":"`+at.Add(7*24*time.Hour).Format(time.RFC3339Nano)+`"`) {
+		t.Errorf("done: %s misses its expiry", read)
+	}
+
+	// Downloads come as an attachment, named after the day of the build.
 	resp, body = get(t, noFollow(), base+"/export.zip", c)
 	if resp.status != http.StatusOK || body != exportZip {
 		t.Fatalf("download: %d %q", resp.status, body)
@@ -126,8 +130,44 @@ func TestAccountExportJob(t *testing.T) {
 	if ct := resp.header.Get("Content-Type"); ct != "application/zip" {
 		t.Errorf("download content type: %s", ct)
 	}
-	if cd := resp.header.Get("Content-Disposition"); !strings.HasPrefix(cd, `attachment; filename="runsten-account-`) || !strings.HasSuffix(cd, `.zip"`) {
-		t.Errorf("download name: %s", cd)
+	if cd, want := resp.header.Get("Content-Disposition"), `attachment; filename="runsten-account-`+at.Format(time.DateOnly)+`.zip"`; cd != want {
+		t.Errorf("download name: %s, want %s", cd, want)
+	}
+	etag := resp.header.Get("ETag")
+	if etag == "" || resp.header.Get("Accept-Ranges") != "bytes" {
+		t.Errorf("download: ETag %q, Accept-Ranges %q", etag, resp.header.Get("Accept-Ranges"))
+	}
+
+	// A download cut short resumes where it stopped, of the same archive.
+	resumed := func(rangeHeader, ifRange string) (reply, string) {
+		t.Helper()
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, base+"/export.zip", http.NoBody)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.AddCookie(c)
+		req.Header.Set("Range", rangeHeader)
+		if ifRange != "" {
+			req.Header.Set("If-Range", ifRange)
+		}
+		r, err := noFollow().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer r.Body.Close()
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return reply{status: r.StatusCode, header: r.Header}, string(b)
+	}
+	if r, b := resumed("bytes=4-", etag); r.status != http.StatusPartialContent || b != exportZip[4:] ||
+		r.header.Get("Content-Range") != fmt.Sprintf("bytes 4-%d/%d", len(exportZip)-1, len(exportZip)) {
+		t.Errorf("resumed: %d %q, %s", r.status, b, r.header.Get("Content-Range"))
+	}
+	// Of another archive (another ETag), the whole of the one held.
+	if r, b := resumed("bytes=4-", `"another"`); r.status != http.StatusOK || b != exportZip {
+		t.Errorf("resumed of another archive: %d %q", r.status, b)
 	}
 
 	// Another account's export is not this one's.

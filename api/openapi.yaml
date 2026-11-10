@@ -50,7 +50,7 @@ components:
       additionalProperties: false
       properties:
         bytes:
-          description: "The archive's size in bytes. 0: not held."
+          description: "The archive's bytes: written so far while running, its size once done. 0: none yet, or failed."
           format: int64
           minimum: 0
           type: integer
@@ -72,6 +72,13 @@ components:
                 - internal
               type: string
             - type: "null"
+        expires_at:
+          description: "When the archive held is thrown away; the export is then gone. null: not done."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
         id:
           format: uuid
           type: string
@@ -96,6 +103,7 @@ components:
         - created_at
         - not_before
         - ended_at
+        - expires_at
       type: object
     AccountExportState:
       additionalProperties: false
@@ -5737,7 +5745,7 @@ paths:
       tags:
         - account
     post:
-      description: "Creates the account's export, which runs in the background: the whole of its data (the document of `GET /account/export`), zipped, built however long it takes however big it is. Its progress is read with `GET /account/export-job`; once done, the archive is held until it is asked for again, downloaded with `GET /account/export.zip`. Open to every account, whatever its offer."
+      description: "Creates the account's export, which runs in the background: the whole of its data (the document of `GET /account/export`), zipped, built however long it takes however big it is. Its progress is read with `GET /account/export-job`; once done, the archive is held until `expires_at`, or until another is asked for, downloaded with `GET /account/export.zip`. Open to every account, whatever its offer."
       operationId: startAccountExport
       responses:
         "202":
@@ -5778,7 +5786,7 @@ paths:
         - account
   /account/export.zip:
     get:
-      description: "The archive the export worker built: the whole of the account's data zipped, written as it is read. `GET /account/export-job` tells when it is held."
+      description: "The archive the export worker built: the whole of the account's data zipped. `GET /account/export-job` tells when it is held. A `Range` request (`Accept-Ranges: bytes`) gets that part of it, `206`, so that a download cut short resumes: with `If-Range` set to the `ETag`, the export's id, a range of an archive replaced since gets the whole new one instead."
       operationId: downloadAccountExport
       responses:
         "200":
@@ -5788,10 +5796,29 @@ paths:
                 contentMediaType: application/octet-stream
                 format: binary
                 type: string
-          description: The archive, as an attachment (Content-Disposition), named after the day.
+          description: The archive, as an attachment (Content-Disposition), named after the day it was built.
           headers:
             Content-Disposition:
               description: attachment, with a file name such as runsten-account-2026-10-01.zip.
+              required: true
+              schema:
+                type: string
+            ETag:
+              description: "The export's id, quoted: the archive's, for If-Range."
+              required: true
+              schema:
+                type: string
+        "206":
+          content:
+            application/zip:
+              schema:
+                contentMediaType: application/octet-stream
+                format: binary
+                type: string
+          description: The range of the archive the `Range` header asked for, as Content-Range says.
+          headers:
+            Content-Range:
+              description: The range sent, such as bytes 1048576-2097151/52428800.
               required: true
               schema:
                 type: string

@@ -99,6 +99,9 @@ func exportCommand(args []string, getenv func(string) string, out io.Writer) err
 		err = closeErr
 	}
 	if err != nil {
+		// A half-written archive would pass for one: it goes.
+		_ = f.Close()
+		_ = os.Remove(name)
 		return err
 	}
 	bytes, err := f.Stat()

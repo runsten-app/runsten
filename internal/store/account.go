@@ -65,9 +65,10 @@ var exportTables = []exportTable{
 
 // notExported are the tables an export leaves out, and why.
 var notExported = map[string]string{
-	"derivation_cursors": "where the derivation resumes: rebuilt from the snapshots",
-	"schema_migrations":  "the schema's bookkeeping, no account's",
-	"account_exports":    "the export's own bookkeeping, and the archive it built: the export is the document",
+	"derivation_cursors":   "where the derivation resumes: rebuilt from the snapshots",
+	"schema_migrations":    "the schema's bookkeeping, no account's",
+	"account_exports":      "the export's own bookkeeping: the export is the document",
+	"account_export_parts": "the archive the export built, of the document itself",
 }
 
 // ExportAccount implements api.Accounts: writes to w, as one JSON document, every row

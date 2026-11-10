@@ -76,10 +76,9 @@ var allowed = map[string][]string{
 		"internal/aaoslogging", "internal/aximote", "internal/core", "internal/platform/clock", "internal/teslamate", "internal/volvoportal",
 	},
 	// The export worker builds an account's archive from the account's export: it
-	// declares its Store, which holds the archive, and never knows the database.
-	"internal/exporter": {
-		"internal/api", "internal/platform/clock",
-	},
+	// declares its Store, which holds the archive, and is given the export; it knows
+	// neither the API nor the database.
+	"internal/exporter": {"internal/platform/clock"},
 	// What is published to an MQTT broker, built from the domain: neither network nor
 	// database; Home Assistant's discovery configurations are JSON.
 	"internal/publish": {"encoding/json", "internal/core"},

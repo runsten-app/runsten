@@ -177,6 +177,8 @@ linters:
               desc: storage belongs to store
             - pkg: runsten/internal/store
               desc: exporter declares its own Store interface
+            - pkg: runsten/internal/api
+              desc: the API creates the jobs, the worker runs them
         # The Aximote client depends on neither storage nor what uses it.
         aximote-is-a-client:
           files: ["**/internal/aximote/**"]

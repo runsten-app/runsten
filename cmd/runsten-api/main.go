@@ -373,7 +373,10 @@ func run(args []string) error {
 	go importer.New(st, ax, clock.Real{}, importer.DefaultParams(), log).Run(ctx)
 	// The export worker builds the accounts' ZIP archives out of the request, of the
 	// same document the API streams, with the tables an extension may add meanwhile.
-	go exporter.New(st, st, func() []api.ExportTable { return handler.ExportTables }, clock.Real{}, exporter.DefaultParams(), log).Run(ctx)
+	exportAccount := func(ctx context.Context, accountID string, at time.Time, w io.Writer) error {
+		return st.ExportAccount(ctx, accountID, at, handler.ExportTables, w) //nolint:wrapcheck // the store's, already has context
+	}
+	go exporter.New(st, exportAccount, clock.Real{}, exporter.DefaultParams(), log).Run(ctx)
 	httpserver.WarnIfExposed(log, cfg.addr, cfg.restricted,
 		"listening beyond this machine over plain http: put an https reverse proxy in front of runsten-api, passwords and session cookies travel in clear text otherwise")
 	if ok, err := st.HasUsers(ctx); err != nil {

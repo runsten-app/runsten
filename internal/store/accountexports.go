@@ -8,45 +8,35 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"runsten/internal/api"
 	"runsten/internal/exporter"
 )
 
-// The accounts' ZIP archives (account_exports): one per account, its row holding the
-// archive as a large object until the next export throws it away. The archive is
-// written and read on a connection of its own, whose descriptor the writer and the
-// reader close when they are done: backup and restore carry it with the database.
+// The accounts' ZIP archives (account_exports): one per account, its archive held in
+// parts (account_export_parts) until it expires or the next export replaces it. Each
+// part is written and read in a transaction of its own: neither the build nor a
+// download holds a connection or a snapshot for its length.
 
-// The large object's modes: INV_WRITE with INV_READ to build it, INV_READ to download
-// it.
-const (
-	loWrite = 0x20000 | 0x40000
-	loRead  = 0x40000
-)
-
-const accountExportColumns = `id, status, coalesce(error, ''), bytes, created_at, not_before, ended_at`
+const accountExportColumns = `id, status, coalesce(error, ''), bytes, created_at, not_before, ended_at, expires_at`
 
 func scanAccountExport(row pgx.Row) (api.AccountExport, error) {
 	var e api.AccountExport
-	var endedAt *time.Time
-	err := row.Scan(&e.ID, &e.Status, &e.Error, &e.Bytes, &e.CreatedAt, &e.NotBefore, &endedAt)
+	var endedAt, expiresAt *time.Time
+	err := row.Scan(&e.ID, &e.Status, &e.Error, &e.Bytes, &e.CreatedAt, &e.NotBefore, &endedAt, &expiresAt)
 	e.CreatedAt, e.NotBefore = e.CreatedAt.UTC(), e.NotBefore.UTC()
-	e.EndedAt = utcOrZero(endedAt)
+	e.EndedAt, e.ExpiresAt = utcOrZero(endedAt), utcOrZero(expiresAt)
 	return e, err //nolint:wrapcheck // wrapped by the caller
 }
 
 // CreateAccountExport implements api.AccountExports: the account holds one export; the
-// one it had goes, with its archive.
+// one it had goes, with its archive, and the new one has an id of its own.
 func (s *Store) CreateAccountExport(ctx context.Context, accountID string, at time.Time) (api.AccountExport, error) {
 	at = at.Truncate(time.Microsecond)
 	var e api.AccountExport
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
-		var oid *uint32
 		var status string
-		err := tx.QueryRow(ctx, `SELECT status, oid FROM account_exports WHERE account_id = $1 FOR UPDATE`, accountID).
-			Scan(&status, &oid)
+		err := tx.QueryRow(ctx, `SELECT status FROM account_exports WHERE account_id = $1 FOR UPDATE`, accountID).Scan(&status)
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
 			// No export yet: no archive to throw away.
@@ -55,15 +45,13 @@ func (s *Store) CreateAccountExport(ctx context.Context, accountID string, at ti
 		case status == api.ExportPending || status == api.ExportRunning:
 			return api.ErrExportActive
 		default:
-			// The export the account had goes, its archive with it.
-			if _, err := tx.Exec(ctx, `SELECT lo_unlink($1)`, *oid); err != nil {
+			// The export the account had goes, its parts with it.
+			if _, err := tx.Exec(ctx, `DELETE FROM account_exports WHERE account_id = $1`, accountID); err != nil {
 				return fmt.Errorf("throwing the old archive away: %w", err)
 			}
 		}
 		e, err = scanAccountExport(tx.QueryRow(ctx, `
 			INSERT INTO account_exports (account_id, created_at, not_before) VALUES ($1, $2, $2)
-			ON CONFLICT (account_id) DO UPDATE SET status = 'pending', error = NULL, oid = NULL, bytes = 0,
-				created_at = $2, not_before = $2, claimed_at = NULL, failures = 0, ended_at = NULL
 			RETURNING `+accountExportColumns, accountID, at))
 		return err //nolint:wrapcheck // wrapped by inAccount
 	})
@@ -117,89 +105,78 @@ func (s *Store) ClaimExport(ctx context.Context, at time.Time, lease time.Durati
 	return j, true, nil
 }
 
-// ExportFile implements exporter.Store: the archive of an interrupted build is thrown
-// away, another one is created and held by the export's row, written on a connection
-// released when the file is closed.
-func (s *Store) ExportFile(ctx context.Context, job exporter.Job) (io.WriteCloser, error) {
-	var oid uint32
-	err := s.inAccount(ctx, job.AccountID, func(tx pgx.Tx) error {
-		var old *uint32
-		if err := tx.QueryRow(ctx, `SELECT oid FROM account_exports WHERE id = $1`, job.ID).Scan(&old); err != nil {
-			return err //nolint:wrapcheck // wrapped by inAccount
-		}
-		// An interrupted build's archive goes: the export is built again from its start.
-		if old != nil {
-			if _, err := tx.Exec(ctx, `SELECT lo_unlink($1)`, *old); err != nil {
-				return fmt.Errorf("throwing the interrupted archive away: %w", err)
-			}
-		}
-		return tx.QueryRow(ctx, `SELECT lo_create(0)`).Scan(&oid) //nolint:wrapcheck // wrapped by inAccount
-	})
+// renew renews the job's claim at at, the bytes written so far set to bytes, within
+// tx: exporter.ErrLeaseLost when the claim is over.
+func renew(ctx context.Context, tx pgx.Tx, job exporter.Job, at time.Time, bytes int64) error {
+	tag, err := tx.Exec(ctx, `UPDATE account_exports SET renewed_at = $3, bytes = $4
+		WHERE id = $1 AND status = 'running' AND claimed_at = $2`, job.ID, job.ClaimedAt, at.Truncate(time.Microsecond), bytes)
 	if err != nil {
-		return nil, fmt.Errorf("export archive: %w", err)
+		return err //nolint:wrapcheck // wrapped by inAccount
 	}
-	err = s.inAccount(ctx, job.AccountID, func(tx pgx.Tx) error {
-		tag, err := tx.Exec(ctx, `UPDATE account_exports SET oid = $2
-			WHERE id = $1 AND status = 'running' AND claimed_at = $3`, job.ID, oid, job.ClaimedAt)
-		if err != nil {
-			return err //nolint:wrapcheck // wrapped by inAccount
-		}
-		if tag.RowsAffected() == 0 {
-			return exporter.ErrLeaseLost
-		}
-		return nil
-	})
-	if err != nil {
-		_, _ = s.pool.Exec(ctx, `SELECT lo_unlink($1)`, oid)
-		return nil, fmt.Errorf("export archive: %w", err)
+	if tag.RowsAffected() == 0 {
+		return exporter.ErrLeaseLost
 	}
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("archive connection: %w", err)
-	}
-	tx, fd, err := openExportFile(ctx, conn, oid, loWrite)
-	if err != nil {
-		conn.Release()
-		return nil, err
-	}
-	return &loWriter{ctx: ctx, conn: conn, tx: tx, fd: fd}, nil
+	return nil
 }
 
-// SaveExport implements exporter.Store: the archive is held, its size written with its
-// status done.
-func (s *Store) SaveExport(ctx context.Context, job exporter.Job, at time.Time, bytes int64) error {
-	return s.endExport(ctx, job, false, `UPDATE account_exports SET status = 'done', bytes = $4, ended_at = $3
-		WHERE id = $1 AND status = 'running' AND claimed_at = $2`, at.Truncate(time.Microsecond), bytes)
+// ResetExport implements exporter.Store: the parts an interrupted build wrote go, the
+// export is built again from its start.
+func (s *Store) ResetExport(ctx context.Context, job exporter.Job, at time.Time) error {
+	err := s.inAccount(ctx, job.AccountID, func(tx pgx.Tx) error {
+		if err := renew(ctx, tx, job, at, 0); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `DELETE FROM account_export_parts WHERE export_id = $1`, job.ID)
+		return err //nolint:wrapcheck // wrapped by inAccount
+	})
+	if err != nil {
+		return fmt.Errorf("resetting an export: %w", err)
+	}
+	return nil
+}
+
+// WriteExportPart implements exporter.Store: the part, and the claim renewed with the
+// bytes written so far, in one transaction.
+func (s *Store) WriteExportPart(ctx context.Context, job exporter.Job, start int64, data []byte, at time.Time) error {
+	err := s.inAccount(ctx, job.AccountID, func(tx pgx.Tx) error {
+		if err := renew(ctx, tx, job, at, start+int64(len(data))); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `INSERT INTO account_export_parts (account_id, export_id, start, data)
+			VALUES ($1, $2, $3, $4)`, job.AccountID, job.ID, start, data)
+		return err //nolint:wrapcheck // wrapped by inAccount
+	})
+	if err != nil {
+		return fmt.Errorf("writing a part of an export: %w", err)
+	}
+	return nil
+}
+
+// SaveExport implements exporter.Store: the archive is held until expiresAt, its size
+// written with its status done.
+func (s *Store) SaveExport(ctx context.Context, job exporter.Job, at time.Time, bytes int64, expiresAt time.Time) error {
+	return s.endExport(ctx, job, false, `UPDATE account_exports SET status = 'done', bytes = $4, ended_at = $3, expires_at = $5
+		WHERE id = $1 AND status = 'running' AND claimed_at = $2`,
+		at.Truncate(time.Microsecond), bytes, expiresAt.Truncate(time.Microsecond))
 }
 
 // RetryExport implements exporter.Store: whatever the interrupted build wrote goes.
 func (s *Store) RetryExport(ctx context.Context, job exporter.Job, notBefore time.Time, failures int) error {
-	return s.endExport(ctx, job, true, `UPDATE account_exports SET status = 'pending', claimed_at = NULL, oid = NULL,
+	return s.endExport(ctx, job, true, `UPDATE account_exports SET status = 'pending', claimed_at = NULL, renewed_at = NULL,
 		bytes = 0, not_before = $3, failures = $4 WHERE id = $1 AND status = 'running' AND claimed_at = $2`,
 		notBefore.Truncate(time.Microsecond), failures)
 }
 
 // FailExport implements exporter.Store: whatever the failed build wrote goes.
 func (s *Store) FailExport(ctx context.Context, job exporter.Job, at time.Time) error {
-	return s.endExport(ctx, job, true, `UPDATE account_exports SET status = 'failed', error = 'internal', oid = NULL,
+	return s.endExport(ctx, job, true, `UPDATE account_exports SET status = 'failed', error = 'internal',
 		bytes = 0, ended_at = $3 WHERE id = $1 AND status = 'running' AND claimed_at = $2`, at.Truncate(time.Microsecond))
 }
 
-// endExport ends the export's claim, throwing its archive away with it when throwAway
-// says so (a retry and a failure build it again; a done export holds it).
+// endExport ends the export's claim, throwing its parts away with it when throwAway
+// says so (a retry builds it again, a failure has none; a done export holds them).
 func (s *Store) endExport(ctx context.Context, job exporter.Job, throwAway bool, sql string, args ...any) error {
 	err := s.inAccount(ctx, job.AccountID, func(tx pgx.Tx) error {
-		if throwAway {
-			var oid *uint32
-			if err := tx.QueryRow(ctx, `SELECT oid FROM account_exports WHERE id = $1`, job.ID).Scan(&oid); err != nil {
-				return err //nolint:wrapcheck // wrapped by inAccount
-			}
-			if oid != nil {
-				if _, err := tx.Exec(ctx, `SELECT lo_unlink($1)`, *oid); err != nil {
-					return err //nolint:wrapcheck // wrapped by inAccount
-				}
-			}
-		}
 		tag, err := tx.Exec(ctx, sql, append([]any{job.ID, job.ClaimedAt}, args...)...)
 		if err != nil {
 			return err //nolint:wrapcheck // wrapped by inAccount
@@ -207,7 +184,10 @@ func (s *Store) endExport(ctx context.Context, job exporter.Job, throwAway bool,
 		if tag.RowsAffected() == 0 {
 			return exporter.ErrLeaseLost
 		}
-		return nil
+		if throwAway {
+			_, err = tx.Exec(ctx, `DELETE FROM account_export_parts WHERE export_id = $1`, job.ID)
+		}
+		return err //nolint:wrapcheck // wrapped by inAccount
 	})
 	if err != nil {
 		return fmt.Errorf("ending an export: %w", err)
@@ -215,138 +195,90 @@ func (s *Store) endExport(ctx context.Context, job exporter.Job, throwAway bool,
 	return nil
 }
 
-// OpenAccountExport implements api.AccountExports: the account's held archive, read on
-// a connection released when the reader is closed.
-func (s *Store) OpenAccountExport(ctx context.Context, accountID string) (io.ReadCloser, error) {
-	var status string
-	var oid *uint32
-	var bytes int64
-	err := s.readInAccount(ctx, accountID, func(tx pgx.Tx) error {
-		err := tx.QueryRow(ctx, `SELECT status, oid, bytes FROM account_exports WHERE account_id = $1`, accountID).
-			Scan(&status, &oid, &bytes)
-		switch {
-		case errors.Is(err, pgx.ErrNoRows):
-			return nil //nolint:nilerr // told of below
-		default:
-			return err //nolint:wrapcheck // wrapped by readInAccount
-		}
-	})
+// ExpireExports implements exporter.Store, across the accounts
+// (runsten_expire_account_exports).
+func (s *Store) ExpireExports(ctx context.Context, at time.Time) (int, error) {
+	var n int
+	if err := s.pool.QueryRow(ctx, "SELECT runsten_expire_account_exports($1)", at).Scan(&n); err != nil {
+		return 0, fmt.Errorf("expiring the exports: %w", err)
+	}
+	return n, nil
+}
+
+// OpenAccountExport implements api.AccountExports: the account's held archive, read
+// part by part, each in a transaction of its own.
+func (s *Store) OpenAccountExport(ctx context.Context, accountID string) (api.AccountExport, io.ReadSeeker, error) {
+	e, found, err := s.LatestAccountExport(ctx, accountID)
 	switch {
 	case err != nil:
-		return nil, fmt.Errorf("opening an account export: %w", err)
-	case status != api.ExportDone:
-		return nil, fmt.Errorf("%w: the account's export is not held", api.ErrNotFound)
+		return api.AccountExport{}, nil, fmt.Errorf("opening an account export: %w", err)
+	case !found || e.Status != api.ExportDone:
+		return api.AccountExport{}, nil, fmt.Errorf("%w: the account's export is not held", api.ErrNotFound)
 	}
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("archive connection: %w", err)
-	}
-	tx, fd, err := openExportFile(ctx, conn, *oid, loRead)
-	if err != nil {
-		conn.Release()
-		return nil, err
-	}
-	return &loReader{ctx: ctx, conn: conn, tx: tx, fd: fd, left: bytes}, nil
+	return e, &partReader{ctx: ctx, s: s, accountID: accountID, exportID: e.ID, size: e.Bytes}, nil
 }
 
-// openExportFile opens the archive in a transaction of its own, that holds the large
-// object's descriptor: PostgreSQL closes it at its end. The connection c is released
-// when the archive is done, by the writer's or the reader's Close.
-func openExportFile(ctx context.Context, c *pgxpool.Conn, oid uint32, mode int32) (pgx.Tx, int32, error) {
-	// The descriptor is only valid within the transaction: one is held for as long
-	// as the archive is written or read, on the one connection c.
-	tx, err := c.Begin(ctx)
-	if err != nil {
-		return nil, 0, fmt.Errorf("archive transaction: %w", err)
-	}
-	var fd int32
-	if err := tx.QueryRow(ctx, `SELECT lo_open($1, $2)`, oid, mode).Scan(&fd); err != nil {
-		_ = tx.Rollback(ctx)
-		return nil, 0, fmt.Errorf("opening the archive: %w", err)
-	}
-	return tx, fd, nil
+// errArchiveGone is returned by a read of an archive thrown away since it was opened:
+// expired, or replaced by the account's next export.
+var errArchiveGone = errors.New("the archive is no longer held")
+
+// partReader reads an archive held in parts, from any offset: each part is read in a
+// transaction of its own, then served from memory.
+type partReader struct {
+	ctx                  context.Context
+	s                    *Store
+	accountID, exportID  string
+	size, pos, partStart int64
+	part                 []byte
 }
 
-// loWriter writes to a large object's descriptor, held by a transaction of one
-// connection.
-type loWriter struct {
-	ctx  context.Context
-	conn *pgxpool.Conn
-	tx   pgx.Tx
-	fd   int32
-}
-
-func (w *loWriter) Write(p []byte) (int, error) {
-	var n int
-	if err := w.tx.QueryRow(w.ctx, `SELECT lowrite($1, $2)`, w.fd, p).Scan(&n); err != nil {
-		return n, fmt.Errorf("writing the archive: %w", err)
+func (r *partReader) Read(p []byte) (int, error) {
+	if r.pos >= r.size {
+		return 0, io.EOF
 	}
-	if n < len(p) {
-		return n, io.ErrShortWrite
+	if r.pos < r.partStart || r.pos >= r.partStart+int64(len(r.part)) {
+		if err := r.load(); err != nil {
+			return 0, err
+		}
 	}
+	n := copy(p, r.part[r.pos-r.partStart:])
+	r.pos += int64(n)
 	return n, nil
 }
 
-// Close releases the descriptor, its transaction and its connection; the archive
-// stays, however far the build went.
-func (w *loWriter) Close() error {
-	_, err := w.tx.Exec(w.ctx, `SELECT lo_close($1)`, w.fd)
-	if err == nil {
-		err = w.tx.Commit(w.ctx)
+// load reads the part that holds pos.
+func (r *partReader) load() error {
+	var start int64
+	var data []byte
+	err := r.s.readInAccount(r.ctx, r.accountID, func(tx pgx.Tx) error {
+		return tx.QueryRow(r.ctx, `SELECT start, data FROM account_export_parts
+			WHERE export_id = $1 AND start <= $2 ORDER BY start DESC LIMIT 1`, r.exportID, r.pos).Scan(&start, &data) //nolint:wrapcheck // wrapped by readInAccount
+	})
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		return errArchiveGone
+	case err != nil:
+		return fmt.Errorf("reading the archive: %w", err)
+	case r.pos >= start+int64(len(data)):
+		return errArchiveGone
 	}
-	if err != nil {
-		_ = w.tx.Rollback(w.ctx)
-	}
-	w.conn.Release()
-	if err != nil {
-		return fmt.Errorf("closing the archive: %w", err)
-	}
+	r.partStart, r.part = start, data
 	return nil
 }
 
-// loReader streams a large object's descriptor, held by a transaction of one
-// connection, to its end.
-type loReader struct {
-	ctx  context.Context
-	conn *pgxpool.Conn
-	tx   pgx.Tx
-	fd   int32
-	left int64 // the archive's bytes, as the export's row says
-	buf  []byte
-}
-
-func (r *loReader) Read(p []byte) (int, error) {
-	for len(r.buf) == 0 {
-		if r.left == 0 {
-			return 0, io.EOF
-		}
-		var b []byte
-		if err := r.tx.QueryRow(r.ctx, `SELECT loread($1, $2)`, r.fd, min(int64(1<<20), r.left)).Scan(&b); err != nil {
-			return 0, fmt.Errorf("reading the archive: %w", err)
-		}
-		if len(b) == 0 {
-			return 0, io.ErrUnexpectedEOF
-		}
-		r.buf, r.left = b, r.left-int64(len(b))
+func (r *partReader) Seek(offset int64, whence int) (int64, error) {
+	switch whence {
+	case io.SeekStart:
+	case io.SeekCurrent:
+		offset += r.pos
+	case io.SeekEnd:
+		offset += r.size
+	default:
+		return r.pos, errors.New("seek: invalid whence")
 	}
-	n := copy(p, r.buf)
-	r.buf = r.buf[n:]
-	return n, nil
-}
-
-// Close releases the descriptor, its transaction and its connection; the archive
-// stays, however far the download went.
-func (r *loReader) Close() error {
-	_, err := r.tx.Exec(r.ctx, `SELECT lo_close($1)`, r.fd)
-	if err == nil {
-		err = r.tx.Commit(r.ctx)
+	if offset < 0 {
+		return r.pos, errors.New("seek: negative position")
 	}
-	if err != nil {
-		_ = r.tx.Rollback(r.ctx)
-	}
-	r.conn.Release()
-	if err != nil {
-		return fmt.Errorf("closing the archive: %w", err)
-	}
-	return nil
+	r.pos = offset
+	return r.pos, nil
 }
