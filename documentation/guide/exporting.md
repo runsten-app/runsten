@@ -40,9 +40,9 @@ Programs read the same file through the API, with an access token: `GET /api/v1/
 
 In the settings, under **Account**, **Download my data** saves everything the account holds as one JSON file: the vehicles, the trips and charges, the places, tariffs and costs, and every response kept, raw. Secrets are left out (passwords, tokens, keys). It is open to every account, whatever its offer.
 
-When the file outgrows the download — a Tesla, read every 15 seconds, gives a gigabyte a month — **Build a ZIP archive** prepares the same data in the background: the archive is built out of the request, however long it takes, and held until another one is asked for. Its progress is read while it builds; once held, it stays and can be downloaded again.
+When the file outgrows the download — a Tesla, read every 15 seconds, gives a gigabyte a month — **Build a ZIP archive** prepares the same data in the background: the archive is built out of the request, however long it takes, the page telling how much of it is written. Once built, it is kept a week, or until another one is asked for, and can be downloaded again meanwhile; a download cut short resumes where it stopped, in a browser or a download manager that resumes.
 
-Programs ask for it through the API, with an access token for the reads: `POST /api/v1/account/export-job` starts it, `GET /api/v1/account/export-job` reads how it stands, `GET /api/v1/account/export.zip` downloads the archive ([API](../reference/api.md)).
+Programs ask for it through the API, with an access token for the reads: `POST /api/v1/account/export-job` starts it, `GET /api/v1/account/export-job` reads how it stands, `GET /api/v1/account/export.zip` downloads the archive, a part of it with a `Range` header ([API](../reference/api.md)): `curl -C - -o runsten.zip …` takes up a download where it stopped.
 
 The command line does the same without the interface, against the database — the copy to take before a vehicle or an account is deleted:
 
