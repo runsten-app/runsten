@@ -1666,8 +1666,24 @@
   "account": {
     "title": "Sus datos",
     "export": {
-      "help": "Descargue todo lo que contiene su cuenta, incluidas las lecturas en bruto de sus vehículos, en un único archivo JSON.",
-      "button": "Descargar mis datos"
+      "help": "Todo lo que contiene su cuenta, incluidas las lecturas en bruto de sus vehículos, en un archivo ZIP con un fichero JSON. Se prepara en segundo plano, sea cual sea el tamaño de la cuenta, y se conserva una semana, o hasta que pida otro.",
+      "button": "Descargar mis datos",
+      "zip": {
+        "again": "Preparar un nuevo archivo",
+        "progress": "Preparando el archivo",
+        "written": "{size} escritos hasta ahora.",
+        "waiting": "Próximo intento: {time}.",
+        "download": "Descargar ({size})",
+        "held": "Preparado {time}. Disponible hasta {until}.",
+        "failed": "No se ha podido preparar el archivo.",
+        "kilobytes": "{n} kB",
+        "megabytes": "{n} MB",
+        "error": {
+          "active": "Ya se está preparando un archivo de esta cuenta.",
+          "unavailable": "Runsten no está accesible. Inténtelo de nuevo en un momento.",
+          "internal": "No se ha podido preparar el archivo. Inténtelo de nuevo en un momento."
+        }
+      }
     }
   },
   "imports": {

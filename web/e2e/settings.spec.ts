@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import { inflateRawSync } from 'node:zlib'
 import type { Page } from '@playwright/test'
 import { checkView, exclusive, expect, signIn, test, user, vehicleId } from './support'
 
@@ -379,19 +380,48 @@ test('Vehicle settings: the model, then the variant of a Polestar', async ({ pag
   await expect(variants.getByRole('radio')).toHaveCount(2)
 })
 
-// The account's data: the export is downloaded whole.
+// unzip reads the only entry of a ZIP archive: its central directory, found from the end
+// of the archive, gives the entry's place and size; the entry is deflated.
+function unzip(zip: Buffer): { name: string; data: string } {
+  const end = zip.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]))
+  if (end < 0) throw new Error('not a ZIP archive: no end of central directory')
+  const central = zip.readUInt32LE(end + 16)
+  const size = zip.readUInt32LE(central + 20)
+  const nameLength = zip.readUInt16LE(central + 28)
+  const local = zip.readUInt32LE(central + 42)
+  const name = zip.toString('utf8', central + 46, central + 46 + nameLength)
+  const start = local + 30 + zip.readUInt16LE(local + 26) + zip.readUInt16LE(local + 28)
+  return { name, data: inflateRawSync(zip.subarray(start, start + size)).toString('utf8') }
+}
+
+// The account's data: an archive prepared in the background, then downloaded whole.
 test("Settings: the account's data, downloaded", async ({ page }, testInfo) => {
+  // The lock, then the worker's preparation: longer than a page's test.
+  test.setTimeout(120_000)
   await signIn(page)
   await page.goto('/settings/account')
   await expect(page.getByRole('heading', { level: 2 })).toHaveText('Account')
   await checkView(page, testInfo, 'settings-account')
   const section = page.getByRole('region', { name: 'Your data' })
-  const download = page.waitForEvent('download')
-  await section.getByRole('link', { name: 'Download my data' }).click()
-  const file = await download
-  expect(file.suggestedFilename()).toMatch(/^runsten-account-\d{4}-\d{2}-\d{2}\.json$/)
-  const path = await file.path()
-  const exported = JSON.parse(await readFile(path, 'utf8')) as {
+  // The archive is the account's, not a project's: one project at a time prepares one,
+  // from the button the previous one left (none held yet, or one held).
+  const file = await exclusive('account-export', async () => {
+    await section
+      .getByRole('button', { name: /^(Download my data|Prepare a new archive)$/ })
+      .click()
+    // The export worker prepares it: the page follows it until the download is offered,
+    // the previous archive's gone first.
+    const link = section.getByRole('link', { name: /^Download \(/ })
+    await expect(link).toBeHidden()
+    await expect(link).toBeVisible({ timeout: 60_000 })
+    const download = page.waitForEvent('download')
+    await link.click()
+    return download
+  })
+  expect(file.suggestedFilename()).toMatch(/^runsten-account-\d{4}-\d{2}-\d{2}\.zip$/)
+  const entry = unzip(await readFile(await file.path()))
+  expect(entry.name).toMatch(/^runsten-account-\d{4}-\d{2}-\d{2}\.json$/)
+  const exported = JSON.parse(entry.data) as {
     format: string
     tables: { name: string; rows: unknown[] }[]
   }

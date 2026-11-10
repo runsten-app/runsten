@@ -1666,8 +1666,24 @@
   "account": {
     "title": "Ihre Daten",
     "export": {
-      "help": "Laden Sie alles herunter, was Ihr Konto enthält, einschließlich der Rohdaten Ihrer Fahrzeuge, als eine JSON-Datei.",
-      "button": "Meine Daten herunterladen"
+      "help": "Alles, was Ihr Konto enthält, einschließlich der Rohdaten Ihrer Fahrzeuge, als ZIP-Archiv mit einer JSON-Datei. Es wird im Hintergrund vorbereitet, wie groß das Konto auch ist, und dann eine Woche aufbewahrt oder bis Sie ein neues anfordern.",
+      "button": "Meine Daten herunterladen",
+      "zip": {
+        "again": "Neues Archiv vorbereiten",
+        "progress": "Archiv wird vorbereitet",
+        "written": "{size} bisher geschrieben.",
+        "waiting": "Nächster Versuch: {time}.",
+        "download": "Herunterladen ({size})",
+        "held": "Vorbereitet {time}. Verfügbar bis {until}.",
+        "failed": "Das Archiv konnte nicht vorbereitet werden.",
+        "kilobytes": "{n} kB",
+        "megabytes": "{n} MB",
+        "error": {
+          "active": "Ein Archiv dieses Kontos wird bereits vorbereitet.",
+          "unavailable": "Runsten ist nicht erreichbar. Versuchen Sie es gleich noch einmal.",
+          "internal": "Das Archiv konnte nicht vorbereitet werden. Versuchen Sie es gleich noch einmal."
+        }
+      }
     }
   },
   "imports": {

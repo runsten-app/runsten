@@ -4,7 +4,7 @@ description: "Download your trips, charges and every value your car reported as 
 
 # Exporting your data
 
-Runsten keeps what your car's API answered, as it answered it, and gives it back to you in three files.
+Runsten keeps what your car's API answered, as it answered it, and gives it back to you: as CSV files, and as the archive of everything it holds.
 
 ## Trips and charges
 
@@ -38,4 +38,18 @@ Programs read the same file through the API, with an access token: `GET /api/v1/
 
 ## All of your account
 
-In the settings, under **Account**, **Download my data** saves everything the account holds as one JSON file: the vehicles, the trips and charges, the places, tariffs and costs, and every response kept, raw. Secrets are left out (passwords, tokens, keys). It is open to every account, whatever its offer.
+In the settings, under **Account**, **Download my data** prepares everything the account holds as a ZIP archive of one JSON file: the vehicles, the trips and charges, the places, tariffs and costs, and every response kept, raw. Secrets are left out (passwords, tokens, keys). It is open to every account, whatever its offer.
+
+The archive is prepared in the background, however big the account — a Tesla, read every 15 seconds, gives a gigabyte a month — the page telling how much of it is written; a small account's is ready in a few seconds. Then **Download** saves it. It is kept a week, or until another one is asked for, and can be downloaded again meanwhile; a download cut short resumes where it stopped, in a browser or a download manager that resumes.
+
+Programs ask for it through the API, with an access token for the reads: `GET /api/v1/account/export` streams the JSON document itself, at once, for an account it fits in a request; `POST /api/v1/account/export-job` starts the archive, `GET /api/v1/account/export-job` reads how it stands, `GET /api/v1/account/export.zip` downloads the archive, a part of it with a `Range` header ([API](../reference/api.md)): `curl -L -C - -o runsten.zip …` takes up a download where it stopped. An instance that keeps its archives in a bucket answers with a link to it, valid a few minutes, which `-L` follows.
+
+The command line does the same without the interface, against the database — the copy to take before a vehicle or an account is deleted:
+
+```
+runsten-api export [FILE]     # the single account, written as runsten-account-<day>.zip
+runsten-api export --user NAME [FILE]     # the user's account, on an instance of several
+runsten-api export --account ID [FILE]     # by its id, across every account
+```
+
+Docker Compose runs it as `docker compose run --rm api export`. The archive holds what the server's own build exports: a hosted offer's own tables are in its own server's books.

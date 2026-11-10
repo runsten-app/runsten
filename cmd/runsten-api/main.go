@@ -91,6 +91,18 @@
 //	                             each takes memory until it is written, about 170 MB for
 //	                             4.5 years of a car, up to about 800 MB for the largest
 //	                             backup accepted; 1 where runsten-api has little memory
+//	RUNSTEN_EXPORT_DIR           the directory the accounts' export archives are kept in,
+//	                             a week each (default: runsten-exports in the system's
+//	                             temporary directory; /var/lib/runsten/exports, a volume,
+//	                             in Docker Compose). One instance of runsten-api only:
+//	                             several share a bucket instead
+//	RUNSTEN_EXPORT_S3_BUCKET     an S3 bucket to keep them in instead (default none), at
+//	RUNSTEN_EXPORT_S3_ENDPOINT   its service's URL (https://s3.fr-par.scw.cloud,
+//	                             http://minio:9000), in RUNSTEN_EXPORT_S3_REGION, with
+//	RUNSTEN_EXPORT_S3_ACCESS_KEY and RUNSTEN_EXPORT_S3_SECRET_KEY. The archives are
+//	                             under exports/; a download is sent to a link of the
+//	                             bucket. The bucket needs a lifecycle rule that aborts
+//	                             the incomplete multipart uploads (a worker stopped)
 //	RUNSTEN_HEALTH_TOKEN         the bearer token of /healthz/full, 32 characters at
 //	                             least (default none: no report)
 //	RUNSTEN_UPDATE_CHECK         true to read the latest release of Runsten on GitHub
@@ -114,6 +126,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -124,12 +137,14 @@ import (
 
 	"runsten/internal/aaoslogging"
 	"runsten/internal/api"
+	"runsten/internal/archive"
 	"runsten/internal/auth"
 	"runsten/internal/aximote"
 	"runsten/internal/bmw"
 	"runsten/internal/catalog"
 	"runsten/internal/core"
 	"runsten/internal/derive"
+	"runsten/internal/exporter"
 	"runsten/internal/flags"
 	"runsten/internal/flags/eval"
 	"runsten/internal/geocode"
@@ -204,6 +219,9 @@ type config struct {
 	// teslaMateImports is how many TeslaMate backups are read at once; 0: the API's
 	// default.
 	teslaMateImports int
+	// exportDir keeps the export archives, unless exportS3 names a bucket.
+	exportDir string
+	exportS3  archive.S3Config
 	// privateBrokers: an account's MQTT broker may be on a local network, or over
 	// plain mqtt://. False on an instance open to the Internet's users.
 	privateBrokers bool
@@ -230,13 +248,15 @@ func run(args []string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), probeTimeout)
 		defer cancel()
 		return health.Probe(ctx, &http.Client{Timeout: probeTimeout}, addr) //nolint:wrapcheck // already has context
+	case len(args) >= 1 && args[0] == "export":
+		return exportCommand(args[1:], os.Getenv, os.Stderr)
 	case len(args) >= 2 && args[0] == "import" && args[1] == "teslamate":
 		return importTeslaMate(args[2:], os.Getenv, os.Stdin, os.Stderr)
 	case len(args) == 3 && args[0] == "user" && (args[1] == "create" || args[1] == "password"):
 		return userCommand(args[1], args[2], os.Getenv, os.Stdin, os.Stderr)
 	case len(args) > 0:
-		return fmt.Errorf("unknown command %q (expected: user create <name>, user password <name>, %s, healthcheck, "+
-			"or none to serve)", args, importTeslaMateUsage)
+		return fmt.Errorf("unknown command %q (expected: user create <name>, user password <name>, %s, %s, healthcheck, "+
+			"or none to serve)", args, exportUsage, importTeslaMateUsage)
 	}
 	cfg, err := loadConfig(os.Getenv)
 	if err != nil {
@@ -302,6 +322,10 @@ func run(args []string) error {
 	}
 	pictureParams := picture.DefaultParams()
 	pictureParams.UserAgent = "Runsten/" + version
+	archives, err := exportArchives(cfg)
+	if err != nil {
+		return err
+	}
 	handler := api.New(api.Config{
 		Sessions: sessions, AccessTokens: sessions,
 		Addresses:        addresses,
@@ -318,6 +342,8 @@ func run(args []string) error {
 		FileImports:      fileImports{importer.NewFiles(st, clock.Real{})},
 		TeslaMateImports: cfg.teslaMateImports,
 		Accounts:         st,
+		AccountExports:   st,
+		ExportArchives:   archives,
 		Flags:            features,
 		// The readings' CSV file: the responses as stored, each source's private fields
 		// left out.
@@ -367,6 +393,12 @@ func run(args []string) error {
 		go geocode.New(st, cfg.geocoder, clock.Real{}, cfg.geocode, log).Run(ctx)
 	}
 	go importer.New(st, ax, clock.Real{}, importer.DefaultParams(), log).Run(ctx)
+	// The export worker builds the accounts' ZIP archives out of the request, of the
+	// same document the API streams, with the tables an extension may add meanwhile.
+	exportAccount := func(ctx context.Context, accountID string, at time.Time, w io.Writer) error {
+		return st.ExportAccount(ctx, accountID, at, handler.ExportTables, w) //nolint:wrapcheck // the store's, already has context
+	}
+	go exporter.New(st, archives, exportAccount, clock.Real{}, exporter.DefaultParams(), log).Run(ctx)
 	httpserver.WarnIfExposed(log, cfg.addr, cfg.restricted,
 		"listening beyond this machine over plain http: put an https reverse proxy in front of runsten-api, passwords and session cookies travel in clear text otherwise")
 	if ok, err := st.HasUsers(ctx); err != nil {
@@ -620,6 +652,18 @@ func loadConfig(getenv func(string) string) (config, error) {
 			errs = append(errs, fmt.Errorf("RUNSTEN_TESLAMATE_IMPORTS %q: a number from 1 to %d expected", v, maxTeslaMateImports))
 		}
 		cfg.teslaMateImports = n
+	}
+	cfg.exportDir = getenv("RUNSTEN_EXPORT_DIR")
+	if cfg.exportDir == "" {
+		cfg.exportDir = filepath.Join(os.TempDir(), "runsten-exports")
+	}
+	cfg.exportS3 = archive.S3Config{
+		Endpoint: getenv("RUNSTEN_EXPORT_S3_ENDPOINT"), Bucket: getenv("RUNSTEN_EXPORT_S3_BUCKET"),
+		Region: getenv("RUNSTEN_EXPORT_S3_REGION"), AccessKey: getenv("RUNSTEN_EXPORT_S3_ACCESS_KEY"),
+		SecretKey: getenv("RUNSTEN_EXPORT_S3_SECRET_KEY"),
+	}
+	if (cfg.exportS3.Bucket == "") != (cfg.exportS3.Endpoint == "") {
+		errs = append(errs, errors.New("RUNSTEN_EXPORT_S3_BUCKET and RUNSTEN_EXPORT_S3_ENDPOINT go together"))
 	}
 	if v := getenv("RUNSTEN_HEALTH_TOKEN"); v != "" {
 		if len(v) < minHealthToken {
@@ -903,4 +947,19 @@ func normalizers() derive.Normalizer {
 	return derive.Sources(append([]derive.Normalizer{
 		volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{}, bmw.Normalizer{},
 	}, extensionNormalizers()...)...)
+}
+
+// archives keep the export archives: the worker writes them, the API serves them.
+type archives interface {
+	exporter.Archives
+	api.ExportArchives
+}
+
+// exportArchives are the bucket RUNSTEN_EXPORT_S3_* names, else the directory
+// RUNSTEN_EXPORT_DIR.
+func exportArchives(cfg config) (archives, error) {
+	if cfg.exportS3.Bucket != "" {
+		return archive.NewS3(cfg.exportS3) //nolint:wrapcheck // already has context
+	}
+	return archive.NewDir(cfg.exportDir) //nolint:wrapcheck // already has context
 }

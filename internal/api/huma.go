@@ -150,6 +150,7 @@ const (
 	codeSourceUnavailable    errorCode = "source_unavailable"
 	codeAuthorizationExpired errorCode = "authorization_expired"
 	codeImportActive         errorCode = "import_active"
+	codeExportActive         errorCode = "export_active"
 	codeInvalidFile          errorCode = "invalid_file"
 	codeInsufficientScope    errorCode = "insufficient_scope"
 	codeRateLimited          errorCode = "rate_limited"
@@ -163,7 +164,7 @@ func (errorCode) Schema(huma.Registry) *huma.Schema {
 	return enumSchema(codeInvalidParameter, codeInvalidBody, codeUnauthorized, codeInvalidCredentials,
 		codeCrossOrigin, codeNotFound, codeMethodNotAllowed, codeUnsupportedMediaType, codeTooManyAttempts,
 		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeImportedCharge, codeAPIKeyRefused, codeCredentialRefused, codeAPIClosed, codeNoVehicle, codeNotVolvo, codeInstanceKey, codeVolvoNotConfigured, codeTooManyVehicles, codeNotAdmitted, codeFeatureUnavailable,
-		codeBrokerRefused, codeTokenRefused, codeSourceUnavailable, codeAuthorizationExpired, codeImportActive, codeInvalidFile, codeInsufficientScope, codeRateLimited,
+		codeBrokerRefused, codeTokenRefused, codeSourceUnavailable, codeAuthorizationExpired, codeImportActive, codeExportActive, codeInvalidFile, codeInsufficientScope, codeRateLimited,
 		codeNotTesla, codeNoMatchingCar, codeAuthorizationPending, codeScopeMissing, codeInternal)
 }
 

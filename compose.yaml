@@ -121,6 +121,16 @@ services:
       RUNSTEN_TESLAMATE_IMPORTS: ${RUNSTEN_TESLAMATE_IMPORTS:-}
       # Empty means the binary's default (Aximote's API, for the imports).
       RUNSTEN_AXIMOTE_BASE_URL: ${RUNSTEN_AXIMOTE_BASE_URL:-}
+      # The accounts' export archives, a week each: the exports volume below, unless
+      # RUNSTEN_EXPORT_S3_* name a bucket.
+      RUNSTEN_EXPORT_DIR: /var/lib/runsten/exports
+      RUNSTEN_EXPORT_S3_ENDPOINT: ${RUNSTEN_EXPORT_S3_ENDPOINT:-}
+      RUNSTEN_EXPORT_S3_BUCKET: ${RUNSTEN_EXPORT_S3_BUCKET:-}
+      RUNSTEN_EXPORT_S3_REGION: ${RUNSTEN_EXPORT_S3_REGION:-}
+      RUNSTEN_EXPORT_S3_ACCESS_KEY: ${RUNSTEN_EXPORT_S3_ACCESS_KEY:-}
+      RUNSTEN_EXPORT_S3_SECRET_KEY: ${RUNSTEN_EXPORT_S3_SECRET_KEY:-}
+    volumes:
+      - exports:/var/lib/runsten/exports
     ports:
       - 127.0.0.1:${RUNSTEN_API_PORT:-8081}:8081
     healthcheck: &healthcheck
@@ -234,6 +244,8 @@ services:
 
 volumes:
   postgres:
+  # The export archives: rebuilt on demand, not worth a backup.
+  exports:
 
 networks:
   default:

@@ -246,9 +246,12 @@ type Config struct {
 	// Admission may hold an account back from connecting a vehicle; nil: none does.
 	Admission Admission
 	// Accounts exports the accounts' data, and ExportTables are the tables an extension
-	// adds to it; nil: none.
-	Accounts     Accounts
-	ExportTables []ExportTable
+	// adds to it; nil: none. AccountExports are the accounts' ZIP archives, built by
+	// the export worker, and ExportArchives where they are kept.
+	Accounts       Accounts
+	ExportTables   []ExportTable
+	AccountExports AccountExports
+	ExportArchives ExportArchives
 	// CapacityParams are the assumptions of the battery capacity estimates.
 	CapacityParams core.CapacityParams
 	// Catalog recognizes the vehicles' variants.
@@ -382,6 +385,7 @@ func New(cfg Config) *Server {
 	s.registerPolestarID(s.api)
 	s.registerBMW(s.api)
 	s.registerAccount(s.api)
+	s.registerAccountExport(s.api)
 	s.registerTokens(s.api)
 	s.registerMQTT(s.api)
 	s.registerInstance(s.api)

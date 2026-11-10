@@ -1666,8 +1666,24 @@
   "account": {
     "title": "Your data",
     "export": {
-      "help": "Download everything your account holds, the raw readings of your vehicles included, as one JSON file.",
-      "button": "Download my data"
+      "help": "Everything your account holds, the raw readings of your vehicles included, as a ZIP archive of one JSON file. It is prepared in the background, however big the account, then kept a week, or until you ask for another.",
+      "button": "Download my data",
+      "zip": {
+        "again": "Prepare a new archive",
+        "progress": "Preparing the archive",
+        "written": "{size} written so far.",
+        "waiting": "Next attempt: {time}.",
+        "download": "Download ({size})",
+        "held": "Prepared {time}. Kept until {until}.",
+        "failed": "The archive could not be prepared.",
+        "kilobytes": "{n} kB",
+        "megabytes": "{n} MB",
+        "error": {
+          "active": "An archive of this account is already being prepared.",
+          "unavailable": "Runsten cannot be reached. Try again in a moment.",
+          "internal": "The archive could not be prepared. Try again in a moment."
+        }
+      }
     }
   },
   "imports": {

@@ -1,22 +1,130 @@
-import { describe, expect, it } from 'vitest'
 import { h } from 'vue'
+import { flushPromises, type VueWrapper } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { accountExportKeys, type AccountExport } from '@/entities/session'
 import { AccountData } from '@/features/export-account'
-import { mountWith } from '@test/utils'
+import { ApiError } from '@/shared/api'
+import { mountWith, testQueryClient } from '@test/utils'
+
+const api = vi.hoisted(() => ({ fetchAccountExport: vi.fn(), startAccountExport: vi.fn() }))
+vi.mock('@/entities/session', async (original) => ({
+  ...(await original<typeof import('@/entities/session')>()),
+  ...api,
+}))
+
+const job = (status: AccountExport['status'], bytes = 0): AccountExport => ({
+  id: '6f0e2d3e-0000-4000-8000-000000000001',
+  status,
+  error: status === 'failed' ? 'internal' : null,
+  bytes,
+  created_at: '2026-10-01T08:00:00Z',
+  not_before: '2026-10-01T08:00:00Z',
+  ended_at: status === 'done' || status === 'failed' ? '2026-10-01T08:05:00Z' : null,
+  expires_at: status === 'done' ? '2026-10-08T08:05:00Z' : null,
+})
+
+let wrapper: VueWrapper | undefined
+
+beforeEach(() => {
+  api.fetchAccountExport.mockReset()
+  api.startAccountExport.mockReset()
+})
+afterEach(() => {
+  wrapper?.unmount()
+  wrapper = undefined
+})
+
+async function mounted(exportJob: AccountExport | null = null) {
+  api.fetchAccountExport.mockResolvedValue(exportJob)
+  const queryClient = testQueryClient()
+  const m = mountWith(AccountData, { queryClient })
+  wrapper = m.wrapper
+  await flushPromises()
+  return m
+}
+
+async function build(w: VueWrapper) {
+  await w.find('.archive-start').trigger('click')
+  await flushPromises()
+}
 
 describe('AccountData', () => {
-  it('downloads the export through a link, saved by the browser', () => {
-    const { wrapper } = mountWith(AccountData)
-    const link = wrapper.find('a.export')
-    expect(link.attributes('href')).toBe('api/v1/account/export')
-    expect(link.attributes()).toHaveProperty('download')
-    expect(link.text()).toBe('Download my data')
-  })
-
-  it('shows what the slot adds after the download', () => {
+  it('shows what the slot adds after the download', async () => {
+    api.fetchAccountExport.mockResolvedValue(null)
     const { wrapper } = mountWith({
       render: () => h(AccountData, null, () => h('button', { class: 'extension-action' }, 'More')),
     })
-    const row = wrapper.find('a.export').element.parentElement
+    await flushPromises()
+    const row = wrapper.find('.archive-start').element.parentElement
     expect(row?.lastElementChild?.className).toBe('extension-action')
+  })
+
+  it('prepares the archive in the background, none held yet', async () => {
+    const { wrapper, queryClient } = await mounted()
+    expect(wrapper.find('.archive-start').text()).toBe('Download my data')
+    expect(wrapper.find('a').exists()).toBe(false)
+
+    api.startAccountExport.mockResolvedValue(job('pending'))
+    await build(wrapper)
+    expect(api.startAccountExport).toHaveBeenCalledTimes(1)
+    expect(queryClient.getQueryData(accountExportKeys.job())).toEqual(job('pending'))
+  })
+
+  it('shows the building of the archive while the worker works', async () => {
+    const { wrapper } = await mounted(job('running'))
+    expect(wrapper.find('.building').text()).toBe('Preparing the archive')
+    expect(wrapper.find('.written').exists()).toBe(false)
+    expect(wrapper.find('a.archive-download').exists()).toBe(false)
+  })
+
+  it('tells how much of the archive is written', async () => {
+    const { wrapper } = await mounted(job('running', 3 * 1024 * 1024))
+    expect(wrapper.find('.written').text()).toBe('3.0 MB written so far.')
+  })
+
+  it('holds the archive once built: downloaded as a link', async () => {
+    const { wrapper } = await mounted(job('done', 2 * 1024 * 1024))
+    const link = wrapper.find('a.archive-download')
+    expect(link.attributes('href')).toBe('api/v1/account/export.zip')
+    expect(link.attributes()).toHaveProperty('download')
+    expect(link.text()).toBe('Download (2.0 MB)')
+    expect(wrapper.find('.held-at').text()).toMatch(/^Prepared .+\. Kept until .*2026.*\.$/)
+    // The user asks for another: the one held is replaced.
+    api.startAccountExport.mockResolvedValue(job('pending'))
+    await build(wrapper)
+    expect(wrapper.find('.building').exists()).toBe(true)
+  })
+
+  it('tells of a failed build, and builds another one', async () => {
+    const { wrapper } = await mounted(job('failed'))
+    expect(wrapper.find('.failure').text()).toBe('The archive could not be prepared.')
+    expect(wrapper.find('.archive-start').text()).toBe('Prepare a new archive')
+  })
+
+  it('tells of a failure to start, and does not crash', async () => {
+    const { wrapper } = await mounted()
+    api.startAccountExport.mockRejectedValue(
+      new ApiError(409, 'export_active', 'an export of the account is already active'),
+    )
+    await build(wrapper)
+    expect(wrapper.find('.error-message').text()).toBe(
+      'An archive of this account is already being prepared.',
+    )
+  })
+
+  it('follows the export another tab started meanwhile', async () => {
+    const { wrapper } = await mounted()
+    api.startAccountExport.mockRejectedValue(
+      new ApiError(409, 'export_active', 'an export of the account is already active'),
+    )
+    api.fetchAccountExport.mockResolvedValue(job('running'))
+    await build(wrapper)
+    expect(api.fetchAccountExport).toHaveBeenCalledTimes(2)
+    expect(wrapper.find('.building').exists()).toBe(true)
+  })
+
+  it('tells when a failed build is tried again', async () => {
+    const { wrapper } = await mounted({ ...job('pending'), not_before: '2999-01-01T08:00:00Z' })
+    expect(wrapper.find('.waiting').text()).toMatch(/^Next attempt: .+\.$/)
   })
 })

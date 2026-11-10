@@ -175,8 +175,7 @@ describe('SettingsPage', () => {
     mocks.fetchSettings.mockResolvedValue(settings)
     const w = await page('account', ['costs', 'stats'])
     const data = w.find('.account-data')
-    expect(data.find('a.export').attributes('href')).toBe('api/v1/account/export')
-    expect(data.find('a.export').attributes()).toHaveProperty('download')
+    expect(data.find('.archive-start').text()).toBe('Download my data')
   })
 
   it("has the extensions' actions beside the download of the account's data", async () => {

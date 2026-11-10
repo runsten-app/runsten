@@ -318,6 +318,19 @@ func TestSingleAccount(t *testing.T) {
 	}
 }
 
+func TestAccountExists(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, _ := newVehicle(t, s, "token", "YV1AAAAAAAAAAAAA1")
+	if ok, err := s.AccountExists(ctx, a); err != nil || !ok {
+		t.Errorf("the account: %v, %v", ok, err)
+	}
+	ok, err := s.AccountExists(ctx, "6f0c1d2e-0000-4000-8000-000000000001")
+	if err != nil || ok {
+		t.Errorf("an account of no one: %v, %v", ok, err)
+	}
+}
+
 func TestSaveSnapshotDeduplicates(t *testing.T) {
 	s, _ := testStore(t)
 	ctx := context.Background()

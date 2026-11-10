@@ -165,6 +165,20 @@ linters:
               desc: importer declares its own Store interface
             - pkg: runsten/internal/api
               desc: the API creates the jobs, the worker runs them
+        # The export worker orchestrates: it knows neither the transport nor the database.
+        exporter-without-adapters:
+          files: ["**/internal/exporter/*.go", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the API serves the export, the worker builds it
+            - pkg: encoding/json
+              desc: the document is written by the store, as the API streams it
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: exporter declares its own Store interface
+            - pkg: runsten/internal/api
+              desc: the API creates the jobs, the worker runs them
         # The Aximote client depends on neither storage nor what uses it.
         aximote-is-a-client:
           files: ["**/internal/aximote/**"]

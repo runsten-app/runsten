@@ -22,6 +22,9 @@ ARG TAGS=""
 ARG VERSION=dev
 ARG TARGETOS TARGETARCH
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -tags "${TAGS}" -o /out/app "./cmd/${CMD}"
+# The directory runsten-api keeps the export archives in: a volume mounted there takes
+# its owner, the image's non-root user (the runtime has no shell to create it).
+RUN mkdir -p /out/exports
 
 # The front end's build: HTML, JavaScript and CSS, the same for every platform. Its types
 # are generated from the API description.
@@ -38,6 +41,7 @@ FROM gcr.io/distroless/static-debian13:nonroot@sha256:25ac8f0c3b2334a9eb05452266
 LABEL org.opencontainers.image.source="https://github.com/runsten-app/runsten" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later"
 COPY --from=build /out/app /app
+COPY --from=build --chown=nonroot:nonroot /out/exports /var/lib/runsten/exports
 USER nonroot:nonroot
 ENTRYPOINT ["/app"]
 

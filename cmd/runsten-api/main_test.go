@@ -9,11 +9,13 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"runsten/internal/archive"
 	"runsten/internal/bmw"
 	"runsten/internal/flags"
 	"runsten/internal/platform/health"
@@ -63,6 +65,35 @@ func TestLoadConfigDefaults(t *testing.T) {
 		cfg.logLevel != slog.LevelInfo || cfg.geocoder != nil || cfg.geocode.Interval != time.Second || !cfg.privateBrokers ||
 		cfg.appURL != "" || !cfg.secureCookies || cfg.updateCheck || len(cfg.flags) != 0 || cfg.unknownFlags != nil {
 		t.Errorf("config = %+v", cfg)
+	}
+}
+
+// The export archives go to a directory, the system's temporary one by default, or to
+// a bucket, whose endpoint and name go together.
+func TestLoadConfigExports(t *testing.T) {
+	cfg, err := loadConfig(env(base()))
+	if err != nil || cfg.exportDir != filepath.Join(os.TempDir(), "runsten-exports") || cfg.exportS3.Bucket != "" {
+		t.Fatalf("default: %q, %+v, %v", cfg.exportDir, cfg.exportS3, err)
+	}
+	m := base()
+	m["RUNSTEN_EXPORT_DIR"] = "/var/lib/runsten/exports"
+	m["RUNSTEN_EXPORT_S3_ENDPOINT"], m["RUNSTEN_EXPORT_S3_BUCKET"] = "https://s3.fr-par.scw.cloud", "runsten-exports"
+	m["RUNSTEN_EXPORT_S3_REGION"], m["RUNSTEN_EXPORT_S3_ACCESS_KEY"], m["RUNSTEN_EXPORT_S3_SECRET_KEY"] = "fr-par", "key", "secret"
+	cfg, err = loadConfig(env(m))
+	want := archive.S3Config{Endpoint: "https://s3.fr-par.scw.cloud", Bucket: "runsten-exports", Region: "fr-par", AccessKey: "key", SecretKey: "secret"}
+	if err != nil || cfg.exportDir != "/var/lib/runsten/exports" || cfg.exportS3 != want {
+		t.Fatalf("set: %q, %+v, %v", cfg.exportDir, cfg.exportS3, err)
+	}
+	if a, err := exportArchives(cfg); err != nil || a == nil {
+		t.Errorf("the bucket: %v", err)
+	}
+	delete(m, "RUNSTEN_EXPORT_S3_ENDPOINT")
+	if _, err := loadConfig(env(m)); err == nil || !strings.Contains(err.Error(), "RUNSTEN_EXPORT_S3_BUCKET") {
+		t.Errorf("a bucket without its endpoint: %v", err)
+	}
+	cfg.exportS3, cfg.exportDir = archive.S3Config{}, t.TempDir()
+	if a, err := exportArchives(cfg); err != nil || a == nil {
+		t.Errorf("the directory: %v", err)
 	}
 }
 
