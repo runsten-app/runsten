@@ -14,6 +14,8 @@ docker compose exec -T postgres pg_dump -U postgres --format=custom runsten > ru
 
 Schedule it with the host's cron or the NAS scheduler, and copy the dumps off the server. The [update script](./updating.md#with-the-update-script) takes one too, into `backups/`, before each update. They contain VINs and locations: protect them.
 
+The ZIP archives of the accounts' data are not in it: they are kept a week in the `exports` volume (or a bucket, `RUNSTEN_EXPORT_S3_*` in `.env`), and built again on demand.
+
 The tokens in them are encrypted with `RUNSTEN_TOKEN_KEY`: a dump restored without the key keeps all the data but loses the Volvo connection, the Polestar credentials and the Tesla refresh tokens, which are then connected and given again.
 
 ## Restore
