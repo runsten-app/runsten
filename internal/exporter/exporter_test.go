@@ -4,11 +4,11 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"io"
 	"log/slog"
+	"maps"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -18,12 +18,11 @@ import (
 
 var t0 = time.Date(2026, 10, 11, 8, 30, 0, 0, time.UTC)
 
-// memStore keeps one job in memory, as the store does, the archive in parts.
+// memStore keeps one job in memory, as the store does.
 type memStore struct {
 	mu     sync.Mutex
 	pended bool // a job may run
-	// err fails ResetExport; lease makes the write of a part, or SaveExport, lose
-	// its claim.
+	// err fails StartExport; lease makes a renewal, or SaveExport, lose its claim.
 	err   error
 	lease bool
 	// What the calls did, as the store does.
@@ -32,10 +31,9 @@ type memStore struct {
 	notUntil  time.Time
 	saved     int64
 	expiresAt time.Time
-	parts     [][]byte    // the archive's parts as written
-	renewed   []time.Time // each renewal of the claim
-	reset     bool        // what an interrupted build wrote was thrown away
+	renewed   []int64     // the bytes of each renewal of the claim
 	expired   []time.Time // each call of ExpireExports
+	held      map[string]bool
 }
 
 func (m *memStore) ClaimExport(_ context.Context, at time.Time, _ time.Duration) (Job, bool, error) {
@@ -48,30 +46,23 @@ func (m *memStore) ClaimExport(_ context.Context, at time.Time, _ time.Duration)
 	return Job{ID: "job", AccountID: "acc", Failures: m.failures, ClaimedAt: at}, true, nil
 }
 
-func (m *memStore) ResetExport(_ context.Context, _ Job, at time.Time) error {
+func (m *memStore) StartExport(_ context.Context, _ Job, _ time.Time) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.err != nil {
 		return m.err
 	}
-	m.reset, m.parts, m.renewed = true, nil, append(m.renewed, at)
+	m.renewed = append(m.renewed, 0)
 	return nil
 }
 
-func (m *memStore) WriteExportPart(_ context.Context, _ Job, start int64, data []byte, at time.Time) error {
+func (m *memStore) RenewExport(_ context.Context, _ Job, _ time.Time, bytes int64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.lease {
 		return ErrLeaseLost
 	}
-	var written int64
-	for _, p := range m.parts {
-		written += int64(len(p))
-	}
-	if start != written {
-		return errors.New("a part out of order")
-	}
-	m.parts, m.renewed = append(m.parts, bytes.Clone(data)), append(m.renewed, at)
+	m.renewed = append(m.renewed, bytes)
 	return nil
 }
 
@@ -88,14 +79,14 @@ func (m *memStore) SaveExport(_ context.Context, _ Job, _ time.Time, bytes int64
 func (m *memStore) RetryExport(_ context.Context, _ Job, notBefore time.Time, failures int) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.pended, m.notUntil, m.failures, m.parts = true, notBefore, failures, nil
+	m.pended, m.notUntil, m.failures = true, notBefore, failures
 	return nil
 }
 
 func (m *memStore) FailExport(_ context.Context, _ Job, _ time.Time) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.status, m.parts = "failed", nil
+	m.status = "failed"
 	return nil
 }
 
@@ -106,10 +97,66 @@ func (m *memStore) ExpireExports(_ context.Context, at time.Time) (int, error) {
 	return 0, nil
 }
 
-func (m *memStore) archive() []byte {
+func (m *memStore) HeldExports(context.Context) (map[string]bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return bytes.Join(m.parts, nil)
+	return m.held, nil
+}
+
+// memArchives keeps the archives in memory, as a directory does: complete once closed,
+// given up when the build's context is over.
+type memArchives struct {
+	mu       sync.Mutex
+	archives map[string][]byte // complete, by export
+	accounts map[string]string // every archive's account, a build's under way too
+	givenUp  int
+	removed  []string
+}
+
+func newMemArchives() *memArchives {
+	return &memArchives{archives: map[string][]byte{}, accounts: map[string]string{}}
+}
+
+type memFile struct {
+	ctx context.Context
+	m   *memArchives
+	id  string
+	buf bytes.Buffer
+}
+
+func (f *memFile) Write(p []byte) (int, error) { return f.buf.Write(p) }
+
+func (f *memFile) Close() error {
+	f.m.mu.Lock()
+	defer f.m.mu.Unlock()
+	if err := f.ctx.Err(); err != nil {
+		f.m.givenUp++
+		return err
+	}
+	f.m.archives[f.id] = f.buf.Bytes()
+	return nil
+}
+
+func (m *memArchives) Create(ctx context.Context, accountID, exportID string) (io.WriteCloser, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.accounts[exportID] = accountID
+	return &memFile{ctx: ctx, m: m, id: exportID}, nil
+}
+
+func (m *memArchives) List(context.Context) (map[string]string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return maps.Clone(m.accounts), nil
+}
+
+func (m *memArchives) Remove(_ context.Context, _, exportID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.archives, exportID)
+	delete(m.accounts, exportID)
+	m.removed = append(m.removed, exportID)
+	return nil
 }
 
 // memExport writes the account's document, as the store does.
@@ -137,16 +184,20 @@ func (m *memExport) export(ctx context.Context, accountID string, at time.Time, 
 }
 
 type env struct {
-	store  *memStore
-	export *memExport
-	clk    *clock.Manual
-	worker *Worker
+	store    *memStore
+	archives *memArchives
+	export   *memExport
+	clk      *clock.Manual
+	worker   *Worker
 }
 
 func newEnv(t *testing.T, params Params) *env {
 	t.Helper()
-	e := &env{store: &memStore{}, export: &memExport{doc: `{"format":"runsten-account"}`}, clk: clock.NewManual(t0)}
-	e.worker = New(e.store, e.export.export, e.clk, params, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	e := &env{
+		store: &memStore{held: map[string]bool{"job": true}}, archives: newMemArchives(),
+		export: &memExport{doc: `{"format":"runsten-account"}`}, clk: clock.NewManual(t0),
+	}
+	e.worker = New(e.store, e.archives, e.export.export, e.clk, params, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	return e
 }
 
@@ -188,14 +239,14 @@ func TestExport(t *testing.T) {
 		t.Fatal("no job run")
 	}
 	s := e.store
-	if s.status != "done" || !s.reset {
-		t.Fatalf("status %s, reset %t", s.status, s.reset)
+	if s.status != "done" {
+		t.Fatalf("status %s", s.status)
 	}
 	if e.once(t) {
 		t.Error("a job done ran again")
 	}
 	// The archive is the account's document, zipped and named after its day.
-	archive := s.archive()
+	archive := e.archives.archives["job"]
 	if len(archive) == 0 || s.saved != int64(len(archive)) {
 		t.Errorf("archive %d bytes, saved %d", len(archive), s.saved)
 	}
@@ -211,32 +262,34 @@ func TestExport(t *testing.T) {
 	}
 }
 
-// The archive is written in parts of PartSize, each renewing the claim: a build longer
-// than the lease keeps it.
-func TestExportParts(t *testing.T) {
+// The claim is renewed every RenewEvery bytes written, and once complete: a build
+// longer than the lease keeps it.
+func TestExportRenews(t *testing.T) {
 	params := DefaultParams()
-	params.PartSize = 64
+	params.RenewEvery = 100
 	e := newEnv(t, params)
-	// Random bytes: the document does not compress below several parts.
-	random := make([]byte, 1500)
-	_, _ = rand.Read(random)
-	e.export.doc = hex.EncodeToString(random)
-	e.store.pended = true
-	e.once(t)
-	s := e.store
-	if s.status != "done" || len(s.parts) < 3 {
-		t.Fatalf("status %s, %d parts", s.status, len(s.parts))
-	}
-	for i, p := range s.parts[:len(s.parts)-1] {
-		if len(p) != params.PartSize {
-			t.Errorf("part %d: %d bytes", i, len(p))
+	r := &renewWriter{ctx: context.Background(), w: e.worker, job: Job{ID: "job"}, file: io.Discard}
+	for _, n := range []int{60, 60, 30, 150, 10} {
+		if _, err := r.Write(make([]byte, n)); err != nil {
+			t.Fatal(err)
 		}
 	}
-	if len(s.renewed) != len(s.parts)+1 {
-		t.Errorf("%d renewals for %d parts", len(s.renewed), len(s.parts))
+	if want := []int64{120, 300}; !slices.Equal(e.store.renewed, want) || r.n != 310 {
+		t.Errorf("renewed %v after %d bytes, want %v", e.store.renewed, r.n, want)
 	}
-	if _, body := unzip(t, s.archive()); body != e.export.doc {
-		t.Error("the parts are not the archive")
+	// A claim lost stops the build.
+	e.store.lease = true
+	if _, err := r.Write(make([]byte, 100)); !errors.Is(err, ErrLeaseLost) {
+		t.Errorf("a claim lost: %v", err)
+	}
+
+	// A build renews it as it starts and as it completes, with the archive's size.
+	e = newEnv(t, DefaultParams())
+	e.store.pended = true
+	e.once(t)
+	size := int64(len(e.archives.archives["job"]))
+	if s := e.store; s.status != "done" || s.saved != size || !slices.Equal(s.renewed, []int64{0, size}) {
+		t.Errorf("status %s, saved %d of %d, renewed %v", s.status, s.saved, size, s.renewed)
 	}
 }
 
@@ -272,6 +325,9 @@ func TestExportDocumentFails(t *testing.T) {
 	if s := e.store; s.status != "" || s.saved != 0 || s.failures != 1 {
 		t.Errorf("status %q, saved %d, failures %d", s.status, s.saved, s.failures)
 	}
+	if len(e.archives.archives) != 0 || e.archives.givenUp != 1 {
+		t.Errorf("the archive is kept: %d given up", e.archives.givenUp)
+	}
 }
 
 // A claim another worker took over is left alone: no retry, no failure.
@@ -282,6 +338,9 @@ func TestExportLeaseLost(t *testing.T) {
 	e.once(t)
 	if s := e.store; s.status != "" || s.saved != 0 || s.failures != 0 || e.once(t) {
 		t.Errorf("taken over: status %q, saved %d, failures %d", s.status, s.saved, s.failures)
+	}
+	if len(e.archives.archives) != 0 {
+		t.Error("the archive of a claim taken over is kept")
 	}
 }
 
@@ -299,14 +358,23 @@ func TestExportStopped(t *testing.T) {
 	}
 }
 
-// The archives past their time are thrown away at most every Expire.
-func TestExportExpires(t *testing.T) {
+// The sweep, at most every Sweep, ends the exports past their time and throws away the
+// archives no export holds.
+func TestExportSweeps(t *testing.T) {
 	e := newEnv(t, DefaultParams())
-	e.once(t)
-	e.clk.Advance(30 * time.Second)
+	e.archives.archives["job"], e.archives.accounts["job"] = []byte("PK held"), "acc"
+	e.archives.archives["old"], e.archives.accounts["old"] = []byte("PK replaced"), "acc"
 	e.once(t)
 	if len(e.store.expired) != 1 || !e.store.expired[0].Equal(t0) {
 		t.Fatalf("expired %v", e.store.expired)
+	}
+	if _, ok := e.archives.archives["job"]; !ok || len(e.archives.removed) != 1 || e.archives.removed[0] != "old" {
+		t.Errorf("removed %v", e.archives.removed)
+	}
+	e.clk.Advance(30 * time.Second)
+	e.once(t)
+	if len(e.store.expired) != 1 {
+		t.Errorf("swept again within a minute: %v", e.store.expired)
 	}
 	e.clk.Advance(30 * time.Second)
 	e.once(t)

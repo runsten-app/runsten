@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"io/fs"
 	"net/http"
 	"time"
 
@@ -22,10 +23,15 @@ type AccountExports interface {
 	CreateAccountExport(ctx context.Context, accountID string, at time.Time) (AccountExport, error)
 	// LatestAccountExport is the account's export; false when it has none.
 	LatestAccountExport(ctx context.Context, accountID string) (AccountExport, bool, error)
-	// OpenAccountExport opens the account's held archive, to be read from any offset;
-	// ErrNotFound when the export is not held: none was asked for, it is still being
-	// built, or it expired. A read fails once the archive is no longer held.
-	OpenAccountExport(ctx context.Context, accountID string) (AccountExport, io.ReadSeeker, error)
+}
+
+// ExportArchives keeps the exports' archives, out of the database: in a directory, or
+// in a bucket that serves them itself.
+type ExportArchives interface {
+	// Open opens the export's archive: a file to serve from any offset, or else the
+	// URL the client is sent to, which downloads it under filename; fs.ErrNotExist when
+	// there is none.
+	Open(ctx context.Context, accountID, exportID, filename string) (io.ReadSeekCloser, string, error)
 }
 
 // ErrExportActive is returned for an export of an account that has one pending or
@@ -121,25 +127,40 @@ func (s *Server) getAccountExport(ctx context.Context, _ *struct{}) (*body[accou
 	return respond(out), nil
 }
 
-// downloadAccountExport serves the account's archive, a range of it when the request
-// asks for one (http.ServeContent): a download cut short resumes where it stopped, as
-// long as the archive is the same one (If-Range, its ETag the export's id). Its status
-// goes with its first bytes: a failure before them is an error of the contract, one
-// after them cuts the archive short.
+// downloadAccountExport serves the account's archive: a file, a range of it when the
+// request asks for one (http.ServeContent), so that a download cut short resumes as long
+// as the archive is the same one (If-Range, its ETag the export's id); or a redirection
+// to the bucket that holds it, which does the same. Its status goes with its first
+// bytes: a failure before them is an error of the contract, one after them cuts the
+// archive short.
 func (s *Server) downloadAccountExport(ctx context.Context, _ *struct{}) (*huma.StreamResponse, error) {
 	account := sessionFrom(ctx).AccountID
-	e, archive, err := s.AccountExports.OpenAccountExport(ctx, account)
+	e, found, err := s.AccountExports.LatestAccountExport(ctx, account)
 	switch {
-	case errors.Is(err, ErrNotFound):
+	case err != nil:
+		return nil, s.internal("export not read", err)
+	case !found || e.Status != ExportDone:
+		return nil, apiError(http.StatusNotFound, codeNotFound, "no export is held: ask for one first")
+	}
+	filename := "runsten-account-" + e.EndedAt.UTC().Format(time.DateOnly) + ".zip"
+	archive, link, err := s.ExportArchives.Open(ctx, account, e.ID, filename)
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
 		return nil, apiError(http.StatusNotFound, codeNotFound, "no export is held: ask for one first")
 	case err != nil:
 		return nil, s.internal("export not opened", err)
 	}
-	name := `attachment; filename="runsten-account-` + e.EndedAt.UTC().Format(time.DateOnly) + `.zip"`
 	return &huma.StreamResponse{Body: func(hctx huma.Context) {
 		r, w := unwrap(hctx)
+		w.Header().Set("Cache-Control", "no-store")
+		if archive == nil {
+			http.Redirect(w, r, link, http.StatusFound)
+			s.Log.Info("account export sent to its bucket", "account", account)
+			return
+		}
+		defer archive.Close()
 		w.Header().Set("Content-Type", "application/zip")
-		w.Header().Set("Content-Disposition", name)
+		w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
 		w.Header().Set("ETag", `"`+e.ID+`"`)
 		// The download is best effort: a client that goes away stops it, the archive
 		// stays as it is, to be resumed.
@@ -198,7 +219,9 @@ func (s *Server) registerAccountExport(api huma.API) {
 		Description: "The archive the export worker built: the whole of the account's data zipped. " +
 			"`GET /account/export-job` tells when it is held. A `Range` request (`Accept-Ranges: bytes`) gets " +
 			"that part of it, `206`, so that a download cut short resumes: with `If-Range` set to the `ETag`, " +
-			"the export's id, a range of an archive replaced since gets the whole new one instead.",
+			"the export's id, a range of an archive replaced since gets the whole new one instead. An instance " +
+			"that keeps its archives in a bucket answers `302` instead, to a link of the bucket valid a few " +
+			"minutes, which serves the archive and its ranges itself.",
 	}, "The archive, as an attachment (Content-Disposition), named after the day it was built.", map[int]string{
 		http.StatusUnauthorized:        errUnauthorized,
 		http.StatusNotFound:            "`not_found`: no export is held, none asked for or one still being built.",
@@ -215,6 +238,12 @@ func (s *Server) registerAccountExport(api huma.API) {
 		"ETag": {
 			Description: "The export's id, quoted: the archive's, for If-Range.", Required: true,
 			Schema: &huma.Schema{Type: huma.TypeString},
+		},
+	}
+	o.Responses["302"] = &huma.Response{
+		Description: "The archive is the bucket's to serve: Location is a link to it, valid a few minutes.",
+		Headers: map[string]*huma.Param{
+			"Location": {Description: "The archive's link.", Required: true, Schema: &huma.Schema{Type: huma.TypeString}},
 		},
 	}
 	o.Responses["206"] = &huma.Response{

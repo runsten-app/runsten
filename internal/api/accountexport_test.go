@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"strings"
 	"sync"
@@ -19,7 +20,6 @@ type memAccountExports struct {
 	ex map[string]AccountExport // by account, its only export
 	// err fails the writes, readErr the reads, as a store the database.
 	err, readErr error
-	zip          []byte // the archive held for every export done
 }
 
 func (m *memAccountExports) CreateAccountExport(_ context.Context, accountID string, at time.Time) (AccountExport, error) {
@@ -52,18 +52,35 @@ func (m *memAccountExports) LatestAccountExport(_ context.Context, accountID str
 	return e, ok, nil
 }
 
-func (m *memAccountExports) OpenAccountExport(_ context.Context, accountID string) (AccountExport, io.ReadSeeker, error) {
+// memArchives keeps the archive of every export done: a file, or a bucket's link when
+// link is set.
+type memArchives struct {
+	mu      sync.Mutex
+	zip     []byte
+	link    string
+	missing bool // the archive is gone, its export still done
+	err     error
+	opened  []string // the file names asked for
+}
+
+func (m *memArchives) Open(_ context.Context, _, _, filename string) (io.ReadSeekCloser, string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if m.readErr != nil {
-		return AccountExport{}, nil, m.readErr
+	m.opened = append(m.opened, filename)
+	switch {
+	case m.err != nil:
+		return nil, "", m.err
+	case m.missing:
+		return nil, "", fs.ErrNotExist
+	case m.link != "":
+		return nil, m.link, nil
 	}
-	e, ok := m.ex[accountID]
-	if !ok || e.Status != ExportDone {
-		return AccountExport{}, nil, fmt.Errorf("%w: the account's export is not held", ErrNotFound)
-	}
-	return e, strings.NewReader(string(m.zip)), nil
+	return nopSeekCloser{strings.NewReader(string(m.zip))}, "", nil
 }
+
+type nopSeekCloser struct{ io.ReadSeeker }
+
+func (nopSeekCloser) Close() error { return nil }
 
 // done ends the account's export as the worker does: its archive is held.
 func (m *memAccountExports) done(accountID string, bytes int64, at time.Time) {
@@ -78,7 +95,7 @@ const exportZip = "PK\x03\x04the account's archive" // opaque bytes: what the wo
 
 func TestAccountExportJob(t *testing.T) {
 	e := newEnv(t, 10)
-	e.exports.zip = []byte(exportZip)
+	e.archives.zip = []byte(exportZip)
 	c := e.session(t, "admin")
 	logs := logged(e)
 	base := e.api.URL + "/api/v1/account"
@@ -196,10 +213,34 @@ func TestAccountExportJob(t *testing.T) {
 	}
 	wantError(t, body, codeInternal)
 	if resp, body = get(t, noFollow(), base+"/export.zip", c); resp.status != http.StatusInternalServerError {
-		t.Fatalf("open failed: %d %s", resp.status, body)
+		t.Fatalf("read failed: %d %s", resp.status, body)
 	}
 	wantError(t, body, codeInternal)
 	e.exports.readErr = nil
+
+	// The export done again: its archive may be gone, or the archives may fail.
+	e.exports.done(account, int64(len(exportZip)), at)
+	e.archives.missing = true
+	if resp, body = get(t, noFollow(), base+"/export.zip", c); resp.status != http.StatusNotFound {
+		t.Fatalf("archive gone: %d %s", resp.status, body)
+	}
+	e.archives.missing, e.archives.err = false, errors.New("disk full")
+	if resp, body = get(t, noFollow(), base+"/export.zip", c); resp.status != http.StatusInternalServerError {
+		t.Fatalf("archives failed: %d %s", resp.status, body)
+	}
+	wantError(t, body, codeInternal)
+	e.archives.err = nil
+
+	// Archives kept in a bucket: the client is sent to its link, the file named after
+	// the build's day.
+	e.archives.link = "https://bucket.example/exports/archive.zip?X-Amz-Signature=abc"
+	resp, _ = get(t, noFollow(), base+"/export.zip", c)
+	if resp.status != http.StatusFound || resp.header.Get("Location") != e.archives.link || resp.header.Get("Cache-Control") != "no-store" {
+		t.Fatalf("bucket: %d %s", resp.status, resp.header.Get("Location"))
+	}
+	if name := e.archives.opened[len(e.archives.opened)-1]; name != "runsten-account-"+at.Format(time.DateOnly)+".zip" {
+		t.Errorf("the link's name: %s", name)
+	}
 
 	for _, want := range []string{"account export started", "account export downloaded"} {
 		if !strings.Contains(logs.String(), want) {

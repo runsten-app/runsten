@@ -247,10 +247,11 @@ type Config struct {
 	Admission Admission
 	// Accounts exports the accounts' data, and ExportTables are the tables an extension
 	// adds to it; nil: none. AccountExports are the accounts' ZIP archives, built by
-	// the export worker.
+	// the export worker, and ExportArchives where they are kept.
 	Accounts       Accounts
 	ExportTables   []ExportTable
 	AccountExports AccountExports
+	ExportArchives ExportArchives
 	// CapacityParams are the assumptions of the battery capacity estimates.
 	CapacityParams core.CapacityParams
 	// Catalog recognizes the vehicles' variants.

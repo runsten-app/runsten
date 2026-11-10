@@ -27,7 +27,7 @@ var allowed = map[string][]string{
 	// The binaries wire the adapters together. Only runsten-simulator knows the simulator.
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/bmw", "internal/catalog", "internal/core",
-		"internal/derive", "internal/exporter", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
+		"internal/archive", "internal/derive", "internal/exporter", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
 		"internal/platform", "internal/polestar", "internal/polestarid", "internal/release", "internal/store", "internal/tesla",
 		"internal/teslamate", "internal/volvo", "internal/volvoportal", "internal/aaoslogging",
 	},
@@ -94,6 +94,8 @@ var allowed = map[string][]string{
 	"internal/aximote":           {"net/http", "encoding/json"},
 	// The latest release on GitHub, compared with the one running.
 	"internal/release": {"net/http", "encoding/json", "internal/platform/clock"},
+	// The accounts' export archives, out of the database: a directory, or an S3 bucket.
+	"internal/archive": {"net/http", "github.com/minio/minio-go/v7"},
 	// The vendors' pictures of the vehicles, relayed to the browser.
 	"internal/picture": {"net/http", "internal/platform/clock"},
 	// AAOS Logging's export: JSON files in ZIPs.

@@ -5786,7 +5786,7 @@ paths:
         - account
   /account/export.zip:
     get:
-      description: "The archive the export worker built: the whole of the account's data zipped. `GET /account/export-job` tells when it is held. A `Range` request (`Accept-Ranges: bytes`) gets that part of it, `206`, so that a download cut short resumes: with `If-Range` set to the `ETag`, the export's id, a range of an archive replaced since gets the whole new one instead."
+      description: "The archive the export worker built: the whole of the account's data zipped. `GET /account/export-job` tells when it is held. A `Range` request (`Accept-Ranges: bytes`) gets that part of it, `206`, so that a download cut short resumes: with `If-Range` set to the `ETag`, the export's id, a range of an archive replaced since gets the whole new one instead. An instance that keeps its archives in a bucket answers `302` instead, to a link of the bucket valid a few minutes, which serves the archive and its ranges itself."
       operationId: downloadAccountExport
       responses:
         "200":
@@ -5819,6 +5819,14 @@ paths:
           headers:
             Content-Range:
               description: The range sent, such as bytes 1048576-2097151/52428800.
+              required: true
+              schema:
+                type: string
+        "302":
+          description: "The archive is the bucket's to serve: Location is a link to it, valid a few minutes."
+          headers:
+            Location:
+              description: The archive's link.
               required: true
               schema:
                 type: string

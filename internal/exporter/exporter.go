@@ -1,9 +1,11 @@
 // Package exporter builds an account's whole history as a ZIP archive, out of the
 // request: its worker claims the export the API created (POST /account/export-job),
-// writes the account's export (the document of GET /account/export) into the archive,
-// part by part, each part renewing its claim, and ends the job done, the archive held
-// a few days. It knows neither HTTP nor the database: it declares its Store, and is
-// given the function that writes the account's document, which the binary wires.
+// writes the account's export (the document of GET /account/export) into an archive of
+// its Archives, out of the database, renewing its claim as it goes, and ends the job
+// done, the archive held a few days. It throws away the archives no export holds
+// anymore. It knows neither HTTP, the database nor where archives are kept: it declares
+// its Store and its Archives, and is given the function that writes the account's
+// document, which the binary wires.
 package exporter
 
 import (
@@ -31,28 +33,39 @@ type Job struct {
 	ClaimedAt time.Time
 }
 
-// Store keeps the exports and their archives, in parts.
+// Store keeps the exports: their status, their claim and their expiry.
 type Store interface {
 	// ClaimExport claims the export that may run and whose previous claim has gone
 	// lease without a sign of life; false when there is none.
 	ClaimExport(ctx context.Context, at time.Time, lease time.Duration) (Job, bool, error)
-	// ResetExport throws away what an interrupted build wrote, and renews the claim;
-	// ErrLeaseLost when it is over.
-	ResetExport(ctx context.Context, job Job, at time.Time) error
-	// WriteExportPart adds the archive's part that starts at start, and renews the
-	// claim; ErrLeaseLost when it is over.
-	WriteExportPart(ctx context.Context, job Job, start int64, data []byte, at time.Time) error
+	// StartExport starts the build, nothing written yet, and RenewExport renews its
+	// claim with the bytes written so far; ErrLeaseLost when the claim is over.
+	StartExport(ctx context.Context, job Job, at time.Time) error
+	RenewExport(ctx context.Context, job Job, at time.Time, bytes int64) error
 	// SaveExport ends the export, done, with the archive's size, held until expiresAt;
 	// ErrLeaseLost when the claim is over.
 	SaveExport(ctx context.Context, job Job, at time.Time, bytes int64, expiresAt time.Time) error
-	// RetryExport throws away what the build wrote and releases the export until
-	// notBefore, with its failures in a row.
+	// RetryExport releases the export until notBefore, with its failures in a row.
 	RetryExport(ctx context.Context, job Job, notBefore time.Time, failures int) error
-	// FailExport throws away what the build wrote and ends the export, failed.
+	// FailExport ends the export, failed: it holds no archive.
 	FailExport(ctx context.Context, job Job, at time.Time) error
-	// ExpireExports throws away the archives held past at, across the accounts: their
-	// number.
+	// ExpireExports ends the exports held past at, across the accounts: their number.
 	ExpireExports(ctx context.Context, at time.Time) (int, error)
+	// HeldExports are the ids of the exports that may hold an archive, across the
+	// accounts: being built, or done.
+	HeldExports(ctx context.Context) (map[string]bool, error)
+}
+
+// Archives keeps the archives, out of the database, named by their account and export.
+type Archives interface {
+	// Create starts the export's archive: Close makes it the export's, unless ctx is
+	// over, which gives it up.
+	Create(ctx context.Context, accountID, exportID string) (io.WriteCloser, error)
+	// List lists the exports that have an archive, or what a build of it left: their
+	// account by their id.
+	List(ctx context.Context) (map[string]string, error)
+	// Remove removes the export's archive, and what a build of it left.
+	Remove(ctx context.Context, accountID, exportID string) error
 }
 
 // ExportFunc writes the account's export document at the time at to w: the one GET
@@ -70,45 +83,47 @@ type Params struct {
 	// export fails.
 	Backoff     time.Duration
 	MaxFailures int
-	// PartSize is the size of the archive's parts: a part is one write of the store.
-	PartSize int
-	// Keep is how long a built archive is held; Expire how often the ones past their
-	// time are thrown away.
-	Keep   time.Duration
-	Expire time.Duration
+	// RenewEvery is how many bytes of the archive are written between two renewals of
+	// the claim.
+	RenewEvery int64
+	// Keep is how long a built archive is held; Sweep how often the archives past their
+	// time, or no export's, are thrown away.
+	Keep  time.Duration
+	Sweep time.Duration
 }
 
-// DefaultParams are the worker's defaults: every part (1 MiB) renews the claim, so a
+// DefaultParams are the worker's defaults: every 4 MiB written renews the claim, so a
 // lease of 5 minutes covers the reading of a table before its first rows; an archive
 // is held a week, the time to download it.
 func DefaultParams() Params {
 	return Params{
 		Lease: 5 * time.Minute, Idle: 5 * time.Second, Backoff: time.Minute, MaxFailures: 3,
-		PartSize: 1 << 20, Keep: 7 * 24 * time.Hour, Expire: time.Minute,
+		RenewEvery: 4 << 20, Keep: 7 * 24 * time.Hour, Sweep: time.Minute,
 	}
 }
 
 // Worker builds the exports, one at a time.
 type Worker struct {
-	store  Store
-	export ExportFunc
-	clk    clock.Clock
-	params Params
-	log    *slog.Logger
-	// expired is when the archives past their time were last thrown away.
-	expired time.Time
+	store    Store
+	archives Archives
+	export   ExportFunc
+	clk      clock.Clock
+	params   Params
+	log      *slog.Logger
+	// swept is when the archives were last swept.
+	swept time.Time
 }
 
 // New creates the worker.
-func New(store Store, export ExportFunc, clk clock.Clock, params Params, log *slog.Logger) *Worker {
-	return &Worker{store: store, export: export, clk: clk, params: params, log: log}
+func New(store Store, archives Archives, export ExportFunc, clk clock.Clock, params Params, log *slog.Logger) *Worker {
+	return &Worker{store: store, archives: archives, export: export, clk: clk, params: params, log: log}
 }
 
-// Once throws away the archives past their time, at most every Expire, then builds one
-// export, if one may run, until it ends or must wait: false when there was none. What
-// the export meets is written to it, and is no error of Once.
+// Once sweeps the archives, at most every Sweep, then builds one export, if one may
+// run, until it ends or must wait: false when there was none. What the export meets is
+// written to it, and is no error of Once.
 func (w *Worker) Once(ctx context.Context) (bool, error) {
-	if err := w.expire(ctx); err != nil {
+	if err := w.sweep(ctx); err != nil {
 		return false, err
 	}
 	job, ok, err := w.store.ClaimExport(ctx, w.now(), w.params.Lease)
@@ -137,19 +152,39 @@ func (w *Worker) Once(ctx context.Context) (bool, error) {
 	return true, w.fail(ctx, job)
 }
 
-func (w *Worker) expire(ctx context.Context) error {
+// sweep ends the exports past their time, then throws away the archives no export
+// holds: replaced, expired, failed, or of an account deleted. The archives are listed
+// before the exports are read: one built meanwhile has its export already.
+func (w *Worker) sweep(ctx context.Context) error {
 	now := w.now()
-	if !w.expired.IsZero() && now.Sub(w.expired) < w.params.Expire {
+	if !w.swept.IsZero() && now.Sub(w.swept) < w.params.Sweep {
 		return nil
 	}
 	n, err := w.store.ExpireExports(ctx, now)
 	if err != nil {
 		return fmt.Errorf("expiring the exports: %w", err)
 	}
-	w.expired = now
 	if n > 0 {
 		w.log.InfoContext(ctx, "account exports expired", "exports", n)
 	}
+	archives, err := w.archives.List(ctx)
+	if err != nil {
+		return fmt.Errorf("listing the archives: %w", err)
+	}
+	held, err := w.store.HeldExports(ctx)
+	if err != nil {
+		return fmt.Errorf("reading the exports held: %w", err)
+	}
+	for exportID, accountID := range archives {
+		if held[exportID] {
+			continue
+		}
+		if err := w.archives.Remove(ctx, accountID, exportID); err != nil {
+			return fmt.Errorf("removing an archive: %w", err)
+		}
+		w.log.InfoContext(ctx, "account export archive removed", "account", accountID, "job", exportID)
+	}
+	w.swept = now
 	return nil
 }
 
@@ -171,16 +206,22 @@ func (w *Worker) fail(ctx context.Context, job Job) error {
 // compared to the one stored.
 func (w *Worker) now() time.Time { return w.clk.Now().Truncate(time.Microsecond) }
 
-// build writes the account's export into the archive, part by part, then ends the job
-// done with its size. Every failure leaves the archive half written: the next claim
-// throws it away and builds it again.
+// build writes the account's export into a new archive, renewing the claim as it goes,
+// then ends the job done with its size. A failure gives the archive up.
 func (w *Worker) build(ctx context.Context, job Job) error {
-	if err := w.store.ResetExport(ctx, job, w.now()); err != nil {
+	if err := w.store.StartExport(ctx, job, w.now()); err != nil {
+		return fmt.Errorf("starting the export: %w", err)
+	}
+	// Canceled, the archive is given up: only a complete one is the export's.
+	buildCtx, giveUp := context.WithCancel(ctx)
+	defer giveUp()
+	file, err := w.archives.Create(buildCtx, job.AccountID, job.ID)
+	if err != nil {
 		return fmt.Errorf("opening the archive: %w", err)
 	}
 	at := w.now()
-	parts := &partWriter{ctx: ctx, w: w, job: job, buf: make([]byte, 0, w.params.PartSize)}
-	zipFile := zip.NewWriter(parts)
+	counted := &renewWriter{ctx: ctx, w: w, job: job, file: file}
+	zipFile := zip.NewWriter(counted)
 	entry, err := zipFile.CreateHeader(&zip.FileHeader{
 		Name: "runsten-account-" + at.Format(time.DateOnly) + ".json", Method: zip.Deflate, Modified: at,
 	})
@@ -195,52 +236,46 @@ func (w *Worker) build(ctx context.Context, job Job) error {
 		err = closeErr
 	}
 	if err == nil {
-		err = parts.flush()
+		// The claim is still this worker's as the archive becomes the export's.
+		err = w.store.RenewExport(ctx, job, w.now(), counted.n)
 	}
 	if err != nil {
+		giveUp()
+		_ = file.Close() // given up: what was written goes
 		return fmt.Errorf("building the archive: %w", err)
 	}
-	if err := w.store.SaveExport(ctx, job, w.now(), parts.start, w.now().Add(w.params.Keep)); err != nil {
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("closing the archive: %w", err)
+	}
+	if err := w.store.SaveExport(ctx, job, w.now(), counted.n, w.now().Add(w.params.Keep)); err != nil {
 		return fmt.Errorf("saving the export: %w", err)
 	}
 	return nil
 }
 
-// partWriter cuts what is written into parts of the store, PartSize each but the last:
-// each write of a part renews the job's claim.
-type partWriter struct {
-	ctx   context.Context
-	w     *Worker
-	job   Job
-	buf   []byte
-	start int64 // the bytes of the parts written: where the next one starts
+// renewWriter writes to the archive, counting its bytes, and renews the job's claim
+// every RenewEvery of them.
+type renewWriter struct {
+	ctx     context.Context
+	w       *Worker
+	job     Job
+	file    io.Writer
+	n, last int64 // the bytes written, and at the last renewal
 }
 
-func (p *partWriter) Write(b []byte) (int, error) {
-	n := 0
-	for len(b) > 0 {
-		k := min(len(b), cap(p.buf)-len(p.buf))
-		p.buf, b, n = append(p.buf, b[:k]...), b[k:], n+k
-		if len(p.buf) == cap(p.buf) {
-			if err := p.flush(); err != nil {
-				return n, err
-			}
+func (r *renewWriter) Write(p []byte) (int, error) {
+	n, err := r.file.Write(p)
+	r.n += int64(n)
+	if err != nil {
+		return n, err //nolint:wrapcheck // the archive's writer
+	}
+	if r.n-r.last >= r.w.params.RenewEvery {
+		if err := r.w.store.RenewExport(r.ctx, r.job, r.w.now(), r.n); err != nil {
+			return n, fmt.Errorf("renewing the claim: %w", err)
 		}
+		r.last = r.n
 	}
 	return n, nil
-}
-
-// flush writes the part held, if any.
-func (p *partWriter) flush() error {
-	if len(p.buf) == 0 {
-		return nil
-	}
-	if err := p.w.store.WriteExportPart(p.ctx, p.job, p.start, p.buf, p.w.now()); err != nil {
-		return fmt.Errorf("writing a part of the archive: %w", err)
-	}
-	p.start += int64(len(p.buf))
-	p.buf = p.buf[:0]
-	return nil
 }
 
 // Run builds the exports until ctx is canceled, then waits Idle while none is to run.

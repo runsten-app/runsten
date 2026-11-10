@@ -5,10 +5,10 @@
 -- downloaded, a download cut short resumed where it stopped. At most one export per
 -- account: the one asked for, being built or held.
 --
--- The archive is kept in parts (account_export_parts), rows of the account like any
--- other: row-level security isolates them, the account's deletion takes them, backup
--- and restore carry them, and each is written or read in a transaction of its own, so
--- that neither a long build nor a slow download holds a connection or a snapshot.
+-- The archive itself is no row: runsten-api keeps it out of the database (a directory,
+-- or an S3 bucket), named by its account and its export. Its worker throws away the
+-- archives no export of this table holds anymore: replaced, expired, failed, or of an
+-- account deleted.
 CREATE TABLE account_exports (
   id         uuid        NOT NULL DEFAULT gen_random_uuid(),
   account_id uuid        NOT NULL UNIQUE REFERENCES accounts ON DELETE CASCADE,
@@ -28,10 +28,9 @@ CREATE TABLE account_exports (
   -- Failures in a row: the export fails at the worker's maximum.
   failures   integer     NOT NULL DEFAULT 0 CHECK (failures >= 0),
   ended_at   timestamptz,
-  -- When the archive held goes, its parts with it.
+  -- When the archive held goes: the export's row is deleted, its archive then.
   expires_at timestamptz,
   PRIMARY KEY (id),
-  UNIQUE (id, account_id),
   CHECK ((status IN ('done', 'failed')) = (ended_at IS NOT NULL)),
   CHECK ((status = 'failed') = (error IS NOT NULL)),
   CHECK ((status = 'pending') = (claimed_at IS NULL)),
@@ -40,29 +39,12 @@ CREATE TABLE account_exports (
   CHECK ((status = 'done') = (expires_at IS NOT NULL))
 );
 
--- The archive's bytes, in parts written in order: a part starts where the previous one
--- ends. A ZIP archive does not compress again: its parts are stored as they are.
-CREATE TABLE account_export_parts (
-  account_id uuid   NOT NULL,
-  export_id  uuid   NOT NULL,
-  -- The part's first byte in the archive.
-  start      bigint NOT NULL CHECK (start >= 0),
-  data       bytea  NOT NULL CHECK (octet_length(data) > 0),
-  PRIMARY KEY (export_id, start),
-  FOREIGN KEY (export_id, account_id) REFERENCES account_exports (id, account_id) ON DELETE CASCADE
-);
-ALTER TABLE account_export_parts ALTER COLUMN data SET STORAGE EXTERNAL;
-
 ALTER TABLE account_exports ENABLE ROW LEVEL SECURITY;
 CREATE POLICY account_isolation ON account_exports TO runsten_app
   USING (account_id = runsten_current_account())
   WITH CHECK (account_id = runsten_current_account());
-ALTER TABLE account_export_parts ENABLE ROW LEVEL SECURITY;
-CREATE POLICY account_isolation ON account_export_parts TO runsten_app
-  USING (account_id = runsten_current_account())
-  WITH CHECK (account_id = runsten_current_account());
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON account_exports, account_export_parts TO runsten_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON account_exports TO runsten_app;
 
 -- Claims the account's export to build once it may run (not_before passed) and its
 -- previous claim, if any, has gone a lease without a sign of life: the worker then
@@ -85,8 +67,8 @@ CREATE FUNCTION runsten_claim_account_export(at timestamptz, lease interval)
     RETURNING e.account_id, e.id, e.claimed_at
   $$;
 
--- Throws away the archives held past their time, across the accounts: the export goes,
--- its parts with it. Only their number leaves the function.
+-- Ends the exports held past their time, across the accounts: their archives are then
+-- no export's. Only their number leaves the function.
 CREATE FUNCTION runsten_expire_account_exports(at timestamptz)
   RETURNS integer
   LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = public
@@ -95,7 +77,16 @@ CREATE FUNCTION runsten_expire_account_exports(at timestamptz)
     SELECT count(*)::integer FROM gone
   $$;
 
+-- The exports that may hold an archive, across the accounts: an archive of none is
+-- thrown away. Only their ids leave the function.
+CREATE FUNCTION runsten_account_exports_held()
+  RETURNS SETOF uuid
+  LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+  AS $$ SELECT id FROM account_exports WHERE status <> 'failed' $$;
+
 REVOKE ALL ON FUNCTION runsten_claim_account_export(timestamptz, interval) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION runsten_claim_account_export(timestamptz, interval) TO runsten_app;
 REVOKE ALL ON FUNCTION runsten_expire_account_exports(timestamptz) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION runsten_expire_account_exports(timestamptz) TO runsten_app;
+REVOKE ALL ON FUNCTION runsten_account_exports_held() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION runsten_account_exports_held() TO runsten_app;
