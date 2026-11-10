@@ -396,18 +396,28 @@ function unzip(zip: Buffer): { name: string; data: string } {
 
 // The account's data: an archive prepared in the background, then downloaded whole.
 test("Settings: the account's data, downloaded", async ({ page }, testInfo) => {
+  // The lock, then the worker's preparation: longer than a page's test.
+  test.setTimeout(120_000)
   await signIn(page)
   await page.goto('/settings/account')
   await expect(page.getByRole('heading', { level: 2 })).toHaveText('Account')
   await checkView(page, testInfo, 'settings-account')
   const section = page.getByRole('region', { name: 'Your data' })
-  await section.getByRole('button', { name: 'Download my data' }).click()
-  // The export worker prepares it: the page follows it until the download is offered.
-  const link = section.getByRole('link', { name: /^Download \(/ })
-  await expect(link).toBeVisible({ timeout: 60_000 })
-  const download = page.waitForEvent('download')
-  await link.click()
-  const file = await download
+  // The archive is the account's, not a project's: one project at a time prepares one,
+  // from the button the previous one left (none held yet, or one held).
+  const file = await exclusive('account-export', async () => {
+    await section
+      .getByRole('button', { name: /^(Download my data|Prepare a new archive)$/ })
+      .click()
+    // The export worker prepares it: the page follows it until the download is offered,
+    // the previous archive's gone first.
+    const link = section.getByRole('link', { name: /^Download \(/ })
+    await expect(link).toBeHidden()
+    await expect(link).toBeVisible({ timeout: 60_000 })
+    const download = page.waitForEvent('download')
+    await link.click()
+    return download
+  })
   expect(file.suggestedFilename()).toMatch(/^runsten-account-\d{4}-\d{2}-\d{2}\.zip$/)
   const entry = unzip(await readFile(await file.path()))
   expect(entry.name).toMatch(/^runsten-account-\d{4}-\d{2}-\d{2}\.json$/)
