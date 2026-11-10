@@ -167,11 +167,12 @@ func (c *Client) Products(ctx context.Context, token string) ([]Product, error) 
 	}
 	var resp struct {
 		Response []struct {
-			// id is beyond float64's exact integers on some vehicles: read as written,
-			// id_s first.
-			ID       json.Number `json:"id"`
-			IDString string      `json:"id_s"`
-			VIN      string      `json:"vin"`
+			// id is beyond float64's exact integers on some vehicles, and a string
+			// that is no number on other products (an energy site's "STE…"): read as
+			// written, id_s first.
+			ID       json.RawMessage `json:"id"`
+			IDString string          `json:"id_s"`
+			VIN      string          `json:"vin"`
 		} `json:"response"`
 	}
 	if err := json.Unmarshal(raw, &resp); err != nil {
@@ -180,8 +181,14 @@ func (c *Client) Products(ctx context.Context, token string) ([]Product, error) 
 	out := []Product{}
 	for _, p := range resp.Response {
 		id := p.IDString
-		if id == "" {
-			id = p.ID.String()
+		switch {
+		case id != "" || string(p.ID) == "null":
+		case len(p.ID) > 0 && p.ID[0] == '"':
+			if err := json.Unmarshal(p.ID, &id); err != nil {
+				return nil, fmt.Errorf("products: %w", err)
+			}
+		default:
+			id = string(p.ID)
 		}
 		if p.VIN != "" && id != "" {
 			out = append(out, Product{ID: id, VIN: p.VIN})
