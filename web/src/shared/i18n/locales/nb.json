@@ -1675,7 +1675,7 @@
         "again": "Bygg et nytt arkiv",
         "progress": "Bygger arkivet",
         "written": "{size} skrevet så langt.",
-        "waiting": "Nytt forsøk {time}.",
+        "waiting": "Neste forsøk: {time}.",
         "download": "Last ned ZIP-en ({size})",
         "held": "Bygget {time}. Beholdes til {until}.",
         "failed": "Arkivet kunne ikke bygges.",

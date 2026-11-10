@@ -1675,7 +1675,7 @@
         "again": "Crea un altro archivio",
         "progress": "Creazione dell'archivio",
         "written": "{size} scritti finora.",
-        "waiting": "Nuovo tentativo alle {time}.",
+        "waiting": "Prossimo tentativo: {time}.",
         "download": "Scarica lo ZIP ({size})",
         "held": "Creato {time}. Disponibile fino a: {until}.",
         "failed": "L'archivio non è stato creato.",

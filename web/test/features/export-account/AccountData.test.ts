@@ -116,4 +116,20 @@ describe('AccountData', () => {
       'An export of this account is already being built.',
     )
   })
+
+  it('follows the export another tab started meanwhile', async () => {
+    const { wrapper } = await mounted()
+    api.startAccountExport.mockRejectedValue(
+      new ApiError(409, 'export_active', 'an export of the account is already active'),
+    )
+    api.fetchAccountExport.mockResolvedValue(job('running'))
+    await build(wrapper)
+    expect(api.fetchAccountExport).toHaveBeenCalledTimes(2)
+    expect(wrapper.find('.building').exists()).toBe(true)
+  })
+
+  it('tells when a failed build is tried again', async () => {
+    const { wrapper } = await mounted({ ...job('pending'), not_before: '2999-01-01T08:00:00Z' })
+    expect(wrapper.find('.waiting').text()).toMatch(/^Next attempt: .+\.$/)
+  })
 })

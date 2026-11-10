@@ -1675,7 +1675,7 @@
         "again": "Construire une autre archive",
         "progress": "Construction de l'archive",
         "written": "{size} écrits jusqu'ici.",
-        "waiting": "Nouvel essai à {time}.",
+        "waiting": "Prochain essai : {time}.",
         "download": "Télécharger le ZIP ({size})",
         "held": "Construite {time}. Expire : {until}.",
         "failed": "L'archive n'a pas pu être construite.",

@@ -1675,7 +1675,7 @@
         "again": "Nog een archief maken",
         "progress": "Het archief wordt gemaakt",
         "written": "{size} tot nu toe geschreven.",
-        "waiting": "Om {time} opnieuw geprobeerd.",
+        "waiting": "Volgende poging: {time}.",
         "download": "De ZIP downloaden ({size})",
         "held": "Gemaakt {time}. Bewaard tot {until}.",
         "failed": "Het archief kon niet gemaakt worden.",

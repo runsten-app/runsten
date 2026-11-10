@@ -1675,7 +1675,7 @@
         "again": "Construir otro archivo",
         "progress": "Construyendo el archivo",
         "written": "{size} escritos hasta ahora.",
-        "waiting": "Reintento a las {time}.",
+        "waiting": "Próximo intento: {time}.",
         "download": "Descargar el ZIP ({size})",
         "held": "Construido {time}. Disponible hasta {until}.",
         "failed": "El archivo no se pudo construir.",

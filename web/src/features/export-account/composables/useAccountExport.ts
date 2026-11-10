@@ -5,6 +5,7 @@ import {
   isExportActive,
   startAccountExport,
 } from '@/entities/session'
+import { isApiError } from '@/shared/api'
 
 // pollInterval is how often an active export is read again, in milliseconds.
 export const pollInterval = 2000
@@ -26,6 +27,12 @@ export function useAccountExport() {
   } = useMutation({
     mutationFn: startAccountExport,
     onSuccess: (job) => queryClient.setQueryData(accountExportKeys.job(), job),
+    // Another tab or a program started one meanwhile: read it, and follow it.
+    onError: (e) => {
+      if (isApiError(e, 'export_active')) {
+        void queryClient.invalidateQueries({ queryKey: accountExportKeys.job() })
+      }
+    },
   })
   return { accountExport, error, start: mutateAsync, isPending, startError, reset }
 }
