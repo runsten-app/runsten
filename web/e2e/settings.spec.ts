@@ -384,6 +384,7 @@ test('Vehicle settings: the model, then the variant of a Polestar', async ({ pag
 // of the archive, gives the entry's place and size; the entry is deflated.
 function unzip(zip: Buffer): { name: string; data: string } {
   const end = zip.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]))
+  if (end < 0) throw new Error('not a ZIP archive: no end of central directory')
   const central = zip.readUInt32LE(end + 16)
   const size = zip.readUInt32LE(central + 20)
   const nameLength = zip.readUInt16LE(central + 28)
