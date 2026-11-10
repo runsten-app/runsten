@@ -45,13 +45,13 @@ func (d *Dir) Create(ctx context.Context, accountID, exportID string) (io.WriteC
 	if err != nil {
 		return nil, fmt.Errorf("archive: %w", err)
 	}
-	return &dirWriter{ctx: ctx, f: f, final: final}, nil
+	return &dirWriter{ctx: ctx, f: f, final: final, root: d.root}, nil
 }
 
 type dirWriter struct {
-	ctx   context.Context
-	f     *os.File
-	final string
+	ctx         context.Context
+	f           *os.File
+	final, root string
 }
 
 func (w *dirWriter) Write(p []byte) (int, error) {
@@ -80,11 +80,14 @@ func (w *dirWriter) Close() error {
 		_ = os.Remove(w.f.Name())
 		return fmt.Errorf("archive: %w", err)
 	}
-	// The rename survives a crash once its directory is synced: the export is told
-	// done after it.
-	if err := syncDir(filepath.Dir(w.final)); err != nil {
-		_ = os.Remove(w.final)
-		return fmt.Errorf("archive: %w", err)
+	// The rename survives a crash once its directory is synced, and the account's
+	// directory, which Create may have made, once the root is: the export is told done
+	// after both.
+	for _, dir := range []string{filepath.Dir(w.final), w.root} {
+		if err := syncDir(dir); err != nil {
+			_ = os.Remove(w.final)
+			return fmt.Errorf("archive: %w", err)
+		}
 	}
 	return nil
 }
