@@ -80,7 +80,25 @@ func (w *dirWriter) Close() error {
 		_ = os.Remove(w.f.Name())
 		return fmt.Errorf("archive: %w", err)
 	}
+	// The rename survives a crash once its directory is synced: the export is told
+	// done after it.
+	if err := syncDir(filepath.Dir(w.final)); err != nil {
+		_ = os.Remove(w.final)
+		return fmt.Errorf("archive: %w", err)
+	}
 	return nil
+}
+
+func syncDir(path string) error {
+	dir, err := os.Open(path) //nolint:gosec // the archives' own directory
+	if err != nil {
+		return err //nolint:wrapcheck // wrapped by the caller
+	}
+	err = dir.Sync()
+	if closeErr := dir.Close(); err == nil {
+		err = closeErr
+	}
+	return err //nolint:wrapcheck // wrapped by the caller
 }
 
 // Open opens the export's archive, to be served from any offset; fs.ErrNotExist when

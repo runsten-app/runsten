@@ -123,8 +123,9 @@ func New(store Store, archives Archives, export ExportFunc, clk clock.Clock, par
 // run, until it ends or must wait: false when there was none. What the export meets is
 // written to it, and is no error of Once.
 func (w *Worker) Once(ctx context.Context) (bool, error) {
-	if err := w.sweep(ctx); err != nil {
-		return false, err
+	// The sweep is best effort: a failure of it holds no export back.
+	if err := w.sweep(ctx); err != nil && ctx.Err() == nil {
+		w.log.ErrorContext(ctx, "account exports not swept", "error", err)
 	}
 	job, ok, err := w.store.ClaimExport(ctx, w.now(), w.params.Lease)
 	if err != nil || !ok {
@@ -160,6 +161,8 @@ func (w *Worker) sweep(ctx context.Context) error {
 	if !w.swept.IsZero() && now.Sub(w.swept) < w.params.Sweep {
 		return nil
 	}
+	// Tried again a Sweep later, whether this one fails or not.
+	w.swept = now
 	n, err := w.store.ExpireExports(ctx, now)
 	if err != nil {
 		return fmt.Errorf("expiring the exports: %w", err)
@@ -180,11 +183,12 @@ func (w *Worker) sweep(ctx context.Context) error {
 			continue
 		}
 		if err := w.archives.Remove(ctx, accountID, exportID); err != nil {
-			return fmt.Errorf("removing an archive: %w", err)
+			// One archive that stays leaves the others to go.
+			w.log.ErrorContext(ctx, "account export archive not removed", "account", accountID, "job", exportID, "error", err)
+			continue
 		}
 		w.log.InfoContext(ctx, "account export archive removed", "account", accountID, "job", exportID)
 	}
-	w.swept = now
 	return nil
 }
 

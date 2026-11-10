@@ -111,6 +111,9 @@ type memArchives struct {
 	accounts map[string]string // every archive's account, a build's under way too
 	givenUp  int
 	removed  []string
+	// listErr fails List, stuck the archives Remove cannot remove.
+	listErr error
+	stuck   map[string]bool
 }
 
 func newMemArchives() *memArchives {
@@ -147,12 +150,18 @@ func (m *memArchives) Create(ctx context.Context, accountID, exportID string) (i
 func (m *memArchives) List(context.Context) (map[string]string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if m.listErr != nil {
+		return nil, m.listErr
+	}
 	return maps.Clone(m.accounts), nil
 }
 
 func (m *memArchives) Remove(_ context.Context, _, exportID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if m.stuck[exportID] {
+		return errors.New("permission denied")
+	}
 	delete(m.archives, exportID)
 	delete(m.accounts, exportID)
 	m.removed = append(m.removed, exportID)
@@ -380,6 +389,28 @@ func TestExportSweeps(t *testing.T) {
 	e.once(t)
 	if len(e.store.expired) != 2 {
 		t.Errorf("expired %v", e.store.expired)
+	}
+}
+
+// The sweep is best effort: an archive that cannot be removed leaves the others to go,
+// and a sweep that fails holds no export back.
+func TestExportSweepFails(t *testing.T) {
+	e := newEnv(t, DefaultParams())
+	e.archives.stuck = map[string]bool{"stuck": true}
+	e.archives.accounts["stuck"], e.archives.accounts["old"] = "acc", "acc"
+	e.store.pended = true
+	if !e.once(t) || e.store.status != "done" {
+		t.Fatalf("not built past an archive stuck: %s", e.store.status)
+	}
+	if !slices.Equal(e.archives.removed, []string{"old"}) {
+		t.Errorf("removed %v", e.archives.removed)
+	}
+
+	e = newEnv(t, DefaultParams())
+	e.archives.listErr = errors.New("bucket unreachable")
+	e.store.pended = true
+	if !e.once(t) || e.store.status != "done" {
+		t.Errorf("not built past a sweep failed: %s", e.store.status)
 	}
 }
 

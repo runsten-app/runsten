@@ -98,13 +98,19 @@ func exportCommand(args []string, getenv func(string) string, out io.Writer) err
 	if closeErr := zipFile.Close(); err == nil {
 		err = closeErr
 	}
+	// On the disk before it is told written: this is the copy taken before a deletion.
+	if err == nil {
+		err = f.Sync()
+	}
+	if closeErr := f.Close(); err == nil {
+		err = closeErr
+	}
 	if err != nil {
 		// A half-written archive would pass for one: it goes.
-		_ = f.Close()
 		_ = os.Remove(name)
-		return err
+		return fmt.Errorf("archive: %w", err)
 	}
-	bytes, err := f.Stat()
+	bytes, err := os.Stat(name)
 	if err != nil {
 		return fmt.Errorf("archive: %w", err)
 	}
