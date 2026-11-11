@@ -55,6 +55,10 @@ describe('perHundred', () => {
     const p = period(300, [1000, 1001])
     expect(perHundred(p.trips, p.charges)).toEqual({ min_minor: 333, max_minor: 334 })
   })
+  it('rounds a cost known exactly to the nearest', () => {
+    const p = period(300, [1000, 1000])
+    expect(perHundred(p.trips, p.charges)).toEqual({ min_minor: 333, max_minor: 333 })
+  })
   it('is unknown without a distance, or with a part unknown', () => {
     const none = period(0, [1000, 1000])
     expect(perHundred(none.trips, none.charges)).toBeNull()
@@ -76,6 +80,7 @@ describe('costKnown', () => {
 describe('accountTotals', () => {
   it('adds the vehicles up, and what 100 km cost on average', () => {
     const t = accountTotals([period(100, [500, 600]), period(300, [1500, 1500])])
+    // A range over the account: its bounds.
     expect(t.distanceKm).toBe(400)
     expect(t.cost).toEqual({ min_minor: 2000, max_minor: 2100 })
     expect(t.costKnown).toBe(true)

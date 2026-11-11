@@ -209,9 +209,9 @@ const isBest = (v: number | null, b: number | null) =>
   flex: 1;
 }
 .figures {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
   margin: 0;
 }
 .label {

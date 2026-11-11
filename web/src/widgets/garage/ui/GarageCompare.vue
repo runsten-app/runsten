@@ -257,6 +257,7 @@ const capacity = computed(() => {
         :series="charging.series"
         unit="%"
         :interval-header="t('garage.compare.vehicle')"
+        :y-max="100"
         :format="(v) => f.quantity(v, 'percent', 0)"
         :hint="charging.note ?? t('garage.compare.charging.hint')"
         :empty="charging.labels.length ? undefined : charging.summary"

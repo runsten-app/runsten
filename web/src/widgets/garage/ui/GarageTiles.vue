@@ -53,7 +53,7 @@ const data = (id: string): GarageVehicle => props.garage.find((v) => v.id === id
 <style scoped>
 .garage-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
 }
 @media (max-width: 599.98px) {

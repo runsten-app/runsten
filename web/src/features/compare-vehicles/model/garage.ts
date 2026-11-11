@@ -33,13 +33,18 @@ export function costKnown(c: Pick<Charges, 'count' | 'cost_unknown'>): boolean {
 }
 
 // perHundred is what 100 km cost, the charges over the distance, in minor units: the
-// lowest rounded down, the highest up, as the API rounds the costs. Unknown when a cost or
-// a distance is: a part left out would bend the ratio, not just lower it.
+// lowest rounded down, the highest up, as the API rounds the costs; a cost known exactly
+// rounds to the nearest, a range of a cent being the rounding's, not the cost's. Unknown
+// when a cost or a distance is: a part left out would bend the ratio, not just lower it.
 export function perHundred(
   trips: Pick<Trips, 'distance_km' | 'distance_unknown'>,
   charges: Pick<Charges, 'cost' | 'cost_unknown'>,
 ): Amounts | null {
   if (trips.distance_km <= 0 || trips.distance_unknown > 0 || charges.cost_unknown > 0) return null
+  if (charges.cost.min_minor === charges.cost.max_minor) {
+    const v = Math.round((charges.cost.min_minor * 100) / trips.distance_km)
+    return { min_minor: v, max_minor: v }
+  }
   return {
     min_minor: Math.floor((charges.cost.min_minor * 100) / trips.distance_km),
     max_minor: Math.ceil((charges.cost.max_minor * 100) / trips.distance_km),
