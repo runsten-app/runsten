@@ -292,7 +292,7 @@ func TestDeriveTrips(t *testing.T) {
 			if tt.params != nil {
 				tt.params(&p)
 			}
-			got := Derive(tt.records, Cursor{}, p, nil)
+			got := derived(t, tt.records, Cursor{}, p, nil)
 			if len(got.Charges) != 0 {
 				t.Errorf("charges: %+v", got.Charges)
 			}
@@ -589,7 +589,7 @@ func TestDeriveCharges(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := Derive(tt.records, Cursor{}, DefaultParams(), nil)
+			got := derived(t, tt.records, Cursor{}, DefaultParams(), nil)
 			checkCharges(t, got.Charges, tt.want)
 		})
 	}
@@ -673,7 +673,7 @@ func TestChargePosition(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			res := Derive(tt.records, Cursor{}, DefaultParams(), nil)
+			res := derived(t, tt.records, Cursor{}, DefaultParams(), nil)
 			if len(res.Charges) != 2 {
 				t.Fatalf("charges %+v", res.Charges)
 			}
@@ -808,7 +808,7 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			res := Derive(day(tt.more...), Cursor{}, DefaultParams(), nil)
+			res := derived(t, day(tt.more...), Cursor{}, DefaultParams(), nil)
 			if len(res.Charges) != 2 {
 				t.Fatalf("charges %+v", res.Charges)
 			}
@@ -826,7 +826,7 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 					t.Errorf("trip %d from %+v to %+v, want %+v", i, tr.From, tr.To, w)
 				}
 			}
-			trips, charges := deriveIncrementally(day(tt.more...), DefaultParams())
+			trips, charges := deriveIncrementally(t, day(tt.more...), DefaultParams())
 			if !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
 				t.Errorf("incremental:\n%+v\n%+v\nrebuild:\n%+v\n%+v", trips, charges, res.Trips, res.Charges)
 			}
@@ -836,12 +836,12 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 	// Without the vehicle's timestamps, the drive revealed may have followed the charge.
 	p := DefaultParams()
 	p.VehicleTimestamps = false
-	res := Derive(day(tests[0].more...), Cursor{}, p, nil)
+	res := derived(t, day(tests[0].more...), Cursor{}, p, nil)
 	if len(res.Charges) != 2 || res.Charges[1].Position != Some(home, m(0)) {
 		t.Errorf("without vehicle timestamps %+v", res.Charges)
 	}
 	// Nor does a trip's arrival tell an older position: the latest read is.
-	res = Derive(day(tests[len(tests)-1].more...), Cursor{}, p, nil)
+	res = derived(t, day(tests[len(tests)-1].more...), Cursor{}, p, nil)
 	if len(res.Trips) == 0 || res.Trips[0].To != Some(far, m(50)) {
 		t.Errorf("arrival without vehicle timestamps %+v", res.Trips)
 	}
@@ -850,14 +850,16 @@ func TestChargeAfterUnseenTrip(t *testing.T) {
 // deriveIncrementally derives records as the collector would have them stored over
 // time, from the cursor each derivation returns, as TestIncrementalMatchesRebuild does
 // from readings.
-func deriveIncrementally(records []Record, p Params) ([]Trip, []Charge) {
-	r := incremental(records, p)
+func deriveIncrementally(t *testing.T, records []Record, p Params) ([]Trip, []Charge) {
+	t.Helper()
+	r := incremental(t, records, p)
 	return r.Trips, r.Charges
 }
 
 // incremental derives records as the collector does, one reading time after another,
 // and returns every event it kept.
-func incremental(records []Record, p Params) Result {
+func incremental(t *testing.T, records []Record, p Params) Result {
+	t.Helper()
 	var times []time.Time
 	for _, r := range records {
 		times = append(times, r.FetchedAt, r.CheckedAt)
@@ -888,7 +890,7 @@ func incremental(records []Record, p Params) Result {
 		for _, r := range latest {
 			since = append(since, r)
 		}
-		res := Derive(since, cursor, p, nil)
+		res := derived(t, since, cursor, p, nil)
 		trips = append(keepTrips(trips, cursor.Settled), res.Trips...)
 		charges = append(keepCharges(charges, cursor.Settled), res.Charges...)
 		versions = append(slices.DeleteFunc(versions, func(v SoftwareVersion) bool { return v.DetectedAt.After(cursor.Settled) }), res.Versions...)
@@ -921,14 +923,14 @@ func TestTripThatNeverMoved(t *testing.T) {
 		rec(40, 40, read(EngineStopped, 1010, work, m(40))),
 		rec(60, 60, read(EngineStopped, 1010, work, m(60))),
 	}
-	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	res := derived(t, records, Cursor{}, DefaultParams(), nil)
 	if len(res.Trips) != 1 {
 		t.Fatalf("trips %+v", res.Trips)
 	}
 	if tr := res.Trips[0]; tr.StartOdometerKm.V != 1000 || tr.DistanceKm.V != 10 {
 		t.Errorf("trip from %+v, distance %+v", tr.StartOdometerKm, tr.DistanceKm)
 	}
-	if trips, charges := deriveIncrementally(records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+	if trips, charges := deriveIncrementally(t, records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
 		t.Errorf("never moved, incremental:\n%+v %+v\nrebuild:\n%+v %+v", trips, charges, res.Trips, res.Charges)
 	}
 }
@@ -945,14 +947,14 @@ func TestTripEndedByTheNext(t *testing.T) {
 		rec(35, 35, read(EngineStopped, 1011, home, m(35))),
 		rec(60, 60, read(EngineStopped, 1011, home, m(60))),
 	}
-	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	res := derived(t, records, Cursor{}, DefaultParams(), nil)
 	if len(res.Trips) != 2 {
 		t.Fatalf("trips %+v", res.Trips)
 	}
 	if tr := res.Trips[0]; tr.EndOdometerKm.V != 1005 || tr.DistanceKm.V != 5 {
 		t.Errorf("first trip to %+v, distance %+v", tr.EndOdometerKm, tr.DistanceKm)
 	}
-	if trips, charges := deriveIncrementally(records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+	if trips, charges := deriveIncrementally(t, records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
 		t.Errorf("ended by the next, incremental:\n%+v %+v\nrebuild:\n%+v %+v", trips, charges, res.Trips, res.Charges)
 	}
 }
@@ -975,14 +977,14 @@ func TestChargeInterruptedOnTheWay(t *testing.T) {
 		}),
 		rec(30, 30, nrg(60, ChargingIdle)),
 	}
-	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	res := derived(t, records, Cursor{}, DefaultParams(), nil)
 	if len(res.Charges) != 1 {
 		t.Fatalf("charges %+v", res.Charges)
 	}
 	if c := res.Charges[0]; c.Position.V != home {
 		t.Errorf("charge at %+v, want %+v", c.Position, home)
 	}
-	if trips, charges := deriveIncrementally(records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+	if trips, charges := deriveIncrementally(t, records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
 		t.Errorf("interrupted on the way, incremental:\n%+v %+v\nrebuild:\n%+v %+v", trips, charges, res.Trips, res.Charges)
 	}
 }
@@ -1006,7 +1008,7 @@ func TestTripAndCharge(t *testing.T) {
 		rec(62, 62, charging(41, 50000, DC)),
 		rec(63, 63, charging(50, 50000, DC)),
 	}
-	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	res := derived(t, records, Cursor{}, DefaultParams(), nil)
 	if len(res.Trips) != 1 || len(res.Charges) != 1 {
 		t.Fatalf("trips %+v, charges %+v", res.Trips, res.Charges)
 	}
@@ -1022,45 +1024,45 @@ func TestTripAndCharge(t *testing.T) {
 // still in progress is not, and the cursor stays before them.
 func TestDeriveInProgress(t *testing.T) {
 	driving := trip()[:6]
-	res := Derive(driving, Cursor{}, DefaultParams(), nil)
+	res := derived(t, driving, Cursor{}, DefaultParams(), nil)
 	if len(res.Trips) != 0 || !res.Cursor.Settled.Equal(m(20)) || !res.Cursor.From.Equal(m(0)) {
 		t.Errorf("driving: %+v", res)
 	}
 	ending := trip()[:10]
-	res = Derive(ending, Cursor{}, DefaultParams(), nil)
+	res = derived(t, ending, Cursor{}, DefaultParams(), nil)
 	if len(res.Trips) != 1 || res.Trips[0].To.OK || !res.Cursor.Settled.Equal(m(20)) {
 		t.Errorf("ending: %+v", res)
 	}
-	res = Derive(trip(), Cursor{}, DefaultParams(), nil)
+	res = derived(t, trip(), Cursor{}, DefaultParams(), nil)
 	if !res.Cursor.Settled.Equal(m(20)) {
 		t.Errorf("within the settle window: cursor %+v", res.Cursor)
 	}
-	res = Derive(append(trip(), rec(100, 110, nrg(55, ChargingIdle))), Cursor{}, DefaultParams(), nil)
+	res = derived(t, append(trip(), rec(100, 110, nrg(55, ChargingIdle))), Cursor{}, DefaultParams(), nil)
 	if !res.Cursor.Settled.Equal(m(100)) || !res.Cursor.From.Equal(m(61)) {
 		t.Errorf("settled: cursor %+v", res.Cursor)
 	}
 	charge := []Record{rec(0, 10, nrg(50, ChargingIdle)), rec(20, 30, charging(51, 7000, AC))}
-	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 0 || !res.Cursor.Settled.Equal(m(10)) {
+	if res := derived(t, charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 0 || !res.Cursor.Settled.Equal(m(10)) {
 		t.Errorf("charging: %+v", res)
 	}
 	// Over, it is returned, but still waits for its position.
 	charge = append(charge, rec(31, 40, nrg(60, ChargingDone)))
-	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(10)) {
+	if res := derived(t, charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(10)) {
 		t.Errorf("charge over: %+v", res)
 	}
 	// Done with the cable connected, it may still resume: the cursor stays before it.
 	charge = append(charge, rec(50, 60, nrg(61, ChargingDone)))
-	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(10)) {
+	if res := derived(t, charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(10)) {
 		t.Errorf("charge resumable: %+v", res)
 	}
 	// Past MaxChargePause, it no longer may, though no energy reading tells.
 	later := append(slices.Clone(charge), rec(31+24*60, 41+24*60, odo(12400)))
-	if res := Derive(later, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(31+24*60)) {
+	if res := derived(t, later, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(31+24*60)) {
 		t.Errorf("charge past its pause: %+v", res)
 	}
 	// Unplugged, it no longer may.
 	charge = append(charge, rec(70, 80, nrg(61, ChargingIdle)))
-	if res := Derive(charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(70)) {
+	if res := derived(t, charge, Cursor{}, DefaultParams(), nil); len(res.Charges) != 1 || !res.Cursor.Settled.Equal(m(70)) {
 		t.Errorf("charge settled: %+v", res)
 	}
 }
@@ -1100,7 +1102,7 @@ func TestChargeInProgress(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for _, res := range []Result{Derive(tt.records, Cursor{}, DefaultParams(), nil), incremental(tt.records, DefaultParams())} {
+			for _, res := range []Result{derived(t, tt.records, Cursor{}, DefaultParams(), nil), incremental(t, tt.records, DefaultParams())} {
 				got := res.InProgress
 				if got.OK != tt.want.OK {
 					t.Fatalf("in progress %+v, want %+v", got, tt.want)
@@ -1117,12 +1119,12 @@ func TestChargeInProgress(t *testing.T) {
 		})
 	}
 	// Over, it is the derived charge of the same DetectedAt.
-	res := Derive(with(rec(41, 41, nrg(60, ChargingDone))), Cursor{}, DefaultParams(), nil)
+	res := derived(t, with(rec(41, 41, nrg(60, ChargingDone))), Cursor{}, DefaultParams(), nil)
 	if len(res.Charges) != 1 || !res.Charges[0].DetectedAt.Equal(m(20)) {
 		t.Errorf("charge over: %+v", res.Charges)
 	}
 	// Charging again after done, the cable connected, it resumes under the same.
-	res = Derive(with(rec(41, 41, pausedAt(60, ChargingDone)), rec(60, 60, charging(61, 7000, AC))), Cursor{}, DefaultParams(), nil)
+	res = derived(t, with(rec(41, 41, pausedAt(60, ChargingDone)), rec(60, 60, charging(61, 7000, AC))), Cursor{}, DefaultParams(), nil)
 	if !res.InProgress.OK || !res.InProgress.V.DetectedAt.Equal(m(20)) || len(res.Charges) != 0 {
 		t.Errorf("resumed: in progress %+v, charges %+v", res.InProgress, res.Charges)
 	}
@@ -1275,9 +1277,9 @@ func TestChargeResumes(t *testing.T) {
 			if p == (Params{}) {
 				p = DefaultParams()
 			}
-			res := Derive(tt.records, Cursor{}, p, nil)
+			res := derived(t, tt.records, Cursor{}, p, nil)
 			checkCharges(t, res.Charges, tt.want)
-			trips, charges := deriveIncrementally(tt.records, p)
+			trips, charges := deriveIncrementally(t, tt.records, p)
 			if !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
 				t.Errorf("incremental:\n%+v\n%+v\nrebuild:\n%+v\n%+v", trips, charges, res.Trips, res.Charges)
 			}
@@ -1287,11 +1289,11 @@ func TestChargeResumes(t *testing.T) {
 	// The SoC rising unseen while it may resume is a reconstructed charge, as without
 	// the pause: it ends the first, which no longer resumes.
 	records := solar(ChargingIdle, night, rec(300, 300, pausedAt(55, ChargingIdle)))
-	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	res := derived(t, records, Cursor{}, DefaultParams(), nil)
 	if len(res.Charges) != 2 || res.Charges[0].End != (Bounds{m(30), m(31)}) || res.Charges[1].DetectedAt != m(300) {
 		t.Errorf("reconstructed in the pause: %+v", res.Charges)
 	}
-	if trips, charges := deriveIncrementally(records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
+	if trips, charges := deriveIncrementally(t, records, DefaultParams()); !reflect.DeepEqual(trips, res.Trips) || !reflect.DeepEqual(charges, res.Charges) {
 		t.Errorf("reconstructed in the pause, incremental:\n%+v\nrebuild:\n%+v", charges, res.Charges)
 	}
 }
@@ -1382,13 +1384,13 @@ func TestIncrementalMatchesRebuild(t *testing.T) {
 		for _, rc := range latest {
 			since = append(since, rc)
 		}
-		res := Derive(since, cursor, DefaultParams(), net)
+		res := derived(t, since, cursor, DefaultParams(), net)
 		trips = append(keepTrips(trips, cursor.Settled), res.Trips...)
 		charges = append(keepCharges(charges, cursor.Settled), res.Charges...)
 		cursor = res.Cursor
 	}
 
-	full := Derive(records, Cursor{}, DefaultParams(), net)
+	full := derived(t, records, Cursor{}, DefaultParams(), net)
 	if len(full.Trips) != 2 || len(full.Charges) != 1 || !full.Trips[1].Reconstructed {
 		t.Fatalf("full derivation: %+v", full)
 	}
@@ -1440,7 +1442,7 @@ func TestReconstructedTripGoesOn(t *testing.T) {
 	for _, stamps := range []bool{true, false} {
 		p := DefaultParams()
 		p.VehicleTimestamps = stamps
-		res := Derive(records, Cursor{}, p, nil)
+		res := derived(t, records, Cursor{}, p, nil)
 		if len(res.Trips) != 2 {
 			t.Fatalf("stamps %v: %d trips: %+v", stamps, len(res.Trips), res.Trips)
 		}
@@ -1484,7 +1486,7 @@ func TestReconstructedTripGoesOnArrival(t *testing.T) {
 	for _, stamps := range []bool{true, false} {
 		p := DefaultParams()
 		p.VehicleTimestamps = stamps
-		res := Derive(records, Cursor{}, p, nil)
+		res := derived(t, records, Cursor{}, p, nil)
 		if len(res.Trips) != 1 {
 			t.Fatalf("stamps %v: %d trips: %+v", stamps, len(res.Trips), res.Trips)
 		}
@@ -1508,7 +1510,7 @@ func TestSources(t *testing.T) {
 	}
 	records[0].Source = "phone" // before the trip
 	records[7].Source = "car"   // while driving
-	res := Derive(records, Cursor{}, DefaultParams(), nil)
+	res := derived(t, records, Cursor{}, DefaultParams(), nil)
 	if len(res.Trips) != 1 {
 		t.Fatalf("trips %+v", res.Trips)
 	}
@@ -1521,7 +1523,7 @@ func TestSources(t *testing.T) {
 		{Source: "volvo", FetchedAt: m(20), CheckedAt: m(30), Snapshot: charging(51, 7000, AC)},
 		{Source: "volvo", FetchedAt: m(40), CheckedAt: m(100), Snapshot: nrg(60, ChargingDone)},
 	}
-	res = Derive(charge, Cursor{}, DefaultParams(), nil)
+	res = derived(t, charge, Cursor{}, DefaultParams(), nil)
 	if len(res.Charges) != 1 || !slices.Equal(res.Charges[0].Sources, []string{"volvo"}) {
 		t.Errorf("charges %+v", res.Charges)
 	}
@@ -1540,7 +1542,7 @@ func TestSources(t *testing.T) {
 	for i := range missed {
 		missed[i].Source = "volvo"
 	}
-	res = Derive(missed, Cursor{}, DefaultParams(), nil)
+	res = derived(t, missed, Cursor{}, DefaultParams(), nil)
 	if len(res.Trips) != 1 || res.Trips[0].End.Before != m(100) || !slices.Equal(res.Trips[0].Sources, []string{"volvo"}) {
 		t.Errorf("reconstructed trips %+v", res.Trips)
 	}
@@ -1579,7 +1581,7 @@ func TestCapacity(t *testing.T) {
 			records[0] = rec(0, 0, tt.details)
 			p := DefaultParams()
 			p.Capacity = tt.source
-			res := Derive(records, Cursor{}, p, tt.net)
+			res := derived(t, records, Cursor{}, p, tt.net)
 			if len(res.Trips) != 1 || len(res.Charges) != 1 {
 				t.Fatalf("trips %+v, charges %+v", res.Trips, res.Charges)
 			}
@@ -1741,7 +1743,7 @@ func TestDeriveMeasuredEnergy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			res := Derive(tt.records, Cursor{}, DefaultParams(), nil)
+			res := derived(t, tt.records, Cursor{}, DefaultParams(), nil)
 			if len(res.Charges) != 1 {
 				t.Fatalf("%d charges: %+v", len(res.Charges), res.Charges)
 			}
@@ -1874,11 +1876,11 @@ func TestSoftwareVersions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			res := Derive(tt.records, Cursor{}, DefaultParams(), nil)
+			res := derived(t, tt.records, Cursor{}, DefaultParams(), nil)
 			if !reflect.DeepEqual(res.Versions, tt.want) {
 				t.Errorf("versions:\n got %+v\nwant %+v", res.Versions, tt.want)
 			}
-			if inc := incremental(tt.records, DefaultParams()); !reflect.DeepEqual(inc.Versions, res.Versions) {
+			if inc := incremental(t, tt.records, DefaultParams()); !reflect.DeepEqual(inc.Versions, res.Versions) {
 				t.Errorf("incremental:\n%+v\nrebuild:\n%+v", inc.Versions, res.Versions)
 			}
 		})
@@ -2029,9 +2031,9 @@ func TestHybridReconstructedCharges(t *testing.T) {
 						want[i].Start.Before, want[i].End.Before = m(120), m(120)
 					}
 				}
-				got := Derive(records, Cursor{}, p, nil)
+				got := derived(t, records, Cursor{}, p, nil)
 				checkCharges(t, got.Charges, want)
-				_, charges := deriveIncrementally(records, p)
+				_, charges := deriveIncrementally(t, records, p)
 				checkCharges(t, charges, want)
 			}
 		})
@@ -2222,8 +2224,8 @@ func TestUnpluggedRise(t *testing.T) {
 				tt.p(&p)
 			}
 			records := append([]Record{rec(0, 0, capacity(75)), rec(0, 0, powertrain(Electric))}, tt.records...)
-			checkCharges(t, Derive(records, Cursor{}, p, nil).Charges, tt.want)
-			_, charges := deriveIncrementally(records, p)
+			checkCharges(t, derived(t, records, Cursor{}, p, nil).Charges, tt.want)
+			_, charges := deriveIncrementally(t, records, p)
 			checkCharges(t, charges, tt.want)
 		})
 	}
@@ -2320,8 +2322,8 @@ func TestSoCDip(t *testing.T) {
 				tt.p(&p)
 			}
 			records := append([]Record{rec(0, 0, capacity(75)), rec(0, 0, powertrain(Electric))}, tt.records...)
-			checkCharges(t, Derive(records, Cursor{}, p, nil).Charges, tt.want)
-			_, charges := deriveIncrementally(records, p)
+			checkCharges(t, derived(t, records, Cursor{}, p, nil).Charges, tt.want)
+			_, charges := deriveIncrementally(t, records, p)
 			checkCharges(t, charges, tt.want)
 		})
 	}
@@ -2422,14 +2424,14 @@ func TestTripOutsideTemp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			full := Derive(tt.records, Cursor{}, tt.p, nil)
+			full := derived(t, tt.records, Cursor{}, tt.p, nil)
 			if len(full.Trips) != 1 {
 				t.Fatalf("trips %+v", full.Trips)
 			}
 			if got := full.Trips[0].OutsideTempC; got != tt.want {
 				t.Errorf("outside %+v, want %+v", got, tt.want)
 			}
-			trips, _ := deriveIncrementally(tt.records, tt.p)
+			trips, _ := deriveIncrementally(t, tt.records, tt.p)
 			if !reflect.DeepEqual(trips, full.Trips) {
 				t.Errorf("incremental:\n%+v\nfull:\n%+v", trips, full.Trips)
 			}
@@ -2537,7 +2539,7 @@ func TestChargeCurrent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			full := Derive(tt.records, Cursor{}, tt.p, nil)
+			full := derived(t, tt.records, Cursor{}, tt.p, nil)
 			if len(full.Charges) != 1 {
 				t.Fatalf("charges %+v", full.Charges)
 			}
@@ -2545,7 +2547,7 @@ func TestChargeCurrent(t *testing.T) {
 			if c.MaxCurrentA != tt.want.current || c.Phases != tt.want.phases {
 				t.Errorf("current %+v, phases %+v, want %+v", c.MaxCurrentA, c.Phases, tt.want)
 			}
-			_, charges := deriveIncrementally(tt.records, tt.p)
+			_, charges := deriveIncrementally(t, tt.records, tt.p)
 			if !reflect.DeepEqual(charges, full.Charges) {
 				t.Errorf("incremental:\n%+v\nfull:\n%+v", charges, full.Charges)
 			}
@@ -2553,7 +2555,7 @@ func TestChargeCurrent(t *testing.T) {
 	}
 
 	// The charge in progress has them so far.
-	res := Derive(append(slices.Clone(base[:5]), rec(20, 20, amps(16, 3, time.Time{}))), Cursor{}, DefaultParams(), nil)
+	res := derived(t, append(slices.Clone(base[:5]), rec(20, 20, amps(16, 3, time.Time{}))), Cursor{}, DefaultParams(), nil)
 	if !res.InProgress.OK || res.InProgress.V.MaxCurrentA != val(16) || res.InProgress.V.Phases != phases(3) {
 		t.Errorf("in progress %+v", res.InProgress)
 	}
@@ -2628,17 +2630,44 @@ func TestChargeOutsideTemp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			full := Derive(tt.records, Cursor{}, tt.p, nil)
+			full := derived(t, tt.records, Cursor{}, tt.p, nil)
 			if len(full.Charges) != 1 {
 				t.Fatalf("charges %+v", full.Charges)
 			}
 			if got := full.Charges[0].OutsideTempC; got != tt.want {
 				t.Errorf("outside %+v, want %+v", got, tt.want)
 			}
-			_, charges := deriveIncrementally(tt.records, tt.p)
+			_, charges := deriveIncrementally(t, tt.records, tt.p)
 			if !reflect.DeepEqual(charges, full.Charges) {
 				t.Errorf("incremental:\n%+v\nfull:\n%+v", charges, full.Charges)
 			}
 		})
 	}
+}
+
+// derived returns Derive's result on records, and checks on the way that every event it
+// derives has a source when every reading has one: the store refuses an event without
+// (trips.sources, charges.sources), and fails the vehicle's whole derivation with it.
+// The check derives again a copy whose readings without a source get one, so that the
+// result returned, and what the tests expect of it, stay those of records.
+func derived(t *testing.T, records []Record, from Cursor, p Params, net NetCapacity) Result {
+	t.Helper()
+	sourced := slices.Clone(records)
+	for i := range sourced {
+		if sourced[i].Source == "" {
+			sourced[i].Source = "test"
+		}
+	}
+	res := Derive(sourced, from, p, net)
+	for _, tr := range res.Trips {
+		if len(tr.Sources) == 0 {
+			t.Errorf("trip detected at %v has no source", tr.DetectedAt)
+		}
+	}
+	for _, c := range res.Charges {
+		if len(c.Sources) == 0 {
+			t.Errorf("charge detected at %v has no source", c.DetectedAt)
+		}
+	}
+	return Derive(records, from, p, net)
 }
