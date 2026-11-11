@@ -4,7 +4,7 @@ description: "How Runsten recognizes the variant of your car, choosing it, the o
 
 # Vehicle models
 
-Runsten carries a catalog of the variants of the brands it reads: the electric Volvos and Polestars, the European Tesla Model 3 and Model Y, and the plug-in hybrids (the T6 and T8 Volvos of the 60 and 90 series, the T4 and T5 of the XC40, and the Polestar 1): for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power (most plug-in hybrids have none), and the sources of every figure. It comes with Runsten: an update brings its corrections.
+Runsten carries a catalog of the variants of the brands it reads: the electric Volvos and Polestars, the European Tesla Model 3 and Model Y, the electric BMWs and MINIs, the electric Hyundais, Kias and Genesis, and the plug-in hybrids (the T6 and T8 Volvos of the 60 and 90 series, the T4 and T5 of the XC40, and the Polestar 1): for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power (most plug-in hybrids have none), and the sources of every figure. It comes with Runsten: an update brings its corrections.
 
 The model matters for two things: the net capacity, on which energies rest, and the onboard charger, which bounds the cost of an AC charge.
 
@@ -12,13 +12,17 @@ The model matters for two things: the net capacity, on which energies rest, and 
 
 The variant is worked out from what the manufacturer's API reports of the car and its VIN; nothing more is collected. What that is depends on the brand, below. The vehicle is recognized when exactly one variant fits, among those of its powertrain: a plug-in hybrid among the plug-in hybrids, an electric car among the electric ones, so that a hybrid is never taken for an electric car of a battery nearby. A car whose fuel type is not read yet, or that runs on fuel alone, has no variant.
 
-When several variants fit, or none, the vehicle has no variant until you choose one: its energies then rest on the capacity the car reports, if it reports one (a Volvo does, a Polestar or a Tesla does not).
+When several variants fit, or none, the vehicle has no variant until you choose one: its energies then rest on the capacity the car reports, if it reports one (a Volvo, a BMW, a MINI, a Hyundai, a Kia or a Genesis does; a Polestar or a Tesla does not).
 
 A Volvo tells its model, its model year, its fuel type and a capacity of its battery: it is recognized from them.
 
 A Polestar read through the Data Portal tells its model year (from its VIN), but neither its model nor its battery's capacity: several Polestar variants fit, and none is recognized. Choose yours: without a variant, its energies are unknown ([Your Polestar](./polestar.md#choose-its-variant)).
 
 A Tesla tells its model, its model year (from its VIN) and its trim badge, but not its battery's capacity: it is recognized when exactly one variant fits its model, year and badge, a variant that lists no badge always fitting. Otherwise, choose yours among those that fit: until you do, its trips and charges have no energy ([Your Tesla](./tesla.md#its-variant)).
+
+A BMW or a MINI, read through BMW CarData, tells its model's name (i4 eDrive40: its family, i4, and its trim, eDrive40), its powertrain, its date of construction and a capacity of its battery: it is recognized from its family, its model year and that capacity. Two readings are assumed until a real car confirms them: the model year is the year of construction, or the next one for a car built from July on, when BMW's model year changes; and the capacity is the gross one ([Your BMW or Mini](./bmw.md)).
+
+A Hyundai, a Kia or a Genesis, read through Pleos, tells its sales name (its family: IONIQ 5, EV3), its powertrain, its model year (from its VIN) and a capacity of its battery: it is recognized from them. How Pleos counts that capacity is assumed until a real car confirms it ([Your Hyundai, Kia or Genesis](./hyundai-kia.md)).
 
 ## Choosing
 
