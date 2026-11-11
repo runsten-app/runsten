@@ -114,6 +114,11 @@ func (f *fakeSessions) count() int {
 
 // enrollStore is an in-memory oauth.Enrollment, Keys and Tokens, of one connection.
 type enrollStore struct {
+	// lock is the account's lock (one account in these tests); locked tells AddVehicle
+	// whether it is held, unlocked counts the vehicles added without it.
+	lock     sync.Mutex
+	locked   bool
+	unlocked int
 	mu       sync.Mutex
 	accounts []string
 	saved    []oauth.Credentials
@@ -186,9 +191,27 @@ func (e *enrollStore) SaveConnection(_ context.Context, acc string, c oauth.Cred
 	return "conn", nil
 }
 
+// WithAccountLock implements AccountLocks.
+func (e *enrollStore) WithAccountLock(ctx context.Context, _ string, fn func(context.Context) error) error {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+	e.mu.Lock()
+	e.locked = true
+	e.mu.Unlock()
+	defer func() {
+		e.mu.Lock()
+		e.locked = false
+		e.mu.Unlock()
+	}()
+	return fn(ctx)
+}
+
 func (e *enrollStore) AddVehicle(_ context.Context, _, _, vin string) (string, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if !e.locked {
+		e.unlocked++
+	}
 	e.vehicles = append(e.vehicles, vin)
 	return "veh", nil
 }
@@ -244,6 +267,14 @@ func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []strin
 	t.Helper()
 	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, bmw: &memBMW{}, bmws: &fakeBMW{}, pleos: &memPleos{}, pleosVehicles: pleosVehicles{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, exports: &memAccountExports{}, archives: &memArchives{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}, stored: &fakeStoredPictures{}}
 	e.reader = newMemReader(e.settings)
+	t.Cleanup(func() {
+		// Every path that adds vehicles holds the account's lock (the cap would not hold).
+		e.store.mu.Lock()
+		defer e.store.mu.Unlock()
+		if e.store.unlocked > 0 {
+			t.Errorf("%d vehicles added outside the account's lock", e.store.unlocked)
+		}
+	})
 	var handler http.Handler
 	e.api = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { handler.ServeHTTP(w, r) }))
 	t.Cleanup(e.api.Close)
@@ -278,7 +309,7 @@ func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []strin
 	e.tokens = newFakeTokens(e.clk)
 	e.server = New(Config{
 		Sessions: e.sessions, AccessTokens: e.tokens, Reader: e.reader, States: e.reader, Readings: e.reader, Health: e.reader, Charging: e.reader, Settings: e.settings, Costs: e.reader, Imports: e.reader, Models: e.reader, Deletion: e.reader,
-		Authorizer: authz, Flows: e.flows, Enrollment: e.store, Vehicles: volvo.NewClient(e.sim.URL, instanceKey, e.sim.Client()),
+		Authorizer: authz, Flows: e.flows, Enrollment: e.store, Locks: e.store, Vehicles: volvo.NewClient(e.sim.URL, instanceKey, e.sim.Client()),
 		Keys: e.store, Tokens: e.store, InstanceKey: instanceKey != "", ClientID: cfg.ClientID,
 		Polestar: e.polestar, PolestarVehicles: polestarSim(t, e.clk, polestarVIN),
 		Tesla: e.tesla, TeslaVehicles: teslaSim(t, e.clk, teslaVIN).client,

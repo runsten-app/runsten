@@ -262,7 +262,9 @@ type Config struct {
 	Authorizer Authorizer
 	Flows      *oauth.Flows
 	Enrollment oauth.Enrollment
-	Vehicles   oauth.VehicleLister
+	// Locks serializes what adds to an account's vehicles, so that their cap holds.
+	Locks    AccountLocks
+	Vehicles oauth.VehicleLister
 	// The account's application key: Keys keeps it, Tokens gives the access token to
 	// list the vehicles with a new one. InstanceKey: the instance has its own
 	// (RUNSTEN_VOLVO_API_KEY), which reads the connections without theirs; without it,

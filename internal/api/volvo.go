@@ -172,13 +172,24 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request, sess auth.Sess
 		s.fail(w, r, http.StatusConflict, "Volvo key required", noKeyMessage)
 		return
 	}
-	limit, err := s.vehicleCap(ctx, sess.AccountID)
-	if err != nil {
-		s.Log.Error("vehicles not read", "err", err)
+	// The cap checked and the vehicles added under the account's lock: another
+	// connection given meanwhile waits.
+	var vins []string
+	var capErr error
+	err = s.Locks.WithAccountLock(ctx, sess.AccountID, func(ctx context.Context) error {
+		limit, err := s.vehicleCap(ctx, sess.AccountID)
+		if err != nil {
+			capErr = err
+			return err
+		}
+		vins, err = oauth.Enroll(ctx, s.Enrollment, s.Vehicles, sess.AccountID, key, oauth.NewCredentials(g, at), limit)
+		return err //nolint:wrapcheck // Enroll's, told apart below
+	})
+	if capErr != nil {
+		s.Log.Error("vehicles not read", "err", capErr)
 		s.fail(w, r, http.StatusInternalServerError, "Connection failed", "The connection could not be recorded: see the logs.")
 		return
 	}
-	vins, err := oauth.Enroll(ctx, s.Enrollment, s.Vehicles, sess.AccountID, key, oauth.NewCredentials(g, at), limit)
 	if errors.Is(err, oauth.ErrKeyRefused) {
 		// The grant is kept: a corrected key lists the vehicles, without a new consent.
 		s.Log.Warn("Volvo ID connected, application key refused", "account", sess.AccountID, "err", err)

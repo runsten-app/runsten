@@ -366,9 +366,9 @@ func run(args []string) error {
 		Catalog:    cat,
 		Authorizer: authorizer,
 		Flows:      oauth.NewFlows(clock.Real{}, flowTTL, maxPending),
-		Enrollment: st,
-		Vehicles:   volvo.NewClient(cfg.baseURL, cfg.apiKey, hc),
-		Keys:       st,
+		Enrollment: st, Locks: st,
+		Vehicles: volvo.NewClient(cfg.baseURL, cfg.apiKey, hc),
+		Keys:     st,
 		// A new application key is checked by listing the vehicles, with a token
 		// refreshed here if needed, under the same row lock as the collector's.
 		Tokens:             oauth.NewManager(st, authorizer, clock.Real{}, oauth.DefaultParams(), log),

@@ -9,7 +9,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"runsten/internal/flags"
-	"runsten/internal/oauth"
 )
 
 // The owner's refresh token of Tesla's Owner API, the unofficial API of the Tesla app,
@@ -95,21 +94,12 @@ func (s *Server) putTesla(ctx context.Context, in *teslaInput) (*body[connection
 	case len(vins) == 0:
 		return nil, apiError(http.StatusConflict, codeNoVehicle, "the Tesla account has no vehicle")
 	}
-	limit, err := s.vehicleCap(ctx, account)
-	if err != nil {
-		return nil, s.internal("vehicles not read", err)
-	}
-	if limit.Exceeded(vins) {
-		return nil, s.tooManyVehicles()
-	}
 	// The token given may no longer refresh once checked: the one to keep is stored,
 	// whatever happens next.
-	id, err := s.Tesla.SetTeslaToken(ctx, account, keep, in.Body.RefreshToken, s.Clock.Now())
-	if err != nil {
-		return nil, s.internal("Tesla refresh token not stored", err)
-	}
-	if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
-		return nil, s.internal("vehicles not recorded", err)
+	if err := s.enroll(ctx, account, vins, "Tesla refresh token not stored", func(ctx context.Context) (string, error) {
+		return s.Tesla.SetTeslaToken(ctx, account, keep, in.Body.RefreshToken, s.Clock.Now()) //nolint:wrapcheck // wrapped by enroll
+	}); err != nil {
+		return nil, err
 	}
 	s.Log.Info("Tesla refresh token set", "account", account, "vehicles", len(vins))
 	out, err := s.connectionSettings(ctx, account)
