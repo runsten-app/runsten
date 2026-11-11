@@ -1454,8 +1454,11 @@
       "credentialRefusedPolestarId": "Polestar ID abgelehnt",
       "streamHeld": "Stream von einer anderen Anwendung belegt (Home Assistant, evcc)",
       "notFoundBmw": "Fahrzeug bei BMW unbekannt",
+      "notFoundPleos": "Fahrzeug bei Pleos unbekannt",
       "unavailableBmw": "BMW nicht erreichbar",
+      "unavailablePleos": "Pleos nicht erreichbar",
       "tokenBmw": "Kein Token von BMW",
+      "tokenPleos": "Kein Token von Pleos",
       "credentialRefusedBmw": "BMW-Verbindung abgelehnt",
       "credentialRefusedPleos": "Pleos-Schlüssel abgelehnt",
       "keyShared": "Schlüssel mit anderer Anwendung geteilt"

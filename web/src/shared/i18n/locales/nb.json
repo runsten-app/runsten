@@ -1454,8 +1454,11 @@
       "credentialRefusedPolestarId": "Polestar ID avvist",
       "streamHeld": "Strømmen er opptatt av et annet program (Home Assistant, evcc)",
       "notFoundBmw": "Bilen er ukjent for BMW",
+      "notFoundPleos": "Bilen er ukjent for Pleos",
       "unavailableBmw": "Ingen kontakt med BMW",
+      "unavailablePleos": "Ingen kontakt med Pleos",
       "tokenBmw": "Ikke noe token fra BMW",
+      "tokenPleos": "Ikke noe token fra Pleos",
       "credentialRefusedBmw": "BMW-tilkobling avvist",
       "credentialRefusedPleos": "Pleos-nøkkel avvist",
       "keyShared": "Nøkkel delt med et annet program"
