@@ -1454,8 +1454,11 @@
       "credentialRefusedPolestarId": "Polestar ID nekat",
       "streamHeld": "Flödet hålls av ett annat program (Home Assistant, evcc)",
       "notFoundBmw": "Fordonet okänt för BMW",
+      "notFoundPleos": "Fordonet okänt för Pleos",
       "unavailableBmw": "BMW nås inte",
+      "unavailablePleos": "Pleos nås inte",
       "tokenBmw": "Ingen token från BMW",
+      "tokenPleos": "Ingen token från Pleos",
       "credentialRefusedBmw": "BMW-anslutning avvisad",
       "credentialRefusedPleos": "Pleos-nyckel avvisad",
       "keyShared": "Nyckel delad med ett annat program"
