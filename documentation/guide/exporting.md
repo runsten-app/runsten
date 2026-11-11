@@ -22,7 +22,7 @@ Beside it, **Download every reading (CSV)** saves every value the car reported o
 | 2026-10-14T07:02:03Z | tesla | vehicle_data | response.vehicle_state.tpms_pressure_fl | 2.9 |
 
 - **fetched_at** is when Runsten read the response, in UTC; every value of one response shares it.
-- **source** is where it came from: `volvo`, `polestar` or `tesla`; **endpoint** is the part of the provider's API it answered.
+- **source** is where it came from: `volvo`, `polestar`, `tesla`, `bmw` or `pleos`; **endpoint** is the part of the provider's API it answered.
 - **field** is the value's place in the response: its keys joined by dots, an element of a list as `[0]`, `[1]`…
 - **value** is as the provider gave it: its units, its words, its numbers with a decimal point. A value it sent empty (`null`) is an empty cell, an empty group `{}` or `[]`.
 
