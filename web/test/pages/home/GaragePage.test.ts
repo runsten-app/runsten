@@ -11,6 +11,9 @@ import { sessionKeys } from '@/entities/session'
 import { heard, mountWith, seen, testQueryClient, testRouter } from '@test/utils'
 
 vi.mock('vue-chartjs', () => import('@test/chart-stub'))
+// The page the account's limits lead to: none here, as in the public build. A build that
+// names one links to its route, which this test's router has not.
+vi.mock('@/entities/session/extensions', () => ({ limitsPage: null }))
 const { fetchStats, fetchVehicleState, getBattery, fetchSession } = vi.hoisted(() => ({
   fetchStats: vi.fn(),
   fetchVehicleState: vi.fn(),
