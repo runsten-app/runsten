@@ -52,6 +52,95 @@
       "pleos": "Ik heb een Hyundai, Kia of Genesis"
     }
   },
+  "garage": {
+    "title": "Garage",
+    "all": "Alle voertuigen",
+    "error": "De cijfers van de voertuigen konden niet worden geladen. Probeer het zo opnieuw.",
+    "period": {
+      "label": "Periode",
+      "30d": "30 dagen",
+      "12m": "12 maanden",
+      "last30d": "laatste 30 dagen",
+      "last12m": "laatste 12 maanden"
+    },
+    "totals": {
+      "label": "De totalen van het account",
+      "vehicles": "{n} voertuig | {n} voertuigen",
+      "driving": "{n} onderweg | {n} onderweg",
+      "charging": "{n} aan het laden | {n} aan het laden",
+      "now": "{what} nu",
+      "distance": "Gereden",
+      "cost": "Aan stroom",
+      "perHundred": "Per 100 km gemiddeld"
+    },
+    "tile": {
+      "soc": "Laadniveau",
+      "charging": "Aan het laden",
+      "chargingTo": "Laadt tot {target}",
+      "driving": "Onderweg",
+      "parked": "Geparkeerd",
+      "distance": "Gereden",
+      "consumption": "Verbruik",
+      "cost": "Per 100 km",
+      "best": "Laagste",
+      "noTrip": "Geen ritten in de periode.",
+      "hide": "Verbergen uit de vergelijking",
+      "lastRead": "Laatst gelezen {age}"
+    },
+    "compare": {
+      "title": "Vergelijken",
+      "label": "Wat vergeleken wordt",
+      "scope": "{n} voertuig, {period} | {n} voertuigen over dezelfde periode: {period}",
+      "vehicle": "Voertuig",
+      "nothing": "Alle voertuigen zijn verborgen uit de vergelijking.",
+      "consumption": {
+        "tab": "Verbruik",
+        "title": "Verbruik naar buitentemperatuur",
+        "summary": "Het verbruik van {vehicles} naar buitentemperatuur, in kWh/100 km.",
+        "none": "Geen rit in de periode geeft zijn buitentemperatuur.",
+        "hint": "Naar de gemiddelde buitentemperatuur van elke rit: de voertuigen vergeleken bij hetzelfde weer, zonder de invloed van het seizoen.",
+        "without": "{vehicles} heeft geen verbruik naar buitentemperatuur (de auto geeft er geen, of geen rit heeft een bekende energie) en wordt niet getekend. | {vehicles} hebben geen verbruik naar buitentemperatuur (de auto's geven er geen, of geen rit heeft een bekende energie) en worden niet getekend."
+      },
+      "cost": {
+        "tab": "Kosten",
+        "title": "Kosten per 100 km per maand",
+        "summary": "Wat 100 km elk voertuig kostte, maand na maand, over de laatste 12 maanden.",
+        "none": "Geen maand heeft zowel bekende kosten als een bekende afstand.",
+        "hint": "Over de laatste 12 maanden, ongeacht de periode. Kosten die als bereik bekend zijn, worden op hun laagste waarde getekend."
+      },
+      "charging": {
+        "tab": "Laden",
+        "title": "Waar de energie werd geladen",
+        "places": "Op je locaties",
+        "ac": "AC elders",
+        "dc": "DC",
+        "unknown": "Onbekend",
+        "summary": "Het deel van de energie van elk voertuig dat op je locaties, met AC elders en met DC is geladen.",
+        "none": "Geen laadbeurt in de periode.",
+        "hint": "Je locaties zijn die van de instellingen, met hun tarieven: ze verklaren de meeste kostenverschillen.",
+        "without": "{vehicles} heeft in de periode niet geladen. | {vehicles} hebben in de periode niet geladen.",
+        "energyUnknown": "{vehicles} heeft laadbeurten met onbekende energie, buiten de aandelen gelaten. | {vehicles} hebben laadbeurten met onbekende energie, buiten de aandelen gelaten."
+      },
+      "battery": {
+        "tab": "Batterij",
+        "parkedTitle": "Verlies bij stilstand",
+        "parkedSummary": "Het laadniveau dat elk voertuig per dag bij stilstand verloor.",
+        "parkedNone": "Geen verlies bij stilstand bekend in de periode.",
+        "capacityTitle": "Capaciteit sinds de eerste schattingen",
+        "capacitySummary": "Hoe de geschatte capaciteit van elk voertuig is veranderd sinds de eerste schattingen.",
+        "capacityNone": "Nog geen voertuig heeft genoeg capaciteitsschattingen.",
+        "capacityHint": "Over de hele geschiedenis, ongeacht de periode.",
+        "since": "{vehicle} sinds {since}"
+      }
+    },
+    "spending": {
+      "title": "Uitgaven per maand",
+      "summary": "De stroom van alle voertuigen kostte {total} over de laatste 12 maanden.",
+      "none": "Geen kosten bekend over de laatste 12 maanden.",
+      "hint": "Alle voertuigen van het account, verborgen inbegrepen, over de laatste 12 maanden. Kosten die als bereik bekend zijn, worden op hun laagste waarde getekend.",
+      "partial": "De kosten van {n} laadbeurt zijn onbekend en weggelaten. | De kosten van {n} laadbeurten zijn onbekend en weggelaten."
+    }
+  },
   "vehicle": {
     "title": "Voertuig",
     "menu": "Voertuig: {label}",

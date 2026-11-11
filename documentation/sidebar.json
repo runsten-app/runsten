@@ -8,12 +8,18 @@
     "items": [
       { "text": "Installation", "link": "/docs/self-hosting/" },
       { "text": "Users", "link": "/docs/self-hosting/users" },
-      { "text": "Reverse proxy (https)", "link": "/docs/self-hosting/reverse-proxy" },
+      {
+        "text": "Reverse proxy (https)",
+        "link": "/docs/self-hosting/reverse-proxy"
+      },
       { "text": "Maps", "link": "/docs/self-hosting/maps" },
       { "text": "Backup and restore", "link": "/docs/self-hosting/backup" },
       { "text": "Updating", "link": "/docs/self-hosting/updating" },
       { "text": "Feature flags", "link": "/docs/self-hosting/flags" },
-      { "text": "Troubleshooting", "link": "/docs/self-hosting/troubleshooting" }
+      {
+        "text": "Troubleshooting",
+        "link": "/docs/self-hosting/troubleshooting"
+      }
     ]
   },
   {
@@ -24,13 +30,17 @@
       { "text": "Polestar ID (beta)", "link": "/docs/guide/polestar-id" },
       { "text": "Tesla", "link": "/docs/guide/tesla" },
       { "text": "BMW and Mini", "link": "/docs/guide/bmw" },
-      { "text": "Hyundai, Kia and Genesis (beta)", "link": "/docs/guide/hyundai-kia" }
+      {
+        "text": "Hyundai, Kia and Genesis (beta)",
+        "link": "/docs/guide/hyundai-kia"
+      }
     ]
   },
   {
     "text": "Using Runsten",
     "items": [
       { "text": "The web interface", "link": "/docs/guide/" },
+      { "text": "The Garage", "link": "/docs/guide/garage" },
       { "text": "Trips and charges", "link": "/docs/guide/trips-and-charges" },
       { "text": "Importing your history", "link": "/docs/guide/importing" },
       { "text": "Exporting your data", "link": "/docs/guide/exporting" },
@@ -48,6 +58,8 @@
   },
   {
     "text": "Contributing",
-    "items": [{ "text": "A vehicle variant", "link": "/docs/contributing/variants" }]
+    "items": [
+      { "text": "A vehicle variant", "link": "/docs/contributing/variants" }
+    ]
   }
 ]

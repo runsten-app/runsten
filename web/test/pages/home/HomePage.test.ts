@@ -12,6 +12,17 @@ const { fetchVehicles, fetchConnection } = vi.hoisted(() => ({
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
   fetchVehicles,
+  fetchVehicleState: () => new Promise(() => {}),
+}))
+// The Garage's reads: nothing to show, the page is what is tested.
+vi.mock('vue-chartjs', () => import('@test/chart-stub'))
+vi.mock('@/entities/stats', async (original) => ({
+  ...(await original<typeof import('@/entities/stats')>()),
+  fetchStats: () => new Promise(() => {}),
+}))
+vi.mock('@/entities/battery', async (original) => ({
+  ...(await original<typeof import('@/entities/battery')>()),
+  getBattery: () => new Promise(() => {}),
 }))
 vi.mock('@/entities/connection', async (original) => ({
   ...(await original<typeof import('@/entities/connection')>()),
@@ -76,13 +87,23 @@ async function home() {
 }
 
 describe('HomePage', () => {
-  it('goes to the first vehicle, in place of home', async () => {
-    fetchVehicles.mockResolvedValue(vehicles.items)
+  it('goes to the only vehicle, in place of home', async () => {
+    fetchVehicles.mockResolvedValue(vehicles.items.slice(0, 1))
     const { router } = await home()
     await vi.waitFor(() =>
       expect(router.currentRoute.value.fullPath).toBe(`/vehicles/${vehicles.items[0]?.id}`),
     )
     expect(window.history.length).toBe(1)
+  })
+
+  it('shows the Garage with several vehicles, and stays home', async () => {
+    fetchVehicles.mockResolvedValue(vehicles.items)
+    const { wrapper, router } = await home()
+    // Loaded on demand.
+    await vi.waitFor(() => expect(wrapper.find('.garage h1').exists()).toBe(true))
+    expect(wrapper.find('.garage h1').text()).toBe('Garage')
+    expect(wrapper.findAll('.vehicle-tile')).toHaveLength(vehicles.items.length)
+    expect(router.currentRoute.value.name).toBe('home')
   })
 
   it('asks which car without a vehicle, Volvo, Polestar, Tesla or BMW', async () => {

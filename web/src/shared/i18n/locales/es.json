@@ -52,6 +52,95 @@
       "pleos": "Tengo un Hyundai, un Kia o un Genesis"
     }
   },
+  "garage": {
+    "title": "Garaje",
+    "all": "Todos los vehículos",
+    "error": "No se han podido cargar las cifras de los vehículos. Vuelve a intentarlo en un momento.",
+    "period": {
+      "label": "Periodo",
+      "30d": "30 días",
+      "12m": "12 meses",
+      "last30d": "últimos 30 días",
+      "last12m": "últimos 12 meses"
+    },
+    "totals": {
+      "label": "Los totales de la cuenta",
+      "vehicles": "{n} vehículo | {n} vehículos",
+      "driving": "{n} en marcha | {n} en marcha",
+      "charging": "{n} cargando | {n} cargando",
+      "now": "{what} ahora",
+      "distance": "Recorridos",
+      "cost": "De electricidad",
+      "perHundred": "Cada 100 km de media"
+    },
+    "tile": {
+      "soc": "Nivel de carga",
+      "charging": "Cargando",
+      "chargingTo": "Cargando hasta {target}",
+      "driving": "En marcha",
+      "parked": "Aparcado",
+      "distance": "Recorridos",
+      "consumption": "Consumo",
+      "cost": "Cada 100 km",
+      "best": "El más bajo",
+      "noTrip": "Ningún trayecto en el periodo.",
+      "hide": "Ocultar de la comparación",
+      "lastRead": "Leído {age}"
+    },
+    "compare": {
+      "title": "Comparar",
+      "label": "Qué se compara",
+      "scope": "{n} vehículo, {period} | {n} vehículos en el mismo periodo: {period}",
+      "vehicle": "Vehículo",
+      "nothing": "Todos los vehículos están ocultos de la comparación.",
+      "consumption": {
+        "tab": "Consumo",
+        "title": "Consumo según la temperatura exterior",
+        "summary": "El consumo de {vehicles} según la temperatura exterior, en kWh/100 km.",
+        "none": "Ningún trayecto del periodo indica su temperatura exterior.",
+        "hint": "Según la temperatura exterior media de cada trayecto: los vehículos comparados con el mismo tiempo, sin el sesgo de la estación.",
+        "without": "{vehicles} no tiene consumo según la temperatura exterior (el coche no la indica, o ningún trayecto tiene energía conocida) y no se dibuja. | {vehicles} no tienen consumo según la temperatura exterior (los coches no la indican, o ningún trayecto tiene energía conocida) y no se dibujan."
+      },
+      "cost": {
+        "tab": "Coste",
+        "title": "Coste cada 100 km por mes",
+        "summary": "Lo que costaron 100 km a cada vehículo, mes a mes, en los últimos 12 meses.",
+        "none": "Ningún mes tiene a la vez un coste y una distancia conocidos.",
+        "hint": "En los últimos 12 meses, sea cual sea el periodo. Un coste conocido como un intervalo se dibuja en su valor más bajo."
+      },
+      "charging": {
+        "tab": "Carga",
+        "title": "Dónde se cargó la energía",
+        "places": "En tus lugares",
+        "ac": "AC en otro sitio",
+        "dc": "DC",
+        "unknown": "Desconocido",
+        "summary": "La parte de la energía de cada vehículo cargada en tus lugares, en AC en otro sitio y en DC.",
+        "none": "Ninguna carga en el periodo.",
+        "hint": "Tus lugares son los de los ajustes, con sus tarifas: explican la mayoría de las diferencias de coste.",
+        "without": "{vehicles} no ha cargado en el periodo. | {vehicles} no han cargado en el periodo.",
+        "energyUnknown": "{vehicles} tiene cargas de energía desconocida, fuera de sus partes. | {vehicles} tienen cargas de energía desconocida, fuera de sus partes."
+      },
+      "battery": {
+        "tab": "Batería",
+        "parkedTitle": "Pérdida en reposo",
+        "parkedSummary": "El nivel de carga que cada vehículo perdió por día en reposo.",
+        "parkedNone": "No se conoce ninguna pérdida en reposo en el periodo.",
+        "capacityTitle": "Capacidad desde las primeras estimaciones",
+        "capacitySummary": "Cómo ha cambiado la capacidad estimada de cada vehículo desde sus primeras estimaciones.",
+        "capacityNone": "Ningún vehículo tiene todavía suficientes estimaciones de capacidad.",
+        "capacityHint": "Sobre todo el historial, sea cual sea el periodo.",
+        "since": "{vehicle} desde {since}"
+      }
+    },
+    "spending": {
+      "title": "Gastos por mes",
+      "summary": "La electricidad de todos los vehículos costó {total} en los últimos 12 meses.",
+      "none": "No se conoce ningún coste en los últimos 12 meses.",
+      "hint": "Todos los vehículos de la cuenta, ocultos incluidos, en los últimos 12 meses. Un coste conocido como un intervalo se dibuja en su valor más bajo.",
+      "partial": "El coste de {n} carga es desconocido y queda fuera. | El coste de {n} cargas es desconocido y queda fuera."
+    }
+  },
   "vehicle": {
     "title": "Vehículo",
     "menu": "Vehículo: {label}",

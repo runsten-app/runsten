@@ -52,6 +52,95 @@
       "pleos": "Jeg har en Hyundai, Kia eller Genesis"
     }
   },
+  "garage": {
+    "title": "Garasje",
+    "all": "Alle biler",
+    "error": "Tallene for bilene kunne ikke lastes. Prøv igjen om litt.",
+    "period": {
+      "label": "Periode",
+      "30d": "30 dager",
+      "12m": "12 måneder",
+      "last30d": "siste 30 dager",
+      "last12m": "siste 12 måneder"
+    },
+    "totals": {
+      "label": "Kontoens summer",
+      "vehicles": "{n} bil | {n} biler",
+      "driving": "{n} kjører | {n} kjører",
+      "charging": "{n} lader | {n} lader",
+      "now": "{what} nå",
+      "distance": "Kjørt",
+      "cost": "Strøm",
+      "perHundred": "Per 100 km i snitt"
+    },
+    "tile": {
+      "soc": "Ladenivå",
+      "charging": "Lader",
+      "chargingTo": "Lader til {target}",
+      "driving": "Kjører",
+      "parked": "Parkert",
+      "distance": "Kjørt",
+      "consumption": "Forbruk",
+      "cost": "Per 100 km",
+      "best": "Lavest",
+      "noTrip": "Ingen turer i perioden.",
+      "hide": "Skjul fra sammenligningen",
+      "lastRead": "Sist lest {age}"
+    },
+    "compare": {
+      "title": "Sammenlign",
+      "label": "Hva som sammenlignes",
+      "scope": "{n} bil, {period} | {n} biler over samme periode: {period}",
+      "vehicle": "Bil",
+      "nothing": "Alle bilene er skjult fra sammenligningen.",
+      "consumption": {
+        "tab": "Forbruk",
+        "title": "Forbruk etter utetemperatur",
+        "summary": "Forbruket til {vehicles} etter utetemperatur, i kWh/100 km.",
+        "none": "Ingen tur i perioden oppgir utetemperaturen.",
+        "hint": "Etter gjennomsnittlig utetemperatur for hver tur: bilene sammenlignet i samme vær, uten årstidens skjevhet.",
+        "without": "{vehicles} har ikke forbruk etter utetemperatur (bilen oppgir ingen, eller ingen tur har kjent energi) og tegnes ikke. | {vehicles} har ikke forbruk etter utetemperatur (bilene oppgir ingen, eller ingen tur har kjent energi) og tegnes ikke."
+      },
+      "cost": {
+        "tab": "Kostnad",
+        "title": "Kostnad per 100 km per måned",
+        "summary": "Hva 100 km kostet hver bil, måned for måned, de siste 12 månedene.",
+        "none": "Ingen måned har både kjent kostnad og kjent distanse.",
+        "hint": "De siste 12 månedene, uansett periode. En kostnad kjent som et intervall tegnes på sin laveste verdi."
+      },
+      "charging": {
+        "tab": "Lading",
+        "title": "Hvor energien ble ladet",
+        "places": "På stedene dine",
+        "ac": "AC andre steder",
+        "dc": "DC",
+        "unknown": "Ukjent",
+        "summary": "Andelen av hver bils energi ladet på stedene dine, med AC andre steder og med DC.",
+        "none": "Ingen lading i perioden.",
+        "hint": "Stedene dine er de i innstillingene, med sine tariffer: de forklarer de fleste kostnadsforskjellene.",
+        "without": "{vehicles} ladet ikke i perioden. | {vehicles} ladet ikke i perioden.",
+        "energyUnknown": "{vehicles} har ladinger med ukjent energi, holdt utenfor andelene. | {vehicles} har ladinger med ukjent energi, holdt utenfor andelene."
+      },
+      "battery": {
+        "tab": "Batteri",
+        "parkedTitle": "Tap i ro",
+        "parkedSummary": "Ladenivået hver bil mistet per dag mens den sto parkert.",
+        "parkedNone": "Ingen tap i ro er kjent i perioden.",
+        "capacityTitle": "Kapasitet siden de første anslagene",
+        "capacitySummary": "Hvordan den anslåtte kapasiteten til hver bil har endret seg siden de første anslagene.",
+        "capacityNone": "Ingen bil har nok kapasitetsanslag ennå.",
+        "capacityHint": "Over hele historikken, uansett periode.",
+        "since": "{vehicle} siden {since}"
+      }
+    },
+    "spending": {
+      "title": "Utgifter per måned",
+      "summary": "Strømmen til alle bilene kostet {total} de siste 12 månedene.",
+      "none": "Ingen kostnad er kjent de siste 12 månedene.",
+      "hint": "Alle bilene på kontoen, skjulte inkludert, de siste 12 månedene. En kostnad kjent som et intervall tegnes på sin laveste verdi.",
+      "partial": "Kostnaden for {n} lading er ukjent og holdt utenfor. | Kostnaden for {n} ladinger er ukjent og holdt utenfor."
+    }
+  },
   "vehicle": {
     "title": "Bil",
     "menu": "Bil: {label}",

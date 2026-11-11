@@ -52,6 +52,95 @@
       "pleos": "Ich fahre einen Hyundai, Kia oder Genesis"
     }
   },
+  "garage": {
+    "title": "Garage",
+    "all": "Alle Fahrzeuge",
+    "error": "Die Zahlen der Fahrzeuge konnten nicht geladen werden. Versuchen Sie es gleich noch einmal.",
+    "period": {
+      "label": "Zeitraum",
+      "30d": "30 Tage",
+      "12m": "12 Monate",
+      "last30d": "letzte 30 Tage",
+      "last12m": "letzte 12 Monate"
+    },
+    "totals": {
+      "label": "Summen des Kontos",
+      "vehicles": "{n} Fahrzeug | {n} Fahrzeuge",
+      "driving": "{n} unterwegs | {n} unterwegs",
+      "charging": "{n} lädt | {n} laden",
+      "now": "{what} gerade",
+      "distance": "Gefahren",
+      "cost": "Strom",
+      "perHundred": "Pro 100 km im Schnitt"
+    },
+    "tile": {
+      "soc": "Ladestand",
+      "charging": "Lädt",
+      "chargingTo": "Lädt bis {target}",
+      "driving": "Unterwegs",
+      "parked": "Geparkt",
+      "distance": "Gefahren",
+      "consumption": "Verbrauch",
+      "cost": "Pro 100 km",
+      "best": "Am niedrigsten",
+      "noTrip": "Keine Fahrt im Zeitraum.",
+      "hide": "Aus dem Vergleich ausblenden",
+      "lastRead": "Zuletzt gelesen {age}"
+    },
+    "compare": {
+      "title": "Vergleichen",
+      "label": "Was verglichen wird",
+      "scope": "{n} Fahrzeug, {period} | {n} Fahrzeuge im selben Zeitraum: {period}",
+      "vehicle": "Fahrzeug",
+      "nothing": "Alle Fahrzeuge sind aus dem Vergleich ausgeblendet.",
+      "consumption": {
+        "tab": "Verbrauch",
+        "title": "Verbrauch nach Außentemperatur",
+        "summary": "Der Verbrauch von {vehicles} nach Außentemperatur, in kWh/100 km.",
+        "none": "Keine Fahrt des Zeitraums nennt ihre Außentemperatur.",
+        "hint": "Nach der mittleren Außentemperatur jeder Fahrt: die Fahrzeuge bei gleichem Wetter verglichen, ohne den Einfluss der Jahreszeit.",
+        "without": "{vehicles} hat keinen Verbrauch nach Außentemperatur (das Fahrzeug meldet keine, oder keine Fahrt hat eine bekannte Energie) und wird nicht gezeichnet. | {vehicles} haben keinen Verbrauch nach Außentemperatur (die Fahrzeuge melden keine, oder keine Fahrt hat eine bekannte Energie) und werden nicht gezeichnet."
+      },
+      "cost": {
+        "tab": "Kosten",
+        "title": "Kosten pro 100 km nach Monat",
+        "summary": "Was 100 km jedes Fahrzeug Monat für Monat in den letzten 12 Monaten kosteten.",
+        "none": "Kein Monat hat zugleich bekannte Kosten und eine bekannte Strecke.",
+        "hint": "Über die letzten 12 Monate, unabhängig vom Zeitraum. Kosten, die als Spanne bekannt sind, werden mit ihrem unteren Wert gezeichnet."
+      },
+      "charging": {
+        "tab": "Laden",
+        "title": "Wo die Energie geladen wurde",
+        "places": "An Ihren Orten",
+        "ac": "AC anderswo",
+        "dc": "DC",
+        "unknown": "Unbekannt",
+        "summary": "Der Anteil der Energie jedes Fahrzeugs, geladen an Ihren Orten, mit AC anderswo und mit DC.",
+        "none": "Keine Ladung im Zeitraum.",
+        "hint": "Ihre Orte sind die der Einstellungen, mit ihren Tarifen: Sie erklären die meisten Kostenunterschiede.",
+        "without": "{vehicles} hat im Zeitraum nicht geladen. | {vehicles} haben im Zeitraum nicht geladen.",
+        "energyUnknown": "{vehicles} hat Ladungen mit unbekannter Energie, die in den Anteilen fehlen. | {vehicles} haben Ladungen mit unbekannter Energie, die in den Anteilen fehlen."
+      },
+      "battery": {
+        "tab": "Batterie",
+        "parkedTitle": "Verlust im Stand",
+        "parkedSummary": "Der Ladestand, den jedes Fahrzeug pro Tag im Stand verlor.",
+        "parkedNone": "Im Zeitraum ist kein Verlust im Stand bekannt.",
+        "capacityTitle": "Kapazität seit den ersten Schätzungen",
+        "capacitySummary": "Wie sich die geschätzte Kapazität jedes Fahrzeugs seit seinen ersten Schätzungen verändert hat.",
+        "capacityNone": "Noch kein Fahrzeug hat genug Kapazitätsschätzungen.",
+        "capacityHint": "Über den ganzen Verlauf, unabhängig vom Zeitraum.",
+        "since": "{vehicle} seit {since}"
+      }
+    },
+    "spending": {
+      "title": "Ausgaben pro Monat",
+      "summary": "Der Strom aller Fahrzeuge kostete in den letzten 12 Monaten {total}.",
+      "none": "In den letzten 12 Monaten sind keine Kosten bekannt.",
+      "hint": "Alle Fahrzeuge des Kontos, ausgeblendete eingeschlossen, über die letzten 12 Monate. Kosten, die als Spanne bekannt sind, werden mit ihrem unteren Wert gezeichnet.",
+      "partial": "Die Kosten von {n} Ladung sind unbekannt und nicht enthalten. | Die Kosten von {n} Ladungen sind unbekannt und nicht enthalten."
+    }
+  },
   "vehicle": {
     "title": "Fahrzeug",
     "menu": "Fahrzeug: {label}",
