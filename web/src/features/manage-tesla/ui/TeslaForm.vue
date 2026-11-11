@@ -160,7 +160,7 @@ const guide = new URL('https://runsten.app/docs/guide/tesla')
       {{ t('tesla.intro') }}
     </p>
     <p class="text-body-medium mb-3">
-      {{ t('tesla.beta') }}
+      {{ t('tesla.unofficial') }}
       <a :href="guide.href" target="_blank" rel="noreferrer" class="guide">
         {{ t('tesla.guide') }}<v-icon :icon="mdiOpenInNew" size="x-small" class="ms-1" />
         <span class="d-sr-only">{{ t('tesla.steps.newTab') }}</span>

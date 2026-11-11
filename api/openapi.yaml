@@ -4334,7 +4334,7 @@ components:
           description: "The feature flags the web interface reads, evaluated for the session's account: a function shipped off or on, which the instance, or the account, turns over. Made to go: a flag is removed once on everywhere."
           properties:
             source.bmw:
-              description: "BMW CarData as a source, for the BMWs and the Minis: its connection and its reads. On by default, the API being BMW's own; an instance may turn it off while the source is in beta, not seen yet on a real car."
+              description: "BMW CarData as a source, for the BMWs and the Minis: its connection and its reads. On by default, the API being BMW's own; an instance may turn it off should the source misbehave there."
               type: boolean
             source.pleos:
               description: "The Pleos Vehicle Data API as a source, for the Hyundais, the Kias and the Genesises: its connection and its reads. On by default, the API being the EU Data Act's own; an instance may turn it off while the source is in beta, not seen yet on a real car."

@@ -199,7 +199,6 @@ const guide = new URL('https://runsten.app/docs/guide/bmw')
   <div class="bmw-form">
     <p class="text-body-medium mb-1">{{ t('bmw.intro') }}</p>
     <p class="text-body-medium mb-3">
-      {{ t('bmw.beta') }}
       <a :href="guide.href" target="_blank" rel="noreferrer" class="guide">
         {{ t('bmw.guide') }}<v-icon :icon="mdiOpenInNew" size="x-small" class="ms-1" />
         <span class="d-sr-only">{{ t('bmw.newTab') }}</span>

@@ -97,11 +97,11 @@ describe('HomePage', () => {
     // A Tesla's refresh token, in its own tab.
     const tesla = wrapper.find('a.tesla')
     expect(tesla.attributes('href')).toBe('/connection#tesla')
-    expect(tesla.text()).toBe('I have a Tesla (beta)')
+    expect(tesla.text()).toBe('I have a Tesla')
     // A BMW's or a MINI's client ID, in its own tab.
     const bmw = wrapper.find('a.bmw')
     expect(bmw.attributes('href')).toBe('/connection#bmw')
-    expect(bmw.text()).toBe('I have a BMW or MINI (beta)')
+    expect(bmw.text()).toBe('I have a BMW or MINI')
     // How each is read, listed as English lists.
     expect(wrapper.text()).toContain(
       "Runsten reads a Volvo through your Volvo ID, a Polestar with a credential of Polestar's Data Portal, a Tesla with a refresh token of your Tesla account, and a BMW or a MINI with a client ID you create in the MyBMW or MyMINI portal.",
@@ -172,7 +172,7 @@ describe('HomePage', () => {
     ext.mentions = { tesla: 'Plus offered' }
     fetchVehicles.mockResolvedValue([])
     const { wrapper } = await home()
-    expect(wrapper.find('a.tesla').text()).toBe('I have a Tesla (beta) · Plus offered')
+    expect(wrapper.find('a.tesla').text()).toBe('I have a Tesla · Plus offered')
     expect(wrapper.find('a.polestar').text()).toBe('I have a Polestar')
     const buttons = wrapper.findAll('.v-empty-state__actions a, .v-empty-state__actions button')
     expect(buttons.at(-1)?.classes()).toContain('none-of-these')

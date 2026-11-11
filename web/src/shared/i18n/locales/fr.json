@@ -46,8 +46,8 @@
     "choose": {
       "volvo": "J'ai une Volvo",
       "polestar": "J'ai une Polestar",
-      "tesla": "J'ai une Tesla (bêta)",
-      "bmw": "J'ai une BMW ou une MINI (bêta)"
+      "tesla": "J'ai une Tesla",
+      "bmw": "J'ai une BMW ou une MINI"
     }
   },
   "vehicle": {
@@ -1939,7 +1939,7 @@
   },
   "tesla": {
     "intro": "Runsten lit votre Tesla avec un jeton de rafraîchissement de votre compte Tesla, comme TeslaMate : par l'Owner API, l'API de l'app Tesla. Il ne demande jamais votre mot de passe Tesla, et ne réveille jamais votre voiture : il la laisse dormir.",
-    "beta": "La prise en charge de Tesla est en bêta. L'Owner API n'est pas officielle : Tesla peut la fermer sans préavis.",
+    "unofficial": "L'Owner API n'est pas officielle : Tesla peut la fermer sans préavis.",
     "guide": "Lire le guide",
     "refused": {
       "title": "Votre jeton Tesla a été refusé",
@@ -2100,7 +2100,6 @@
   },
   "bmw": {
     "intro": "Runsten lit votre BMW ou votre MINI par BMW CarData, le service officiel que BMW ouvre gratuitement à ses propriétaires : la voiture envoie ses relevés (batterie, autonomie, charge, compteur, position) et Runsten les reçoit. Vous créez votre propre client ID dans le portail MyBMW ou MyMINI ; Runsten ne demande jamais votre mot de passe BMW et n'envoie jamais de commande à la voiture.",
-    "beta": "La prise en charge de BMW est en bêta : elle a été conçue d'après la documentation de BMW et reste à vérifier sur d'autres voitures.",
     "guide": "Lire le guide",
     "newTab": "(s'ouvre dans un nouvel onglet)",
     "refused": {

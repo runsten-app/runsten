@@ -46,8 +46,8 @@
     "choose": {
       "volvo": "Ik heb een Volvo",
       "polestar": "Ik heb een Polestar",
-      "tesla": "Ik heb een Tesla (bèta)",
-      "bmw": "Ik heb een BMW of MINI (bèta)"
+      "tesla": "Ik heb een Tesla",
+      "bmw": "Ik heb een BMW of MINI"
     }
   },
   "vehicle": {
@@ -1939,7 +1939,7 @@
   },
   "tesla": {
     "intro": "Runsten leest uw Tesla uit met een refreshtoken van uw Tesla-account, zoals TeslaMate dat doet: via de Owner API, de API van de Tesla-app. Het vraagt nooit om uw Tesla-wachtwoord en maakt uw auto nooit wakker: het laat hem slapen.",
-    "beta": "De ondersteuning voor Tesla is in bèta. De Owner API is niet officieel: Tesla kan hem zonder aankondiging sluiten.",
+    "unofficial": "De Owner API is niet officieel: Tesla kan hem zonder aankondiging sluiten.",
     "guide": "Lees de handleiding",
     "refused": {
       "title": "Uw Tesla-refreshtoken is geweigerd",
@@ -2100,7 +2100,6 @@
   },
   "bmw": {
     "intro": "Runsten leest uw BMW of MINI uit via BMW CarData, de officiële dienst die BMW gratis openstelt voor eigenaars: de auto stuurt zijn metingen (batterij, actieradius, laden, kilometerstand, positie) en Runsten ontvangt ze. U maakt zelf uw client ID aan in het portaal MyBMW of MyMINI; Runsten vraagt nooit om uw BMW-wachtwoord en stuurt nooit een opdracht naar de auto.",
-    "beta": "De ondersteuning voor BMW is in bèta: ze is gebouwd op basis van de documentatie van BMW en moet nog op meer auto’s worden getest.",
     "guide": "Lees de handleiding",
     "newTab": "(opent in een nieuw tabblad)",
     "refused": {

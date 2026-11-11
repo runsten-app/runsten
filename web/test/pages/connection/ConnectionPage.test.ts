@@ -132,7 +132,7 @@ describe('ConnectionPage', () => {
     expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
       'Volvo needs your attention',
       'Polestar needs your attention',
-      'Tesla Beta',
+      'Tesla',
     ])
     expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Volvo')
     // Self-hosting: the instance's key reads every vehicle, there is none to give.
@@ -177,7 +177,7 @@ describe('ConnectionPage', () => {
     const w = await page()
     expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
       'Polestar needs your attention',
-      'Tesla Beta',
+      'Tesla',
     ])
     expect(w.find('#connection-panel-polestar').exists()).toBe(true)
     expect(w.find('a[href="auth/volvo/start"]').exists()).toBe(false)
@@ -333,7 +333,7 @@ describe('ConnectionPage', () => {
     expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
       'Volvo',
       'Polestar needs your attention',
-      'Tesla Beta',
+      'Tesla',
     ])
   })
 
@@ -693,7 +693,7 @@ describe('ConnectionPage', () => {
     expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
       'Volvo needs your attention',
       'Polestar needs your attention',
-      'Tesla Beta',
+      'Tesla',
     ])
     await w.findAll('[role="tab"]')[2]?.trigger('click')
     await vi.waitFor(() => expect(w.find('#connection-panel-tesla .fleet').exists()).toBe(true))
@@ -725,19 +725,21 @@ describe('ConnectionPage', () => {
       }
     }
 
-    it('has a tab, marked beta, while its flag is on, with its form and no dot', async () => {
+    it('has a tab while its flag is on, with its form and no dot', async () => {
       flag.bmw = true
       const w = await page()
       expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
         'Volvo needs your attention',
         'Polestar needs your attention',
-        'Tesla Beta',
-        'BMW Beta',
+        'Tesla',
+        'BMW',
       ])
+      // Out of beta, as Tesla: no tab says so.
+      expect(w.find('[role="tab"] .beta').exists()).toBe(false)
       await w.findAll('[role="tab"]')[3]?.trigger('click')
       await vi.waitFor(() => expect(w.find('#connection-panel-bmw .bmw-form').exists()).toBe(true))
       const panel = w.find('#connection-panel-bmw')
-      expect(panel.findAll('h2').map((h) => plain(h.text()))).toEqual(['BMW CarData Beta'])
+      expect(panel.findAll('h2').map((h) => plain(h.text()))).toEqual(['BMW CarData'])
       expect(panel.find('#bmw-client-id').exists()).toBe(true)
       expect(panel.find('.bmw-off').exists()).toBe(false)
     })
@@ -750,7 +752,7 @@ describe('ConnectionPage', () => {
 
     it('has no tab while its flag is off, and nothing of BMW is connected', async () => {
       const w = await page()
-      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).not.toContain('BMW Beta')
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).not.toContain('BMW')
       expect(w.find('#connection-panel-bmw').exists()).toBe(false)
     })
 
@@ -851,7 +853,7 @@ describe('ConnectionPage', () => {
       expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
         'Volvo needs your attention',
         'Polestar needs your attention',
-        'Tesla Beta',
+        'Tesla',
         'Hyundai · Kia · Genesis Beta',
       ])
       await w.findAll('[role="tab"]')[3]?.trigger('click')

@@ -46,8 +46,8 @@
     "choose": {
       "volvo": "Ho una Volvo",
       "polestar": "Ho una Polestar",
-      "tesla": "Ho una Tesla (beta)",
-      "bmw": "Ho una BMW o una MINI (beta)"
+      "tesla": "Ho una Tesla",
+      "bmw": "Ho una BMW o una MINI"
     }
   },
   "vehicle": {
@@ -1939,7 +1939,7 @@
   },
   "tesla": {
     "intro": "Runsten legge la Sua Tesla con un refresh token del Suo account Tesla, come fa TeslaMate: tramite la Owner API, l’API dell’app Tesla. Non chiede mai la Sua password Tesla e non sveglia mai la Sua auto: la lascia dormire.",
-    "beta": "Il supporto Tesla è in beta. La Owner API non è ufficiale: Tesla potrebbe chiuderla senza preavviso.",
+    "unofficial": "La Owner API non è ufficiale: Tesla potrebbe chiuderla senza preavviso.",
     "guide": "Leggi la guida",
     "refused": {
       "title": "Il Suo refresh token Tesla è stato rifiutato",
@@ -2100,7 +2100,6 @@
   },
   "bmw": {
     "intro": "Runsten legge la Sua BMW o la Sua MINI tramite BMW CarData, il servizio ufficiale che BMW offre gratuitamente ai proprietari: l’auto invia le sue misure (batteria, autonomia, ricarica, contachilometri, posizione) e Runsten le riceve. Il client ID lo crea Lei stesso nel portale MyBMW o MyMINI; Runsten non chiede mai la Sua password BMW e non invia mai comandi all’auto.",
-    "beta": "Il supporto BMW è in beta: è stato realizzato sulla documentazione di BMW e va ancora verificato su altre auto.",
     "guide": "Leggi la guida",
     "newTab": "(si apre in una nuova scheda)",
     "refused": {
