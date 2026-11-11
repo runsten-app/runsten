@@ -46,8 +46,8 @@
     "choose": {
       "volvo": "Jag har en Volvo",
       "polestar": "Jag har en Polestar",
-      "tesla": "Jag har en Tesla (beta)",
-      "bmw": "Jag har en BMW eller MINI (beta)"
+      "tesla": "Jag har en Tesla",
+      "bmw": "Jag har en BMW eller MINI"
     }
   },
   "vehicle": {
@@ -1915,7 +1915,7 @@
   },
   "tesla": {
     "intro": "Runsten läser din Tesla med en uppdateringstoken från ditt Tesla-konto, som TeslaMate gör: via Owner API, Tesla-appens API. Det frågar aldrig efter ditt Tesla-lösenord och väcker aldrig bilen: det låter den sova.",
-    "beta": "Stödet för Tesla är i beta. Owner API är inte officiellt: Tesla kan stänga det utan förvarning.",
+    "unofficial": "Owner API är inte officiellt: Tesla kan stänga det utan förvarning.",
     "guide": "Läs guiden",
     "refused": {
       "title": "Din Tesla-token avvisades",
@@ -2076,7 +2076,6 @@
   },
   "bmw": {
     "intro": "Runsten läser din BMW eller MINI via BMW CarData, den officiella tjänst som BMW öppnar gratis för ägare: bilen skickar sina mätvärden (batteri, räckvidd, laddning, vägmätare, position) och Runsten tar emot dem. Du skapar ditt eget client ID i portalen MyBMW eller MyMINI; Runsten frågar aldrig efter ditt BMW-lösenord och skickar aldrig något kommando till bilen.",
-    "beta": "Stödet för BMW är i beta: det är byggt efter BMW:s dokumentation och återstår att kontrollera på fler bilar.",
     "guide": "Läs guiden",
     "newTab": "(öppnas i en ny flik)",
     "refused": {

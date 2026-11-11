@@ -266,15 +266,6 @@ const alerted = computed(
           class="brand"
         >
           {{ brandLabels[b] }}
-          <v-chip
-            v-if="b === 'tesla' || b === 'bmw'"
-            size="x-small"
-            variant="tonal"
-            color="primary"
-            class="ms-2 beta"
-          >
-            {{ t('connection.polestar.beta') }}
-          </v-chip>
           <template v-if="alerted.has(b)">
             <v-badge dot inline color="warning" class="attention ms-1" aria-hidden="true" />
             <!-- A space before: the tab's name would run into it. -->
@@ -422,9 +413,6 @@ const alerted = computed(
           <section v-else-if="b === 'bmw'" class="mb-8" aria-labelledby="connection-bmw-title">
             <h2 id="connection-bmw-title" class="text-title-large mb-3">
               {{ t('connection.bmw.title') }}
-              <v-chip size="x-small" variant="tonal" color="primary" class="ms-2 beta">
-                {{ t('connection.polestar.beta') }}
-              </v-chip>
             </h2>
             <BmwForm v-if="bmwOn" :connection="settings" />
             <p v-else class="text-body-medium bmw-off">{{ t('connection.bmw.off') }}</p>

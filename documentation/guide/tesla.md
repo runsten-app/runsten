@@ -1,14 +1,12 @@
 ---
-description: "Read a Tesla with Runsten: a refresh token of your Tesla account, as TeslaMate takes it, the Owner API, a car left to sleep, and what is still in beta."
+description: "Read a Tesla with Runsten: a refresh token of your Tesla account, as TeslaMate takes it, the Owner API, which is not official, and a car left to sleep."
 ---
 
 # Your Tesla
 
 Runsten reads a Tesla through the **Owner API**, the API of the Tesla app, with a **refresh token** of your Tesla account: the way TeslaMate does. You get the token with a tool that signs you in on Tesla's own page, and give it to Runsten. Runsten never asks for your Tesla password. A self-hosted instance needs no Volvo application to read a Tesla.
 
-::: warning Beta
-Tesla support is in beta. It was built against a simulator of the Owner API, from responses of a real Model Y, and how often it reads is still being tuned on a real car.
-
+::: warning An API that is not official
 The Owner API is **not official**: Tesla calls it deprecated in favour of its Fleet API, which is paid and needs an application registered with Tesla. It still answers owners' tokens, but Tesla may close it without notice. Should Tesla close it to your account, the Connection page says so.
 :::
 

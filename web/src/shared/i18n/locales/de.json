@@ -46,8 +46,8 @@
     "choose": {
       "volvo": "Ich fahre einen Volvo",
       "polestar": "Ich fahre einen Polestar",
-      "tesla": "Ich fahre einen Tesla (Beta)",
-      "bmw": "Ich fahre einen BMW oder MINI (Beta)"
+      "tesla": "Ich fahre einen Tesla",
+      "bmw": "Ich fahre einen BMW oder MINI"
     }
   },
   "vehicle": {
@@ -1915,7 +1915,7 @@
   },
   "tesla": {
     "intro": "Runsten liest Ihren Tesla mit einem Refresh-Token Ihres Tesla-Kontos, wie TeslaMate: über die Owner API, die API der Tesla-App. Es fragt nie nach Ihrem Tesla-Passwort und weckt Ihr Auto nie: Es lässt es schlafen.",
-    "beta": "Die Tesla-Unterstützung ist in der Beta. Die Owner API ist nicht offiziell: Tesla kann sie ohne Vorankündigung schließen.",
+    "unofficial": "Die Owner API ist nicht offiziell: Tesla kann sie ohne Vorankündigung schließen.",
     "guide": "Anleitung lesen",
     "refused": {
       "title": "Ihr Tesla-Refresh-Token wurde abgelehnt",
@@ -2076,7 +2076,6 @@
   },
   "bmw": {
     "intro": "Runsten liest Ihren BMW oder MINI über BMW CarData, den offiziellen Dienst, den BMW seinen Besitzern kostenlos öffnet: Das Auto sendet seine Werte (Batterie, Reichweite, Laden, Kilometerstand, Position), und Runsten empfängt sie. Die Client-ID legen Sie selbst im Portal MyBMW oder MyMINI an; Runsten fragt nie nach Ihrem BMW-Passwort und sendet nie einen Befehl an das Auto.",
-    "beta": "Die BMW-Unterstützung ist in der Beta. Sie wurde nach BMWs Dokumentation gebaut und muss noch an weiteren Fahrzeugen geprüft werden.",
     "guide": "Anleitung lesen",
     "newTab": "(öffnet in einem neuen Tab)",
     "refused": {

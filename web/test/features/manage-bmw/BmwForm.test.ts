@@ -74,7 +74,7 @@ describe('BmwForm', () => {
   it('without a connection, is open on the steps in the portal, the field and the guide', () => {
     form(none)
     expect(w().text()).toContain('Runsten reads your BMW or MINI through BMW CarData')
-    expect(w().text()).toContain('BMW support is in beta')
+    expect(w().text()).not.toContain('beta')
     expect(w().find('a.guide').attributes('href')).toBe('https://runsten.app/docs/guide/bmw')
     const steps = w()
       .findAll('.steps li')

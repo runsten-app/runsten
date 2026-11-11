@@ -17,8 +17,8 @@ Runsten records the trips, charges and costs of your electric cars, and shows th
 
 - **Volvo**, through the Volvo Cars API;
 - **Polestar**, through Polestar's Data Portal (or, outside the EU and the EEA, the Polestar app's API, in beta);
-- **Tesla**, through the Owner API of the Tesla app (beta);
-- **BMW and Mini**, through BMW CarData (beta).
+- **Tesla**, through the Owner API of the Tesla app;
+- **BMW and Mini**, through BMW CarData.
 
 Other makes will follow. One account follows several vehicles, of one make or of several: a Volvo and a Tesla in the same garage are each read from their own manufacturer, and switched between from the bar of every page.
 
