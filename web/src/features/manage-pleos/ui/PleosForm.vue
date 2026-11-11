@@ -31,7 +31,7 @@ const props = defineProps<{ connection: ConnectionSettings; brand: PleosBrand; o
 const { t } = useI18n()
 const f = useFormat()
 const now = useNow()
-const { setCredential, isPending, error, reset } = useSetPleosCredential(props.brand)
+const { setCredential, error, reset } = useSetPleosCredential(props.brand)
 
 const credential = computed((): PleosKey | null => props.connection.pleos?.[props.brand] ?? null)
 const opened = ref(false)
@@ -40,10 +40,13 @@ const empty = (): Draft => ({ client_id: '', client_secret: '' })
 const draft = reactive<Draft>(empty())
 const sent = ref(false)
 const status = ref('')
+// saving holds from the request to its answer: the mutation's own state is cleared by
+// reset(), which an edit of a field calls while the request still runs.
+const saving = ref(false)
 
 watch(draft, () => {
   status.value = ''
-  reset()
+  if (!saving.value) reset()
 })
 
 const checked = computed(() => validate(draft))
@@ -118,11 +121,15 @@ async function submit() {
   sent.value = true
   const body = checked.value.body
   if (!body) return focusSummary()
+  if (saving.value) return
+  saving.value = true
   try {
     await setCredential(body)
     await close(t('pleos.saved'))
   } catch {
     await focusSummary()
+  } finally {
+    saving.value = false
   }
 }
 
@@ -239,7 +246,7 @@ const brandName = computed(() => {
         variant="text"
         color="error"
         class="delete-credential"
-        :disabled="isPending"
+        :disabled="saving"
         @click="askDelete"
       >
         {{ t('pleos.delete.button') }}
@@ -322,7 +329,7 @@ const brandName = computed(() => {
           type="submit"
           color="primary"
           :prepend-icon="mdiContentSave"
-          :loading="isPending"
+          :loading="saving"
           class="save"
         >
           {{ t('pleos.save') }}

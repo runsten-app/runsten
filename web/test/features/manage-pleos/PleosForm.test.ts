@@ -149,6 +149,27 @@ describe('PleosForm', () => {
     expect(w().find('form').exists()).toBe(false)
   })
 
+  it('keeps the removal away while a key is being saved, whatever is typed meanwhile', async () => {
+    let answer: (c: ConnectionSettings) => void = () => {}
+    api.setPleosCredential.mockReturnValue(
+      new Promise<ConnectionSettings>((resolve) => {
+        answer = resolve
+      }),
+    )
+    form(given)
+    await w().find('.toggle').trigger('click')
+    await fill('runsten-dev', secret)
+    await submit()
+    const remove = () => w().find('.delete-credential').attributes('disabled')
+    expect(remove()).toBeDefined()
+    // An edit resets the mutation's own state: the request still runs.
+    await fill('runsten-dev-2', secret)
+    expect(remove()).toBeDefined()
+    answer(given)
+    await flushPromises()
+    expect(remove()).toBeUndefined()
+  })
+
   it('tells a key Pleos refused, under its first field', async () => {
     api.setPleosCredential.mockRejectedValue(new ApiError(400, 'credential_refused', 'refused'))
     form(none)
