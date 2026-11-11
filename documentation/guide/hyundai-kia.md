@@ -23,7 +23,7 @@ Two things decide what a key reads:
 - a car you are the **primary user** of in the maker's account: only the primary user's key lists cars; a secondary or shared account's lists none;
 - the cars **registered at the moment the key was issued**: a car added to the account later is not read, and to read it you must issue a new key.
 
-**One key per brand**: a household with a Kia and a Hyundai gives two keys, each in its own section of the same tab.
+**One key per brand**: a household with a Kia and a Hyundai gives two keys, each in the tab of its make.
 
 ## Create your key
 
