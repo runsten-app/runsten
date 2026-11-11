@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"log/slog"
 	"slices"
 	"strings"
@@ -258,6 +259,37 @@ func TestSourceWatch(t *testing.T) {
 				t.Errorf("availability read %d times in 4 hours, want 24: every 10 minutes", n)
 			}
 		})
+	}
+}
+
+// TestSourceWatchFleet: six cars parked on one credential spend more than its budget
+// with their batteries watched; the batteries slow down, and every car's availability is
+// still read every parked interval.
+func TestSourceWatchFleet(t *testing.T) {
+	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+	src := newFakeSource(clk)
+	src.watch = true
+	var targets []Target
+	for i := range 6 {
+		tg := sourceTarget()
+		tg.VehicleID, tg.VIN = fmt.Sprintf("p%d", i), fmt.Sprintf("LPSVSEDE5RL00000%d", i)
+		targets = append(targets, tg)
+	}
+	st := &sourceStore{memStore: memStore{targets: targets}}
+	c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+	c.AddSource(src, st)
+	t0 := clk.Now()
+	for clk.Now().Before(t0.Add(12 * time.Hour)) {
+		poll(t, c)
+		clk.Advance(15 * time.Second)
+	}
+	// 6 cars × 12 hours, every 10 minutes: 432 availability reads, a minute each: 4,320
+	// battery reads.
+	if n := len(src.calls[psAvailability]); n < 430 {
+		t.Errorf("availability read %d times, want 432: every car every 10 minutes", n)
+	}
+	if n := len(src.calls[psBattery]); n >= 4_000 || n < 432 {
+		t.Errorf("battery read %d times, want fewer than every minute, no fewer than every 10", n)
 	}
 }
 
