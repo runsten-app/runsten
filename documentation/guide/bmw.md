@@ -6,11 +6,7 @@ description: "Read a BMW or a Mini with Runsten: BMW CarData, a client ID you cr
 
 Runsten reads a BMW or a Mini through **BMW CarData**, the official service BMW opens to the owner of a car, free of charge. You create a **client ID** of your own in the MyBMW or MyMINI portal, give it to Runsten, then approve a code on BMW's own page. Runsten never asks for your BMW password, and a self-hosted instance needs nothing else from BMW.
 
-::: warning Beta
-BMW support is in beta. It was built from BMW's documentation, its API files and the free clients that already read CarData (the Home Assistant integrations), against a simulator: it still has to be checked on more real cars, and the names and units of what a car sends may differ from what Runsten expects. What the Connection page tells you, and the [troubleshooting](#when-it-is-not-read) below, are the first things to look at.
-
 On an instance where BMW is turned off ([Feature flags](../self-hosting/flags.md)), the Connection page tells so, and reads nothing of your BMWs and Minis.
-:::
 
 Runsten is not affiliated with BMW or MINI. It only reads: it never sends a command to the car.
 

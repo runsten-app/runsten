@@ -10,8 +10,8 @@ Runsten reads your car from its manufacturer:
 
 - **Volvo**, through the Volvo Cars API: a Volvo ID, and on some instances a key of your own ([Your Volvo key](#your-volvo-key)).
 - **Polestar**, through Polestar's Data Portal: a credential of your own ([Your Polestar](./polestar.md)); outside the EU and the EEA, on a self-hosted instance, through the Polestar app's API with your Polestar ID (beta, [Your Polestar, with the Polestar ID](./polestar-id.md)).
-- **Tesla** (beta), through the Owner API of the Tesla app: a refresh token of your Tesla account ([Your Tesla](./tesla.md)).
-- **BMW and Mini** (beta), through BMW CarData: a client ID of your own, approved with a code on BMW's page ([Your BMW or Mini](./bmw.md)).
+- **Tesla**, through the Owner API of the Tesla app: a refresh token of your Tesla account ([Your Tesla](./tesla.md)).
+- **BMW and Mini**, through BMW CarData: a client ID of your own, approved with a code on BMW's page ([Your BMW or Mini](./bmw.md)).
 
 <Screen view="state" alt="The State tab: charge level, range, odometer and last position." />
 

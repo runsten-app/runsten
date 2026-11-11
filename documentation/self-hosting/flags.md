@@ -20,7 +20,7 @@ Then restart the stack (`docker compose up -d`): `runsten-api` and `runsten-coll
 |---|---|---|
 | `source.tesla` | on | Tesla as a source, when it ships: its connection, its page and its reads. Until then, it changes nothing. |
 | `source.polestar-id` | off | The Polestar ID as a source, for a Polestar the Data Portal does not read (outside the EU and the EEA): its connection and its reads, through the Polestar app's unofficial API ([Your Polestar, with the Polestar ID](../guide/polestar-id.md)). Turn it on for your own instance only. |
-| `source.bmw` | on | BMW CarData as a source, for a BMW or a Mini: its connection and its reads, through BMW's own API and its stream ([Your BMW or Mini](../guide/bmw.md)). In beta: turn it off should it misbehave on your instance. |
+| `source.bmw` | on | BMW CarData as a source, for a BMW or a Mini: its connection and its reads, through BMW's own API and its stream ([Your BMW or Mini](../guide/bmw.md)). Turn it off should it misbehave on your instance. |
 | `picture.tesla` | on | A Tesla's picture, drawn by Tesla's configurator in its colour and on its wheels ([Vehicle models](../guide/vehicle-models.md)), which `runsten-api` fetches from Tesla's servers. The configurator's address is not documented: turn it off should Tesla change it, or should you rather not call it. |
 
 The [release notes](https://github.com/runsten-app/runsten/releases) tell when a release adds or removes one.
