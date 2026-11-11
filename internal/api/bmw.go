@@ -12,7 +12,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"runsten/internal/flags"
-	"runsten/internal/oauth"
 )
 
 // BMW CarData (ADR 0045), BMW's own API, for the BMWs and the Minis. The owner creates a
@@ -388,28 +387,17 @@ func (s *Server) postBMWToken(ctx context.Context, _ *struct{}) (*body[connectio
 	case len(vins) == 0:
 		return nil, apiError(http.StatusConflict, codeNoVehicle, "the BMW account is the primary user of no vehicle")
 	}
-	limit, err := s.vehicleCap(ctx, account)
-	if err != nil {
-		return nil, s.internal("vehicles not read", err)
-	}
-	if limit.Exceeded(vins) {
-		return nil, s.tooManyVehicles()
-	}
 	cred := BMWCredential{ClientID: fl.clientID, GCID: tok.GCID, Refresh: tok.Refresh}
-	// The credential and the vehicles, together under the account's lock: a removal
-	// comes before both or after both.
-	var failed string
+	// The credential and the vehicles, together under the flow's lock (a removal comes
+	// before both or after both) and the account's (the cap holds against another
+	// connection given meanwhile).
 	current, err := s.bmwFlows.commit(account, fl.gen, func() error {
-		id, err := s.BMW.SetBMW(ctx, account, cred, s.Clock.Now())
-		if err != nil {
-			failed = "BMW connection not stored"
-			return err //nolint:wrapcheck // wrapped by s.internal below
-		}
-		failed = "vehicles not recorded"
-		return oauth.AddVehicles(ctx, s.Enrollment, account, id, vins) //nolint:wrapcheck // wrapped by s.internal below
+		return s.enroll(ctx, account, vins, "BMW connection not stored", func(ctx context.Context) (string, error) {
+			return s.BMW.SetBMW(ctx, account, cred, s.Clock.Now()) //nolint:wrapcheck // wrapped by enroll
+		})
 	})
 	if err != nil {
-		return nil, s.internal(failed, err)
+		return nil, err //nolint:wrapcheck // the API's, from enroll
 	}
 	if !current {
 		return nil, apiError(http.StatusBadRequest, codeAuthorizationExpired, "the connection was removed or started again meanwhile")

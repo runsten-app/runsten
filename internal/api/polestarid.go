@@ -208,21 +208,12 @@ func (s *Server) connectPolestarID(ctx context.Context, account string,
 		return nil, s.internal("vehicles not read", err)
 	}
 	vins := slices.DeleteFunc(slices.Clone(cars.VINs), func(vin string) bool { return others[vin] })
-	limit, err := s.vehicleCap(ctx, account)
-	if err != nil {
-		return nil, s.internal("vehicles not read", err)
-	}
-	if limit.Exceeded(vins) {
-		return nil, s.tooManyVehicles()
-	}
 	// The refresh token the sign-in gave is the only one that refreshes: it is stored,
 	// whatever happens next.
-	id, err := s.PolestarID.SetPolestarID(ctx, account, cred, s.Clock.Now())
-	if err != nil {
-		return nil, s.internal("Polestar ID not stored", err)
-	}
-	if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
-		return nil, s.internal("vehicles not recorded", err)
+	if err := s.enroll(ctx, account, vins, "Polestar ID not stored", func(ctx context.Context) (string, error) {
+		return s.PolestarID.SetPolestarID(ctx, account, cred, s.Clock.Now()) //nolint:wrapcheck // wrapped by enroll
+	}); err != nil {
+		return nil, err
 	}
 	s.Log.Info("Polestar ID connected", "account", account, "password", cred.Email != "", "vehicles", len(vins),
 		"read_elsewhere", len(cars.VINs)-len(vins))

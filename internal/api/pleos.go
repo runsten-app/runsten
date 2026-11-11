@@ -9,7 +9,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"runsten/internal/flags"
-	"runsten/internal/oauth"
 )
 
 // The owner's key of the Pleos Vehicle Data API, the access Hyundai, Kia and Genesis
@@ -123,19 +122,10 @@ func (s *Server) putPleos(ctx context.Context, in *pleosInput) (*body[connection
 	case len(vins) == 0:
 		return nil, apiError(http.StatusConflict, codeNoVehicle, "the key reads no vehicle: it lists only the cars registered when it was issued, and only with the primary user's account")
 	}
-	limit, err := s.vehicleCap(ctx, account)
-	if err != nil {
-		return nil, s.internal("vehicles not read", err)
-	}
-	if limit.Exceeded(vins) {
-		return nil, s.tooManyVehicles()
-	}
-	id, err := s.Pleos.SetPleosCredential(ctx, account, brand, cred, s.Clock.Now())
-	if err != nil {
-		return nil, s.internal("Pleos key not stored", err)
-	}
-	if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
-		return nil, s.internal("vehicles not recorded", err)
+	if err := s.enroll(ctx, account, vins, "Pleos key not stored", func(ctx context.Context) (string, error) {
+		return s.Pleos.SetPleosCredential(ctx, account, brand, cred, s.Clock.Now()) //nolint:wrapcheck // wrapped by enroll
+	}); err != nil {
+		return nil, err
 	}
 	s.Log.Info("Pleos key set", "account", account, "brand", brand, "vehicles", len(vins))
 	out, err := s.connectionSettings(ctx, account)

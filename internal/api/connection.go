@@ -179,19 +179,10 @@ func (s *Server) putAPIKey(ctx context.Context, in *apiKeyInput) (*body[connecti
 			s.Log.Warn("application key not checked", "err", err)
 		}
 	}
-	limit, err := s.vehicleCap(ctx, account)
-	if err != nil {
-		return nil, s.internal("vehicles not read", err)
-	}
-	if limit.Exceeded(vins) {
-		return nil, s.tooManyVehicles()
-	}
-	id, err := s.Keys.SetAPIKey(ctx, account, in.Body.Key, s.Clock.Now())
-	if err != nil {
-		return nil, s.internal("application key not stored", err)
-	}
-	if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
-		return nil, s.internal("vehicles not recorded", err)
+	if err := s.enroll(ctx, account, vins, "application key not stored", func(ctx context.Context) (string, error) {
+		return s.Keys.SetAPIKey(ctx, account, in.Body.Key, s.Clock.Now()) //nolint:wrapcheck // wrapped by enroll
+	}); err != nil {
+		return nil, err
 	}
 	s.Log.Info("application key set", "account", account, "vehicles", len(vins))
 	out, err := s.connectionSettings(ctx, account)
@@ -199,6 +190,52 @@ func (s *Server) putAPIKey(ctx context.Context, in *apiKeyInput) (*body[connecti
 		return nil, err
 	}
 	return respond(out), nil
+}
+
+// AccountLocks serializes, per account, what checks the cap of its vehicles and then
+// adds to them: two connections given at once would both pass the check otherwise.
+type AccountLocks interface {
+	// WithAccountLock runs fn while the account's lock is held, and returns fn's error
+	// as it is.
+	WithAccountLock(ctx context.Context, accountID string, fn func(context.Context) error) error
+}
+
+// enroll checks that vins keep the account within its cap, stores the connection
+// (store, which returns its ID; notStored names its failure in the logs) and adds the
+// vehicles, the three under the account's lock. It returns the API's error.
+func (s *Server) enroll(ctx context.Context, account string, vins []string, notStored string,
+	store func(context.Context) (string, error),
+) error {
+	var refused error
+	err := s.Locks.WithAccountLock(ctx, account, func(ctx context.Context) error {
+		limit, err := s.vehicleCap(ctx, account)
+		switch {
+		case err != nil:
+			refused = s.internal("vehicles not read", err)
+		case limit.Exceeded(vins):
+			refused = s.tooManyVehicles()
+		}
+		if refused != nil {
+			return refused
+		}
+		id, err := store(ctx)
+		if err != nil {
+			refused = s.internal(notStored, err)
+			return refused
+		}
+		if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
+			refused = s.internal("vehicles not recorded", err)
+			return refused
+		}
+		return nil
+	})
+	if refused != nil {
+		return refused
+	}
+	if err != nil {
+		return s.internal("account not locked", err)
+	}
+	return nil
 }
 
 // vehicleCap is the account's cap on vehicles, with those it has already, of any

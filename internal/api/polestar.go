@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
-
-	"runsten/internal/oauth"
 )
 
 // The owner's credential of the Polestar Data Portal: an OAuth client they create there,
@@ -108,19 +106,10 @@ func (s *Server) putPolestar(ctx context.Context, in *polestarInput) (*body[conn
 	case len(vins) == 0:
 		return nil, apiError(http.StatusConflict, codeNoVehicle, "the credential reads no vehicle: share one with it on the Data Portal")
 	}
-	limit, err := s.vehicleCap(ctx, account)
-	if err != nil {
-		return nil, s.internal("vehicles not read", err)
-	}
-	if limit.Exceeded(vins) {
-		return nil, s.tooManyVehicles()
-	}
-	id, err := s.Polestar.SetPolestarCredential(ctx, account, cred, s.Clock.Now())
-	if err != nil {
-		return nil, s.internal("Polestar credential not stored", err)
-	}
-	if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
-		return nil, s.internal("vehicles not recorded", err)
+	if err := s.enroll(ctx, account, vins, "Polestar credential not stored", func(ctx context.Context) (string, error) {
+		return s.Polestar.SetPolestarCredential(ctx, account, cred, s.Clock.Now()) //nolint:wrapcheck // wrapped by enroll
+	}); err != nil {
+		return nil, err
 	}
 	s.Log.Info("Polestar credential set", "account", account, "vehicles", len(vins))
 	out, err := s.connectionSettings(ctx, account)
