@@ -1,31 +1,33 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { vehicleMode } from '@/entities/vehicle'
+import { isStale, vehicleMode, type State } from '@/entities/vehicle'
 import { accountTotals, type GaragePeriod, type GarageVehicle } from '@/features/compare-vehicles'
-import { useFormat } from '@/shared/lib'
+import { useFormat, useNow } from '@/shared/lib'
 import { TileFigure } from '@/shared/ui'
 
 // GarageTotals are the account's figures over the period, every vehicle added up, hidden
 // ones included: the distance, what the electricity cost and what 100 km cost on average;
-// and, above them, how many vehicles drive or charge right now. They stand for the page's
-// title: the Garage is the account's. Without the statistics (the account's limits), the
-// live part only; without a currency, no amount.
+// and, above them, how many vehicles drive or charge right now, as far as their state is
+// current: a stale one may have stopped. They stand for the page's title: the Garage is
+// the account's. A part unknown (a trip's distance, a charge's cost) is said under its
+// figure; without a currency, no amount.
 const props = defineProps<{
   garage: GarageVehicle[]
   period: GaragePeriod
-  stats: boolean
 }>()
 const { t } = useI18n()
 const f = useFormat()
+const clock = useNow()
+const current = (s: State) => !!s.checked_at && !isStale(s.checked_at, clock.value, s.connection)
 
 const periods = computed(() => props.garage.flatMap((v) => (v.period ? [v.period] : [])))
-const read = computed(() => props.stats && periods.value.length === props.garage.length)
+const read = computed(() => periods.value.length === props.garage.length)
 const totals = computed(() => accountTotals(periods.value.map((p) => p.totals)))
 const currency = computed(() => periods.value.find((p) => p.currency)?.currency ?? null)
 
 const now = computed(() => {
-  const modes = props.garage.map((v) => (v.state ? vehicleMode(v.state) : null))
+  const modes = props.garage.map((v) => (v.state && current(v.state) ? vehicleMode(v.state) : null))
   const driving = modes.filter((m) => m === 'driving').length
   const charging = modes.filter((m) => m === 'charging').length
   const parts = [
@@ -61,7 +63,12 @@ const perHundred = computed(() =>
     <dl v-if="read" class="figures">
       <div class="figure distance">
         <dt class="label">{{ t('garage.totals.distance') }}</dt>
-        <dd><TileFigure :text="distance" size="kpi" /></dd>
+        <dd>
+          <TileFigure :text="distance" size="kpi" />
+          <span v-if="totals.distanceUnknown" class="note d-block">
+            {{ t('stats.tile.distanceUnknown', totals.distanceUnknown) }}
+          </span>
+        </dd>
       </div>
       <template v-if="currency">
         <div class="figure cost">

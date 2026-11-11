@@ -40,9 +40,12 @@ const spending = computed(() => {
   const summary = totals.costKnown
     ? t('garage.spending.summary', { total: f.amounts(totals.cost, c).spoken })
     : t('garage.spending.none')
+  // Costs unknown beside known ones: the bars and the sum leave them out, and say so.
+  const partial = totals.costKnown && totals.costUnknown
   return {
     series,
-    summary,
+    summary: partial ? `${summary} ${t('garage.spending.partial', totals.costUnknown)}` : summary,
+    partial: partial ? t('garage.spending.partial', totals.costUnknown) : null,
     empty: totals.costKnown ? undefined : summary,
     format: (v: number | null) => (v === null ? f.unknown() : f.majorAmount(v, c)),
     unit: f.currencySymbol(c.code),
@@ -63,7 +66,7 @@ const spending = computed(() => {
     :unit="spending.unit"
     :interval-header="t('stats.bucket.monthHeader')"
     :format="spending.format"
-    :hint="t('garage.spending.hint')"
+    :hint="[t('garage.spending.hint'), spending.partial].filter(Boolean).join(' ')"
     :empty="spending.empty"
     :selectable="false"
   />

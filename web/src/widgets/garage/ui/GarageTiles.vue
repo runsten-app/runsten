@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Vehicle } from '@/entities/vehicle'
-import { best, perHundred, type GarageVehicle } from '@/features/compare-vehicles'
+import {
+  best,
+  perHundred,
+  rankedConsumption,
+  type GarageVehicle,
+} from '@/features/compare-vehicles'
 import VehicleTile from './VehicleTile.vue'
 
 // GarageTiles are the account's vehicles side by side, a tile each, in the order of the
@@ -13,13 +18,12 @@ const props = defineProps<{
   colors: Map<string, string>
   garage: GarageVehicle[]
   hidden: string[]
-  stats: boolean
 }>()
 defineEmits<{ toggle: [vehicle: string] }>()
 
 const compared = computed(() => props.garage.filter((v) => !props.hidden.includes(v.id)))
 const bestConsumption = computed(() =>
-  best(compared.value.map((v) => v.period?.totals.trips.consumption_kwh_per_100km ?? null)),
+  best(compared.value.map((v) => (v.period ? rankedConsumption(v.period.totals.trips) : null))),
 )
 const bestCost = computed(() =>
   best(
@@ -42,7 +46,6 @@ const data = (id: string): GarageVehicle => props.garage.find((v) => v.id === id
       :color="colors.get(v.id) ?? ''"
       :data="data(v.id)"
       :hidden="hidden.includes(v.id)"
-      :stats
       :best-consumption="bestConsumption"
       :best-cost="bestCost"
       @toggle="$emit('toggle', v.id)"

@@ -84,7 +84,8 @@
       "cost": "Per 100 km",
       "best": "Lavest",
       "noTrip": "Ingen turer i perioden.",
-      "hide": "Skjul fra sammenligningen"
+      "hide": "Skjul fra sammenligningen",
+      "lastRead": "Sist lest {age}"
     },
     "compare": {
       "title": "Sammenlign",
@@ -98,7 +99,7 @@
         "summary": "Forbruket til {vehicles} etter utetemperatur, i kWh/100 km.",
         "none": "Ingen tur i perioden oppgir utetemperaturen.",
         "hint": "Etter gjennomsnittlig utetemperatur for hver tur: bilene sammenlignet i samme vær, uten årstidens skjevhet.",
-        "without": "{vehicles} oppgir ingen utetemperatur og tegnes ikke. | {vehicles} oppgir ingen utetemperatur og tegnes ikke."
+        "without": "{vehicles} har ikke forbruk etter utetemperatur (bilen oppgir ingen, eller ingen tur har kjent energi) og tegnes ikke. | {vehicles} har ikke forbruk etter utetemperatur (bilene oppgir ingen, eller ingen tur har kjent energi) og tegnes ikke."
       },
       "cost": {
         "tab": "Kostnad",
@@ -117,7 +118,8 @@
         "summary": "Andelen av hver bils energi ladet på stedene dine, med AC andre steder og med DC.",
         "none": "Ingen lading i perioden.",
         "hint": "Stedene dine er de i innstillingene, med sine tariffer: de forklarer de fleste kostnadsforskjellene.",
-        "without": "{vehicles} ladet ikke i perioden. | {vehicles} ladet ikke i perioden."
+        "without": "{vehicles} ladet ikke i perioden. | {vehicles} ladet ikke i perioden.",
+        "energyUnknown": "{vehicles} har ladinger med ukjent energi, holdt utenfor andelene. | {vehicles} har ladinger med ukjent energi, holdt utenfor andelene."
       },
       "battery": {
         "tab": "Batteri",
@@ -135,7 +137,8 @@
       "title": "Utgifter per måned",
       "summary": "Strømmen til alle bilene kostet {total} de siste 12 månedene.",
       "none": "Ingen kostnad er kjent de siste 12 månedene.",
-      "hint": "Alle bilene på kontoen, skjulte inkludert, de siste 12 månedene. En kostnad kjent som et intervall tegnes på sin laveste verdi."
+      "hint": "Alle bilene på kontoen, skjulte inkludert, de siste 12 månedene. En kostnad kjent som et intervall tegnes på sin laveste verdi.",
+      "partial": "Kostnaden for {n} lading er ukjent og holdt utenfor. | Kostnaden for {n} ladinger er ukjent og holdt utenfor."
     }
   },
   "vehicle": {

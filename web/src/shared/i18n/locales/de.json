@@ -84,7 +84,8 @@
       "cost": "Pro 100 km",
       "best": "Am niedrigsten",
       "noTrip": "Keine Fahrt im Zeitraum.",
-      "hide": "Aus dem Vergleich ausblenden"
+      "hide": "Aus dem Vergleich ausblenden",
+      "lastRead": "Zuletzt gelesen {age}"
     },
     "compare": {
       "title": "Vergleichen",
@@ -98,7 +99,7 @@
         "summary": "Der Verbrauch von {vehicles} nach Außentemperatur, in kWh/100 km.",
         "none": "Keine Fahrt des Zeitraums nennt ihre Außentemperatur.",
         "hint": "Nach der mittleren Außentemperatur jeder Fahrt: die Fahrzeuge bei gleichem Wetter verglichen, ohne den Einfluss der Jahreszeit.",
-        "without": "{vehicles} meldet keine Außentemperatur und wird nicht gezeichnet. | {vehicles} melden keine Außentemperatur und werden nicht gezeichnet."
+        "without": "{vehicles} hat keinen Verbrauch nach Außentemperatur (das Fahrzeug meldet keine, oder keine Fahrt hat eine bekannte Energie) und wird nicht gezeichnet. | {vehicles} haben keinen Verbrauch nach Außentemperatur (die Fahrzeuge melden keine, oder keine Fahrt hat eine bekannte Energie) und werden nicht gezeichnet."
       },
       "cost": {
         "tab": "Kosten",
@@ -117,7 +118,8 @@
         "summary": "Der Anteil der Energie jedes Fahrzeugs, geladen an Ihren Orten, mit AC anderswo und mit DC.",
         "none": "Keine Ladung im Zeitraum.",
         "hint": "Ihre Orte sind die der Einstellungen, mit ihren Tarifen: Sie erklären die meisten Kostenunterschiede.",
-        "without": "{vehicles} hat im Zeitraum nicht geladen. | {vehicles} haben im Zeitraum nicht geladen."
+        "without": "{vehicles} hat im Zeitraum nicht geladen. | {vehicles} haben im Zeitraum nicht geladen.",
+        "energyUnknown": "{vehicles} hat Ladungen mit unbekannter Energie, die in den Anteilen fehlen. | {vehicles} haben Ladungen mit unbekannter Energie, die in den Anteilen fehlen."
       },
       "battery": {
         "tab": "Batterie",
@@ -135,7 +137,8 @@
       "title": "Ausgaben pro Monat",
       "summary": "Der Strom aller Fahrzeuge kostete in den letzten 12 Monaten {total}.",
       "none": "In den letzten 12 Monaten sind keine Kosten bekannt.",
-      "hint": "Alle Fahrzeuge des Kontos, ausgeblendete eingeschlossen, über die letzten 12 Monate. Kosten, die als Spanne bekannt sind, werden mit ihrem unteren Wert gezeichnet."
+      "hint": "Alle Fahrzeuge des Kontos, ausgeblendete eingeschlossen, über die letzten 12 Monate. Kosten, die als Spanne bekannt sind, werden mit ihrem unteren Wert gezeichnet.",
+      "partial": "Die Kosten von {n} Ladung sind unbekannt und nicht enthalten. | Die Kosten von {n} Ladungen sind unbekannt und nicht enthalten."
     }
   },
   "vehicle": {

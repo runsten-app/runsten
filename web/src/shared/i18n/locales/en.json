@@ -84,7 +84,8 @@
       "cost": "Per 100 km",
       "best": "Lowest",
       "noTrip": "No trip over the period.",
-      "hide": "Hide from the comparison"
+      "hide": "Hide from the comparison",
+      "lastRead": "Last read {age}"
     },
     "compare": {
       "title": "Compare",
@@ -98,7 +99,7 @@
         "summary": "The consumption of {vehicles} by outside temperature, in kWh/100 km.",
         "none": "No trip of the period tells its outside temperature.",
         "hint": "By the average outside temperature of each trip: the vehicles compared in the same weather, without the season's bias.",
-        "without": "{vehicles} tells no outside temperature, and is not drawn. | {vehicles} tell no outside temperature, and are not drawn."
+        "without": "{vehicles} has no consumption by outside temperature (the car tells none, or no trip's energy is known), and is not drawn. | {vehicles} have no consumption by outside temperature (the cars tell none, or no trip's energy is known), and are not drawn."
       },
       "cost": {
         "tab": "Cost",
@@ -117,7 +118,8 @@
         "summary": "The share of each vehicle's energy charged at your places, on AC elsewhere and on DC.",
         "none": "No charge over the period.",
         "hint": "Your places are those of the settings, with their tariffs: they explain most differences in cost.",
-        "without": "{vehicles} did not charge over the period. | {vehicles} did not charge over the period."
+        "without": "{vehicles} did not charge over the period. | {vehicles} did not charge over the period.",
+        "energyUnknown": "{vehicles} has charges whose energy is unknown, left out of its shares. | {vehicles} have charges whose energy is unknown, left out of their shares."
       },
       "battery": {
         "tab": "Battery",
@@ -135,7 +137,8 @@
       "title": "Spending per month",
       "summary": "The electricity of every vehicle cost {total} over the last 12 months.",
       "none": "No cost is known over the last 12 months.",
-      "hint": "Every vehicle of the account, hidden ones included, over the last 12 months. A cost known as a range is drawn at its lowest."
+      "hint": "Every vehicle of the account, hidden ones included, over the last 12 months. A cost known as a range is drawn at its lowest.",
+      "partial": "The cost of {n} charge is unknown and left out. | The cost of {n} charges is unknown and left out."
     }
   },
   "vehicle": {

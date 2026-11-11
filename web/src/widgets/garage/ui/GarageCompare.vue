@@ -11,6 +11,7 @@ import {
   type GaragePeriod,
   type GarageVehicle,
 } from '@/features/compare-vehicles'
+import { FeatureUnavailable } from '@/features/view-limits'
 import { majorUnits, useFormat } from '@/shared/lib'
 import { ChartFrame, type Series } from '@/shared/ui/chart'
 import { useTheme } from 'vuetify'
@@ -20,13 +21,15 @@ import { useTheme } from 'vuetify'
 // weighs alike on all of them), what 100 km cost them month by month, where their energy
 // was charged, and their battery (the loss while parked, the capacity's change since the
 // first estimates). A vehicle without data for a chart is named under it, never drawn as
-// a zero.
+// a zero. monthly: false, where the account's limits refuse the statistics by interval: the
+// cost by month says it is unavailable.
 const props = defineProps<{
   garage: GarageVehicle[]
   labels: Map<string, string>
   colors: Map<string, string>
   period: GaragePeriod
   view: CompareView
+  monthly: boolean
 }>()
 const { t } = useI18n()
 const f = useFormat()
@@ -53,7 +56,10 @@ const names = (ids: string[]) => f.list(ids.map(label))
 
 // consumption: kWh/100 km by band of 5 °C, a line per vehicle on one axis of bands.
 const consumption = computed(() => {
-  const told = props.garage.filter((v) => v.period?.trips_by_temperature.bands.length)
+  // A band may have no estimate (a plug-in hybrid, trips without a known energy).
+  const told = props.garage.filter((v) =>
+    v.period?.trips_by_temperature.bands.some((b) => b.consumption_kwh_per_100km !== null),
+  )
   const axis = temperatureAxis(told.map((v) => v.period?.trips_by_temperature.bands ?? []))
   const labels = axis.map((c) =>
     t('stats.band.between', { min: f.number(c), max: f.quantity(c + 5, 'celsius') }),
@@ -89,6 +95,8 @@ const monthLabels = computed(() => months.value.map((b) => f.bucket(b.start, 'mo
 const currency = computed(
   () => props.garage.find((v) => v.months?.currency)?.months?.currency ?? null,
 )
+// Every vehicle's months read: before, no currency is no reason to say it is missing.
+const monthsRead = computed(() => props.garage.every((v) => v.months))
 
 // cost: what 100 km cost each vehicle, month by month, its lowest bound: a range would
 // make the bars of several vehicles unreadable, and the bounds are one most of the time.
@@ -125,8 +133,10 @@ const charging = computed(() => {
   }))
   const told = split.filter((s) => s.shares)
   // Read, but without a charge over the period.
-  const idle = props.garage
-    .filter((v) => v.period && !shares(chargeSplit(v.period)))
+  const idle = props.garage.filter((v) => v.period?.totals.charges.count === 0).map((v) => v.id)
+  // Charges whose energy is unknown: left out of the shares, or the whole bar.
+  const unknown = props.garage
+    .filter((v) => (v.period?.totals.charges.energy_soc_unknown ?? 0) > 0)
     .map((v) => v.id)
   const part = (k: 'places' | 'ac' | 'dc' | 'unknown') => told.map((s) => s.shares?.[k] ?? null)
   const series: Series[] = [
@@ -144,9 +154,21 @@ const charging = computed(() => {
     labels: told.map((s) => label(s.id)),
     series,
     summary: told.length ? t('garage.compare.charging.summary') : t('garage.compare.charging.none'),
-    note: idle.length
-      ? t('garage.compare.charging.without', { vehicles: names(idle) }, idle.length)
-      : null,
+    note:
+      [
+        ...(idle.length
+          ? [t('garage.compare.charging.without', { vehicles: names(idle) }, idle.length)]
+          : []),
+        ...(unknown.length
+          ? [
+              t(
+                'garage.compare.charging.energyUnknown',
+                { vehicles: names(unknown) },
+                unknown.length,
+              ),
+            ]
+          : []),
+      ].join(' ') || null,
   }
 })
 
@@ -225,8 +247,15 @@ const capacity = computed(() => {
         :selectable="false"
       />
       <template v-else-if="view === 'cost'">
+        <FeatureUnavailable v-if="!monthly" feature="stats" class="wide" />
+        <v-progress-linear
+          v-else-if="!monthsRead"
+          indeterminate
+          class="wide"
+          :aria-label="t('stats.loading')"
+        />
         <ChartFrame
-          v-if="cost"
+          v-else-if="cost"
           class="cost-by-month wide"
           kind="bar"
           :title="t('garage.compare.cost.title')"

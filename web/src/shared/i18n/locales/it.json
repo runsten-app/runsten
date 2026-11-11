@@ -84,7 +84,8 @@
       "cost": "Ogni 100 km",
       "best": "Il più basso",
       "noTrip": "Nessun viaggio nel periodo.",
-      "hide": "Nascondi dal confronto"
+      "hide": "Nascondi dal confronto",
+      "lastRead": "Letto {age}"
     },
     "compare": {
       "title": "Confronta",
@@ -98,7 +99,7 @@
         "summary": "Il consumo di {vehicles} secondo la temperatura esterna, in kWh/100 km.",
         "none": "Nessun viaggio del periodo indica la temperatura esterna.",
         "hint": "Secondo la temperatura esterna media di ogni viaggio: i veicoli confrontati con lo stesso tempo, senza l’effetto della stagione.",
-        "without": "{vehicles} non indica la temperatura esterna e non è tracciato. | {vehicles} non indicano la temperatura esterna e non sono tracciati."
+        "without": "{vehicles} non ha un consumo secondo la temperatura esterna (l’auto non la indica, o nessun viaggio ha un’energia nota) e non è tracciato. | {vehicles} non hanno un consumo secondo la temperatura esterna (le auto non la indicano, o nessun viaggio ha un’energia nota) e non sono tracciati."
       },
       "cost": {
         "tab": "Costo",
@@ -117,7 +118,8 @@
         "summary": "La quota dell’energia di ogni veicolo caricata nei tuoi luoghi, in AC altrove e in DC.",
         "none": "Nessuna ricarica nel periodo.",
         "hint": "I tuoi luoghi sono quelli delle impostazioni, con le loro tariffe: spiegano la maggior parte delle differenze di costo.",
-        "without": "{vehicles} non ha caricato nel periodo. | {vehicles} non hanno caricato nel periodo."
+        "without": "{vehicles} non ha caricato nel periodo. | {vehicles} non hanno caricato nel periodo.",
+        "energyUnknown": "{vehicles} ha ricariche di energia sconosciuta, escluse dalle sue quote. | {vehicles} hanno ricariche di energia sconosciuta, escluse dalle loro quote."
       },
       "battery": {
         "tab": "Batteria",
@@ -135,7 +137,8 @@
       "title": "Spese per mese",
       "summary": "L’elettricità di tutti i veicoli è costata {total} negli ultimi 12 mesi.",
       "none": "Nessun costo noto negli ultimi 12 mesi.",
-      "hint": "Tutti i veicoli dell’account, nascosti compresi, negli ultimi 12 mesi. Un costo noto come intervallo è tracciato al suo valore più basso."
+      "hint": "Tutti i veicoli dell’account, nascosti compresi, negli ultimi 12 mesi. Un costo noto come intervallo è tracciato al suo valore più basso.",
+      "partial": "Il costo di {n} ricarica è sconosciuto ed escluso. | Il costo di {n} ricariche è sconosciuto ed escluso."
     }
   },
   "vehicle": {

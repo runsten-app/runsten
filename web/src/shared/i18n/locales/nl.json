@@ -84,7 +84,8 @@
       "cost": "Per 100 km",
       "best": "Laagste",
       "noTrip": "Geen ritten in de periode.",
-      "hide": "Verbergen uit de vergelijking"
+      "hide": "Verbergen uit de vergelijking",
+      "lastRead": "Laatst gelezen {age}"
     },
     "compare": {
       "title": "Vergelijken",
@@ -98,7 +99,7 @@
         "summary": "Het verbruik van {vehicles} naar buitentemperatuur, in kWh/100 km.",
         "none": "Geen rit in de periode geeft zijn buitentemperatuur.",
         "hint": "Naar de gemiddelde buitentemperatuur van elke rit: de voertuigen vergeleken bij hetzelfde weer, zonder de invloed van het seizoen.",
-        "without": "{vehicles} geeft geen buitentemperatuur en wordt niet getekend. | {vehicles} geven geen buitentemperatuur en worden niet getekend."
+        "without": "{vehicles} heeft geen verbruik naar buitentemperatuur (de auto geeft er geen, of geen rit heeft een bekende energie) en wordt niet getekend. | {vehicles} hebben geen verbruik naar buitentemperatuur (de auto's geven er geen, of geen rit heeft een bekende energie) en worden niet getekend."
       },
       "cost": {
         "tab": "Kosten",
@@ -117,7 +118,8 @@
         "summary": "Het deel van de energie van elk voertuig dat op je locaties, met AC elders en met DC is geladen.",
         "none": "Geen laadbeurt in de periode.",
         "hint": "Je locaties zijn die van de instellingen, met hun tarieven: ze verklaren de meeste kostenverschillen.",
-        "without": "{vehicles} heeft in de periode niet geladen. | {vehicles} hebben in de periode niet geladen."
+        "without": "{vehicles} heeft in de periode niet geladen. | {vehicles} hebben in de periode niet geladen.",
+        "energyUnknown": "{vehicles} heeft laadbeurten met onbekende energie, buiten de aandelen gelaten. | {vehicles} hebben laadbeurten met onbekende energie, buiten de aandelen gelaten."
       },
       "battery": {
         "tab": "Batterij",
@@ -135,7 +137,8 @@
       "title": "Uitgaven per maand",
       "summary": "De stroom van alle voertuigen kostte {total} over de laatste 12 maanden.",
       "none": "Geen kosten bekend over de laatste 12 maanden.",
-      "hint": "Alle voertuigen van het account, verborgen inbegrepen, over de laatste 12 maanden. Kosten die als bereik bekend zijn, worden op hun laagste waarde getekend."
+      "hint": "Alle voertuigen van het account, verborgen inbegrepen, over de laatste 12 maanden. Kosten die als bereik bekend zijn, worden op hun laagste waarde getekend.",
+      "partial": "De kosten van {n} laadbeurt zijn onbekend en weggelaten. | De kosten van {n} laadbeurten zijn onbekend en weggelaten."
     }
   },
   "vehicle": {

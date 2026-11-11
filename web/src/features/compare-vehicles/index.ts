@@ -8,6 +8,7 @@ export {
   costKnown,
   garagePeriods,
   perHundred,
+  rankedConsumption,
   shares,
   temperatureAxis,
   type AccountTotals,

@@ -84,7 +84,8 @@
       "cost": "Per 100 km",
       "best": "Lägst",
       "noTrip": "Inga resor under perioden.",
-      "hide": "Dölj från jämförelsen"
+      "hide": "Dölj från jämförelsen",
+      "lastRead": "Senast läst {age}"
     },
     "compare": {
       "title": "Jämför",
@@ -98,7 +99,7 @@
         "summary": "Förbrukningen för {vehicles} efter utetemperatur, i kWh/100 km.",
         "none": "Ingen resa under perioden anger sin utetemperatur.",
         "hint": "Efter varje resas genomsnittliga utetemperatur: bilarna jämförda i samma väder, utan årstidens inverkan.",
-        "without": "{vehicles} anger ingen utetemperatur och ritas inte. | {vehicles} anger ingen utetemperatur och ritas inte."
+        "without": "{vehicles} har ingen förbrukning efter utetemperatur (bilen anger ingen, eller ingen resa har känd energi) och ritas inte. | {vehicles} har ingen förbrukning efter utetemperatur (bilarna anger ingen, eller ingen resa har känd energi) och ritas inte."
       },
       "cost": {
         "tab": "Kostnad",
@@ -117,7 +118,8 @@
         "summary": "Andelen av varje bils energi som laddades på dina platser, med AC på annat håll och med DC.",
         "none": "Ingen laddning under perioden.",
         "hint": "Dina platser är de i inställningarna, med sina tariffer: de förklarar de flesta kostnadsskillnaderna.",
-        "without": "{vehicles} laddade inte under perioden. | {vehicles} laddade inte under perioden."
+        "without": "{vehicles} laddade inte under perioden. | {vehicles} laddade inte under perioden.",
+        "energyUnknown": "{vehicles} har laddningar med okänd energi, utelämnade ur andelarna. | {vehicles} har laddningar med okänd energi, utelämnade ur andelarna."
       },
       "battery": {
         "tab": "Batteri",
@@ -135,7 +137,8 @@
       "title": "Utgifter per månad",
       "summary": "Elen för alla bilar kostade {total} under de senaste 12 månaderna.",
       "none": "Ingen kostnad är känd under de senaste 12 månaderna.",
-      "hint": "Alla bilar på kontot, dolda inräknade, under de senaste 12 månaderna. En kostnad känd som ett intervall ritas vid sitt lägsta värde."
+      "hint": "Alla bilar på kontot, dolda inräknade, under de senaste 12 månaderna. En kostnad känd som ett intervall ritas vid sitt lägsta värde.",
+      "partial": "Kostnaden för {n} laddning är okänd och utelämnad. | Kostnaden för {n} laddningar är okänd och utelämnad."
     }
   },
   "vehicle": {

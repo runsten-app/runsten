@@ -84,7 +84,8 @@
       "cost": "Aux 100 km",
       "best": "Le plus bas",
       "noTrip": "Aucun trajet sur la période.",
-      "hide": "Masquer de la comparaison"
+      "hide": "Masquer de la comparaison",
+      "lastRead": "Lu {age}"
     },
     "compare": {
       "title": "Comparer",
@@ -98,7 +99,7 @@
         "summary": "La consommation de {vehicles} selon la température extérieure, en kWh/100 km.",
         "none": "Aucun trajet de la période ne donne sa température extérieure.",
         "hint": "Selon la température extérieure moyenne de chaque trajet : les voitures comparées par le même temps, sans le biais de la saison.",
-        "without": "{vehicles} ne donne pas la température extérieure et n'est pas tracée. | {vehicles} ne donnent pas la température extérieure et ne sont pas tracées."
+        "without": "{vehicles} n'a pas de consommation selon la température extérieure (la voiture n'en donne pas, ou aucun trajet n'a d'énergie connue) et n'est pas tracée. | {vehicles} n'ont pas de consommation selon la température extérieure (les voitures n'en donnent pas, ou aucun trajet n'a d'énergie connue) et ne sont pas tracées."
       },
       "cost": {
         "tab": "Coût",
@@ -117,7 +118,8 @@
         "summary": "La part de l'énergie de chaque voiture chargée à vos lieux, en AC ailleurs et en DC.",
         "none": "Aucune charge sur la période.",
         "hint": "Vos lieux sont ceux des réglages, avec leurs tarifs : ils expliquent la plupart des écarts de coût.",
-        "without": "{vehicles} n'a pas chargé sur la période. | {vehicles} n'ont pas chargé sur la période."
+        "without": "{vehicles} n'a pas chargé sur la période. | {vehicles} n'ont pas chargé sur la période.",
+        "energyUnknown": "{vehicles} a des charges d'énergie inconnue, laissées hors de ses parts. | {vehicles} ont des charges d'énergie inconnue, laissées hors de leurs parts."
       },
       "battery": {
         "tab": "Batterie",
@@ -135,7 +137,8 @@
       "title": "Dépenses par mois",
       "summary": "L'électricité de toutes les voitures a coûté {total} sur les 12 derniers mois.",
       "none": "Aucun coût n'est connu sur les 12 derniers mois.",
-      "hint": "Toutes les voitures du compte, masquées comprises, sur les 12 derniers mois. Un coût connu par une fourchette est tracé à sa borne basse."
+      "hint": "Toutes les voitures du compte, masquées comprises, sur les 12 derniers mois. Un coût connu par une fourchette est tracé à sa borne basse.",
+      "partial": "Le coût de {n} charge est inconnu et laissé de côté. | Le coût de {n} charges est inconnu et laissé de côté."
     }
   },
   "vehicle": {

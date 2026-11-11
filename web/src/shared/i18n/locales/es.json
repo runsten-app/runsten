@@ -84,7 +84,8 @@
       "cost": "Cada 100 km",
       "best": "El más bajo",
       "noTrip": "Ningún trayecto en el periodo.",
-      "hide": "Ocultar de la comparación"
+      "hide": "Ocultar de la comparación",
+      "lastRead": "Leído {age}"
     },
     "compare": {
       "title": "Comparar",
@@ -98,7 +99,7 @@
         "summary": "El consumo de {vehicles} según la temperatura exterior, en kWh/100 km.",
         "none": "Ningún trayecto del periodo indica su temperatura exterior.",
         "hint": "Según la temperatura exterior media de cada trayecto: los vehículos comparados con el mismo tiempo, sin el sesgo de la estación.",
-        "without": "{vehicles} no indica la temperatura exterior y no se dibuja. | {vehicles} no indican la temperatura exterior y no se dibujan."
+        "without": "{vehicles} no tiene consumo según la temperatura exterior (el coche no la indica, o ningún trayecto tiene energía conocida) y no se dibuja. | {vehicles} no tienen consumo según la temperatura exterior (los coches no la indican, o ningún trayecto tiene energía conocida) y no se dibujan."
       },
       "cost": {
         "tab": "Coste",
@@ -117,7 +118,8 @@
         "summary": "La parte de la energía de cada vehículo cargada en tus lugares, en AC en otro sitio y en DC.",
         "none": "Ninguna carga en el periodo.",
         "hint": "Tus lugares son los de los ajustes, con sus tarifas: explican la mayoría de las diferencias de coste.",
-        "without": "{vehicles} no ha cargado en el periodo. | {vehicles} no han cargado en el periodo."
+        "without": "{vehicles} no ha cargado en el periodo. | {vehicles} no han cargado en el periodo.",
+        "energyUnknown": "{vehicles} tiene cargas de energía desconocida, fuera de sus partes. | {vehicles} tienen cargas de energía desconocida, fuera de sus partes."
       },
       "battery": {
         "tab": "Batería",
@@ -135,7 +137,8 @@
       "title": "Gastos por mes",
       "summary": "La electricidad de todos los vehículos costó {total} en los últimos 12 meses.",
       "none": "No se conoce ningún coste en los últimos 12 meses.",
-      "hint": "Todos los vehículos de la cuenta, ocultos incluidos, en los últimos 12 meses. Un coste conocido como un intervalo se dibuja en su valor más bajo."
+      "hint": "Todos los vehículos de la cuenta, ocultos incluidos, en los últimos 12 meses. Un coste conocido como un intervalo se dibuja en su valor más bajo.",
+      "partial": "El coste de {n} carga es desconocido y queda fuera. | El coste de {n} cargas es desconocido y queda fuera."
     }
   },
   "vehicle": {

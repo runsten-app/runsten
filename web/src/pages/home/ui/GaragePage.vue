@@ -16,19 +16,20 @@ import {
 // (the last 30 days or 12 months), its vehicles side by side, a tile each leading to the
 // vehicle's page, then their comparison and the spending per month. A vehicle can be
 // hidden from the comparison, for this visit only. Loaded on demand: Chart.js comes with
-// it. Where the account's limits leave the statistics out, the tiles tell the state only.
+// it. Where the account's limits refuse the statistics by interval, a period's totals stay:
+// only what is split by month (the cost by month, the spending) says it is unavailable.
 const props = defineProps<{ vehicles: Vehicle[] }>()
 const { t } = useI18n()
 const { lacks } = useLimits()
-const stats = computed(() => !lacks('stats'))
+const monthly = computed(() => !lacks('stats'))
 const { period, view } = useGarageView()
 
 const ids = computed(() => props.vehicles.map((v) => v.id))
 const labels = computed(() => vehicleLabels(props.vehicles))
 const colors = useVehicleColors(ids)
 const { garage, isPending, error } = useGarage(ids, period, {
-  stats,
-  battery: () => stats.value && view.value === 'battery',
+  monthly,
+  battery: () => view.value === 'battery',
 })
 
 const hidden = ref<string[]>([])
@@ -44,9 +45,9 @@ const compared = computed(() => garage.value.filter((v) => !hidden.value.include
   <div class="garage">
     <div class="d-flex flex-wrap align-center ga-3 mb-2">
       <h1 class="text-headline-small me-auto">{{ t('garage.title') }}</h1>
-      <GaragePeriodToggle v-if="stats" />
+      <GaragePeriodToggle />
     </div>
-    <GarageTotals :garage :period :stats />
+    <GarageTotals :garage :period />
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{
       t('garage.error')
     }}</v-alert>
@@ -56,22 +57,24 @@ const compared = computed(() => garage.value.filter((v) => !hidden.value.include
       class="mb-2"
       :aria-label="t('stats.loading')"
     />
-    <GarageTiles :vehicles :labels :colors :garage :hidden :stats class="mb-6" @toggle="toggle" />
-    <FeatureUnavailable v-if="!stats" feature="stats" />
-    <template v-else>
-      <GarageCompare
-        v-if="compared.length"
-        :garage="compared"
-        :labels
-        :colors
-        :period
-        :view
-        class="mb-6"
-      />
-      <p v-else class="text-body-medium text-medium-emphasis mb-6">
-        {{ t('garage.compare.nothing') }}
-      </p>
-      <GarageSpending :garage :labels :colors />
-    </template>
+    <GarageTiles :vehicles :labels :colors :garage :hidden class="mb-6" @toggle="toggle" />
+    <GarageCompare
+      v-if="compared.length"
+      :garage="compared"
+      :labels
+      :colors
+      :period
+      :view
+      :monthly
+      class="mb-6"
+    />
+    <p v-else class="text-body-medium text-medium-emphasis mb-6">
+      {{ t('garage.compare.nothing') }}
+    </p>
+    <GarageSpending v-if="monthly" :garage :labels :colors />
+    <section v-else class="garage-spending">
+      <h2 class="text-title-large mb-3">{{ t('garage.spending.title') }}</h2>
+      <FeatureUnavailable feature="stats" />
+    </section>
   </div>
 </template>

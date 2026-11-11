@@ -2,15 +2,22 @@
 import { mdiEye, mdiEyeOff } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { vehicleMode, VehiclePicture, type Vehicle } from '@/entities/vehicle'
-import { perHundred, type Amounts, type GarageVehicle } from '@/features/compare-vehicles'
-import { useFormat } from '@/shared/lib'
+import { isStale, vehicleMode, VehiclePicture, type Vehicle } from '@/entities/vehicle'
+import {
+  perHundred,
+  rankedConsumption,
+  type Amounts,
+  type GarageVehicle,
+} from '@/features/compare-vehicles'
+import { useFormat, useNow } from '@/shared/lib'
 import { LevelBar, TileFigure } from '@/shared/ui'
 
 // VehicleTile is a vehicle as the Garage shows it: its color in the comparison, its name,
 // its state of charge and range, what it does now (parked, charging to its target,
 // driving), and over the period its distance, its consumption and what 100 km cost it.
-// The lowest consumption and cost among the vehicles compared are marked. The tile leads to
+// A state no longer current (too old, or its connection lost) says when it was read rather
+// than what the vehicle did then. The lowest consumption and cost among the vehicles
+// compared are marked, an estimate over part of the trips never. The tile leads to
 // the vehicle's page: its name is the link, stretched over the tile, so that the button
 // that hides it from the comparison stays a button of its own.
 const props = defineProps<{
@@ -19,13 +26,13 @@ const props = defineProps<{
   color: string
   data: GarageVehicle
   hidden: boolean
-  stats: boolean
   bestConsumption: number | null
   bestCost: number | null
 }>()
 defineEmits<{ toggle: [] }>()
 const { t } = useI18n()
 const f = useFormat()
+const clock = useNow()
 
 // The model under the name the driver gave it (a Tesla's), else nothing: the label is it.
 const model = computed(() => {
@@ -48,6 +55,10 @@ const level = computed(() =>
 const doing = computed(() => {
   const s = state.value
   if (!s) return null
+  // Never checked: nothing to say of now.
+  if (!s.checked_at) return null
+  if (isStale(s.checked_at, clock.value, s.connection))
+    return t('garage.tile.lastRead', { age: f.age(s.checked_at, clock.value) })
   const mode = vehicleMode(s)
   if (mode === 'charging') {
     const target = s.charging.target_soc_pct?.value
@@ -63,6 +74,7 @@ const doing = computed(() => {
 const totals = computed(() => props.data.period?.totals)
 const currency = computed(() => props.data.period?.currency ?? null)
 const consumption = computed(() => totals.value?.trips.consumption_kwh_per_100km ?? null)
+const ranked = computed(() => (totals.value ? rankedConsumption(totals.value.trips) : null))
 const cost = computed<Amounts | null>(() =>
   totals.value ? perHundred(totals.value.trips, totals.value.charges) : null,
 )
@@ -92,11 +104,16 @@ const isBest = (v: number | null, b: number | null) =>
       <span class="text-body-small text-medium-emphasis">{{ level }}</span>
     </div>
     <p v-if="doing" class="doing text-body-small mb-0">{{ doing }}</p>
-    <template v-if="stats && totals">
+    <template v-if="totals">
       <dl v-if="drove" class="figures">
         <div class="distance">
           <dt class="label">{{ t('garage.tile.distance') }}</dt>
-          <dd><TileFigure :text="f.quantity(totals.trips.distance_km, 'km', 0)" size="small" /></dd>
+          <dd>
+            <TileFigure :text="f.quantity(totals.trips.distance_km, 'km', 0)" size="small" />
+            <span v-if="totals.trips.distance_unknown" class="note d-block">
+              {{ t('stats.tile.distanceUnknown', totals.trips.distance_unknown) }}
+            </span>
+          </dd>
         </div>
         <div class="consumption">
           <dt class="label">{{ t('garage.tile.consumption') }}</dt>
@@ -106,7 +123,7 @@ const isBest = (v: number | null, b: number | null) =>
               :unknown="consumption === null"
               size="small"
             />
-            <span v-if="isBest(consumption, bestConsumption)" class="best d-block">
+            <span v-if="isBest(ranked, bestConsumption)" class="best d-block">
               {{ t('garage.tile.best') }}
             </span>
           </dd>
@@ -220,6 +237,10 @@ const isBest = (v: number | null, b: number | null) =>
 }
 dd {
   margin: 0;
+}
+.note {
+  font-size: 0.75rem;
+  color: rgb(var(--v-theme-text-secondary));
 }
 .best {
   font-size: 0.75rem;

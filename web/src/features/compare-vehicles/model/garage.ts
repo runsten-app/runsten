@@ -122,6 +122,16 @@ export function temperatureAxis(lists: { min_c: number }[][]): number[] {
   return Array.from({ length: Math.round((hi - lo) / step) + 1 }, (_, i) => lo + i * step)
 }
 
+// rankedConsumption is the consumption of a period when every trip's distance and
+// energy are known: an estimate over part of the trips is shown, never ranked.
+export function rankedConsumption(
+  trips: Pick<Trips, 'consumption_kwh_per_100km' | 'distance_unknown' | 'energy_unknown'>,
+): number | null {
+  return trips.distance_unknown === 0 && trips.energy_unknown === 0
+    ? trips.consumption_kwh_per_100km
+    : null
+}
+
 // best is the lowest known value among several, when there are two at least to compare:
 // the one a tile marks. Several equal to it are all the best.
 export function best(values: (number | null)[]): number | null {
