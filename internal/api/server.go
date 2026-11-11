@@ -113,8 +113,9 @@ type Vehicle struct {
 	ID  string
 	VIN string
 	// Provider is the connection's: volvo (a Volvo ID, the fields below up to
-	// KeyRefused), polestar (a credential of the Data Portal), or tesla (a refresh
-	// token of the Owner API).
+	// KeyRefused), polestar (a credential of the Data Portal), tesla (a refresh
+	// token of the Owner API), or pleos_hyundai, pleos_kia or pleos_genesis (the
+	// owner's key of the Pleos Vehicle Data API, per brand).
 	Provider     string
 	AuthorizedAt time.Time // zero: unknown (a token pasted by hand)
 	RefreshedAt  time.Time // issue of the current refresh token; zero: none
@@ -287,6 +288,10 @@ type Config struct {
 	// flow and lists its vehicles.
 	BMW         BMWCredentials
 	BMWAccounts BMWAccounts
+	// Pleos keeps the account's key of each brand of the Pleos Vehicle Data API, and
+	// PleosVehicles checks a new one by listing its vehicles.
+	Pleos         PleosKeys
+	PleosVehicles PleosVehicles
 	// TeslaMateImports is how many TeslaMate backups the instance reads at once; 0:
 	// DefaultTeslaMateImports. One where the API has little memory.
 	TeslaMateImports int
@@ -384,6 +389,7 @@ func New(cfg Config) *Server {
 	s.registerTesla(s.api)
 	s.registerPolestarID(s.api)
 	s.registerBMW(s.api)
+	s.registerPleos(s.api)
 	s.registerAccount(s.api)
 	s.registerAccountExport(s.api)
 	s.registerTokens(s.api)

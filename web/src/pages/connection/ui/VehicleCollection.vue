@@ -16,6 +16,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   collectionState,
+  keySharedFor,
   streamHeldFor,
   type CollectionState,
   type Vehicle,
@@ -66,21 +67,25 @@ const nextRead = computed(() => {
     if (state.value.kind === 'credential')
       return provider === 'bmw'
         ? t('connection.facts.noneDueBmw')
-        : provider === 'tesla'
-          ? t('connection.facts.noneDueToken')
-          : provider === 'tesla_fleet'
-            ? t('connection.facts.noneDueTeslaFleet')
-            : provider === 'polestar_id'
-              ? t('connection.facts.noneDuePolestarId')
-              : t('connection.facts.noneDueCredential')
+        : provider === 'pleos_hyundai' || provider === 'pleos_kia' || provider === 'pleos_genesis'
+          ? t('connection.facts.noneDuePleos')
+          : provider === 'tesla'
+            ? t('connection.facts.noneDueToken')
+            : provider === 'tesla_fleet'
+              ? t('connection.facts.noneDueTeslaFleet')
+              : provider === 'polestar_id'
+                ? t('connection.facts.noneDuePolestarId')
+                : t('connection.facts.noneDueCredential')
     if (state.value.kind === 'unshared')
       return provider === 'bmw'
         ? t('connection.facts.noneDueUnsharedBmw')
-        : provider === 'tesla' || provider === 'tesla_fleet'
-          ? t('connection.facts.noneDueUnsharedTesla')
-          : provider === 'polestar_id'
-            ? t('connection.facts.noneDueUnsharedPolestarId')
-            : t('connection.facts.noneDueUnshared')
+        : provider === 'pleos_hyundai' || provider === 'pleos_kia' || provider === 'pleos_genesis'
+          ? t('connection.facts.noneDueUnsharedPleos')
+          : provider === 'tesla' || provider === 'tesla_fleet'
+            ? t('connection.facts.noneDueUnsharedTesla')
+            : provider === 'polestar_id'
+              ? t('connection.facts.noneDueUnsharedPolestarId')
+              : t('connection.facts.noneDueUnshared')
     return t('connection.facts.noneDue')
   }
   return Date.parse(next) <= props.now ? t('connection.facts.due') : f.dateTime(next, props.now)
@@ -99,6 +104,12 @@ const failure = computed(() => {
 const streamHeld = computed(() => {
   const l = c.value?.last_failure
   return l?.kind === 'stream_held' && props.now - Date.parse(l.at) < streamHeldFor
+})
+// Pleos's API allows one reader at a time per key (only one token): while another reads
+// with it, half the reads fall, and the user is told to keep the key to one client.
+const keyShared = computed(() => {
+  const l = c.value?.last_failure
+  return l?.kind === 'key_shared' && props.now - Date.parse(l.at) < keySharedFor
 })
 </script>
 
@@ -151,6 +162,12 @@ const streamHeld = computed(() => {
         {{ t('connection.streamHeld.text') }}
         <router-link :to="{ name: 'settingsIntegrations' }" class="mqtt">
           {{ t('connection.streamHeld.mqtt') }}
+        </router-link>
+      </p>
+      <p v-if="keyShared" class="key-shared text-body-medium mt-4">
+        {{ t('connection.keyShared.text') }}
+        <router-link :to="{ name: 'settingsIntegrations' }" class="mqtt">
+          {{ t('connection.keyShared.mqtt') }}
         </router-link>
       </p>
     </v-card-text>

@@ -52,6 +52,34 @@ describe('useCollectionText', () => {
     ).toBe('Daily calls to BMW reached until 09:00')
   })
 
+  it("words a failure and a state by Pleos's, whatever the brand's connection", () => {
+    const { result: text } = withSetup(useCollectionText)
+    expect(text.failure('key_shared', 'pleos_kia')).toBe('Key shared with another application')
+    expect(text.failure('credential_refused', 'pleos_kia')).toBe('Pleos key refused')
+    expect(text.failure('credential_refused', 'pleos_hyundai')).toBe('Pleos key refused')
+    expect(text.failure('credential_refused', 'pleos_genesis')).toBe('Pleos key refused')
+    const now = Date.parse('2026-09-28T07:05:00Z')
+    expect(text.state({ kind: 'credential', refused: true }, now, 'pleos_kia')).toBe(
+      'Not read: Pleos refused the key',
+    )
+    expect(text.state({ kind: 'credential', refused: false }, now, 'pleos_genesis')).toBe(
+      'Not read: no Pleos key given',
+    )
+    expect(text.state({ kind: 'unshared' }, now, 'pleos_kia')).toBe(
+      'Not read: the car no longer shares its data with the key',
+    )
+    expect(text.state({ kind: 'paused', until: '2026-09-28T07:30:00Z' }, now, 'pleos_kia')).toBe(
+      'Paused by Pleos until 07:30',
+    )
+    expect(
+      text.state(
+        { kind: 'quota', until: '2026-09-28T09:00:00Z', apis: ['pleos'] },
+        now,
+        'pleos_hyundai',
+      ),
+    ).toBe('Daily calls to Pleos reached until 09:00')
+  })
+
   it("names the Data Portal's API", () => {
     const { result: text } = withSetup(useCollectionText)
     expect(text.api('polestar')).toBe('Polestar Data Portal')

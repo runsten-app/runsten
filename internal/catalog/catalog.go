@@ -29,6 +29,11 @@ const (
 	Tesla    Brand = "tesla"
 	BMW      Brand = "bmw"
 	Mini     Brand = "mini"
+	// The three brands of the Pleos Vehicle Data API, whose providers name them
+	// (pleos_hyundai, pleos_kia, pleos_genesis): a key per brand.
+	Hyundai Brand = "hyundai"
+	Kia     Brand = "kia"
+	Genesis Brand = "genesis"
 )
 
 // readsCapacity reports whether the brand's sources tell the battery's capacity, which

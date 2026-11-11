@@ -12,6 +12,7 @@ Runsten reads your car from its manufacturer:
 - **Polestar**, through Polestar's Data Portal: a credential of your own ([Your Polestar](./polestar.md)); outside the EU and the EEA, on a self-hosted instance, through the Polestar app's API with your Polestar ID (beta, [Your Polestar, with the Polestar ID](./polestar-id.md)).
 - **Tesla** (beta), through the Owner API of the Tesla app: a refresh token of your Tesla account ([Your Tesla](./tesla.md)).
 - **BMW and Mini** (beta), through BMW CarData: a client ID of your own, approved with a code on BMW's page ([Your BMW or Mini](./bmw.md)).
+- **Hyundai, Kia and Genesis** (beta), through the Pleos Vehicle Data API: a key of your own per brand, created in the Pleos Playground ([Your Hyundai, Kia or Genesis](./hyundai-kia.md)).
 
 <Screen view="state" alt="The State tab: charge level, range, odometer and last position." />
 
@@ -45,6 +46,7 @@ The **Connection** page (in the menu under your name) tells whether Runsten read
 - **The Polestar ID refused the sign-in**, **no Polestar ID connected**, or **the car is no longer in the Polestar ID**: a Polestar read with the Polestar ID must be connected again ([When it is not read](./polestar-id.md#when-it-is-not-read)).
 - **Tesla refused the refresh token**, **no Tesla refresh token given**, or **the vehicle is no longer in the Tesla account**: a Tesla's token was revoked, removed, or the car left the account ([When it is not read](./tesla.md#when-it-is-not-read)).
 - **BMW refused the connection**, **no BMW connected**, or **the BMW account is no longer the car's main user**: a BMW's connection must be made again ([When it is not read](./bmw.md#when-it-is-not-read)); and **stream held by another application**: Home Assistant's CarData integration or evcc holds BMW's only stream ([One application on the stream](./bmw.md#one-application-on-the-stream)).
+- **Pleos refused the key**, **no Pleos key given**, or **the car no longer shares its data with the key**: a Hyundai's, Kia's or Genesis's key must be given again ([When it is not read](./hyundai-kia.md#when-it-is-not-read)); and **key shared with another application**: only one application reads with a Pleos key at a time ([One key, one application](./hyundai-kia.md#one-key-one-application)).
 - **The collector seems stopped**: nothing is read on the instance's side. Whoever runs the instance looks into it ([Troubleshooting](../self-hosting/troubleshooting.md#nothing-new-is-read)).
 
 ### Your Volvo key

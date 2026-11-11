@@ -1268,7 +1268,8 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW"
+      "bmw": "BMW",
+      "pleos": "Hyundai · Kia · Genesis"
     },
     "brandAttention": "behöver din uppmärksamhet",
     "outcome": {
@@ -1333,10 +1334,15 @@
       "credentialMissingPolestarId": "Läses inte: inget Polestar ID anslutet",
       "unsharedPolestarId": "Läses inte: bilen finns inte längre i Polestar ID",
       "credentialRefusedBmw": "Läses inte: BMW avvisade anslutningen",
+      "credentialRefusedPleos": "Läses inte: Pleos vägrade nyckeln",
       "credentialMissingBmw": "Läses inte: ingen BMW-anslutning",
+      "credentialMissingPleos": "Läses inte: ingen Pleos-nyckel given",
       "unsharedBmw": "Läses inte: BMW-kontot är inte längre bilens huvudanvändare",
+      "unsharedPleos": "Läses inte: bilen delar inte längre sina data med nyckeln",
       "pausedBmw": "Pausad av BMW till {time}",
-      "quotaBmw": "Dagens anrop till BMW förbrukade till {time}"
+      "pausedPleos": "Pausad av Pleos till {time}",
+      "quotaBmw": "Dagens anrop till BMW förbrukade till {time}",
+      "quotaPleos": "Dagens anrop till Pleos förbrukade till {time}"
     },
     "notice": {
       "reauth": {
@@ -1378,7 +1384,12 @@
       "credentialMissingBmw": "Runsten läser den här bilen via din BMW-anslutning, som har tagits bort: anslut igen på anslutningssidan.",
       "unsharedBmw": "Ditt BMW-konto är inte längre huvudanvändare av den här bilen, eller listar den inte längre: såld, eller bytt ägare. Kommer den tillbaka, anslut BMW igen på anslutningssidan: bilen läses igen.",
       "pausedBmw": "BMW begränsade antalet anrop. Läsningen återupptas av sig själv.",
-      "quotaBmw": "Runsten gör högst 40 anrop om dagen till BMW:s API per anslutning, för att lämna några av BMW:s 50 åt dig: de är förbrukade. Flödet, som saknar gräns, läses fortfarande; resten återupptas av sig själv."
+      "pausedPleos": "Pleos begränsade antalet anrop. Läsningen återupptas av sig själv.",
+      "credentialRefusedPleos": "Pleos vägrade nyckeln som den här bilen läses med: återkallad eller utbytt i Playground, eller utgången. Skapa en ny där och ge den på anslutningssidan: det som redan lästs finns kvar.",
+      "credentialMissingPleos": "Runsten läser den här bilen med din Pleos-nyckel, som har tagits bort: ge en ny på anslutningssidan.",
+      "unsharedPleos": "Pleos svarade att den här bilen inte längre delar sina data med nyckeln: delningen avstängd i de uppkopplade tjänsterna, eller bilen avregistrerad. Delar bilen igen, ge nyckeln på nytt på anslutningssidan: bilen läses igen.",
+      "quotaBmw": "Runsten gör högst 40 anrop om dagen till BMW:s API per anslutning, för att lämna några av BMW:s 50 åt dig: de är förbrukade. Flödet, som saknar gräns, läses fortfarande; resten återupptas av sig själv.",
+      "quotaPleos": "Runsten gör högst 2000 anrop om dagen till Pleos Vehicle Data API per nyckel, ett eget tak (Pleos publicerar inget): de är förbrukade. Läsningen återupptas av sig själv."
     },
     "facts": {
       "mode": "Läsläge",
@@ -1403,7 +1414,9 @@
       "noneDuePolestarId": "Ingen förrän Polestar ID anslutits igen",
       "noneDueUnsharedPolestarId": "Ingen: bilen finns inte längre i Polestar ID",
       "noneDueBmw": "Ingen förrän BMW ansluts igen",
-      "noneDueUnsharedBmw": "Ingen: BMW-kontot är inte längre bilens huvudanvändare"
+      "noneDuePleos": "Ingen förrän en Pleos-nyckel anges",
+      "noneDueUnsharedBmw": "Ingen: BMW-kontot är inte längre bilens huvudanvändare",
+      "noneDueUnsharedPleos": "Ingen: bilen delar inte längre sina data med nyckeln"
     },
     "api": {
       "connectedVehicle": "fordonsdata",
@@ -1413,7 +1426,8 @@
       "tesla": "Teslas Owner API",
       "teslaFleet": "Teslas Fleet API",
       "polestarId": "Polestar-appens API",
-      "bmw": "BMW CarData"
+      "bmw": "BMW CarData",
+      "pleos": "Pleos Vehicle Data API"
     },
     "failure": {
       "quota": "Kvot nådd",
@@ -1442,7 +1456,9 @@
       "notFoundBmw": "Fordonet okänt för BMW",
       "unavailableBmw": "BMW nås inte",
       "tokenBmw": "Ingen token från BMW",
-      "credentialRefusedBmw": "BMW-anslutning avvisad"
+      "credentialRefusedBmw": "BMW-anslutning avvisad",
+      "credentialRefusedPleos": "Pleos-nyckel avvisad",
+      "keyShared": "Nyckel delad med ett annat program"
     },
     "key": {
       "title": "Volvo-nyckel"
@@ -1475,6 +1491,14 @@
     },
     "streamHeld": {
       "text": "Ett annat program håller BMW:s flöde: BMW tillåter bara ett i taget per konto, och det kan vara CarData-integrationen i Home Assistant eller evcc. Runsten läser inget av flödet förrän det släpper det. Stoppa det programmet, eller låt Runsten i stället publicera din bil till din MQTT-broker för Home Assistant:",
+      "mqtt": "MQTT-inställningar"
+    },
+    "pleos": {
+      "title": "Pleos Vehicle Data API",
+      "off": "Hyundai, Kia och Genesis är avstängda på denna instans (flaggan source.pleos)."
+    },
+    "keyShared": {
+      "text": "Ett annat program läser med samma Pleos-nyckel — evcc, Home Assistant. API:et tillåter bara en läsare åt gången, så var och en tar den andras plats. Behåll denna nyckel för Runsten ensam, eller låt Runsten i stället publicera din bil till din MQTT-mäklare för Home Assistant:",
       "mqtt": "MQTT-inställningar"
     }
   },
@@ -2139,6 +2163,64 @@
       "tooManyPending": "För många anslutningar till BMW väntar på den här instansen. Försök igen om några minuter.",
       "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
       "internal": "BMW kunde inte anslutas. Försök igen om en stund."
+    }
+  },
+  "pleos": {
+    "intro": "Runsten läser din Hyundai, Kia eller Genesis med en nyckel du skapar i Pleos Playground, den tillgång som EU:s datalag ger ägarna. En nyckel per märke, var och en med sin egen kvot anrop.",
+    "guide": "Läs-guiden",
+    "refused": {
+      "title": "Din nyckel vägrades",
+      "body": "Pleos vägrade den {time}: återkallad eller utbytt i Playground, eller utgången. Dina bilar läses inte förrän du ger en ny; det som lästs finns kvar."
+    },
+    "current": "Din nyckel",
+    "last4": "Client-ID som slutar på {last4}",
+    "setAt": "Angiven",
+    "replace": "Byt nyckeln",
+    "delete": {
+      "button": "Ta bort nyckeln",
+      "title": "Ta bort din {brand}-nyckel?",
+      "text": "Din {brand} finns kvar, med sin historik, men läses inte förrän du ger en annan nyckel.",
+      "error": "Nyckeln kunde inte tas bort. Försök igen om en stund.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    },
+    "steps": {
+      "title": "Skapa din nyckel",
+      "signIn": "Logga in med bilens konto på",
+      "newTab": "(öppnas i en ny flik)",
+      "accept": "Under My Vehicle Data API, på fliken för bilens märke, kryssa i de två rutorna: villkor, integritetspolicy.",
+      "get": "Välj Get API Key och logga in med bilens app-konto — Bluelink, Kia Connect eller Genesis Connected —, primär användarens.",
+      "copy": "Kopiera nyckelns Client-ID och Client secret på nyckelns sida och klistra in dem nedan: de visas aldrig igen."
+    },
+    "field": {
+      "clientId": "Client-ID",
+      "clientSecret": "Client secret"
+    },
+    "help": "Nyckeln listar bara de bilar som var registrerade när den utfärdades, och läser bara med primär användarens konto. Behåll den för Runsten ensam: ett annat program som läste med den skulle ta Runstens plats.",
+    "save": "Spara nyckeln",
+    "cancel": "Avbryt",
+    "saved": "Nyckel sparad: Runsten läser dess bilar från nästa pass.",
+    "deleted": "Nyckel borttagen.",
+    "error": {
+      "summary": "Nyckeln sparades inte",
+      "required": "Klistra in {field}.",
+      "spaces": "{field} innehåller inga mellanslag: kopiera igen.",
+      "characters": "{field} innehåller bara bokstäver, siffror och tecken: kopiera igen.",
+      "tooShort": "{field} har minst {min} tecken: kopiera hela.",
+      "tooLong": "{field} har högst {max} tecken: kopiera bara den.",
+      "refused": "Pleos vägrade denna nyckel: kontrollera dess två värden, och att den fortfarande finns i Playground.",
+      "invalidBody": "Denna nyckel vägrades: kopiera värdena igen.",
+      "noVehicle": "Denna nyckel läser inget fordon: den listar bara de bilar som var registrerade när den utfärdades, och bara med primär användarens konto. Kontrollera märkesfliken i Playground och spara igen.",
+      "tooManyVehicles": "Med denna nyckels bilar skulle ditt konto ha fler fordon än det får: nyckeln sparades inte.",
+      "notAdmitted": "Ditt konto måste först ta ett steg, som att godkänna villkor: ladda om sidan. Nyckeln sparades inte.",
+      "sourceUnavailable": "Pleos Vehicle Data API svarade inte: nyckeln sparades inte. Försök igen om en stund.",
+      "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
+      "internal": "Nyckeln kunde inte sparas. Försök igen om en stund."
+    },
+    "brand": {
+      "hyundai": "Hyundai",
+      "kia": "Kia",
+      "genesis": "Genesis"
     }
   }
 }

@@ -144,6 +144,10 @@ func TestAmbiguousPairs(t *testing.T) {
 		{"countryman-e-2024", "countryman-se-all4-2024"},
 		{"countryman-e-2024", "countryman-se-all4-2026"},
 		{"countryman-se-all4-2024", "countryman-se-all4-2026"},
+		{"kona-64-2019", "kona-65-2023"},
+		{"kona-65-2023", "kona-64-2019"},
+		{"niro-64-2019", "niro-2022"},
+		{"niro-2022", "niro-64-2019"},
 	}
 	var got [][2]string
 	for _, v := range mustLoad(t).Variants() {

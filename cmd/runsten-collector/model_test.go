@@ -39,8 +39,8 @@ func TestModel(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := models{catalog: cat, vehicle: func(context.Context, string, string) (string, string, bool, error) {
-				return tt.vin, tt.chosen, true, nil
+			m := models{catalog: cat, vehicle: func(context.Context, string, string) (string, string, string, bool, error) {
+				return tt.vin, "volvo", tt.chosen, true, nil
 			}}
 			got, err := m.Model(context.Background(), "a", "v", core.Latest([]core.Record{{Snapshot: tt.snap}}))
 			if err != nil || got != tt.want {
@@ -50,9 +50,13 @@ func TestModel(t *testing.T) {
 	}
 
 	boom := errors.New("boom")
-	for name, vehicle := range map[string]func(context.Context, string, string) (string, string, bool, error){
-		"store error":  func(context.Context, string, string) (string, string, bool, error) { return "", "", false, boom },
-		"vehicle gone": func(context.Context, string, string) (string, string, bool, error) { return "", "", false, nil },
+	for name, vehicle := range map[string]func(context.Context, string, string) (string, string, string, bool, error){
+		"store error": func(context.Context, string, string) (string, string, string, bool, error) {
+			return "", "", "", false, boom
+		},
+		"vehicle gone": func(context.Context, string, string) (string, string, string, bool, error) {
+			return "", "", "", false, nil
+		},
 	} {
 		if _, err := (models{catalog: cat, vehicle: vehicle}).Model(context.Background(), "a", "v", core.Current{}); err == nil {
 			t.Errorf("%s: no error", name)

@@ -21,7 +21,12 @@ describe('useFlag', () => {
 
     const off = flag({
       ...(session as Session),
-      flags: { 'source.tesla': false, 'source.polestar-id': false, 'source.bmw': false },
+      flags: {
+        'source.tesla': false,
+        'source.polestar-id': false,
+        'source.bmw': false,
+        'source.pleos': false,
+      },
     })
     await flushPromises()
     expect(off.result.value).toBe(false)

@@ -22,3 +22,12 @@ export type PolestarIdAuthorization = components['schemas']['PolestarIDAuthoriza
 // started with it: the code to enter on BMW's page, and when to ask whether it was.
 export type Bmw = components['schemas']['Bmw']
 export type BmwDevice = components['schemas']['BmwDevice']
+// PleosKeys is what the user is shown again of the account's key of each brand of the
+// Pleos Vehicle Data API; PleosKey of one brand's, PleosCredentialUpdate a new one,
+// its two values.
+export type PleosKeys = components['schemas']['PleosKeys']
+export type PleosKey = components['schemas']['PleosKey']
+export type PleosCredentialUpdate = components['schemas']['PleosCredentialUpdate']
+// PleosBrand is the brand of a key, in the API's own words.
+export type PleosBrand = 'hyundai' | 'kia' | 'genesis'
+export const pleosBrands: PleosBrand[] = ['hyundai', 'kia', 'genesis']

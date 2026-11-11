@@ -2,6 +2,8 @@ import { api, unwrap } from '@/shared/api'
 import type {
   BmwDevice,
   ConnectionSettings,
+  PleosBrand,
+  PleosCredentialUpdate,
   PolestarCredentialUpdate,
   PolestarIdAuthorization,
 } from '../model/Connection'
@@ -51,6 +53,17 @@ export function setPolestarIdPassword(
 
 export async function deletePolestarId(): Promise<void> {
   await unwrap(api.DELETE('/connection/polestar-id'))
+}
+
+export function setPleosCredential(
+  brand: PleosBrand,
+  body: PleosCredentialUpdate,
+): Promise<ConnectionSettings> {
+  return unwrap(api.PUT('/connection/pleos/{brand}', { params: { path: { brand } }, body }))
+}
+
+export async function deletePleosCredential(brand: PleosBrand): Promise<void> {
+  await unwrap(api.DELETE('/connection/pleos/{brand}', { params: { path: { brand } } }))
 }
 
 export function startBmwAuthorization(clientId: string): Promise<BmwDevice> {

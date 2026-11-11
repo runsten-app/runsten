@@ -47,8 +47,8 @@ func TestVariants(t *testing.T) {
 			var got *string
 			v := variants{
 				Deriver: deriverFunc(func(context.Context, string, string) error { return tt.derived }),
-				capacities: capacities{catalog: cat, vehicle: func(context.Context, string, string) (string, string, bool, error) {
-					return tt.vin, tt.chosen, true, nil
+				capacities: capacities{catalog: cat, vehicle: func(context.Context, string, string) (string, string, string, bool, error) {
+					return tt.vin, "volvo", tt.chosen, true, nil
 				}},
 				current: func(_ context.Context, _, _ string, at time.Time) (core.Current, error) {
 					if !at.Equal(now) {
@@ -72,8 +72,8 @@ func TestVariants(t *testing.T) {
 	t.Run("vehicle gone: nothing written", func(t *testing.T) {
 		v := variants{
 			Deriver: deriverFunc(func(context.Context, string, string) error { return nil }),
-			capacities: capacities{catalog: cat, vehicle: func(context.Context, string, string) (string, string, bool, error) {
-				return "", "", false, nil
+			capacities: capacities{catalog: cat, vehicle: func(context.Context, string, string) (string, string, string, bool, error) {
+				return "", "", "", false, nil
 			}},
 			set: func(context.Context, string, string, string) error { t.Error("written"); return nil },
 			clk: clock.NewManual(now),

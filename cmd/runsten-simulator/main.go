@@ -3,7 +3,10 @@
 // brand polestar, with the credential polestarapi.DevCredential), Tesla's Owner API
 // (under teslaapi.APIPrefix, its token under teslaapi.AuthPrefix and its faults under
 // teslaapi.ControlPrefix, for the scenarios of brand tesla, with the refresh token
-// teslaapi.DevRefreshToken), the Polestar app's API read with the Polestar ID (under
+// teslaapi.DevRefreshToken), the Pleos Vehicle Data API of Hyundai, Kia and Genesis (its
+// key, its vehicles and their status under pleosapi.Prefix, its faults under
+// pleosapi.ControlPrefix, for the scenarios of brand hyundai, kia or genesis, with the key
+// pleosapi.DevCredential), the Polestar app's API read with the Polestar ID (under
 // polestaridapi.Prefix, its faults under polestaridapi.ControlPrefix, its gRPC services at
 // their paths over HTTP/2 without TLS, for the scenarios of brand polestar with source
 // polestar_id, signed in as polestaridapi.DevEmail), BMW CarData (its device flow and
@@ -56,6 +59,13 @@
 //	                        the stream is closed when its ID token expires
 //	SIM_BMW_SEND_EVERY      how often at most a BMW sends a value that changes all along a
 //	                        drive or a charge (default 30s, in simulated time)
+//	SIM_POLESTAR_SEND_EVERY how often at most a Hyundai, Kia or Genesis sends its state
+//	                        while it drives or charges (default 5m; 0 = only at a
+//	                        change, in simulated time)
+//	SIM_POLESTAR_CLIENT_ID  the Pleos key's client ID, the one of every brand (default
+//	                        runsten-dev); its secret too
+//	SIM_POLESTAR_TOKEN_TTL  lifetime of the Pleos tokens issued (default 1h, read in
+//	                        their JWT)
 //	SIM_POLESTAR_ID_TOKEN_TTL  lifetime of the Polestar ID's access tokens issued (default
 //	                        300s, the real one's)
 //	SIM_LOG_LEVEL           debug, info, warn, error (default info)
@@ -96,6 +106,7 @@ import (
 	"runsten/internal/simulator/bmwapi"
 	"runsten/internal/simulator/control"
 	"runsten/internal/simulator/pgledger"
+	"runsten/internal/simulator/pleosapi"
 	"runsten/internal/simulator/polestarapi"
 	"runsten/internal/simulator/polestaridapi"
 	"runsten/internal/simulator/scenario"
@@ -123,6 +134,8 @@ type config struct {
 	polestar         polestarapi.Credential
 	polestarCredTTL  time.Duration
 	polestarBehavior polestarapi.Behavior
+	pleos            pleosapi.Credential
+	pleosBehavior    pleosapi.Behavior
 	tesla            teslaapi.Behavior
 	polestarID       polestaridapi.Behavior
 	bmw              bmwapi.Behavior
@@ -151,6 +164,7 @@ func run() error {
 		srcs       []volvoapi.Source
 		polestar   []polestarapi.Source
 		polestarID []polestaridapi.Source
+		pleos      []pleosapi.Source
 		tesla      []teslaapi.Source
 		bmw        []bmwapi.Source
 	)
@@ -165,6 +179,9 @@ func run() error {
 			tesla = append(tesla, sim)
 		case sim.Brand() == scenario.BrandBMW || sim.Brand() == scenario.BrandMini:
 			bmw = append(bmw, sim)
+		case sim.Brand() == scenario.BrandHyundai || sim.Brand() == scenario.BrandKia ||
+			sim.Brand() == scenario.BrandGenesis:
+			pleos = append(pleos, sim)
 		default:
 			srcs = append(srcs, sim)
 		}
@@ -194,6 +211,7 @@ func run() error {
 	mux.Handle(aximoteapi.Prefix, aximoteapi.NewHandler(aximoteapi.DevToken, aximoteapi.Default(clock.Real{}.Now(), vins[0])))
 	psLimits := cfg.polestarLimits()
 	mux.Handle(polestarapi.Prefix, polestarapi.NewHandler(polestar, clk, cfg.polestar, psLimits, cfg.polestarBehavior))
+	mux.Handle(pleosapi.Prefix, pleosapi.NewHandler(pleos, clk, cfg.pleos, cfg.pleosBehavior))
 	th := teslaapi.NewHandler(tesla, clk, cfg.tesla)
 	for _, prefix := range []string{teslaapi.APIPrefix, teslaapi.AuthPrefix, teslaapi.ControlPrefix} {
 		mux.Handle(prefix, th)
@@ -231,6 +249,8 @@ func run() error {
 		"grants_kept", auth.Ledger != nil, "grants_restored", len(auth.Issued.Grants),
 		"polestar_vehicles", len(polestar), "polestar_client_id", cfg.polestar.ClientID,
 		"polestar_credential_ttl", psLimits.CredentialTTL.String(), "polestar_parked_upload", cfg.polestarBehavior.ParkedUpload.String(),
+		"pleos_vehicles", len(pleos), "pleos_client_id", cfg.pleos.ClientID,
+		"pleos_send_every", cfg.pleosBehavior.SendEvery.String(), "pleos_token_ttl", cfg.pleosBehavior.TokenTTL.String(),
 		"tesla_vehicles", len(tesla), "tesla_sleep_after", cfg.tesla.SleepAfter.String(), "tesla_token_ttl", cfg.tesla.TokenTTL.String(),
 		"bmw_vehicles", len(bmw), "bmw_stream_addr", cfg.bmwStreamAddr, "bmw_token_ttl", cfg.bmw.TokenTTL.String(),
 		"polestar_id_vehicles", len(polestarID), "polestar_id_token_ttl", cfg.polestarID.AccessTokenTTL.String())
@@ -274,6 +294,8 @@ func loadConfig(getenv func(string) string) (config, error) {
 
 		polestar:         polestarapi.DevCredential(),
 		polestarBehavior: polestarapi.DefaultBehavior(),
+		pleos:            pleosapi.DevCredential(),
+		pleosBehavior:    pleosapi.DefaultBehavior(),
 		tesla:            teslaapi.DefaultBehavior(),
 		bmw:              bmwapi.DefaultBehavior(),
 		bmwStreamAddr:    ":9000",
@@ -358,6 +380,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 	for name, dst := range map[string]*string{
 		"SIM_POLESTAR_CLIENT_ID": &cfg.polestar.ClientID, "SIM_POLESTAR_CLIENT_SECRET": &cfg.polestar.ClientSecret,
 		"SIM_POLESTAR_ACCOUNT_ID": &cfg.polestar.AccountID,
+		"SIM_PLEOS_CLIENT_ID":     &cfg.pleos.ClientID, "SIM_PLEOS_CLIENT_SECRET": &cfg.pleos.ClientSecret,
 	} {
 		if v := getenv(name); v != "" {
 			*dst = v
@@ -365,6 +388,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 	}
 	for name, dst := range map[string]*time.Duration{
 		"SIM_POLESTAR_CREDENTIAL_TTL": &cfg.polestarCredTTL, "SIM_POLESTAR_PARKED_UPLOAD": &cfg.polestarBehavior.ParkedUpload,
+		"SIM_PLEOS_SEND_EVERY": &cfg.pleosBehavior.SendEvery, "SIM_PLEOS_TOKEN_TTL": &cfg.pleosBehavior.TokenTTL,
 	} {
 		if v := getenv(name); v != "" {
 			d, err := time.ParseDuration(v)

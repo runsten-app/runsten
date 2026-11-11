@@ -103,9 +103,10 @@ func bucketOf(daily int) bucket {
 	return bucket{rate: (usable - burst) / budgetWindow.Seconds(), burst: burst}
 }
 
-// sourceAPI is an API of a Source: the provider it reads, and its quota per credential.
+// sourceAPI is an API of a Source: the providers whose connections read it, and its
+// quota per credential.
 type sourceAPI struct {
-	provider string
+	providers []string
 	bucket
 }
 
@@ -123,9 +124,19 @@ func newBudget(q Quota, now time.Time) *budget {
 	}
 }
 
-// addSource has the calls of a Source's API counted per credential, daily a day.
-func (b *budget) addSource(provider, api string, daily int) {
-	b.sources[api] = sourceAPI{provider: provider, bucket: bucketOf(daily)}
+// addSource has the calls of a Source's API counted per credential, daily a day. The
+// providers are those whose connections read the API, for the calls a restart replays.
+func (b *budget) addSource(api string, providers []string, daily int) {
+	s := b.sources[api]
+	if s.providers == nil {
+		s.bucket = bucketOf(daily)
+	}
+	for _, p := range providers {
+		if !slices.Contains(s.providers, p) {
+			s.providers = append(s.providers, p)
+		}
+	}
+	b.sources[api] = s
 }
 
 // bucketOf returns how the calls of u accrue.
@@ -249,13 +260,19 @@ func (b *budget) restore(calls []Calls, targets []Target, now time.Time) {
 		if end.After(now) {
 			end = now
 		}
-		provider := volvo.Source
-		if s, ok := b.sources[c.API]; ok {
-			provider = s.provider
+		providers := []string{volvo.Source}
+		if s, ok := b.sources[c.API]; ok && s.providers != nil {
+			providers = s.providers
 		}
-		t, ok := byAccount[reader{c.AccountID, provider}]
+		t, ok := Target{}, false
+		for _, p := range providers {
+			if x, exists := byAccount[reader{c.AccountID, p}]; exists {
+				t, ok = x, true
+				break
+			}
+		}
 		switch {
-		case !ok && provider != volvo.Source:
+		case !ok && providers[0] != volvo.Source:
 			continue // its credential is gone, and its quota with it
 		case !ok:
 			t = Target{AccountID: c.AccountID}

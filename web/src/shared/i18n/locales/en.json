@@ -1268,7 +1268,8 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW"
+      "bmw": "BMW",
+      "pleos": "Hyundai · Kia · Genesis"
     },
     "brandAttention": "needs your attention",
     "outcome": {
@@ -1333,10 +1334,15 @@
       "credentialMissingPolestarId": "Not read: no Polestar ID connected",
       "unsharedPolestarId": "Not read: the car is no longer in the Polestar ID",
       "credentialRefusedBmw": "Not read: BMW refused the connection",
+      "credentialRefusedPleos": "Not read: Pleos refused the key",
       "credentialMissingBmw": "Not read: no BMW connected",
+      "credentialMissingPleos": "Not read: no Pleos key given",
       "unsharedBmw": "Not read: the BMW account is no longer the car's main user",
+      "unsharedPleos": "Not read: the car no longer shares its data with the key",
       "pausedBmw": "Paused by BMW until {time}",
-      "quotaBmw": "Daily calls to BMW reached until {time}"
+      "pausedPleos": "Paused by Pleos until {time}",
+      "quotaBmw": "Daily calls to BMW reached until {time}",
+      "quotaPleos": "Daily calls to Pleos reached until {time}"
     },
     "notice": {
       "reauth": {
@@ -1378,7 +1384,12 @@
       "credentialMissingBmw": "Runsten reads this car through your BMW connection, which was removed: connect again on the connection page.",
       "unsharedBmw": "Your BMW account is no longer the main user of this car, or no longer lists it: sold, or changed owner. Should it come back, connect BMW again on the connection page: the car is read again.",
       "pausedBmw": "BMW limited the number of calls. Reading resumes by itself.",
-      "quotaBmw": "Runsten makes at most 40 calls a day to BMW's API per connection, to leave a few of BMW's 50 to you: they are used up. The stream, which has no limit, is still read; the rest resumes by itself."
+      "pausedPleos": "Pleos limited the number of calls. Reading resumes by itself.",
+      "credentialRefusedPleos": "Pleos refused the key this car is read with: revoked or replaced in the Playground, or expired. Issue a new one there and give it on the connection page: what was read stays.",
+      "credentialMissingPleos": "Runsten reads this car with your Pleos key, which was removed: give a new one on the connection page.",
+      "unsharedPleos": "Pleos answered that this car no longer shares its data with the key: the sharing was turned off in its connected services, or the car was unregistered. Should it share again, give the key again on the connection page: the car is read again.",
+      "quotaBmw": "Runsten makes at most 40 calls a day to BMW's API per connection, to leave a few of BMW's 50 to you: they are used up. The stream, which has no limit, is still read; the rest resumes by itself.",
+      "quotaPleos": "Runsten makes at most 2,000 calls a day to the Pleos Vehicle Data API per key, a cap of its own (Pleos publishes none): they are used up. Reading resumes by itself."
     },
     "facts": {
       "mode": "Polling mode",
@@ -1403,7 +1414,9 @@
       "noneDuePolestarId": "None until the Polestar ID is connected again",
       "noneDueUnsharedPolestarId": "None: the car is no longer in the Polestar ID",
       "noneDueBmw": "None until BMW is connected again",
-      "noneDueUnsharedBmw": "None: the BMW account is no longer the car's main user"
+      "noneDuePleos": "None until a Pleos key is given",
+      "noneDueUnsharedBmw": "None: the BMW account is no longer the car's main user",
+      "noneDueUnsharedPleos": "None: the car is no longer shared with the key"
     },
     "api": {
       "connectedVehicle": "vehicle data",
@@ -1413,7 +1426,8 @@
       "tesla": "Tesla Owner API",
       "teslaFleet": "Tesla Fleet API",
       "polestarId": "Polestar app API",
-      "bmw": "BMW CarData"
+      "bmw": "BMW CarData",
+      "pleos": "the Pleos Vehicle Data API"
     },
     "failure": {
       "quota": "Quota reached",
@@ -1442,7 +1456,9 @@
       "notFoundBmw": "Vehicle unknown to BMW",
       "unavailableBmw": "BMW unreachable",
       "tokenBmw": "No token from BMW",
-      "credentialRefusedBmw": "BMW connection refused"
+      "credentialRefusedBmw": "BMW connection refused",
+      "credentialRefusedPleos": "Pleos key refused",
+      "keyShared": "Key shared with another application"
     },
     "key": {
       "title": "Volvo key"
@@ -1475,6 +1491,14 @@
     },
     "streamHeld": {
       "text": "Another application holds BMW's stream: BMW allows one at a time per account, and it may be Home Assistant's CarData integration or evcc. Runsten reads nothing of the stream until it lets go. Stop that application, or let Runsten republish your car to your MQTT broker for Home Assistant instead:",
+      "mqtt": "MQTT settings"
+    },
+    "pleos": {
+      "title": "The Pleos Vehicle Data API",
+      "off": "Hyundai, Kia and Genesis are turned off on this instance (the flag source.pleos)."
+    },
+    "keyShared": {
+      "text": "Another application reads with the same Pleos key — evcc, Home Assistant. The API allows only one reader at a time, so each takes the other’s place. Keep this key for Runsten alone, or let Runsten republish your car to your MQTT broker for Home Assistant instead:",
       "mqtt": "MQTT settings"
     }
   },
@@ -2139,6 +2163,64 @@
       "tooManyPending": "Too many connections to BMW are pending on this instance. Try again in a few minutes.",
       "unavailable": "Runsten could not be reached. Try again in a moment.",
       "internal": "BMW could not be connected. Try again in a moment."
+    }
+  },
+  "pleos": {
+    "intro": "Runsten reads your Hyundai, Kia or Genesis with a key you create in the Pleos Playground, the access the EU Data Act gives their owners. One key per brand, each with its own quota of calls.",
+    "guide": "Read the guide",
+    "refused": {
+      "title": "Your key was refused",
+      "body": "Pleos refused it on {time}: revoked or replaced in the Playground, or expired. Your cars are not read until you give a new one; what was read stays."
+    },
+    "current": "Your key",
+    "last4": "Client ID ending in {last4}",
+    "setAt": "Given",
+    "replace": "Replace the key",
+    "delete": {
+      "button": "Remove the key",
+      "title": "Remove your {brand} key?",
+      "text": "Your {brand} stays, with its history, but is no longer read until you give another key.",
+      "error": "The key could not be removed. Try again in a moment.",
+      "cancel": "Cancel",
+      "confirm": "Remove"
+    },
+    "steps": {
+      "title": "Create your key",
+      "signIn": "Sign in with your car’s account at",
+      "newTab": "(opens in a new tab)",
+      "accept": "Under My Vehicle Data API, on the tab of your car’s brand, tick the two boxes: Terms and Conditions, Privacy Policy.",
+      "get": "Choose Get API Key, then sign in with your car’s app account — Bluelink, Kia Connect or Genesis Connected — the primary user’s.",
+      "copy": "On the key’s page, copy its Client ID and its Client secret, then paste them below: they are never shown again."
+    },
+    "field": {
+      "clientId": "Client ID",
+      "clientSecret": "Client secret"
+    },
+    "help": "The key lists only the cars registered when it was issued, and reads them only with the primary user’s account. Keep it for Runsten alone: another application reading with it would take Runsten’s place.",
+    "save": "Save the key",
+    "cancel": "Cancel",
+    "saved": "Key saved: Runsten reads its cars from its next pass.",
+    "deleted": "Key removed.",
+    "error": {
+      "summary": "The key was not saved",
+      "required": "Paste the {field}.",
+      "spaces": "The {field} has no space: copy it again.",
+      "characters": "The {field} has only letters, digits and signs: copy it again.",
+      "tooShort": "The {field} has at least {min} characters: copy it whole.",
+      "tooLong": "The {field} has at most {max} characters: copy it alone.",
+      "refused": "Pleos refused this key: check its two values, and that it still exists in the Playground.",
+      "invalidBody": "This key was refused: copy its values again.",
+      "noVehicle": "This key reads no vehicle: it lists only the cars registered when it was issued, and only with the primary user’s account. Check the brand’s tab in the Playground, then save it again.",
+      "tooManyVehicles": "With this key’s cars, your account would have more vehicles than it may: the key was not saved.",
+      "notAdmitted": "Your account must take a step first, such as accepting terms: reload the page. The key was not saved.",
+      "sourceUnavailable": "The Pleos Vehicle Data API did not answer: the key was not saved. Try again in a moment.",
+      "unavailable": "Runsten could not be reached. Try again in a moment.",
+      "internal": "The key could not be saved. Try again in a moment."
+    },
+    "brand": {
+      "hyundai": "Hyundai",
+      "kia": "Kia",
+      "genesis": "Genesis"
     }
   }
 }

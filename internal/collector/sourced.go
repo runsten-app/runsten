@@ -239,6 +239,17 @@ func (c *Collector) sourceFailed(ctx context.Context, t Target, vs *vehicleState
 		c.logOnce(t, "stream held by another client: tried again later", append(args, "err", err)...)
 		vs.failure = Failure{At: now, Endpoint: ep, Status: se.Status, Kind: FailStreamHeld}
 		return
+	case KindKeyShared:
+		// The key is shared with another client, which keeps taking the source's place
+		// at the provider: the connection waits, and the user is told (one key reads
+		// one client at Pleos). The access the other client took the place of is
+		// dropped: past the wait, a new one is asked for.
+		delete(c.sessions, t.ConnectionID)
+		c.connectionPause[t.ConnectionID] = now.Add(se.RetryIn)
+		c.logOnce(t, "another client reads with the same key: tried again later", append(args,
+			"retry_in", se.RetryIn.String(), "err", err)...)
+		vs.failure = Failure{At: now, Endpoint: ep, Status: se.Status, Kind: FailKeyShared}
+		return
 	case KindOther:
 	}
 	if ep == "" {

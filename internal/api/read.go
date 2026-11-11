@@ -94,7 +94,8 @@ type providerJSON string
 
 // Schema lists the providers.
 func (providerJSON) Schema(huma.Registry) *huma.Schema {
-	return enumSchema(providerVolvo, providerPolestar, providerTesla, providerPolestarID, providerTeslaFleet, providerBMW)
+	return enumSchema(providerVolvo, providerPolestar, providerTesla, providerPolestarID,
+		providerTeslaFleet, providerBMW, providerPleosHyundai, providerPleosKia, providerPleosGenesis)
 }
 
 const (
@@ -108,13 +109,24 @@ const (
 	providerTeslaFleet providerJSON = "tesla_fleet"
 	// providerBMW: BMW CarData, read with the owner's client ID.
 	providerBMW providerJSON = "bmw"
+	// The Pleos Vehicle Data API, read with the owner's key of one brand: one provider
+	// per brand, the connection of each its own.
+	providerPleosHyundai providerJSON = "pleos_hyundai"
+	providerPleosKia     providerJSON = "pleos_kia"
+	providerPleosGenesis providerJSON = "pleos_genesis"
 )
 
 // credentialed reports whether p's connections read with a credential of their own,
 // rather than a Volvo ID and an application key.
 func (p providerJSON) credentialed() bool {
 	return p == providerPolestar || p == providerTesla || p == providerPolestarID || p == providerTeslaFleet ||
-		p == providerBMW
+		p == providerBMW || p.pleos()
+}
+
+// pleos reports whether p reads through the Pleos Vehicle Data API, one brand of the
+// three its provider names.
+func (p providerJSON) pleos() bool {
+	return p == providerPleosHyundai || p == providerPleosKia || p == providerPleosGenesis
 }
 
 // tesla reports whether p reads Teslas.
@@ -135,10 +147,10 @@ const (
 )
 
 type connectionJSON struct {
-	Provider     providerJSON           `json:"provider" doc:"volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData."`
+	Provider     providerJSON           `json:"provider" doc:"volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis."`
 	Status       connectionStatus       `json:"status" doc:"reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. not_configured: the instance has no Volvo application, the vehicle is not read until its administrator sets one. Always active for a Polestar or Tesla connection: credential tells its state."`
 	APIKey       null[apiKeyStatus]     `json:"api_key" doc:"The application key the vehicle is read with: instance, the instance's, which reads every vehicle when the instance has one; own, the account's. refused: the account's, refused by Volvo; missing: none, the instance has none either. Neither refused nor missing is read, until the user gives a key (PUT /connection/api-key). null for a Polestar or Tesla connection, read with its own credential."`
-	Credential   null[credentialStatus] `json:"credential" doc:"The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account; a Polestar ID's session ended, or its password refused); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla, /connection/polestar-id/code or /password, POST /connection/bmw/token). null for a Volvo connection."`
+	Credential   null[credentialStatus] `json:"credential" doc:"The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account; a Polestar ID's session ended, or its password refused); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla, /connection/polestar-id/code or /password, PUT /connection/pleos/{brand}, POST /connection/bmw/token). null for a Volvo connection."`
 	AuthorizedAt *time.Time             `json:"authorized_at" pattern:"Z$" doc:"When the user authorized the connection; null for a token pasted by hand, or a Polestar or Tesla connection."`
 	RefreshedAt  *time.Time             `json:"refreshed_at" pattern:"Z$" doc:"When the current refresh token was issued: the collector renews an idle one daily, before it lapses. null without one (a token pasted by hand, or a Polestar or Tesla connection)."`
 	ReauthAt     *time.Time             `json:"reauth_at" pattern:"Z$" doc:"When the grant was found lost; null while active."`
@@ -154,7 +166,7 @@ type vehicleJSON struct {
 	// Market refused: a fact of the vehicle, apart from its connection and from the
 	// collector's latest pass.
 	MarketRefusedAt *time.Time           `json:"market_refused_at" pattern:"Z$" doc:"When the vendor's API refused the vehicle's market: the API does not serve the market it was sold in, nothing of it can be read, and it is no longer read. Connecting the Volvo ID again tries it again. null: served."`
-	UnsharedAt      *time.Time           `json:"unshared_at" pattern:"Z$" doc:"When Polestar's Data Portal answered that the owner no longer shares the vehicle with the credential: it is no longer read. Giving a credential that lists it again reads it again. null: shared, or a Volvo."`
+	UnsharedAt      *time.Time           `json:"unshared_at" pattern:"Z$" doc:"When Polestar's Data Portal or the Pleos Vehicle Data API answered that the owner no longer shares the vehicle with the credential: it is no longer read. Giving a credential that lists it again reads it again. null: shared, or a Volvo."`
 	Collection      null[collectionJSON] `json:"collection" doc:"What the collector wrote of the vehicle after its latest pass; null before the first one."`
 }
 
@@ -172,7 +184,7 @@ func (collectionModeJSON) Schema(huma.Registry) *huma.Schema {
 // Schema lists the kinds of a failed call.
 func (failureKindJSON) Schema(huma.Registry) *huma.Schema {
 	return enumSchema("quota", "rate_limited", "unauthorized", "not_found", "unavailable", "token", "key_refused", "market",
-		"credential_refused", "unshared", "not_granted", "api_closed", "stream_held", "other")
+		"credential_refused", "unshared", "not_granted", "api_closed", "stream_held", "key_shared", "other")
 }
 
 type collectionJSON struct {
@@ -194,7 +206,7 @@ type failureJSON struct {
 	At       time.Time       `json:"at" pattern:"Z$"`
 	Endpoint *string         `json:"endpoint" doc:"The vendor's endpoint called; null when no call could be made, without an access token."`
 	Status   *int            `json:"status" doc:"The HTTP status; null when the API did not respond."`
-	Kind     failureKindJSON `json:"kind" doc:"quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). credential_refused: Polestar's Data Portal refused the connection's credential. unshared: the vehicle is no longer shared with the credential (unshared_at). not_granted: the credential was not granted the endpoint's domain, left out for a day. api_closed: the vendor's API is closed to the connection's credential (Tesla's Owner API, which sends to its Fleet API). stream_held: another client holds the vendor's only connection to its stream (BMW CarData's, which Home Assistant or evcc may hold): its values are not read until it lets go. other: another refusal."`
+	Kind     failureKindJSON `json:"kind" doc:"quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). credential_refused: Polestar's Data Portal refused the connection's credential. unshared: the vehicle is no longer shared with the credential (unshared_at). not_granted: the credential was not granted the endpoint's domain, left out for a day. api_closed: the vendor's API is closed to the connection's credential (Tesla's Owner API, which sends to its Fleet API). stream_held: another client holds the vendor's only connection to its stream (BMW CarData's, which Home Assistant or evcc may hold): its values are not read until it lets go. key_shared: another client reads with the same key (the Pleos Vehicle Data API's, of Hyundai, Kia and Genesis, which allows one at a time): Runsten waits for its turn, and the other reads undisturbed. other: another refusal."`
 }
 
 func collectionOf(v Vehicle) null[collectionJSON] {

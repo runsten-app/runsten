@@ -7,6 +7,7 @@ import { limitsPage } from '@/entities/session'
 import { collectionState, needsAttention, vehicleLabels, type Vehicle } from '@/entities/vehicle'
 import { ApiKeyForm, useConnectionSettings } from '@/features/manage-api-key'
 import { BmwForm } from '@/features/manage-bmw'
+import { PleosForms } from '@/features/manage-pleos'
 import { PolestarForm, renewalDue } from '@/features/manage-polestar'
 import { PolestarIdForm } from '@/features/manage-polestar-id'
 import { TeslaForm } from '@/features/manage-tesla'
@@ -17,7 +18,7 @@ import { useFormat, useNow } from '@/shared/lib'
 import { FactItem } from '@/shared/ui'
 import { AppShell } from '@/widgets/app-shell'
 import { extensionBrandSections } from '../extensions'
-import { brands, type Brand } from '../model/brands'
+import { brands, pleosProviders, type Brand } from '../model/brands'
 import VehicleCollection from './VehicleCollection.vue'
 
 // ConnectionPage is the hidden part: the Volvo ID that lets Runsten read, the application
@@ -133,10 +134,17 @@ const brandLabels = computed<Record<Brand, string>>(() => ({
   polestar: t('connection.brand.polestar'),
   tesla: t('connection.brand.tesla'),
   bmw: t('connection.brand.bmw'),
+  pleos: t('connection.brand.pleos'),
 }))
 // A Polestar read with the Polestar ID is a Polestar's: one tab.
 const brandOf = (p?: Vehicle['connection']['provider']) =>
-  p === 'polestar_id' ? 'polestar' : p === 'tesla_fleet' ? 'tesla' : p
+  p === 'polestar_id'
+    ? 'polestar'
+    : p === 'tesla_fleet'
+      ? 'tesla'
+      : pleosProviders.includes(p as (typeof pleosProviders)[number])
+        ? 'pleos'
+        : p
 const ofBrand = (b: Brand) =>
   (vehicles.value ?? []).filter((v) => brandOf(v.connection.provider) === b)
 const teslaOn = useFlag('source.tesla')
@@ -146,6 +154,7 @@ const ownerTeslas = computed(() =>
   (vehicles.value ?? []).some((v) => v.connection.provider === 'tesla'),
 )
 const bmwOn = useFlag('source.bmw')
+const pleosOn = useFlag('source.pleos')
 const polestarIdOn = useFlag('source.polestar-id')
 const polestarIdShown = computed(
   () =>
@@ -161,7 +170,9 @@ const shown = computed(() =>
         ? settings.value?.volvo !== false || ofBrand(b).length
         : b === 'tesla'
           ? teslaOn.value || ofBrand(b).length
-          : b !== 'bmw' || bmwOn.value || !!settings.value?.bmw || ofBrand(b).length),
+          : b === 'pleos'
+            ? pleosOn.value || !!settings.value?.pleos || ofBrand(b).length
+            : b !== 'bmw' || bmwOn.value || !!settings.value?.bmw || ofBrand(b).length),
   ),
 )
 const asBrand = (s?: string) => shown.value.find((b) => b === s)
@@ -267,7 +278,7 @@ const alerted = computed(
         >
           {{ brandLabels[b] }}
           <v-chip
-            v-if="b === 'tesla' || b === 'bmw'"
+            v-if="b === 'tesla' || b === 'bmw' || b === 'pleos'"
             size="x-small"
             variant="tonal"
             color="primary"
@@ -419,6 +430,16 @@ const alerted = computed(
               </p>
             </section>
           </template>
+          <section v-else-if="b === 'pleos'" class="mb-8" aria-labelledby="connection-pleos-title">
+            <h2 id="connection-pleos-title" class="text-title-large mb-3">
+              {{ t('connection.pleos.title') }}
+              <v-chip size="x-small" variant="tonal" color="primary" class="ms-2 beta">
+                {{ t('connection.polestar.beta') }}
+              </v-chip>
+            </h2>
+            <PleosForms v-if="pleosOn" :connection="settings" />
+            <p v-else class="text-body-medium pleos-off">{{ t('connection.pleos.off') }}</p>
+          </section>
           <section v-else-if="b === 'bmw'" class="mb-8" aria-labelledby="connection-bmw-title">
             <h2 id="connection-bmw-title" class="text-title-large mb-3">
               {{ t('connection.bmw.title') }}

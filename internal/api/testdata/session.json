@@ -7,6 +7,7 @@
   "limits": null,
   "flags": {
     "source.bmw": true,
+    "source.pleos": true,
     "source.polestar-id": false,
     "source.tesla": true
   }

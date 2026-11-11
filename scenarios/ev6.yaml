@@ -1,0 +1,39 @@
+# The Kia of demonstration: an EV6 of 2023, served on the Pleos Vehicle Data API (brand
+# kia), read with the simulator's key (pleosapi.DevCredential), the EU Data Act's access
+# its owner opens in the Pleos Playground. Home to work and back, then an AC charge at
+# home.
+#
+# What the API gives differs from the other sources: the last state the car sent, dated
+# from the car's own clock and never woken for a read; the car sends at each change, and
+# every SIM_PLEOS_SEND_EVERY while it drives or charges (unknown on a real one, assumed
+# 5 minutes). No charging power: a charge has the energy of its state of charge only,
+# as a reconstructed charge does.
+#
+# The VIN is fictitious: KNA, the WMI of Kia, and P, model year 2023, at the tenth
+# position. Fictitious coordinates (Lyon).
+brand: kia
+vin: KNAPC81ABPP000001
+start: 2026-09-28T05:00:00Z
+vehicle:
+  profile: bev-generic
+  model: EV6
+  modelYear: 2023
+  batteryKWh: 77.4
+  usableKWh: 74
+  consumptionKWhPer100km: 18
+  chargingCurrentLimitA: 16
+  soc: 64
+  targetSoc: 80
+  odometerKm: 21034
+  place: home
+places:
+  home: { lat: 45.7640, lon: 4.8357 }
+  work: { lat: 45.7980, lon: 4.8300 }
+steps:
+  - park: { duration: 2h }
+  - drive: { to: work, distanceKm: 8, duration: 20m }
+  - park: { duration: 9h }
+  - drive: { to: home, distanceKm: 8, duration: 20m }
+  - park: { duration: 1h }
+  - charge: { type: AC, powerKW: 11, untilSoc: 90 }
+  - park: { duration: 11h }

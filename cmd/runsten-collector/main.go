@@ -37,6 +37,9 @@
 //	                            https://pc-api.polestar.com/eu-north-1/data-portal/m2m):
 //	                            the connections with a Polestar credential are read
 //	                            through it
+//	RUNSTEN_PLEOS_API_URL       the Pleos Vehicle Data API, which reads the Hyundais,
+//	                            Kias and Genesises of the connections with a key when the
+//	                            flag source.pleos is on (default https://api.pleos.ai)
 //	RUNSTEN_TESLA_API_URL       Tesla's Owner API address (default
 //	                            https://owner-api.teslamotors.com): the connections with
 //	                            a Tesla refresh token are read through it; another host
@@ -124,6 +127,7 @@ import (
 	"runsten/internal/catalog"
 	"runsten/internal/collector"
 	"runsten/internal/collector/bmwsource"
+	"runsten/internal/collector/pleossource"
 	"runsten/internal/collector/polestaridsource"
 	"runsten/internal/collector/polestarsource"
 	"runsten/internal/collector/teslasource"
@@ -137,6 +141,7 @@ import (
 	"runsten/internal/platform/health"
 	"runsten/internal/platform/httpserver"
 	"runsten/internal/platform/secretbox"
+	"runsten/internal/pleos"
 	"runsten/internal/polestar"
 	"runsten/internal/polestarid"
 	"runsten/internal/publish/mqtt"
@@ -152,6 +157,7 @@ type config struct {
 	baseURL      string
 	authURL      string
 	polestarURL  string
+	pleosURL     string
 	tesla        tesla.Hosts
 	polestarID   polestarid.Hosts
 	bmw          bmw.Hosts
@@ -347,7 +353,8 @@ func run(args []string) error {
 
 	cfg.quota.NoInstanceKey = cfg.apiKey == ""
 	log.Info("collector started", "version", version, "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
-		"polestar_base_url", cfg.polestarURL, "tesla_api_url", cfg.tesla.API, "tesla_auth_url", cfg.tesla.Auth,
+		"polestar_base_url", cfg.polestarURL, "pleos_api_url", cfg.pleosURL,
+		"tesla_api_url", cfg.tesla.API, "tesla_auth_url", cfg.tesla.Auth,
 		"polestar_id_auth_url", cfg.polestarID.Auth, "polestar_id_api_url", cfg.polestarID.API,
 		"polestar_id_discovery_url", cfg.polestarID.Discovery, "polestar_id_pccs_url", cfg.polestarID.PCCS,
 		"bmw_auth_url", cfg.bmw.Auth, "bmw_api_url", cfg.bmw.API, "bmw_stream_url", cfg.bmwStream,
@@ -388,6 +395,15 @@ func run(args []string) error {
 	c.SetGate(bmw.Source, func(ctx context.Context, account string) bool {
 		return features.Enabled(ctx, flags.SourceBMW, account)
 	})
+	pleosSource := pleossource.New(pleos.NewClient(cfg.pleosURL, hc), pleosCredential(st), clk)
+	c.AddSource(pleosSource, st)
+	// The same flag gates the three brands, on by default: an instance may turn it off
+	// while the source is in beta (ADR 0049 §9).
+	for _, b := range pleos.Brands() {
+		c.SetGate(b.Provider(), func(ctx context.Context, account string) bool {
+			return features.Enabled(ctx, flags.SourcePleos, account)
+		})
+	}
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
 	c.SetPublisher(pub)
@@ -493,7 +509,8 @@ func rebuildAll(ctx context.Context, st *store.Store, d *derive.Deriver, norm de
 }
 
 // readProviders tells whether norm reads the readings of a provider's connections, each
-// provider being the source of its readings; Volvo's for an empty one.
+// provider being the source of its readings; Volvo's for an empty one. A source of
+// several providers (the Pleos Vehicle Data API's, one per brand) reads each of theirs.
 func readProviders(norm derive.Normalizer) func(provider string) bool {
 	sources := map[string]bool{}
 	for _, k := range norm.Kinds() {
@@ -503,6 +520,9 @@ func readProviders(norm derive.Normalizer) func(provider string) bool {
 		if provider == "" {
 			provider = volvo.Source
 		}
+		if b, ok := pleos.BrandOf(provider); ok {
+			provider = b.SourceOf()
+		}
 		return sources[provider]
 	}
 }
@@ -511,6 +531,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 	cfg := config{
 		baseURL:     volvo.DefaultBaseURL,
 		polestarURL: polestar.DefaultBaseURL,
+		pleosURL:    pleos.DefaultBaseURL,
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		polestarID: polestarid.Hosts{
 			Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL,
@@ -578,6 +599,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 	}
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.authURL, "RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL,
+		"RUNSTEN_PLEOS_API_URL": &cfg.pleosURL,
 		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
 		"RUNSTEN_POLESTAR_ID_DISCOVERY_URL": &cfg.polestarID.Discovery, "RUNSTEN_POLESTAR_ID_PCCS_URL": &cfg.polestarID.PCCS,
@@ -647,10 +669,30 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 	return cfg, errors.Join(errs...)
 }
 
+// pleosCredential reads the key of a Pleos connection from the store, with its brand.
+func pleosCredential(st *store.Store) func(ctx context.Context, accountID, connectionID string) (pleossource.Credential, error) {
+	return func(ctx context.Context, accountID, connectionID string) (pleossource.Credential, error) {
+		c, provider, err := st.PleosCredential(ctx, accountID, connectionID)
+		if err != nil {
+			return pleossource.Credential{}, fmt.Errorf("pleos credential: %w", err)
+		}
+		brand, ok := pleos.BrandOf(provider)
+		if !ok {
+			return pleossource.Credential{}, fmt.Errorf("pleos credential: %s is no brand's provider", provider)
+		}
+		return pleossource.Credential{ClientID: c.ClientID, ClientSecret: c.ClientSecret, Brand: brand}, nil
+	}
+}
+
 // normalizers reads the stored responses of every source: the core's, and those an
 // extension adds.
 func normalizers() derive.Normalizer {
 	return derive.Sources(append([]derive.Normalizer{
-		volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{}, bmw.Normalizer{},
+		volvo.Normalizer{},
+		polestar.Normalizer{},
+		tesla.Normalizer{},
+		polestarid.Normalizer{},
+		bmw.Normalizer{},
+		pleos.Normalizer{},
 	}, extensionNormalizers()...)...)
 }

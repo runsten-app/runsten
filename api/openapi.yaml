@@ -1469,7 +1469,7 @@ components:
             - string
             - "null"
         credential:
-          description: "The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account; a Polestar ID's session ended, or its password refused); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla, /connection/polestar-id/code or /password, POST /connection/bmw/token). null for a Volvo connection."
+          description: "The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account; a Polestar ID's session ended, or its password refused); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla, /connection/polestar-id/code or /password, PUT /connection/pleos/{brand}, POST /connection/bmw/token). null for a Volvo connection."
           oneOf:
             - enum:
                 - set
@@ -1478,7 +1478,7 @@ components:
               type: string
             - type: "null"
         provider:
-          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData."
+          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis."
           enum:
             - volvo
             - polestar
@@ -1486,6 +1486,9 @@ components:
             - polestar_id
             - tesla_fleet
             - bmw
+            - pleos_hyundai
+            - pleos_kia
+            - pleos_genesis
           type: string
         reauth_at:
           description: When the grant was found lost; null while active.
@@ -1547,6 +1550,11 @@ components:
           oneOf:
             - $ref: "#/components/schemas/InstanceKey"
             - type: "null"
+        pleos:
+          description: "The account's keys of the Pleos Vehicle Data API, one per brand — Hyundai, Kia, Genesis —, which read its cars of each (the flag source.pleos); null: none."
+          oneOf:
+            - $ref: "#/components/schemas/PleosKeys"
+            - type: "null"
         polestar:
           description: "The account's credential of Polestar's Data Portal, which reads its Polestar vehicles; null: none."
           oneOf:
@@ -1575,6 +1583,7 @@ components:
         - tesla
         - polestar_id
         - bmw
+        - pleos
       type: object
     Cost:
       additionalProperties: false
@@ -2035,7 +2044,7 @@ components:
             - string
             - "null"
         kind:
-          description: "quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). credential_refused: Polestar's Data Portal refused the connection's credential. unshared: the vehicle is no longer shared with the credential (unshared_at). not_granted: the credential was not granted the endpoint's domain, left out for a day. api_closed: the vendor's API is closed to the connection's credential (Tesla's Owner API, which sends to its Fleet API). stream_held: another client holds the vendor's only connection to its stream (BMW CarData's, which Home Assistant or evcc may hold): its values are not read until it lets go. other: another refusal."
+          description: "quota: the API's quota is exhausted. rate_limited: too many calls, the account is paused. unauthorized: the token was refused again after a refresh. not_found: the vendor does not know the vehicle. unavailable: no response, or a server error. token: no access token could be had, the grant still held (Volvo ID unreachable). key_refused: the application key was refused, not the token. market: the vendor's API does not serve the vehicle's market (market_refused_at). credential_refused: Polestar's Data Portal refused the connection's credential. unshared: the vehicle is no longer shared with the credential (unshared_at). not_granted: the credential was not granted the endpoint's domain, left out for a day. api_closed: the vendor's API is closed to the connection's credential (Tesla's Owner API, which sends to its Fleet API). stream_held: another client holds the vendor's only connection to its stream (BMW CarData's, which Home Assistant or evcc may hold): its values are not read until it lets go. key_shared: another client reads with the same key (the Pleos Vehicle Data API's, of Hyundai, Kia and Genesis, which allows one at a time): Runsten waits for its turn, and the other reads undisturbed. other: another refusal."
           enum:
             - quota
             - rate_limited
@@ -2050,6 +2059,7 @@ components:
             - not_granted
             - api_closed
             - stream_held
+            - key_shared
             - other
           type: string
         status:
@@ -3340,6 +3350,71 @@ components:
         - cost_unknown
         - cost_entered
       type: object
+    PleosCredentialUpdate:
+      additionalProperties: false
+      properties:
+        client_id:
+          description: The client ID of a key created in the Pleos Playground, on the tab of its brand.
+          maxLength: 256
+          minLength: 4
+          pattern: ^[!-~]+$
+          type: string
+        client_secret:
+          description: Its client secret. It is never returned.
+          maxLength: 512
+          minLength: 4
+          pattern: ^[!-~]+$
+          type: string
+      required:
+        - client_id
+        - client_secret
+      type: object
+    PleosKey:
+      additionalProperties: false
+      properties:
+        last4:
+          description: "The last four characters of the key's client ID, to tell it apart: the key itself, above all its secret, is never returned."
+          type: string
+        refused_at:
+          description: "When Pleos refused it (revoked or replaced in the Playground, or expired): its vehicles are not read until another. null: not refused."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        set_at:
+          description: "When it was given. The API tells no expiry: the Playground does, and a key it refuses asks for another."
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - last4
+        - set_at
+        - refused_at
+      type: object
+    PleosKeys:
+      additionalProperties: false
+      properties:
+        genesis:
+          description: "The account's key of its Genesises; null: none."
+          oneOf:
+            - $ref: "#/components/schemas/PleosKey"
+            - type: "null"
+        hyundai:
+          description: "The account's key of its Hyundais; null: none."
+          oneOf:
+            - $ref: "#/components/schemas/PleosKey"
+            - type: "null"
+        kia:
+          description: "The account's key of its Kias; null: none."
+          oneOf:
+            - $ref: "#/components/schemas/PleosKey"
+            - type: "null"
+      required:
+        - hyundai
+        - kia
+        - genesis
+      type: object
     PolestarCredential:
       additionalProperties: false
       properties:
@@ -4261,6 +4336,9 @@ components:
             source.bmw:
               description: "BMW CarData as a source, for the BMWs and the Minis: its connection and its reads. On by default, the API being BMW's own; an instance may turn it off while the source is in beta, not seen yet on a real car."
               type: boolean
+            source.pleos:
+              description: "The Pleos Vehicle Data API as a source, for the Hyundais, the Kias and the Genesises: its connection and its reads. On by default, the API being the EU Data Act's own; an instance may turn it off while the source is in beta, not seen yet on a real car."
+              type: boolean
             source.polestar-id:
               description: "The Polestar ID as a source, for the Polestars the Data Portal does not read (outside the EU/EEA): its connection and its reads. Off by default: the Polestar app's API is unofficial, and many accounts read from one instance's addresses could have them blocked; a self-hosted instance turns it on."
               type: boolean
@@ -4271,6 +4349,7 @@ components:
             - source.tesla
             - source.polestar-id
             - source.bmw
+            - source.pleos
           type: object
         limits:
           description: "What the account's offer hides, as of now; null: nothing, the whole history is shown. Only an instance that limits its accounts sets it."
@@ -5476,7 +5555,7 @@ components:
             - $ref: "#/components/schemas/Sheet"
             - type: "null"
         unshared_at:
-          description: "When Polestar's Data Portal answered that the owner no longer shares the vehicle with the credential: it is no longer read. Giving a credential that lists it again reads it again. null: shared, or a Volvo."
+          description: "When Polestar's Data Portal or the Pleos Vehicle Data API answered that the owner no longer shares the vehicle with the credential: it is no longer read. Giving a credential that lists it again reads it again. null: shared, or a Volvo."
           format: date-time
           pattern: Z$
           type:
@@ -6320,6 +6399,119 @@ paths:
         - session: []
         - sessionSecure: []
       summary: Connect the account's BMW once the owner approved the code
+      tags:
+        - connection
+  /connection/pleos/{brand}:
+    delete:
+      description: The key is erased. The cars of the brand stay, with their history, and are no longer read until another key is given.
+      operationId: deletePleosCredential
+      parameters:
+        - description: "The brand of the key: the API of each is the same, the key and the cars are not."
+          in: path
+          name: brand
+          required: true
+          schema:
+            description: "The brand of the key: the API of each is the same, the key and the cars are not."
+            pattern: ^(hyundai|kia|genesis)$
+            type: string
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Remove the account's Pleos key of a brand
+      tags:
+        - connection
+    put:
+      description: "A key the owner created in the Pleos Playground reads the cars of its brand — Hyundai, Kia or Genesis — through the Pleos Vehicle Data API, the EU Data Act's access. It is checked first: a token is asked for with it and its vehicles are listed. A key the Playground refuses, or that reads no vehicle, is not stored; one it accepts replaces the previous one, and its vehicles are added to the account, unless they would be more than the instance lets an account have. The values travel in the body only, and are never returned."
+      operationId: putPleosCredential
+      parameters:
+        - description: "The brand of the key: the API of each is the same, the key and the cars are not."
+          in: path
+          name: brand
+          required: true
+          schema:
+            description: "The brand of the key: the API of each is the same, the key and the cars are not."
+            pattern: ^(hyundai|kia|genesis)$
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PleosCredentialUpdate"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionSettings"
+          description: The connection.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `credential_refused`: the Pleos Playground refused the key."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: Hyundai, Kia and Genesis are not offered to the account (the flag `source.pleos`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`no_vehicle`: the key reads no vehicle, none being registered to the primary user's account when it was issued. `too_many_vehicles`: the account would have more vehicles than the instance lets it have. The key is not stored."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: the Pleos Vehicle Data API did not answer; the key is not stored."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Give the account's Pleos key of a brand
       tags:
         - connection
   /connection/polestar:

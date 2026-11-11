@@ -106,7 +106,7 @@ func (s *Server) getCharging(ctx context.Context, in *vehicleInput) (*body[charg
 // variant in effect (catalog.Effective), from the details of each reading.
 func (s *Server) netCapacity(v Vehicle) core.NetCapacity {
 	return func(n core.Snapshot) (float64, bool) {
-		variant, ok := s.Catalog.Effective(v.VariantID, catalogReading(n, v.VIN))
+		variant, ok := s.Catalog.Effective(v.VariantID, catalogReading(s.Catalog, n, v))
 		if !ok || variant.NetKWh == nil {
 			return 0, false
 		}

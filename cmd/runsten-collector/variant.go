@@ -31,7 +31,7 @@ func (v variants) Update(ctx context.Context, accountID, vehicleID string) error
 }
 
 func (v variants) write(ctx context.Context, accountID, vehicleID string) error {
-	vin, chosen, found, err := v.vehicle(ctx, accountID, vehicleID)
+	vin, provider, chosen, found, err := v.vehicle(ctx, accountID, vehicleID)
 	if err != nil || !found {
 		return err
 	}
@@ -40,7 +40,7 @@ func (v variants) write(ctx context.Context, accountID, vehicleID string) error 
 		return err //nolint:wrapcheck // the deriver's, which says what failed
 	}
 	var id string
-	if variant, ok := v.effective(chosen, vin, cur.Snapshot); ok {
+	if variant, ok := v.effective(chosen, vin, provider, cur.Snapshot); ok {
 		id = variant.ID
 	}
 	return v.set(ctx, accountID, vehicleID, id)
