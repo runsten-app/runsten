@@ -30,10 +30,12 @@ func New(client *polestar.Client, credential func(ctx context.Context, accountID
 const Daily = 10_000
 
 // Spec implements collector.Source. The paces are set for a credential's 10,000 calls a
-// day: parked, the battery and the availability every parked interval, the rest every
-// rare one; driving or charging, the four telemetries every active interval; the
-// target level, the health and the exterior every rare interval, the last two being
-// optional.
+// day: parked, the battery every active interval, so that a charge is seen within a
+// minute of its start, where a fast charge peaks; the availability every parked
+// interval, the rest every rare one; driving or charging, the four telemetries every
+// active interval; the target level, the health and the exterior every rare interval,
+// the last two being optional. A car parked all day costs about 1,700 calls, one driving
+// two hours and charging one about 2,200.
 func (Source) Spec() collector.SourceSpec {
 	telemetry := func(d polestar.Domain, parked collector.Pace) collector.EndpointSpec {
 		return collector.EndpointSpec{
@@ -44,7 +46,7 @@ func (Source) Spec() collector.SourceSpec {
 	return collector.SourceSpec{
 		Name: polestar.Source,
 		Endpoints: []collector.EndpointSpec{
-			telemetry(polestar.Battery, collector.PaceParked),
+			telemetry(polestar.Battery, collector.PaceActive),
 			telemetry(polestar.Availability, collector.PaceParked),
 			telemetry(polestar.Odometer, collector.PaceRare),
 			telemetry(polestar.Location, collector.PaceRare),
