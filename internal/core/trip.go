@@ -69,7 +69,12 @@ func (d *detector) stepTrip(p point, prev state) {
 		// odometer on the way, without its engine, as a BMW), and ended after this reading
 		// at the earliest. Its distance already ran to the last reading; its capacity is
 		// the one of this reading, and a position read before it was on the way, no
-		// arrival.
+		// arrival. It started before the rise that revealed it, its start bound the end
+		// it had: the end it moves to may be a vehicle's timestamp after every reading of
+		// the trip.
+		if tb.t.Start.Before.IsZero() {
+			tb.t.Start.Before = d.narrow(tb.endLimit, tb.t.End.After, tb.hints...)
+		}
 		tb.stopAt, tb.endLimit, tb.hints = p.at, p.at, []time.Time{s.OdometerKm.At}
 		tb.t.Capacity = d.capacity()
 		tb.t.To, tb.arrived, tb.departureRow = Value[Position]{}, false, prev.rowAt(FieldPosition)
@@ -184,7 +189,7 @@ func (d *detector) finishTrip(st *state) {
 func (d *detector) buildTrip(tb *tripBuilder, st *state) Trip {
 	t, s := tb.t, st.snap
 	t.End.Before = d.narrow(tb.endLimit, t.End.After, append(tb.hints, t.To.At)...)
-	if t.Reconstructed {
+	if t.Reconstructed && t.Start.Before.IsZero() {
 		t.Start.Before = t.End.Before
 	}
 	t.EndOdometerKm = s.OdometerKm

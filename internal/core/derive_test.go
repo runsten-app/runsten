@@ -1434,6 +1434,9 @@ func TestReconstructedTripGoesOn(t *testing.T) {
 		rec(14, 30, stamped(104, 13)), // parked
 		rec(40, 40, stamped(106, 39)), // after the settle window: another trip
 	}
+	for i := range records {
+		records[i].Source = "bmw"
+	}
 	for _, stamps := range []bool{true, false} {
 		p := DefaultParams()
 		p.VehicleTimestamps = stamps
@@ -1442,12 +1445,18 @@ func TestReconstructedTripGoesOn(t *testing.T) {
 			t.Fatalf("stamps %v: %d trips: %+v", stamps, len(res.Trips), res.Trips)
 		}
 		first, second := res.Trips[0], res.Trips[1]
-		end, end2 := m(13), m(40)
+		start, end, end2 := m(10), m(13), m(40)
 		if stamps {
-			end, end2 = m(12), m(39)
+			start, end, end2 = m(9), m(12), m(39)
 		}
-		if !first.Reconstructed || first.Start.After != m(0) || first.End.Before != end || first.DistanceKm != val(4) {
+		// It started before the reading that revealed it, and has the sources of its
+		// readings: the end it moved to may be a vehicle's timestamp, no reading's.
+		if !first.Reconstructed || first.Start.After != m(0) || first.Start.Before != start || first.End.Before != end ||
+			first.DistanceKm != val(4) {
 			t.Errorf("stamps %v: first trip %+v", stamps, first)
+		}
+		if !slices.Equal(first.Sources, []string{"bmw"}) || !slices.Equal(second.Sources, []string{"bmw"}) {
+			t.Errorf("stamps %v: sources %q, %q", stamps, first.Sources, second.Sources)
 		}
 		if second.Start.After != m(30) || second.End.Before != end2 || second.DistanceKm != val(2) {
 			t.Errorf("stamps %v: second trip %+v", stamps, second)
