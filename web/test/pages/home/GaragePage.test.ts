@@ -316,6 +316,39 @@ describe('GaragePage', () => {
     )
   })
 
+  it('says why when no vehicle can be drawn by temperature or by charging', async () => {
+    const band = (stats as Stats).trips_by_temperature.bands[0]
+    const blind = (s: Stats): Stats => ({
+      ...s,
+      trips_by_temperature: {
+        bands: band ? [{ ...band, consumption_kwh_per_100km: null }] : [],
+        left_out: 0,
+      },
+      totals: { ...s.totals, charges: { ...s.totals.charges, energy_soc_unknown: 2 } },
+      charges_by_place: {
+        places: [],
+        outside: {
+          ac: { ...s.charges_by_place.outside.ac, energy_soc_kwh: 0 },
+          dc: { ...s.charges_by_place.outside.dc, energy_soc_kwh: 0 },
+          unknown: { ...s.charges_by_place.outside.unknown, energy_soc_kwh: 0 },
+        },
+        no_position: { ...s.charges_by_place.no_position, energy_soc_kwh: 0 },
+      },
+    })
+    fetchStats.mockImplementation((id: string) =>
+      Promise.resolve(blind(id === xc40.id ? first : other)),
+    )
+    const { wrapper, router } = await garage()
+    expect(wrapper.find('.by-temperature .empty').text()).toBe(
+      "XC40 Recharge Twin · 2021 and EX30 Single Motor Extended Range · 2024 have no consumption by outside temperature (the cars tell none, or no trip's energy is known), and are not drawn.",
+    )
+    await router.replace('/?compare=charging')
+    await flushPromises()
+    expect(wrapper.find('.charge-split .empty').text()).toBe(
+      'XC40 Recharge Twin · 2021 and EX30 Single Motor Extended Range · 2024 have charges whose energy is unknown, left out of their shares.',
+    )
+  })
+
   it('tells a vehicle without a charge from one whose charges have no known energy', async () => {
     const idle: Stats = {
       ...other,

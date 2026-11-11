@@ -21,7 +21,7 @@ import { useTheme } from 'vuetify'
 // weighs alike on all of them), what 100 km cost them month by month, where their energy
 // was charged, and their battery (the loss while parked, the capacity's change since the
 // first estimates). A vehicle without data for a chart is named under it, never drawn as
-// a zero. monthly: false, where the account's limits refuse the statistics by interval: the
+// a zero; with none to draw, that note is what the chart says, why included. monthly: false, where the account's limits refuse the statistics by interval: the
 // cost by month says it is unavailable.
 const props = defineProps<{
   garage: GarageVehicle[]
@@ -243,7 +243,7 @@ const capacity = computed(() => {
         :interval-header="t('stats.chart.byTemperature.header')"
         :format="(v) => f.quantity(v, 'kWhPer100km')"
         :hint="consumption.note ?? t('garage.compare.consumption.hint')"
-        :empty="consumption.series.length ? undefined : consumption.summary"
+        :empty="consumption.series.length ? undefined : (consumption.note ?? consumption.summary)"
         :selectable="false"
       />
       <template v-else-if="view === 'cost'">
@@ -289,7 +289,7 @@ const capacity = computed(() => {
         :y-max="100"
         :format="(v) => f.quantity(v, 'percent', 0)"
         :hint="charging.note ?? t('garage.compare.charging.hint')"
-        :empty="charging.labels.length ? undefined : charging.summary"
+        :empty="charging.labels.length ? undefined : (charging.note ?? charging.summary)"
         :selectable="false"
       />
       <template v-else>
