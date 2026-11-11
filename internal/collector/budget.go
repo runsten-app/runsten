@@ -52,11 +52,14 @@ const (
 	budgetWindow = 24 * time.Hour
 )
 
-// Calls counts the calls an account made to an API within an hour. They are saved, so
-// that a restarted collector knows what it spent.
+// Calls counts the calls an account made to an API within an hour, through the
+// connections of one provider. They are saved, so that a restarted collector knows what
+// it spent, and on which credential: an account may read one API with several, a
+// Pleos key per brand.
 type Calls struct {
 	AccountID string
 	API       string
+	Provider  string    // the connection's provider; empty for the calls saved before it was
 	Hour      time.Time // start of the hour, UTC
 	N         int
 }
@@ -192,7 +195,7 @@ func (b *budget) spend(t Target, api string, now time.Time) {
 		b.decay(now)
 		b.usage[t.AccountID]++
 	}
-	b.unsaved[Calls{AccountID: t.AccountID, API: api, Hour: now.UTC().Truncate(time.Hour)}]++
+	b.unsaved[Calls{AccountID: t.AccountID, API: api, Provider: t.provider(), Hour: now.UTC().Truncate(time.Hour)}]++
 }
 
 // left is how many calls t may still make to api now, for the logs: below zero when
@@ -243,9 +246,11 @@ func (b *budget) order(targets []Target, now time.Time) {
 // restore replays the calls saved since now less budgetWindow, oldest hour first, into
 // a fresh budget: each hour's calls are taken at its end (now, for the current hour),
 // the latest they may have been made, which leaves the fewest tokens. The calls are
-// saved per account: they count on the key or the credential each account's connection
-// of the API's provider has now (among targets); the Volvo API's on the instance's key
-// for an account without a vehicle, a Source's on nothing without its connection.
+// saved per account and provider: they count on the key or the credential the account's
+// connection of that provider has now (among targets), or, for the calls saved without
+// their provider, of the API's first provider the account has; the Volvo API's on the
+// instance's key for an account without a vehicle, a Source's on nothing without its
+// connection.
 func (b *budget) restore(calls []Calls, targets []Target, now time.Time) {
 	b.at, b.usedAt = now.Add(-budgetWindow), now
 	type reader struct{ account, provider string }
@@ -263,6 +268,9 @@ func (b *budget) restore(calls []Calls, targets []Target, now time.Time) {
 		providers := []string{volvo.Source}
 		if s, ok := b.sources[c.API]; ok && s.providers != nil {
 			providers = s.providers
+		}
+		if c.Provider != "" {
+			providers = []string{c.Provider}
 		}
 		t, ok := Target{}, false
 		for _, p := range providers {

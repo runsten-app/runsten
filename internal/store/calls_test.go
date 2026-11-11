@@ -90,4 +90,28 @@ func TestCalls(t *testing.T) {
 			t.Errorf("A's calls changed by B: %+v, %v", got, err)
 		}
 	})
+
+	// Each provider's calls of one API apart: a Pleos key per brand.
+	save(
+		collector.Calls{AccountID: b, API: "pleos", Provider: "pleos_kia", Hour: h, N: 4},
+		collector.Calls{AccountID: b, API: "pleos", Provider: "pleos_hyundai", Hour: h, N: 1},
+	)
+	save(collector.Calls{AccountID: b, API: "pleos", Provider: "pleos_kia", Hour: h, N: 2})
+	since, err := s.Calls(ctx, h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var pleos []collector.Calls
+	for _, c := range since {
+		if c.API == "pleos" {
+			pleos = append(pleos, c)
+		}
+	}
+	wantPleos := []collector.Calls{
+		{AccountID: b, API: "pleos", Provider: "pleos_hyundai", Hour: h, N: 1},
+		{AccountID: b, API: "pleos", Provider: "pleos_kia", Hour: h, N: 6},
+	}
+	if !reflect.DeepEqual(pleos, wantPleos) {
+		t.Errorf("calls by provider = %+v, want %+v", pleos, wantPleos)
+	}
 }

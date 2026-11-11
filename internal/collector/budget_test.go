@@ -373,3 +373,40 @@ func TestCallsSaved(t *testing.T) {
 		}
 	}
 }
+
+// TestRestoreByProvider: an account reading one API through two connections (a Pleos
+// key per brand) has each one's calls saved apart and given back to it after a restart;
+// the calls saved before the provider was go to the API's first provider the account
+// has, as they did.
+func TestRestoreByProvider(t *testing.T) {
+	now := time.Date(2026, 9, 28, 6, 30, 0, 0, time.UTC)
+	hyundai := Target{AccountID: "a", VehicleID: "h", ConnectionID: "ch", Provider: "pleos_hyundai"}
+	kia := Target{AccountID: "a", VehicleID: "k", ConnectionID: "ck", Provider: "pleos_kia"}
+	b := newBudget(DefaultQuota(), now)
+	b.addSource("pleos", []string{"pleos_hyundai", "pleos_kia"}, 2_000)
+	b.spend(kia, "pleos", now)
+	saved := b.unsavedCalls()
+	if len(saved) != 1 || saved[0].Provider != "pleos_kia" {
+		t.Fatalf("saved %+v", saved)
+	}
+
+	burst := bucketOf(2_000).burst
+	saved = []Calls{{AccountID: "a", API: "pleos", Provider: "pleos_kia", Hour: now.Truncate(time.Hour), N: int(burst)}}
+	r := newBudget(DefaultQuota(), now)
+	r.addSource("pleos", []string{"pleos_hyundai", "pleos_kia"}, 2_000)
+	r.restore(saved, []Target{hyundai, kia}, now)
+	if ok, _ := r.allows(kia, "pleos", now); ok {
+		t.Error("the Kia key's calls forgotten after a restart")
+	}
+	if ok, _ := r.allows(hyundai, "pleos", now); !ok {
+		t.Error("the Kia key's calls given to the Hyundai key")
+	}
+
+	old := newBudget(DefaultQuota(), now)
+	old.addSource("pleos", []string{"pleos_hyundai", "pleos_kia"}, 2_000)
+	saved[0].Provider = ""
+	old.restore(saved, []Target{hyundai, kia}, now)
+	if ok, _ := old.allows(hyundai, "pleos", now); ok {
+		t.Error("calls saved without their provider not given to the first one")
+	}
+}
