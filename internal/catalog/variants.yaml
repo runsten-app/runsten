@@ -1,4 +1,4 @@
-# Electric and plug-in hybrid variants of Volvo, Polestar, Tesla, BMW and Mini vehicles.
+# Electric and plug-in hybrid variants of Volvo, Polestar, Tesla, BMW, Mini, Hyundai, Kia and Genesis vehicles.
 #
 # One entry per variant: a powertrain and battery over a range of model years. Its id is
 # stored by users once they choose it, so it never changes: correcting a figure keeps the
@@ -1982,11 +1982,31 @@
       level: secondary
       for: [gross_kwh, ac_max_kw, dc_max_kw]
 
+# The first Long Range sold in Europe (ordered from July 2021 to June 2022) had a
+# 72.6 kWh battery; the 77.4 kWh one followed there in 2022, as in the United States.
+# DC: Hyundai Europe states 220 kW, ev-database 221 kW; the highest is kept.
+- id: ioniq5-long-72-2021
+  brand: hyundai
+  family: IONIQ 5
+  name: Ioniq 5 Long Range (72.6 kWh)
+  years: [2021, 2022]
+  gross_kwh: 72.6
+  net_kwh: 70
+  ac_max_kw: 11
+  dc_max_kw: 221
+  sources:
+    - url: https://www.hyundai.news/newsroom/dam/eu/models/20210630_ioniq_5_press_kit/hyundai-ioniq-5-technical-data-0621.pdf
+      level: manufacturer
+      for: [gross_kwh, ac_max_kw]
+    - url: https://ev-database.org/car/1478/Hyundai-IONIQ-5-Long-Range-2WD
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
 - id: ioniq5-long-2021
   brand: hyundai
   family: IONIQ 5
   name: Ioniq 5 Long Range
-  years: [2021, 2024]
+  years: [2022, 2024]
   gross_kwh: 77.4
   net_kwh: 74
   ac_max_kw: 11

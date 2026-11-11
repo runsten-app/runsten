@@ -85,6 +85,9 @@ func TestEffectiveModel(t *testing.T) {
 		// the family, and the maker may spell it otherwise than the catalog does.
 		{"a Pleos Kia: the consent's EV6 recognized", kiaConsent, kiaVIN, "", core.Value[float64]{}, "pleos_kia", "ev6-long-2021", variantDetected, core.Value[float64]{}, some(11.0)},
 		{"a family spelled otherwise: the brand's variant chosen", kiaMisspelt, kiaVIN, "ev6-long-2021", core.Value[float64]{}, "pleos_kia", "ev6-long-2021", variantChosen, core.Value[float64]{}, some(11.0)},
+		// The first European Ioniq 5 Long Range, of 72.6 kWh, apart from the 77.4 kWh one.
+		{"a 2021 Ioniq 5 of 72.6 kWh", details("IONIQ 5", 2021, 72.6, true), "KMHKN81ABMU000001", "", core.Value[float64]{}, "pleos_hyundai", "ioniq5-long-72-2021", variantDetected, core.Value[float64]{}, some(11.0)},
+		{"a 2022 Ioniq 5 of 77.4 kWh", details("IONIQ 5", 2022, 77.4, true), "KMHKN81ABNU000001", "", core.Value[float64]{}, "pleos_hyundai", "ioniq5-long-2021", variantDetected, core.Value[float64]{}, some(11.0)},
 		{"the doc's Ioniq Electric: no year, no capacity", ioniqEV, "TMAPJ81ABPP000001", "", core.Value[float64]{}, "pleos_hyundai", "ioniq-electric-2016", variantDetected, core.Value[float64]{}, some(6.6)},
 		{"the doc's Sorento: a combustion car, told by nothing", sorento, "TEST111111111TEST", "", core.Value[float64]{}, "pleos_kia", "", "", core.Value[float64]{}, core.Value[float64]{}},
 	}
