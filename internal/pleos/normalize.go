@@ -239,10 +239,15 @@ func normalizeBatteries(data map[string]any, at time.Time, s *core.Snapshot) {
 		}
 	}
 	if t, _ := c["targetStateOfCharge"].(map[string]any); t != nil {
-		if target, ok := number(t["standard"]); ok {
+		// core has one target: the one of the charge in progress, the DC's (quick)
+		// during a fast charge, the AC's (standard) the rest of the time.
+		key := "standard"
+		if status == statusFast {
+			key = "quick"
+		}
+		if target, ok := number(t[key]); ok {
 			s.TargetSoC = core.Some(target, at)
 		}
-		// The DC target (quick) stays in the raw response: core has one target.
 	}
 	// Assumption (ADR 0049 §5), a single observation behind it: batteryCapacity is in
 	// kilojoules (256,320 for 71.2 kWh). Read as the capacity the car states, never in

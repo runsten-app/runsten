@@ -35,7 +35,7 @@ func TestNormalizeBatteries(t *testing.T) {
 	check(t, "the charge", s.Covers&core.FieldCharging != 0 && s.Charging.V == core.ChargingActive && s.Charging.At.Equal(at))
 	check(t, "the charge's type", s.Covers&core.FieldChargeType != 0 && s.ChargeType.V == core.DC)
 	check(t, "the state of charge", s.Covers&core.FieldSoC != 0 && s.SoC.V == 42.5 && s.SoC.At.Equal(at))
-	check(t, "the target", s.Covers&core.FieldTargetSoC != 0 && s.TargetSoC.V == 80)
+	check(t, "the target (a fast charge's, quick)", s.Covers&core.FieldTargetSoC != 0 && s.TargetSoC.V == 100)
 	check(t, "the capacity (kJ, assumption)", s.Covers&core.FieldCapacity != 0 && s.CapacityKWh.V == 256320.0/3600)
 	check(t, "the time left (to the target, assumption)",
 		s.Covers&core.FieldChargeDetails != 0 && s.TimeLeft.V.Duration == 54*time.Minute && s.TimeLeft.V.To == core.ToTarget)

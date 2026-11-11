@@ -99,13 +99,19 @@ func TestPleosDay(t *testing.T) {
 	if len(v.trips) != 2 {
 		t.Fatalf("%d trips derived, want the two drives of the day:\n%+v", len(v.trips), v.trips)
 	}
-	for i, want := range []struct{ from, to core.Position }{{pleosHome, pleosWork}, {pleosWork, pleosHome}} {
+	// The drives of the scenario: 07:00 to work, 16:20 back.
+	for i, want := range []struct {
+		from, to core.Position
+		start    time.Duration
+	}{{pleosHome, pleosWork, 7 * time.Hour}, {pleosWork, pleosHome, 16*time.Hour + 20*time.Minute}} {
 		trip := v.trips[i]
 		if !near(trip.DistanceKm, 8, 0.5) || !at(trip.From, want.from.Lat, want.from.Lon) ||
 			!at(trip.To, want.to.Lat, want.to.Lon) {
 			t.Errorf("the drive %d: %+v", i+1, trip)
 		}
-		within(trip.Start.After, day.Add(7*time.Hour), day.Add(9*time.Hour))
+		if !within(trip.Start.After, day.Add(want.start-30*time.Minute), day.Add(want.start+30*time.Minute)) {
+			t.Errorf("the drive %d starts after %v, want about %v", i+1, trip.Start.After, day.Add(want.start))
+		}
 	}
 	if len(v.charges) != 1 {
 		t.Fatalf("%d charges derived, want the AC charge of the evening:\n%+v", len(v.charges), v.charges)

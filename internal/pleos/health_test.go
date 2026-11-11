@@ -123,6 +123,25 @@ func TestNormalizeHealthWarnings(t *testing.T) {
 			t.Errorf("%s: %v", w, warn)
 		}
 	}
+	// A list received without pressures still tells of every wheel, and of both low
+	// beams: an empty one ends the warnings a previous one told.
+	h, err = NormalizeHealth(Status, status(`"warnings":[]`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if h.Covers&core.HealthTyres == 0 {
+		t.Fatalf("an empty list covers no tyre: %+v", h)
+	}
+	for _, w := range core.Wheels() {
+		if warn := h.Tyres[w].Warning; !warn.OK || warn.V != core.TyreOK {
+			t.Errorf("%s without a pressure: %v", w, warn)
+		}
+	}
+	for _, c := range []core.Check{core.CheckLightLowBeamLeft, core.CheckLightLowBeamRight} {
+		if v, ok := h.Checks[c]; !ok || !v.OK || v.V {
+			t.Errorf("%s after an empty list: %+v", c, v)
+		}
+	}
 	// A missing list tells nothing: the current warnings keep their value.
 	h, err = NormalizeHealth(Status, status(`"tire":[{"left":40,"right":40,"unit":"psi"}]`))
 	if err != nil {
@@ -137,9 +156,10 @@ func TestNormalizeHealthWarnings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The known checks stay none, and none warns.
-	if len(h.Checks) != len(checkWords) {
-		t.Errorf("the list made %d checks, want the %d known ones", len(h.Checks), len(checkWords))
+	// The known checks stay none, and none warns: one per word, and the right low
+	// beam frontHeadLamp tells with the left.
+	if want := len(checkWords) + 1; len(h.Checks) != want {
+		t.Errorf("the list made %d checks, want the %d known ones", len(h.Checks), want)
 	}
 	for c, v := range h.Checks {
 		if v.OK && v.V {

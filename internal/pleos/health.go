@@ -76,7 +76,9 @@ func NormalizeHealth(ep Endpoint, raw []byte) (core.Health, error) {
 		"tirePressureLow": {core.FrontLeft, core.FrontRight, core.RearLeft, core.RearRight},
 	}
 	if warned {
-		for w := range tyres {
+		// Every wheel, with a pressure or not: a list received without a wheel's word
+		// ends the warning a previous one told of it.
+		for _, w := range []core.Wheel{core.FrontLeft, core.FrontRight, core.RearLeft, core.RearRight} {
 			t := tyres[w]
 			t.Warning = core.Some(core.TyreOK, at)
 			tyres[w] = t
@@ -103,6 +105,8 @@ func NormalizeHealth(ep Endpoint, raw []byte) (core.Health, error) {
 		for _, c := range checkWords {
 			h.Checks[c.check] = core.Some(false, at)
 		}
+		// frontHeadLamp tells of both low beams: both end with it.
+		h.Checks[core.CheckLightLowBeamRight] = core.Some(false, at)
 		for _, word := range v.Data.Warnings {
 			for _, c := range checkWords {
 				if c.word != word {
