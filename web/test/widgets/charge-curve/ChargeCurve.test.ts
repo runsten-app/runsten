@@ -95,7 +95,9 @@ describe('ChargeCurve', () => {
     ).toEqual(['7.4 kW', '47%'])
   })
 
-  it('draws the readings of the fixtures, the line broken between their runs', async () => {
+  // The charge started between 18:20, not charging, and 18:30, charging: the line breaks
+  // there rather than draw a ramp nobody read, and the hint says the start was not read.
+  it('draws the readings of the fixtures, the line broken between their runs and at the start', async () => {
     mocks.fetchSeries.mockResolvedValue(series)
     const w = await mounted()
     const [power] = w.findComponent({ name: 'ChartFrame' }).props('series') as Series[]
@@ -104,9 +106,25 @@ describe('ChargeCurve', () => {
       null,
       0,
       0,
+      null,
       7.4,
       7.35,
     ])
+    expect(plain(w.find('.hint').text())).toMatch(
+      /The start was not read, from .+ to .+: a parked vehicle/,
+    )
+  })
+
+  it('says nothing of the start when it was read at the charging pace', async () => {
+    mocks.fetchCharge.mockResolvedValue({
+      ...charge,
+      start: { after: '2026-09-28T18:29:00Z', before: '2026-09-28T18:30:00Z' },
+    })
+    mocks.fetchSeries.mockResolvedValue(charging(6))
+    const w = await mounted()
+    expect(plain(w.find('.hint').text())).toBe(
+      'As the vehicle gave them during the charge; the line breaks where nothing was read.',
+    )
   })
 
   it('says how few readings there are rather than draw them', async () => {

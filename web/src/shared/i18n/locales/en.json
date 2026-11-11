@@ -991,6 +991,7 @@
     "soc": "State of charge",
     "time": "Time",
     "hint": "As the vehicle gave them during the charge; the line breaks where nothing was read.",
+    "unreadStart": "The start was not read, from {from} to {to}: a parked vehicle is read less often, and a fast charge peaks in its first minutes.",
     "summary": "Up to {peak}; state of charge from {from} to {to}.",
     "few": "No reading of the power during this charge: too few to draw its curve. | One reading of the power during this charge: too few to draw its curve. | {n} readings of the power during this charge: too few to draw its curve."
   },

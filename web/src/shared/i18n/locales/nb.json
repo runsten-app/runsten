@@ -991,6 +991,7 @@
     "soc": "Ladenivå",
     "time": "Tid",
     "hint": "Slik bilen oppga dem under ladingen; linjen brytes der ingenting ble lest.",
+    "unreadStart": "Starten ble ikke lest, fra {from} til {to}: en parkert bil leses sjeldnere, og en hurtiglading når toppen i de første minuttene.",
     "summary": "Opptil {peak}; ladenivå fra {from} til {to}.",
     "few": "Ingen avlesning av effekten under denne ladingen: for få til å tegne kurven. | Én avlesning av effekten under denne ladingen: for få til å tegne kurven. | {n} avlesninger av effekten under denne ladingen: for få til å tegne kurven."
   },

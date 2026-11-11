@@ -19,6 +19,19 @@ export function seriesLine(
   return out
 }
 
+// splitRuns breaks the runs at an instant: the readings before it and those from it on
+// fall in two runs, so that no line joins them. A charge's curve breaks so at its first
+// reading charging: the reading before is the vehicle not yet charging, and a line from
+// it would draw a ramp that was never read.
+export function splitRuns(runs: SeriesRun[], at: string): SeriesRun[] {
+  const cut = Date.parse(at)
+  return runs.flatMap((run) => {
+    const i = run.readings.findIndex((r) => Date.parse(r.at) >= cut)
+    if (i <= 0) return [run]
+    return [{ readings: run.readings.slice(0, i) }, { readings: run.readings.slice(i) }]
+  })
+}
+
 // readingsOf lists the readings of every run, oldest first.
 export function readingsOf(runs: SeriesRun[]): SeriesReading[] {
   return runs.flatMap((r) => r.readings)

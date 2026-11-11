@@ -991,6 +991,7 @@
     "soc": "Laadniveau",
     "time": "Tijd",
     "hint": "Zoals het voertuig ze tijdens het laden doorgaf; de lijn wordt onderbroken waar niets is uitgelezen.",
+    "unreadStart": "Het begin is niet uitgelezen, van {from} tot {to}: een geparkeerd voertuig wordt minder vaak uitgelezen, en een snellaadsessie piekt in de eerste minuten.",
     "summary": "Tot {peak}; laadniveau van {from} tot {to}.",
     "few": "Geen uitlezing van het vermogen tijdens deze laadsessie: te weinig om de curve te tekenen. | Eén uitlezing van het vermogen tijdens deze laadsessie: te weinig om de curve te tekenen. | {n} uitlezingen van het vermogen tijdens deze laadsessie: te weinig om de curve te tekenen."
   },

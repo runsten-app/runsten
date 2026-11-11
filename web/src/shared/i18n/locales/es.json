@@ -991,6 +991,7 @@
     "soc": "Nivel de carga",
     "time": "Tiempo",
     "hint": "Tal como los indicó el vehículo durante la carga; la línea se interrumpe donde no se leyó nada.",
+    "unreadStart": "El inicio no se leyó, de {from} a {to}: un vehículo aparcado se lee con menos frecuencia, y una carga rápida alcanza su pico en los primeros minutos.",
     "summary": "Hasta {peak}; nivel de carga de {from} a {to}.",
     "few": "Ninguna lectura de la potencia durante esta carga: son muy pocas para trazar su curva. | Una sola lectura de la potencia durante esta carga: es muy poca para trazar su curva. | {n} lecturas de la potencia durante esta carga: son muy pocas para trazar su curva."
   },
