@@ -20,7 +20,7 @@ A Polestar read through the Data Portal tells its model year (from its VIN), but
 
 A Tesla tells its model, its model year (from its VIN) and its trim badge, but not its battery's capacity: it is recognized when exactly one variant fits its model, year and badge, a variant that lists no badge always fitting. Otherwise, choose yours among those that fit: until you do, its trips and charges have no energy ([Your Tesla](./tesla.md#its-variant)).
 
-A BMW or a MINI, read through BMW CarData, tells its model's name (i4 eDrive40: its family, i4, and its trim, eDrive40), its powertrain, its date of construction and its battery's gross capacity: its model year is taken from that date, the next one for a car built from July on, when BMW's model year changes, and it is recognized from its family, its model year and its capacity ([Your BMW or Mini](./bmw.md)).
+A BMW or a MINI, read through BMW CarData, tells its model's name (i4 eDrive40: its family, i4, and its trim, eDrive40), its powertrain, its date of construction and a capacity of its battery: it is recognized from its family, its model year and that capacity. Two readings are assumed until a real car confirms them: the model year is the year of construction, or the next one for a car built from July on, when BMW's model year changes; and the capacity is the gross one ([Your BMW or Mini](./bmw.md)).
 
 A Hyundai, a Kia or a Genesis, read through Pleos, tells its sales name (its family: IONIQ 5, EV3), its powertrain, its model year (from its VIN) and a capacity of its battery: it is recognized from them. How Pleos counts that capacity is assumed until a real car confirms it ([Your Hyundai, Kia or Genesis](./hyundai-kia.md)).
 
