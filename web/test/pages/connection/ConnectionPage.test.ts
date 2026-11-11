@@ -870,6 +870,34 @@ describe('ConnectionPage', () => {
       expect(panel.find('.pleos-off').exists()).toBe(false)
     })
 
+    it('has no tab while its flag is off for an account without a key nor a car of it', async () => {
+      // What the API answers of an account without a key: the three brands, each null.
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        pleos: { hyundai: null, kia: null, genesis: null },
+      })
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).not.toContain(
+        'Hyundai · Kia · Genesis Beta',
+      )
+      expect(w.find('#connection-panel-pleos').exists()).toBe(false)
+    })
+
+    it('keeps its tab while its flag is off for an account that has a key of it', async () => {
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        pleos: {
+          hyundai: null,
+          kia: { last4: '-dev', set_at: '2026-09-28T05:00:00Z', refused_at: null },
+          genesis: null,
+        },
+      })
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toContain(
+        'Hyundai · Kia · Genesis Beta',
+      )
+    })
+
     it('keeps its tab while its flag is off for an account that has a car of it, which stays read from before', async () => {
       mocks.fetchVehicles.mockResolvedValue([kiaCar()])
       const w = await page({ vehicle: 'kia-1' })

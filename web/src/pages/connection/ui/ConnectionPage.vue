@@ -155,6 +155,9 @@ const ownerTeslas = computed(() =>
 )
 const bmwOn = useFlag('source.bmw')
 const pleosOn = useFlag('source.pleos')
+// The API answers the three brands whatever the flag, each null without a key: a key
+// given, not the object, keeps the tab while the flag is off.
+const pleosKey = computed(() => Object.values(settings.value?.pleos ?? {}).some((k) => k !== null))
 const polestarIdOn = useFlag('source.polestar-id')
 const polestarIdShown = computed(
   () =>
@@ -171,7 +174,7 @@ const shown = computed(() =>
         : b === 'tesla'
           ? teslaOn.value || ofBrand(b).length
           : b === 'pleos'
-            ? pleosOn.value || !!settings.value?.pleos || ofBrand(b).length
+            ? pleosOn.value || pleosKey.value || ofBrand(b).length
             : b !== 'bmw' || bmwOn.value || !!settings.value?.bmw || ofBrand(b).length),
   ),
 )

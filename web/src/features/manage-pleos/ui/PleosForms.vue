@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ConnectionSettings, PleosBrand } from '@/entities/connection'
 import { pleosBrands } from '@/entities/connection'
@@ -11,11 +12,11 @@ defineProps<{ connection: ConnectionSettings }>()
 const { t } = useI18n()
 
 // The brands, written out: an interpolated key is invisible to the unused-key rule.
-const names: Record<PleosBrand, string> = {
+const names = computed<Record<PleosBrand, string>>(() => ({
   hyundai: t('pleos.brand.hyundai'),
   kia: t('pleos.brand.kia'),
   genesis: t('pleos.brand.genesis'),
-}
+}))
 </script>
 
 <template>
