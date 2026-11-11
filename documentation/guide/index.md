@@ -4,7 +4,7 @@ description: "The web interface of Runsten: the supported cars, the app on a pho
 
 # The web interface
 
-The web interface works on a phone as well as a desktop, in English, French, German, Italian, Dutch, Norwegian, Spanish and Swedish, light or dark. Each vehicle has five tabs: **State**, **[Health](./health.md)**, **Trips**, **Charges** and **Stats**. The [battery](./battery.md)'s estimated capacity is part of its health.
+The web interface works on a phone as well as a desktop, in English, French, German, Italian, Dutch, Norwegian, Spanish and Swedish, light or dark. Each vehicle has five tabs: **State**, **[Health](./health.md)**, **Trips**, **Charges** and **Stats**. The [battery](./battery.md)'s estimated capacity is part of its health. An account with several vehicles opens on the **[Garage](./garage.md)**, which compares them.
 
 Runsten reads your car from its manufacturer:
 
@@ -62,7 +62,7 @@ The key's quota is yours alone: 10,000 calls a day for each Volvo API, about sev
 
 ## Settings and preferences
 
-The bar names the vehicle shown, on every page. Its menu lists your other vehicles, each opened on the same tab, with the same period, and leads to the vehicle's settings. The menu under your name holds the account's settings, the Connection page, your preferences and the keyboard shortcuts (press **?** to list them).
+The bar names the vehicle shown, on every page. Its menu lists your other vehicles, each opened on the same tab, with the same period, and leads to the vehicle's settings; with several vehicles, **All vehicles** comes first and leads to the [Garage](./garage.md), which the bar then names. The menu under your name holds the account's settings, the Connection page, your preferences and the keyboard shortcuts (press **?** to list them).
 
 - **Settings** (in the menu under your name) are the account's, in four areas: **Costs**, the currency, the places and their tariffs, and the costs left without a charge ([Places, tariffs and costs](./costs.md)); **Vehicles**, a way to each vehicle's own settings; **Integrations**, the access tokens and MQTT ([Home Assistant and MQTT](./mqtt.md)); **Account**, the download of your data. Under **Account**, **About Runsten** shows the release the instance runs, and a newer one when the instance checks ([Updating](../self-hosting/updating.md#knowing-a-release-is-out)).
 - **A vehicle's settings** (the menu of its name in the bar), in two parts: **Vehicle**, its model and onboard charger ([Vehicle models](./vehicle-models.md)) and, at the bottom, **Delete this vehicle**, for a car sold or no longer followed: its readings, trips, charges, imported history and the costs entered for them are deleted for good, after a confirmation. Download your data in the settings first to keep a copy. Its connection stays and keeps reading your other vehicles; a new connection that lists the car again adds it as a new vehicle, without that history. **Imported history**: what was imported from other apps ([Importing your history](./importing.md)).
