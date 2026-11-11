@@ -898,6 +898,16 @@ describe('ConnectionPage', () => {
       expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toContain(
         'Hyundai · Kia · Genesis Beta',
       )
+      // The key stays told and can be removed; no key is taken, of any brand.
+      await w.find('#connection-tab-pleos').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('#connection-panel-pleos .pleos-off').exists()).toBe(true),
+      )
+      const panel = w.find('#connection-panel-pleos')
+      expect(panel.findAll('h3').map((h) => plain(h.text()))).toEqual(['Kia'])
+      expect(panel.find('.delete-credential').exists()).toBe(true)
+      expect(panel.find('.toggle').exists()).toBe(false)
+      expect(panel.find('.credential-form').exists()).toBe(false)
     })
 
     it('keeps its tab while its flag is off for an account that has a car of it, which stays read from before', async () => {

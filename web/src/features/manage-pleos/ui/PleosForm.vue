@@ -25,7 +25,9 @@ import {
 // four characters of its client ID, and when it was given — the API tells no expiry,
 // and a key it refuses asks for another. Without one, the form is open; with one, it is
 // replaced behind a button.
-const props = defineProps<{ connection: ConnectionSettings; brand: PleosBrand }>()
+// off: the source is turned off for the account (the flag). A key given before stays
+// told and can be removed; none is taken.
+const props = defineProps<{ connection: ConnectionSettings; brand: PleosBrand; off?: boolean }>()
 const { t } = useI18n()
 const f = useFormat()
 const now = useNow()
@@ -33,7 +35,7 @@ const { setCredential, isPending, error, reset } = useSetPleosCredential(props.b
 
 const credential = computed((): PleosKey | null => props.connection.pleos?.[props.brand] ?? null)
 const opened = ref(false)
-const open = computed(() => opened.value || !credential.value)
+const open = computed(() => !props.off && (opened.value || !credential.value))
 const empty = (): Draft => ({ client_id: '', client_secret: '' })
 const draft = reactive<Draft>(empty())
 const sent = ref(false)
@@ -221,7 +223,7 @@ const brandName = computed(() => {
 
     <div v-if="!open || credential" class="d-flex flex-wrap ga-2 mb-4">
       <v-btn
-        v-if="!open"
+        v-if="!open && !off"
         :id="toggleId"
         :prepend-icon="mdiKeyVariant"
         variant="tonal"
@@ -237,6 +239,7 @@ const brandName = computed(() => {
         variant="text"
         color="error"
         class="delete-credential"
+        :disabled="isPending"
         @click="askDelete"
       >
         {{ t('pleos.delete.button') }}
@@ -324,7 +327,7 @@ const brandName = computed(() => {
         >
           {{ t('pleos.save') }}
         </v-btn>
-        <v-btn v-if="opened" variant="text" class="cancel" @click="close()">
+        <v-btn v-if="opened && credential" variant="text" class="cancel" @click="close()">
           {{ t('pleos.cancel') }}
         </v-btn>
       </div>

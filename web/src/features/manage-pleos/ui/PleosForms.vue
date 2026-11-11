@@ -8,7 +8,12 @@ import PleosForm from './PleosForm.vue'
 // PleosForms holds a section per brand of the Pleos Vehicle Data API — Hyundai, Kia,
 // Genesis —, each with the owner's key of its cars: one key per brand, kept apart,
 // told apart and removed apart.
-defineProps<{ connection: ConnectionSettings }>()
+// off: the source is turned off for the account. Only the brands with a key are
+// shown, for it to be removed.
+const props = defineProps<{ connection: ConnectionSettings; off?: boolean }>()
+const shown = computed(() =>
+  pleosBrands.filter((b) => !props.off || props.connection.pleos?.[b] != null),
+)
 const { t } = useI18n()
 
 // The brands, written out: an interpolated key is invisible to the unused-key rule.
@@ -21,7 +26,7 @@ const names = computed<Record<PleosBrand, string>>(() => ({
 
 <template>
   <section
-    v-for="brand of pleosBrands"
+    v-for="brand of shown"
     :key="brand"
     :aria-labelledby="`connection-pleos-${brand}-title`"
     class="mb-8"
@@ -29,6 +34,6 @@ const names = computed<Record<PleosBrand, string>>(() => ({
     <h3 :id="`connection-pleos-${brand}-title`" class="text-title-small mb-3">
       {{ names[brand] }}
     </h3>
-    <PleosForm :connection :brand />
+    <PleosForm :connection :brand :off />
   </section>
 </template>

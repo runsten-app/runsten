@@ -440,8 +440,11 @@ const alerted = computed(
                 {{ t('connection.polestar.beta') }}
               </v-chip>
             </h2>
-            <PleosForms v-if="pleosOn" :connection="settings" />
-            <p v-else class="text-body-medium pleos-off">{{ t('connection.pleos.off') }}</p>
+            <p v-if="!pleosOn" class="text-body-medium pleos-off">
+              {{ t('connection.pleos.off') }}
+            </p>
+            <!-- Off, a key given before stays told, and can be removed. -->
+            <PleosForms v-if="pleosOn || pleosKey" :connection="settings" :off="!pleosOn" />
           </section>
           <section v-else-if="b === 'bmw'" class="mb-8" aria-labelledby="connection-bmw-title">
             <h2 id="connection-bmw-title" class="text-title-large mb-3">

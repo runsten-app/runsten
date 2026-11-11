@@ -29,5 +29,5 @@ export type PleosKeys = components['schemas']['PleosKeys']
 export type PleosKey = components['schemas']['PleosKey']
 export type PleosCredentialUpdate = components['schemas']['PleosCredentialUpdate']
 // PleosBrand is the brand of a key, in the API's own words.
-export type PleosBrand = 'hyundai' | 'kia' | 'genesis'
+export type PleosBrand = keyof PleosKeys
 export const pleosBrands: PleosBrand[] = ['hyundai', 'kia', 'genesis']
