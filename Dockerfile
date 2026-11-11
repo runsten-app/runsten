@@ -21,7 +21,11 @@ ARG TAGS=""
 # The release built, which the binaries tell (their main.version); dev otherwise.
 ARG VERSION=dev
 ARG TARGETOS TARGETARCH
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -tags "${TAGS}" -o /out/app "./cmd/${CMD}"
+# Go's build cache is the builder's, kept from one image to the next: the binaries share
+# most of their packages, compiled once instead of once per image. It is keyed by what is
+# compiled (sources, flags, tags, platform): nothing stale comes out of it.
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -tags "${TAGS}" -o /out/app "./cmd/${CMD}"
 # The directory runsten-api keeps the export archives in: a volume mounted there takes
 # its owner, the image's non-root user (the runtime has no shell to create it).
 RUN mkdir -p /out/exports
