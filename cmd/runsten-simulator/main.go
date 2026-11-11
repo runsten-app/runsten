@@ -59,12 +59,13 @@
 //	                        the stream is closed when its ID token expires
 //	SIM_BMW_SEND_EVERY      how often at most a BMW sends a value that changes all along a
 //	                        drive or a charge (default 30s, in simulated time)
-//	SIM_POLESTAR_SEND_EVERY how often at most a Hyundai, Kia or Genesis sends its state
+//	SIM_PLEOS_SEND_EVERY    how often at most a Hyundai, Kia or Genesis sends its state
 //	                        while it drives or charges (default 5m; 0 = only at a
 //	                        change, in simulated time)
-//	SIM_POLESTAR_CLIENT_ID  the Pleos key's client ID, the one of every brand (default
-//	                        runsten-dev); its secret too
-//	SIM_POLESTAR_TOKEN_TTL  lifetime of the Pleos tokens issued (default 1h, read in
+//	SIM_PLEOS_CLIENT_ID     the Pleos key's client ID, the one of every brand (default
+//	                        runsten-dev)
+//	SIM_PLEOS_CLIENT_SECRET its secret (default the development key's)
+//	SIM_PLEOS_TOKEN_TTL     lifetime of the Pleos tokens issued (default 1h, read in
 //	                        their JWT)
 //	SIM_POLESTAR_ID_TOKEN_TTL  lifetime of the Polestar ID's access tokens issued (default
 //	                        300s, the real one's)
@@ -211,7 +212,10 @@ func run() error {
 	mux.Handle(aximoteapi.Prefix, aximoteapi.NewHandler(aximoteapi.DevToken, aximoteapi.Default(clock.Real{}.Now(), vins[0])))
 	psLimits := cfg.polestarLimits()
 	mux.Handle(polestarapi.Prefix, polestarapi.NewHandler(polestar, clk, cfg.polestar, psLimits, cfg.polestarBehavior))
-	mux.Handle(pleosapi.Prefix, pleosapi.NewHandler(pleos, clk, cfg.pleos, cfg.pleosBehavior))
+	pleosHandler := pleosapi.NewHandler(pleos, clk, cfg.pleos, cfg.pleosBehavior)
+	for _, prefix := range []string{pleosapi.Prefix, pleosapi.ControlPrefix} {
+		mux.Handle(prefix, pleosHandler)
+	}
 	th := teslaapi.NewHandler(tesla, clk, cfg.tesla)
 	for _, prefix := range []string{teslaapi.APIPrefix, teslaapi.AuthPrefix, teslaapi.ControlPrefix} {
 		mux.Handle(prefix, th)

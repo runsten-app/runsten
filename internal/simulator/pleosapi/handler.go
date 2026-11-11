@@ -101,11 +101,11 @@ type Handler struct {
 	mux      *http.ServeMux
 
 	mu        sync.Mutex
-	refused   bool            // the key revoked: /auth answers 40404
-	live      *token          // the one token living for the key
-	withdrawn map[string]bool // the VINs whose consent is withdrawn
-	noData    map[string]bool // the endpoints with no data; "": every one of them
-	rateUntil time.Time       // calls answered 429 until, with Retry-After
+	refused   bool              // the key revoked: /auth answers 40404
+	live      map[string]*token // the one token living for the key of each brand
+	withdrawn map[string]bool   // the VINs whose consent is withdrawn
+	noData    map[string]bool   // the endpoints with no data; "": every one of them
+	rateUntil time.Time         // calls answered 429 until, with Retry-After
 }
 
 // NewHandler creates the simulated API for the vehicles srcs, read with the key cred and
@@ -114,7 +114,7 @@ type Handler struct {
 func NewHandler(srcs []Source, clk clock.Clock, cred Credential, behavior Behavior) *Handler {
 	h := &Handler{
 		clk: clk, behavior: behavior, srcs: srcs, byVIN: make(map[string]Source, len(srcs)),
-		cred: cred, withdrawn: map[string]bool{}, noData: map[string]bool{},
+		cred: cred, live: map[string]*token{}, withdrawn: map[string]bool{}, noData: map[string]bool{},
 	}
 	for _, src := range srcs {
 		if _, dup := h.byVIN[src.VIN()]; dup {
@@ -169,9 +169,11 @@ func (h *Handler) personalToken(w http.ResponseWriter, r *http.Request) {
 		writeError(w, now, http.StatusNotFound, "40404", "User or key not found")
 	default:
 		until := now.Add(h.behavior.TokenTTL)
-		h.live = &token{value: jwt(brand, until), brand: brand, until: until}
+		// One key per brand on the real API: a brand's token leaves the others'.
+		tok := &token{value: jwt(brand, until), brand: brand, until: until}
+		h.live[strings.ToLower(brand)] = tok
 		writeJSON(w, http.StatusOK, map[string]any{
-			"data": map[string]any{"accessToken": h.live.value},
+			"data": map[string]any{"accessToken": tok.value},
 			"meta": meta(now),
 		})
 	}
@@ -182,12 +184,11 @@ func (h *Handler) personalToken(w http.ResponseWriter, r *http.Request) {
 // data endpoints' alone.
 func (h *Handler) consent(w http.ResponseWriter, r *http.Request) {
 	now := h.clk.Now()
-	if h.check(w, r, "", "", now) == nil {
+	tok := h.check(w, r, "", "", now)
+	if tok == nil {
 		return
 	}
-	h.mu.Lock()
-	brand := h.live.brand
-	h.mu.Unlock()
+	brand := tok.brand
 	vehicles := []map[string]any{}
 	for _, src := range h.srcs {
 		if src.Brand() != brand {
@@ -232,6 +233,9 @@ func (h *Handler) endpoint(name string) http.HandlerFunc {
 // answers its refusal: the 429 first, then the token, its brand, the vehicle, and the
 // faults set on demand. It returns the token the call reads with.
 func (h *Handler) check(w http.ResponseWriter, r *http.Request, vin, ep string, now time.Time) *token {
+	tok, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	if !h.rateUntil.IsZero() && now.Before(h.rateUntil) {
 		// No 429 is documented: its body is assumed, its header what its clients
 		// honour.
@@ -239,16 +243,19 @@ func (h *Handler) check(w http.ResponseWriter, r *http.Request, vin, ep string, 
 		writeError(w, now, http.StatusTooManyRequests, "429", "Too Many Requests")
 		return nil
 	}
-	tok, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	live := h.live
+	// The token among those living, one per brand.
+	var live *token
+	for _, t := range h.live {
+		if t.value == tok {
+			live = t
+		}
+	}
 	switch {
 	case tok == "":
 		// No Authorization header: the documented answer, its code the doc's.
 		writeError(w, now, http.StatusBadRequest, "40002", "Missing Authorization Header")
 		return nil
-	case live == nil || tok != live.value:
+	case live == nil:
 		// A token asked after this one has taken its place, or one never issued: the
 		// 403 observed on the real API, its code a number (the research §1.8).
 		writeError(w, now, http.StatusForbidden, 403, "Forbidden")

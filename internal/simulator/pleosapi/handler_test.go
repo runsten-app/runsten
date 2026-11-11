@@ -225,6 +225,11 @@ func TestOneLiveTokenPerKey(t *testing.T) {
 	if status, _, _ := s.get(t, second, Kia, Prefix+"v1/vehicles/consent"); status != http.StatusOK {
 		t.Errorf("the new token: HTTP %d", status)
 	}
+	// A key per brand: a Hyundai token asked for leaves the Kia one reading.
+	_ = s.token(t, Hyundai)
+	if status, _, _ := s.get(t, second, Kia, Prefix+"v1/vehicles/consent"); status != http.StatusOK {
+		t.Errorf("the kia token after a hyundai one: HTTP %d", status)
+	}
 	// The token reads its own brand only (assumption: the forbidden of the doc's
 	// table, the answer of another brand not being published).
 	if status, _, _ := s.get(t, second, Hyundai, Prefix+"v1/vehicles/consent"); status != http.StatusBadRequest {
