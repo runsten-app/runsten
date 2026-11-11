@@ -193,14 +193,14 @@ func Derive(records []Record, from Cursor, p Params, net NetCapacity) Result {
 	}
 	for i := range d.res.Trips {
 		t := &d.res.Trips[i]
-		t.Sources = sourcesIn(ps, t.Start.Before, later(t.End.Before, t.DetectedAt))
+		t.Sources = sourcesIn(ps, earlier(t.Start.Before, t.DetectedAt), later(t.End.Before, t.DetectedAt))
 		if v := outsideTemp(ps, t.DetectedAt, t.End.Before); v.OK && !t.Reconstructed {
 			t.OutsideTempC = v
 		}
 	}
 	for i := range d.res.Charges {
 		c := &d.res.Charges[i]
-		c.Sources = sourcesIn(ps, c.Start.Before, later(c.End.Before, c.DetectedAt))
+		c.Sources = sourcesIn(ps, earlier(c.Start.Before, c.DetectedAt), later(c.End.Before, c.DetectedAt))
 		if !c.Reconstructed {
 			c.MaxCurrentA, c.Phases = chargeCurrent(ps, c.Start.Before, c.End.Before)
 			c.OutsideTempC = outsideTemp(ps, c.DetectedAt, c.End.Before)
@@ -224,10 +224,11 @@ func (d *detector) expireResumable(p point) {
 // sourcesIn returns the sources of the readings within [from, to], sorted: those of an
 // event from its start (its first reading seen running or charging, or the one that
 // revealed it) to its end. Never before: those readings come after the cursor's
-// settled time, which an incremental derivation replays as a rebuild does. The end is
-// the later of End.Before and DetectedAt: the vehicle's timestamps may narrow a
-// reconstructed event's bounds to before the reading that revealed it, which leaves
-// no reading within them.
+// settled time, which an incremental derivation replays as a rebuild does. The window
+// always holds the reading that revealed the event, at DetectedAt: the vehicle's
+// timestamps may narrow a reconstructed event's bounds to before it, and an event that
+// went on moves them after it, either way to an instant at which no reading may have
+// been fetched. An event always has a source: the store refuses one without.
 func sourcesIn(ps []point, from, to time.Time) []string {
 	var out []string
 	for i := sort.Search(len(ps), func(i int) bool { return !ps[i].at.Before(from) }); i < len(ps) && !ps[i].at.After(to); i++ {
