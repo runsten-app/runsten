@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"log/slog"
 	"slices"
 	"strings"
@@ -35,6 +36,7 @@ type fakeSource struct {
 	answer   func(ep Endpoint, login int, at time.Time) ([]byte, error)
 	upload   func(ep Endpoint, raw []byte) (Upload, error) // nil: nothing told
 	local    Endpoint                                      // read without a call (EndpointSpec.Local)
+	watch    bool                                          // the battery watched (EndpointSpec.Watch)
 	logins   int
 	calls    map[Endpoint][]time.Time
 }
@@ -60,6 +62,7 @@ func (f *fakeSource) Spec() SourceSpec {
 	}
 	for i := range spec.Endpoints {
 		spec.Endpoints[i].Local = spec.Endpoints[i].Endpoint == f.local
+		spec.Endpoints[i].Watch = f.watch && spec.Endpoints[i].Endpoint == psBattery
 	}
 	return spec
 }
@@ -222,6 +225,71 @@ func TestSourcePaces(t *testing.T) {
 	}
 	if src.logins != 4 {
 		t.Errorf("%d logins in 4 hours, want 4: one an hour", src.logins)
+	}
+}
+
+// TestSourceWatch: parked, a watched endpoint is read every active interval while the
+// budget is ample; as calls run short, it falls back to its parked pace, and the other
+// endpoints are still read at theirs.
+func TestSourceWatch(t *testing.T) {
+	for _, tc := range []struct {
+		name                   string
+		daily                  int
+		minBattery, maxBattery int // battery calls in 4 hours
+	}{
+		{"ample", 10_000, 235, 241},
+		{"short", 1_000, 25, 200},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+			src := newFakeSource(clk)
+			src.watch, src.daily = true, tc.daily
+			st := &sourceStore{memStore: memStore{targets: []Target{sourceTarget()}}}
+			c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+			c.AddSource(src, st)
+			t0 := clk.Now()
+			for clk.Now().Before(t0.Add(4 * time.Hour)) {
+				poll(t, c)
+				clk.Advance(15 * time.Second)
+			}
+			if n := len(src.calls[psBattery]); n < tc.minBattery || n > tc.maxBattery {
+				t.Errorf("battery read %d times in 4 hours, want %d to %d", n, tc.minBattery, tc.maxBattery)
+			}
+			if n := len(src.calls[psAvailability]); n != 24 {
+				t.Errorf("availability read %d times in 4 hours, want 24: every 10 minutes", n)
+			}
+		})
+	}
+}
+
+// TestSourceWatchFleet: six cars parked on one credential spend more than its budget
+// with their batteries watched; the batteries slow down, and every car's availability is
+// still read every parked interval.
+func TestSourceWatchFleet(t *testing.T) {
+	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+	src := newFakeSource(clk)
+	src.watch = true
+	var targets []Target
+	for i := range 6 {
+		tg := sourceTarget()
+		tg.VehicleID, tg.VIN = fmt.Sprintf("p%d", i), fmt.Sprintf("LPSVSEDE5RL00000%d", i)
+		targets = append(targets, tg)
+	}
+	st := &sourceStore{memStore: memStore{targets: targets}}
+	c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+	c.AddSource(src, st)
+	t0 := clk.Now()
+	for clk.Now().Before(t0.Add(12 * time.Hour)) {
+		poll(t, c)
+		clk.Advance(15 * time.Second)
+	}
+	// 6 cars × 12 hours, every 10 minutes: 432 availability reads, a minute each: 4,320
+	// battery reads.
+	if n := len(src.calls[psAvailability]); n < 430 {
+		t.Errorf("availability read %d times, want 432: every car every 10 minutes", n)
+	}
+	if n := len(src.calls[psBattery]); n >= 4_000 || n < 432 {
+		t.Errorf("battery read %d times, want fewer than every minute, no fewer than every 10", n)
 	}
 }
 

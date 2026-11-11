@@ -991,6 +991,7 @@
     "soc": "Niveau de charge",
     "time": "Heure",
     "hint": "Telles que le véhicule les a données pendant la recharge ; la ligne s'interrompt là où rien n'a été lu.",
+    "unreadStart": "Le début n'a pas été lu, de {from} à {to} : un véhicule garé est lu moins souvent, et une recharge rapide atteint son pic dans ses premières minutes.",
     "summary": "Jusqu'à {peak} ; niveau de charge de {from} à {to}.",
     "few": "Aucune lecture de la puissance pendant cette recharge : trop peu pour tracer sa courbe. | Une lecture de la puissance pendant cette recharge : trop peu pour tracer sa courbe. | {n} lectures de la puissance pendant cette recharge : trop peu pour tracer sa courbe."
   },

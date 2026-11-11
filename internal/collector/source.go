@@ -44,6 +44,11 @@ type EndpointSpec struct {
 	// minutes on the way, taken for unchanged until the next push, squeezed each trip
 	// into seconds). A push of the same values, newly timestamped, is saved.
 	Local bool
+	// Watch: parked, it is read at the active pace while the budget of its calls holds at
+	// least half its burst, at its Parked pace otherwise. A change it tells (a charge
+	// starting) is read sooner, never at the cost of the other endpoints or vehicles when
+	// the calls run short.
+	Watch bool
 }
 
 func (s EndpointSpec) pace(m mode) Pace {

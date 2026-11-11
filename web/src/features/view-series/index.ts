@@ -1,2 +1,2 @@
 export { useSeries } from './composables/useSeries'
-export { readingsOf, seriesLine, type TimePoint } from './model/line'
+export { readingsOf, seriesLine, splitRuns, type TimePoint } from './model/line'

@@ -991,6 +991,7 @@
     "soc": "Ladezustand",
     "time": "Zeit",
     "hint": "So, wie das Fahrzeug sie während des Ladevorgangs gemeldet hat; die Linie bricht ab, wo nichts gelesen wurde.",
+    "unreadStart": "Der Beginn wurde nicht gelesen, von {from} bis {to}: Ein geparktes Fahrzeug wird seltener gelesen, und ein Schnellladevorgang erreicht seine Spitze in den ersten Minuten.",
     "summary": "Bis zu {peak}; Ladezustand von {from} bis {to}.",
     "few": "Kein Leistungsmesswert während dieses Ladevorgangs: zu wenige, um die Kurve zu zeichnen. | Ein Leistungsmesswert während dieses Ladevorgangs: zu wenige, um die Kurve zu zeichnen. | {n} Leistungsmesswerte während dieses Ladevorgangs: zu wenige, um die Kurve zu zeichnen."
   },

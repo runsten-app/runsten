@@ -124,6 +124,10 @@ func TestSpec(t *testing.T) {
 			t.Errorf("endpoint %d: %+v", i, ep)
 		}
 	}
+	// Parked, the battery is watched, so that the start of a charge is read sooner.
+	if ep := spec.Endpoints[0]; ep.Endpoint != collector.Endpoint(polestar.Battery) || !ep.Watch || ep.Parked != collector.PaceParked {
+		t.Errorf("battery: %+v", ep)
+	}
 }
 
 func isKind(err error, k collector.ErrorKind) bool {

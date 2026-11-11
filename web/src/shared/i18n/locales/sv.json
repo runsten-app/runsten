@@ -991,6 +991,7 @@
     "soc": "Laddningsnivå",
     "time": "Tid",
     "hint": "Som fordonet angav dem under laddningen; linjen bryts där inget lästes.",
+    "unreadStart": "Början lästes inte, från {from} till {to}: ett parkerat fordon läses mer sällan, och en snabbladdning når sin topp under de första minuterna.",
     "summary": "Upp till {peak}; laddningsnivå från {from} till {to}.",
     "few": "Ingen avläsning av effekten under denna laddning: för få för att rita dess kurva. | En avläsning av effekten under denna laddning: för få för att rita dess kurva. | {n} avläsningar av effekten under denna laddning: för få för att rita dess kurva."
   },

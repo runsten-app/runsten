@@ -991,6 +991,7 @@
     "soc": "Stato di carica",
     "time": "Ora",
     "hint": "Come li ha forniti il veicolo durante la ricarica; la linea si interrompe dove non è stato letto nulla.",
+    "unreadStart": "L'inizio non è stato letto, dalle {from} alle {to}: un veicolo parcheggiato viene letto meno spesso, e una ricarica rapida raggiunge il picco nei primi minuti.",
     "summary": "Fino a {peak}; stato di carica da {from} a {to}.",
     "few": "Nessuna lettura della potenza durante questa ricarica: troppo poche per tracciarne la curva. | Una sola lettura della potenza durante questa ricarica: troppo poche per tracciarne la curva. | {n} letture della potenza durante questa ricarica: troppo poche per tracciarne la curva."
   },

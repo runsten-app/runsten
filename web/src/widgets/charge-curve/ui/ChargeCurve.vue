@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useTheme } from 'vuetify'
 import type { ChargeInProgress } from '@/entities/charge'
 import { useCharge } from '@/features/browse-charges'
-import { readingsOf, seriesLine, useSeries } from '@/features/view-series'
+import { readingsOf, seriesLine, splitRuns, useSeries } from '@/features/view-series'
 import { kilowatts, timeTicks, useFormat } from '@/shared/lib'
 import { ChartFrame, type Series } from '@/shared/ui/chart'
 
@@ -13,7 +13,9 @@ import { ChartFrame, type Series } from '@/shared/ui/chart'
 // every minute gives: with fewer than minReadings of the power, the chart says how many
 // there are rather than draw a line between a few far apart. A reconstructed charge was
 // never seen, and has none. A charge in progress (live) is drawn up to its latest
-// reading, and grows as it is read again.
+// reading, and grows as it is read again. The line breaks at the first reading charging
+// (start.before): a parked vehicle is read less often, so its start may go unread, and
+// the hint then says so.
 const props = defineProps<{ vehicle: string; id: string; live?: ChargeInProgress | null }>()
 const { t } = useI18n()
 const f = useFormat()
@@ -21,6 +23,9 @@ const theme = useTheme()
 const minReadings = 5
 // The API's window, 7 days at most: a longer charge is drawn over its first week.
 const maxWindow = 7 * 24 * 3600_000
+// A start read further apart than this was read at a parked vehicle's pace, not a
+// charging one's (every minute): the hint says that it was not read.
+const unreadStart = 2 * 60_000
 
 const { charge: derived } = useCharge(
   () => props.vehicle,
@@ -30,9 +35,11 @@ const { charge: derived } = useCharge(
 // The bounds of the window: a charge's, or one in progress up to its latest reading.
 const span = computed(() => {
   const l = props.live
-  if (l) return { start: l.start.after, end: l.read_at }
+  if (l) return { start: l.start.after, charging: l.start.before, end: l.read_at }
   const c = derived.value
-  return c && !c.reconstructed ? { start: c.start.after, end: c.end.before } : undefined
+  return c && !c.reconstructed
+    ? { start: c.start.after, charging: c.start.before, end: c.end.before }
+    : undefined
 })
 const window = computed(() => {
   const s = span.value
@@ -48,7 +55,10 @@ function color(name: string): string {
   return typeof c === 'string' ? c : '#000'
 }
 
-const runs = computed(() => series.value?.runs ?? [])
+const runs = computed(() => {
+  const r = series.value?.runs ?? []
+  return span.value ? splitRuns(r, span.value.charging) : r
+})
 const readings = computed(() => readingsOf(runs.value))
 const withPower = computed(() => readings.value.filter((r) => r.power_w !== null))
 const drawn = computed(() => withPower.value.length >= minReadings)
@@ -103,6 +113,15 @@ const summary = computed(() => {
   })
 })
 
+const hint = computed(() => {
+  const s = span.value
+  if (!s || Date.parse(s.charging) - Date.parse(s.start) <= unreadStart)
+    return t('chargeCurve.hint')
+  const from = f.time(s.start, day.value)
+  const to = f.time(s.charging, day.value)
+  return `${t('chargeCurve.hint')} ${t('chargeCurve.unreadStart', { from, to })}`
+})
+
 const extent = computed(() => {
   const w = window.value
   return w ? { min: Date.parse(w.from), max: Date.parse(w.to) } : undefined
@@ -121,7 +140,7 @@ const formatPoint = (v: number) => f.time(iso(v), day.value)
     kind="line"
     :title="t('chargeCurve.title')"
     :summary
-    :hint="t('chargeCurve.hint')"
+    :hint
     :labels="table.labels"
     :series="lines"
     :table-series="table.series"
