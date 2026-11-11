@@ -58,9 +58,8 @@ func All() []Flag {
 		{
 			Name: SourceBMW, Default: true, Web: true,
 			Purpose: "BMW CarData as a source, for the BMWs and the Minis: its connection and its reads. On by default, " +
-				"the API being BMW's own; an instance may turn it off while the source is in beta, not seen yet on a " +
-				"real car.",
-			Remove: "once the source has been checked on real cars and is out of beta",
+				"the API being BMW's own; an instance may turn it off should the source misbehave there.",
+			Remove: "by the release after the one that took the source out of beta",
 		},
 		{
 			Name: PictureTesla, Default: true,

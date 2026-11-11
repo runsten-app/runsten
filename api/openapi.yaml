@@ -4259,7 +4259,7 @@ components:
           description: "The feature flags the web interface reads, evaluated for the session's account: a function shipped off or on, which the instance, or the account, turns over. Made to go: a flag is removed once on everywhere."
           properties:
             source.bmw:
-              description: "BMW CarData as a source, for the BMWs and the Minis: its connection and its reads. On by default, the API being BMW's own; an instance may turn it off while the source is in beta, not seen yet on a real car."
+              description: "BMW CarData as a source, for the BMWs and the Minis: its connection and its reads. On by default, the API being BMW's own; an instance may turn it off should the source misbehave there."
               type: boolean
             source.polestar-id:
               description: "The Polestar ID as a source, for the Polestars the Data Portal does not read (outside the EU/EEA): its connection and its reads. Off by default: the Polestar app's API is unofficial, and many accounts read from one instance's addresses could have them blocked; a self-hosted instance turns it on."

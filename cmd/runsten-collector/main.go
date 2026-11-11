@@ -383,8 +383,7 @@ func run(args []string) error {
 	go func() { defer close(bmwDone); bmwSource.Run(bmwCtx) }()
 	defer func() { stopBMW(); <-bmwDone }()
 	c.AddSource(bmwSource, st)
-	// BMW's too, on by default: an instance may turn it off while it is in beta (ADR 0045
-	// §8).
+	// BMW's too, on by default: an instance may turn it off (ADR 0045 §8).
 	c.SetGate(bmw.Source, func(ctx context.Context, account string) bool {
 		return features.Enabled(ctx, flags.SourceBMW, account)
 	})
