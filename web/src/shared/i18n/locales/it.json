@@ -41,13 +41,15 @@
       "polestar": "una Polestar con una credenziale del Data Portal di Polestar",
       "tesla": "una Tesla con un refresh token del Suo account Tesla",
       "bmw": "una BMW o una MINI con un client ID creato da Lei nel portale MyBMW o MyMINI",
+      "pleos": "una Hyundai, una Kia o una Genesis con una chiave creata da Lei nel Pleos Playground",
       "noVolvo": "Questa istanza non è configurata per leggere una Volvo."
     },
     "choose": {
       "volvo": "Ho una Volvo",
       "polestar": "Ho una Polestar",
       "tesla": "Ho una Tesla",
-      "bmw": "Ho una BMW o una MINI"
+      "bmw": "Ho una BMW o una MINI",
+      "pleos": "Ho una Hyundai, una Kia o una Genesis"
     }
   },
   "vehicle": {

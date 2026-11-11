@@ -10,14 +10,15 @@ import { AppShell } from '@/widgets/app-shell'
 import { extensionChoices, extensionMakeMentions, type HomeMake } from '../extensions'
 
 // Home leads to the first vehicle of the account; without one, it asks which car, Volvo,
-// Polestar, Tesla or BMW, choices of equal weight, and says how Runsten reads each one
+// Polestar, Tesla, BMW or Hyundai, Kia and Genesis (one key per brand, all read through
+// Pleos), choices of equal weight, and says how Runsten reads each one
 // offered, a part per brand joined as the language lists. A Volvo leads to the Volvo ID
 // connection, or first to the Connection page while the account's key is missing: without
 // it, runsten-api refuses to start the flow (an instance without a key of its own). A
-// Polestar, a Tesla or a BMW leads to the Connection page's tab of its brand, which takes
-// its credential, its refresh token or its client ID. On an instance without a Volvo
+// Polestar, a Tesla, a BMW or a Hyundai leads to the Connection page's tab of its brand,
+// which takes its credential, its refresh token, its client ID or its key. On an instance without a Volvo
 // application, the Volvo is left out; the Tesla, while the flag source.tesla is off for the
-// account; the BMW, while source.bmw is. A downstream build may add its own choices after
+// account; the BMW, while source.bmw is; the Hyundai, while source.pleos is. A downstream build may add its own choices after
 // the makes, and a mention on a make's button (extensions.ts).
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -26,6 +27,7 @@ const { connection } = useConnectionSettings()
 const noVolvo = computed(() => connection.value?.volvo === false)
 const teslaOn = useFlag('source.tesla')
 const bmwOn = useFlag('source.bmw')
+const pleosOn = useFlag('source.pleos')
 const keyMissing = computed(
   () => !!connection.value && !connection.value.instance_key && !connection.value.api_key,
 )
@@ -38,6 +40,7 @@ function choose(make: HomeMake): string {
     polestar: t('home.choose.polestar'),
     tesla: t('home.choose.tesla'),
     bmw: t('home.choose.bmw'),
+    pleos: t('home.choose.pleos'),
   }[make]
   const mention = mentions.value[make]
   return mention ? `${label} · ${mention}` : label
@@ -49,6 +52,7 @@ const text = computed(() => {
     t('home.empty.polestar'),
     ...(teslaOn.value ? [t('home.empty.tesla')] : []),
     ...(bmwOn.value ? [t('home.empty.bmw')] : []),
+    ...(pleosOn.value ? [t('home.empty.pleos')] : []),
   ]
   const list = new Intl.ListFormat(locale.value, { type: 'conjunction' }).format(makes)
   const parts = [t('home.empty.ask'), t('home.empty.reads', { makes: list })]
@@ -108,8 +112,34 @@ watchEffect(() => {
           class="bmw"
           >{{ choose('bmw') }}</v-btn
         >
+        <v-btn
+          v-if="pleosOn"
+          :to="{ name: 'connection', hash: '#pleos' }"
+          color="primary"
+          variant="flat"
+          class="pleos"
+          >{{ choose('pleos') }}</v-btn
+        >
         <component :is="choice" v-for="(choice, i) in extensionChoices" :key="i" />
       </template>
     </v-empty-state>
   </AppShell>
 </template>
+
+<style scoped>
+/* The makes' buttons wrap within the page: five of them, and an extension's, are wider
+   than a phone. A label too long for the width wraps too. */
+.v-empty-state :deep(.v-empty-state__actions) {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+}
+.v-empty-state :deep(.v-empty-state__actions .v-btn) {
+  max-width: 100%;
+  height: auto;
+  min-height: var(--v-btn-height);
+}
+.v-empty-state :deep(.v-empty-state__actions .v-btn__content) {
+  white-space: normal;
+}
+</style>

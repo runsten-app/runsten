@@ -1,7 +1,7 @@
 import type { Component, Ref } from 'vue'
 
 // The makes of the empty home's buttons.
-export type HomeMake = 'volvo' | 'polestar' | 'tesla' | 'bmw'
+export type HomeMake = 'volvo' | 'polestar' | 'tesla' | 'bmw' | 'pleos'
 
 // extensionChoices adds none: the public build offers the makes it reads, and nothing for
 // a car it does not. A downstream build replaces this file with its own components, shown

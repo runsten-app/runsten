@@ -18,13 +18,16 @@ vi.mock('@/entities/connection', async (original) => ({
   fetchConnection,
 }))
 
-// The flags source.tesla and source.bmw, as the session gives them: on unless a test turns
-// one off.
-const flag = vi.hoisted(() => ({ tesla: true, bmw: true }))
+// The flags source.tesla, source.bmw and source.pleos, as the session gives them: on
+// unless a test turns one off.
+const flag = vi.hoisted(() => ({ tesla: true, bmw: true, pleos: true }))
 vi.mock('@/features/view-flags', async () => {
   const { computed } = await import('vue')
   return {
-    useFlag: (name: string) => computed(() => (name === 'source.bmw' ? flag.bmw : flag.tesla)),
+    useFlag: (name: string) =>
+      computed(() =>
+        name === 'source.bmw' ? flag.bmw : name === 'source.pleos' ? flag.pleos : flag.tesla,
+      ),
   }
 })
 
@@ -49,6 +52,7 @@ beforeEach(() => {
   ext.mentions = null
   flag.tesla = true
   flag.bmw = true
+  flag.pleos = true
   fetchVehicles.mockReset()
   fetchConnection.mockReset()
   // Self-hosting: the instance's key reads the vehicles.
@@ -102,12 +106,16 @@ describe('HomePage', () => {
     const bmw = wrapper.find('a.bmw')
     expect(bmw.attributes('href')).toBe('/connection#bmw')
     expect(bmw.text()).toBe('I have a BMW or MINI')
+    // A Hyundai's, Kia's or Genesis's key, in the tab of the three.
+    const pleos = wrapper.find('a.pleos')
+    expect(pleos.attributes('href')).toBe('/connection#pleos')
+    expect(pleos.text()).toBe('I have a Hyundai, Kia or Genesis')
     // How each is read, listed as English lists.
     expect(wrapper.text()).toContain(
-      "Runsten reads a Volvo through your Volvo ID, a Polestar with a credential of Polestar's Data Portal, a Tesla with a refresh token of your Tesla account, and a BMW or a MINI with a client ID you create in the MyBMW or MyMINI portal.",
+      "Runsten reads a Volvo through your Volvo ID, a Polestar with a credential of Polestar's Data Portal, a Tesla with a refresh token of your Tesla account, a BMW or a MINI with a client ID you create in the MyBMW or MyMINI portal, and a Hyundai, a Kia or a Genesis with a key you create in the Pleos Playground.",
     )
     // Choices of equal weight.
-    for (const b of [volvo, polestar, tesla, bmw])
+    for (const b of [volvo, polestar, tesla, bmw, pleos])
       expect(b.classes()).toContain('v-btn--variant-flat')
     expect(router.currentRoute.value.name).toBe('home')
   })
@@ -167,13 +175,23 @@ describe('HomePage', () => {
     expect(wrapper.text()).not.toContain('BMW')
   })
 
+  it('leaves the Hyundai, Kia and Genesis out while their flag is off', async () => {
+    flag.pleos = false
+    fetchVehicles.mockResolvedValue([])
+    const { wrapper } = await home()
+    expect(wrapper.find('a.bmw').exists()).toBe(true)
+    expect(wrapper.find('a.pleos').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Kia')
+  })
+
   it("shows the extensions' choices after the makes, and their mentions", async () => {
     ext.choices.push({ template: '<button class="none-of-these">None of these</button>' })
-    ext.mentions = { tesla: 'Plus offered' }
+    ext.mentions = { tesla: 'Plus offered', pleos: 'Beta' }
     fetchVehicles.mockResolvedValue([])
     const { wrapper } = await home()
     expect(wrapper.find('a.tesla').text()).toBe('I have a Tesla · Plus offered')
     expect(wrapper.find('a.polestar').text()).toBe('I have a Polestar')
+    expect(wrapper.find('a.pleos').text()).toBe('I have a Hyundai, Kia or Genesis · Beta')
     const buttons = wrapper.findAll('.v-empty-state__actions a, .v-empty-state__actions button')
     expect(buttons.at(-1)?.classes()).toContain('none-of-these')
   })
