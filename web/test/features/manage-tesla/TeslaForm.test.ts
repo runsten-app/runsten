@@ -65,7 +65,8 @@ describe('TeslaForm', () => {
       'Runsten reads your Tesla with a refresh token of your Tesla account',
     )
     expect(w().text()).toContain('It never asks for your Tesla password')
-    expect(w().text()).toContain('Tesla support is in beta')
+    expect(w().text()).toContain('The Owner API is not official')
+    expect(w().text()).not.toContain('beta')
     const tool = w().find('a.tool')
     expect(tool.attributes('href')).toBe('https://github.com/adriankumpf/tesla_auth')
     expect(tool.attributes('rel')).toBe('noreferrer')
