@@ -106,7 +106,7 @@ describe('HomePage', () => {
     expect(router.currentRoute.value.name).toBe('home')
   })
 
-  it('asks which car without a vehicle, Volvo, Polestar, Tesla or BMW', async () => {
+  it('asks which car without a vehicle, one choice per make', async () => {
     fetchVehicles.mockResolvedValue([])
     const { wrapper, router } = await home()
     expect(wrapper.text()).toContain('No vehicle yet')
@@ -114,30 +114,42 @@ describe('HomePage', () => {
     // Relative to <base>: a full page load of runsten-api's flow, under any prefix.
     const volvo = wrapper.find('a.volvo')
     expect(volvo.attributes('href')).toBe('auth/volvo/start')
-    expect(volvo.text()).toBe('I have a Volvo')
+    expect(volvo.text()).toBe('Volvo')
     // A Polestar's credential is given in the connection page's Polestar section.
     const polestar = wrapper.find('a.polestar')
     expect(polestar.attributes('href')).toBe('/connection#polestar')
-    expect(polestar.text()).toBe('I have a Polestar')
+    expect(polestar.text()).toBe('Polestar')
     // A Tesla's refresh token, in its own tab.
     const tesla = wrapper.find('a.tesla')
     expect(tesla.attributes('href')).toBe('/connection#tesla')
-    expect(tesla.text()).toBe('I have a Tesla')
-    // A BMW's or a MINI's client ID, in its own tab.
+    expect(tesla.text()).toBe('Tesla')
+    // A BMW's or a MINI's client ID, in BMW's tab: a tile each.
     const bmw = wrapper.find('a.bmw')
     expect(bmw.attributes('href')).toBe('/connection#bmw')
-    expect(bmw.text()).toBe('I have a BMW or MINI')
-    // A Hyundai's, Kia's or Genesis's key, in the tab of the three.
-    const pleos = wrapper.find('a.pleos')
-    expect(pleos.attributes('href')).toBe('/connection#pleos')
-    expect(pleos.text()).toBe('I have a Hyundai, Kia or Genesis')
-    // How each is read, listed as English lists.
+    expect(bmw.text()).toBe('BMW')
+    const mini = wrapper.find('a.mini')
+    expect(mini.attributes('href')).toBe('/connection#bmw')
+    expect(mini.text()).toBe('MINI')
+    // A Hyundai's, a Kia's, a Genesis's key, each in its make's tab: read through the same
+    // API, but the owner looks for their make.
+    const hyundai = wrapper.find('a.hyundai')
+    expect(hyundai.attributes('href')).toBe('/connection#hyundai')
+    expect(hyundai.text()).toBe('Hyundai, Beta')
+    const kia = wrapper.find('a.kia')
+    expect(kia.attributes('href')).toBe('/connection#kia')
+    expect(kia.text()).toBe('Kia, Beta')
+    const genesis = wrapper.find('a.genesis')
+    expect(genesis.attributes('href')).toBe('/connection#genesis')
+    expect(genesis.text()).toBe('Genesis, Beta')
+    // How each is read is told by its tab: the home only says it guides.
     expect(wrapper.text()).toContain(
-      "Runsten reads a Volvo through your Volvo ID, a Polestar with a credential of Polestar's Data Portal, a Tesla with a refresh token of your Tesla account, a BMW or a MINI with a client ID you create in the MyBMW or MyMINI portal, and a Hyundai, a Kia or a Genesis with a key you create in the Pleos Playground.",
+      'Which car is yours? Choose its make: Runsten guides you through connecting it.',
     )
-    // Choices of equal weight.
-    for (const b of [volvo, polestar, tesla, bmw, pleos])
-      expect(b.classes()).toContain('v-btn--variant-flat')
+    expect(wrapper.text()).not.toContain('Pleos')
+    // Tiles of equal weight, in a list named for screen readers.
+    expect(wrapper.find('ul.makes').attributes('aria-label')).toBe("Your car's make")
+    for (const b of [volvo, polestar, tesla, bmw, mini, hyundai, kia, genesis])
+      expect(b.classes()).toContain('v-card--link')
     expect(router.currentRoute.value.name).toBe('home')
   })
 
@@ -152,8 +164,6 @@ describe('HomePage', () => {
       polestar: null,
     })
     const { wrapper } = await home()
-    expect(wrapper.text()).toContain('the key of a Volvo application you create')
-    expect(wrapper.text()).toContain("a Polestar with a credential of Polestar's Data Portal")
     expect(wrapper.find('a[href="auth/volvo/start"]').exists()).toBe(false)
     expect(wrapper.find('a.volvo').attributes('href')).toBe('/connection')
     expect(wrapper.find('a.polestar').attributes('href')).toBe('/connection#polestar')
@@ -174,7 +184,7 @@ describe('HomePage', () => {
     expect(wrapper.find('.volvo').exists()).toBe(false)
     const polestar = wrapper.find('a.polestar')
     expect(polestar.attributes('href')).toBe('/connection#polestar')
-    expect(polestar.text()).toBe('I have a Polestar')
+    expect(polestar.text()).toBe('Polestar')
     expect(wrapper.find('a.tesla').attributes('href')).toBe('/connection#tesla')
   })
 
@@ -193,6 +203,7 @@ describe('HomePage', () => {
     const { wrapper } = await home()
     expect(wrapper.find('a.tesla').exists()).toBe(true)
     expect(wrapper.find('a.bmw').exists()).toBe(false)
+    expect(wrapper.find('a.mini').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('BMW')
   })
 
@@ -201,18 +212,21 @@ describe('HomePage', () => {
     fetchVehicles.mockResolvedValue([])
     const { wrapper } = await home()
     expect(wrapper.find('a.bmw').exists()).toBe(true)
-    expect(wrapper.find('a.pleos').exists()).toBe(false)
+    for (const make of ['hyundai', 'kia', 'genesis'])
+      expect(wrapper.find(`a.${make}`).exists()).toBe(false)
     expect(wrapper.text()).not.toContain('Kia')
   })
 
   it("shows the extensions' choices after the makes, and their mentions", async () => {
     ext.choices.push({ template: '<button class="none-of-these">None of these</button>' })
-    ext.mentions = { tesla: 'Plus offered', pleos: 'Beta' }
+    ext.mentions = { tesla: 'Plus offered', kia: 'Plus offered' }
     fetchVehicles.mockResolvedValue([])
     const { wrapper } = await home()
-    expect(wrapper.find('a.tesla').text()).toBe('I have a Tesla · Plus offered')
-    expect(wrapper.find('a.polestar').text()).toBe('I have a Polestar')
-    expect(wrapper.find('a.pleos').text()).toBe('I have a Hyundai, Kia or Genesis · Beta')
+    expect(wrapper.find('a.tesla').text()).toBe('Tesla, Plus offered')
+    expect(wrapper.find('a.polestar').text()).toBe('Polestar')
+    // The mention takes Beta's place.
+    expect(wrapper.find('a.kia').text()).toBe('Kia, Plus offered')
+    expect(wrapper.find('a.hyundai').text()).toBe('Hyundai, Beta')
     const buttons = wrapper.findAll('.v-empty-state__actions a, .v-empty-state__actions button')
     expect(buttons.at(-1)?.classes()).toContain('none-of-these')
   })

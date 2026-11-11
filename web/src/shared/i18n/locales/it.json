@@ -35,22 +35,21 @@
     "empty": {
       "title": "Ancora nessun veicolo",
       "ask": "Qual è la Sua auto?",
-      "reads": "Runsten legge {makes}.",
-      "volvo": "una Volvo tramite il Suo Volvo ID",
-      "volvoKey": "una Volvo con la chiave di un’applicazione Volvo creata da Lei, poi con il Suo Volvo ID",
-      "polestar": "una Polestar con una credenziale del Data Portal di Polestar",
-      "tesla": "una Tesla con un refresh token del Suo account Tesla",
-      "bmw": "una BMW o una MINI con un client ID creato da Lei nel portale MyBMW o MyMINI",
-      "pleos": "una Hyundai, una Kia o una Genesis con una chiave creata da Lei nel Pleos Playground",
+      "guided": "Scelga la marca: Runsten La guida nel collegamento.",
       "noVolvo": "Questa istanza non è configurata per leggere una Volvo."
     },
-    "choose": {
-      "volvo": "Ho una Volvo",
-      "polestar": "Ho una Polestar",
-      "tesla": "Ho una Tesla",
-      "bmw": "Ho una BMW o una MINI",
-      "pleos": "Ho una Hyundai, una Kia o una Genesis"
-    }
+    "makes": "La marca della Sua auto",
+    "make": {
+      "volvo": "Volvo",
+      "polestar": "Polestar",
+      "tesla": "Tesla",
+      "bmw": "BMW",
+      "mini": "MINI",
+      "hyundai": "Hyundai",
+      "kia": "Kia",
+      "genesis": "Genesis"
+    },
+    "beta": "Beta"
   },
   "garage": {
     "title": "Garage",
@@ -1360,8 +1359,7 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW",
-      "pleos": "Hyundai · Kia · Genesis"
+      "bmw": "BMW"
     },
     "brandAttention": "richiede la Sua attenzione",
     "outcome": {
@@ -1589,8 +1587,8 @@
       "mqtt": "Impostazioni MQTT"
     },
     "pleos": {
-      "title": "La Pleos Vehicle Data API",
-      "off": "Hyundai, Kia e Genesis sono spenti su questa istanza (il flag source.pleos)."
+      "title": "La tua chiave {brand}",
+      "off": "{brand} è spento su questa istanza (il flag source.pleos)."
     },
     "keyShared": {
       "text": "Un’altra applicazione legge con la stessa chiave Pleos — evcc, Home Assistant. L’API ammette un solo lettore alla volta, e ciascuno prende il posto dell’altro. Tieni questa chiave solo per Runsten, oppure lascia che Runsten ripubblichi la tua auto sul tuo broker MQTT per Home Assistant:",
@@ -2260,7 +2258,7 @@
     }
   },
   "pleos": {
-    "intro": "Runsten legge la tua Hyundai, Kia o Genesis con una chiave che crei nel Pleos Playground, l’accesso che il Data Act europeo dà ai proprietari. Una chiave per marca, ciascuna con la propria quota di chiamate.",
+    "intro": "Runsten legge la tua {brand} con una chiave che crei nel Pleos Playground, l’accesso che il Data Act europeo dà ai proprietari.",
     "guide": "Leggi la guida",
     "refused": {
       "title": "La tua chiave è stata rifiutata",
@@ -2282,8 +2280,8 @@
       "title": "Crea la tua chiave",
       "signIn": "Accedi con l’account della tua auto su",
       "newTab": "(si apre in una nuova scheda)",
-      "accept": "In My Vehicle Data API, nella scheda della marca della tua auto, spunta le due caselle: Termini e condizioni, Informativa sulla privacy.",
-      "get": "Scegli Get API Key e accedi con l’account dell’app della tua auto — Bluelink, Kia Connect o Genesis Connected —, quello dell’utente principale.",
+      "accept": "In My Vehicle Data API, nella scheda {brand}, spunta le due caselle: Termini e condizioni, Informativa sulla privacy.",
+      "get": "Scegli Get API Key e accedi con il tuo account {app}, quello dell’utente principale.",
       "copy": "Nella pagina della chiave copia il suo Client ID e il suo Client secret, poi incollali qui sotto: non verranno più mostrati."
     },
     "field": {
@@ -2315,6 +2313,11 @@
       "hyundai": "Hyundai",
       "kia": "Kia",
       "genesis": "Genesis"
+    },
+    "app": {
+      "hyundai": "Bluelink",
+      "kia": "Kia Connect",
+      "genesis": "Genesis Connected"
     }
   }
 }

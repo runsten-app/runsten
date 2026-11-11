@@ -72,8 +72,11 @@ describe('PleosForm', () => {
   it('without a key, is open with the steps to the Playground and the guide', () => {
     form(none)
     expect(w().text()).toContain(
-      'Runsten reads your Hyundai, Kia or Genesis with a key you create in the Pleos Playground',
+      'Runsten reads your Kia with a key you create in the Pleos Playground',
     )
+    // The steps name the make's tab in the Playground, and its app's account.
+    expect(w().text()).toContain('on the Kia tab')
+    expect(w().text()).toContain('sign in with your Kia Connect account')
     const portal = w().find('a.portal')
     expect(portal.attributes('href')).toBe('https://developers.pleos.ai/')
     expect(portal.attributes('rel')).toBe('noreferrer')
@@ -81,7 +84,7 @@ describe('PleosForm', () => {
       'https://runsten.app/docs/guide/hyundai-kia',
     )
     expect(w().findAll('.steps li')).toHaveLength(4)
-    expect(w().text()).toContain('Bluelink, Kia Connect or Genesis Connected')
+    expect(w().text()).not.toContain('Bluelink')
     expect(w().text()).toContain('registered when it was issued')
     // The secret is typed as a password: neither shown nor kept by the browser's autofill.
     expect(input('client-secret').attributes('type')).toBe('password')

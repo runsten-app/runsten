@@ -19,8 +19,8 @@ import {
 } from '../model/validate'
 
 // PleosForm gives the account's key of one brand, which the owner creates in the Pleos
-// Playground (the EU Data Act's access): a client ID and its secret. The brand is the
-// section's own name; the API of each is the same, the key and the cars are not. The
+// Playground (the EU Data Act's access): a client ID and its secret. The brand is its
+// tab's, named in its texts with its app; the API of each is the same, the key and the cars are not. The
 // steps lead to the Playground and to the guide. The key is never shown again: the last
 // four characters of its client ID, and when it was given — the API tells no expiry,
 // and a key it refuses asks for another. Without one, the form is open; with one, it is
@@ -197,12 +197,23 @@ const brandName = computed(() => {
       return t('pleos.brand.genesis')
   }
 })
+// The brand's own app, whose account signs in to the Playground.
+const appName = computed(() => {
+  switch (props.brand) {
+    case 'hyundai':
+      return t('pleos.app.hyundai')
+    case 'kia':
+      return t('pleos.app.kia')
+    default:
+      return t('pleos.app.genesis')
+  }
+})
 </script>
 
 <template>
   <div class="pleos-form">
     <p class="text-body-medium mb-1">
-      {{ t('pleos.intro') }}
+      {{ t('pleos.intro', { brand: brandName }) }}
     </p>
     <p class="text-body-medium mb-3">
       <a :href="guide.href" target="_blank" rel="noreferrer" class="guide">
@@ -305,8 +316,8 @@ const brandName = computed(() => {
             <span class="d-sr-only">{{ t('pleos.steps.newTab') }}</span>
           </a>
         </li>
-        <li>{{ t('pleos.steps.accept') }}</li>
-        <li>{{ t('pleos.steps.get') }}</li>
+        <li>{{ t('pleos.steps.accept', { brand: brandName }) }}</li>
+        <li>{{ t('pleos.steps.get', { app: appName }) }}</li>
         <li>{{ t('pleos.steps.copy') }}</li>
       </ol>
       <v-text-field

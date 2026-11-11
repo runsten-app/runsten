@@ -9,7 +9,7 @@ Runsten reads a Hyundai, a Kia or a Genesis through **the Pleos Vehicle Data API
 ::: warning Beta
 Hyundai, Kia and Genesis support is in beta. It was built from Pleos's documentation, its examples and the free clients that already read the API (evcc, the Home Assistant integrations), against a simulator: no real car has been read yet. What Pleos does not publish is assumed until then — how long a token lives, how many calls a key may make, the units of what a car sends and how often it sends — and may differ from what Runsten expects. What the Connection page tells you, and the [troubleshooting](#when-it-is-not-read) below, are the first things to look at.
 
-On an instance where Hyundai, Kia and Genesis are turned off ([Feature flags](../self-hosting/flags.md)), Runsten reads nothing of your Hyundais, Kias and Genesises, and takes no new key. The **Hyundai · Kia · Genesis** tab of the Connection page then shows only for an account that already has a key or a car of these brands: it says the brands are turned off, and a key already given stays shown, and can be removed.
+On an instance where Hyundai, Kia and Genesis are turned off ([Feature flags](../self-hosting/flags.md)), Runsten reads nothing of your Hyundais, Kias and Genesises, and takes no new key. The tab of each of these brands on the Connection page then shows only for an account that already has a key or a car of it: it says the brand is turned off, and a key already given stays shown, and can be removed.
 :::
 
 Runsten is not affiliated with Hyundai, Kia, Genesis or Pleos. It only reads: it never sends a command to the car.
@@ -23,7 +23,7 @@ Two things decide what a key reads:
 - a car you are the **primary user** of in the maker's account: only the primary user's key lists cars; a secondary or shared account's lists none;
 - the cars **registered at the moment the key was issued**: a car added to the account later is not read, and to read it you must issue a new key.
 
-**One key per brand**: a household with a Kia and a Hyundai gives two keys, each in its own section of the same tab.
+**One key per brand**: a household with a Kia and a Hyundai gives two keys, each in the tab of its make.
 
 ## Create your key
 
@@ -37,7 +37,7 @@ You do this once per brand, on a computer, in the Pleos Playground. The Playgrou
 
 ## Give it to Runsten
 
-On the **Connection** page (in the menu under your name), in the **Hyundai · Kia · Genesis** tab, under the brand of your car, paste the Client ID and the Client secret, then **Save the key**. Runsten checks the key first: it asks Pleos for a token and lists the cars the key reads.
+On the **Connection** page (in the menu under your name), in the tab of your car's brand (**Hyundai**, **Kia** or **Genesis**), paste the Client ID and the Client secret, then **Save the key**. Runsten checks the key first: it asks Pleos for a token and lists the cars the key reads.
 
 - A key Pleos refuses is not saved: revoked, replaced or expired in the Playground. Check the key's page there.
 - A key Pleos could not check, its servers failing or out of reach, is not saved either: try again in a moment.

@@ -847,29 +847,42 @@ describe('ConnectionPage', () => {
       }
     }
 
-    it('has one tab for the three brands, marked beta, while its flag is on, with a form for each key', async () => {
+    it('has a tab per make, Hyundai, Kia, Genesis, marked beta, while its flag is on, each with its key', async () => {
       flag.pleos = true
       const w = await page()
       expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
         'Volvo needs your attention',
         'Polestar needs your attention',
         'Tesla',
-        'Hyundai · Kia · Genesis Beta',
+        'Hyundai Beta',
+        'Kia Beta',
+        'Genesis Beta',
       ])
-      await w.findAll('[role="tab"]')[3]?.trigger('click')
+      await w.find('#connection-tab-kia').trigger('click')
       await vi.waitFor(() =>
-        expect(w.find('#connection-panel-pleos .pleos-form').exists()).toBe(true),
+        expect(w.find('#connection-panel-kia .pleos-form').exists()).toBe(true),
       )
-      const panel = w.find('#connection-panel-pleos')
-      expect(panel.findAll('h2').map((h) => plain(h.text()))).toEqual([
-        'The Pleos Vehicle Data API Beta',
-      ])
-      // One section per brand, each with the fields of its own key.
-      expect(panel.findAll('h3').map((h) => plain(h.text()))).toContain('Kia')
+      const panel = w.find('#connection-panel-kia')
+      expect(panel.findAll('h2').map((h) => plain(h.text()))).toEqual(['Your Kia key'])
+      // The fields of its own key only: no other make in sight.
       expect(panel.find('#pleos-kia-client-id').exists()).toBe(true)
-      expect(panel.find('#pleos-hyundai-client-id').exists()).toBe(true)
-      expect(panel.find('#pleos-genesis-client-secret').exists()).toBe(true)
+      expect(panel.find('#pleos-hyundai-client-id').exists()).toBe(false)
+      expect(panel.text()).not.toContain('Hyundai')
       expect(panel.find('.pleos-off').exists()).toBe(false)
+    })
+
+    it('opens the first make the account reads for a link to the old tab of the three', async () => {
+      flag.pleos = true
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        pleos: {
+          hyundai: null,
+          kia: { last4: '-dev', set_at: '2026-09-28T05:00:00Z', refused_at: null },
+          genesis: null,
+        },
+      })
+      const { w } = await pageAt('/connection#pleos')
+      expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Kia')
     })
 
     it('has no tab while its flag is off for an account without a key nor a car of it', async () => {
@@ -879,10 +892,8 @@ describe('ConnectionPage', () => {
         pleos: { hyundai: null, kia: null, genesis: null },
       })
       const w = await page()
-      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).not.toContain(
-        'Hyundai · Kia · Genesis Beta',
-      )
-      expect(w.find('#connection-panel-pleos').exists()).toBe(false)
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).not.toContain('Kia Beta')
+      expect(w.find('#connection-panel-kia').exists()).toBe(false)
     })
 
     it('keeps its tab while its flag is off for an account that has a key of it', async () => {
@@ -895,16 +906,14 @@ describe('ConnectionPage', () => {
         },
       })
       const w = await page()
-      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toContain(
-        'Hyundai · Kia · Genesis Beta',
-      )
-      // The key stays told and can be removed; no key is taken, of any brand.
-      await w.find('#connection-tab-pleos').trigger('click')
-      await vi.waitFor(() =>
-        expect(w.find('#connection-panel-pleos .pleos-off').exists()).toBe(true),
-      )
-      const panel = w.find('#connection-panel-pleos')
-      expect(panel.findAll('h3').map((h) => plain(h.text()))).toEqual(['Kia'])
+      // Kia's only: the other makes have neither key nor car.
+      const tabs = w.findAll('[role="tab"]').map((t) => plain(t.text()))
+      expect(tabs).toContain('Kia Beta')
+      expect(tabs).not.toContain('Hyundai Beta')
+      // The key stays told and can be removed; no key is taken.
+      await w.find('#connection-tab-kia').trigger('click')
+      await vi.waitFor(() => expect(w.find('#connection-panel-kia .pleos-off').exists()).toBe(true))
+      const panel = w.find('#connection-panel-kia')
       expect(panel.find('.delete-credential').exists()).toBe(true)
       expect(panel.find('.toggle').exists()).toBe(false)
       expect(panel.find('.credential-form').exists()).toBe(false)
@@ -913,13 +922,9 @@ describe('ConnectionPage', () => {
     it('keeps its tab while its flag is off for an account that has a car of it, which stays read from before', async () => {
       mocks.fetchVehicles.mockResolvedValue([kiaCar()])
       const w = await page({ vehicle: 'kia-1' })
-      expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain(
-        'Hyundai · Kia · Genesis',
-      )
+      expect(plain(w.find('[role="tab"][aria-selected="true"]').text())).toBe('Kia Beta')
       // The flag off: no key is taken, why is said.
-      expect(w.find('.pleos-off').text()).toContain(
-        'Hyundai, Kia and Genesis are turned off on this instance',
-      )
+      expect(w.find('.pleos-off').text()).toContain('Kia is turned off on this instance')
     })
 
     it('tells a car whose key was refused, without another brand in sight', async () => {
@@ -932,7 +937,7 @@ describe('ConnectionPage', () => {
         },
       ])
       const w = await page({ vehicle: 'kia-1' })
-      const v = w.find('#connection-panel-pleos .vehicle-collection')
+      const v = w.find('#connection-panel-kia .vehicle-collection')
       expect(v.find('.state').text()).toBe('Not read: Pleos refused the key')
       expect(facts(v.find('dl'))['Next reading']).toBe('None until a Pleos key is given')
       expect(w.find('[role="tab"][aria-selected="true"] .attention').exists()).toBe(true)
@@ -951,7 +956,7 @@ describe('ConnectionPage', () => {
         }),
       ])
       const w = await page({ vehicle: 'kia-1' })
-      const v = w.find('#connection-panel-pleos .vehicle-collection')
+      const v = w.find('#connection-panel-kia .vehicle-collection')
       expect(facts(v.find('dl'))['Latest failure']).toContain('Key shared with another application')
       const hint = v.find('.key-shared')
       expect(hint.text()).toContain('The API allows only one reader at a time')
