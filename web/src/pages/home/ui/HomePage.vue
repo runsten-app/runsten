@@ -125,3 +125,21 @@ watchEffect(() => {
     </v-empty-state>
   </AppShell>
 </template>
+
+<style scoped>
+/* The makes' buttons wrap within the page: five of them, and an extension's, are wider
+   than a phone. A label too long for the width wraps too. */
+.v-empty-state :deep(.v-empty-state__actions) {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+}
+.v-empty-state :deep(.v-empty-state__actions .v-btn) {
+  max-width: 100%;
+  height: auto;
+  min-height: var(--v-btn-height);
+}
+.v-empty-state :deep(.v-empty-state__actions .v-btn__content) {
+  white-space: normal;
+}
+</style>
