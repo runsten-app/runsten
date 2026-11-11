@@ -23,8 +23,7 @@
       { "text": "Polestar", "link": "/docs/guide/polestar" },
       { "text": "Polestar ID (beta)", "link": "/docs/guide/polestar-id" },
       { "text": "Tesla (beta)", "link": "/docs/guide/tesla" },
-      { "text": "BMW and Mini (beta)", "link": "/docs/guide/bmw" },
-      { "text": "Hyundai, Kia and Genesis (beta)", "link": "/docs/guide/hyundai-kia" }
+      { "text": "BMW and Mini (beta)", "link": "/docs/guide/bmw" }
     ]
   },
   {
