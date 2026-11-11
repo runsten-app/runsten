@@ -446,6 +446,27 @@ func TestSourceRefusals(t *testing.T) {
 			t.Errorf("%d calls, status %+v", len(src.calls[psBattery]), s)
 		}
 	})
+	t.Run("key shared: the connection waits, then asks for a new access", func(t *testing.T) {
+		c, src, st, clk := newSourced(t, sourceTarget())
+		src.answer = func(_ Endpoint, login int, _ time.Time) ([]byte, error) {
+			if login == 1 {
+				return nil, &SourceError{Kind: KindKeyShared, Status: 403, RetryIn: 15 * time.Minute, Err: errors.New("taken")}
+			}
+			return []byte("parked"), nil
+		}
+		t0 := clk.Now()
+		poll(t, c)
+		s := st.statuses[len(st.statuses)-1]
+		if src.logins != 1 || !s.PausedUntil.Equal(t0.Add(15*time.Minute)) || s.Failure.Kind != FailKeyShared {
+			t.Fatalf("%d logins, status %+v", src.logins, s)
+		}
+		clk.Advance(16 * time.Minute)
+		poll(t, c)
+		s = st.statuses[len(st.statuses)-1]
+		if src.logins != 2 || !s.ReadAt.Equal(clk.Now()) || !s.PausedUntil.IsZero() {
+			t.Errorf("past the wait: %d logins, status %+v", src.logins, s)
+		}
+	})
 	t.Run("stream held by another client: told, no pause", func(t *testing.T) {
 		c, src, st, clk := newSourced(t, sourceTarget())
 		src.answer = func(Endpoint, int, time.Time) ([]byte, error) {
@@ -532,7 +553,7 @@ func TestSourceQuota(t *testing.T) {
 	// Restarted: the call counts on the credential again, and the Volvo budget is whole.
 	r := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
 	r.AddSource(newFakeSource(clk), st)
-	r.budget.sources["fake"] = sourceAPI{provider: "fake", bucket: bucketOf(27)}
+	r.budget.sources["fake"] = sourceAPI{providers: []string{"fake"}, bucket: bucketOf(27)}
 	r.budget.restore(st.calls, []Target{sourceTarget(), target()}, clk.Now())
 	if ok, _ := r.budget.allows(sourceTarget(), "fake", clk.Now()); ok {
 		t.Error("the credential's call forgotten after a restart")
@@ -542,7 +563,7 @@ func TestSourceQuota(t *testing.T) {
 	}
 	// Without the connection, its calls count on nothing.
 	g := newBudget(DefaultQuota(), clk.Now())
-	g.addSource("fake", "fake", 27)
+	g.addSource("fake", []string{"fake"}, 27)
 	g.restore(st.calls, []Target{target()}, clk.Now())
 	if _, ok := g.tokens[unit{api: "fake"}]; ok || g.usage["a"] != float64(volvo) {
 		t.Errorf("tokens %v, usage %v", g.tokens, g.usage)

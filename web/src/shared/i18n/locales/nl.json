@@ -1268,7 +1268,8 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW"
+      "bmw": "BMW",
+      "pleos": "Hyundai · Kia · Genesis"
     },
     "brandAttention": "vraagt uw aandacht",
     "outcome": {
@@ -1333,10 +1334,15 @@
       "credentialMissingPolestarId": "Niet uitgelezen: geen Polestar ID gekoppeld",
       "unsharedPolestarId": "Niet uitgelezen: de auto staat niet meer in het Polestar ID",
       "credentialRefusedBmw": "Niet uitgelezen: BMW heeft de koppeling geweigerd",
+      "credentialRefusedPleos": "Niet uitgelezen: Pleos heeft de sleutel geweigerd",
       "credentialMissingBmw": "Niet uitgelezen: geen BMW gekoppeld",
+      "credentialMissingPleos": "Niet uitgelezen: geen Pleos-sleutel opgegeven",
       "unsharedBmw": "Niet uitgelezen: het BMW-account is niet langer hoofdgebruiker van de auto",
+      "unsharedPleos": "Niet uitgelezen: de auto deelt zijn gegevens niet langer met de sleutel",
       "pausedBmw": "Door BMW gepauzeerd tot {time}",
-      "quotaBmw": "Dagelijks aantal aanroepen naar BMW bereikt tot {time}"
+      "pausedPleos": "Door Pleos gepauzeerd tot {time}",
+      "quotaBmw": "Dagelijks aantal aanroepen naar BMW bereikt tot {time}",
+      "quotaPleos": "Dagelijks aantal aanroepen naar Pleos bereikt tot {time}"
     },
     "notice": {
       "reauth": {
@@ -1378,7 +1384,12 @@
       "credentialMissingBmw": "Runsten leest deze auto uit via uw BMW-koppeling, maar die is verwijderd: koppel opnieuw via de koppelingspagina.",
       "unsharedBmw": "Uw BMW-account is niet langer hoofdgebruiker van deze auto, of vermeldt hem niet meer: verkocht, of van eigenaar gewisseld. Komt hij terug, koppel BMW dan opnieuw via de koppelingspagina: de auto wordt dan weer uitgelezen.",
       "pausedBmw": "BMW heeft het aantal aanroepen beperkt. Het uitlezen wordt vanzelf hervat.",
-      "quotaBmw": "Runsten doet hoogstens 40 aanroepen per dag naar de API van BMW per koppeling, om u enkele van de 50 van BMW te laten: die zijn op. De stream, die geen limiet heeft, wordt nog steeds gelezen; de rest wordt vanzelf hervat."
+      "pausedPleos": "Pleos heeft het aantal aanroepen beperkt. Het uitlezen wordt vanzelf hervat.",
+      "credentialRefusedPleos": "Pleos heeft de sleutel geweigerd waarmee deze auto wordt uitgelezen: ingetrokken of vervangen in het Playground, of verlopen. Maak daar een nieuwe aan en geef die op de koppelingspagina: wat al is uitgelezen, blijft bewaard.",
+      "credentialMissingPleos": "Runsten leest deze auto uit met uw Pleos-sleutel, maar die is verwijderd: geef een nieuwe op de koppelingspagina.",
+      "unsharedPleos": "Pleos antwoordde dat deze auto zijn gegevens niet langer deelt met de sleutel: het delen uitgeschakeld in de verbonden diensten, of de auto uitgeschreven. Deelt de auto opnieuw, geef de sleutel dan opnieuw op de koppelingspagina: de auto wordt dan weer uitgelezen.",
+      "quotaBmw": "Runsten doet hoogstens 40 aanroepen per dag naar de API van BMW per koppeling, om u enkele van de 50 van BMW te laten: die zijn op. De stream, die geen limiet heeft, wordt nog steeds gelezen; de rest wordt vanzelf hervat.",
+      "quotaPleos": "Runsten doet hoogstens 2000 aanroepen per dag naar de Pleos Vehicle Data API per sleutel, een eigen plafond (Pleos publiceert er geen): die zijn op. Het uitlezen wordt vanzelf hervat."
     },
     "facts": {
       "mode": "Uitleesmodus",
@@ -1403,7 +1414,9 @@
       "noneDuePolestarId": "Geen, tot het Polestar ID opnieuw is gekoppeld",
       "noneDueUnsharedPolestarId": "Geen: de auto staat niet meer in het Polestar ID",
       "noneDueBmw": "Geen, tot BMW opnieuw is gekoppeld",
-      "noneDueUnsharedBmw": "Geen: het BMW-account is niet langer hoofdgebruiker van de auto"
+      "noneDuePleos": "Geen, tot er een Pleos-sleutel is opgegeven",
+      "noneDueUnsharedBmw": "Geen: het BMW-account is niet langer hoofdgebruiker van de auto",
+      "noneDueUnsharedPleos": "Geen: de auto deelt zijn gegevens niet langer met de sleutel"
     },
     "api": {
       "connectedVehicle": "voertuiggegevens",
@@ -1413,7 +1426,8 @@
       "tesla": "Tesla Owner API",
       "teslaFleet": "Tesla Fleet API",
       "polestarId": "API van de Polestar-app",
-      "bmw": "BMW CarData"
+      "bmw": "BMW CarData",
+      "pleos": "de Pleos Vehicle Data API"
     },
     "failure": {
       "quota": "Quotum bereikt",
@@ -1442,7 +1456,9 @@
       "notFoundBmw": "Voertuig onbekend bij BMW",
       "unavailableBmw": "BMW onbereikbaar",
       "tokenBmw": "Geen token van BMW",
-      "credentialRefusedBmw": "BMW-koppeling geweigerd"
+      "credentialRefusedBmw": "BMW-koppeling geweigerd",
+      "credentialRefusedPleos": "Pleos-sleutel geweigerd",
+      "keyShared": "Sleutel gedeeld met een andere toepassing"
     },
     "key": {
       "title": "Volvo-sleutel"
@@ -1475,6 +1491,14 @@
     },
     "streamHeld": {
       "text": "Een andere toepassing bezet de stream van BMW: BMW staat er per account maar één tegelijk toe, en dat kan de CarData-integratie van Home Assistant of evcc zijn. Runsten leest niets van de stream tot die hem loslaat. Stop die toepassing, of laat Runsten uw auto in plaats daarvan voor Home Assistant publiceren op uw MQTT-broker:",
+      "mqtt": "MQTT-instellingen"
+    },
+    "pleos": {
+      "title": "De Pleos Vehicle Data API",
+      "off": "Hyundai, Kia en Genesis staan uit op deze instantie (de vlag source.pleos)."
+    },
+    "keyShared": {
+      "text": "Een andere toepassing leest met dezelfde Pleos-sleutel — evcc, Home Assistant. De API laat maar één lezer tegelijk toe, dus elk neemt de plaats van de ander in. Houd deze sleutel voor Runsten alleen, of laat Runsten uw auto voor Home Assistant op uw MQTT-broker publiceren:",
       "mqtt": "MQTT-instellingen"
     }
   },
@@ -2138,6 +2162,64 @@
       "tooManyPending": "Er wachten te veel koppelingen met BMW op deze instantie. Probeer het over een paar minuten opnieuw.",
       "unavailable": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
       "internal": "BMW kon niet worden gekoppeld. Probeer het zo meteen opnieuw."
+    }
+  },
+  "pleos": {
+    "intro": "Runsten leest uw Hyundai, Kia of Genesis met een sleutel die u aanmaakt in het Pleos Playground, de toegang die de EU Data Act de eigenaars geeft. Eén sleutel per merk, elk met een eigen quota oproepen.",
+    "guide": "Lees de gids",
+    "refused": {
+      "title": "Uw sleutel werd geweigerd",
+      "body": "Pleos weigerde hem op {time}: ingetrokken of vervangen in het Playground, of verlopen. Uw auto’s worden niet meer gelezen tot u een nieuwe geeft; wat gelezen is, blijft."
+    },
+    "current": "Uw sleutel",
+    "last4": "Client ID eindigend op {last4}",
+    "setAt": "Gegeven",
+    "replace": "Sleutel vervangen",
+    "delete": {
+      "button": "Sleutel verwijderen",
+      "title": "Uw {brand}-sleutel verwijderen?",
+      "text": "Uw {brand} blijft, met zijn geschiedenis, maar wordt niet meer gelezen tot u een andere sleutel geeft.",
+      "error": "De sleutel kon niet worden verwijderd. Probeer het zo opnieuw.",
+      "cancel": "Annuleren",
+      "confirm": "Verwijderen"
+    },
+    "steps": {
+      "title": "Maak uw sleutel aan",
+      "signIn": "Meld u aan met het account van uw auto bij",
+      "newTab": "(opent in een nieuw tabblad)",
+      "accept": "Vink onder My Vehicle Data API, op het tabblad van het merk van uw auto, de twee vakjes aan: voorwaarden, privacybeleid.",
+      "get": "Kies Get API Key en meld u aan met het app-account van uw auto — Bluelink, Kia Connect of Genesis Connected —, dat van de hoofdgebruiker.",
+      "copy": "Kopieer op de pagina van de sleutel zijn Client ID en Client secret en plak ze hieronder: ze worden nooit meer getoond."
+    },
+    "field": {
+      "clientId": "Client ID",
+      "clientSecret": "Client secret"
+    },
+    "help": "De sleutel somt alleen de auto’s op die waren geregistreerd toen hij werd aangemaakt, en leest alleen met het account van de hoofdgebruiker. Houd hem voor Runsten alleen: een andere toepassing die ermee las, zou Runstens plaats innemen.",
+    "save": "Sleutel opslaan",
+    "cancel": "Annuleren",
+    "saved": "Sleutel opgeslagen: Runsten leest zijn auto’s vanaf zijn volgende ronde.",
+    "deleted": "Sleutel verwijderd.",
+    "error": {
+      "summary": "De sleutel werd niet opgeslagen",
+      "required": "Plak {field} in.",
+      "spaces": "{field} bevat geen spaties: kopieer opnieuw.",
+      "characters": "{field} bevat alleen letters, cijfers en tekens: kopieer opnieuw.",
+      "tooShort": "{field} telt minstens {min} tekens: kopieer hem helemaal.",
+      "tooLong": "{field} telt hooguit {max} tekens: kopieer hem alleen.",
+      "refused": "Pleos weigerde deze sleutel: controleer zijn twee waarden, en dat hij nog bestaat in het Playground.",
+      "invalidBody": "Deze sleutel werd geweigerd: kopieer de waarden opnieuw.",
+      "noVehicle": "Deze sleutel leest geen voertuig: hij somt alleen de auto’s op die waren geregistreerd toen hij werd aangemaakt, en alleen met het account van de hoofdgebruiker. Controleer het tabblad van het merk in het Playground en sla opnieuw op.",
+      "tooManyVehicles": "Met de auto’s van deze sleutel zou uw account meer voertuigen hebben dan mag: de sleutel werd niet opgeslagen.",
+      "notAdmitted": "Uw account moet eerst een stap zetten, zoals voorwaarden aanvaarden: laad de pagina opnieuw. De sleutel werd niet opgeslagen.",
+      "sourceUnavailable": "De Pleos Vehicle Data API antwoordde niet: de sleutel werd niet opgeslagen. Probeer het zo opnieuw.",
+      "unavailable": "Runsten kon niet worden bereikt. Probeer het zo opnieuw.",
+      "internal": "De sleutel kon niet worden opgeslagen. Probeer het zo opnieuw."
+    },
+    "brand": {
+      "hyundai": "Hyundai",
+      "kia": "Kia",
+      "genesis": "Genesis"
     }
   }
 }

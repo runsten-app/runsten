@@ -211,21 +211,24 @@ type env struct {
 	// polestarID keeps the Polestar ID, polestarIDs signs in to it.
 	polestarID  *memPolestarID
 	polestarIDs *fakePolestarID
-	// bmw keeps the BMW connection, bmws runs its device flow.
-	bmw      *memBMW
-	bmws     *fakeBMW
-	reader   *memReader
-	settings *memSettings
-	brokers  *memBrokers
-	jobs     *memImportJobs
-	exports  *memAccountExports
-	archives *memArchives
-	aximote  *fakeAximote
-	files    *fakeFileImports
-	pictures *fakePictures
-	stored   *fakeStoredPictures
-	flows    *oauth.Flows
-	server   *Server
+	// bmw keeps the BMW connection, bmws runs its device flow; pleos keeps the key of
+	// each brand, pleosVehicles checks a new one.
+	bmw           *memBMW
+	bmws          *fakeBMW
+	pleos         *memPleos
+	pleosVehicles PleosVehicles
+	reader        *memReader
+	settings      *memSettings
+	brokers       *memBrokers
+	jobs          *memImportJobs
+	exports       *memAccountExports
+	archives      *memArchives
+	aximote       *fakeAximote
+	files         *fakeFileImports
+	pictures      *fakePictures
+	stored        *fakeStoredPictures
+	flows         *oauth.Flows
+	server        *Server
 }
 
 // newEnv starts runsten-api against the simulator, with the redirect URI registered
@@ -239,7 +242,7 @@ func newEnv(t *testing.T, maxFlows int) *env {
 // the simulator accepts (nil: any).
 func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []string) *env {
 	t.Helper()
-	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, bmw: &memBMW{}, bmws: &fakeBMW{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, exports: &memAccountExports{}, archives: &memArchives{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}, stored: &fakeStoredPictures{}}
+	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, bmw: &memBMW{}, bmws: &fakeBMW{}, pleos: &memPleos{}, pleosVehicles: pleosVehicles{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, exports: &memAccountExports{}, archives: &memArchives{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}, stored: &fakeStoredPictures{}}
 	e.reader = newMemReader(e.settings)
 	var handler http.Handler
 	e.api = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { handler.ServeHTTP(w, r) }))
@@ -281,6 +284,7 @@ func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []strin
 		Tesla: e.tesla, TeslaVehicles: teslaSim(t, e.clk, teslaVIN).client,
 		PolestarID: e.polestarID, PolestarIDAccounts: e.polestarIDs, PolestarIDFlows: oauth.NewFlows(e.clk, flowTTL, maxFlows),
 		BMW: e.bmw, BMWAccounts: e.bmws,
+		Pleos: e.pleos, PleosVehicles: e.pleosVehicles,
 		InstanceKeyLast4: instanceKey[max(0, len(instanceKey)-4):], Brokers: e.brokers, ImportJobs: e.jobs, AccountExports: e.exports, ExportArchives: e.archives, Aximote: e.aximote, FileImports: e.files,
 		Pictures: e.pictures, StoredPictures: e.stored, Params: readerParams(), CostParams: core.DefaultCostParams(), CapacityParams: core.DefaultCapacityParams(),
 		Catalog: mustCatalog(t), Clock: e.clk, Log: quiet,

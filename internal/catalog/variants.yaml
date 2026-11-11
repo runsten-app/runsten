@@ -1959,6 +1959,412 @@
       level: secondary
       for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
 
+# --- Hyundai Ioniq 5, Ioniq 6 and Ioniq Electric (read by the Pleos Vehicle Data API) ----
+#
+# The families are the sellname the maker's consent reads; whose spelling on a real car
+# is checked when one is read (the brand's variants stand in for a family the catalog
+# knows no variant of).
+
+- id: ioniq5-standard-2021
+  brand: hyundai
+  family: IONIQ 5
+  name: Ioniq 5 Standard Range
+  years: [2021, 2024]
+  gross_kwh: 58
+  net_kwh: 54
+  ac_max_kw: 11
+  dc_max_kw: 175
+  sources:
+    - url: https://www.chargeprosd.com/blog/hyundai-ioniq-5-battery-size-capacity/
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://en.wikipedia.org/wiki/Hyundai_Ioniq_5
+      level: secondary
+      for: [gross_kwh, ac_max_kw, dc_max_kw]
+
+- id: ioniq5-long-2021
+  brand: hyundai
+  family: IONIQ 5
+  name: Ioniq 5 Long Range
+  years: [2021, 2024]
+  gross_kwh: 77.4
+  net_kwh: 74
+  ac_max_kw: 11
+  dc_max_kw: 233
+  sources:
+    - url: https://www.chargeprosd.com/blog/hyundai-ioniq-5-battery-size-capacity/
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://en.wikipedia.org/wiki/Hyundai_Ioniq_5
+      level: secondary
+      for: [gross_kwh, ac_max_kw, dc_max_kw]
+
+- id: ioniq5-long-2025
+  brand: hyundai
+  family: IONIQ 5
+  name: Ioniq 5 (facelift)
+  years: [2025]
+  gross_kwh: 84
+  ac_max_kw: 11
+  dc_max_kw: 233
+  sources:
+    - url: https://en.wikipedia.org/wiki/Hyundai_Ioniq_5
+      level: secondary
+      for: [gross_kwh, ac_max_kw, dc_max_kw]
+
+- id: ioniq6-standard-2022
+  brand: hyundai
+  family: IONIQ 6
+  name: Ioniq 6 Standard Range
+  years: [2022]
+  gross_kwh: 53.8
+  ac_max_kw: 11
+  dc_max_kw: 175
+  sources:
+    - url: https://www.hyundainews.com/assets/documents/original/56235-2024IONIQ6Specs20230502.pdf
+      level: manufacturer
+      for: [gross_kwh, ac_max_kw]
+    - url: https://ev-database.org/car/1717/Hyundai-IONIQ-6-Standard-Range-2WD
+      level: secondary
+      for: [dc_max_kw]
+
+- id: ioniq6-long-2022
+  brand: hyundai
+  family: IONIQ 6
+  name: Ioniq 6 Long Range
+  years: [2022]
+  gross_kwh: 77.4
+  net_kwh: 74
+  ac_max_kw: 11
+  dc_max_kw: 233
+  sources:
+    - url: https://www.hyundainews.com/assets/documents/original/56235-2024IONIQ6Specs20230502.pdf
+      level: manufacturer
+      for: [gross_kwh, ac_max_kw]
+    - url: https://evspecshub.com/hyundai-ioniq-6-long-range-specs/
+      level: secondary
+      for: [net_kwh, dc_max_kw]
+
+- id: ioniq-electric-2016
+  brand: hyundai
+  family: IONIQ
+  name: Ioniq Electric
+  years: [2016, 2019]
+  gross_kwh: 30.5
+  net_kwh: 27
+  ac_max_kw: 6.6
+  dc_max_kw: 69
+  sources:
+    - url: https://ev-database.org/car/1057/Hyundai-IONIQ-Electric
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+    - url: https://evkx.net/models/hyundai/ioniq_electric/ioniq_electric_28_kwh/
+      level: secondary
+      for: [dc_max_kw]
+
+# --- Hyundai Kona Electric and Inster (read by the Pleos Vehicle Data API) --------------
+
+- id: kona-39-2019
+  brand: hyundai
+  family: Kona
+  name: Kona Electric 39.2 kWh
+  years: [2019, 2023]
+  gross_kwh: 39.2
+  ac_max_kw: 6.6
+  dc_max_kw: 64
+  sources:
+    - url: https://ev-database.org/car/1129/Hyundai-Kona-Electric-39-kWh
+      level: secondary
+      for: [gross_kwh, ac_max_kw, dc_max_kw]
+
+- id: kona-64-2019
+  brand: hyundai
+  family: Kona
+  name: Kona Electric 64 kWh
+  years: [2019, 2023]
+  gross_kwh: 67.5
+  net_kwh: 64
+  ac_max_kw: 10.5
+  dc_max_kw: 77
+  ambiguous_with: [kona-65-2023]
+  sources:
+    - url: https://ev-database.org/car/1126/Hyundai-Kona-Electric-64-kWh
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://evkx.net/models/hyundai/kona/kona_electric_64_kwh/
+      level: secondary
+      for: [ac_max_kw, dc_max_kw]
+
+- id: kona-48-2023
+  brand: hyundai
+  family: Kona
+  name: Kona Electric 48.4 kWh
+  years: [2023]
+  gross_kwh: 48.4
+  ac_max_kw: 10.5
+  dc_max_kw: 85
+  sources:
+    - url: https://en.wikipedia.org/wiki/Hyundai_Kona
+      level: secondary
+      for: [gross_kwh, ac_max_kw, dc_max_kw]
+
+- id: kona-65-2023
+  brand: hyundai
+  family: Kona
+  name: Kona Electric 64.8 kWh
+  years: [2023]
+  gross_kwh: 65.4
+  net_kwh: 64.8
+  ac_max_kw: 10.5
+  dc_max_kw: 85
+  ambiguous_with: [kona-64-2019]
+  sources:
+    - url: https://ev-database.org/car/1830/Hyundai-Kona-Electric-65-kWh
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: inster-standard-2024
+  brand: hyundai
+  family: Inster
+  name: Inster Standard Range
+  years: [2024]
+  gross_kwh: 42.3
+  ac_max_kw: 11
+  dc_max_kw: 85
+  sources:
+    - url: https://en.wikipedia.org/wiki/Hyundai_Inster
+      level: secondary
+      for: [gross_kwh, ac_max_kw, dc_max_kw]
+    # evkx reads a smaller pack (41.0 gross, 39.0 usable): no source settles the
+    # usable capacity, net_kwh is left out.
+
+- id: inster-long-2024
+  brand: hyundai
+  family: Inster
+  name: Inster Long Range
+  years: [2024]
+  gross_kwh: 49.0
+  net_kwh: 46.0
+  ac_max_kw: 11
+  dc_max_kw: 120
+  sources:
+    - url: https://evkx.net/models/hyundai/inster/inster_long_range/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+# --- Kia EV3, EV6 and EV9 (read by the Pleos Vehicle Data API) ---------------------------
+
+- id: ev3-standard-2024
+  brand: kia
+  family: EV3
+  name: EV3 Standard Range
+  years: [2024]
+  gross_kwh: 58.3
+  ac_max_kw: 11
+  dc_max_kw: 108
+  sources:
+    - url: https://evbattery.us/kia-ev3-battery-complete-guide/
+      level: secondary
+      for: [gross_kwh]
+    - url: https://www.go-electra.com/en/newsroom/kia-ev3-price-range-charging-and-full-technical-specifications-for-2025/
+      level: secondary
+      for: [ac_max_kw, dc_max_kw]
+
+- id: ev3-long-2025
+  brand: kia
+  family: EV3
+  name: EV3 Long Range
+  years: [2025]
+  gross_kwh: 81.4
+  net_kwh: 78.0
+  ac_max_kw: 11
+  dc_max_kw: 128
+  sources:
+    - url: https://evkx.net/models/kia/ev3/ev3_long_range/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+    - url: https://www.go-electra.com/en/newsroom/kia-ev3-price-range-charging-and-full-technical-specifications-for-2025/
+      level: secondary
+      for: [dc_max_kw]
+
+- id: ev6-long-2021
+  brand: kia
+  family: EV6
+  name: EV6 Long Range
+  years: [2021, 2024]
+  gross_kwh: 77.4
+  net_kwh: 74
+  ac_max_kw: 11
+  dc_max_kw: 233
+  sources:
+    - url: https://www.kiamedia.com/us/en/models/ev6/2022/specifications
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://en.wikipedia.org/wiki/Kia_EV6
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: ev6-long-2025
+  brand: kia
+  family: EV6
+  name: EV6 (facelift)
+  years: [2025]
+  gross_kwh: 84
+  ac_max_kw: 11
+  dc_max_kw: 233
+  sources:
+    - url: https://en.wikipedia.org/wiki/Kia_EV6
+      level: secondary
+      for: [gross_kwh, ac_max_kw, dc_max_kw]
+
+- id: ev9-standard-2024
+  brand: kia
+  family: EV9
+  name: EV9 Standard Range
+  years: [2023]
+  gross_kwh: 76.1
+  net_kwh: 74
+  ac_max_kw: 11
+  dc_max_kw: 210
+  sources:
+    - url: https://www.evspecs.org/tech-specs/kia/ev9/rwd-standard-range
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://www.kiamedia.com/us/en/models/ev9/2025/specifications
+      level: manufacturer
+      for: [ac_max_kw, dc_max_kw]
+
+- id: ev9-long-2024
+  brand: kia
+  family: EV9
+  name: EV9 Long Range
+  years: [2023]
+  gross_kwh: 99.8
+  net_kwh: 96
+  ac_max_kw: 11
+  dc_max_kw: 210
+  sources:
+    - url: https://ev-database.org/uk/car/1834/Kia-EV9-998-kWh-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://www.kiamedia.com/us/en/models/ev9/2025/specifications
+      level: manufacturer
+      for: [ac_max_kw, dc_max_kw]
+
+# --- Kia Niro EV and Soul EV (read by the Pleos Vehicle Data API) -------------------------
+
+- id: niro-39-2019
+  brand: kia
+  family: Niro
+  name: e-Niro 39.2 kWh
+  years: [2019, 2022]
+  gross_kwh: 39.2
+  ac_max_kw: 7.2
+  dc_max_kw: 44
+  sources:
+    - url: https://www.evspecs.org/tech-specs/kia/e-niro/39-kwh
+      level: secondary
+      for: [ac_max_kw]
+    - url: https://evkx.net/models/kia/niro/e-niro_39.2_kwh/
+      level: secondary
+      for: [gross_kwh, dc_max_kw]
+
+- id: niro-64-2019
+  brand: kia
+  family: Niro
+  name: e-Niro 64 kWh
+  years: [2019, 2022]
+  gross_kwh: 67.5
+  net_kwh: 64
+  ac_max_kw: 10.5
+  dc_max_kw: 77
+  ambiguous_with: [niro-2022]
+  sources:
+    - url: https://evkx.net/models/kia/niro/e-niro_64_kwh/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/1125/Kia-e-Niro-64-kWh
+      level: secondary
+      for: [gross_kwh, net_kwh]
+
+- id: niro-2022
+  brand: kia
+  family: Niro
+  name: Niro EV
+  years: [2022]
+  gross_kwh: 68.0
+  net_kwh: 64.8
+  ac_max_kw: 10.5
+  dc_max_kw: 85
+  ambiguous_with: [niro-64-2019]
+  sources:
+    - url: https://evkx.net/models/kia/niro/niro_ev/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/uk/car/1666/Kia-Niro-EV
+      level: secondary
+      for: [gross_kwh, net_kwh]
+
+- id: soul-ev-2015
+  brand: kia
+  family: Soul EV
+  name: Soul EV
+  years: [2015, 2019]
+  gross_kwh: 30.5
+  net_kwh: 27
+  ac_max_kw: 6.6
+  dc_max_kw: 100
+  sources:
+    - url: https://ev-database.org/uk/car/1012/Kia-Soul-EV
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+# --- Genesis GV60, GV70 Electrified and G80 Electrified (Pleos Vehicle Data API) --------
+
+- id: gv60-2021
+  brand: genesis
+  family: GV60
+  name: GV60
+  years: [2021, 2025]
+  gross_kwh: 77.4
+  net_kwh: 74.0
+  ac_max_kw: 11
+  dc_max_kw: 240
+  sources:
+    - url: https://evkx.net/models/genesis/gv60/gv60_awd_performance/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: gv70-2021
+  brand: genesis
+  family: GV70
+  name: Electrified GV70
+  years: [2021, 2025]
+  gross_kwh: 77.4
+  net_kwh: 74.0
+  ac_max_kw: 11
+  dc_max_kw: 240
+  sources:
+    - url: https://evkx.net/models/genesis/gv70/electrified_gv70/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: g80-2021
+  brand: genesis
+  family: G80
+  name: Electrified G80
+  years: [2021, 2025]
+  gross_kwh: 87.2
+  ac_max_kw: 10.9
+  dc_max_kw: 240
+  sources:
+    - url: https://www.caranddriver.com/genesis/electrified-g80-2024
+      level: secondary
+      for: [gross_kwh, ac_max_kw]
+    - url: https://www.evspecs.org/technical-data/genesis/g80-electrified/battery-capacity-usable-kwh
+      level: secondary
+      for: [dc_max_kw]
+
 # --- Plug-in hybrids: Volvo SPA and CMA, Polestar 1 -------------------------------------
 #
 # Recognized only for a vehicle read as a plug-in hybrid (Volvo's fuelType PETROL/ELECTRIC),

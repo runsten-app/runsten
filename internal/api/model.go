@@ -95,7 +95,7 @@ type vehicleModel struct {
 // one of the variant's in effect. Pure: it reads nothing else.
 func effectiveModel(c *catalog.Catalog, n core.Snapshot, v Vehicle) vehicleModel {
 	m := vehicleModel{Family: n.Family, ModelYear: n.ModelYear, Powertrain: n.Powertrain}
-	r := catalogReading(n, v.VIN)
+	r := catalogReading(c, n, v)
 	if !r.Offered() {
 		return m
 	}
@@ -125,11 +125,26 @@ func effectiveModel(c *catalog.Catalog, n core.Snapshot, v Vehicle) vehicleModel
 
 // catalogReading is what the catalog's rules read of the details. Unknown year, capacity
 // or powertrain: zero, which they do not filter on, or, for the powertrain, never match.
-func catalogReading(n core.Snapshot, vin string) catalog.Reading {
-	return catalog.Reading{
-		Brand: catalog.Brand(n.Brand.V), Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
-		Trim: n.Trim.V, Powertrain: catalog.Powertrain(n.Powertrain.V),
+// A car of the Pleos Vehicle Data API keeps the brand its provider names, and a family
+// the catalog knows no variant of (the consent may spell it otherwise than the catalog)
+// gives way to the brand, as a family the details do not read.
+func catalogReading(c *catalog.Catalog, n core.Snapshot, v Vehicle) catalog.Reading {
+	r := catalog.Reading{
+		Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: v.VIN,
+		Trim: n.Trim.V, Powertrain: catalog.Powertrain(n.Powertrain.V), Brand: catalog.Brand(n.Brand.V),
 	}
+	if p := providerJSON(v.Provider); p.pleos() {
+		brand := map[providerJSON]catalog.Brand{
+			providerPleosHyundai: catalog.Hyundai, providerPleosKia: catalog.Kia, providerPleosGenesis: catalog.Genesis,
+		}[p]
+		if r.Brand == "" {
+			r.Brand = brand
+		}
+		if r.Family != "" && len(c.Offer(r)) == 0 {
+			r.Family = ""
+		}
+	}
+	return r
 }
 
 // chargersOf lists the onboard chargers a variant may have: the standard one, and the
@@ -270,9 +285,9 @@ func optionalLevel(v catalog.Variant, f catalog.Figure) null[sourceLevelJSON] {
 // variantsOf lists the variants the user may choose from: the recognition's candidates
 // first, then the rest of the family (of the brand, when the family is unknown), each in
 // the order of the catalog.
-func (s *Server) variantsOf(n core.Snapshot, vin string, m vehicleModel) variantListJSON {
+func (s *Server) variantsOf(n core.Snapshot, v Vehicle, m vehicleModel) variantListJSON {
 	out := variantListJSON{Items: []variantOptionJSON{}}
-	family := s.Catalog.Offer(catalogReading(n, vin))
+	family := s.Catalog.Offer(catalogReading(s.Catalog, n, v))
 	if len(family) == 0 || len(m.Match.Candidates) == 0 {
 		return out
 	}
@@ -310,7 +325,7 @@ func (s *Server) listVariants(ctx context.Context, in *vehicleInput) (*body[vari
 	if err != nil {
 		return nil, err
 	}
-	return respond(s.variantsOf(n, v.VIN, effectiveModel(s.Catalog, n, v))), nil
+	return respond(s.variantsOf(n, v, effectiveModel(s.Catalog, n, v))), nil
 }
 
 // putModel writes the user's choice, checked against the details as they are: a choice
@@ -330,7 +345,7 @@ func (s *Server) putModel(ctx context.Context, in *vehicleModelInput) (*body[veh
 			return nil, invalidBody("variant_id", "unknown variant")
 		}
 		// The rule of a choice that holds: of the family read, else of the brand read.
-		if _, ok := s.Catalog.Chosen(*id, catalogReading(n, v.VIN)); !ok {
+		if _, ok := s.Catalog.Chosen(*id, catalogReading(s.Catalog, n, v)); !ok {
 			return nil, invalidBody("variant_id", "not a variant of the vehicle's family")
 		}
 		v.VariantID = *id

@@ -1,12 +1,14 @@
 export {
   deleteApiKey,
   deleteBmw,
+  deletePleosCredential,
   deletePolestarCredential,
   deletePolestarId,
   deleteTeslaToken,
   fetchConnection,
   pollBmwToken,
   setApiKey,
+  setPleosCredential,
   setPolestarCredential,
   setPolestarIdCode,
   setPolestarIdPassword,
@@ -19,10 +21,15 @@ export type {
   Bmw,
   BmwDevice,
   ConnectionSettings,
+  PleosBrand,
+  PleosCredentialUpdate,
+  PleosKey,
+  PleosKeys,
   PolestarCredential,
   PolestarCredentialUpdate,
   PolestarId,
   PolestarIdAuthorization,
   TeslaToken,
 } from './model/Connection'
+export { pleosBrands } from './model/Connection'
 export { connectionKeys } from './model/queryKeys'

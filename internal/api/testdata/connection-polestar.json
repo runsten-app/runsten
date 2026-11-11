@@ -14,5 +14,10 @@
   },
   "tesla": null,
   "polestar_id": null,
-  "bmw": null
+  "bmw": null,
+  "pleos": {
+    "hyundai": null,
+    "kia": null,
+    "genesis": null
+  }
 }

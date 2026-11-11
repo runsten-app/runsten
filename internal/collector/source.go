@@ -61,6 +61,11 @@ type SourceSpec struct {
 	// Name names the provider of the connections it reads (Target.Provider), and the
 	// source of their snapshots.
 	Name string
+	// Providers are the connection providers that read through the Source, when
+	// several do (each of Pleos's brands, each with its own key) while every snapshot
+	// belongs to one source of readings: the connections of each are read through it.
+	// Empty: Name alone, as the other sources'.
+	Providers []string
 	// Endpoints are read in this order in a pass: those that tell the mode first, so that
 	// a transition triggers the readings of its end within the same pass.
 	Endpoints []EndpointSpec
@@ -170,6 +175,10 @@ const (
 	// (BMW CarData's, which Home Assistant or evcc may hold); the source tries again at its
 	// own pace, and the user is told.
 	KindStreamHeld
+	// KindKeyShared: the provider allows one access at a time for a key, and another
+	// client keeps taking its place (Pleos keeps one token per key, which Home Assistant
+	// or evcc may take in turn); the connection waits RetryIn, and the user is told.
+	KindKeyShared
 )
 
 // SourceError is a refusal of a Source's provider. It holds neither the access nor the
@@ -256,17 +265,23 @@ func observeVolvo(ep Endpoint, raw []byte, a *Activity) error {
 }
 
 // AddSource has the vehicles of the connections of src's provider read through it,
-// from the next pass on; st records what the provider tells of them. Call it before
-// Run.
+// from the next pass on; st records what the provider tells of them. A Source whose
+// connections are of several providers (Providers) reads each of theirs. Call it
+// before Run.
 func (c *Collector) AddSource(src Source, st SourceStore) {
 	spec := src.Spec()
 	spec.Endpoints = append([]EndpointSpec(nil), spec.Endpoints...)
 	if spec.Intervals == (Intervals{}) {
 		spec.Intervals = c.iv
 	}
-	c.sources[spec.Name] = &source{SourceSpec: spec, observe: src.Observe, fingerprint: src.Fingerprint, ext: src, store: st}
+	s := &source{SourceSpec: spec, observe: src.Observe, fingerprint: src.Fingerprint, ext: src, store: st}
+	c.sources[spec.Name] = s
+	for _, p := range spec.Providers {
+		c.sources[p] = s
+	}
+	providers := append([]string{spec.Name}, spec.Providers...)
 	for _, ep := range spec.Endpoints {
-		c.budget.addSource(spec.Name, ep.API, spec.Daily)
+		c.budget.addSource(ep.API, providers, spec.Daily)
 	}
 }
 

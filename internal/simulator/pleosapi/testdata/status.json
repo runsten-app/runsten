@@ -1,0 +1,77 @@
+{
+  "data": {
+    "doors": [
+      {
+        "left": "locked",
+        "right": "locked"
+      },
+      {
+        "left": "locked",
+        "right": "locked"
+      }
+    ],
+    "hood": "closed",
+    "trunk": "closed",
+    "sunroof": "closed",
+    "tire": [
+      {
+        "left": 40,
+        "right": 40,
+        "unit": "psi"
+      },
+      {
+        "left": 40,
+        "right": 40,
+        "unit": "psi"
+      }
+    ],
+    "warnings": ["washFluid"],
+    "climateControl": {
+      "mode": "auto",
+      "status": "on",
+      "speed": -1,
+      "temperature": {
+        "value": 17,
+        "unit": "C"
+      }
+    },
+    "windshield": {
+      "defrost": "off"
+    },
+    "steeringWheelHeat": "off",
+    "seats": [
+      {
+        "left": {
+          "heat": "off",
+          "ventilation": "high"
+        },
+        "right": {
+          "heat": "off",
+          "ventilation": "off"
+        }
+      },
+      {
+        "left": {
+          "heat": "off",
+          "ventilation": "off"
+        },
+        "right": {
+          "heat": "off",
+          "ventilation": "off"
+        }
+      }
+    ],
+    "outsideTemperature": {
+      "value": 30,
+      "unit": "C"
+    },
+    "timestamp": "2025-09-01T09:10:00Z"
+  },
+  "meta": {
+    "code": 200,
+    "message": "Success",
+    "success": "true",
+    "timestamp": "2025-09-01T11:00:00Z",
+    "requestId": "835bdbd4-1105-4a8c-b438-a1b2c3d4f5g6"
+  }
+}

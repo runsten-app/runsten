@@ -19,7 +19,8 @@ import (
 type Scenario struct {
 	// Brand is the vehicle's maker, which says the API that serves it: volvo (the
 	// default, the Volvo Cars API), polestar (the Polestar Data Portal's), tesla (the
-	// Owner API), bmw or mini (BMW CarData).
+	// Owner API), bmw or mini (BMW CarData), hyundai, kia or genesis (the Pleos
+	// Vehicle Data API).
 	Brand string `yaml:"brand"`
 	// Source is the API a Polestar is served on: empty, the Data Portal's; polestar_id,
 	// the Polestar app's, read with the Polestar ID (polestaridapi). For brand polestar
@@ -135,6 +136,11 @@ const (
 	BrandTesla    = "tesla"
 	BrandBMW      = "bmw"
 	BrandMini     = "mini"
+	// The three the Pleos Vehicle Data API reads, by their header value: hyundai and
+	// genesis read a Hyundai's or a Genesis's, kia a Kia's.
+	BrandHyundai = "hyundai"
+	BrandKia     = "kia"
+	BrandGenesis = "genesis"
 )
 
 // SourcePolestarID serves a Polestar on the Polestar app's API rather than the Data
@@ -160,8 +166,11 @@ func Parse(data []byte) (*Scenario, error) {
 // Validate checks that the scenario is consistent.
 func (s *Scenario) Validate() error {
 	var errs []error
-	if s.Brand != "" && !slices.Contains([]string{BrandVolvo, BrandPolestar, BrandTesla, BrandBMW, BrandMini}, s.Brand) {
-		errs = append(errs, fmt.Errorf("brand %q: volvo, polestar, tesla, bmw or mini expected", s.Brand))
+	if s.Brand != "" && !slices.Contains([]string{
+		BrandVolvo, BrandPolestar, BrandTesla, BrandBMW, BrandMini,
+		BrandHyundai, BrandKia, BrandGenesis,
+	}, s.Brand) {
+		errs = append(errs, fmt.Errorf("brand %q: volvo, polestar, tesla, bmw, mini, hyundai, kia or genesis expected", s.Brand))
 	}
 	if s.Source != "" && (s.Source != SourcePolestarID || s.Brand != BrandPolestar) {
 		errs = append(errs, fmt.Errorf("source %q: polestar_id, for brand polestar only", s.Source))

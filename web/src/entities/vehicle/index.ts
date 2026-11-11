@@ -11,6 +11,7 @@ export {
 export {
   collectionState,
   collectorStoppedAfter,
+  keySharedFor,
   needsAttention,
   notGrantedFor,
   streamHeldFor,

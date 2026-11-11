@@ -1085,3 +1085,31 @@ func TestConnectionOfTeslaFleet(t *testing.T) {
 		}
 	}
 }
+
+// TestConnectionOfPleos: a car of the Pleos Vehicle Data API is read with its brand's
+// key, whatever the brand's provider, its state told: set, refused, missing.
+func TestConnectionOfPleos(t *testing.T) {
+	s := &Server{}
+	for _, tc := range []struct {
+		provider string
+		want     providerJSON
+	}{
+		{"pleos_hyundai", providerPleosHyundai},
+		{"pleos_kia", providerPleosKia},
+		{"pleos_genesis", providerPleosGenesis},
+	} {
+		for _, state := range []struct {
+			v    Vehicle
+			want credentialStatus
+		}{
+			{Vehicle{Provider: tc.provider}, credentialSet},
+			{Vehicle{Provider: tc.provider, CredentialRefused: true}, credentialRefused},
+			{Vehicle{Provider: tc.provider, CredentialMissing: true}, credentialMissing},
+		} {
+			c := s.connectionOf(state.v)
+			if c.Provider != tc.want || c.Credential != known(state.want) || c.APIKey.ok {
+				t.Errorf("%+v: %+v", state.v, c)
+			}
+		}
+	}
+}

@@ -1268,7 +1268,8 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW"
+      "bmw": "BMW",
+      "pleos": "Hyundai · Kia · Genesis"
     },
     "brandAttention": "demande votre attention",
     "outcome": {
@@ -1333,10 +1334,15 @@
       "credentialMissingPolestarId": "Non lue : aucun Polestar ID connecté",
       "unsharedPolestarId": "Non lue : la voiture n'est plus dans le Polestar ID",
       "credentialRefusedBmw": "Non lu : BMW a refusé la connexion",
+      "credentialRefusedPleos": "Non lu : Pleos a refusé la clé",
       "credentialMissingBmw": "Non lu : aucune connexion BMW",
+      "credentialMissingPleos": "Non lu : aucune clé Pleos donnée",
       "unsharedBmw": "Non lu : le compte BMW n'est plus l'utilisateur principal de la voiture",
+      "unsharedPleos": "Non lu : la voiture ne partage plus ses données avec la clé",
       "pausedBmw": "En pause par BMW jusqu'à {time}",
-      "quotaBmw": "Appels du jour à BMW atteints jusqu'à {time}"
+      "pausedPleos": "En pause par Pleos jusqu'à {time}",
+      "quotaBmw": "Appels du jour à BMW atteints jusqu'à {time}",
+      "quotaPleos": "Appels du jour à Pleos atteints jusqu'à {time}"
     },
     "notice": {
       "reauth": {
@@ -1378,7 +1384,12 @@
       "credentialMissingBmw": "Runsten lit cette voiture par votre connexion BMW, qui a été retirée : reconnectez-vous sur la page Connexion.",
       "unsharedBmw": "Votre compte BMW n'est plus l'utilisateur principal de cette voiture, ou ne la liste plus : vendue, ou changée de propriétaire. Si elle revient, reconnectez BMW sur la page Connexion : la voiture est lue à nouveau.",
       "pausedBmw": "BMW a limité le nombre d'appels. La lecture reprend d'elle-même.",
-      "quotaBmw": "Runsten fait au plus 40 appels par jour à l'API de BMW par connexion, pour vous en laisser quelques-uns des 50 de BMW : ils sont épuisés. Le flux, qui n'a pas de limite, est toujours lu ; le reste reprend de lui-même."
+      "pausedPleos": "Pleos a limité le nombre d'appels. La lecture reprend d'elle-même.",
+      "credentialRefusedPleos": "Pleos a refusé la clé avec laquelle cette voiture est lue : révoquée ou remplacée dans le Playground, ou expirée. Créez-en une nouvelle là-bas et donnez-la sur la page Connexion : ce qui a été lu reste.",
+      "credentialMissingPleos": "Runsten lit cette voiture avec votre clé Pleos, qui a été retirée : donnez-en une nouvelle sur la page Connexion.",
+      "unsharedPleos": "Pleos a répondu que cette voiture ne partage plus ses données avec la clé : le partage coupé dans ses services connectés, ou la voiture désenregistrée. Si elle partage à nouveau, redonnez la clé sur la page Connexion : la voiture est lue à nouveau.",
+      "quotaBmw": "Runsten fait au plus 40 appels par jour à l'API de BMW par connexion, pour vous en laisser quelques-uns des 50 de BMW : ils sont épuisés. Le flux, qui n'a pas de limite, est toujours lu ; le reste reprend de lui-même.",
+      "quotaPleos": "Runsten fait au plus 2 000 appels par jour à la Pleos Vehicle Data API par clé, un plafond à lui (Pleos n'en publie aucun) : ils sont épuisés. La lecture reprend d'elle-même."
     },
     "facts": {
       "mode": "Mode de lecture",
@@ -1403,7 +1414,9 @@
       "noneDuePolestarId": "Aucune avant la reconnexion du Polestar ID",
       "noneDueUnsharedPolestarId": "Aucune : la voiture n'est plus dans le Polestar ID",
       "noneDueBmw": "Aucune avant la reconnexion de BMW",
-      "noneDueUnsharedBmw": "Aucune : le compte BMW n'est plus l'utilisateur principal de la voiture"
+      "noneDuePleos": "Aucune tant qu'aucune clé Pleos n'est donnée",
+      "noneDueUnsharedBmw": "Aucune : le compte BMW n'est plus l'utilisateur principal de la voiture",
+      "noneDueUnsharedPleos": "Aucune : la voiture ne partage plus ses données avec la clé"
     },
     "api": {
       "connectedVehicle": "données du véhicule",
@@ -1413,7 +1426,8 @@
       "tesla": "Owner API de Tesla",
       "teslaFleet": "Fleet API de Tesla",
       "polestarId": "API de l'app Polestar",
-      "bmw": "BMW CarData"
+      "bmw": "BMW CarData",
+      "pleos": "l’API Pleos Vehicle Data"
     },
     "failure": {
       "quota": "Quota atteint",
@@ -1442,7 +1456,9 @@
       "notFoundBmw": "Véhicule inconnu de BMW",
       "unavailableBmw": "BMW injoignable",
       "tokenBmw": "Aucun jeton de BMW",
-      "credentialRefusedBmw": "Connexion BMW refusée"
+      "credentialRefusedBmw": "Connexion BMW refusée",
+      "credentialRefusedPleos": "Clé Pleos refusée",
+      "keyShared": "Clé partagée avec une autre application"
     },
     "key": {
       "title": "Clé Volvo"
@@ -1475,6 +1491,14 @@
     },
     "streamHeld": {
       "text": "Une autre application tient le flux de BMW : BMW n'en autorise qu'une à la fois par compte, et ce peut être l'intégration CarData de Home Assistant ou evcc. Runsten ne lit rien du flux tant qu'elle ne le lâche pas. Arrêtez cette application, ou laissez plutôt Runsten republier votre voiture sur votre broker MQTT pour Home Assistant :",
+      "mqtt": "Réglages MQTT"
+    },
+    "pleos": {
+      "title": "L’API Pleos Vehicle Data",
+      "off": "Hyundai, Kia et Genesis sont désactivés sur cette instance (le drapeau source.pleos)."
+    },
+    "keyShared": {
+      "text": "Une autre application lit avec la même clé Pleos — evcc, Home Assistant. L’API n’autorise qu’un lecteur à la fois, et chacun prend la place de l’autre. Gardez cette clé pour Runsten seul, ou laissez plutôt Runsten republier votre voiture sur votre broker MQTT pour Home Assistant :",
       "mqtt": "Réglages MQTT"
     }
   },
@@ -2138,6 +2162,64 @@
       "tooManyPending": "Trop de connexions à BMW sont en attente sur cette instance. Réessayez dans quelques minutes.",
       "unavailable": "Runsten n'a pas pu être joint. Réessayez dans un instant.",
       "internal": "BMW n'a pas pu être connecté. Réessayez dans un instant."
+    }
+  },
+  "pleos": {
+    "intro": "Runsten lit votre Hyundai, Kia ou Genesis avec une clé que vous créez dans le Pleos Playground, l’accès que le Data Act européen donne aux propriétaires. Une clé par marque, chacune avec son propre quota d’appels.",
+    "guide": "Lire le guide",
+    "refused": {
+      "title": "Votre clé a été refusée",
+      "body": "Pleos l’a refusée le {time} : révoquée ou remplacée dans le Playground, ou expirée. Vos voitures ne sont plus lues tant que vous n’en donnez pas une autre ; ce qui a été lu reste."
+    },
+    "current": "Votre clé",
+    "last4": "Client ID se terminant par {last4}",
+    "setAt": "Donnée",
+    "replace": "Remplacer la clé",
+    "delete": {
+      "button": "Retirer la clé",
+      "title": "Retirer votre clé {brand} ?",
+      "text": "Votre {brand} reste, avec son historique, mais n’est plus lue tant que vous ne donnez pas une autre clé.",
+      "error": "La clé n’a pas pu être retirée. Réessayez dans un instant.",
+      "cancel": "Annuler",
+      "confirm": "Retirer"
+    },
+    "steps": {
+      "title": "Créez votre clé",
+      "signIn": "Connectez-vous avec le compte de votre voiture sur",
+      "newTab": "(s’ouvre dans un nouvel onglet)",
+      "accept": "Dans My Vehicle Data API, sur l’onglet de la marque de votre voiture, cochez les deux cases : Conditions d’utilisation, Politique de confidentialité.",
+      "get": "Choisissez Get API Key, puis connectez-vous avec le compte de l’application de votre voiture — Bluelink, Kia Connect ou Genesis Connected —, celui de l’utilisateur principal.",
+      "copy": "Sur la page de la clé, copiez son Client ID et son Client secret, puis collez-les ci-dessous : ils ne seront plus jamais affichés."
+    },
+    "field": {
+      "clientId": "Client ID",
+      "clientSecret": "Client secret"
+    },
+    "help": "La clé ne liste que les voitures enregistrées au moment de sa création, et ne lit que le compte de l’utilisateur principal. Gardez-la pour Runsten seul : une autre application qui lirait avec prendrait la place de Runsten.",
+    "save": "Enregistrer la clé",
+    "cancel": "Annuler",
+    "saved": "Clé enregistrée : Runsten lit ses voitures dès sa prochaine passe.",
+    "deleted": "Clé retirée.",
+    "error": {
+      "summary": "La clé n’a pas été enregistrée",
+      "required": "Collez le {field}.",
+      "spaces": "Le {field} ne contient pas d’espace : copiez-le à nouveau.",
+      "characters": "Le {field} ne contient que des lettres, des chiffres et des signes : copiez-le à nouveau.",
+      "tooShort": "Le {field} compte au moins {min} caractères : copiez-le en entier.",
+      "tooLong": "Le {field} compte au plus {max} caractères : copiez-le seul.",
+      "refused": "Pleos a refusé cette clé : vérifiez ses deux valeurs, et qu’elle existe encore dans le Playground.",
+      "invalidBody": "Cette clé a été refusée : copiez à nouveau ses valeurs.",
+      "noVehicle": "Cette clé ne lit aucune voiture : elle ne liste que celles enregistrées au moment de sa création, et seulement avec le compte de l’utilisateur principal. Vérifiez l’onglet de la marque dans le Playground, puis enregistrez-la à nouveau.",
+      "tooManyVehicles": "Avec les voitures de cette clé, votre compte aurait plus de véhicules qu’il ne peut : la clé n’a pas été enregistrée.",
+      "notAdmitted": "Votre compte doit d’abord franchir une étape, comme accepter des conditions : rechargez la page. La clé n’a pas été enregistrée.",
+      "sourceUnavailable": "L’API Pleos Vehicle Data n’a pas répondu : la clé n’a pas été enregistrée. Réessayez dans un instant.",
+      "unavailable": "Runsten n’a pas pu être joint. Réessayez dans un instant.",
+      "internal": "La clé n’a pas pu être enregistrée. Réessayez dans un instant."
+    },
+    "brand": {
+      "hyundai": "Hyundai",
+      "kia": "Kia",
+      "genesis": "Genesis"
     }
   }
 }

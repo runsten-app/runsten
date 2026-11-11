@@ -43,6 +43,8 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/bmwapi
               desc: outward dependency forbidden
+            - pkg: runsten/internal/simulator/pleosapi
+              desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/scenario
               desc: outward dependency forbidden
         # The scenario engine drives the vehicle, without knowing HTTP or the API.
@@ -60,6 +62,8 @@ linters:
             - pkg: runsten/internal/simulator/polestaridapi
               desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/bmwapi
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/simulator/pleosapi
               desc: outward dependency forbidden
         # The simulated API declares its Ledger: pgledger keeps the grants in PostgreSQL.
         volvoapi-without-database:
@@ -111,6 +115,8 @@ linters:
               desc: the collector declares its own Source, which collector/polestaridsource adapts the Polestar ID client to
             - pkg: runsten/internal/bmw
               desc: the collector declares its own Source, which collector/bmwsource adapts the CarData client to
+            - pkg: runsten/internal/pleos
+              desc: the collector declares its own Source, which collector/pleosource adapts the Pleos client to
         # The collector's Polestar source adapts the client: no transport, no storage.
         polestarsource-adapts:
           files: ["**/internal/collector/polestarsource/**", "!$test"]
@@ -141,6 +147,16 @@ linters:
               desc: storage belongs to store
             - pkg: runsten/internal/store
               desc: polestaridsource declares its own Store, which the store implements
+        # The collector's Pleos source adapts the client: no transport, no storage.
+        pleossource-adapts:
+          files: ["**/internal/collector/pleossource/**", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the transport belongs to the pleos client
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: the binary reads the credential from the store
         # The addresses' worker orchestrates: it knows neither the transport nor the database.
         geocode-without-adapters:
           files: ["**/internal/geocode/*.go", "!$test"]
@@ -289,6 +305,27 @@ linters:
               desc: each vendor's client stands alone
             - pkg: runsten/internal/oauth
               desc: the M2M credential has no grant to keep, a token is asked again
+        # The Pleos client depends on neither storage nor the collector, nor on another
+        # vendor's client.
+        pleos-is-a-client:
+          files: ["**/internal/pleos/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: the client stores nothing
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/derive
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/api
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/catalog
+              desc: recognizing a variant is a reading of the API, not a normalization
+            - pkg: runsten/internal/volvo
+              desc: each vendor's client stands alone
+            - pkg: runsten/internal/polestar
+              desc: each vendor's client stands alone
         # The collector's CarData source adapts the client: no transport, no storage.
         bmwsource-adapts:
           files: ["**/internal/collector/bmwsource/**", "!$test"]

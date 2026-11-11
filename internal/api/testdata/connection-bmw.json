@@ -13,5 +13,10 @@
     "last4": "c1d0",
     "set_at": "2026-09-28T05:00:20Z",
     "refused_at": null
+  },
+  "pleos": {
+    "hyundai": null,
+    "kia": null,
+    "genesis": null
   }
 }

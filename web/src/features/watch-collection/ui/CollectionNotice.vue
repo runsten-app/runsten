@@ -42,6 +42,7 @@ function body(s: CollectionState): string {
         polestar: t('connection.notice.pausedPolestar'),
         tesla: t('connection.notice.pausedTesla'),
         bmw: t('connection.notice.pausedBmw'),
+        pleos: t('connection.notice.pausedPleos'),
       })
     case 'market':
       return t('connection.notice.market')
@@ -54,6 +55,7 @@ function body(s: CollectionState): string {
             polestarId: t('connection.notice.credentialRefusedPolestarId'),
             teslaFleet: t('connection.notice.credentialRefusedTeslaFleet'),
             bmw: t('connection.notice.credentialRefusedBmw'),
+            pleos: t('connection.notice.credentialRefusedPleos'),
           })
         : byProvider(provider.value, {
             volvo: t('connection.notice.credentialMissing'),
@@ -62,6 +64,7 @@ function body(s: CollectionState): string {
             polestarId: t('connection.notice.credentialMissingPolestarId'),
             teslaFleet: t('connection.notice.credentialMissingTeslaFleet'),
             bmw: t('connection.notice.credentialMissingBmw'),
+            pleos: t('connection.notice.credentialMissingPleos'),
           })
     case 'unshared':
       return byProvider(provider.value, {
@@ -71,18 +74,20 @@ function body(s: CollectionState): string {
         polestarId: t('connection.notice.unsharedPolestarId'),
         teslaFleet: t('connection.notice.unsharedTeslaFleet'),
         bmw: t('connection.notice.unsharedBmw'),
+        pleos: t('connection.notice.unsharedPleos'),
       })
     case 'notGranted':
       return t('connection.notice.notGranted', { endpoint: s.endpoint ?? f.unknown() })
     default:
       // The quota is the key's: the account's own, or the instance's, shared; or the
       // Polestar credential's, the Tesla refresh token's, the Polestar ID's, the calls to
-      // Tesla's Fleet API.
+      // Tesla's Fleet API, or the Pleos key's.
       if (provider.value === 'polestar') return t('connection.notice.quotaPolestar')
       if (provider.value === 'tesla_fleet') return t('connection.notice.quotaTeslaFleet')
       if (provider.value === 'polestar_id') return t('connection.notice.quotaPolestarId')
       if (provider.value === 'bmw') return t('connection.notice.quotaBmw')
       if (provider.value === 'tesla') return t('connection.notice.quotaTesla')
+      if (provider.value.startsWith('pleos_')) return t('connection.notice.quotaPleos')
       return connection.value?.api_key === 'own'
         ? t('connection.notice.quotaOwnKey')
         : t('connection.notice.quota')

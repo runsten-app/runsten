@@ -17,10 +17,10 @@ vi.mock('@/entities/session/extensions', () => ({
   },
 }))
 
-// The flags, as the session gives them: source.tesla on, source.polestar-id and source.bmw
-// off (BMW's is on in the app, but the other tests have three tabs), unless a test turns
-// them over.
-const flag = vi.hoisted(() => ({ tesla: true, polestarId: false, bmw: false }))
+// The flags, as the session gives them: source.tesla on, source.polestar-id, source.bmw
+// and source.pleos off (BMW's and Pleos's are on in the app, but the other tests have
+// three tabs), unless a test turns them over.
+const flag = vi.hoisted(() => ({ tesla: true, polestarId: false, bmw: false, pleos: false }))
 vi.mock('@/features/view-flags', async () => {
   const { computed } = await import('vue')
   return {
@@ -30,7 +30,9 @@ vi.mock('@/features/view-flags', async () => {
           ? flag.polestarId
           : name === 'source.bmw'
             ? flag.bmw
-            : flag.tesla,
+            : name === 'source.pleos'
+              ? flag.pleos
+              : flag.tesla,
       ),
   }
 })
@@ -64,6 +66,7 @@ const selfHosted: ConnectionSettings = {
   tesla: null,
   polestar_id: null,
   bmw: null,
+  pleos: null,
 }
 // The hosted offer: no instance key, the account gives its own.
 const hosted: ConnectionSettings = {
@@ -76,6 +79,7 @@ const hosted: ConnectionSettings = {
   tesla: null,
   polestar_id: null,
   bmw: null,
+  pleos: null,
 }
 
 const items = vehicles.items as Vehicle[]
@@ -85,6 +89,7 @@ beforeEach(() => {
   flag.tesla = true
   flag.polestarId = false
   flag.bmw = false
+  flag.pleos = false
   mocks.fetchVehicles.mockReset()
   mocks.fetchVehicles.mockResolvedValue(items)
   mocks.fetchConnection.mockReset()
@@ -827,6 +832,131 @@ describe('ConnectionPage', () => {
       ])
       const w = await page({ vehicle: 'bmw-1' })
       expect(w.find('#connection-panel-bmw .stream-held').exists()).toBe(false)
+    })
+  })
+
+  describe('Pleos', () => {
+    const kiaCar = (collection: Partial<NonNullable<Vehicle['collection']>> = {}): Vehicle => {
+      const [car] = items
+      if (!car?.collection) throw new Error('fixture')
+      return {
+        ...car,
+        id: 'kia-1',
+        connection: { ...car.connection, provider: 'pleos_kia', credential: 'set', api_key: null },
+        collection: { ...car.collection, quota: [], last_failure: null, ...collection },
+      }
+    }
+
+    it('has one tab for the three brands, marked beta, while its flag is on, with a form for each key', async () => {
+      flag.pleos = true
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
+        'Volvo needs your attention',
+        'Polestar needs your attention',
+        'Tesla',
+        'Hyundai · Kia · Genesis Beta',
+      ])
+      await w.findAll('[role="tab"]')[3]?.trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('#connection-panel-pleos .pleos-form').exists()).toBe(true),
+      )
+      const panel = w.find('#connection-panel-pleos')
+      expect(panel.findAll('h2').map((h) => plain(h.text()))).toEqual([
+        'The Pleos Vehicle Data API Beta',
+      ])
+      // One section per brand, each with the fields of its own key.
+      expect(panel.findAll('h3').map((h) => plain(h.text()))).toContain('Kia')
+      expect(panel.find('#pleos-kia-client-id').exists()).toBe(true)
+      expect(panel.find('#pleos-hyundai-client-id').exists()).toBe(true)
+      expect(panel.find('#pleos-genesis-client-secret').exists()).toBe(true)
+      expect(panel.find('.pleos-off').exists()).toBe(false)
+    })
+
+    it('has no tab while its flag is off for an account without a key nor a car of it', async () => {
+      // What the API answers of an account without a key: the three brands, each null.
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        pleos: { hyundai: null, kia: null, genesis: null },
+      })
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).not.toContain(
+        'Hyundai · Kia · Genesis Beta',
+      )
+      expect(w.find('#connection-panel-pleos').exists()).toBe(false)
+    })
+
+    it('keeps its tab while its flag is off for an account that has a key of it', async () => {
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        pleos: {
+          hyundai: null,
+          kia: { last4: '-dev', set_at: '2026-09-28T05:00:00Z', refused_at: null },
+          genesis: null,
+        },
+      })
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toContain(
+        'Hyundai · Kia · Genesis Beta',
+      )
+      // The key stays told and can be removed; no key is taken, of any brand.
+      await w.find('#connection-tab-pleos').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('#connection-panel-pleos .pleos-off').exists()).toBe(true),
+      )
+      const panel = w.find('#connection-panel-pleos')
+      expect(panel.findAll('h3').map((h) => plain(h.text()))).toEqual(['Kia'])
+      expect(panel.find('.delete-credential').exists()).toBe(true)
+      expect(panel.find('.toggle').exists()).toBe(false)
+      expect(panel.find('.credential-form').exists()).toBe(false)
+    })
+
+    it('keeps its tab while its flag is off for an account that has a car of it, which stays read from before', async () => {
+      mocks.fetchVehicles.mockResolvedValue([kiaCar()])
+      const w = await page({ vehicle: 'kia-1' })
+      expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain(
+        'Hyundai · Kia · Genesis',
+      )
+      // The flag off: no key is taken, why is said.
+      expect(w.find('.pleos-off').text()).toContain(
+        'Hyundai, Kia and Genesis are turned off on this instance',
+      )
+    })
+
+    it('tells a car whose key was refused, without another brand in sight', async () => {
+      flag.pleos = true
+      mocks.fetchVehicles.mockResolvedValue([
+        {
+          ...kiaCar(),
+          connection: { ...kiaCar().connection, credential: 'refused' },
+          collection: { ...kiaCar().collection, next_read_at: null } as Vehicle['collection'],
+        },
+      ])
+      const w = await page({ vehicle: 'kia-1' })
+      const v = w.find('#connection-panel-pleos .vehicle-collection')
+      expect(v.find('.state').text()).toBe('Not read: Pleos refused the key')
+      expect(facts(v.find('dl'))['Next reading']).toBe('None until a Pleos key is given')
+      expect(w.find('[role="tab"][aria-selected="true"] .attention').exists()).toBe(true)
+    })
+
+    it('tells a key another application reads with, and leads to the MQTT settings', async () => {
+      flag.pleos = true
+      mocks.fetchVehicles.mockResolvedValue([
+        kiaCar({
+          last_failure: {
+            at: '2026-09-28T07:04:00Z',
+            endpoint: 'batteries',
+            status: 403,
+            kind: 'key_shared',
+          },
+        }),
+      ])
+      const w = await page({ vehicle: 'kia-1' })
+      const v = w.find('#connection-panel-pleos .vehicle-collection')
+      expect(facts(v.find('dl'))['Latest failure']).toContain('Key shared with another application')
+      const hint = v.find('.key-shared')
+      expect(hint.text()).toContain('The API allows only one reader at a time')
+      expect(hint.text()).toContain('republish your car to your MQTT broker')
+      expect(hint.find('a.mqtt').attributes('href')).toBe('/settings/integrations')
     })
   })
 })

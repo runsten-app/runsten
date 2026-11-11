@@ -67,6 +67,9 @@
 //	                             address, no position leaves the instance). It is sent
 //	                             the positions outside the places, one per
 //	                             RUNSTEN_GEOCODER_INTERVAL (default 1s)
+//	RUNSTEN_PLEOS_API_URL        the Pleos Vehicle Data API, which checks a key and reads
+//	                             the Hyundais, Kias and Genesises when the flag source.pleos
+//	                             is on (default https://api.pleos.ai)
 //	RUNSTEN_POLESTAR_BASE_URL    Polestar Data Portal's M2M API, which checks a credential
 //	                             before it is stored (default
 //	                             https://pc-api.polestar.com/eu-north-1/data-portal/m2m)
@@ -156,6 +159,7 @@ import (
 	"runsten/internal/platform/health"
 	"runsten/internal/platform/httpserver"
 	"runsten/internal/platform/secretbox"
+	"runsten/internal/pleos"
 	"runsten/internal/polestar"
 	"runsten/internal/polestarid"
 	"runsten/internal/release"
@@ -199,6 +203,7 @@ type config struct {
 	baseURL     string
 	aximoteURL  string
 	polestarURL string
+	pleosURL    string
 	tesla       tesla.Hosts
 	polestarID  polestarid.Hosts
 	bmw         bmw.Hosts
@@ -376,6 +381,8 @@ func run(args []string) error {
 		PolestarIDFlows:    oauth.NewFlows(clock.Real{}, flowTTL, maxPending),
 		BMW:                st,
 		BMWAccounts:        bmwAccounts{bmw.NewClient(cfg.bmw, hc)},
+		Pleos:              st,
+		PleosVehicles:      pleosVehicles{pleos.NewClient(cfg.pleosURL, hc)},
 		InstanceKey:        cfg.apiKey != "",
 		InstanceKeyLast4:   cfg.apiKey[max(0, len(cfg.apiKey)-4):],
 		ClientID:           cfg.app.ClientID,
@@ -555,6 +562,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		baseURL:     volvo.DefaultBaseURL,
 		aximoteURL:  aximote.DefaultBaseURL,
 		polestarURL: polestar.DefaultBaseURL,
+		pleosURL:    pleos.DefaultBaseURL,
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		polestarID:  polestarid.Hosts{Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL},
 		bmw:         bmw.Hosts{Auth: bmw.DefaultAuthURL, API: bmw.DefaultAPIURL},
@@ -587,7 +595,8 @@ func loadConfig(getenv func(string) string) (config, error) {
 	errs = append(errs, loadVolvoApp(&cfg, getenv)...)
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.app.BaseURL, "RUNSTEN_AXIMOTE_BASE_URL": &cfg.aximoteURL,
-		"RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL, "RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
+		"RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL, "RUNSTEN_PLEOS_API_URL": &cfg.pleosURL,
+		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
 		"RUNSTEN_BMW_AUTH_URL": &cfg.bmw.Auth, "RUNSTEN_BMW_API_URL": &cfg.bmw.API,
 	} {
@@ -805,6 +814,18 @@ func (p polestarVehicles) PolestarVehicles(ctx context.Context, cred api.Polesta
 	return p.c.Vehicles(ctx, tok.Value, cred.AccountID) //nolint:wrapcheck // the client's, with its context
 }
 
+// pleosVehicles lists the vehicles of a Pleos key for the API: a token, then the VINs
+// of its brand.
+type pleosVehicles struct{ c *pleos.Client }
+
+func (p pleosVehicles) PleosVehicles(ctx context.Context, brand string, cred api.PleosCredential) ([]string, error) {
+	tok, err := p.c.Token(ctx, pleos.Brand(brand), pleos.Credential{ClientID: cred.ClientID, ClientSecret: cred.ClientSecret})
+	if err != nil {
+		return nil, err //nolint:wrapcheck // the client's, with its context
+	}
+	return p.c.Vehicles(ctx, tok.Value, pleos.Brand(brand)) //nolint:wrapcheck // the client's, with its context
+}
+
 // teslaVehicles lists the vehicles of a Tesla refresh token for the API: a refresh, then
 // the VINs, with the refresh token to keep.
 type teslaVehicles struct{ c *tesla.Client }
@@ -945,7 +966,12 @@ func (a aximoteVehicles) AximoteVehicles(ctx context.Context, token string) ([]a
 // extension adds.
 func normalizers() derive.Normalizer {
 	return derive.Sources(append([]derive.Normalizer{
-		volvo.Normalizer{}, polestar.Normalizer{}, tesla.Normalizer{}, polestarid.Normalizer{}, bmw.Normalizer{},
+		volvo.Normalizer{},
+		polestar.Normalizer{},
+		tesla.Normalizer{},
+		polestarid.Normalizer{},
+		bmw.Normalizer{},
+		pleos.Normalizer{},
 	}, extensionNormalizers()...)...)
 }
 

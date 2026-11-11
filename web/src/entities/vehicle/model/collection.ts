@@ -18,6 +18,11 @@ export const notGrantedFor = 24 * 60 * 60_000
 // is this recent, and a stream read again is no longer told as held.
 export const streamHeldFor = 5 * 60_000
 
+// The Pleos Vehicle Data API allows one reader at a time per key, and the connection
+// of a shared key waits a quarter of an hour before it tries again: only while its
+// failure is this recent.
+export const keySharedFor = 15 * 60_000
+
 // CollectionState is what the user is told of the reading of a vehicle, the worst first:
 // the account's offer leaves it unread, the instance without the provider's application,
 // the grant lost, no application key it may be

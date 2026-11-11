@@ -333,6 +333,55 @@ describe('CollectionNotice', () => {
     expect(alert.text()).toContain(body)
   })
 
+  // pleos is the Polestar of the fixtures as a car of the Pleos Vehicle Data API.
+  function pleos(
+    patch: Partial<Vehicle> = {},
+    collection = {},
+    credential: Vehicle['connection']['credential'] = 'set',
+  ): Vehicle | undefined {
+    const v = shared(collection)
+    return (
+      v && { ...v, connection: { ...v.connection, provider: 'pleos_kia', credential }, ...patch }
+    )
+  }
+
+  it.each<[string, Vehicle | undefined, string, string]>([
+    [
+      'its key refused',
+      pleos({}, {}, 'refused'),
+      'Not read: Pleos refused the key',
+      'revoked or replaced in the Playground',
+    ],
+    [
+      'its key removed',
+      pleos({}, {}, 'missing'),
+      'Not read: no Pleos key given',
+      'your Pleos key, which was removed',
+    ],
+    [
+      'no longer shared with the key',
+      pleos({ unshared_at: '2026-09-28T07:00:00Z' }),
+      'Not read: the car no longer shares its data with the key',
+      'no longer shares its data with the key',
+    ],
+    [
+      'its calls of the day used up',
+      pleos({}, { quota: [{ api: 'pleos', until: '2026-09-28T09:00:00Z' }] }),
+      'Daily calls to Pleos reached until 09:00',
+      'a cap of its own (Pleos publishes none)',
+    ],
+    [
+      'a pause',
+      pleos({}, { paused_until: '2026-09-28T07:30:00Z' }),
+      'Paused by Pleos until 07:30',
+      'Pleos limited the number of calls.',
+    ],
+  ])('tells a car of the Pleos Vehicle Data API %s', async (_, v, title, body) => {
+    const alert = await notice(v)
+    expect(plain(alert.find('.v-alert-title').text())).toBe(title)
+    expect(alert.text()).toContain(body)
+  })
+
   // polestarId is the Polestar of the fixtures read with the Polestar ID.
   function polestarId(
     patch: Partial<Vehicle> = {},

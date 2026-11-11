@@ -34,42 +34,63 @@ func TestEffectiveModel(t *testing.T) {
 	)
 	ex30 := details("EX30", 2024, 69.0, true)
 	xc40 := details("XC40", 2021, 78.012, true)
+	// The consent of the Pleos Vehicle Data API: the maker's sellname as the family,
+	// the capacity of batteryCapacity, the year of the VIN. kiaConsent is the
+	// simulator's EV6 of demonstration; ioniqEV and sorento are the doc's examples
+	// (the latter a combustion car, offered by the catalog to nothing).
+	kiaVIN := "KNAPC81ABPP000001"
+	kiaConsent := details("EV6", 2023, 77.4, true)
+	kiaMisspelt := core.Snapshot{
+		Covers: kiaConsent.Covers, CapacityKWh: kiaConsent.CapacityKWh,
+		Family: some("EV-6"), ModelYear: kiaConsent.ModelYear, Powertrain: kiaConsent.Powertrain,
+	}
+	ioniqEV := core.Snapshot{Covers: core.FieldModel, Family: some("IONIQ"), Powertrain: some(core.Electric)}
+	sorento := core.Snapshot{Covers: core.FieldModel, Family: some("Sorento"), Powertrain: some(core.OtherPowertrain)}
 	tests := []struct {
 		name        string
 		details     core.Snapshot
 		vin, chosen string
 		stated      core.Value[float64]
+		// The vehicle's provider: a car of the Pleos Vehicle Data API keeps the brand
+		// its provider names.
+		provider string
 		// The variant in effect, its source, the charger stated and the one in effect.
 		variant  string
 		source   variantSourceJSON
 		statedKW core.Value[float64]
 		chargerK core.Value[float64]
 	}{
-		{"recognized, the option not stated: 22", ex30, single, "", core.Value[float64]{}, "ex30-er-2024", variantDetected, core.Value[float64]{}, some(22.0)},
-		{"recognized, 11 stated", ex30, single, "", some(11.0), "ex30-er-2024", variantDetected, some(11.0), some(11.0)},
-		{"recognized, 22 stated", ex30, single, "", some(22.0), "ex30-er-2024", variantDetected, some(22.0), some(22.0)},
-		{"a charger of no variant: ignored", ex30, single, "", some(7.4), "ex30-er-2024", variantDetected, core.Value[float64]{}, some(22.0)},
-		{"no option: the standard charger", xc40, other, "", core.Value[float64]{}, "xc40-twin-2021", variantDetected, core.Value[float64]{}, some(11.0)},
-		{"the option of another variant: ignored", xc40, other, "", some(22.0), "xc40-twin-2021", variantDetected, core.Value[float64]{}, some(11.0)},
-		{"chosen among the candidates", ex30, other, "ex30-twin-2024", some(11.0), "ex30-twin-2024", variantChosen, some(11.0), some(11.0)},
-		{"chosen over the recognized", ex30, single, "ex30-lfp-2024", core.Value[float64]{}, "ex30-lfp-2024", variantChosen, core.Value[float64]{}, some(11.0)},
-		{"chosen, the charger of the recognized no longer", ex30, single, "ex30-lfp-2024", some(22.0), "ex30-lfp-2024", variantChosen, core.Value[float64]{}, some(11.0)},
-		{"chosen of another model year", ex30, other, "ex30-p8-2027", core.Value[float64]{}, "ex30-p8-2027", variantChosen, core.Value[float64]{}, some(22.0)},
-		{"chosen, gone from the catalog: recognized", ex30, single, "ex30-gone", core.Value[float64]{}, "ex30-er-2024", variantDetected, core.Value[float64]{}, some(22.0)},
-		{"chosen, of another family: recognized", xc40, other, "ex30-er-2024", some(22.0), "xc40-twin-2021", variantDetected, core.Value[float64]{}, some(11.0)},
-		{"chosen, gone, none recognized", ex30, other, "ex30-gone", some(11.0), "", "", core.Value[float64]{}, core.Value[float64]{}},
-		{"none chosen, none recognized", ex30, other, "", some(11.0), "", "", core.Value[float64]{}, core.Value[float64]{}},
-		{"a hybrid at an electric's capacity: neither", details("EX30", 2024, 69.0, false), single, "ex30-er-2024", some(11.0), "", "", core.Value[float64]{}, core.Value[float64]{}},
+		{"recognized, the option not stated: 22", ex30, single, "", core.Value[float64]{}, "", "ex30-er-2024", variantDetected, core.Value[float64]{}, some(22.0)},
+		{"recognized, 11 stated", ex30, single, "", some(11.0), "", "ex30-er-2024", variantDetected, some(11.0), some(11.0)},
+		{"recognized, 22 stated", ex30, single, "", some(22.0), "", "ex30-er-2024", variantDetected, some(22.0), some(22.0)},
+		{"a charger of no variant: ignored", ex30, single, "", some(7.4), "", "ex30-er-2024", variantDetected, core.Value[float64]{}, some(22.0)},
+		{"no option: the standard charger", xc40, other, "", core.Value[float64]{}, "", "xc40-twin-2021", variantDetected, core.Value[float64]{}, some(11.0)},
+		{"the option of another variant: ignored", xc40, other, "", some(22.0), "", "xc40-twin-2021", variantDetected, core.Value[float64]{}, some(11.0)},
+		{"chosen among the candidates", ex30, other, "ex30-twin-2024", some(11.0), "", "ex30-twin-2024", variantChosen, some(11.0), some(11.0)},
+		{"chosen over the recognized", ex30, single, "ex30-lfp-2024", core.Value[float64]{}, "", "ex30-lfp-2024", variantChosen, core.Value[float64]{}, some(11.0)},
+		{"chosen, the charger of the recognized no longer", ex30, single, "ex30-lfp-2024", some(22.0), "", "ex30-lfp-2024", variantChosen, core.Value[float64]{}, some(11.0)},
+		{"chosen of another model year", ex30, other, "ex30-p8-2027", core.Value[float64]{}, "", "ex30-p8-2027", variantChosen, core.Value[float64]{}, some(22.0)},
+		{"chosen, gone from the catalog: recognized", ex30, single, "ex30-gone", core.Value[float64]{}, "", "ex30-er-2024", variantDetected, core.Value[float64]{}, some(22.0)},
+		{"chosen, of another family: recognized", xc40, other, "ex30-er-2024", some(22.0), "", "xc40-twin-2021", variantDetected, core.Value[float64]{}, some(11.0)},
+		{"chosen, gone, none recognized", ex30, other, "ex30-gone", some(11.0), "", "", "", core.Value[float64]{}, core.Value[float64]{}},
+		{"none chosen, none recognized", ex30, other, "", some(11.0), "", "", "", core.Value[float64]{}, core.Value[float64]{}},
+		{"a hybrid at an electric's capacity: neither", details("EX30", 2024, 69.0, false), single, "ex30-er-2024", some(11.0), "", "", "", core.Value[float64]{}, core.Value[float64]{}},
 		// No option: the one charger bounds the costs.
-		{"a hybrid recognized", details("V60", 2027, 18.819, false), other, "", core.Value[float64]{}, "v60-phev-2022", variantDetected, core.Value[float64]{}, some(6.4)},
-		{"a hybrid, an electric chosen: recognized", details("XC40", 2021, 10.7, false), other, "xc40-twin-2021", core.Value[float64]{}, "xc40-phev-2020", variantDetected, core.Value[float64]{}, some(3.7)},
-		{"a hybrid chosen", details("V60", 2022, 0, false), other, "v60-phev-2020", some(3.7), "v60-phev-2020", variantChosen, some(3.7), some(3.7)},
-		{"details never read", core.Snapshot{}, single, "ex30-er-2024", some(11.0), "", "", core.Value[float64]{}, core.Value[float64]{}},
-		{"unknown family", details("EX-SIM", 2026, 80, true), single, "ex30-er-2024", core.Value[float64]{}, "", "", core.Value[float64]{}, core.Value[float64]{}},
+		{"a hybrid recognized", details("V60", 2027, 18.819, false), other, "", core.Value[float64]{}, "", "v60-phev-2022", variantDetected, core.Value[float64]{}, some(6.4)},
+		{"a hybrid, an electric chosen: recognized", details("XC40", 2021, 10.7, false), other, "xc40-twin-2021", core.Value[float64]{}, "", "xc40-phev-2020", variantDetected, core.Value[float64]{}, some(3.7)},
+		{"a hybrid chosen", details("V60", 2022, 0, false), other, "v60-phev-2020", some(3.7), "", "v60-phev-2020", variantChosen, some(3.7), some(3.7)},
+		{"details never read", core.Snapshot{}, single, "ex30-er-2024", some(11.0), "", "", "", core.Value[float64]{}, core.Value[float64]{}},
+		{"unknown family", details("EX-SIM", 2026, 80, true), single, "ex30-er-2024", core.Value[float64]{}, "", "", "", core.Value[float64]{}, core.Value[float64]{}},
+		// A car of the Pleos Vehicle Data API: its provider names the brand, the consent
+		// the family, and the maker may spell it otherwise than the catalog does.
+		{"a Pleos Kia: the consent's EV6 recognized", kiaConsent, kiaVIN, "", core.Value[float64]{}, "pleos_kia", "ev6-long-2021", variantDetected, core.Value[float64]{}, some(11.0)},
+		{"a family spelled otherwise: the brand's variant chosen", kiaMisspelt, kiaVIN, "ev6-long-2021", core.Value[float64]{}, "pleos_kia", "ev6-long-2021", variantChosen, core.Value[float64]{}, some(11.0)},
+		{"the doc's Ioniq Electric: no year, no capacity", ioniqEV, "TMAPJ81ABPP000001", "", core.Value[float64]{}, "pleos_hyundai", "ioniq-electric-2016", variantDetected, core.Value[float64]{}, some(6.6)},
+		{"the doc's Sorento: a combustion car, told by nothing", sorento, "TEST111111111TEST", "", core.Value[float64]{}, "pleos_kia", "", "", core.Value[float64]{}, core.Value[float64]{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := effectiveModel(cat, tt.details, Vehicle{VIN: tt.vin, VariantID: tt.chosen, ACMaxKW: tt.stated})
+			m := effectiveModel(cat, tt.details, Vehicle{VIN: tt.vin, VariantID: tt.chosen, ACMaxKW: tt.stated, Provider: tt.provider})
 			if m.Variant.OK != (tt.variant != "") || m.Variant.V.ID != tt.variant || m.Source != tt.source {
 				t.Errorf("variant %+v (%v), source %q; want %q, %q", m.Variant.V.ID, m.Variant.OK, m.Source, tt.variant, tt.source)
 			}

@@ -23,6 +23,9 @@ const (
 	// SourceBMW: a BMW or a Mini is read through BMW CarData, with its owner's client ID
 	// (ADR 0045).
 	SourceBMW Name = "source.bmw"
+	// SourcePleos: a Hyundai, a Kia or a Genesis is read through the Pleos Vehicle
+	// Data API, with its owner's key (ADR 0049).
+	SourcePleos Name = "source.pleos"
 	// PictureTesla: a Tesla's picture, as Tesla's configurator draws it, relayed.
 	PictureTesla Name = "picture.tesla"
 )
@@ -60,6 +63,13 @@ func All() []Flag {
 			Purpose: "BMW CarData as a source, for the BMWs and the Minis: its connection and its reads. On by default, " +
 				"the API being BMW's own; an instance may turn it off should the source misbehave there.",
 			Remove: "by the release after the one that took the source out of beta",
+		},
+		{
+			Name: SourcePleos, Default: true, Web: true,
+			Purpose: "The Pleos Vehicle Data API as a source, for the Hyundais, the Kias and the Genesises: its " +
+				"connection and its reads. On by default, the API being the EU Data Act's own; an instance may turn " +
+				"it off while the source is in beta, not seen yet on a real car.",
+			Remove: "once the source has been checked on real cars and is out of beta",
 		},
 		{
 			Name: PictureTesla, Default: true,

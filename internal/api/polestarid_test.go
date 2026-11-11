@@ -235,7 +235,7 @@ func TestPolestarIDCode(t *testing.T) {
 	if resp, body := do(t, noFollow(), http.MethodDelete, u+"/polestar-id", "", "", c); resp.status != http.StatusNoContent || body != "" {
 		t.Errorf("DELETE: %d %q", resp.status, body)
 	}
-	if _, body := get(t, noFollow(), u, c); !strings.HasSuffix(body, `"polestar_id":null,"bmw":null}`+"\n") || !e.polestarID.setAt.IsZero() {
+	if _, body := get(t, noFollow(), u, c); !strings.HasSuffix(body, `"polestar_id":null,"bmw":null,"pleos":{"hyundai":null,"kia":null,"genesis":null}}`+"\n") || !e.polestarID.setAt.IsZero() {
 		t.Errorf("after DELETE: %s", body)
 	}
 }
