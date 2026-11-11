@@ -769,6 +769,9 @@ func (c *Collector) interval(t Target, src *source, m mode, spec EndpointSpec) t
 	if every := c.reads[t.AccountID].Every; every > 0 {
 		return max(every, src.Intervals.of(spec.Parked))
 	}
+	if m == parked && spec.Watch && c.budget.ample(t, spec.API, c.clk.Now()) {
+		return src.Intervals.Active
+	}
 	return src.Intervals.of(spec.pace(m))
 }
 

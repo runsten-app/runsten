@@ -209,6 +209,12 @@ func (b *budget) left(t Target, api string, now time.Time) float64 {
 	return b.bucketOf(u).burst
 }
 
+// ample reports whether t's budget for api holds at least half its burst: calls are not
+// running short.
+func (b *budget) ample(t Target, api string, now time.Time) bool {
+	return b.left(t, api, now) >= b.bucketOf(b.unitOf(t, api)).burst/2
+}
+
 func (b *budget) take(u unit, n float64, now time.Time) {
 	b.refill(now)
 	left, seen := b.tokens[u]

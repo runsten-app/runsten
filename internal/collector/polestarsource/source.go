@@ -30,23 +30,26 @@ func New(client *polestar.Client, credential func(ctx context.Context, accountID
 const Daily = 10_000
 
 // Spec implements collector.Source. The paces are set for a credential's 10,000 calls a
-// day: parked, the battery every active interval, so that a charge is seen within a
-// minute of its start, where a fast charge peaks; the availability every parked
-// interval, the rest every rare one; driving or charging, the four telemetries every
-// active interval; the target level, the health and the exterior every rare interval,
-// the last two being optional. A car parked all day costs about 1,700 calls, one driving
-// two hours and charging one about 2,200.
+// day: parked, the battery every active interval while the budget is ample (Watch),
+// for a charge's start, where a fast charge peaks, to be read sooner, every parked one
+// otherwise; the availability every parked interval, the rest every rare one; driving or
+// charging, the four telemetries every active interval; the target level, the health
+// and the exterior every rare interval, the last two being optional. A car parked all
+// day costs about 1,700 calls, one driving two hours and charging one about 2,200; past
+// five cars on a credential, the battery falls back to the parked pace as the budget
+// runs short.
 func (Source) Spec() collector.SourceSpec {
 	telemetry := func(d polestar.Domain, parked collector.Pace) collector.EndpointSpec {
 		return collector.EndpointSpec{
 			Endpoint: collector.Endpoint(d), API: polestar.Source,
 			Parked: parked, Driving: collector.PaceActive, Charging: collector.PaceActive,
+			Watch: d == polestar.Battery,
 		}
 	}
 	return collector.SourceSpec{
 		Name: polestar.Source,
 		Endpoints: []collector.EndpointSpec{
-			telemetry(polestar.Battery, collector.PaceActive),
+			telemetry(polestar.Battery, collector.PaceParked),
 			telemetry(polestar.Availability, collector.PaceParked),
 			telemetry(polestar.Odometer, collector.PaceRare),
 			telemetry(polestar.Location, collector.PaceRare),
