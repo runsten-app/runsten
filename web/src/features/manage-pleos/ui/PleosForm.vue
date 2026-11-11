@@ -103,7 +103,8 @@ async function openForm() {
   sent.value = false
   opened.value = true
   await nextTick()
-  reset()
+  // A save still running keeps its state: its error is yet to be told.
+  if (!saving.value) reset()
   status.value = ''
   document.getElementById(fieldId(props.brand, 'client_id'))?.focus()
 }
