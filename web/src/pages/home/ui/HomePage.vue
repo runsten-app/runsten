@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { mdiCarOff } from '@mdi/js'
-import { computed, ref, watchEffect } from 'vue'
+import { computed, defineAsyncComponent, ref, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useConnectionSettings } from '@/features/manage-api-key'
@@ -9,7 +9,8 @@ import { useVehicles } from '@/features/select-vehicle'
 import { AppShell } from '@/widgets/app-shell'
 import { extensionChoices, extensionMakeMentions, type HomeMake } from '../extensions'
 
-// Home leads to the first vehicle of the account; without one, it asks which car, Volvo,
+// Home leads to the vehicle of an account that has one; with several, it is the Garage,
+// which compares them (loaded on demand: Chart.js comes with it). Without one, it asks which car, Volvo,
 // Polestar, Tesla, BMW or Hyundai, Kia and Genesis (one key per brand, all read through
 // Pleos), choices of equal weight, and says how Runsten reads each one
 // offered, a part per brand joined as the language lists. A Volvo leads to the Volvo ID
@@ -60,15 +61,19 @@ const text = computed(() => {
   return parts.join(' ')
 })
 
+const GaragePage = defineAsyncComponent(() => import('./GaragePage.vue'))
+const garage = computed(() => (vehicles.value?.length ?? 0) >= 2)
+
 watchEffect(() => {
-  const first = vehicles.value?.[0]
-  if (first) void router.replace({ name: 'vehicle', params: { vehicle: first.id } })
+  const only = vehicles.value?.length === 1 ? vehicles.value[0] : undefined
+  if (only) void router.replace({ name: 'vehicle', params: { vehicle: only.id } })
 })
 </script>
 
 <template>
-  <AppShell>
+  <AppShell :garage>
     <v-alert v-if="error" type="error" variant="tonal">{{ t('home.error') }}</v-alert>
+    <GaragePage v-else-if="garage && vehicles" :vehicles />
     <v-progress-linear v-else-if="isPending || vehicles?.length" indeterminate />
     <v-empty-state v-else :icon="mdiCarOff" :headline="t('home.empty.title')" :text>
       <template #actions>

@@ -26,12 +26,12 @@ type Item = (typeof vehicles.items)[0]
 const [first, second, third, fourth, fifth] = vehicles.items as [Item, Item, Item, Item, Item]
 
 // opened mounts the menu on a route and opens it: its list is teleported to the body.
-async function opened(path: string, vehicle = first.id) {
+async function opened(path: string, vehicle = first.id, garage = false) {
   const router = testRouter()
   await router.push(path)
   const { wrapper } = mountWith(VehicleMenu, {
     router,
-    props: { vehicle },
+    props: { vehicle, garage },
     attachTo: document.body,
   })
   await flushPromises()
@@ -41,7 +41,8 @@ async function opened(path: string, vehicle = first.id) {
   const nav = [...document.querySelectorAll('nav')].at(-1)
   const rows = [...(nav?.querySelectorAll<HTMLAnchorElement>('a.vehicle-item') ?? [])]
   const settings = nav?.querySelector<HTMLAnchorElement>('a.vehicle-settings')
-  return { wrapper, button, nav, rows, settings }
+  const all = nav?.querySelector<HTMLAnchorElement>('a.garage-item')
+  return { wrapper, button, nav, rows, settings, all }
 }
 
 describe('VehicleMenu', () => {
@@ -130,9 +131,11 @@ describe('VehicleMenu', () => {
   // The pages under a vehicle rely on the bar to name it.
   it('names a single vehicle too', async () => {
     fetchVehicles.mockResolvedValue([first])
-    const { button, rows, settings } = await opened(`/vehicles/${first.id}/settings`)
+    const { button, rows, settings, all } = await opened(`/vehicles/${first.id}/settings`)
     expect(button.text()).toBe('XC40 Recharge Twin · 2021')
     expect(rows).toHaveLength(1)
+    // No Garage for one vehicle.
+    expect(all).toBeFalsy()
     expect(settings?.getAttribute('href')).toBe(`/vehicles/${first.id}/settings`)
   })
 
@@ -145,6 +148,23 @@ describe('VehicleMenu', () => {
     expect(button.text()).toBe('XC40 Recharge Twin · 2021')
     expect(rows).toHaveLength(0)
     expect(settings?.getAttribute('href')).toBe(`/vehicles/${first.id}/settings`)
+  })
+
+  it('leads to the Garage first, with several vehicles', async () => {
+    const { all, rows } = await opened(`/vehicles/${first.id}`)
+    expect(all?.textContent?.trim()).toBe('All vehicles')
+    expect(all?.getAttribute('href')).toBe('/')
+    expect(all?.hasAttribute('aria-current')).toBe(false)
+    expect(rows[0]?.getAttribute('aria-current')).toBe('true')
+  })
+
+  it('names the Garage on it, no vehicle current and no settings', async () => {
+    const { button, all, rows, settings } = await opened('/', first.id, true)
+    expect(button.text()).toBe('All vehicles')
+    expect(button.find('img').exists()).toBe(false)
+    expect(all?.getAttribute('aria-current')).toBe('true')
+    expect(rows.some((a) => a.hasAttribute('aria-current'))).toBe(false)
+    expect(settings).toBeFalsy()
   })
 
   it('reads no vehicle of its own while the list names it', async () => {

@@ -52,6 +52,92 @@
       "pleos": "J'ai une Hyundai, une Kia ou une Genesis"
     }
   },
+  "garage": {
+    "title": "Garage",
+    "all": "Toutes les voitures",
+    "error": "Les chiffres des voitures n'ont pas pu être chargés. Réessayez dans un instant.",
+    "period": {
+      "label": "Période",
+      "30d": "30 jours",
+      "12m": "12 mois",
+      "last30d": "30 derniers jours",
+      "last12m": "12 derniers mois"
+    },
+    "totals": {
+      "label": "Les totaux du compte",
+      "vehicles": "{n} voiture | {n} voitures",
+      "driving": "{n} en route | {n} en route",
+      "charging": "{n} en charge | {n} en charge",
+      "now": "{what} maintenant",
+      "distance": "Parcourus",
+      "cost": "D'électricité",
+      "perHundred": "Aux 100 km en moyenne"
+    },
+    "tile": {
+      "soc": "Niveau de charge",
+      "charging": "En charge",
+      "chargingTo": "En charge jusqu'à {target}",
+      "driving": "En route",
+      "parked": "Garée",
+      "distance": "Parcourus",
+      "consumption": "Consommation",
+      "cost": "Aux 100 km",
+      "best": "Le plus bas",
+      "noTrip": "Aucun trajet sur la période.",
+      "hide": "Masquer de la comparaison"
+    },
+    "compare": {
+      "title": "Comparer",
+      "label": "Ce qui est comparé",
+      "scope": "{n} voiture, {period} | {n} voitures sur la même période : {period}",
+      "vehicle": "Voiture",
+      "nothing": "Toutes les voitures sont masquées de la comparaison.",
+      "consumption": {
+        "tab": "Consommation",
+        "title": "Consommation selon la température extérieure",
+        "summary": "La consommation de {vehicles} selon la température extérieure, en kWh/100 km.",
+        "none": "Aucun trajet de la période ne donne sa température extérieure.",
+        "hint": "Selon la température extérieure moyenne de chaque trajet : les voitures comparées par le même temps, sans le biais de la saison.",
+        "without": "{vehicles} ne donne pas la température extérieure et n'est pas tracée. | {vehicles} ne donnent pas la température extérieure et ne sont pas tracées."
+      },
+      "cost": {
+        "tab": "Coût",
+        "title": "Coût aux 100 km par mois",
+        "summary": "Ce que 100 km ont coûté à chaque voiture, mois par mois, sur les 12 derniers mois.",
+        "none": "Aucun mois n'a à la fois un coût et une distance connus.",
+        "hint": "Sur les 12 derniers mois, quelle que soit la période. Un coût connu par une fourchette est tracé à sa borne basse."
+      },
+      "charging": {
+        "tab": "Charge",
+        "title": "Où l'énergie a été chargée",
+        "places": "À vos lieux",
+        "ac": "AC ailleurs",
+        "dc": "DC",
+        "unknown": "Inconnu",
+        "summary": "La part de l'énergie de chaque voiture chargée à vos lieux, en AC ailleurs et en DC.",
+        "none": "Aucune charge sur la période.",
+        "hint": "Vos lieux sont ceux des réglages, avec leurs tarifs : ils expliquent la plupart des écarts de coût.",
+        "without": "{vehicles} n'a pas chargé sur la période. | {vehicles} n'ont pas chargé sur la période."
+      },
+      "battery": {
+        "tab": "Batterie",
+        "parkedTitle": "Perte à l'arrêt",
+        "parkedSummary": "Le niveau de charge perdu par jour à l'arrêt, par voiture.",
+        "parkedNone": "Aucune perte à l'arrêt n'est connue sur la période.",
+        "capacityTitle": "Capacité depuis les premières estimations",
+        "capacitySummary": "Comment la capacité estimée de chaque voiture a varié depuis ses premières estimations.",
+        "capacityNone": "Aucune voiture n'a encore assez d'estimations de capacité.",
+        "capacityHint": "Sur tout l'historique, quelle que soit la période.",
+        "since": "{vehicle} depuis {since}"
+      }
+    },
+    "spending": {
+      "title": "Dépenses par mois",
+      "summary": "L'électricité de toutes les voitures a coûté {total} sur les 12 derniers mois.",
+      "none": "Aucun coût n'est connu sur les 12 derniers mois.",
+      "hint": "Toutes les voitures du compte, masquées comprises, sur les 12 derniers mois. Un coût connu par une fourchette est tracé à sa borne basse."
+    }
+  },
   "vehicle": {
     "title": "Véhicule",
     "menu": "Véhicule : {label}",

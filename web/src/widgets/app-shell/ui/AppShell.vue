@@ -44,7 +44,9 @@ import { extensionAttention, extensionMenuItems, extensionNotices } from '../ext
 // credential is to be renewed: a dot on the menu and on it says so, from every page. A dot
 // on the health's tab says the vehicle needs attention (a tyre, the service, a warning),
 // from every page of the vehicle.
-const props = defineProps<{ vehicle?: string }>()
+// garage: the page is the Garage, the account's vehicles side by side: the bar names it
+// rather than a vehicle.
+const props = defineProps<{ vehicle?: string; garage?: boolean }>()
 const { t } = useI18n()
 const { unread } = useLimits()
 const route = useRoute()
@@ -165,7 +167,7 @@ const helpKey = '?'
         <span class="mark" aria-hidden="true"><span /><span /><span /><span /></span>
         <span class="wordmark" :class="{ 'd-sr-only': xs && shown }">Runsten</span>
       </router-link>
-      <VehicleMenu v-if="shown" :vehicle="shown" class="picker" />
+      <VehicleMenu v-if="shown" :vehicle="shown" :garage class="picker" />
       <v-spacer />
       <UserMenu :attention>
         <div role="listitem">

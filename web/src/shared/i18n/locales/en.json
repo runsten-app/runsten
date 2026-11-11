@@ -52,6 +52,92 @@
       "pleos": "I have a Hyundai, Kia or Genesis"
     }
   },
+  "garage": {
+    "title": "Garage",
+    "all": "All vehicles",
+    "error": "The figures of the vehicles could not be loaded. Try again in a moment.",
+    "period": {
+      "label": "Period",
+      "30d": "30 days",
+      "12m": "12 months",
+      "last30d": "last 30 days",
+      "last12m": "last 12 months"
+    },
+    "totals": {
+      "label": "The account's totals",
+      "vehicles": "{n} vehicle | {n} vehicles",
+      "driving": "{n} driving | {n} driving",
+      "charging": "{n} charging | {n} charging",
+      "now": "{what} now",
+      "distance": "Driven",
+      "cost": "Electricity",
+      "perHundred": "Per 100 km on average"
+    },
+    "tile": {
+      "soc": "State of charge",
+      "charging": "Charging",
+      "chargingTo": "Charging to {target}",
+      "driving": "Driving",
+      "parked": "Parked",
+      "distance": "Driven",
+      "consumption": "Consumption",
+      "cost": "Per 100 km",
+      "best": "Lowest",
+      "noTrip": "No trip over the period.",
+      "hide": "Hide from the comparison"
+    },
+    "compare": {
+      "title": "Compare",
+      "label": "What to compare",
+      "scope": "{n} vehicle, {period} | {n} vehicles over the same period: {period}",
+      "vehicle": "Vehicle",
+      "nothing": "Every vehicle is hidden from the comparison.",
+      "consumption": {
+        "tab": "Consumption",
+        "title": "Consumption by outside temperature",
+        "summary": "The consumption of {vehicles} by outside temperature, in kWh/100 km.",
+        "none": "No trip of the period tells its outside temperature.",
+        "hint": "By the average outside temperature of each trip: the vehicles compared in the same weather, without the season's bias.",
+        "without": "{vehicles} tells no outside temperature, and is not drawn. | {vehicles} tell no outside temperature, and are not drawn."
+      },
+      "cost": {
+        "tab": "Cost",
+        "title": "Cost per 100 km by month",
+        "summary": "What 100 km cost each vehicle, month by month, over the last 12 months.",
+        "none": "No month has both a known cost and a known distance.",
+        "hint": "Over the last 12 months, whatever the period. A cost known as a range is drawn at its lowest."
+      },
+      "charging": {
+        "tab": "Charging",
+        "title": "Where the energy was charged",
+        "places": "At your places",
+        "ac": "AC elsewhere",
+        "dc": "DC",
+        "unknown": "Unknown",
+        "summary": "The share of each vehicle's energy charged at your places, on AC elsewhere and on DC.",
+        "none": "No charge over the period.",
+        "hint": "Your places are those of the settings, with their tariffs: they explain most differences in cost.",
+        "without": "{vehicles} did not charge over the period. | {vehicles} did not charge over the period."
+      },
+      "battery": {
+        "tab": "Battery",
+        "parkedTitle": "Loss while parked",
+        "parkedSummary": "The state of charge each vehicle lost per day while parked.",
+        "parkedNone": "No loss while parked is known over the period.",
+        "capacityTitle": "Capacity since the first estimates",
+        "capacitySummary": "How the estimated capacity of each vehicle changed since its first estimates.",
+        "capacityNone": "No vehicle has enough capacity estimates yet.",
+        "capacityHint": "Over the whole history, whatever the period.",
+        "since": "{vehicle} since {since}"
+      }
+    },
+    "spending": {
+      "title": "Spending per month",
+      "summary": "The electricity of every vehicle cost {total} over the last 12 months.",
+      "none": "No cost is known over the last 12 months.",
+      "hint": "Every vehicle of the account, hidden ones included, over the last 12 months. A cost known as a range is drawn at its lowest."
+    }
+  },
   "vehicle": {
     "title": "Vehicle",
     "menu": "Vehicle: {label}",

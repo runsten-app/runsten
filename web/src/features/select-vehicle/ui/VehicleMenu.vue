@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { mdiCarCog, mdiCheck, mdiChevronDown } from '@mdi/js'
+import { mdiCarCog, mdiCarMultiple, mdiCheck, mdiChevronDown } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, type RouteLocationRaw } from 'vue-router'
@@ -11,8 +11,10 @@ import { useVehicles } from '../composables/useVehicles'
 // pages under it rely on it rather than repeating its label. It lists the account's
 // vehicles, each leading to the same section of the other (a details page to its list, a
 // list with its period), the account's pages to its state; then the vehicle's settings.
-// Each vehicle's picture goes beside its label, where its vendor gives one.
-const props = defineProps<{ vehicle: string }>()
+// Each vehicle's picture goes beside its label, where its vendor gives one. With several
+// vehicles, "All vehicles" comes first and leads to the Garage (home), which the menu then
+// names; the vehicle's settings are left out there: no vehicle is the page's.
+const props = defineProps<{ vehicle: string; garage?: boolean }>()
 const { t } = useI18n()
 const route = useRoute()
 const { vehicles, error } = useVehicles()
@@ -63,8 +65,16 @@ const { vehicle: own } = useVehicle(
   () => (!!vehicles.value || !!error.value) && !listed.value,
 )
 const pictured = computed(() => items.value.some((i) => i.vehicle?.sheet?.picture))
-const label = computed(() => listed.value ?? (own.value ? vehicleLabel(own.value) : ''))
-const shown = computed(() => items.value.find((i) => i.id === props.vehicle)?.vehicle ?? own.value)
+const several = computed(() => items.value.length >= 2)
+const label = computed(() =>
+  props.garage ? t('garage.all') : (listed.value ?? (own.value ? vehicleLabel(own.value) : '')),
+)
+const shown = computed(() =>
+  props.garage
+    ? undefined
+    : (items.value.find((i) => i.id === props.vehicle)?.vehicle ?? own.value),
+)
+const current = (id: string) => !props.garage && id === props.vehicle
 const name = computed(() => t('vehicle.menu', { label: label.value }))
 </script>
 
@@ -86,11 +96,33 @@ const name = computed(() => t('vehicle.menu', { label: label.value }))
          divider included, a listitem. -->
     <nav :aria-label="name">
       <v-list density="compact" class="vehicle-list">
+        <template v-if="several">
+          <div role="listitem">
+            <v-list-item
+              :to="{ name: 'home' }"
+              :title="t('garage.all')"
+              :aria-current="garage ? 'true' : undefined"
+              :active="false"
+              class="garage-item"
+            >
+              <template #prepend>
+                <span v-if="pictured" class="no-picture garage-icon me-3">
+                  <v-icon :icon="mdiCarMultiple" />
+                </span>
+                <v-icon v-else :icon="mdiCarMultiple" class="me-3" />
+              </template>
+              <template v-if="garage" #append>
+                <v-icon :icon="mdiCheck" size="small" />
+              </template>
+            </v-list-item>
+          </div>
+          <div role="listitem"><v-divider class="my-1" /></div>
+        </template>
         <div v-for="item in items" :key="item.id" role="listitem">
           <v-list-item
             :to="item.to"
             :title="item.title"
-            :aria-current="item.id === vehicle ? 'true' : undefined"
+            :aria-current="current(item.id) ? 'true' : undefined"
             :active="false"
             class="vehicle-item"
           >
@@ -99,13 +131,13 @@ const name = computed(() => t('vehicle.menu', { label: label.value }))
               <VehiclePicture v-if="item.vehicle" :vehicle="item.vehicle" class="me-3" />
               <span v-if="!item.vehicle?.sheet?.picture" class="no-picture me-3" />
             </template>
-            <template v-if="item.id === vehicle" #append>
+            <template v-if="current(item.id)" #append>
               <v-icon :icon="mdiCheck" size="small" />
             </template>
           </v-list-item>
         </div>
-        <div role="listitem"><v-divider class="my-1" /></div>
-        <div role="listitem">
+        <div v-if="!garage" role="listitem"><v-divider class="my-1" /></div>
+        <div v-if="!garage" role="listitem">
           <v-list-item
             :to="{ name: 'vehicleSettings', params: { vehicle } }"
             :prepend-icon="mdiCarCog"
@@ -129,6 +161,10 @@ const name = computed(() => t('vehicle.menu', { label: label.value }))
 .no-picture {
   display: block;
   inline-size: 3rem;
+}
+.garage-icon {
+  display: flex;
+  justify-content: center;
 }
 .vehicle-list {
   min-inline-size: 16rem;

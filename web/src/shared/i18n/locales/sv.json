@@ -52,6 +52,92 @@
       "pleos": "Jag har en Hyundai, Kia eller Genesis"
     }
   },
+  "garage": {
+    "title": "Garage",
+    "all": "Alla bilar",
+    "error": "Bilarnas siffror kunde inte läsas in. Försök igen om en stund.",
+    "period": {
+      "label": "Period",
+      "30d": "30 dagar",
+      "12m": "12 månader",
+      "last30d": "senaste 30 dagarna",
+      "last12m": "senaste 12 månaderna"
+    },
+    "totals": {
+      "label": "Kontots summor",
+      "vehicles": "{n} bil | {n} bilar",
+      "driving": "{n} kör | {n} kör",
+      "charging": "{n} laddar | {n} laddar",
+      "now": "{what} nu",
+      "distance": "Körda",
+      "cost": "El",
+      "perHundred": "Per 100 km i snitt"
+    },
+    "tile": {
+      "soc": "Laddnivå",
+      "charging": "Laddar",
+      "chargingTo": "Laddar till {target}",
+      "driving": "Kör",
+      "parked": "Parkerad",
+      "distance": "Körda",
+      "consumption": "Förbrukning",
+      "cost": "Per 100 km",
+      "best": "Lägst",
+      "noTrip": "Inga resor under perioden.",
+      "hide": "Dölj från jämförelsen"
+    },
+    "compare": {
+      "title": "Jämför",
+      "label": "Vad som jämförs",
+      "scope": "{n} bil, {period} | {n} bilar under samma period: {period}",
+      "vehicle": "Bil",
+      "nothing": "Alla bilar är dolda från jämförelsen.",
+      "consumption": {
+        "tab": "Förbrukning",
+        "title": "Förbrukning efter utetemperatur",
+        "summary": "Förbrukningen för {vehicles} efter utetemperatur, i kWh/100 km.",
+        "none": "Ingen resa under perioden anger sin utetemperatur.",
+        "hint": "Efter varje resas genomsnittliga utetemperatur: bilarna jämförda i samma väder, utan årstidens inverkan.",
+        "without": "{vehicles} anger ingen utetemperatur och ritas inte. | {vehicles} anger ingen utetemperatur och ritas inte."
+      },
+      "cost": {
+        "tab": "Kostnad",
+        "title": "Kostnad per 100 km per månad",
+        "summary": "Vad 100 km kostade varje bil, månad för månad, under de senaste 12 månaderna.",
+        "none": "Ingen månad har både känd kostnad och känd sträcka.",
+        "hint": "Under de senaste 12 månaderna, oavsett period. En kostnad känd som ett intervall ritas vid sitt lägsta värde."
+      },
+      "charging": {
+        "tab": "Laddning",
+        "title": "Var energin laddades",
+        "places": "På dina platser",
+        "ac": "AC på annat håll",
+        "dc": "DC",
+        "unknown": "Okänt",
+        "summary": "Andelen av varje bils energi som laddades på dina platser, med AC på annat håll och med DC.",
+        "none": "Ingen laddning under perioden.",
+        "hint": "Dina platser är de i inställningarna, med sina tariffer: de förklarar de flesta kostnadsskillnaderna.",
+        "without": "{vehicles} laddade inte under perioden. | {vehicles} laddade inte under perioden."
+      },
+      "battery": {
+        "tab": "Batteri",
+        "parkedTitle": "Förlust vid stillastående",
+        "parkedSummary": "Laddnivån varje bil förlorade per dag när den stod parkerad.",
+        "parkedNone": "Ingen förlust vid stillastående är känd under perioden.",
+        "capacityTitle": "Kapacitet sedan de första uppskattningarna",
+        "capacitySummary": "Hur varje bils uppskattade kapacitet har ändrats sedan de första uppskattningarna.",
+        "capacityNone": "Ingen bil har tillräckligt med kapacitetsuppskattningar än.",
+        "capacityHint": "Över hela historiken, oavsett period.",
+        "since": "{vehicle} sedan {since}"
+      }
+    },
+    "spending": {
+      "title": "Utgifter per månad",
+      "summary": "Elen för alla bilar kostade {total} under de senaste 12 månaderna.",
+      "none": "Ingen kostnad är känd under de senaste 12 månaderna.",
+      "hint": "Alla bilar på kontot, dolda inräknade, under de senaste 12 månaderna. En kostnad känd som ett intervall ritas vid sitt lägsta värde."
+    }
+  },
   "vehicle": {
     "title": "Fordon",
     "menu": "Fordon: {label}",
