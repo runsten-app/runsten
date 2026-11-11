@@ -35,22 +35,21 @@
     "empty": {
       "title": "Noch kein Fahrzeug",
       "ask": "Welches Auto fahren Sie?",
-      "reads": "Runsten liest {makes}.",
-      "volvo": "einen Volvo über Ihre Volvo ID",
-      "volvoKey": "einen Volvo mit dem Schlüssel einer Volvo-Anwendung, die Sie selbst anlegen, und dann mit Ihrer Volvo ID",
-      "polestar": "einen Polestar mit Zugangsdaten aus dem Data Portal von Polestar",
-      "tesla": "einen Tesla mit einem Refresh-Token Ihres Tesla-Kontos",
-      "bmw": "einen BMW oder MINI mit einer Client-ID, die Sie im MyBMW- oder MyMINI-Portal anlegen",
-      "pleos": "einen Hyundai, Kia oder Genesis mit einem Schlüssel, den Sie im Pleos Playground anlegen",
+      "guided": "Wählen Sie die Marke: Runsten führt Sie durch die Verbindung.",
       "noVolvo": "Diese Instanz ist nicht dafür eingerichtet, einen Volvo zu lesen."
     },
-    "choose": {
-      "volvo": "Ich fahre einen Volvo",
-      "polestar": "Ich fahre einen Polestar",
-      "tesla": "Ich fahre einen Tesla",
-      "bmw": "Ich fahre einen BMW oder MINI",
-      "pleos": "Ich fahre einen Hyundai, Kia oder Genesis"
-    }
+    "makes": "Die Marke Ihres Autos",
+    "make": {
+      "volvo": "Volvo",
+      "polestar": "Polestar",
+      "tesla": "Tesla",
+      "bmw": "BMW",
+      "mini": "MINI",
+      "hyundai": "Hyundai",
+      "kia": "Kia",
+      "genesis": "Genesis"
+    },
+    "beta": "Beta"
   },
   "garage": {
     "title": "Garage",
@@ -1360,8 +1359,7 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW",
-      "pleos": "Hyundai · Kia · Genesis"
+      "bmw": "BMW"
     },
     "brandAttention": "erfordert Ihre Aufmerksamkeit",
     "outcome": {
@@ -1589,8 +1587,8 @@
       "mqtt": "MQTT-Einstellungen"
     },
     "pleos": {
-      "title": "Die Pleos Vehicle Data API",
-      "off": "Hyundai, Kia und Genesis sind auf dieser Instanz abgeschaltet (das Flag source.pleos)."
+      "title": "Ihr {brand}-Schlüssel",
+      "off": "{brand} ist auf dieser Instanz abgeschaltet (das Flag source.pleos)."
     },
     "keyShared": {
       "text": "Eine andere Anwendung liest mit demselben Pleos-Schlüssel — evcc, Home Assistant. Die API erlaubt nur einen Leser zugleich; jeder verdrängt den anderen. Behalten Sie diesen Schlüssel für Runsten allein, oder lassen Sie Runsten Ihr Auto stattdessen für Home Assistant auf Ihren MQTT-Broker veröffentlichen:",
@@ -2260,7 +2258,7 @@
     }
   },
   "pleos": {
-    "intro": "Runsten liest Ihren Hyundai, Kia oder Genesis mit einem Schlüssel, den Sie im Pleos Playground anlegen – dem Zugang, den der EU Data Act den Besitzern gibt. Ein Schlüssel pro Marke, jeder mit eigenem Aufrufkontingent.",
+    "intro": "Runsten liest Ihren {brand} mit einem Schlüssel, den Sie im Pleos Playground anlegen – dem Zugang, den der EU Data Act den Besitzern gibt.",
     "guide": "Zur Anleitung",
     "refused": {
       "title": "Ihr Schlüssel wurde abgelehnt",
@@ -2282,8 +2280,8 @@
       "title": "Schlüssel anlegen",
       "signIn": "Melden Sie sich mit dem Konto Ihres Autos an bei",
       "newTab": "(öffnet in neuem Tab)",
-      "accept": "Unter My Vehicle Data API, auf dem Tab der Marke Ihres Autos, die beiden Kästchen ankreuzen: Nutzungsbedingungen, Datenschutzerklärung.",
-      "get": "Get API Key wählen und sich mit dem App-Konto Ihres Autos anmelden — Bluelink, Kia Connect oder Genesis Connected —, dem des Hauptbenutzers.",
+      "accept": "Unter My Vehicle Data API, auf dem Tab {brand}, die beiden Kästchen ankreuzen: Nutzungsbedingungen, Datenschutzerklärung.",
+      "get": "Get API Key wählen und sich mit Ihrem {app}-Konto anmelden, dem des Hauptbenutzers.",
       "copy": "Auf der Seite des Schlüssels seine Client-ID und sein Client Secret kopieren und unten einfügen: sie werden nie wieder angezeigt."
     },
     "field": {
@@ -2315,6 +2313,11 @@
       "hyundai": "Hyundai",
       "kia": "Kia",
       "genesis": "Genesis"
+    },
+    "app": {
+      "hyundai": "Bluelink",
+      "kia": "Kia Connect",
+      "genesis": "Genesis Connected"
     }
   }
 }

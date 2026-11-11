@@ -35,22 +35,21 @@
     "empty": {
       "title": "Aucun véhicule pour l'instant",
       "ask": "Quelle est votre voiture ?",
-      "reads": "Runsten lit {makes}.",
-      "volvo": "une Volvo par votre Volvo ID",
-      "volvoKey": "une Volvo avec la clé d'une application Volvo que vous créez, puis votre Volvo ID",
-      "polestar": "une Polestar avec un identifiant du Data Portal de Polestar",
-      "tesla": "une Tesla avec un jeton de rafraîchissement de votre compte Tesla",
-      "bmw": "une BMW ou une MINI avec un identifiant client que vous créez dans le portail MyBMW ou MyMINI",
-      "pleos": "une Hyundai, une Kia ou une Genesis avec une clé que vous créez dans le Pleos Playground",
+      "guided": "Choisissez sa marque : Runsten vous guide pour la connecter.",
       "noVolvo": "Cette instance n'est pas configurée pour lire une Volvo."
     },
-    "choose": {
-      "volvo": "J'ai une Volvo",
-      "polestar": "J'ai une Polestar",
-      "tesla": "J'ai une Tesla",
-      "bmw": "J'ai une BMW ou une MINI",
-      "pleos": "J'ai une Hyundai, une Kia ou une Genesis"
-    }
+    "makes": "La marque de votre voiture",
+    "make": {
+      "volvo": "Volvo",
+      "polestar": "Polestar",
+      "tesla": "Tesla",
+      "bmw": "BMW",
+      "mini": "MINI",
+      "hyundai": "Hyundai",
+      "kia": "Kia",
+      "genesis": "Genesis"
+    },
+    "beta": "Bêta"
   },
   "garage": {
     "title": "Garage",
@@ -1360,8 +1359,7 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW",
-      "pleos": "Hyundai · Kia · Genesis"
+      "bmw": "BMW"
     },
     "brandAttention": "demande votre attention",
     "outcome": {
@@ -1589,8 +1587,8 @@
       "mqtt": "Réglages MQTT"
     },
     "pleos": {
-      "title": "L’API Pleos Vehicle Data",
-      "off": "Hyundai, Kia et Genesis sont désactivés sur cette instance (le drapeau source.pleos)."
+      "title": "Votre clé {brand}",
+      "off": "{brand} n’est pas proposé sur cette instance (le drapeau source.pleos)."
     },
     "keyShared": {
       "text": "Une autre application lit avec la même clé Pleos — evcc, Home Assistant. L’API n’autorise qu’un lecteur à la fois, et chacun prend la place de l’autre. Gardez cette clé pour Runsten seul, ou laissez plutôt Runsten republier votre voiture sur votre broker MQTT pour Home Assistant :",
@@ -2260,7 +2258,7 @@
     }
   },
   "pleos": {
-    "intro": "Runsten lit votre Hyundai, Kia ou Genesis avec une clé que vous créez dans le Pleos Playground, l’accès que le Data Act européen donne aux propriétaires. Une clé par marque, chacune avec son propre quota d’appels.",
+    "intro": "Runsten lit votre {brand} avec une clé que vous créez dans le Pleos Playground, l’accès que le Data Act européen donne aux propriétaires.",
     "guide": "Lire le guide",
     "refused": {
       "title": "Votre clé a été refusée",
@@ -2282,8 +2280,8 @@
       "title": "Créez votre clé",
       "signIn": "Connectez-vous avec le compte de votre voiture sur",
       "newTab": "(s’ouvre dans un nouvel onglet)",
-      "accept": "Dans My Vehicle Data API, sur l’onglet de la marque de votre voiture, cochez les deux cases : Conditions d’utilisation, Politique de confidentialité.",
-      "get": "Choisissez Get API Key, puis connectez-vous avec le compte de l’application de votre voiture — Bluelink, Kia Connect ou Genesis Connected —, celui de l’utilisateur principal.",
+      "accept": "Dans My Vehicle Data API, sur l’onglet {brand}, cochez les deux cases : Conditions d’utilisation, Politique de confidentialité.",
+      "get": "Choisissez Get API Key, puis connectez-vous avec votre compte {app}, celui de l’utilisateur principal.",
       "copy": "Sur la page de la clé, copiez son Client ID et son Client secret, puis collez-les ci-dessous : ils ne seront plus jamais affichés."
     },
     "field": {
@@ -2315,6 +2313,11 @@
       "hyundai": "Hyundai",
       "kia": "Kia",
       "genesis": "Genesis"
+    },
+    "app": {
+      "hyundai": "Bluelink",
+      "kia": "Kia Connect",
+      "genesis": "Genesis Connected"
     }
   }
 }
