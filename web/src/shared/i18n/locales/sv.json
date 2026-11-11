@@ -41,13 +41,15 @@
       "polestar": "en Polestar med inloggningsuppgifter från Polestars Data Portal",
       "tesla": "en Tesla med en uppdateringstoken från ditt Tesla-konto",
       "bmw": "en BMW eller MINI med ett klient-ID du skapar i MyBMW- eller MyMINI-portalen",
+      "pleos": "en Hyundai, Kia eller Genesis med en nyckel du skapar i Pleos Playground",
       "noVolvo": "Den här instansen är inte inställd för att läsa en Volvo."
     },
     "choose": {
       "volvo": "Jag har en Volvo",
       "polestar": "Jag har en Polestar",
       "tesla": "Jag har en Tesla",
-      "bmw": "Jag har en BMW eller MINI"
+      "bmw": "Jag har en BMW eller MINI",
+      "pleos": "Jag har en Hyundai, Kia eller Genesis"
     }
   },
   "vehicle": {
