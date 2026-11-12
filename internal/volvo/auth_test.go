@@ -261,6 +261,17 @@ func TestTokenResponses(t *testing.T) {
 			oauth.Grant{AccessToken: "a", RefreshToken: "r", ExpiresIn: 299 * time.Second},
 			false, false,
 		},
+		// Keycloak's, a number; and as a string, as Volvo ID sends expires_in.
+		{
+			"refresh_expires_in", 200, `{"access_token":"a","refresh_token":"r","expires_in":300,"refresh_expires_in":1800}`,
+			oauth.Grant{AccessToken: "a", RefreshToken: "r", ExpiresIn: 300 * time.Second, RefreshExpiresIn: 30 * time.Minute},
+			false, false,
+		},
+		{
+			"refresh_expires_in as a string", 200, `{"access_token":"a","refresh_token":"r","refresh_expires_in":"7776000"}`,
+			oauth.Grant{AccessToken: "a", RefreshToken: "r", RefreshExpiresIn: 90 * 24 * time.Hour},
+			false, false,
+		},
 		// Not rotated: the library returns the refresh token that was presented.
 		{"no expires_in, no refresh token", 200, `{"access_token":"a"}`, oauth.Grant{AccessToken: "a", RefreshToken: "rt"}, false, false},
 		{"no access token", 200, `{"refresh_token":"r"}`, oauth.Grant{}, true, false},

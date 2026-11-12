@@ -178,6 +178,8 @@ func (s *Server) connectionPage(w http.ResponseWriter, r *http.Request, sess aut
 	switch r.URL.Query().Get("volvo") {
 	case outcomeConnected:
 		v = view{Title: "Volvo ID connected", Message: "Your vehicles are recorded: the collector reads them from its next pass. You can close this page.", Back: "./"}
+	case outcomeShortSession:
+		v = view{Title: "Volvo ID connected for an hour", Error: shortSessionMessage, Back: "./"}
 	case outcomeKeyRefused:
 		v = view{Title: "Volvo key refused", Error: keyRefusedMessage, Back: "./"}
 	case outcomeTooManyVehicles:

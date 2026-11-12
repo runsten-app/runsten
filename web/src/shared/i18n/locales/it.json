@@ -1365,6 +1365,7 @@
     "outcome": {
       "connected": "Volvo ID collegato: il collector legge i Suoi veicoli dal prossimo passaggio.",
       "keyRefused": "Il Suo Volvo ID è collegato, ma Volvo ha rifiutato la Sua chiave: la corregga qui sotto, e i veicoli verranno elencati senza doversi ricollegare.",
+      "shortSession": "Il Suo Volvo ID è collegato, ma solo per un’ora: Volvo mantiene il collegamento solo se la casella «Ricordami» della sua pagina di accesso è spuntata. Clicchi su «{button}» e la spunti.",
       "noVehicle": "Il Suo Volvo ID non ha alcun veicolo: non è stato collegato. Aggiunga la Sua auto a questo Volvo ID nell’app Volvo Cars, poi faccia di nuovo clic su «{button}».",
       "tooManyVehicles": "Con i veicoli del Suo Volvo ID, il Suo account avrebbe più veicoli di quanti ne sono consentiti: non è stato collegato.",
       "brand": {
@@ -1379,6 +1380,7 @@
       "connect": "Collega un Volvo ID",
       "reconnect": "Ricollega il Volvo ID",
       "reconnectHelp": "Ricollegarlo rinnova solo l’autorizzazione: nulla di ciò che è già stato letto va perso.",
+      "rememberMe": "Nella pagina di accesso di Volvo, spunti «Ricordami»: altrimenti Volvo interrompe il collegamento dopo un’ora.",
       "status": "Stato",
       "active": "Collegato",
       "reauth": "Nuova autenticazione necessaria",

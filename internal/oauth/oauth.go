@@ -31,6 +31,9 @@ type Grant struct {
 	AccessToken  string
 	RefreshToken string        // empty if the provider did not rotate it
 	ExpiresIn    time.Duration // zero: not announced
+	// RefreshExpiresIn is the refresh token's lifetime, as Keycloak announces it
+	// (refresh_expires_in, not in RFC 6749). Zero: not announced.
+	RefreshExpiresIn time.Duration
 }
 
 // NewCredentials returns the credentials of a grant obtained at at, from an

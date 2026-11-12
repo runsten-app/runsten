@@ -26,8 +26,8 @@ import VehicleCollection from './VehicleCollection.vue'
 // token of Tesla's Owner API, and how the collector reads each vehicle. The other
 // pages only warn when nothing new is read; this one says why, and how to connect again.
 // The vehicle it was opened from, if any, is kept for the way back. The Volvo ID flow
-// comes back to it with its outcome (volvo=connected, key_refused, no_vehicle, which
-// names the button to click again, or too_many_vehicles, which leads to the offer when
+// comes back to it with its outcome (volvo=connected, key_refused, no_vehicle and
+// short_session, which name the button to click again, or too_many_vehicles, which leads to the offer when
 // the instance has a page of it), and so may the sign-in of a brand an extension
 // connects (tesla=connected): told once, in the brand's tab, the parameter leaves the URL,
 // a reload does not tell it again.
@@ -59,11 +59,18 @@ const { t } = useI18n()
 const { unread } = useLimits()
 const route = useRoute()
 const router = useRouter()
-const outcomes = ['connected', 'key_refused', 'no_vehicle', 'too_many_vehicles'] as const
+const outcomes = [
+  'connected',
+  'key_refused',
+  'short_session',
+  'no_vehicle',
+  'too_many_vehicles',
+] as const
 type Outcome = (typeof outcomes)[number]
 // The brand whose sign-in came back, by its parameter, read whenever the query brings one
 // (the page stays mounted through a navigation to itself). Volvo's key is the only one a
-// sign-in may refuse. Its tab goes into the hash, unless the URL names one, so that a later
+// sign-in may refuse, and its connection the only one that may be short ("Remember me" not
+// ticked at Volvo). Its tab goes into the hash, unless the URL names one, so that a later
 // navigation (to another vehicle's tab) decides again; that one forgets the outcome too.
 const outcomeBrand = ref<Brand>()
 const outcome = ref<Outcome>()
@@ -73,7 +80,9 @@ watch(
     if (!b) return
     const value = route.query[b]
     outcomeBrand.value = b
-    outcome.value = outcomes.find((o) => o === value && (o !== 'key_refused' || b === 'volvo'))
+    outcome.value = outcomes.find(
+      (o) => o === value && ((o !== 'key_refused' && o !== 'short_session') || b === 'volvo'),
+    )
     const dropped = Object.fromEntries(brands.map((x) => [x, undefined]))
     void router.replace({ query: { ...route.query, ...dropped }, hash: route.hash || `#${b}` })
   },
@@ -103,6 +112,8 @@ const outcomeText = (o: Outcome) => {
       return t('connection.outcome.connected')
     case 'key_refused':
       return t('connection.outcome.keyRefused')
+    case 'short_session':
+      return t('connection.outcome.shortSession', { button: t('connection.volvoId.reconnect') })
     case 'no_vehicle':
       return t('connection.outcome.noVehicle', { button: connectLabel.value })
     case 'too_many_vehicles':
@@ -358,9 +369,12 @@ const alerted = computed(
                   }}
                 </p>
                 <!-- A full page load: the Volvo ID flow is served by runsten-api. -->
-                <v-btn v-if="!keyMissing" href="auth/volvo/start" color="primary" variant="flat">
-                  {{ connectLabel }}
-                </v-btn>
+                <template v-if="!keyMissing">
+                  <v-btn href="auth/volvo/start" color="primary" variant="flat">
+                    {{ connectLabel }}
+                  </v-btn>
+                  <p class="text-body-medium mt-2">{{ t('connection.volvoId.rememberMe') }}</p>
+                </template>
               </template>
               <template v-else>
                 <dl class="facts mb-4">
@@ -399,7 +413,10 @@ const alerted = computed(
                 >
                   {{ t('connection.volvoId.reconnect') }}
                 </v-btn>
-                <p class="text-body-medium mt-2">{{ t('connection.volvoId.reconnectHelp') }}</p>
+                <p class="text-body-medium mt-2">
+                  {{ t('connection.volvoId.reconnectHelp') }}
+                  {{ t('connection.volvoId.rememberMe') }}
+                </p>
               </template>
             </section>
 

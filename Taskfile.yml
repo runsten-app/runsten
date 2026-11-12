@@ -398,6 +398,7 @@ tasks:
         authorize=$(next http://127.0.0.1:8081/auth/volvo/start) && callback=$(next "$authorize") && back=$(next "$callback") || exit 1
         case "$back" in
           *volvo=connected) echo "Volvo ID connected"; connected=1 ;;
+          *volvo=short_session) echo "Volvo ID connected, for a short session (SIM_REFRESH_TOKEN_TTL under a day)"; connected=1 ;;
           *volvo=no_vehicle) echo "Volvo ID: no Volvo in the scenario" ;;
           *) echo "not connected: $back" >&2; exit 1 ;;
         esac
