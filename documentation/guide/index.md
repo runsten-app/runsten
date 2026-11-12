@@ -13,6 +13,7 @@ Runsten reads your car from its manufacturer:
 - **Tesla**, through the Owner API of the Tesla app: a refresh token of your Tesla account ([Your Tesla](./tesla.md)).
 - **BMW and Mini**, through BMW CarData: a client ID of your own, approved with a code on BMW's page ([Your BMW or Mini](./bmw.md)).
 - **Hyundai, Kia and Genesis** (beta), through the Pleos Vehicle Data API: a key of your own per brand, created in the Pleos Playground ([Your Hyundai, Kia or Genesis](./hyundai-kia.md)).
+- **Škoda** (beta), through the MyŠkoda Public API: a key of your own, created in the MyŠkoda app, and the VIN of each car ([Your Škoda](./skoda.md)).
 
 <Screen view="state" alt="The State tab: charge level, range, odometer and last position." />
 
@@ -47,6 +48,7 @@ The **Connection** page (in the menu under your name) tells whether Runsten read
 - **Tesla refused the refresh token**, **no Tesla refresh token given**, or **the vehicle is no longer in the Tesla account**: a Tesla's token was revoked, removed, or the car left the account ([When it is not read](./tesla.md#when-it-is-not-read)).
 - **BMW refused the connection**, **no BMW connected**, or **the BMW account is no longer the car's main user**: a BMW's connection must be made again ([When it is not read](./bmw.md#when-it-is-not-read)); and **stream held by another application**: Home Assistant's CarData integration or evcc holds BMW's only stream ([One application on the stream](./bmw.md#one-application-on-the-stream)).
 - **Pleos refused the key**, **no Pleos key given**, or **the car no longer shares its data with the key**: a Hyundai's, Kia's or Genesis's key must be given again ([When it is not read](./hyundai-kia.md#when-it-is-not-read)); and **key shared with another application**: only one application reads with a Pleos key at a time ([One key, one application](./hyundai-kia.md#one-key-one-application)).
+- **Škoda refused the key**, **no MyŠkoda key given**, or **the key no longer covers this car**: a Škoda's key expired, was removed, or no longer reads the car ([When it is not read](./skoda.md#when-it-is-not-read)).
 - **The collector seems stopped**: nothing is read on the instance's side. Whoever runs the instance looks into it ([Troubleshooting](../self-hosting/troubleshooting.md#nothing-new-is-read)).
 
 ### Your Volvo key
