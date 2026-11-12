@@ -34,18 +34,16 @@ const Daily = 10_000
 // for a charge's start, where a fast charge peaks, to be read sooner, every parked one
 // otherwise; the availability every parked interval, and at once when the battery tells
 // a new upload, the rest every rare one; driving or charging, the four telemetries every
-// active interval; the target level, the health
-// and the exterior every rare interval, the last two being optional. A car parked all
-// day costs about 1,700 calls, one driving two hours and charging one about 2,200; past
-// five cars on a credential, the battery falls back to the parked pace as the budget
-// runs short.
+// active interval; the target level, the health and the exterior every rare interval,
+// the last two being optional. A car parked all day costs about 1,700 calls, one driving
+// two hours and charging one about 2,200; past five cars on a credential, the battery
+// falls back to the parked pace as the budget runs short.
 //
-// Measured on 23 cars (2026-11): driving or charging, the car uploads every 60 s, which
-// the active interval matches; parked, it uploads only while awake (its battery read every
-// minute: 38 uploads a day on average, 133 at most). The availability alone tells a
-// drive: read every parked interval, a drive's start was known within 7 minutes (median),
-// and drives shorter than that were missed. A new battery upload, parked, is the car
-// waking up, perhaps to drive: it brings the availability forward, for as many calls.
+// The car uploads about every minute while it drives or charges, which the active interval
+// matches, and parked only while it is awake. The availability alone tells a drive: read
+// every parked interval, a drive's start would be known only within that interval, and a
+// shorter drive missed. A new battery upload, parked, is the car waking up, perhaps to
+// drive: it brings the availability forward, a call for each such upload.
 func (Source) Spec() collector.SourceSpec {
 	telemetry := func(d polestar.Domain, parked collector.Pace) collector.EndpointSpec {
 		return collector.EndpointSpec{
