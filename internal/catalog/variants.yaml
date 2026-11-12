@@ -2845,8 +2845,9 @@
 # Škoda renamed Enyaq iV to Enyaq with MY2024 and the family stays "Enyaq".
 # Škoda's technical-data PDFs are updated in place at the same URL: the 2027 ones are the
 # April 2026 editions, the 2025 ones the May 2025 editions.
-# MY2027 (mid-2026) arrived for the Enyaq and Elroq; no manufacturer source lists a Coupé
-# MY2027, so the Coupé entries stop at 2026.
+# MY2027 (mid-2026) arrived for the Enyaq, the Enyaq Coupé and the Elroq: Škoda's Finnish
+# technical data "Enyaq & Enyaq Coupé vm. 2027" (April 2026) covers both body styles with the
+# same capacities and DC powers (60: 61 (58) kWh, 105 kW; 85, 85x and RS: 82 (77) kWh, 165 kW).
 
 # Conflict (dc_max_kw): Škoda's 2021 charging sheet gives 50 kW DC for the 50 (100 kW
 # not available), Wikipedia says 50 kW, 100 kW optional: the highest is kept. Last model
@@ -2869,17 +2870,22 @@
       for: [gross_kwh, net_kwh, dc_max_kw]
 
 # Conflict (dc_max_kw): Škoda's 2021 Enyaq charging sheet says 100 kW for the 60, its Coupé
-# sheet and Wikipedia say 120 kW: the highest is kept.
+# sheet, its February 2024 technical data (MY2024, 120 kW) and Wikipedia say 120 kW: the highest
+# is kept. The 2024 sheet gives the same figures for the 60 and the Coupé 60 (62 (58) kWh,
+# 11 kW AC), so both entries run to 2024; the 63 (59) kWh 60 starts with 2025.
 - id: enyaq-60-2021
   brand: skoda
   family: Enyaq
   name: Enyaq iV 60
-  years: [2021, 2023]
+  years: [2021, 2024]
   gross_kwh: 62
   net_kwh: 58
   ac_max_kw: 11
   dc_max_kw: 120
   sources:
+    - url: https://cdn.skoda-storyboard.com/2024/02/TD-Enyaq-de_bc32b330.pdf
+      level: manufacturer
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
     - url: https://cdn.skoda-storyboard.com/2021/03/SKODA_ENYAQ_iV_Charging.pdf
       level: manufacturer
       for: [ac_max_kw]
@@ -3093,12 +3099,15 @@
   brand: skoda
   family: Enyaq Coupé
   name: Enyaq Coupé iV 60
-  years: [2022, 2023]
+  years: [2022, 2024]
   gross_kwh: 62
   net_kwh: 58
   ac_max_kw: 11
   dc_max_kw: 120
   sources:
+    - url: https://cdn.skoda-storyboard.com/2024/02/TD-Enyaq-de_bc32b330.pdf
+      level: manufacturer
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
     - url: https://cdn.skoda-storyboard.com/2021/09/SKODA_ENYAQ_COUPE_iV_SK_nabijanie.pdf
       level: manufacturer
       for: [ac_max_kw, dc_max_kw]
@@ -3256,6 +3265,80 @@
     - url: https://cdn.skoda-storyboard.com/2025/06/Enyaq_rs_technical_data_EN_d0e03b1f.pdf
       level: manufacturer
       for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+# MY2027 Coupé: the English Enyaq sheet (April 2026) lists capacities, AC power and chemistry
+# for the range; the Finnish sheet names the Coupé and gives the same capacities and DC powers.
+- id: enyaq-coupe-60-2027
+  brand: skoda
+  family: Enyaq Coupé
+  name: Enyaq Coupé 60 (LFP)
+  years: [2027]
+  gross_kwh: 61
+  net_kwh: 58
+  ac_max_kw: 11
+  dc_max_kw: 105
+  chemistry: lfp
+  sources:
+    - url: https://www.skoda.fi/_doc/adcd7a4f-772d-4201-b658-37eb4f65dffe
+      level: manufacturer
+      for: [gross_kwh, net_kwh, dc_max_kw]
+    - url: https://cdn.skoda-storyboard.com/2025/06/TD-Enyaq-en_new_db50ac09.pdf
+      level: manufacturer
+      for: [ac_max_kw, chemistry]
+
+- id: enyaq-coupe-85-2027
+  brand: skoda
+  family: Enyaq Coupé
+  name: Enyaq Coupé 85 (MY2027)
+  years: [2027]
+  gross_kwh: 82
+  net_kwh: 77
+  ac_max_kw: 11
+  dc_max_kw: 165
+  chemistry: nmc
+  sources:
+    - url: https://www.skoda.fi/_doc/adcd7a4f-772d-4201-b658-37eb4f65dffe
+      level: manufacturer
+      for: [gross_kwh, net_kwh, dc_max_kw]
+    - url: https://cdn.skoda-storyboard.com/2025/06/TD-Enyaq-en_new_db50ac09.pdf
+      level: manufacturer
+      for: [ac_max_kw, chemistry]
+
+- id: enyaq-coupe-85x-2027
+  brand: skoda
+  family: Enyaq Coupé
+  name: Enyaq Coupé 85x (MY2027)
+  years: [2027]
+  gross_kwh: 82
+  net_kwh: 77
+  ac_max_kw: 11
+  dc_max_kw: 165
+  chemistry: nmc
+  sources:
+    - url: https://www.skoda.fi/_doc/adcd7a4f-772d-4201-b658-37eb4f65dffe
+      level: manufacturer
+      for: [gross_kwh, net_kwh, dc_max_kw]
+    - url: https://cdn.skoda-storyboard.com/2025/06/TD-Enyaq-en_new_db50ac09.pdf
+      level: manufacturer
+      for: [ac_max_kw, chemistry]
+
+- id: enyaq-coupe-rs-2027
+  brand: skoda
+  family: Enyaq Coupé
+  name: Enyaq Coupé RS (MY2027)
+  years: [2027]
+  gross_kwh: 82
+  net_kwh: 77
+  ac_max_kw: 11
+  dc_max_kw: 165
+  chemistry: nmc
+  sources:
+    - url: https://www.skoda.fi/_doc/adcd7a4f-772d-4201-b658-37eb4f65dffe
+      level: manufacturer
+      for: [gross_kwh, net_kwh, dc_max_kw]
+    - url: https://cdn.skoda-storyboard.com/2025/06/TD-Enyaq-en_new_db50ac09.pdf
+      level: manufacturer
+      for: [ac_max_kw, chemistry]
 
 # Absent from the April 2026 (MY2027) sheet: last year 2026 assumed. Chemistry not stated by Škoda.
 - id: elroq-50-2025
