@@ -41,11 +41,11 @@ const Daily = 10_000
 // runs short.
 //
 // Measured on 23 cars (2026-11): driving or charging, the car uploads every 60 s, which
-// the active interval matches; parked, it uploads only while awake, about 15 times a day.
-// The availability alone tells a drive: read every parked interval, a drive's start was
-// known within 7 minutes (median), and drives shorter than that were missed. A new battery
-// upload, parked, is the car waking up, perhaps to drive: it brings the availability
-// forward, for about 15 calls a day.
+// the active interval matches; parked, it uploads only while awake (its battery read every
+// minute: 38 uploads a day on average, 133 at most). The availability alone tells a
+// drive: read every parked interval, a drive's start was known within 7 minutes (median),
+// and drives shorter than that were missed. A new battery upload, parked, is the car
+// waking up, perhaps to drive: it brings the availability forward, for as many calls.
 func (Source) Spec() collector.SourceSpec {
 	telemetry := func(d polestar.Domain, parked collector.Pace) collector.EndpointSpec {
 		return collector.EndpointSpec{
