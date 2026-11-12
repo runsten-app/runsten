@@ -16,7 +16,7 @@ vars:
   REDOCLY: redocly/cli:2.54.3@sha256:8e3a6fee4e002900d22fb35595e7f7346524b9a93acb29615062b3cbfc7bb55c
   # Browser tests only (scripts/e2e.sh), never shipped: not scanned by trivy image. Its
   # version is the one of @playwright/test in web/package.json.
-  PLAYWRIGHT: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
+  PLAYWRIGHT: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
   # runsten-web has its own Dockerfile target, with the front end's build.
   IMAGES: runsten-simulator runsten-collector runsten-api runsten-web
   PLATFORMS: linux/amd64 linux/arm64
