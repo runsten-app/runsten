@@ -29,15 +29,21 @@ vi.mock('@/entities/connection', async (original) => ({
   fetchConnection,
 }))
 
-// The flags source.tesla, source.bmw and source.pleos, as the session gives them: on
-// unless a test turns one off.
-const flag = vi.hoisted(() => ({ tesla: true, bmw: true, pleos: true }))
+// The flags source.tesla, source.bmw, source.pleos and source.skoda, as the session gives
+// them: on unless a test turns one off.
+const flag = vi.hoisted(() => ({ tesla: true, bmw: true, pleos: true, skoda: true }))
 vi.mock('@/features/view-flags', async () => {
   const { computed } = await import('vue')
   return {
     useFlag: (name: string) =>
       computed(() =>
-        name === 'source.bmw' ? flag.bmw : name === 'source.pleos' ? flag.pleos : flag.tesla,
+        name === 'source.bmw'
+          ? flag.bmw
+          : name === 'source.pleos'
+            ? flag.pleos
+            : name === 'source.skoda'
+              ? flag.skoda
+              : flag.tesla,
       ),
   }
 })
@@ -64,6 +70,7 @@ beforeEach(() => {
   flag.tesla = true
   flag.bmw = true
   flag.pleos = true
+  flag.skoda = true
   fetchVehicles.mockReset()
   fetchConnection.mockReset()
   // Self-hosting: the instance's key reads the vehicles.
@@ -141,6 +148,10 @@ describe('HomePage', () => {
     const genesis = wrapper.find('a.genesis')
     expect(genesis.attributes('href')).toBe('/connection#genesis')
     expect(genesis.text()).toBe('Genesis, Beta')
+    // A Škoda's key, in its tab, in beta.
+    const skoda = wrapper.find('a.skoda')
+    expect(skoda.attributes('href')).toBe('/connection#skoda')
+    expect(skoda.text()).toBe('Škoda, Beta')
     // How each is read is told by its tab: the home only says it guides.
     expect(wrapper.text()).toContain(
       'Which car is yours? Choose its make: Runsten guides you through connecting it.',
@@ -215,6 +226,14 @@ describe('HomePage', () => {
     for (const make of ['hyundai', 'kia', 'genesis'])
       expect(wrapper.find(`a.${make}`).exists()).toBe(false)
     expect(wrapper.text()).not.toContain('Kia')
+  })
+
+  it('leaves the Škoda out while its flag is off', async () => {
+    flag.skoda = false
+    fetchVehicles.mockResolvedValue([])
+    const { wrapper } = await home()
+    expect(wrapper.find('a.kia').exists()).toBe(true)
+    expect(wrapper.find('a.skoda').exists()).toBe(false)
   })
 
   it("shows the extensions' choices after the makes, and their mentions", async () => {

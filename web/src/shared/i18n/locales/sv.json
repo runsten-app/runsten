@@ -47,7 +47,8 @@
       "mini": "MINI",
       "hyundai": "Hyundai",
       "kia": "Kia",
-      "genesis": "Genesis"
+      "genesis": "Genesis",
+      "skoda": "Škoda"
     },
     "beta": "Beta"
   },
@@ -1359,7 +1360,8 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW"
+      "bmw": "BMW",
+      "skoda": "Škoda"
     },
     "brandAttention": "behöver din uppmärksamhet",
     "outcome": {
@@ -1427,14 +1429,19 @@
       "unsharedPolestarId": "Läses inte: bilen finns inte längre i Polestar ID",
       "credentialRefusedBmw": "Läses inte: BMW avvisade anslutningen",
       "credentialRefusedPleos": "Läses inte: Pleos vägrade nyckeln",
+      "credentialRefusedSkoda": "Läses inte: Škoda nekade nyckeln",
       "credentialMissingBmw": "Läses inte: ingen BMW-anslutning",
       "credentialMissingPleos": "Läses inte: ingen Pleos-nyckel given",
+      "credentialMissingSkoda": "Läses inte: ingen MyŠkoda-nyckel angiven",
       "unsharedBmw": "Läses inte: BMW-kontot är inte längre bilens huvudanvändare",
       "unsharedPleos": "Läses inte: bilen delar inte längre sina data med nyckeln",
+      "unsharedSkoda": "Läses inte: nyckeln omfattar inte längre bilen",
       "pausedBmw": "Pausad av BMW till {time}",
       "pausedPleos": "Pausad av Pleos till {time}",
+      "pausedSkoda": "Pausad av Škoda till {time}",
       "quotaBmw": "Dagens anrop till BMW förbrukade till {time}",
-      "quotaPleos": "Dagens anrop till Pleos förbrukade till {time}"
+      "quotaPleos": "Dagens anrop till Pleos förbrukade till {time}",
+      "quotaSkoda": "Dagens anrop till Škoda förbrukade till {time}"
     },
     "notice": {
       "reauth": {
@@ -1477,11 +1484,16 @@
       "unsharedBmw": "Ditt BMW-konto är inte längre huvudanvändare av den här bilen, eller listar den inte längre: såld, eller bytt ägare. Kommer den tillbaka, anslut BMW igen på anslutningssidan: bilen läses igen.",
       "pausedBmw": "BMW begränsade antalet anrop. Läsningen återupptas av sig själv.",
       "pausedPleos": "Pleos begränsade antalet anrop. Läsningen återupptas av sig själv.",
+      "pausedSkoda": "Škoda begränsade antalet anrop. Läsningen återupptas av sig själv.",
       "credentialRefusedPleos": "Pleos vägrade nyckeln som den här bilen läses med: återkallad eller utbytt i Playground, eller utgången. Skapa en ny där och ge den på anslutningssidan: det som redan lästs finns kvar.",
+      "credentialRefusedSkoda": "Škoda nekade nyckeln som den här bilen läses med: utgången, eller borttagen i MyŠkoda-appen. Skapa en ny där och ange den på anslutningssidan: det som lästs finns kvar.",
       "credentialMissingPleos": "Runsten läser den här bilen med din Pleos-nyckel, som har tagits bort: ge en ny på anslutningssidan.",
+      "credentialMissingSkoda": "Runsten läser den här bilen med din MyŠkoda-nyckel, som har tagits bort: ange en ny på anslutningssidan.",
       "unsharedPleos": "Pleos svarade att den här bilen inte längre delar sina data med nyckeln: delningen avstängd i de uppkopplade tjänsterna, eller bilen avregistrerad. Delar bilen igen, ge nyckeln på nytt på anslutningssidan: bilen läses igen.",
+      "unsharedSkoda": "Škoda svarade att nyckeln inte längre läser den här bilen: den avmarkerades för nyckeln i MyŠkoda-appen. Skapa en nyckel med bilen markerad och ange den på anslutningssidan: bilen läses igen.",
       "quotaBmw": "Runsten gör högst 40 anrop om dagen till BMW:s API per anslutning, för att lämna några av BMW:s 50 åt dig: de är förbrukade. Flödet, som saknar gräns, läses fortfarande; resten återupptas av sig själv.",
-      "quotaPleos": "Runsten gör högst 2000 anrop om dagen till Pleos Vehicle Data API per nyckel, ett eget tak (Pleos publicerar inget): de är förbrukade. Läsningen återupptas av sig själv."
+      "quotaPleos": "Runsten gör högst 2000 anrop om dagen till Pleos Vehicle Data API per nyckel, ett eget tak (Pleos publicerar inget): de är förbrukade. Läsningen återupptas av sig själv.",
+      "quotaSkoda": "Runsten gör högst 2 400 anrop om dagen till MyŠkoda Public API per nyckel, över Škodas egen gräns på 20 i timmen per bil: de är förbrukade. Läsningen återupptas av sig själv."
     },
     "facts": {
       "mode": "Läsläge",
@@ -1507,8 +1519,10 @@
       "noneDueUnsharedPolestarId": "Ingen: bilen finns inte längre i Polestar ID",
       "noneDueBmw": "Ingen förrän BMW ansluts igen",
       "noneDuePleos": "Ingen förrän en Pleos-nyckel anges",
+      "noneDueSkoda": "Ingen förrän en MyŠkoda-nyckel anges",
       "noneDueUnsharedBmw": "Ingen: BMW-kontot är inte längre bilens huvudanvändare",
-      "noneDueUnsharedPleos": "Ingen: bilen delar inte längre sina data med nyckeln"
+      "noneDueUnsharedPleos": "Ingen: bilen delar inte längre sina data med nyckeln",
+      "noneDueUnsharedSkoda": "Ingen: nyckeln omfattar inte längre bilen"
     },
     "api": {
       "connectedVehicle": "fordonsdata",
@@ -1519,7 +1533,8 @@
       "teslaFleet": "Teslas Fleet API",
       "polestarId": "Polestar-appens API",
       "bmw": "BMW CarData",
-      "pleos": "Pleos Vehicle Data API"
+      "pleos": "Pleos Vehicle Data API",
+      "skoda": "MyŠkoda Public API"
     },
     "failure": {
       "quota": "Kvot nådd",
@@ -1547,12 +1562,16 @@
       "streamHeld": "Flödet hålls av ett annat program (Home Assistant, evcc)",
       "notFoundBmw": "Fordonet okänt för BMW",
       "notFoundPleos": "Fordonet okänt för Pleos",
+      "notFoundSkoda": "Fordonet okänt för Škoda",
       "unavailableBmw": "BMW nås inte",
       "unavailablePleos": "Pleos nås inte",
+      "unavailableSkoda": "Škoda kan inte nås",
       "tokenBmw": "Ingen token från BMW",
       "tokenPleos": "Ingen token från Pleos",
+      "tokenSkoda": "MyŠkoda-nyckeln lästes inte",
       "credentialRefusedBmw": "BMW-anslutning avvisad",
       "credentialRefusedPleos": "Pleos-nyckel avvisad",
+      "credentialRefusedSkoda": "MyŠkoda-nyckeln nekades",
       "keyShared": "Nyckel delad med ett annat program"
     },
     "key": {
@@ -1591,6 +1610,10 @@
     "pleos": {
       "title": "Din {brand}-nyckel",
       "off": "{brand} är avstängt på denna instans (flaggan source.pleos)."
+    },
+    "skoda": {
+      "title": "Din MyŠkoda-nyckel",
+      "off": "Škoda är avstängt på den här instansen (flaggan source.skoda)."
     },
     "keyShared": {
       "text": "Ett annat program läser med samma Pleos-nyckel — evcc, Home Assistant. API:et tillåter bara en läsare åt gången, så var och en tar den andras plats. Behåll denna nyckel för Runsten ensam, eller låt Runsten i stället publicera din bil till din MQTT-mäklare för Home Assistant:",
@@ -2320,6 +2343,75 @@
       "hyundai": "Bluelink",
       "kia": "Kia Connect",
       "genesis": "Genesis Connected"
+    }
+  },
+  "skoda": {
+    "intro": "Runsten läser din Škoda med en nyckel du skapar i MyŠkoda-appen, den tillgång Škoda ger sina ägare, och VIN för varje bil nyckeln läser.",
+    "guide": "Läs guiden",
+    "refused": {
+      "title": "Din nyckel nekades",
+      "body": "Škoda nekade den {time}: borttagen i MyŠkoda-appen, eller inte längre giltig. Dina bilar läses inte förrän du anger en ny; det som lästs finns kvar."
+    },
+    "expired": {
+      "title": "Din nyckel har gått ut",
+      "body": "Den gick ut {date}: dina bilar läses inte förrän du anger en ny. Skapa den i MyŠkoda-appen; det som lästs finns kvar."
+    },
+    "renew": {
+      "title": "Förnya din nyckel",
+      "body": "Den går ut {date}. Skapa en ny i MyŠkoda-appen före dess och ange den här, annars läses dina bilar inte längre."
+    },
+    "current": "Din nyckel",
+    "last4": "Nyckel som slutar på {last4}",
+    "setAt": "Angiven",
+    "expiresAt": "Går ut",
+    "expiresUnknown": "Anges vid nästa läsning",
+    "replace": "Byt nyckel",
+    "delete": {
+      "button": "Ta bort nyckeln",
+      "title": "Ta bort din MyŠkoda-nyckel?",
+      "text": "Dina Škoda-bilar finns kvar, med sin historik, men läses inte förrän du anger en annan nyckel.",
+      "error": "Nyckeln kunde inte tas bort. Försök igen om en stund.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    },
+    "steps": {
+      "title": "Skapa din nyckel",
+      "open": "Öppna på telefonen med MyŠkoda-appen",
+      "newTab": "(öppnas i en ny flik)",
+      "create": "Skapa en nyckel och markera varje bil den ska läsa.",
+      "copy": "Kopiera nyckeln och klistra in den nedan med VIN för varje bil: den visas aldrig igen."
+    },
+    "field": {
+      "apiKey": "API-nyckel",
+      "vins": "VIN"
+    },
+    "vinsHint": "Ett per rad: 17 tecken, i MyŠkoda-appen och i registreringsbeviset.",
+    "help": "Škoda tillåter 20 läsningar i timmen per bil, delade av alla program som läser den: evcc eller Home Assistant som läser samma bil lämnar färre åt Runsten. Villkoren tillåter bara personligt bruk.",
+    "save": "Spara nyckeln",
+    "cancel": "Avbryt",
+    "saved": "Nyckeln sparad: Runsten läser dess bilar från nästa omgång.",
+    "deleted": "Nyckeln borttagen.",
+    "error": {
+      "summary": "Nyckeln sparades inte",
+      "required": "Klistra in API-nyckeln.",
+      "spaces": "API-nyckeln har inga mellanslag: kopiera den igen.",
+      "characters": "API-nyckeln har bara bokstäver, siffror och tecken: kopiera den igen.",
+      "tooShort": "API-nyckeln har minst {min} tecken: kopiera hela.",
+      "tooLong": "API-nyckeln har högst {max} tecken: kopiera bara den.",
+      "vinRequired": "Ange VIN för varje bil nyckeln läser.",
+      "vinInvalid": "{vin} är inget VIN: 17 bokstäver och siffror, utan I, O och Q.",
+      "vinTwice": "{vin} är angivet två gånger.",
+      "tooManyVins": "En nyckel läser högst {max} bilar.",
+      "refused": "Škoda nekade den här nyckeln: kopiera den igen och kontrollera att den fortfarande finns i MyŠkoda-appen.",
+      "expired": "Den här nyckeln har gått ut: skapa en ny i MyŠkoda-appen.",
+      "invalidBody": "Nyckeln eller ett VIN nekades: kopiera dem igen.",
+      "notCovered": "Nyckeln läser inte {vin}: markera bilen när du skapar nyckeln i MyŠkoda-appen, eller kontrollera dess VIN.",
+      "tooManyVehicles": "Med de här bilarna skulle ditt konto ha fler fordon än det får: nyckeln sparades inte.",
+      "notAdmitted": "Ditt konto måste först ta ett steg, som att godkänna villkor: ladda om sidan. Nyckeln sparades inte.",
+      "sourceUnavailable": "MyŠkoda Public API svarade inte: nyckeln sparades inte. Försök igen om en stund.",
+      "featureUnavailable": "Škoda erbjuds inte på den här instansen: nyckeln sparades inte.",
+      "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
+      "internal": "Nyckeln kunde inte sparas. Försök igen om en stund."
     }
   }
 }

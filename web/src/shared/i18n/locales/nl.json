@@ -47,7 +47,8 @@
       "mini": "MINI",
       "hyundai": "Hyundai",
       "kia": "Kia",
-      "genesis": "Genesis"
+      "genesis": "Genesis",
+      "skoda": "Škoda"
     },
     "beta": "Bèta"
   },
@@ -1359,7 +1360,8 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW"
+      "bmw": "BMW",
+      "skoda": "Škoda"
     },
     "brandAttention": "vraagt uw aandacht",
     "outcome": {
@@ -1427,14 +1429,19 @@
       "unsharedPolestarId": "Niet uitgelezen: de auto staat niet meer in het Polestar ID",
       "credentialRefusedBmw": "Niet uitgelezen: BMW heeft de koppeling geweigerd",
       "credentialRefusedPleos": "Niet uitgelezen: Pleos heeft de sleutel geweigerd",
+      "credentialRefusedSkoda": "Niet gelezen: Škoda weigerde de sleutel",
       "credentialMissingBmw": "Niet uitgelezen: geen BMW gekoppeld",
       "credentialMissingPleos": "Niet uitgelezen: geen Pleos-sleutel opgegeven",
+      "credentialMissingSkoda": "Niet gelezen: geen MyŠkoda-sleutel opgegeven",
       "unsharedBmw": "Niet uitgelezen: het BMW-account is niet langer hoofdgebruiker van de auto",
       "unsharedPleos": "Niet uitgelezen: de auto deelt zijn gegevens niet langer met de sleutel",
+      "unsharedSkoda": "Niet gelezen: de sleutel dekt deze auto niet meer",
       "pausedBmw": "Door BMW gepauzeerd tot {time}",
       "pausedPleos": "Door Pleos gepauzeerd tot {time}",
+      "pausedSkoda": "Gepauzeerd door Škoda tot {time}",
       "quotaBmw": "Dagelijks aantal aanroepen naar BMW bereikt tot {time}",
-      "quotaPleos": "Dagelijks aantal aanroepen naar Pleos bereikt tot {time}"
+      "quotaPleos": "Dagelijks aantal aanroepen naar Pleos bereikt tot {time}",
+      "quotaSkoda": "Dagelijkse aanroepen naar Škoda bereikt tot {time}"
     },
     "notice": {
       "reauth": {
@@ -1477,11 +1484,16 @@
       "unsharedBmw": "Uw BMW-account is niet langer hoofdgebruiker van deze auto, of vermeldt hem niet meer: verkocht, of van eigenaar gewisseld. Komt hij terug, koppel BMW dan opnieuw via de koppelingspagina: de auto wordt dan weer uitgelezen.",
       "pausedBmw": "BMW heeft het aantal aanroepen beperkt. Het uitlezen wordt vanzelf hervat.",
       "pausedPleos": "Pleos heeft het aantal aanroepen beperkt. Het uitlezen wordt vanzelf hervat.",
+      "pausedSkoda": "Škoda heeft het aantal aanroepen beperkt. Het uitlezen wordt vanzelf hervat.",
       "credentialRefusedPleos": "Pleos heeft de sleutel geweigerd waarmee deze auto wordt uitgelezen: ingetrokken of vervangen in het Playground, of verlopen. Maak daar een nieuwe aan en geef die op de koppelingspagina: wat al is uitgelezen, blijft bewaard.",
+      "credentialRefusedSkoda": "Škoda weigerde de sleutel waarmee deze auto wordt gelezen: verlopen, of verwijderd in de MyŠkoda-app. Maak er daar een nieuwe aan en geef die op de verbindingspagina: wat gelezen is, blijft.",
       "credentialMissingPleos": "Runsten leest deze auto uit met uw Pleos-sleutel, maar die is verwijderd: geef een nieuwe op de koppelingspagina.",
+      "credentialMissingSkoda": "Runsten leest deze auto met uw MyŠkoda-sleutel, die werd verwijderd: geef een nieuwe op de verbindingspagina.",
       "unsharedPleos": "Pleos antwoordde dat deze auto zijn gegevens niet langer deelt met de sleutel: het delen uitgeschakeld in de verbonden diensten, of de auto uitgeschreven. Deelt de auto opnieuw, geef de sleutel dan opnieuw op de koppelingspagina: de auto wordt dan weer uitgelezen.",
+      "unsharedSkoda": "Škoda antwoordde dat de sleutel deze auto niet meer leest: hij werd bij de sleutel uitgevinkt in de MyŠkoda-app. Maak een sleutel aan met deze auto aangevinkt en geef hem op de verbindingspagina: de auto wordt weer gelezen.",
       "quotaBmw": "Runsten doet hoogstens 40 aanroepen per dag naar de API van BMW per koppeling, om u enkele van de 50 van BMW te laten: die zijn op. De stream, die geen limiet heeft, wordt nog steeds gelezen; de rest wordt vanzelf hervat.",
-      "quotaPleos": "Runsten doet hoogstens 2000 aanroepen per dag naar de Pleos Vehicle Data API per sleutel, een eigen plafond (Pleos publiceert er geen): die zijn op. Het uitlezen wordt vanzelf hervat."
+      "quotaPleos": "Runsten doet hoogstens 2000 aanroepen per dag naar de Pleos Vehicle Data API per sleutel, een eigen plafond (Pleos publiceert er geen): die zijn op. Het uitlezen wordt vanzelf hervat.",
+      "quotaSkoda": "Runsten doet hoogstens 2400 aanroepen per dag naar de MyŠkoda Public API per sleutel, boven Škoda’s eigen limiet van 20 per uur per auto: die zijn op. Het uitlezen wordt vanzelf hervat."
     },
     "facts": {
       "mode": "Uitleesmodus",
@@ -1507,8 +1519,10 @@
       "noneDueUnsharedPolestarId": "Geen: de auto staat niet meer in het Polestar ID",
       "noneDueBmw": "Geen, tot BMW opnieuw is gekoppeld",
       "noneDuePleos": "Geen, tot er een Pleos-sleutel is opgegeven",
+      "noneDueSkoda": "Geen, tot er een MyŠkoda-sleutel is opgegeven",
       "noneDueUnsharedBmw": "Geen: het BMW-account is niet langer hoofdgebruiker van de auto",
-      "noneDueUnsharedPleos": "Geen: de auto deelt zijn gegevens niet langer met de sleutel"
+      "noneDueUnsharedPleos": "Geen: de auto deelt zijn gegevens niet langer met de sleutel",
+      "noneDueUnsharedSkoda": "Geen: de sleutel dekt de auto niet meer"
     },
     "api": {
       "connectedVehicle": "voertuiggegevens",
@@ -1519,7 +1533,8 @@
       "teslaFleet": "Tesla Fleet API",
       "polestarId": "API van de Polestar-app",
       "bmw": "BMW CarData",
-      "pleos": "de Pleos Vehicle Data API"
+      "pleos": "de Pleos Vehicle Data API",
+      "skoda": "de MyŠkoda Public API"
     },
     "failure": {
       "quota": "Quotum bereikt",
@@ -1547,12 +1562,16 @@
       "streamHeld": "Stream bezet door een andere toepassing (Home Assistant, evcc)",
       "notFoundBmw": "Voertuig onbekend bij BMW",
       "notFoundPleos": "Voertuig onbekend bij Pleos",
+      "notFoundSkoda": "Voertuig onbekend bij Škoda",
       "unavailableBmw": "BMW onbereikbaar",
       "unavailablePleos": "Pleos onbereikbaar",
+      "unavailableSkoda": "Škoda onbereikbaar",
       "tokenBmw": "Geen token van BMW",
       "tokenPleos": "Geen token van Pleos",
+      "tokenSkoda": "MyŠkoda-sleutel niet gelezen",
       "credentialRefusedBmw": "BMW-koppeling geweigerd",
       "credentialRefusedPleos": "Pleos-sleutel geweigerd",
+      "credentialRefusedSkoda": "MyŠkoda-sleutel geweigerd",
       "keyShared": "Sleutel gedeeld met een andere toepassing"
     },
     "key": {
@@ -1591,6 +1610,10 @@
     "pleos": {
       "title": "Uw {brand}-sleutel",
       "off": "{brand} staat uit op deze instantie (de vlag source.pleos)."
+    },
+    "skoda": {
+      "title": "Uw MyŠkoda-sleutel",
+      "off": "Škoda staat uit op deze instantie (de vlag source.skoda)."
     },
     "keyShared": {
       "text": "Een andere toepassing leest met dezelfde Pleos-sleutel — evcc, Home Assistant. De API laat maar één lezer tegelijk toe, dus elk neemt de plaats van de ander in. Houd deze sleutel voor Runsten alleen, of laat Runsten uw auto voor Home Assistant op uw MQTT-broker publiceren:",
@@ -2320,6 +2343,75 @@
       "hyundai": "Bluelink",
       "kia": "Kia Connect",
       "genesis": "Genesis Connected"
+    }
+  },
+  "skoda": {
+    "intro": "Runsten leest uw Škoda met een sleutel die u aanmaakt in de MyŠkoda-app, de toegang die Škoda zijn eigenaars geeft, en de VIN van elke auto die de sleutel leest.",
+    "guide": "Lees de handleiding",
+    "refused": {
+      "title": "Uw sleutel werd geweigerd",
+      "body": "Škoda weigerde hem op {time}: verwijderd in de MyŠkoda-app, of niet meer geldig. Uw auto’s worden niet meer gelezen tot u een nieuwe geeft; wat gelezen is, blijft."
+    },
+    "expired": {
+      "title": "Uw sleutel is verlopen",
+      "body": "Hij verliep op {date}: uw auto’s worden niet meer gelezen tot u een nieuwe geeft. Maak die aan in de MyŠkoda-app; wat gelezen is, blijft."
+    },
+    "renew": {
+      "title": "Vernieuw uw sleutel",
+      "body": "Hij verloopt op {date}. Maak vóór die datum een nieuwe aan in de MyŠkoda-app en geef die hier, anders worden uw auto’s niet meer gelezen."
+    },
+    "current": "Uw sleutel",
+    "last4": "Sleutel eindigend op {last4}",
+    "setAt": "Opgegeven",
+    "expiresAt": "Verloopt",
+    "expiresUnknown": "Bekend bij de volgende uitlezing",
+    "replace": "Sleutel vervangen",
+    "delete": {
+      "button": "Sleutel verwijderen",
+      "title": "Uw MyŠkoda-sleutel verwijderen?",
+      "text": "Uw Škoda’s blijven, met hun geschiedenis, maar worden niet meer gelezen tot u een andere sleutel geeft.",
+      "error": "De sleutel kon niet worden verwijderd. Probeer het zo meteen opnieuw.",
+      "cancel": "Annuleren",
+      "confirm": "Verwijderen"
+    },
+    "steps": {
+      "title": "Maak uw sleutel aan",
+      "open": "Open op de telefoon met uw MyŠkoda-app",
+      "newTab": "(opent in een nieuw tabblad)",
+      "create": "Maak een sleutel aan en vink elke auto aan die hij moet lezen.",
+      "copy": "Kopieer de sleutel en plak hem hieronder met de VIN van elke auto: hij wordt nooit meer getoond."
+    },
+    "field": {
+      "apiKey": "API-sleutel",
+      "vins": "VIN’s"
+    },
+    "vinsHint": "Eén per regel: 17 tekens, in de MyŠkoda-app en op het kentekenbewijs.",
+    "help": "Škoda staat 20 uitlezingen per uur per auto toe, gedeeld door elke toepassing die hem leest: evcc of Home Assistant die dezelfde auto lezen, laten Runsten er minder. Zijn voorwaarden staan alleen persoonlijk gebruik toe.",
+    "save": "Sleutel opslaan",
+    "cancel": "Annuleren",
+    "saved": "Sleutel opgeslagen: Runsten leest zijn auto’s vanaf de volgende ronde.",
+    "deleted": "Sleutel verwijderd.",
+    "error": {
+      "summary": "De sleutel werd niet opgeslagen",
+      "required": "Plak de API-sleutel.",
+      "spaces": "De API-sleutel bevat geen spatie: kopieer hem opnieuw.",
+      "characters": "De API-sleutel bevat alleen letters, cijfers en tekens: kopieer hem opnieuw.",
+      "tooShort": "De API-sleutel heeft minstens {min} tekens: kopieer hem volledig.",
+      "tooLong": "De API-sleutel heeft hoogstens {max} tekens: kopieer hem alleen.",
+      "vinRequired": "Geef de VIN van elke auto die de sleutel leest.",
+      "vinInvalid": "{vin} is geen VIN: 17 letters en cijfers, zonder I, O of Q.",
+      "vinTwice": "{vin} is twee keer opgegeven.",
+      "tooManyVins": "Een sleutel leest hoogstens {max} auto’s.",
+      "refused": "Škoda weigerde deze sleutel: kopieer hem opnieuw en controleer of hij nog bestaat in de MyŠkoda-app.",
+      "expired": "Deze sleutel is verlopen: maak een nieuwe aan in de MyŠkoda-app.",
+      "invalidBody": "De sleutel of een VIN werd geweigerd: kopieer ze opnieuw.",
+      "notCovered": "De sleutel leest {vin} niet: vink deze auto aan wanneer u de sleutel aanmaakt in de MyŠkoda-app, of controleer de VIN.",
+      "tooManyVehicles": "Met deze auto’s zou uw account meer voertuigen hebben dan toegestaan: de sleutel werd niet opgeslagen.",
+      "notAdmitted": "Uw account moet eerst een stap zetten, zoals voorwaarden aanvaarden: laad de pagina opnieuw. De sleutel werd niet opgeslagen.",
+      "sourceUnavailable": "De MyŠkoda Public API antwoordde niet: de sleutel werd niet opgeslagen. Probeer het zo meteen opnieuw.",
+      "featureUnavailable": "Škoda wordt op deze instantie niet aangeboden: de sleutel werd niet opgeslagen.",
+      "unavailable": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
+      "internal": "De sleutel kon niet worden opgeslagen. Probeer het zo meteen opnieuw."
     }
   }
 }

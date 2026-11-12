@@ -47,7 +47,8 @@
       "mini": "MINI",
       "hyundai": "Hyundai",
       "kia": "Kia",
-      "genesis": "Genesis"
+      "genesis": "Genesis",
+      "skoda": "Škoda"
     },
     "beta": "Beta"
   },
@@ -1359,7 +1360,8 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW"
+      "bmw": "BMW",
+      "skoda": "Škoda"
     },
     "brandAttention": "requiere su atención",
     "outcome": {
@@ -1427,14 +1429,19 @@
       "unsharedPolestarId": "No se lee: el vehículo ya no está en el Polestar ID",
       "credentialRefusedBmw": "No se lee: BMW rechazó la conexión",
       "credentialRefusedPleos": "No se lee: Pleos rechazó la clave",
+      "credentialRefusedSkoda": "No leído: Škoda rechazó la clave",
       "credentialMissingBmw": "No se lee: no hay conexión con BMW",
       "credentialMissingPleos": "No se lee: no hay clave de Pleos",
+      "credentialMissingSkoda": "No leído: no se ha dado ninguna clave de MyŠkoda",
       "unsharedBmw": "No se lee: la cuenta de BMW ya no es el usuario principal del vehículo",
       "unsharedPleos": "No se lee: el coche ya no comparte sus datos con la clave",
+      "unsharedSkoda": "No leído: la clave ya no cubre este coche",
       "pausedBmw": "En pausa por BMW hasta {time}",
       "pausedPleos": "En pausa por Pleos hasta {time}",
+      "pausedSkoda": "En pausa por Škoda hasta {time}",
       "quotaBmw": "Límite diario de llamadas a BMW alcanzado hasta {time}",
-      "quotaPleos": "Límite diario de llamadas a Pleos alcanzado hasta {time}"
+      "quotaPleos": "Límite diario de llamadas a Pleos alcanzado hasta {time}",
+      "quotaSkoda": "Llamadas diarias a Škoda agotadas hasta {time}"
     },
     "notice": {
       "reauth": {
@@ -1477,11 +1484,16 @@
       "unsharedBmw": "Su cuenta de BMW ya no es el usuario principal de este vehículo, o ya no lo incluye: se vendió o cambió de propietario. Si volviera, conecte BMW de nuevo en la página de conexión: el vehículo se leerá otra vez.",
       "pausedBmw": "BMW limitó el número de llamadas. La lectura se reanudará por sí sola.",
       "pausedPleos": "Pleos limitó el número de llamadas. La lectura se reanudará por sí sola.",
+      "pausedSkoda": "Škoda limitó el número de llamadas. La lectura se reanudará por sí sola.",
       "credentialRefusedPleos": "Pleos rechazó la clave con la que se lee este coche: revocada o sustituida en el Playground, o caducada. Emita una nueva allí y désela en la página de conexión: lo ya leído se conserva.",
+      "credentialRefusedSkoda": "Škoda rechazó la clave con la que se lee este coche: caducada o eliminada en la app MyŠkoda. Cree una nueva allí e indíquela en la página de conexión: lo leído se conserva.",
       "credentialMissingPleos": "Runsten lee este coche con su clave de Pleos, que se eliminó: dé una nueva en la página de conexión.",
+      "credentialMissingSkoda": "Runsten lee este coche con su clave de MyŠkoda, que se eliminó: indique una nueva en la página de conexión.",
       "unsharedPleos": "Pleos respondió que este coche ya no comparte sus datos con la clave: el uso compartido apagado en sus servicios conectados, o el coche dado de baja. Si volviera a compartirse, dé de nuevo la clave en la página de conexión: el coche se leerá otra vez.",
+      "unsharedSkoda": "Škoda respondió que la clave ya no lee este coche: se desmarcó de la clave en la app MyŠkoda. Cree una clave con este coche marcado e indíquela en la página de conexión: el coche se vuelve a leer.",
       "quotaBmw": "Runsten hace como máximo 40 llamadas al día a la API de BMW por conexión, para dejarle algunas de las 50 de BMW: se agotaron. El flujo, que no tiene límite, se sigue leyendo; el resto se reanudará por sí solo.",
-      "quotaPleos": "Runsten hace como máximo 2000 llamadas al día a la Pleos Vehicle Data API por clave, un tope propio (Pleos no publica ninguno): se agotaron. La lectura se reanudará por sí sola."
+      "quotaPleos": "Runsten hace como máximo 2000 llamadas al día a la Pleos Vehicle Data API por clave, un tope propio (Pleos no publica ninguno): se agotaron. La lectura se reanudará por sí sola.",
+      "quotaSkoda": "Runsten hace como máximo 2400 llamadas al día a la API pública de MyŠkoda por clave, por encima del límite propio de Škoda de 20 por hora y coche: se agotaron. La lectura se reanudará por sí sola."
     },
     "facts": {
       "mode": "Modo de consulta",
@@ -1507,8 +1519,10 @@
       "noneDueUnsharedPolestarId": "Ninguna: el vehículo ya no está en el Polestar ID",
       "noneDueBmw": "Ninguna hasta que se vuelva a conectar BMW",
       "noneDuePleos": "Ninguna hasta que se dé una clave de Pleos",
+      "noneDueSkoda": "Ninguna hasta que se indique una clave de MyŠkoda",
       "noneDueUnsharedBmw": "Ninguna: la cuenta de BMW ya no es el usuario principal del vehículo",
-      "noneDueUnsharedPleos": "Ninguna: el coche ya no comparte sus datos con la clave"
+      "noneDueUnsharedPleos": "Ninguna: el coche ya no comparte sus datos con la clave",
+      "noneDueUnsharedSkoda": "Ninguna: la clave ya no cubre el coche"
     },
     "api": {
       "connectedVehicle": "datos del vehículo",
@@ -1519,7 +1533,8 @@
       "teslaFleet": "Fleet API de Tesla",
       "polestarId": "API de la aplicación de Polestar",
       "bmw": "BMW CarData",
-      "pleos": "la Pleos Vehicle Data API"
+      "pleos": "la Pleos Vehicle Data API",
+      "skoda": "la API pública de MyŠkoda"
     },
     "failure": {
       "quota": "Cuota alcanzada",
@@ -1547,12 +1562,16 @@
       "streamHeld": "Flujo ocupado por otra aplicación (Home Assistant, evcc)",
       "notFoundBmw": "Vehículo desconocido para BMW",
       "notFoundPleos": "Vehículo desconocido para Pleos",
+      "notFoundSkoda": "Vehículo desconocido para Škoda",
       "unavailableBmw": "BMW no accesible",
       "unavailablePleos": "Pleos no accesible",
+      "unavailableSkoda": "Škoda inaccesible",
       "tokenBmw": "Sin token de BMW",
       "tokenPleos": "Sin token de Pleos",
+      "tokenSkoda": "Clave de MyŠkoda no leída",
       "credentialRefusedBmw": "Conexión con BMW rechazada",
       "credentialRefusedPleos": "Clave de Pleos rechazada",
+      "credentialRefusedSkoda": "Clave de MyŠkoda rechazada",
       "keyShared": "Clave compartida con otra aplicación"
     },
     "key": {
@@ -1591,6 +1610,10 @@
     "pleos": {
       "title": "Su clave de {brand}",
       "off": "{brand} está apagado en esta instancia (el indicador source.pleos)."
+    },
+    "skoda": {
+      "title": "Su clave de MyŠkoda",
+      "off": "Škoda está desactivado en esta instancia (el indicador source.skoda)."
     },
     "keyShared": {
       "text": "Otra aplicación lee con la misma clave de Pleos — evcc, Home Assistant. La API solo permite un lector a la vez, así que cada uno desplaza al otro. Reserve esta clave para Runsten, o deje que Runsten republique su coche en su broker MQTT para Home Assistant:",
@@ -2320,6 +2343,75 @@
       "hyundai": "Bluelink",
       "kia": "Kia Connect",
       "genesis": "Genesis Connected"
+    }
+  },
+  "skoda": {
+    "intro": "Runsten lee su Škoda con una clave que crea en la app MyŠkoda, el acceso que Škoda abre a sus propietarios, y el VIN de cada coche que la clave lee.",
+    "guide": "Leer la guía",
+    "refused": {
+      "title": "Su clave fue rechazada",
+      "body": "Škoda la rechazó el {time}: eliminada en la app MyŠkoda, o ya no válida. Sus coches no se leen hasta que dé una nueva; lo leído se conserva."
+    },
+    "expired": {
+      "title": "Su clave ha caducado",
+      "body": "Caducó el {date}: sus coches no se leen hasta que dé una nueva. Créela en la app MyŠkoda; lo leído se conserva."
+    },
+    "renew": {
+      "title": "Renueve su clave",
+      "body": "Caduca el {date}. Cree una nueva en la app MyŠkoda antes de esa fecha e indíquela aquí; si no, sus coches dejarán de leerse."
+    },
+    "current": "Su clave",
+    "last4": "Clave que termina en {last4}",
+    "setAt": "Indicada",
+    "expiresAt": "Caduca",
+    "expiresUnknown": "Se sabrá en la próxima lectura",
+    "replace": "Sustituir la clave",
+    "delete": {
+      "button": "Quitar la clave",
+      "title": "¿Quitar su clave de MyŠkoda?",
+      "text": "Sus Škoda se quedan, con su historial, pero dejan de leerse hasta que dé otra clave.",
+      "error": "No se pudo quitar la clave. Inténtelo de nuevo en un momento.",
+      "cancel": "Cancelar",
+      "confirm": "Quitar"
+    },
+    "steps": {
+      "title": "Cree su clave",
+      "open": "En el teléfono con su app MyŠkoda, abra",
+      "newTab": "(se abre en una pestaña nueva)",
+      "create": "Cree una clave y marque cada coche que deba leer.",
+      "copy": "Copie la clave y péguela abajo con el VIN de cada coche: no se volverá a mostrar."
+    },
+    "field": {
+      "apiKey": "Clave de API",
+      "vins": "VIN"
+    },
+    "vinsHint": "Uno por línea: 17 caracteres, en la app MyŠkoda y en el permiso de circulación.",
+    "help": "Škoda permite 20 lecturas por hora y coche, compartidas por todas las aplicaciones que lo leen: evcc o Home Assistant leyendo el mismo coche le dejan menos a Runsten. Sus condiciones solo permiten un uso personal.",
+    "save": "Guardar la clave",
+    "cancel": "Cancelar",
+    "saved": "Clave guardada: Runsten lee sus coches desde su próxima pasada.",
+    "deleted": "Clave quitada.",
+    "error": {
+      "summary": "La clave no se guardó",
+      "required": "Pegue la clave de API.",
+      "spaces": "La clave de API no tiene espacios: cópiela de nuevo.",
+      "characters": "La clave de API solo tiene letras, cifras y signos: cópiela de nuevo.",
+      "tooShort": "La clave de API tiene al menos {min} caracteres: cópiela entera.",
+      "tooLong": "La clave de API tiene como máximo {max} caracteres: cópiela sola.",
+      "vinRequired": "Indique el VIN de cada coche que lee la clave.",
+      "vinInvalid": "{vin} no es un VIN: 17 letras y cifras, sin I, O ni Q.",
+      "vinTwice": "{vin} está dos veces.",
+      "tooManyVins": "Una clave lee como máximo {max} coches.",
+      "refused": "Škoda rechazó esta clave: cópiela de nuevo y compruebe que sigue existiendo en la app MyŠkoda.",
+      "expired": "Esta clave ha caducado: cree una nueva en la app MyŠkoda.",
+      "invalidBody": "La clave o un VIN fue rechazado: cópielos de nuevo.",
+      "notCovered": "La clave no lee {vin}: marque este coche al crear la clave en la app MyŠkoda, o compruebe su VIN.",
+      "tooManyVehicles": "Con estos coches, su cuenta tendría más vehículos de los que puede: la clave no se guardó.",
+      "notAdmitted": "Su cuenta debe dar primero un paso, como aceptar condiciones: recargue la página. La clave no se guardó.",
+      "sourceUnavailable": "La API pública de MyŠkoda no respondió: la clave no se guardó. Inténtelo de nuevo en un momento.",
+      "featureUnavailable": "Škoda no se ofrece en esta instancia: la clave no se guardó.",
+      "unavailable": "No se pudo contactar con Runsten. Inténtelo de nuevo en un momento.",
+      "internal": "No se pudo guardar la clave. Inténtelo de nuevo en un momento."
     }
   }
 }

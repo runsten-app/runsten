@@ -133,6 +133,11 @@ func catalogReading(c *catalog.Catalog, n core.Snapshot, v Vehicle) catalog.Read
 		Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: v.VIN,
 		Trim: n.Trim.V, Powertrain: catalog.Powertrain(n.Powertrain.V), Brand: catalog.Brand(n.Brand.V),
 	}
+	if providerJSON(v.Provider) == providerSkoda && r.Brand == "" {
+		// The Škoda's family comes from its VIN or its model's name, its brand from the
+		// provider when the response told none.
+		r.Brand = catalog.Skoda
+	}
 	if p := providerJSON(v.Provider); p.pleos() {
 		brand := map[providerJSON]catalog.Brand{
 			providerPleosHyundai: catalog.Hyundai, providerPleosKia: catalog.Kia, providerPleosGenesis: catalog.Genesis,

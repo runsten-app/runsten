@@ -40,6 +40,7 @@ type fakeSource struct {
 	wakes    bool                                          // the battery wakes the availability (EndpointSpec.Wakes)
 	logins   int
 	calls    map[Endpoint][]time.Time
+	vins     []string // the VIN of each call, in order
 }
 
 func newFakeSource(clk clock.Clock) *fakeSource {
@@ -106,9 +107,10 @@ type fakeSession struct {
 	login int
 }
 
-func (s fakeSession) Fetch(_ context.Context, _ string, ep Endpoint) ([]byte, error) {
+func (s fakeSession) Fetch(_ context.Context, vin string, ep Endpoint) ([]byte, error) {
 	now := s.f.clk.Now()
 	s.f.calls[ep] = append(s.f.calls[ep], now)
+	s.f.vins = append(s.f.vins, vin)
 	if s.f.answer != nil {
 		return s.f.answer(ep, s.login, now)
 	}
@@ -629,6 +631,58 @@ func TestSourceRefusals(t *testing.T) {
 			t.Errorf("%d logins, status %+v", src.logins, st.statuses[0])
 		}
 	})
+}
+
+// limitedSource is a fakeSource whose provider limits the calls per vehicle.
+type limitedSource struct {
+	*fakeSource
+	held map[string]time.Time
+}
+
+func (l limitedSource) HeldUntil(vin string) time.Time { return l.held[vin] }
+
+// TestSourceVehicleLimit: a vehicle its source holds back is not read, without a failure,
+// while the connection's other vehicle is; a vehicle's own limit pauses neither the
+// connection nor tells the user.
+func TestSourceVehicleLimit(t *testing.T) {
+	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+	a, b := sourceTarget(), sourceTarget()
+	b.VehicleID, b.VIN = "q", "LPSVSEDE5RL000002"
+	src := limitedSource{newFakeSource(clk), map[string]time.Time{a.VIN: clk.Now().Add(30 * time.Minute)}}
+	src.answer = func(Endpoint, int, time.Time) ([]byte, error) {
+		if src.vins[len(src.vins)-1] == b.VIN {
+			return nil, &SourceError{Kind: KindVehicleLimited, Status: 429, RetryIn: time.Hour, Err: errors.New("rate-limit-exceeded")}
+		}
+		return []byte("parked"), nil
+	}
+	st := &sourceStore{memStore: memStore{targets: []Target{a, b}}}
+	c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+	c.AddSource(src, st)
+	poll(t, c)
+	for _, vin := range src.vins {
+		if vin == a.VIN {
+			t.Fatalf("the vehicle held back was read: %v", src.vins)
+		}
+	}
+	if len(src.vins) == 0 {
+		t.Fatal("the other vehicle was not read")
+	}
+	for _, s := range st.statuses {
+		if s.Failure.Kind != "" || !s.PausedUntil.IsZero() {
+			t.Errorf("a vehicle's limit told or paused: %+v", s)
+		}
+	}
+	for _, s := range st.statuses {
+		if s.VehicleID == a.VehicleID && s.NextAt.Before(clk.Now().Add(30*time.Minute)) {
+			t.Errorf("the vehicle held back is told due at %v", s.NextAt)
+		}
+	}
+	clk.Advance(31 * time.Minute)
+	src.vins = nil
+	poll(t, c)
+	if len(src.vins) == 0 || src.vins[0] != a.VIN {
+		t.Errorf("past its hold, the vehicle is read: %v", src.vins)
+	}
 }
 
 // TestSourceQuota: a Source's calls count on its connection's credential, at its own

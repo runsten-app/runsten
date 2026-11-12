@@ -2,7 +2,7 @@ import type { Component, Ref } from 'vue'
 
 // The makes of the empty home's tiles.
 export type HomeMake =
-  'volvo' | 'polestar' | 'tesla' | 'bmw' | 'mini' | 'hyundai' | 'kia' | 'genesis'
+  'volvo' | 'polestar' | 'tesla' | 'bmw' | 'mini' | 'hyundai' | 'kia' | 'genesis' | 'skoda'
 
 // extensionChoices adds none: the public build offers the makes it reads, and nothing for
 // a car it does not. A downstream build replaces this file with its own components, shown

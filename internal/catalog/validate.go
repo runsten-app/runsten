@@ -46,8 +46,8 @@ func (v Variant) validate() error {
 	if !idPattern.MatchString(v.ID) {
 		errs = append(errs, fmt.Errorf("id %q: lowercase words joined by hyphens expected", v.ID))
 	}
-	if !slices.Contains([]Brand{Volvo, Polestar, Tesla, BMW, Mini, Hyundai, Kia, Genesis}, v.Brand) {
-		errs = append(errs, fmt.Errorf("brand %q: volvo, polestar, tesla, bmw, mini, hyundai, kia or genesis expected", v.Brand))
+	if !slices.Contains([]Brand{Volvo, Polestar, Tesla, BMW, Mini, Hyundai, Kia, Genesis, Skoda}, v.Brand) {
+		errs = append(errs, fmt.Errorf("brand %q: volvo, polestar, tesla, bmw, mini, hyundai, kia, genesis or skoda expected", v.Brand))
 	}
 	if v.Family == "" || v.Name == "" {
 		errs = append(errs, errors.New("family and name are required"))
@@ -159,7 +159,7 @@ func validateAmbiguity(variants []Variant, byID map[string]Variant) error {
 // indiscernible reports whether some reading would leave both variants candidates of
 // Match: same family and powertrain, overlapping years, no motor codes nor trims apart, and a capacity
 // both accept (a shared api_kwh value, or gross capacities whose tolerance windows
-// meet). A brand whose source reads no capacity (Tesla's) is left out: its packs are
+// meet). A brand whose source reads no capacity (Tesla's, Škoda's) is left out: its packs are
 // told apart by their trim at best, ambiguity is the rule, and the user chooses.
 func indiscernible(a, b Variant) bool {
 	if a.ID == b.ID || a.Family != b.Family || a.Powertrain != b.Powertrain || !a.Years.overlap(b.Years) ||

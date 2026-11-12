@@ -95,7 +95,7 @@ type providerJSON string
 // Schema lists the providers.
 func (providerJSON) Schema(huma.Registry) *huma.Schema {
 	return enumSchema(providerVolvo, providerPolestar, providerTesla, providerPolestarID,
-		providerTeslaFleet, providerBMW, providerPleosHyundai, providerPleosKia, providerPleosGenesis)
+		providerTeslaFleet, providerBMW, providerPleosHyundai, providerPleosKia, providerPleosGenesis, providerSkoda)
 }
 
 const (
@@ -114,13 +114,15 @@ const (
 	providerPleosHyundai providerJSON = "pleos_hyundai"
 	providerPleosKia     providerJSON = "pleos_kia"
 	providerPleosGenesis providerJSON = "pleos_genesis"
+	// providerSkoda: the MyŠkoda Public API, read with the owner's key.
+	providerSkoda providerJSON = "skoda"
 )
 
 // credentialed reports whether p's connections read with a credential of their own,
 // rather than a Volvo ID and an application key.
 func (p providerJSON) credentialed() bool {
 	return p == providerPolestar || p == providerTesla || p == providerPolestarID || p == providerTeslaFleet ||
-		p == providerBMW || p.pleos()
+		p == providerBMW || p.pleos() || p == providerSkoda
 }
 
 // pleos reports whether p reads through the Pleos Vehicle Data API, one brand of the
@@ -147,7 +149,7 @@ const (
 )
 
 type connectionJSON struct {
-	Provider     providerJSON           `json:"provider" doc:"volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis."`
+	Provider     providerJSON           `json:"provider" doc:"volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis; skoda: the owner's key of the MyŠkoda Public API."`
 	Status       connectionStatus       `json:"status" doc:"reauth_required once the Volvo ID's grant is lost: the vehicle is no longer read until the user connects the Volvo ID again. not_configured: the instance has no Volvo application, the vehicle is not read until its administrator sets one. Always active for a Polestar or Tesla connection: credential tells its state."`
 	APIKey       null[apiKeyStatus]     `json:"api_key" doc:"The application key the vehicle is read with: instance, the instance's, which reads every vehicle when the instance has one; own, the account's. refused: the account's, refused by Volvo; missing: none, the instance has none either. Neither refused nor missing is read, until the user gives a key (PUT /connection/api-key). null for a Polestar or Tesla connection, read with its own credential."`
 	Credential   null[credentialStatus] `json:"credential" doc:"The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account; a Polestar ID's session ended, or its password refused); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla, /connection/polestar-id/code or /password, PUT /connection/pleos/{brand}, POST /connection/bmw/token). null for a Volvo connection."`

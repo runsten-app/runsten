@@ -83,10 +83,10 @@ func (s *Store) credentialConnection(ctx context.Context, accountID, provider st
 	var c api.CredentialConnection
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		var last4 *string
-		var setAt, refusedAt *time.Time
+		var setAt, refusedAt, expiresAt *time.Time
 		err := tx.QueryRow(ctx, `
-			SELECT id, credential_last4, credential_set_at, credential_refused_at FROM connections
-			WHERE provider = $1`, provider).Scan(&c.ID, &last4, &setAt, &refusedAt)
+			SELECT id, credential_last4, credential_set_at, credential_refused_at, credential_expires_at FROM connections
+			WHERE provider = $1`, provider).Scan(&c.ID, &last4, &setAt, &refusedAt, &expiresAt)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
@@ -96,7 +96,7 @@ func (s *Store) credentialConnection(ctx context.Context, accountID, provider st
 		if last4 != nil {
 			c.Last4 = *last4
 		}
-		c.SetAt, c.RefusedAt = utcOrZero(setAt), utcOrZero(refusedAt)
+		c.SetAt, c.RefusedAt, c.ExpiresAt = utcOrZero(setAt), utcOrZero(refusedAt), utcOrZero(expiresAt)
 		return nil
 	})
 	return c, err
@@ -143,7 +143,7 @@ func (s *Store) deleteCredential(ctx context.Context, accountID, provider string
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		_, err := tx.Exec(ctx, `
 			UPDATE connections SET credential = NULL, credential_set_at = NULL, credential_last4 = NULL,
-				credential_mode = NULL, credential_refused_at = NULL, updated_at = now()
+				credential_mode = NULL, credential_refused_at = NULL, credential_expires_at = NULL, updated_at = now()
 			WHERE provider = $1 AND credential IS NOT NULL`, provider)
 		return err //nolint:wrapcheck // wrapped by inAccount
 	})

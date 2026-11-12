@@ -54,7 +54,7 @@ x-runsten-env: &runsten-env
   RUNSTEN_VOLVO_API_KEY: ${RUNSTEN_VOLVO_API_KEY:-}
   # Empty means the binary's default (the real Volvo API and Volvo ID, the real Polestar
   # Data Portal, Tesla's real Owner API and authentication, the real Polestar ID, BMW
-  # CarData and its stream, the real Pleos Vehicle Data API).
+  # CarData and its stream, the real Pleos Vehicle Data API, the real MyŠkoda Public API).
   RUNSTEN_VOLVO_BASE_URL: ${RUNSTEN_VOLVO_BASE_URL:-}
   RUNSTEN_VOLVO_AUTH_URL: ${RUNSTEN_VOLVO_AUTH_URL:-}
   RUNSTEN_POLESTAR_BASE_URL: ${RUNSTEN_POLESTAR_BASE_URL:-}
@@ -68,6 +68,7 @@ x-runsten-env: &runsten-env
   RUNSTEN_BMW_API_URL: ${RUNSTEN_BMW_API_URL:-}
   RUNSTEN_BMW_STREAM_URL: ${RUNSTEN_BMW_STREAM_URL:-}
   RUNSTEN_PLEOS_API_URL: ${RUNSTEN_PLEOS_API_URL:-}
+  RUNSTEN_SKODA_API_URL: ${RUNSTEN_SKODA_API_URL:-}
   RUNSTEN_LOG_LEVEL: ${RUNSTEN_LOG_LEVEL:-}
   # false: the MQTT brokers set in the settings must be on the Internet, over TLS.
   RUNSTEN_MQTT_PRIVATE_BROKERS: ${RUNSTEN_MQTT_PRIVATE_BROKERS:-}

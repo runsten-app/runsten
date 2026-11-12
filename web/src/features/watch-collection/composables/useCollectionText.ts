@@ -13,13 +13,23 @@ type Provider = Connection['provider']
 // have their own.
 function byProvider<T>(
   provider: Provider,
-  texts: { volvo: T; polestar: T; tesla: T; polestarId?: T; teslaFleet?: T; bmw?: T; pleos?: T },
+  texts: {
+    volvo: T
+    polestar: T
+    tesla: T
+    polestarId?: T
+    teslaFleet?: T
+    bmw?: T
+    pleos?: T
+    skoda?: T
+  },
 ): T {
   if (provider === 'polestar_id') return texts.polestarId ?? texts.polestar
   if (provider === 'tesla_fleet') return texts.teslaFleet ?? texts.tesla
   if (provider === 'bmw') return texts.bmw ?? texts.volvo
   // The three brands of the Pleos Vehicle Data API: one text for the three.
   if (provider.startsWith('pleos_')) return texts.pleos ?? texts.volvo
+  if (provider === 'skoda') return texts.skoda ?? texts.volvo
   return provider === 'polestar' || provider === 'tesla' ? texts[provider] : texts.volvo
 }
 
@@ -51,6 +61,8 @@ export function useCollectionText() {
         return t('connection.api.bmw')
       case 'pleos':
         return t('connection.api.pleos')
+      case 'skoda':
+        return t('connection.api.skoda')
       default:
         return name
     }
@@ -67,6 +79,7 @@ export function useCollectionText() {
         tesla: t('connection.failure.notFoundTesla'),
         bmw: t('connection.failure.notFoundBmw'),
         pleos: t('connection.failure.notFoundPleos'),
+        skoda: t('connection.failure.notFoundSkoda'),
       }),
       unavailable: byProvider(provider, {
         volvo: t('connection.failure.unavailable'),
@@ -74,6 +87,7 @@ export function useCollectionText() {
         tesla: t('connection.failure.unavailableTesla'),
         bmw: t('connection.failure.unavailableBmw'),
         pleos: t('connection.failure.unavailablePleos'),
+        skoda: t('connection.failure.unavailableSkoda'),
       }),
       token: byProvider(provider, {
         volvo: t('connection.failure.token'),
@@ -81,6 +95,7 @@ export function useCollectionText() {
         tesla: t('connection.failure.tokenTesla'),
         bmw: t('connection.failure.tokenBmw'),
         pleos: t('connection.failure.tokenPleos'),
+        skoda: t('connection.failure.tokenSkoda'),
       }),
       key_refused: t('connection.failure.keyRefused'),
       market: t('connection.failure.market'),
@@ -92,6 +107,7 @@ export function useCollectionText() {
         teslaFleet: t('connection.failure.credentialRefusedTeslaFleet'),
         bmw: t('connection.failure.credentialRefusedBmw'),
         pleos: t('connection.failure.credentialRefusedPleos'),
+        skoda: t('connection.failure.credentialRefusedSkoda'),
       }),
       unshared: t('connection.failure.unshared'),
       not_granted: t('connection.failure.notGranted'),
@@ -124,6 +140,7 @@ export function useCollectionText() {
               teslaFleet: t('connection.state.credentialRefusedTeslaFleet'),
               bmw: t('connection.state.credentialRefusedBmw'),
               pleos: t('connection.state.credentialRefusedPleos'),
+              skoda: t('connection.state.credentialRefusedSkoda'),
             })
           : byProvider(provider, {
               volvo: t('connection.state.credentialMissing'),
@@ -133,6 +150,7 @@ export function useCollectionText() {
               teslaFleet: t('connection.state.credentialMissingTeslaFleet'),
               bmw: t('connection.state.credentialMissingBmw'),
               pleos: t('connection.state.credentialMissingPleos'),
+              skoda: t('connection.state.credentialMissingSkoda'),
             })
       case 'unshared':
         return byProvider(provider, {
@@ -142,6 +160,7 @@ export function useCollectionText() {
           polestarId: t('connection.state.unsharedPolestarId'),
           bmw: t('connection.state.unsharedBmw'),
           pleos: t('connection.state.unsharedPleos'),
+          skoda: t('connection.state.unsharedSkoda'),
         })
       case 'notGranted':
         return t('connection.state.notGranted')
@@ -158,6 +177,7 @@ export function useCollectionText() {
           tesla: t('connection.state.pausedTesla', { time: f.dateTime(s.until, now) }),
           bmw: t('connection.state.pausedBmw', { time: f.dateTime(s.until, now) }),
           pleos: t('connection.state.pausedPleos', { time: f.dateTime(s.until, now) }),
+          skoda: t('connection.state.pausedSkoda', { time: f.dateTime(s.until, now) }),
         })
       case 'quota':
         // The Data Portal's quota is the credential's, over every domain: one API; the
@@ -169,6 +189,7 @@ export function useCollectionText() {
             tesla: t('connection.state.quotaTesla', { time: f.dateTime(s.until, now) }),
             bmw: t('connection.state.quotaBmw', { time: f.dateTime(s.until, now) }),
             pleos: t('connection.state.quotaPleos', { time: f.dateTime(s.until, now) }),
+            skoda: t('connection.state.quotaSkoda', { time: f.dateTime(s.until, now) }),
           })
         return t('connection.state.quota', {
           time: f.dateTime(s.until, now),

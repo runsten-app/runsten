@@ -125,7 +125,7 @@ func TestPolestarCredential(t *testing.T) {
 	if resp, body := do(t, noFollow(), http.MethodDelete, u+"/polestar", "", "", c); resp.status != http.StatusNoContent || body != "" {
 		t.Errorf("DELETE: %d %q", resp.status, body)
 	}
-	if _, body := get(t, noFollow(), u, c); !strings.HasSuffix(body, `"polestar":null,"tesla":null,"polestar_id":null,"bmw":null,"pleos":{"hyundai":null,"kia":null,"genesis":null}}`+"\n") || !e.polestar.setAt.IsZero() {
+	if _, body := get(t, noFollow(), u, c); !strings.HasSuffix(body, `"polestar":null,"tesla":null,"polestar_id":null,"bmw":null,"pleos":{"hyundai":null,"kia":null,"genesis":null},"skoda":null}`+"\n") || !e.polestar.setAt.IsZero() {
 		t.Errorf("after DELETE: %s", body)
 	}
 

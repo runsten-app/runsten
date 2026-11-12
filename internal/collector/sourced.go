@@ -48,6 +48,8 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 		return false
 	case t.Unshared || vs.unshared:
 		return false
+	case c.held(t, src):
+		return false
 	}
 	delete(c.sourceLogged, t.ConnectionID)
 	var sess Session
@@ -102,6 +104,13 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 		saved = ok || saved
 	}
 	return saved
+}
+
+// held reports whether src's provider holds the vehicle back, its own calls spent
+// (Limiter).
+func (c *Collector) held(t Target, src *source) bool {
+	l, ok := src.ext.(Limiter)
+	return ok && c.clk.Now().Before(l.HeldUntil(t.VIN))
 }
 
 // resting reports whether the vehicle is left to sleep, so that spec, which would keep
@@ -234,6 +243,11 @@ func (c *Collector) sourceFailed(ctx context.Context, t Target, vs *vehicleState
 		c.connectionPause[t.ConnectionID] = now.Add(c.iv.Parked)
 		c.log.Warn("access rejected again", append(args, "retry_in", c.iv.Parked.String())...)
 		vs.failure = Failure{At: now, Endpoint: ep, Status: se.Status, Kind: FailRejected}
+		return
+	case KindVehicleLimited:
+		// The vehicle's own quota: it waits, its Limiter holding it; nothing the user
+		// can act upon.
+		c.log.Info("vehicle limit: waits", append(args, "retry_in", se.RetryIn.String(), "err", err)...)
 		return
 	case KindStreamHeld:
 		c.logOnce(t, "stream held by another client: tried again later", append(args, "err", err)...)

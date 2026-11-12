@@ -28,13 +28,13 @@ var allowed = map[string][]string{
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/bmw", "internal/catalog", "internal/core",
 		"internal/archive", "internal/derive", "internal/exporter", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
-		"internal/platform", "internal/pleos", "internal/polestar", "internal/polestarid", "internal/release", "internal/store", "internal/tesla",
+		"internal/platform", "internal/pleos", "internal/polestar", "internal/polestarid", "internal/release", "internal/skoda", "internal/store", "internal/tesla",
 		"internal/teslamate", "internal/volvo", "internal/volvoportal", "internal/aaoslogging",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/bmw", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
 		"internal/flags", "internal/oauth", "internal/platform", "internal/pleos", "internal/polestar", "internal/polestarid",
-		"internal/publish",
+		"internal/publish", "internal/skoda",
 		"internal/store", "internal/tesla", "internal/volvo",
 	},
 	"cmd/runsten-simulator": {"net/http", "internal/platform", "internal/simulator"},
@@ -61,6 +61,8 @@ var allowed = map[string][]string{
 	// The collector's Source of the Pleos Vehicle Data API: the client, adapted, whose
 	// tokens it keeps until their end.
 	"internal/collector/pleossource": {"internal/collector", "internal/core", "internal/platform/clock", "internal/pleos"},
+	// The MyŠkoda Public API's: the client, adapted, which holds a VIN back on its quota.
+	"internal/collector/skodasource": {"internal/collector", "internal/core", "internal/platform/clock", "internal/skoda"},
 	"internal/derive":                {"internal/core"},
 	"internal/oauth":                 {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
 	// It reads the catalog, pure data like core, to recognize the vehicles' variants, and
@@ -94,6 +96,8 @@ var allowed = map[string][]string{
 	"internal/polestarid": {"net/http", "encoding/json", "google.golang.org/protobuf", "internal/core"},
 	// The reader of the Pleos Vehicle Data API of Hyundai, Kia and Genesis.
 	"internal/pleos": {"net/http", "encoding/json", "internal/core"},
+	// The reader of the MyŠkoda Public API.
+	"internal/skoda": {"net/http", "encoding/json", "internal/core"},
 	// CarData's REST and its MQTT stream; the YAML decoder for its embedded paints' names.
 	"internal/bmw":               {"net/http", "encoding/json", "github.com/eclipse/paho.mqtt.golang", "go.yaml.in/yaml/v3", "internal/core"},
 	"internal/geocode/nominatim": {"net/http", "encoding/json", "internal/core"},
@@ -144,6 +148,8 @@ var allowed = map[string][]string{
 	"internal/simulator/bmwapi": {"net/http", "net", "encoding/json", "github.com/mochi-mqtt/server/v2", "internal/platform/clock", "internal/simulator/vehicle"},
 	// The fake Pleos Vehicle Data API exposes the same vehicle model; it never imports the client.
 	"internal/simulator/pleosapi": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
+	// The fake MyŠkoda Public API, the same; it never imports the client.
+	"internal/simulator/skodaapi": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
 	"internal/simulator/control":  {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
 	// The fake Aximote writes its API's JSON on its own: it never imports the client.
 	"internal/simulator/aximoteapi": {"net/http", "encoding/json"},

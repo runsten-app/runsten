@@ -27,6 +27,7 @@ type CredentialConnection struct {
 	Last4     string    // of the client ID, of the token given
 	SetAt     time.Time // zero: no credential (none set, or removed)
 	RefusedAt time.Time // zero: not refused
+	ExpiresAt time.Time // when the provider says it expires (Škoda's); zero: not told
 }
 
 // PolestarConnection is what the user is shown again of the account's credential.

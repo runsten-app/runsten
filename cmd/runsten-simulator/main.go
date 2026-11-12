@@ -6,7 +6,9 @@
 // teslaapi.DevRefreshToken), the Pleos Vehicle Data API of Hyundai, Kia and Genesis (its
 // key, its vehicles and their status under pleosapi.Prefix, its faults under
 // pleosapi.ControlPrefix, for the scenarios of brand hyundai, kia or genesis, with the key
-// pleosapi.DevCredential), the Polestar app's API read with the Polestar ID (under
+// pleosapi.DevCredential), the MyŠkoda Public API (its one endpoint under skodaapi.Prefix,
+// its faults under skodaapi.ControlPrefix, for the scenarios of brand skoda, with the key
+// skodaapi.DevAPIKey), the Polestar app's API read with the Polestar ID (under
 // polestaridapi.Prefix, its faults under polestaridapi.ControlPrefix, its gRPC services at
 // their paths over HTTP/2 without TLS, for the scenarios of brand polestar with source
 // polestar_id, signed in as polestaridapi.DevEmail), BMW CarData (its device flow and
@@ -67,6 +69,14 @@
 //	SIM_PLEOS_CLIENT_SECRET its secret (default the development key's)
 //	SIM_PLEOS_TOKEN_TTL     lifetime of the Pleos tokens issued (default 1h, read in
 //	                        their JWT)
+//	SIM_SKODA_API_KEY       the MyŠkoda key accepted (default skodaapi.DevAPIKey)
+//	SIM_SKODA_PER_HOUR      calls a VIN is allowed an hour (default 20, the real API's;
+//	                        0 = unlimited, without the RateLimit-* headers), in
+//	                        simulated time
+//	SIM_SKODA_KEY_LIFETIME  how long the key reads from the start (default 8760h); its
+//	                        expiry rides in X-API-Key-Expires-At
+//	SIM_SKODA_SEND_EVERY    how often at most a Škoda sends its state while it drives or
+//	                        charges (default 5m; 0 = only at a change, in simulated time)
 //	SIM_POLESTAR_ID_TOKEN_TTL  lifetime of the Polestar ID's access tokens issued (default
 //	                        300s, the real one's)
 //	SIM_LOG_LEVEL           debug, info, warn, error (default info)
@@ -111,6 +121,7 @@ import (
 	"runsten/internal/simulator/polestarapi"
 	"runsten/internal/simulator/polestaridapi"
 	"runsten/internal/simulator/scenario"
+	"runsten/internal/simulator/skodaapi"
 	"runsten/internal/simulator/teslaapi"
 	"runsten/internal/simulator/vehicle"
 	"runsten/internal/simulator/volvoapi"
@@ -137,6 +148,8 @@ type config struct {
 	polestarBehavior polestarapi.Behavior
 	pleos            pleosapi.Credential
 	pleosBehavior    pleosapi.Behavior
+	skodaKey         string
+	skodaBehavior    skodaapi.Behavior
 	tesla            teslaapi.Behavior
 	polestarID       polestaridapi.Behavior
 	bmw              bmwapi.Behavior
@@ -166,6 +179,7 @@ func run() error {
 		polestar   []polestarapi.Source
 		polestarID []polestaridapi.Source
 		pleos      []pleosapi.Source
+		skoda      []skodaapi.Source
 		tesla      []teslaapi.Source
 		bmw        []bmwapi.Source
 	)
@@ -183,6 +197,8 @@ func run() error {
 		case sim.Brand() == scenario.BrandHyundai || sim.Brand() == scenario.BrandKia ||
 			sim.Brand() == scenario.BrandGenesis:
 			pleos = append(pleos, sim)
+		case sim.Brand() == scenario.BrandSkoda:
+			skoda = append(skoda, sim)
 		default:
 			srcs = append(srcs, sim)
 		}
@@ -215,6 +231,10 @@ func run() error {
 	pleosHandler := pleosapi.NewHandler(pleos, clk, cfg.pleos, cfg.pleosBehavior)
 	for _, prefix := range []string{pleosapi.Prefix, pleosapi.ControlPrefix} {
 		mux.Handle(prefix, pleosHandler)
+	}
+	skodaHandler := skodaapi.NewHandler(skoda, clk, cfg.skodaKey, cfg.skodaBehavior)
+	for _, prefix := range []string{skodaapi.Prefix, skodaapi.ControlPrefix} {
+		mux.Handle(prefix, skodaHandler)
 	}
 	th := teslaapi.NewHandler(tesla, clk, cfg.tesla)
 	for _, prefix := range []string{teslaapi.APIPrefix, teslaapi.AuthPrefix, teslaapi.ControlPrefix} {
@@ -255,6 +275,8 @@ func run() error {
 		"polestar_credential_ttl", psLimits.CredentialTTL.String(), "polestar_parked_upload", cfg.polestarBehavior.ParkedUpload.String(),
 		"pleos_vehicles", len(pleos), "pleos_client_id", cfg.pleos.ClientID,
 		"pleos_send_every", cfg.pleosBehavior.SendEvery.String(), "pleos_token_ttl", cfg.pleosBehavior.TokenTTL.String(),
+		"skoda_vehicles", len(skoda), "skoda_per_hour", cfg.skodaBehavior.PerHour,
+		"skoda_key_expires_at", skodaHandler.ExpiresAt(), "skoda_send_every", cfg.skodaBehavior.SendEvery.String(),
 		"tesla_vehicles", len(tesla), "tesla_sleep_after", cfg.tesla.SleepAfter.String(), "tesla_token_ttl", cfg.tesla.TokenTTL.String(),
 		"bmw_vehicles", len(bmw), "bmw_stream_addr", cfg.bmwStreamAddr, "bmw_token_ttl", cfg.bmw.TokenTTL.String(),
 		"polestar_id_vehicles", len(polestarID), "polestar_id_token_ttl", cfg.polestarID.AccessTokenTTL.String())
@@ -300,6 +322,8 @@ func loadConfig(getenv func(string) string) (config, error) {
 		polestarBehavior: polestarapi.DefaultBehavior(),
 		pleos:            pleosapi.DevCredential(),
 		pleosBehavior:    pleosapi.DefaultBehavior(),
+		skodaKey:         skodaapi.DevAPIKey,
+		skodaBehavior:    skodaapi.DefaultBehavior(),
 		tesla:            teslaapi.DefaultBehavior(),
 		bmw:              bmwapi.DefaultBehavior(),
 		bmwStreamAddr:    ":9000",
@@ -385,6 +409,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		"SIM_POLESTAR_CLIENT_ID": &cfg.polestar.ClientID, "SIM_POLESTAR_CLIENT_SECRET": &cfg.polestar.ClientSecret,
 		"SIM_POLESTAR_ACCOUNT_ID": &cfg.polestar.AccountID,
 		"SIM_PLEOS_CLIENT_ID":     &cfg.pleos.ClientID, "SIM_PLEOS_CLIENT_SECRET": &cfg.pleos.ClientSecret,
+		"SIM_SKODA_API_KEY": &cfg.skodaKey,
 	} {
 		if v := getenv(name); v != "" {
 			*dst = v
@@ -393,6 +418,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 	for name, dst := range map[string]*time.Duration{
 		"SIM_POLESTAR_CREDENTIAL_TTL": &cfg.polestarCredTTL, "SIM_POLESTAR_PARKED_UPLOAD": &cfg.polestarBehavior.ParkedUpload,
 		"SIM_PLEOS_SEND_EVERY": &cfg.pleosBehavior.SendEvery, "SIM_PLEOS_TOKEN_TTL": &cfg.pleosBehavior.TokenTTL,
+		"SIM_SKODA_KEY_LIFETIME": &cfg.skodaBehavior.KeyLifetime, "SIM_SKODA_SEND_EVERY": &cfg.skodaBehavior.SendEvery,
 	} {
 		if v := getenv(name); v != "" {
 			d, err := time.ParseDuration(v)
@@ -401,6 +427,13 @@ func loadConfig(getenv func(string) string) (config, error) {
 			}
 			*dst = d
 		}
+	}
+	if v := getenv("SIM_SKODA_PER_HOUR"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 0 {
+			errs = append(errs, fmt.Errorf("SIM_SKODA_PER_HOUR %q: integer ≥ 0 expected", v))
+		}
+		cfg.skodaBehavior.PerHour = n
 	}
 	if v := getenv("SIM_TESLA_SLEEP_AFTER"); v != "" {
 		d, err := time.ParseDuration(v)

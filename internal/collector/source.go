@@ -189,7 +189,19 @@ const (
 	// client keeps taking its place (Pleos keeps one token per key, which Home Assistant
 	// or evcc may take in turn); the connection waits RetryIn, and the user is told.
 	KindKeyShared
+	// KindVehicleLimited: the provider limits the calls per vehicle (Škoda's quota per
+	// VIN) and this one's are spent: the vehicle waits, the connection's others are read,
+	// and the user is not told (the Source's Limiter holds it until its quota is back).
+	KindVehicleLimited
 )
+
+// Limiter is a Source whose provider limits the calls per vehicle rather than per
+// credential (Škoda's quota per VIN, told in each response's headers): a vehicle it holds
+// is not read until then, without a call nor a failure.
+type Limiter interface {
+	// HeldUntil returns until when the vehicle vin is not to be read; zero: it may be.
+	HeldUntil(vin string) time.Time
+}
 
 // SourceError is a refusal of a Source's provider. It holds neither the access nor the
 // credential.

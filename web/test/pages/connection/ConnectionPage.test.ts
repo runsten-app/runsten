@@ -17,10 +17,16 @@ vi.mock('@/entities/session/extensions', () => ({
   },
 }))
 
-// The flags, as the session gives them: source.tesla on, source.polestar-id, source.bmw
-// and source.pleos off (BMW's and Pleos's are on in the app, but the other tests have
-// three tabs), unless a test turns them over.
-const flag = vi.hoisted(() => ({ tesla: true, polestarId: false, bmw: false, pleos: false }))
+// The flags, as the session gives them: source.tesla on, source.polestar-id, source.bmw,
+// source.pleos and source.skoda off (BMW's, Pleos's and Škoda's are on in the app, but the
+// other tests have three tabs), unless a test turns them over.
+const flag = vi.hoisted(() => ({
+  tesla: true,
+  polestarId: false,
+  bmw: false,
+  pleos: false,
+  skoda: false,
+}))
 vi.mock('@/features/view-flags', async () => {
   const { computed } = await import('vue')
   return {
@@ -32,7 +38,9 @@ vi.mock('@/features/view-flags', async () => {
             ? flag.bmw
             : name === 'source.pleos'
               ? flag.pleos
-              : flag.tesla,
+              : name === 'source.skoda'
+                ? flag.skoda
+                : flag.tesla,
       ),
   }
 })
@@ -67,6 +75,7 @@ const selfHosted: ConnectionSettings = {
   polestar_id: null,
   bmw: null,
   pleos: null,
+  skoda: null,
 }
 // The hosted offer: no instance key, the account gives its own.
 const hosted: ConnectionSettings = {
@@ -80,6 +89,7 @@ const hosted: ConnectionSettings = {
   polestar_id: null,
   bmw: null,
   pleos: null,
+  skoda: null,
 }
 
 const items = vehicles.items as Vehicle[]
@@ -90,6 +100,7 @@ beforeEach(() => {
   flag.polestarId = false
   flag.bmw = false
   flag.pleos = false
+  flag.skoda = false
   mocks.fetchVehicles.mockReset()
   mocks.fetchVehicles.mockResolvedValue(items)
   mocks.fetchConnection.mockReset()
@@ -977,6 +988,84 @@ describe('ConnectionPage', () => {
       expect(hint.text()).toContain('The API allows only one reader at a time')
       expect(hint.text()).toContain('republish your car to your MQTT broker')
       expect(hint.find('a.mqtt').attributes('href')).toBe('/settings/integrations')
+    })
+  })
+
+  describe('Škoda', () => {
+    const skodaKey = (k: Partial<NonNullable<ConnectionSettings['skoda']>> = {}) => ({
+      last4: '-key',
+      set_at: '2026-09-01T07:00:00Z',
+      expires_at: '2027-09-01T07:00:00Z',
+      refused_at: null,
+      ...k,
+    })
+    const skodaCar = (): Vehicle => {
+      const [car] = items
+      if (!car?.collection) throw new Error('fixture')
+      return {
+        ...car,
+        id: 'skoda-1',
+        vin: 'TMBJC9NY0RF000001',
+        connection: { ...car.connection, provider: 'skoda', credential: 'set', api_key: null },
+        collection: { ...car.collection, quota: [], last_failure: null },
+      }
+    }
+
+    it('has a tab marked beta while its flag is on, with its form and no dot', async () => {
+      flag.skoda = true
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
+        'Volvo needs your attention',
+        'Polestar needs your attention',
+        'Tesla',
+        'Škoda Beta',
+      ])
+      await w.find('#connection-tab-skoda').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('#connection-panel-skoda .skoda-form').exists()).toBe(true),
+      )
+      const panel = w.find('#connection-panel-skoda')
+      expect(panel.findAll('h2').map((h) => plain(h.text()))).toEqual(['Your MyŠkoda key'])
+      expect(panel.find('#skoda-api-key').exists()).toBe(true)
+      expect(panel.find('.skoda-off').exists()).toBe(false)
+    })
+
+    it('fills the VINs of the account’s Škodas in', async () => {
+      flag.skoda = true
+      mocks.fetchVehicles.mockResolvedValue([...items, skodaCar()])
+      mocks.fetchConnection.mockResolvedValue({ ...selfHosted, skoda: skodaKey() })
+      const { w } = await pageAt('/connection#skoda')
+      await w.find('#connection-panel-skoda .toggle').trigger('click')
+      await vi.waitFor(() =>
+        expect((w.find('#skoda-vins').element as HTMLTextAreaElement | null)?.value).toBe(
+          'TMBJC9NY0RF000001',
+        ),
+      )
+    })
+
+    it('puts a dot on its tab when its key expires within two weeks', async () => {
+      flag.skoda = true
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        skoda: skodaKey({ expires_at: '2026-10-05T07:00:00Z' }),
+      })
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toContain(
+        'Škoda Beta needs your attention',
+      )
+    })
+
+    it('keeps its tab while its flag is off for an account that has a key', async () => {
+      mocks.fetchConnection.mockResolvedValue({ ...selfHosted, skoda: skodaKey() })
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toContain('Škoda Beta')
+      await w.find('#connection-tab-skoda').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('#connection-panel-skoda .skoda-off').exists()).toBe(true),
+      )
+      const panel = w.find('#connection-panel-skoda')
+      expect(panel.find('.delete-credential').exists()).toBe(true)
+      expect(panel.find('.toggle').exists()).toBe(false)
     })
   })
 })
