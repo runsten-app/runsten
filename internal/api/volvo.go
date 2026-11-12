@@ -218,13 +218,34 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request, sess auth.Sess
 		return
 	}
 	s.Log.Info("Volvo ID connected", "account", sess.AccountID, "vehicles", len(vins),
-		"refreshable", g.RefreshToken != "", "expires_in", g.ExpiresIn.String())
+		"refreshable", g.RefreshToken != "", "expires_in", g.ExpiresIn.String(),
+		"refresh_expires_in", g.RefreshExpiresIn.String())
+	if shortSession(g) {
+		// Kept: it reads the vehicles until it ends, and the page tells how to have a lasting one.
+		s.Log.Warn("Volvo ID connected for a short session: \"Remember me\" not ticked", "account", sess.AccountID,
+			"refresh_expires_in", g.RefreshExpiresIn.String())
+		s.backToApp(w, r, outcomeShortSession)
+		return
+	}
 	s.backToApp(w, r, outcomeConnected)
+}
+
+// minSession is the shortest refresh token lifetime taken as a lasting connection. On
+// Keycloak, a sign-in without "Remember me" gives 30 minutes, the session ending an hour
+// after the authorization whatever the refreshes; with it, 90 days (measured, not
+// documented).
+const minSession = 24 * time.Hour
+
+// shortSession reports whether a grant's connection will end soon whatever Runsten does:
+// the user must authorize again, ticking "Remember me". Unknown lifetime: not short.
+func shortSession(g oauth.Grant) bool {
+	return g.RefreshExpiresIn > 0 && g.RefreshExpiresIn < minSession
 }
 
 // The outcomes of a connection the Connection page tells, in its volvo query parameter.
 const (
 	outcomeConnected       = "connected"
+	outcomeShortSession    = "short_session"
 	outcomeKeyRefused      = "key_refused"
 	outcomeNoVehicle       = "no_vehicle"
 	outcomeTooManyVehicles = "too_many_vehicles"
@@ -254,6 +275,9 @@ func (s *Server) fail(w http.ResponseWriter, r *http.Request, status int, title,
 
 // keyRefusedMessage: the grant is kept, a corrected key lists the vehicles.
 const keyRefusedMessage = "Your Volvo ID is connected, but Volvo refused your application key. Correct it on the Connection page: the vehicles are listed then, without connecting again."
+
+// shortSessionMessage: the connection ends within the hour, without "Remember me".
+const shortSessionMessage = "Your Volvo ID is connected, but Volvo ends the connection after an hour: the box \"Remember me\" of its sign-in page was not ticked. Connect again, ticking it."
 
 // tooManyVehiclesMessage: the Volvo ID gives access to more vehicles than the instance
 // lets an account have.

@@ -49,6 +49,8 @@ Volvo ID moves to a new server: the applications whose client ID starts with `dc
 1. Create a new application on the developer portal, as above, with the same redirect URI. Its client ID starts with `vid-dc-`, and it has an API key of its own.
 2. Put its client ID, client secret and API key in `.env`, in place of the former ones, and restart Runsten (`docker compose up -d`). If your `.env` sets `RUNSTEN_VOLVO_AUTH_URL`, remove it, or set it to `https://auth.volvocars.com/realms/volvocars`: it wins over the client ID.
 3. Reconnect your Volvo ID: the former application's tokens are refused by the new Volvo ID, so every vehicle page asks for it, with a **Reconnect the Volvo ID** button.
+
+   On the new Volvo ID's sign-in page, tick **Remember me**: without it, the connection ends after an hour (see [Connecting your Volvo ID](#connecting-your-volvo-id)).
 4. Once the vehicles are read again, delete the former application on the portal.
 
 An account that gave an API key of its own on the Connection page gives the new application's there.
@@ -64,6 +66,8 @@ Runsten spreads 90 % of the quota over the day. Above it, the calls wait and the
 ## Connecting your Volvo ID
 
 Open the web interface, sign in, then follow **Connect a Volvo ID** on the home page, and log in with your Volvo ID. The connection and its vehicles are recorded in your account; the tokens are stored encrypted.
+
+On the new Volvo ID (an application whose client ID starts with `vid-`), tick **Remember me** on Volvo's sign-in page: without it, Volvo ends the connection one hour after the sign-in, however often Runsten renews it. Runsten reads the lifetime Volvo gives the connection: when it is that short, the vehicles are recorded all the same, and the Connection page asks you to connect again, ticking the box.
 
 The collector then refreshes the tokens before they expire, and at least once a day. A Volvo grant lasts 6 months at most: when it ends, or if Volvo refuses a refresh, the collector stops polling and every page of the vehicle says so, with a **Reconnect the Volvo ID** button.
 

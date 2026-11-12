@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -211,5 +213,22 @@ func grant(op string, tok *oauth2.Token, err error) (oauth.Grant, error) {
 	if tok.ExpiresIn > 0 {
 		g.ExpiresIn = time.Duration(tok.ExpiresIn) * time.Second
 	}
+	g.RefreshExpiresIn = lifetime(tok.Extra("refresh_expires_in"))
 	return g, nil
+}
+
+// lifetime reads a lifetime in seconds of a token response, a number or a string as
+// Volvo ID sends expires_in; zero if absent or unreadable.
+func lifetime(v any) time.Duration {
+	var n float64
+	switch v := v.(type) {
+	case float64:
+		n = v
+	case string:
+		n, _ = strconv.ParseFloat(v, 64)
+	}
+	if !(n > 0) { // NaN too
+		return 0
+	}
+	return seconds(int64(min(n, math.MaxInt64/2)))
 }

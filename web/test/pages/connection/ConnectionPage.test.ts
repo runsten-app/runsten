@@ -347,6 +347,7 @@ describe('ConnectionPage', () => {
     })
     expect(section.find('a').attributes('href')).toBe('auth/volvo/start')
     expect(section.find('a').text()).toBe('Reconnect the Volvo ID')
+    expect(section.text()).toContain('tick “Remember me”')
   })
 
   it("tells the instance's application, by its client ID and the end of its key", async () => {
@@ -485,6 +486,9 @@ describe('ConnectionPage', () => {
     const w = await page()
     expect(w.text()).toContain('No Volvo ID connected yet: Runsten reads no Volvo.')
     expect(w.find('a[href="auth/volvo/start"]').text()).toBe('Connect a Volvo ID')
+    expect(w.text()).toContain(
+      'tick “Remember me”: without it, Volvo ends the connection after an hour',
+    )
     expect(w.findAll('h2').map((h) => h.text())).toEqual(['Volvo ID', 'Volvo application'])
   })
 
@@ -584,6 +588,17 @@ describe('ConnectionPage', () => {
   it('warns when Volvo refused the key at the connection', async () => {
     const { w } = await pageAt('/connection?volvo=key_refused')
     expect(w.find('.v-alert').text()).toContain('Volvo refused your key')
+  })
+
+  it('warns when the Volvo ID was connected for an hour only, "Remember me" not ticked', async () => {
+    const { w } = await pageAt('/connection?volvo=short_session')
+    expect(w.find('.v-alert').text()).toContain('connected, but only for an hour')
+    expect(w.find('.v-alert').text()).toContain('Click “Reconnect the Volvo ID” and tick it.')
+  })
+
+  it("ignores a short session from another brand's sign-in", async () => {
+    const { w } = await pageAt('/connection?tesla=short_session')
+    expect(w.find('.v-alert').exists()).toBe(false)
   })
 
   it('warns when the Volvo ID has no vehicle', async () => {

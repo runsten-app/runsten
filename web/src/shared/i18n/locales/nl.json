@@ -1365,6 +1365,7 @@
     "outcome": {
       "connected": "Volvo ID gekoppeld: de collector leest uw voertuigen uit vanaf zijn volgende ronde.",
       "keyRefused": "Uw Volvo ID is gekoppeld, maar Volvo heeft uw sleutel geweigerd: corrigeer die hieronder, dan worden de voertuigen vermeld zonder opnieuw te koppelen.",
+      "shortSession": "Uw Volvo ID is gekoppeld, maar slechts voor een uur: Volvo houdt de koppeling alleen vast als het vakje ‘Onthoud mij’ op de inlogpagina is aangevinkt. Klik op ‘{button}’ en vink het aan.",
       "noVehicle": "Uw Volvo ID heeft geen voertuig: het is niet gekoppeld. Voeg uw auto toe aan dit Volvo ID in de Volvo Cars-app en klik dan opnieuw op ‘{button}’.",
       "tooManyVehicles": "Met de voertuigen van uw Volvo ID zou uw account meer voertuigen hebben dan toegestaan: het is niet gekoppeld.",
       "brand": {
@@ -1379,6 +1380,7 @@
       "connect": "Een Volvo ID koppelen",
       "reconnect": "Volvo ID opnieuw koppelen",
       "reconnectHelp": "Opnieuw koppelen vernieuwt alleen de autorisatie: niets van wat al is uitgelezen, gaat verloren.",
+      "rememberMe": "Vink op de inlogpagina van Volvo ‘Onthoud mij’ aan: anders verbreekt Volvo de koppeling na een uur.",
       "status": "Status",
       "active": "Gekoppeld",
       "reauth": "Opnieuw aanmelden vereist",

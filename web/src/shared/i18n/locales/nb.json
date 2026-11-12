@@ -1365,6 +1365,7 @@
     "outcome": {
       "connected": "Volvo ID er koblet til: innsamleren leser bilene dine fra neste runde.",
       "keyRefused": "Volvo ID-en din er koblet til, men Volvo avviste nøkkelen din: rett den nedenfor, så vises bilene, uten at du må koble til på nytt.",
+      "shortSession": "Volvo ID-en din er koblet til, men bare i én time: Volvo beholder tilkoblingen når «Husk meg» er krysset av på innloggingssiden. Klikk på «{button}» og kryss av for det.",
       "noVehicle": "Volvo ID-en din har ingen bil: den ble ikke koblet til. Legg bilen til i denne Volvo ID-en i Volvo Cars-appen, og klikk deretter på «{button}» igjen.",
       "tooManyVehicles": "Med bilene i Volvo ID-en din ville kontoen din hatt flere biler enn den kan ha: den ble ikke koblet til.",
       "brand": {
@@ -1379,6 +1380,7 @@
       "connect": "Koble til en Volvo ID",
       "reconnect": "Koble til Volvo ID-en på nytt",
       "reconnectHelp": "Kobler du til på nytt, fornyes bare autorisasjonen: ingenting som allerede er lest, går tapt.",
+      "rememberMe": "Kryss av for «Husk meg» på innloggingssiden til Volvo: uten det avslutter Volvo tilkoblingen etter én time.",
       "status": "Status",
       "active": "Tilkoblet",
       "reauth": "Ny autentisering kreves",

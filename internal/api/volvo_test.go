@@ -302,15 +302,18 @@ func TestTooManyFlows(t *testing.T) {
 	}
 }
 
-// fakeAuthorizer accepts any code.
-type fakeAuthorizer struct{ err error }
+// fakeAuthorizer accepts any code; its refresh token lives refresh (zero: not announced).
+type fakeAuthorizer struct {
+	err     error
+	refresh time.Duration
+}
 
 func (f *fakeAuthorizer) AuthorizeURL(state, _ string) string {
 	return "https://volvoid.test/as/authorization.oauth2?state=" + state
 }
 
 func (f *fakeAuthorizer) Exchange(context.Context, string, string) (oauth.Grant, error) {
-	return oauth.Grant{AccessToken: "a", RefreshToken: "r"}, f.err
+	return oauth.Grant{AccessToken: "a", RefreshToken: "r", RefreshExpiresIn: f.refresh}, f.err
 }
 
 // failingVehicles fails to list the vehicles.
@@ -371,6 +374,52 @@ func TestNoVehicle(t *testing.T) {
 	if rec.Code != http.StatusSeeOther || !strings.HasSuffix(rec.Header().Get("Location"), "connection?volvo="+outcomeNoVehicle) ||
 		st.count() != 0 {
 		t.Errorf("status %d, Location %q, %d saved", rec.Code, rec.Header().Get("Location"), st.count())
+	}
+}
+
+// TestShortSession: a Volvo ID signed in without "Remember me", whose refresh token
+// lives half an hour, is connected all the same, and the Connection page tells how to
+// have a lasting connection; one of 90 days, or of unknown lifetime, is connected.
+func TestShortSession(t *testing.T) {
+	for _, tt := range []struct {
+		refresh time.Duration
+		outcome string
+	}{
+		{30 * time.Minute, outcomeShortSession},
+		{90 * 24 * time.Hour, outcomeConnected},
+		{0, outcomeConnected},
+	} {
+		clk := clock.NewManual(t0)
+		flows := oauth.NewFlows(clk, time.Minute, 1)
+		st := &enrollStore{}
+		sessions := newFakeSessions(clk)
+		token, _, _ := sessions.Login(context.Background(), "admin", password, "test")
+		s := New(Config{
+			Sessions: sessions, ClientID: "runsten-dev", Authorizer: &fakeAuthorizer{refresh: tt.refresh}, Flows: flows, Enrollment: st, Locks: st,
+			Vehicles: twoVehicles{}, Keys: st, Tokens: st, InstanceKey: true,
+			Clock: clk, Log: quiet,
+		})
+		state, _, _ := flows.Start(account)
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/auth/volvo/callback?code=c&state="+state, http.NoBody)
+		req.AddCookie(reqCookie(stateCookie, state))
+		req.AddCookie(reqCookie("runsten_session", token))
+		s.ServeHTTP(rec, req)
+		if rec.Code != http.StatusSeeOther || !strings.HasSuffix(rec.Header().Get("Location"), "connection?volvo="+tt.outcome) ||
+			st.count() != 1 {
+			t.Errorf("refresh %s: status %d, Location %q, %d saved", tt.refresh, rec.Code, rec.Header().Get("Location"), st.count())
+		}
+		if tt.outcome != outcomeShortSession {
+			continue
+		}
+		// runsten-api served alone tells it in place of the web interface.
+		rec = httptest.NewRecorder()
+		req = httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/connection?volvo="+tt.outcome, http.NoBody)
+		req.AddCookie(reqCookie("runsten_session", token))
+		s.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Remember me") {
+			t.Errorf("the page: status %d, %s", rec.Code, rec.Body.String())
+		}
 	}
 }
 

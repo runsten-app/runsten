@@ -1365,6 +1365,7 @@
     "outcome": {
       "connected": "Volvo ID anslutet: insamlaren läser dina fordon från sitt nästa varv.",
       "keyRefused": "Ditt Volvo ID är anslutet, men Volvo avvisade din nyckel: rätta den nedan, fordonen listas då, utan att du ansluter igen.",
+      "shortSession": "Ditt Volvo ID är anslutet, men bara i en timme: Volvo behåller anslutningen när rutan ”Kom ihåg mig” på inloggningssidan är ikryssad. Klicka på ”{button}” och kryssa i den.",
       "noVehicle": "Ditt Volvo ID har inget fordon: det anslöts inte. Lägg till din bil i detta Volvo ID i Volvo Cars-appen och klicka sedan på ”{button}” igen.",
       "tooManyVehicles": "Med ditt Volvo ID:s fordon skulle ditt konto få fler fordon än det tillåter: det anslöts inte.",
       "brand": {
@@ -1379,6 +1380,7 @@
       "connect": "Anslut ett Volvo ID",
       "reconnect": "Anslut Volvo ID igen",
       "reconnectHelp": "Att ansluta igen förnyar bara behörigheten: inget som redan lästs går förlorat.",
+      "rememberMe": "Kryssa i ”Kom ihåg mig” på Volvos inloggningssida: utan den avslutar Volvo anslutningen efter en timme.",
       "status": "Status",
       "active": "Ansluten",
       "reauth": "Ny inloggning krävs",

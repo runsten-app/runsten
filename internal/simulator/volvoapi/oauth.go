@@ -329,7 +329,9 @@ func (s *issuer) issue(ctx context.Context, w http.ResponseWriter, g *grant, use
 		"refresh_token": refresh,
 		"token_type":    "Bearer",
 		"expires_in":    int(s.cfg.AccessTokenTTL.Seconds()),
-		"scope":         g.scope,
+		// Keycloak's, beside the standard fields.
+		"refresh_expires_in": int(s.cfg.RefreshTokenTTL.Seconds()),
+		"scope":              g.scope,
 	})
 }
 
