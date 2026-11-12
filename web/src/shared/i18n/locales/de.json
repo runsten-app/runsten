@@ -47,7 +47,8 @@
       "mini": "MINI",
       "hyundai": "Hyundai",
       "kia": "Kia",
-      "genesis": "Genesis"
+      "genesis": "Genesis",
+      "skoda": "Škoda"
     },
     "beta": "Beta"
   },
@@ -1359,7 +1360,8 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW"
+      "bmw": "BMW",
+      "skoda": "Škoda"
     },
     "brandAttention": "erfordert Ihre Aufmerksamkeit",
     "outcome": {
@@ -1425,14 +1427,19 @@
       "unsharedPolestarId": "Nicht gelesen: Das Auto ist nicht mehr in der Polestar ID",
       "credentialRefusedBmw": "Nicht gelesen: BMW hat die Verbindung abgelehnt",
       "credentialRefusedPleos": "Nicht gelesen: Pleos hat den Schlüssel abgelehnt",
+      "credentialRefusedSkoda": "Nicht gelesen: Škoda hat den Schlüssel abgelehnt",
       "credentialMissingBmw": "Nicht gelesen: keine BMW-Verbindung",
       "credentialMissingPleos": "Nicht gelesen: kein Pleos-Schlüssel angegeben",
+      "credentialMissingSkoda": "Nicht gelesen: kein MyŠkoda-Schlüssel angegeben",
       "unsharedBmw": "Nicht gelesen: Das BMW-Konto ist nicht mehr Hauptnutzer des Fahrzeugs",
       "unsharedPleos": "Nicht gelesen: Das Auto teilt seine Daten nicht mehr mit dem Schlüssel",
+      "unsharedSkoda": "Nicht gelesen: Der Schlüssel umfasst dieses Auto nicht mehr",
       "pausedBmw": "Von BMW pausiert bis {time}",
       "pausedPleos": "Von Pleos pausiert bis {time}",
+      "pausedSkoda": "Von Škoda pausiert bis {time}",
       "quotaBmw": "Tägliche Abrufe bei BMW erreicht bis {time}",
-      "quotaPleos": "Tägliche Abrufe bei Pleos erreicht bis {time}"
+      "quotaPleos": "Tägliche Abrufe bei Pleos erreicht bis {time}",
+      "quotaSkoda": "Tägliche Abrufe bei Škoda erreicht bis {time}"
     },
     "notice": {
       "reauth": {
@@ -1475,11 +1482,16 @@
       "unsharedBmw": "Ihr BMW-Konto ist nicht mehr Hauptnutzer dieses Fahrzeugs oder führt es nicht mehr: verkauft oder der Besitzer gewechselt. Sollte es zurückkommen, verbinden Sie BMW auf der Verbindungsseite erneut: Das Fahrzeug wird wieder gelesen.",
       "pausedBmw": "BMW hat die Zahl der Abrufe begrenzt. Das Lesen wird von selbst fortgesetzt.",
       "pausedPleos": "Pleos hat die Zahl der Abrufe begrenzt. Das Lesen wird von selbst fortgesetzt.",
+      "pausedSkoda": "Škoda hat die Zahl der Abrufe begrenzt. Das Lesen wird von selbst fortgesetzt.",
       "credentialRefusedPleos": "Pleos hat den Schlüssel abgelehnt, mit dem dieses Auto gelesen wird: im Playground entzogen oder ersetzt, oder abgelaufen. Stellen Sie dort einen neuen aus und geben Sie ihn auf der Verbindungsseite an: Das bereits Gelesene bleibt erhalten.",
+      "credentialRefusedSkoda": "Škoda hat den Schlüssel abgelehnt, mit dem dieses Auto gelesen wird: abgelaufen oder in der MyŠkoda-App gelöscht. Legen Sie dort einen neuen an und geben Sie ihn auf der Verbindungsseite an: Das bereits Gelesene bleibt erhalten.",
       "credentialMissingPleos": "Runsten liest dieses Auto mit Ihrem Pleos-Schlüssel, der entfernt wurde: geben Sie einen neuen auf der Verbindungsseite an.",
+      "credentialMissingSkoda": "Runsten liest dieses Auto mit Ihrem MyŠkoda-Schlüssel, der entfernt wurde: Geben Sie einen neuen auf der Verbindungsseite an.",
       "unsharedPleos": "Pleos hat geantwortet, dass dieses Auto seine Daten nicht mehr mit dem Schlüssel teilt: die Freigabe in den Connected Services ausgeschaltet, oder das Auto abgemeldet. Sollte die Freigabe zurückkehren, geben Sie den Schlüssel auf der Verbindungsseite erneut an: Das Auto wird wieder gelesen.",
+      "unsharedSkoda": "Škoda hat geantwortet, dass der Schlüssel dieses Auto nicht mehr liest: Es wurde in der MyŠkoda-App beim Schlüssel abgewählt. Legen Sie einen Schlüssel mit diesem Auto an und geben Sie ihn auf der Verbindungsseite an: Das Auto wird wieder gelesen.",
       "quotaBmw": "Runsten ruft die API von BMW pro Verbindung höchstens 40-mal am Tag ab, damit Ihnen von BMWs 50 einige bleiben: Diese Abrufe sind aufgebraucht. Der Stream, der keine Grenze hat, wird weiter gelesen; der Rest wird von selbst fortgesetzt.",
-      "quotaPleos": "Runsten ruft die Pleos Vehicle Data API pro Schlüssel höchstens 2000-mal am Tag ab, eine eigene Grenze (Pleos gibt keine bekannt): Diese Abrufe sind aufgebraucht. Das Lesen wird von selbst fortgesetzt."
+      "quotaPleos": "Runsten ruft die Pleos Vehicle Data API pro Schlüssel höchstens 2000-mal am Tag ab, eine eigene Grenze (Pleos gibt keine bekannt): Diese Abrufe sind aufgebraucht. Das Lesen wird von selbst fortgesetzt.",
+      "quotaSkoda": "Runsten ruft die MyŠkoda Public API pro Schlüssel höchstens 2400-mal am Tag ab, über Škodas eigener Grenze von 20 pro Stunde und Auto: Diese Abrufe sind aufgebraucht. Das Lesen wird von selbst fortgesetzt."
     },
     "facts": {
       "mode": "Abrufmodus",
@@ -1505,8 +1517,10 @@
       "noneDueUnsharedPolestarId": "Keiner: Das Auto ist nicht mehr in der Polestar ID",
       "noneDueBmw": "Keiner, bis BMW erneut verbunden ist",
       "noneDuePleos": "Keiner, bis ein Pleos-Schlüssel angegeben ist",
+      "noneDueSkoda": "Keiner, bis ein MyŠkoda-Schlüssel angegeben ist",
       "noneDueUnsharedBmw": "Keiner: Das BMW-Konto ist nicht mehr Hauptnutzer des Fahrzeugs",
-      "noneDueUnsharedPleos": "Keiner: Das Auto teilt seine Daten nicht mehr mit dem Schlüssel"
+      "noneDueUnsharedPleos": "Keiner: Das Auto teilt seine Daten nicht mehr mit dem Schlüssel",
+      "noneDueUnsharedSkoda": "Keiner: Der Schlüssel umfasst das Auto nicht mehr"
     },
     "api": {
       "connectedVehicle": "Fahrzeugdaten",
@@ -1517,7 +1531,8 @@
       "teslaFleet": "Tesla Fleet API",
       "polestarId": "API der Polestar-App",
       "bmw": "BMW CarData",
-      "pleos": "die Pleos Vehicle Data API"
+      "pleos": "die Pleos Vehicle Data API",
+      "skoda": "die MyŠkoda Public API"
     },
     "failure": {
       "quota": "Kontingent erreicht",
@@ -1545,12 +1560,16 @@
       "streamHeld": "Stream von einer anderen Anwendung belegt (Home Assistant, evcc)",
       "notFoundBmw": "Fahrzeug bei BMW unbekannt",
       "notFoundPleos": "Fahrzeug bei Pleos unbekannt",
+      "notFoundSkoda": "Fahrzeug bei Škoda unbekannt",
       "unavailableBmw": "BMW nicht erreichbar",
       "unavailablePleos": "Pleos nicht erreichbar",
+      "unavailableSkoda": "Škoda nicht erreichbar",
       "tokenBmw": "Kein Token von BMW",
       "tokenPleos": "Kein Token von Pleos",
+      "tokenSkoda": "MyŠkoda-Schlüssel nicht gelesen",
       "credentialRefusedBmw": "BMW-Verbindung abgelehnt",
       "credentialRefusedPleos": "Pleos-Schlüssel abgelehnt",
+      "credentialRefusedSkoda": "MyŠkoda-Schlüssel abgelehnt",
       "keyShared": "Schlüssel mit anderer Anwendung geteilt"
     },
     "key": {
@@ -1589,6 +1608,10 @@
     "pleos": {
       "title": "Ihr {brand}-Schlüssel",
       "off": "{brand} ist auf dieser Instanz abgeschaltet (das Flag source.pleos)."
+    },
+    "skoda": {
+      "title": "Ihr MyŠkoda-Schlüssel",
+      "off": "Škoda ist auf dieser Instanz abgeschaltet (das Flag source.skoda)."
     },
     "keyShared": {
       "text": "Eine andere Anwendung liest mit demselben Pleos-Schlüssel — evcc, Home Assistant. Die API erlaubt nur einen Leser zugleich; jeder verdrängt den anderen. Behalten Sie diesen Schlüssel für Runsten allein, oder lassen Sie Runsten Ihr Auto stattdessen für Home Assistant auf Ihren MQTT-Broker veröffentlichen:",
@@ -2318,6 +2341,75 @@
       "hyundai": "Bluelink",
       "kia": "Kia Connect",
       "genesis": "Genesis Connected"
+    }
+  },
+  "skoda": {
+    "intro": "Runsten liest Ihren Škoda mit einem Schlüssel, den Sie in der MyŠkoda-App anlegen – Škodas eigenem Zugang für seine Besitzer –, und der FIN jedes Autos, das der Schlüssel liest.",
+    "guide": "Anleitung lesen",
+    "refused": {
+      "title": "Ihr Schlüssel wurde abgelehnt",
+      "body": "Škoda hat ihn am {time} abgelehnt: in der MyŠkoda-App gelöscht oder nicht mehr gültig. Ihre Autos werden erst wieder gelesen, wenn Sie einen neuen angeben; was gelesen wurde, bleibt."
+    },
+    "expired": {
+      "title": "Ihr Schlüssel ist abgelaufen",
+      "body": "Er ist am {date} abgelaufen: Ihre Autos werden erst wieder gelesen, wenn Sie einen neuen angeben. Legen Sie ihn in der MyŠkoda-App an; was gelesen wurde, bleibt."
+    },
+    "renew": {
+      "title": "Schlüssel erneuern",
+      "body": "Er läuft am {date} ab. Legen Sie vorher in der MyŠkoda-App einen neuen an und geben Sie ihn hier an, sonst werden Ihre Autos nicht mehr gelesen."
+    },
+    "current": "Ihr Schlüssel",
+    "last4": "Schlüssel, endend auf {last4}",
+    "setAt": "Angegeben",
+    "expiresAt": "Gültig bis",
+    "expiresUnknown": "Beim nächsten Lesen bekannt",
+    "replace": "Schlüssel ersetzen",
+    "delete": {
+      "button": "Schlüssel entfernen",
+      "title": "Ihren MyŠkoda-Schlüssel entfernen?",
+      "text": "Ihre Škodas bleiben mit ihrer Geschichte, werden aber erst wieder gelesen, wenn Sie einen anderen Schlüssel angeben.",
+      "error": "Der Schlüssel konnte nicht entfernt werden. Versuchen Sie es gleich noch einmal.",
+      "cancel": "Abbrechen",
+      "confirm": "Entfernen"
+    },
+    "steps": {
+      "title": "Schlüssel anlegen",
+      "open": "Öffnen Sie auf dem Telefon mit Ihrer MyŠkoda-App",
+      "newTab": "(öffnet in neuem Tab)",
+      "create": "Legen Sie einen Schlüssel an und wählen Sie jedes Auto aus, das er lesen soll.",
+      "copy": "Kopieren Sie den Schlüssel und fügen Sie ihn unten mit der FIN jedes Autos ein: Er wird nie wieder angezeigt."
+    },
+    "field": {
+      "apiKey": "API-Schlüssel",
+      "vins": "FINs"
+    },
+    "vinsHint": "Eine pro Zeile: 17 Zeichen, in der MyŠkoda-App und im Fahrzeugschein.",
+    "help": "Škoda erlaubt 20 Abrufe pro Stunde und Auto, geteilt mit jeder Anwendung, die es liest: evcc oder Home Assistant am selben Auto lassen Runsten weniger. Seine Bedingungen erlauben nur eine private Nutzung.",
+    "save": "Schlüssel speichern",
+    "cancel": "Abbrechen",
+    "saved": "Schlüssel gespeichert: Runsten liest seine Autos ab dem nächsten Durchlauf.",
+    "deleted": "Schlüssel entfernt.",
+    "error": {
+      "summary": "Der Schlüssel wurde nicht gespeichert",
+      "required": "Fügen Sie den API-Schlüssel ein.",
+      "spaces": "Der API-Schlüssel enthält kein Leerzeichen: erneut kopieren.",
+      "characters": "Der API-Schlüssel enthält nur Buchstaben, Ziffern und Zeichen: erneut kopieren.",
+      "tooShort": "Der API-Schlüssel hat mindestens {min} Zeichen: vollständig kopieren.",
+      "tooLong": "Der API-Schlüssel hat höchstens {max} Zeichen: nur ihn kopieren.",
+      "vinRequired": "Geben Sie die FIN jedes Autos an, das der Schlüssel liest.",
+      "vinInvalid": "{vin} ist keine FIN: 17 Buchstaben und Ziffern, ohne I, O und Q.",
+      "vinTwice": "{vin} ist zweimal angegeben.",
+      "tooManyVins": "Ein Schlüssel liest höchstens {max} Autos.",
+      "refused": "Škoda hat diesen Schlüssel abgelehnt: erneut kopieren und prüfen, dass er in der MyŠkoda-App noch besteht.",
+      "expired": "Dieser Schlüssel ist abgelaufen: Legen Sie in der MyŠkoda-App einen neuen an.",
+      "invalidBody": "Der Schlüssel oder eine FIN wurde abgelehnt: erneut kopieren.",
+      "notCovered": "Der Schlüssel liest {vin} nicht: Wählen Sie dieses Auto beim Anlegen des Schlüssels in der MyŠkoda-App aus, oder prüfen Sie seine FIN.",
+      "tooManyVehicles": "Mit diesen Autos hätte Ihr Konto mehr Fahrzeuge, als ihm zusteht: Der Schlüssel wurde nicht gespeichert.",
+      "notAdmitted": "Ihr Konto muss erst einen Schritt tun, etwa Bedingungen annehmen: die Seite neu laden. Der Schlüssel wurde nicht gespeichert.",
+      "sourceUnavailable": "Die MyŠkoda Public API hat nicht geantwortet: Der Schlüssel wurde nicht gespeichert. Versuchen Sie es gleich noch einmal.",
+      "featureUnavailable": "Škoda wird auf dieser Instanz nicht angeboten: Der Schlüssel wurde nicht gespeichert.",
+      "unavailable": "Runsten war nicht erreichbar. Versuchen Sie es gleich noch einmal.",
+      "internal": "Der Schlüssel konnte nicht gespeichert werden. Versuchen Sie es gleich noch einmal."
     }
   }
 }

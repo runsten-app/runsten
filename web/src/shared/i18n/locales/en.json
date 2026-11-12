@@ -47,7 +47,8 @@
       "mini": "MINI",
       "hyundai": "Hyundai",
       "kia": "Kia",
-      "genesis": "Genesis"
+      "genesis": "Genesis",
+      "skoda": "Škoda"
     },
     "beta": "Beta"
   },
@@ -1359,7 +1360,8 @@
       "volvo": "Volvo",
       "polestar": "Polestar",
       "tesla": "Tesla",
-      "bmw": "BMW"
+      "bmw": "BMW",
+      "skoda": "Škoda"
     },
     "brandAttention": "needs your attention",
     "outcome": {
@@ -1425,14 +1427,19 @@
       "unsharedPolestarId": "Not read: the car is no longer in the Polestar ID",
       "credentialRefusedBmw": "Not read: BMW refused the connection",
       "credentialRefusedPleos": "Not read: Pleos refused the key",
+      "credentialRefusedSkoda": "Not read: Škoda refused the key",
       "credentialMissingBmw": "Not read: no BMW connected",
       "credentialMissingPleos": "Not read: no Pleos key given",
+      "credentialMissingSkoda": "Not read: no MyŠkoda key given",
       "unsharedBmw": "Not read: the BMW account is no longer the car's main user",
       "unsharedPleos": "Not read: the car no longer shares its data with the key",
+      "unsharedSkoda": "Not read: the key no longer covers this car",
       "pausedBmw": "Paused by BMW until {time}",
       "pausedPleos": "Paused by Pleos until {time}",
+      "pausedSkoda": "Paused by Škoda until {time}",
       "quotaBmw": "Daily calls to BMW reached until {time}",
-      "quotaPleos": "Daily calls to Pleos reached until {time}"
+      "quotaPleos": "Daily calls to Pleos reached until {time}",
+      "quotaSkoda": "Daily calls to Škoda reached until {time}"
     },
     "notice": {
       "reauth": {
@@ -1475,11 +1482,16 @@
       "unsharedBmw": "Your BMW account is no longer the main user of this car, or no longer lists it: sold, or changed owner. Should it come back, connect BMW again on the connection page: the car is read again.",
       "pausedBmw": "BMW limited the number of calls. Reading resumes by itself.",
       "pausedPleos": "Pleos limited the number of calls. Reading resumes by itself.",
+      "pausedSkoda": "Škoda limited the number of calls. Reading resumes by itself.",
       "credentialRefusedPleos": "Pleos refused the key this car is read with: revoked or replaced in the Playground, or expired. Issue a new one there and give it on the connection page: what was read stays.",
+      "credentialRefusedSkoda": "Škoda refused the key this car is read with: expired, or deleted in the MyŠkoda app. Create a new one there and give it on the connection page: what was read stays.",
       "credentialMissingPleos": "Runsten reads this car with your Pleos key, which was removed: give a new one on the connection page.",
+      "credentialMissingSkoda": "Runsten reads this car with your MyŠkoda key, which was removed: give a new one on the connection page.",
       "unsharedPleos": "Pleos answered that this car no longer shares its data with the key: the sharing was turned off in its connected services, or the car was unregistered. Should it share again, give the key again on the connection page: the car is read again.",
+      "unsharedSkoda": "Škoda answered that the key no longer reads this car: it was unticked from the key in the MyŠkoda app. Create a key with this car ticked and give it on the connection page: the car is read again.",
       "quotaBmw": "Runsten makes at most 40 calls a day to BMW's API per connection, to leave a few of BMW's 50 to you: they are used up. The stream, which has no limit, is still read; the rest resumes by itself.",
-      "quotaPleos": "Runsten makes at most 2,000 calls a day to the Pleos Vehicle Data API per key, a cap of its own (Pleos publishes none): they are used up. Reading resumes by itself."
+      "quotaPleos": "Runsten makes at most 2,000 calls a day to the Pleos Vehicle Data API per key, a cap of its own (Pleos publishes none): they are used up. Reading resumes by itself.",
+      "quotaSkoda": "Runsten makes at most 2,400 calls a day to the MyŠkoda Public API per key, above Škoda’s own limit of 20 an hour per car: they are used up. Reading resumes by itself."
     },
     "facts": {
       "mode": "Polling mode",
@@ -1505,8 +1517,10 @@
       "noneDueUnsharedPolestarId": "None: the car is no longer in the Polestar ID",
       "noneDueBmw": "None until BMW is connected again",
       "noneDuePleos": "None until a Pleos key is given",
+      "noneDueSkoda": "None until a MyŠkoda key is given",
       "noneDueUnsharedBmw": "None: the BMW account is no longer the car's main user",
-      "noneDueUnsharedPleos": "None: the car is no longer shared with the key"
+      "noneDueUnsharedPleos": "None: the car is no longer shared with the key",
+      "noneDueUnsharedSkoda": "None: the key no longer covers the car"
     },
     "api": {
       "connectedVehicle": "vehicle data",
@@ -1517,7 +1531,8 @@
       "teslaFleet": "Tesla Fleet API",
       "polestarId": "Polestar app API",
       "bmw": "BMW CarData",
-      "pleos": "the Pleos Vehicle Data API"
+      "pleos": "the Pleos Vehicle Data API",
+      "skoda": "the MyŠkoda Public API"
     },
     "failure": {
       "quota": "Quota reached",
@@ -1545,12 +1560,16 @@
       "streamHeld": "Stream held by another application (Home Assistant, evcc)",
       "notFoundBmw": "Vehicle unknown to BMW",
       "notFoundPleos": "Vehicle unknown to Pleos",
+      "notFoundSkoda": "Vehicle unknown to Škoda",
       "unavailableBmw": "BMW unreachable",
       "unavailablePleos": "Pleos unreachable",
+      "unavailableSkoda": "Škoda unreachable",
       "tokenBmw": "No token from BMW",
       "tokenPleos": "No token from Pleos",
+      "tokenSkoda": "MyŠkoda key not read",
       "credentialRefusedBmw": "BMW connection refused",
       "credentialRefusedPleos": "Pleos key refused",
+      "credentialRefusedSkoda": "MyŠkoda key refused",
       "keyShared": "Key shared with another application"
     },
     "key": {
@@ -1589,6 +1608,10 @@
     "pleos": {
       "title": "Your {brand} key",
       "off": "{brand} is turned off on this instance (the flag source.pleos)."
+    },
+    "skoda": {
+      "title": "Your MyŠkoda key",
+      "off": "Škoda is turned off on this instance (the flag source.skoda)."
     },
     "keyShared": {
       "text": "Another application reads with the same Pleos key — evcc, Home Assistant. The API allows only one reader at a time, so each takes the other’s place. Keep this key for Runsten alone, or let Runsten republish your car to your MQTT broker for Home Assistant instead:",
@@ -2318,6 +2341,75 @@
       "hyundai": "Bluelink",
       "kia": "Kia Connect",
       "genesis": "Genesis Connected"
+    }
+  },
+  "skoda": {
+    "intro": "Runsten reads your Škoda with a key you create in the MyŠkoda app, Škoda’s own access for its owners, and the VIN of each car the key reads.",
+    "guide": "Read the guide",
+    "refused": {
+      "title": "Your key was refused",
+      "body": "Škoda refused it on {time}: deleted in the MyŠkoda app, or no longer valid. Your cars are not read until you give a new one; what was read stays."
+    },
+    "expired": {
+      "title": "Your key has expired",
+      "body": "It expired on {date}: your cars are not read until you give a new one. Create it in the MyŠkoda app; what was read stays."
+    },
+    "renew": {
+      "title": "Renew your key",
+      "body": "It expires on {date}. Create a new one in the MyŠkoda app before then and give it here, or your cars will no longer be read."
+    },
+    "current": "Your key",
+    "last4": "Key ending in {last4}",
+    "setAt": "Given",
+    "expiresAt": "Expires",
+    "expiresUnknown": "Told at the next read",
+    "replace": "Replace the key",
+    "delete": {
+      "button": "Remove the key",
+      "title": "Remove your MyŠkoda key?",
+      "text": "Your Škodas stay, with their history, but are no longer read until you give another key.",
+      "error": "The key could not be removed. Try again in a moment.",
+      "cancel": "Cancel",
+      "confirm": "Remove"
+    },
+    "steps": {
+      "title": "Create your key",
+      "open": "On the phone with your MyŠkoda app, open",
+      "newTab": "(opens in a new tab)",
+      "create": "Create a key, and tick each car it is to read.",
+      "copy": "Copy the key, then paste it below with the VIN of each car: it is never shown again."
+    },
+    "field": {
+      "apiKey": "API key",
+      "vins": "VINs"
+    },
+    "vinsHint": "One per line: 17 characters, shown in the MyŠkoda app and on the registration document.",
+    "help": "Škoda allows 20 reads an hour per car, shared by every application reading it: evcc or Home Assistant reading the same car leave Runsten fewer. Its terms allow a personal use only.",
+    "save": "Save the key",
+    "cancel": "Cancel",
+    "saved": "Key saved: Runsten reads its cars from its next pass.",
+    "deleted": "Key removed.",
+    "error": {
+      "summary": "The key was not saved",
+      "required": "Paste the API key.",
+      "spaces": "The API key has no space: copy it again.",
+      "characters": "The API key has only letters, digits and signs: copy it again.",
+      "tooShort": "The API key has at least {min} characters: copy it whole.",
+      "tooLong": "The API key has at most {max} characters: copy it alone.",
+      "vinRequired": "Give the VIN of each car the key reads.",
+      "vinInvalid": "{vin} is not a VIN: 17 letters and digits, without I, O nor Q.",
+      "vinTwice": "{vin} is given twice.",
+      "tooManyVins": "A key reads at most {max} cars.",
+      "refused": "Škoda refused this key: copy it again, and check that it still exists in the MyŠkoda app.",
+      "expired": "This key has expired: create a new one in the MyŠkoda app.",
+      "invalidBody": "The key or a VIN was refused: copy them again.",
+      "notCovered": "The key does not read {vin}: tick this car when you create the key in the MyŠkoda app, or check its VIN.",
+      "tooManyVehicles": "With these cars, your account would have more vehicles than it may: the key was not saved.",
+      "notAdmitted": "Your account must take a step first, such as accepting terms: reload the page. The key was not saved.",
+      "sourceUnavailable": "The MyŠkoda Public API did not answer: the key was not saved. Try again in a moment.",
+      "featureUnavailable": "Škoda is not offered on this instance: the key was not saved.",
+      "unavailable": "Runsten could not be reached. Try again in a moment.",
+      "internal": "The key could not be saved. Try again in a moment."
     }
   }
 }

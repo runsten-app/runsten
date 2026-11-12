@@ -6,6 +6,7 @@ import type {
   PleosCredentialUpdate,
   PolestarCredentialUpdate,
   PolestarIdAuthorization,
+  SkodaCredentialUpdate,
 } from '../model/Connection'
 
 export function fetchConnection(): Promise<ConnectionSettings> {
@@ -64,6 +65,14 @@ export function setPleosCredential(
 
 export async function deletePleosCredential(brand: PleosBrand): Promise<void> {
   await unwrap(api.DELETE('/connection/pleos/{brand}', { params: { path: { brand } } }))
+}
+
+export function setSkodaCredential(body: SkodaCredentialUpdate): Promise<ConnectionSettings> {
+  return unwrap(api.PUT('/connection/skoda', { body }))
+}
+
+export async function deleteSkodaCredential(): Promise<void> {
+  await unwrap(api.DELETE('/connection/skoda'))
 }
 
 export function startBmwAuthorization(clientId: string): Promise<BmwDevice> {

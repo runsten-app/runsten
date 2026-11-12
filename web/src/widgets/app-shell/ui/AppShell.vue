@@ -22,6 +22,7 @@ import { periodQuery } from '@/features/filter-period'
 import { placeQuery } from '@/features/filter-place'
 import { useConnectionSettings } from '@/features/manage-api-key'
 import { renewalDue } from '@/features/manage-polestar'
+import { renewalDue as skodaRenewalDue } from '@/features/manage-skoda'
 import { rememberedVehicle, rememberVehicle, VehicleMenu } from '@/features/select-vehicle'
 import { useHealth } from '@/features/view-health'
 import { useLimits } from '@/features/view-limits'
@@ -97,7 +98,9 @@ const connectionAttention = computed(() =>
   vehicles.value?.some((v) => {
     const s = collectionState(v, now.value, unread(v.id))
     return s.kind !== 'unread' && needsAttention(s)
-  }) || renewalDue(connectionSettings.value?.polestar, now.value)
+  }) ||
+  renewalDue(connectionSettings.value?.polestar, now.value) ||
+  skodaRenewalDue(connectionSettings.value?.skoda, now.value)
     ? t('connection.attention')
     : undefined,
 )

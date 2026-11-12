@@ -31,3 +31,8 @@ export type PleosCredentialUpdate = components['schemas']['PleosCredentialUpdate
 // PleosBrand is the brand of a key, in the API's own words.
 export type PleosBrand = keyof PleosKeys
 export const pleosBrands: PleosBrand[] = ['hyundai', 'kia', 'genesis']
+// SkodaKey is what the user is shown again of the account's key of the MyŠkoda Public
+// API: its last four characters, when it was given and when it expires; SkodaCredentialUpdate
+// a new one, with the VIN of each car it reads (the API lists none).
+export type SkodaKey = components['schemas']['SkodaKey']
+export type SkodaCredentialUpdate = components['schemas']['SkodaCredentialUpdate']

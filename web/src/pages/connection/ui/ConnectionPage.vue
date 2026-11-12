@@ -10,6 +10,7 @@ import { BmwForm } from '@/features/manage-bmw'
 import { PleosForm } from '@/features/manage-pleos'
 import { PolestarForm, renewalDue } from '@/features/manage-polestar'
 import { PolestarIdForm } from '@/features/manage-polestar-id'
+import { SkodaForm, renewalDue as skodaRenewalDue } from '@/features/manage-skoda'
 import { TeslaForm } from '@/features/manage-tesla'
 import { useFlag } from '@/features/view-flags'
 import { useLimits } from '@/features/view-limits'
@@ -38,7 +39,7 @@ import VehicleCollection from './VehicleCollection.vue'
 //
 // One tab per brand, each with its connection and its vehicles: a brand added later is a
 // tab more. The tab is the URL's hash (#volvo, #polestar, #tesla, #bmw, #hyundai, #kia,
-// #genesis: the home's choice of a brand opens its tab; #pleos, of an older link, the first
+// #genesis, #skoda: the home's choice of a brand opens its tab; #pleos, of an older link, the first
 // of Hyundai, Kia and Genesis the account reads, else Hyundai's); without one, that of the vehicle the page was opened from, else the
 // first brand the account has a vehicle of, else Volvo's. A dot marks a tab whose vehicles need the user,
 // or whose credential is to be renewed (Polestar's).
@@ -51,7 +52,8 @@ import VehicleCollection from './VehicleCollection.vue'
 // only while the flag source.bmw is on for the account (on by default), unless it has a
 // connection or BMWs from before: it then says why they are not read. Hyundai's, Kia's and
 // Genesis's, read through the same API (Pleos's), each with its own key, are there while
-// the flag source.pleos is on, unless the brand has a key or vehicles from before.
+// the flag source.pleos is on, unless the brand has a key or vehicles from before. Škoda's
+// is there while the flag source.skoda is on, unless it has a key or Škodas from before.
 // A brand's section an extension sets (extensionBrandSections) takes the place of the
 // core's, and shows its tab whatever the above.
 const props = defineProps<{ vehicle?: string }>()
@@ -140,6 +142,7 @@ const brandLabels = computed<Record<Brand, string>>(() => ({
   hyundai: t('pleos.brand.hyundai'),
   kia: t('pleos.brand.kia'),
   genesis: t('pleos.brand.genesis'),
+  skoda: t('connection.brand.skoda'),
 }))
 // A Polestar read with the Polestar ID is a Polestar's: one tab. A Hyundai, a Kia or a
 // Genesis, read through Pleos (pleos_kia), is its make's.
@@ -164,6 +167,9 @@ const pleosOn = useFlag('source.pleos')
 // The API answers the three brands whatever the flag, each null without a key: a key
 // given, not the object, keeps the brand's tab while the flag is off.
 const pleosKey = (b: Brand) => isPleos(b) && settings.value?.pleos?.[b] != null
+const skodaOn = useFlag('source.skoda')
+// The VINs of the account's Škodas: a new key is given with them.
+const skodaVins = computed(() => ofBrand('skoda').map((v) => v.vin))
 const polestarIdOn = useFlag('source.polestar-id')
 const polestarIdShown = computed(
   () =>
@@ -181,7 +187,9 @@ const shown = computed(() =>
           ? teslaOn.value || ofBrand(b).length
           : isPleos(b)
             ? pleosOn.value || pleosKey(b) || ofBrand(b).length
-            : b !== 'bmw' || bmwOn.value || !!settings.value?.bmw || ofBrand(b).length),
+            : b === 'skoda'
+              ? skodaOn.value || !!settings.value?.skoda || ofBrand(b).length
+              : b !== 'bmw' || bmwOn.value || !!settings.value?.bmw || ofBrand(b).length),
   ),
 )
 // #pleos, the tab of the three makes before each had its own: the first the account
@@ -222,7 +230,8 @@ const alerted = computed(
       brands.filter(
         (b) =>
           ofBrand(b).some(attention) ||
-          (b === 'polestar' && renewalDue(settings.value?.polestar, now.value)),
+          (b === 'polestar' && renewalDue(settings.value?.polestar, now.value)) ||
+          (b === 'skoda' && skodaRenewalDue(settings.value?.skoda, now.value)),
       ),
     ),
 )
@@ -293,7 +302,7 @@ const alerted = computed(
         >
           {{ brandLabels[b] }}
           <v-chip
-            v-if="isPleos(b)"
+            v-if="isPleos(b) || b === 'skoda'"
             size="x-small"
             variant="tonal"
             color="primary"
@@ -458,6 +467,21 @@ const alerted = computed(
               :connection="settings"
               :brand="b"
               :off="!pleosOn"
+            />
+          </section>
+          <section v-else-if="b === 'skoda'" class="mb-8" aria-labelledby="connection-skoda-title">
+            <h2 id="connection-skoda-title" class="text-title-large mb-3">
+              {{ t('connection.skoda.title') }}
+            </h2>
+            <p v-if="!skodaOn" class="text-body-medium skoda-off">
+              {{ t('connection.skoda.off') }}
+            </p>
+            <!-- Off, a key given before stays told, and can be removed. -->
+            <SkodaForm
+              v-if="skodaOn || settings.skoda"
+              :connection="settings"
+              :vins="skodaVins"
+              :off="!skodaOn"
             />
           </section>
           <section v-else-if="b === 'bmw'" class="mb-8" aria-labelledby="connection-bmw-title">

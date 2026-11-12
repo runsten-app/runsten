@@ -12,12 +12,13 @@ import { extensionChoices, extensionMakeMentions, type HomeMake } from '../exten
 // Home leads to the vehicle of an account that has one; with several, it is the Garage,
 // which compares them (loaded on demand: Chart.js comes with it). Without one, it asks which
 // car, one tile per make, of equal weight: Volvo, Polestar, Tesla, BMW, MINI, Hyundai,
-// Kia, Genesis. How each is read (an ID, a credential, a key) is told by its brand's tab: the
+// Kia, Genesis, Škoda. How each is read (an ID, a credential, a key) is told by its brand's tab: the
 // owner picks their make and is guided there, never told that two makes share an API. A
 // Volvo needs the account's key first: without it, runsten-api refuses to start the flow
 // (an instance without a key of its own). On an instance without a Volvo application, the
 // Volvo is left out; the Tesla, while the flag source.tesla is off for the account; the BMW
-// and the MINI, while source.bmw is; Hyundai, Kia and Genesis, while source.pleos is. A
+// and the MINI, while source.bmw is; Hyundai, Kia and Genesis, while source.pleos is; Škoda,
+// while source.skoda is. A
 // downstream build may add its own choices under the makes, and a mention on a make's
 // tile (extensions.ts).
 const { t } = useI18n()
@@ -28,6 +29,7 @@ const noVolvo = computed(() => connection.value?.volvo === false)
 const teslaOn = useFlag('source.tesla')
 const bmwOn = useFlag('source.bmw')
 const pleosOn = useFlag('source.pleos')
+const skodaOn = useFlag('source.skoda')
 const keyMissing = computed(
   () => !!connection.value && !connection.value.instance_key && !connection.value.api_key,
 )
@@ -64,6 +66,9 @@ const tiles = computed<Tile[]>(() => [
         beta: true,
       }))
     : []),
+  ...(skodaOn.value
+    ? [{ make: 'skoda' as const, to: { name: 'connection', hash: '#skoda' }, beta: true }]
+    : []),
 ])
 // The makes, written out: an interpolated key is invisible to the unused-key rule.
 const names = computed<Record<HomeMake, string>>(() => ({
@@ -75,6 +80,7 @@ const names = computed<Record<HomeMake, string>>(() => ({
   hyundai: t('home.make.hyundai'),
   kia: t('home.make.kia'),
   genesis: t('home.make.genesis'),
+  skoda: t('home.make.skoda'),
 }))
 const note = (tile: Tile) => mentions.value[tile.make] ?? (tile.beta ? t('home.beta') : undefined)
 

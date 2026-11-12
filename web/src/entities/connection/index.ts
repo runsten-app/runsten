@@ -4,6 +4,7 @@ export {
   deletePleosCredential,
   deletePolestarCredential,
   deletePolestarId,
+  deleteSkodaCredential,
   deleteTeslaToken,
   fetchConnection,
   pollBmwToken,
@@ -12,6 +13,7 @@ export {
   setPolestarCredential,
   setPolestarIdCode,
   setPolestarIdPassword,
+  setSkodaCredential,
   startPolestarIdSignIn,
   setTeslaToken,
   startBmwAuthorization,
@@ -29,6 +31,8 @@ export type {
   PolestarCredentialUpdate,
   PolestarId,
   PolestarIdAuthorization,
+  SkodaCredentialUpdate,
+  SkodaKey,
   TeslaToken,
 } from './model/Connection'
 export { pleosBrands } from './model/Connection'
