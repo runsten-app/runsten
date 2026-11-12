@@ -56,7 +56,8 @@ vars:
   # /eu-north-1/data-portal/m2m; Tesla's Owner API, its token under /oauth2/v3; the
   # Polestar ID and the Polestar app's API under /polestar-id (its gRPC at the root), its
   # flag on; BMW CarData under /gcdm/oauth and /customers, its stream on :9000; the Pleos
-  # Vehicle Data API under /pleos (its key below, its faults under /sim/pleos).
+  # Vehicle Data API under /pleos (its key below, its faults under /sim/pleos); the MyŠkoda
+  # Public API under /skoda (its key below, its faults under /sim/skoda).
   # Development-only encryption key (32 zero bytes).
   DEV_ENV: >-
     RUNSTEN_DATABASE_URL="{{.DB_DEV}}"
@@ -71,6 +72,7 @@ vars:
     RUNSTEN_BMW_AUTH_URL=http://localhost:8080/gcdm/oauth RUNSTEN_BMW_API_URL=http://localhost:8080
     RUNSTEN_BMW_STREAM_URL=tcp://localhost:9000
     RUNSTEN_PLEOS_API_URL=http://localhost:8080/pleos
+    RUNSTEN_SKODA_API_URL=http://localhost:8080/skoda
     RUNSTEN_FLAGS=source.polestar-id=true
 
   # The simulator's Polestar ID (polestaridapi.DevEmail and DevPassword), development
@@ -87,6 +89,10 @@ vars:
   # PUT /api/v1/connection/pleos/{brand}: the brand is the scenario's car's.
   DEV_PLEOS: >-
     {"client_id":"runsten-dev","client_secret":"runsten-dev-secret"}
+
+  # The simulator's MyŠkoda key (skodaapi.DevAPIKey), development only, given with the
+  # VINs it covers (GET /sim/skoda/vehicles) to PUT /api/v1/connection/skoda.
+  DEV_SKODA_KEY: runsten-dev-skoda-key
 
 tasks:
   default:
@@ -383,9 +389,10 @@ tasks:
   # polestar, and a new refresh token of its Tesla account (one is used up by each
   # check), which reads those of brand tesla, and its Polestar ID, which reads those of
   # source polestar_id, and its Pleos key, per brand, which reads those of brand hyundai,
-  # kia or genesis. A scenario without one of them connects the others only.
+  # kia or genesis, and its MyŠkoda key with the VINs it covers, which reads those of
+  # brand skoda. A scenario without one of them connects the others only.
   connect-sim:
-    desc: Sign in as the development user, connect the simulated Volvo ID as a browser would (curl), and give the simulated Polestar credential, Tesla refresh token, Polestar ID and Pleos key
+    desc: Sign in as the development user, connect the simulated Volvo ID as a browser would (curl), and give the simulated Polestar credential, Tesla refresh token, Polestar ID, Pleos key and MyŠkoda key
     silent: true
     cmds:
       - |
@@ -433,6 +440,18 @@ tasks:
             *) echo "Pleos key refused ($brand): HTTP $status" >&2; exit 1 ;;
           esac
         done
+        vins=$(curl -fsS http://127.0.0.1:8080/sim/skoda/vehicles | sed -n 's/.*"vins":\(\[[^]]*\]\).*/\1/p') || exit 1
+        if [ "$vins" = "[]" ]; then
+          echo "MyŠkoda key: no Škoda in the scenario"
+        else
+          status=$(curl -sS -b "$jar" -X PUT -H 'Content-Type: application/json' -o /dev/null -w '%{http_code}' \
+            -d "{\"api_key\":\"{{.DEV_SKODA_KEY}}\",\"vins\":$vins}" http://127.0.0.1:8081/api/v1/connection/skoda) || exit 1
+          case "$status" in
+            200) echo "MyŠkoda key set"; connected=1 ;;
+            403) echo "MyŠkoda key: not offered (the flag source.skoda is off)" ;;
+            *) echo "MyŠkoda key refused: HTTP $status" >&2; exit 1 ;;
+          esac
+        fi
         [ "$connected" = 1 ] || { echo "no vehicle connected" >&2; exit 1; }
 
   # In the foreground, removed when it stops: tilt up runs it as a service.

@@ -1,5 +1,5 @@
 // Package catalog is the data sheet of the electric and plug-in hybrid Volvo, Polestar,
-// Tesla, BMW and Mini variants: battery
+// Tesla, BMW, Mini, Hyundai, Kia, Genesis and Škoda variants: battery
 // capacities and charging powers, read from a sourced YAML file embedded in the binary,
 // and the recognition of a vehicle's variant from what the vendor API says of it.
 //
@@ -34,11 +34,13 @@ const (
 	Hyundai Brand = "hyundai"
 	Kia     Brand = "kia"
 	Genesis Brand = "genesis"
+	// Skoda is read through the MyŠkoda Public API, whose provider names it.
+	Skoda Brand = "skoda"
 )
 
 // readsCapacity reports whether the brand's sources tell the battery's capacity, which
-// Match compares: Tesla's Owner API tells none.
-func (b Brand) readsCapacity() bool { return b != Tesla }
+// Match compares: Tesla's Owner API tells none, nor the MyŠkoda Public API.
+func (b Brand) readsCapacity() bool { return b != Tesla && b != Skoda }
 
 // Powertrain is what moves the vehicles of a variant, as core.Powertrain names it.
 type Powertrain string

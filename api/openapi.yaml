@@ -1478,7 +1478,7 @@ components:
               type: string
             - type: "null"
         provider:
-          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis."
+          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis; skoda: the owner's key of the MyŠkoda Public API."
           enum:
             - volvo
             - polestar
@@ -1489,6 +1489,7 @@ components:
             - pleos_hyundai
             - pleos_kia
             - pleos_genesis
+            - skoda
           type: string
         reauth_at:
           description: When the grant was found lost; null while active.
@@ -1565,6 +1566,11 @@ components:
           oneOf:
             - $ref: "#/components/schemas/PolestarID"
             - type: "null"
+        skoda:
+          description: "The account's key of the MyŠkoda Public API, which reads its Škodas (the flag source.skoda); null: none."
+          oneOf:
+            - $ref: "#/components/schemas/SkodaKey"
+            - type: "null"
         tesla:
           description: "The account's refresh token of Tesla's Owner API, which reads its Tesla vehicles; null: none."
           oneOf:
@@ -1584,6 +1590,7 @@ components:
         - polestar_id
         - bmw
         - pleos
+        - skoda
       type: object
     Cost:
       additionalProperties: false
@@ -1970,6 +1977,8 @@ components:
             - no_matching_car
             - authorization_pending
             - scope_missing
+            - key_expired
+            - vin_not_covered
             - internal
           type: string
         message:
@@ -4342,6 +4351,9 @@ components:
             source.polestar-id:
               description: "The Polestar ID as a source, for the Polestars the Data Portal does not read (outside the EU/EEA): its connection and its reads. Off by default: the Polestar app's API is unofficial, and many accounts read from one instance's addresses could have them blocked; a self-hosted instance turns it on."
               type: boolean
+            source.skoda:
+              description: "The MyŠkoda Public API as a source, for the Škodas: its connection and its reads. On by default: a self-hosted instance read by the car's owner is the personal use Škoda's terms allow. An instance that serves other people turns it off, the terms forbidding a commercial use of the API."
+              type: boolean
             source.tesla:
               description: "Tesla as a source: its connection, its page and its reads. On by default; an instance may turn it off, Tesla's Owner API being unofficial."
               type: boolean
@@ -4350,6 +4362,7 @@ components:
             - source.polestar-id
             - source.bmw
             - source.pleos
+            - source.skoda
           type: object
         limits:
           description: "What the account's offer hides, as of now; null: nothing, the whole history is shown. Only an instance that limits its accounts sets it."
@@ -4525,6 +4538,58 @@ components:
         - performance
         - first_registration
         - picture
+      type: object
+    SkodaCredentialUpdate:
+      additionalProperties: false
+      properties:
+        api_key:
+          description: A key created in the MyŠkoda app (Settings, API keys), with the cars it reads ticked. It is never returned.
+          maxLength: 512
+          minLength: 8
+          pattern: ^[!-~]+$
+          type: string
+        vins:
+          description: "The VIN of each car the key reads: the API does not list them. 17 characters, without I, O nor Q."
+          items:
+            type: string
+          maxItems: 5
+          minItems: 1
+          type: array
+          uniqueItems: true
+      required:
+        - api_key
+        - vins
+      type: object
+    SkodaKey:
+      additionalProperties: false
+      properties:
+        expires_at:
+          description: "When it expires, as the API tells on every response: the owner creates or renews a key in the MyŠkoda app before. null: not told yet."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        last4:
+          description: "The key's last four characters, to tell it apart in the MyŠkoda app: the key itself is never returned."
+          type: string
+        refused_at:
+          description: "When Škoda refused it (expired, or deleted in the app): its vehicles are not read until another. null: not refused."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        set_at:
+          description: When it was given.
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - last4
+        - set_at
+        - expires_at
+        - refused_at
       type: object
     SoftwareUpdate:
       additionalProperties: false
@@ -6809,6 +6874,101 @@ paths:
         - session: []
         - sessionSecure: []
       summary: Connect the account's Polestar ID with its email and password
+      tags:
+        - connection
+  /connection/skoda:
+    delete:
+      description: The key is erased. The Škodas stay, with their history, and are no longer read until another key is given.
+      operationId: deleteSkodaCredential
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Remove the account's MyŠkoda key
+      tags:
+        - connection
+    put:
+      description: "A key the owner created in the MyŠkoda app reads the cars ticked then through the MyŠkoda Public API, with the VIN of each, which the API does not list. The key is checked first on each VIN: one Škoda refuses, or that does not read one of them, is not stored; one it accepts replaces the previous one, its expiry kept, and the vehicles are added to the account, unless they would be more than the instance lets an account have. The key travels in the body only, and is never returned."
+      operationId: putSkodaCredential
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SkodaCredentialUpdate"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionSettings"
+          description: The connection.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `credential_refused`: Škoda refused the key. `key_expired`: the key has expired."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: Škoda is not offered to the account (the flag `source.skoda`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`vin_not_covered`: the key does not read one of the vehicles, which was not ticked when the key was created in the MyŠkoda app; the message names it. `too_many_vehicles`: the account would have more vehicles than the instance lets it have. The key is not stored."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: the MyŠkoda Public API did not answer; the key is not stored."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Give the account's MyŠkoda key
       tags:
         - connection
   /connection/tesla:

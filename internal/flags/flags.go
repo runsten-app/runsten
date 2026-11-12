@@ -26,6 +26,8 @@ const (
 	// SourcePleos: a Hyundai, a Kia or a Genesis is read through the Pleos Vehicle
 	// Data API, with its owner's key (ADR 0049).
 	SourcePleos Name = "source.pleos"
+	// SourceSkoda: a Škoda is read through the MyŠkoda Public API, with its owner's key.
+	SourceSkoda Name = "source.skoda"
 	// PictureTesla: a Tesla's picture, as Tesla's configurator draws it, relayed.
 	PictureTesla Name = "picture.tesla"
 )
@@ -70,6 +72,13 @@ func All() []Flag {
 				"connection and its reads. On by default, the API being the EU Data Act's own; an instance may turn " +
 				"it off while the source is in beta, not seen yet on a real car.",
 			Remove: "once the source has been checked on real cars and is out of beta",
+		},
+		{
+			Name: SourceSkoda, Default: true, Web: true,
+			Purpose: "The MyŠkoda Public API as a source, for the Škodas: its connection and its reads. On by default: " +
+				"a self-hosted instance read by the car's owner is the personal use Škoda's terms allow. An instance " +
+				"that serves other people turns it off, the terms forbidding a commercial use of the API.",
+			Remove: "never while Škoda's terms allow a personal use only; else once the source is out of beta",
 		},
 		{
 			Name: PictureTesla, Default: true,

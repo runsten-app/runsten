@@ -1,0 +1,24 @@
+{
+  "volvo": true,
+  "connected": false,
+  "client_id": "runsten-dev",
+  "instance_key": {
+    "last4": "key"
+  },
+  "api_key": null,
+  "polestar": null,
+  "tesla": null,
+  "polestar_id": null,
+  "bmw": null,
+  "pleos": {
+    "hyundai": null,
+    "kia": null,
+    "genesis": null
+  },
+  "skoda": {
+    "last4": "-key",
+    "set_at": "2026-09-28T05:00:00Z",
+    "expires_at": "2027-09-28T05:00:00Z",
+    "refused_at": null
+  }
+}

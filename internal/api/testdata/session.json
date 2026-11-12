@@ -9,6 +9,7 @@
     "source.bmw": true,
     "source.pleos": true,
     "source.polestar-id": false,
+    "source.skoda": true,
     "source.tesla": true
   }
 }

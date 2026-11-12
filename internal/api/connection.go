@@ -76,6 +76,7 @@ type connectionSettingsJSON struct {
 	PolestarID  null[polestarIDJSON]         `json:"polestar_id" doc:"The account's Polestar ID, which reads its Polestars through the Polestar app's API where the Data Portal does not (the flag source.polestar-id); null: none."`
 	BMW         null[bmwJSON]                `json:"bmw" doc:"The account's BMW CarData connection, which reads its BMWs and Minis (the flag source.bmw); null: none."`
 	Pleos       null[pleosKeysJSON]          `json:"pleos" doc:"The account's keys of the Pleos Vehicle Data API, one per brand — Hyundai, Kia, Genesis —, which read its cars of each (the flag source.pleos); null: none."`
+	Skoda       null[skodaKeyJSON]           `json:"skoda" doc:"The account's key of the MyŠkoda Public API, which reads its Škodas (the flag source.skoda); null: none."`
 }
 
 type apiKeyUpdateJSON struct {
@@ -133,6 +134,11 @@ func (s *Server) connectionSettings(ctx context.Context, account string) (connec
 		keys[brand] = c
 	}
 	out.Pleos = known(pleosOf(keys))
+	sc, err := s.Skoda.SkodaConnection(ctx, account)
+	if err != nil {
+		return connectionSettingsJSON{}, s.internal("Škoda connection not read", err)
+	}
+	out.Skoda = skodaOf(sc)
 	return out, nil
 }
 

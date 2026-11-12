@@ -70,6 +70,9 @@
 //	RUNSTEN_PLEOS_API_URL        the Pleos Vehicle Data API, which checks a key and reads
 //	                             the Hyundais, Kias and Genesises when the flag source.pleos
 //	                             is on (default https://api.pleos.ai)
+//	RUNSTEN_SKODA_API_URL        the MyŠkoda Public API, which checks a key on each VIN
+//	                             when the flag source.skoda is on (default
+//	                             https://public.api.connect.skoda-auto.cz)
 //	RUNSTEN_POLESTAR_BASE_URL    Polestar Data Portal's M2M API, which checks a credential
 //	                             before it is stored (default
 //	                             https://pc-api.polestar.com/eu-north-1/data-portal/m2m)
@@ -163,6 +166,7 @@ import (
 	"runsten/internal/polestar"
 	"runsten/internal/polestarid"
 	"runsten/internal/release"
+	"runsten/internal/skoda"
 	"runsten/internal/store"
 	"runsten/internal/tesla"
 	"runsten/internal/teslamate"
@@ -204,6 +208,7 @@ type config struct {
 	aximoteURL  string
 	polestarURL string
 	pleosURL    string
+	skodaURL    string
 	tesla       tesla.Hosts
 	polestarID  polestarid.Hosts
 	bmw         bmw.Hosts
@@ -383,6 +388,8 @@ func run(args []string) error {
 		BMWAccounts:        bmwAccounts{bmw.NewClient(cfg.bmw, hc)},
 		Pleos:              st,
 		PleosVehicles:      pleosVehicles{pleos.NewClient(cfg.pleosURL, hc)},
+		Skoda:              st,
+		SkodaVehicles:      skodaVehicles{skoda.NewClient(cfg.skodaURL, hc)},
 		InstanceKey:        cfg.apiKey != "",
 		InstanceKeyLast4:   cfg.apiKey[max(0, len(cfg.apiKey)-4):],
 		ClientID:           cfg.app.ClientID,
@@ -563,6 +570,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		aximoteURL:  aximote.DefaultBaseURL,
 		polestarURL: polestar.DefaultBaseURL,
 		pleosURL:    pleos.DefaultBaseURL,
+		skodaURL:    skoda.DefaultBaseURL,
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		polestarID:  polestarid.Hosts{Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL},
 		bmw:         bmw.Hosts{Auth: bmw.DefaultAuthURL, API: bmw.DefaultAPIURL},
@@ -596,6 +604,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.app.BaseURL, "RUNSTEN_AXIMOTE_BASE_URL": &cfg.aximoteURL,
 		"RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL, "RUNSTEN_PLEOS_API_URL": &cfg.pleosURL,
+		"RUNSTEN_SKODA_API_URL": &cfg.skodaURL,
 		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
 		"RUNSTEN_BMW_AUTH_URL": &cfg.bmw.Auth, "RUNSTEN_BMW_API_URL": &cfg.bmw.API,
@@ -826,6 +835,18 @@ func (p pleosVehicles) PleosVehicles(ctx context.Context, brand string, cred api
 	return p.c.Vehicles(ctx, tok.Value, pleos.Brand(brand)) //nolint:wrapcheck // the client's, with its context
 }
 
+// skodaVehicles checks a MyŠkoda key on a VIN for the API: a read of the vehicle's basic
+// information alone, which tells the key's expiry.
+type skodaVehicles struct{ c *skoda.Client }
+
+func (s skodaVehicles) CheckSkoda(ctx context.Context, key, vin string) (time.Time, error) {
+	resp, err := s.c.Vehicle(ctx, key, vin, "info")
+	if err != nil {
+		return time.Time{}, err //nolint:wrapcheck // the client's, with its context
+	}
+	return resp.ExpiresAt, nil
+}
+
 // teslaVehicles lists the vehicles of a Tesla refresh token for the API: a refresh, then
 // the VINs, with the refresh token to keep.
 type teslaVehicles struct{ c *tesla.Client }
@@ -972,6 +993,7 @@ func normalizers() derive.Normalizer {
 		polestarid.Normalizer{},
 		bmw.Normalizer{},
 		pleos.Normalizer{},
+		skoda.Normalizer{},
 	}, extensionNormalizers()...)...)
 }
 

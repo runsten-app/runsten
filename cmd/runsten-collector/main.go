@@ -40,6 +40,9 @@
 //	RUNSTEN_PLEOS_API_URL       the Pleos Vehicle Data API, which reads the Hyundais,
 //	                            Kias and Genesises of the connections with a key when the
 //	                            flag source.pleos is on (default https://api.pleos.ai)
+//	RUNSTEN_SKODA_API_URL       the MyŠkoda Public API, which reads the Škodas of the
+//	                            connections with a key when the flag source.skoda is on
+//	                            (default https://public.api.connect.skoda-auto.cz)
 //	RUNSTEN_TESLA_API_URL       Tesla's Owner API address (default
 //	                            https://owner-api.teslamotors.com): the connections with
 //	                            a Tesla refresh token are read through it; another host
@@ -130,6 +133,7 @@ import (
 	"runsten/internal/collector/pleossource"
 	"runsten/internal/collector/polestaridsource"
 	"runsten/internal/collector/polestarsource"
+	"runsten/internal/collector/skodasource"
 	"runsten/internal/collector/teslasource"
 	"runsten/internal/core"
 	"runsten/internal/debugui"
@@ -145,6 +149,7 @@ import (
 	"runsten/internal/polestar"
 	"runsten/internal/polestarid"
 	"runsten/internal/publish/mqtt"
+	"runsten/internal/skoda"
 	"runsten/internal/store"
 	"runsten/internal/tesla"
 	"runsten/internal/volvo"
@@ -158,6 +163,7 @@ type config struct {
 	authURL      string
 	polestarURL  string
 	pleosURL     string
+	skodaURL     string
 	tesla        tesla.Hosts
 	polestarID   polestarid.Hosts
 	bmw          bmw.Hosts
@@ -353,7 +359,7 @@ func run(args []string) error {
 
 	cfg.quota.NoInstanceKey = cfg.apiKey == ""
 	log.Info("collector started", "version", version, "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
-		"polestar_base_url", cfg.polestarURL, "pleos_api_url", cfg.pleosURL,
+		"polestar_base_url", cfg.polestarURL, "pleos_api_url", cfg.pleosURL, "skoda_api_url", cfg.skodaURL,
 		"tesla_api_url", cfg.tesla.API, "tesla_auth_url", cfg.tesla.Auth,
 		"polestar_id_auth_url", cfg.polestarID.Auth, "polestar_id_api_url", cfg.polestarID.API,
 		"polestar_id_discovery_url", cfg.polestarID.Discovery, "polestar_id_pccs_url", cfg.polestarID.PCCS,
@@ -403,6 +409,12 @@ func run(args []string) error {
 			return features.Enabled(ctx, flags.SourcePleos, account)
 		})
 	}
+	c.AddSource(skodasource.New(skoda.NewClient(cfg.skodaURL, hc), skodaCredential(st), st, clk), st)
+	// Škoda's, on by default: a self-hosted instance read by the owner is the personal use
+	// Škoda's terms allow; an instance serving others turns it off.
+	c.SetGate(skoda.Source, func(ctx context.Context, account string) bool {
+		return features.Enabled(ctx, flags.SourceSkoda, account)
+	})
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
 	c.SetPublisher(pub)
@@ -531,6 +543,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		baseURL:     volvo.DefaultBaseURL,
 		polestarURL: polestar.DefaultBaseURL,
 		pleosURL:    pleos.DefaultBaseURL,
+		skodaURL:    skoda.DefaultBaseURL,
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		polestarID: polestarid.Hosts{
 			Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL,
@@ -598,7 +611,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 	}
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.authURL, "RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL,
-		"RUNSTEN_PLEOS_API_URL": &cfg.pleosURL,
+		"RUNSTEN_PLEOS_API_URL": &cfg.pleosURL, "RUNSTEN_SKODA_API_URL": &cfg.skodaURL,
 		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
 		"RUNSTEN_POLESTAR_ID_DISCOVERY_URL": &cfg.polestarID.Discovery, "RUNSTEN_POLESTAR_ID_PCCS_URL": &cfg.polestarID.PCCS,
@@ -683,6 +696,17 @@ func pleosCredential(st *store.Store) func(ctx context.Context, accountID, conne
 	}
 }
 
+// skodaCredential reads the key of a Škoda connection from the store, and when it was set.
+func skodaCredential(st *store.Store) func(ctx context.Context, accountID, connectionID string) (skodasource.Credential, error) {
+	return func(ctx context.Context, accountID, connectionID string) (skodasource.Credential, error) {
+		key, setAt, err := st.SkodaCredential(ctx, accountID, connectionID)
+		if err != nil {
+			return skodasource.Credential{}, fmt.Errorf("skoda credential: %w", err)
+		}
+		return skodasource.Credential{APIKey: key, SetAt: setAt}, nil
+	}
+}
+
 // normalizers reads the stored responses of every source: the core's, and those an
 // extension adds.
 func normalizers() derive.Normalizer {
@@ -693,5 +717,6 @@ func normalizers() derive.Normalizer {
 		polestarid.Normalizer{},
 		bmw.Normalizer{},
 		pleos.Normalizer{},
+		skoda.Normalizer{},
 	}, extensionNormalizers()...)...)
 }
