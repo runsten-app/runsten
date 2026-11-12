@@ -41,7 +41,7 @@ On the **Connection** page (in the menu under your name), in the tab of your car
 
 - A key Pleos refuses is not saved: revoked, replaced or expired in the Playground. Check the key's page there.
 - A key Pleos could not check, its servers failing or out of reach, is not saved either: try again in a moment.
-- A key that lists no car is not saved either, and the message tells the three known causes: the account you signed in with is not the car's primary user (issue the key again with the primary user's); the car was registered after the key was issued (revoke the key and issue a new one); an old fleet, demo or company car can stay locked by the maker and list nothing even for the primary user — only the maker's support lifts that.
+- A key that lists no car is not saved either: Pleos accepted it, but it reads none of your cars. Saving the same key again changes nothing: see [when the key lists no car](#when-the-key-lists-no-car).
 - A key whose cars would take your account past the number of vehicles it may have is not saved either.
 - Otherwise the cars the key lists are added to your account, and read from the collector's next pass.
 
@@ -66,6 +66,17 @@ Runsten reads the battery level and its target (during a fast charge, the DC tar
 Pleos shows the key's validity on its page in the Playground; the API does not tell it, and Runsten does not remind you before it passes (a reminder will come once the real duration is known). A key that expires, like one revoked or replaced, is refused: the Connection page says **Pleos refused the key** under each of its cars, and you issue a new key and give it with **Replace the key**. Nothing already read is lost.
 
 Note that **revoking or reissuing the key ends the access tokens** issued with the one before it: every application that read with the old key stops, and Runsten asks a token again with the new one by itself.
+
+## When the key lists no car
+
+Pleos accepted the key, but tells Runsten it reads no car: the key is not saved. The list of a key's cars is fixed when the key is issued, so saving the same key again gives the same answer; in each case below, the fix is a new key. The known causes, the most frequent first:
+
+- **Not the primary user.** The key was issued with an account the car is only shared with — a partner's, a second driver's. In the Bluelink, Kia Connect or Genesis Connected app, check that this account is the car's **primary user**; if not, issue the key with the primary user's account, or have the car transferred to yours in the app first.
+- **The car came after the key.** A car registered or activated in the maker's account after the key was issued is not in its list. Revoke the key in the Playground, issue a new one, and give it again.
+- **The wrong brand's tab.** A key belongs to the tab of the Playground it was issued from: a Hyundai's key issued in the Kia tab lists no Hyundai. Issue the key from your car's brand's tab, and give it in the same brand's form in Runsten.
+- **A car locked by the maker.** A former fleet, demo or company car can stay locked and list nothing, even for its primary user. Only the maker's support lifts that: ask it to release the car for the connected services of your account, then issue a new key.
+
+The connected services must be active, and their data collection agreed, in the car or the maker's app ([what the API is](#what-the-my-vehicle-data-api-is)).
 
 ## When it is not read
 
