@@ -123,7 +123,10 @@ func TestShape(t *testing.T) {
 	if ac := veh["airConditioning"].(map[string]any); ac["state"] != "OFF" {
 		t.Errorf("air conditioning %v", ac)
 	}
-	for _, p := range []string{"fuelStatus", "chargingProfiles", "operations"} {
+	if ops, ok := veh["operations"].([]any); !ok || len(ops) != 0 {
+		t.Errorf("operations %v: none simulated", veh["operations"])
+	}
+	for _, p := range []string{"fuelStatus", "chargingProfiles"} {
 		if _, ok := veh[p]; ok {
 			t.Errorf("an unsupported part rendered: %s", p)
 		}
@@ -142,6 +145,10 @@ func TestInclude(t *testing.T) {
 	}
 	if errs := v["errors"].([]any); len(errs) != 1 || errs[0].(map[string]any)["type"] != "FUEL_STATUS_UNSUPPORTED" {
 		t.Errorf("errors %v", errs)
+	}
+	_, v = get(t, srv, DevAPIKey, "?include=operations")
+	if ops, ok := v["vehicle"].(map[string]any)["operations"].([]any); !ok || len(ops) != 0 || len(v["errors"].([]any)) != 0 {
+		t.Errorf("operations: %v", v)
 	}
 	h.MakeUnavailable("odometer")
 	_, v = get(t, srv, DevAPIKey, "?include=odometer")
@@ -215,7 +222,11 @@ func TestQuota(t *testing.T) {
 		resp.Header.Get("Retry-After") != "1800" || resp.Header.Get("RateLimit-Remaining") != "0" {
 		t.Fatalf("21st: %d %v %v", resp.StatusCode, v, resp.Header)
 	}
-	clk.Advance(30 * time.Minute)
+	clk.Advance(30*time.Minute - 400*time.Millisecond)
+	if resp, _ := get(t, srv, DevAPIKey, "?include=info"); resp.Header.Get("RateLimit-Reset") != "1" {
+		t.Errorf("a wait of 400 ms left: reset %q", resp.Header.Get("RateLimit-Reset"))
+	}
+	clk.Advance(400 * time.Millisecond)
 	if resp, _ := get(t, srv, DevAPIKey, "?include=info"); resp.StatusCode != http.StatusOK || resp.Header.Get("RateLimit-Reset") != "3600" {
 		t.Errorf("a new window: %d %v", resp.StatusCode, resp.Header)
 	}

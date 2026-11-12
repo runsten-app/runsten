@@ -12,8 +12,9 @@ import (
 
 // simulated are the parts the simulator renders, by include value, with the error type
 // that tells one unavailable. The others (fuelStatus, auxiliaryHeating,
-// activeVentilation, chargingProfiles, operations) are an electric car's unsupported
-// ones here: absent, and told in errors only when asked for, as the API does.
+// activeVentilation, chargingProfiles) are an electric car's unsupported ones here:
+// absent, and told in errors only when asked for, as the API does. operations, which
+// the contract gives no unsupported error, is an empty list: no command is simulated.
 var simulated = map[string]string{
 	"status":          "VEHICLE_STATUS_UNAVAILABLE",
 	"odometer":        "ODOMETER_UNAVAILABLE",
@@ -62,6 +63,8 @@ func response(vin string, r vehicle.Report, parts map[string]bool, explicit bool
 				continue
 			}
 			v[p] = render[p]()
+		} else if p == "operations" {
+			v[p] = []any{}
 		} else if errType, ok := unsupported[p]; ok && explicit {
 			errs = append(errs, map[string]string{"type": errType, "description": "Not supported by the vehicle."})
 		}

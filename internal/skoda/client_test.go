@@ -187,6 +187,20 @@ func TestRateLimit(t *testing.T) {
 	}
 }
 
+// TestErrorsHideTheVIN: neither a transport error nor a problem's message, cut to its
+// length, tells the VIN.
+func TestErrorsHideTheVIN(t *testing.T) {
+	c := NewClient("http://127.0.0.1:1", &http.Client{Timeout: time.Second})
+	_, err := c.Vehicle(context.Background(), "key", simVIN)
+	if err == nil || strings.Contains(err.Error(), simVIN) {
+		t.Errorf("transport error: %v", err)
+	}
+	long := problem{Title: strings.Repeat("x", 190), Detail: "vehicle " + simVIN}
+	if m := long.message(); strings.Contains(m, simVIN[:8]) || len(m) > 200 {
+		t.Errorf("message %q", m)
+	}
+}
+
 func TestRateRetry(t *testing.T) {
 	tests := []struct {
 		name   string

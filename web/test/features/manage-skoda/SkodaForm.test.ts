@@ -111,6 +111,34 @@ describe('SkodaForm', () => {
     expect(document.activeElement).toBe(w().find('.toggle').element)
   })
 
+  it('fills the VINs in once read, but keeps a list the user emptied', async () => {
+    form(none, { vins: [] })
+    props.vins = [vin]
+    await flushPromises()
+    expect(vins().element.value).toBe(vin)
+    await vins().setValue('')
+    props.vins = [vin, 'TMBNC7NY5SF083963']
+    await flushPromises()
+    expect(vins().element.value).toBe('')
+  })
+
+  it('keeps Cancel away while a replacement is being saved', async () => {
+    let answer: (c: ConnectionSettings) => void = () => {}
+    api.setSkodaCredential.mockReturnValue(
+      new Promise<ConnectionSettings>((resolve) => {
+        answer = resolve
+      }),
+    )
+    form(given, { vins: [vin] })
+    await w().find('.toggle').trigger('click')
+    await fill(key, vin)
+    await w().find('form').trigger('submit')
+    await flushPromises()
+    expect(w().find('.cancel').attributes('disabled')).toBeDefined()
+    answer(given)
+    await flushPromises()
+  })
+
   it('tells an expiry not told yet', () => {
     form(withKey({ expires_at: null }))
     expect(facts()[2]).toEqual(['Expires', 'Told at the next read'])

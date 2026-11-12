@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -93,6 +94,9 @@ func (s *Server) putSkoda(ctx context.Context, in *skodaInput) (*body[connection
 		v = strings.ToUpper(strings.TrimSpace(v)) // as pasted from the registration papers
 		if !vinPattern.MatchString(v) {
 			return nil, apiError(http.StatusBadRequest, codeInvalidBody, "a VIN has 17 characters, letters and digits, without I, O nor Q")
+		}
+		if slices.Contains(vins, v) {
+			continue // the same car pasted twice, in another case or with spaces
 		}
 		vins = append(vins, v)
 	}

@@ -15,6 +15,7 @@ package skoda
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -83,6 +84,11 @@ func (c *Client) Vehicle(ctx context.Context, key, vin string, parts ...string) 
 	req.Header.Set("Accept", "application/json")
 	resp, err := c.hc.Do(req)
 	if err != nil {
+		// The request's URL holds the VIN: the logs carry the error.
+		var ue *url.Error
+		if errors.As(err, &ue) {
+			ue.URL = maskVINs(ue.URL)
+		}
 		return Response{}, fmt.Errorf("vehicle: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()

@@ -142,11 +142,13 @@ func (p problem) message() string {
 		}
 		msg += p.Detail
 	}
+	// Masked whole first: a VIN cut by the truncation would no longer match.
+	msg = maskVINs(msg)
 	const maxLen = 200
 	if len(msg) > maxLen {
 		msg = msg[:maxLen]
 	}
-	return maskVINs(msg)
+	return msg
 }
 
 // rateRetry reads Retry-After, in seconds or as a date (against the response's own

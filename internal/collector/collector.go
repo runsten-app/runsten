@@ -1009,6 +1009,9 @@ func (c *Collector) status(t Target, vs *vehicleState) Status {
 		if spec.Awake {
 			blocks = append(blocks, vs.sleepUntil)
 		}
+		if l, ok := src.ext.(Limiter); ok {
+			blocks = append(blocks, l.HeldUntil(t.VIN))
+		}
 		for _, block := range blocks {
 			if block.After(due) {
 				due = block

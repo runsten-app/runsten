@@ -147,6 +147,16 @@ func TestNormalizeParts(t *testing.T) {
 			},
 		},
 		{
+			name:  "parked without coordinates",
+			parts: map[string]string{"parkingPosition": `{"state":"PARKED"}`},
+			check: func(t *testing.T, s core.Snapshot) {
+				t.Helper()
+				if s.Covers&core.FieldPosition == 0 || s.Position.OK {
+					t.Errorf("a position unknown, never the previous one: %+v", s.Position)
+				}
+			},
+		},
+		{
 			name:  "in motion",
 			parts: map[string]string{"parkingPosition": `{"state":"IN_MOTION"}`},
 			check: func(t *testing.T, s core.Snapshot) {

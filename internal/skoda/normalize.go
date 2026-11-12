@@ -269,10 +269,11 @@ func normalizeParking(p *parkingPosition, s *core.Snapshot) {
 		s.Covers |= core.FieldEngine
 		s.Engine = core.Some(core.EngineRunning, t)
 	case "PARKED":
-		s.Covers |= core.FieldEngine
+		// Parked without coordinates is a position unknown, never the previous one: the
+		// car may have moved since.
+		s.Covers |= core.FieldEngine | core.FieldPosition
 		s.Engine = core.Some(core.EngineStopped, t)
 		if g := p.GPSCoordinates; g != nil && g.Latitude != nil && g.Longitude != nil {
-			s.Covers |= core.FieldPosition
 			s.Position = core.Some(core.Position{Lat: *g.Latitude, Lon: *g.Longitude}, t)
 		}
 	}

@@ -42,11 +42,13 @@ watch(draft, () => {
   status.value = ''
   if (!saving.value) reset()
 })
-// The account's Škodas, once read, fill an empty list in.
+// The account's Škodas, once read, fill the list in until the user edits it: a list they
+// emptied stays empty.
+const vinsEdited = ref(false)
 watch(
   () => props.vins,
   (vins) => {
-    if (!draft.vins && vins?.length) draft.vins = vins.join('\n')
+    if (!vinsEdited.value && !draft.vins && vins?.length) draft.vins = vins.join('\n')
   },
 )
 
@@ -115,6 +117,7 @@ const toggleId = 'skoda-toggle'
 // (Vuetify's takes the focus back 50 ms later).
 async function openForm() {
   Object.assign(draft, empty())
+  vinsEdited.value = false
   sent.value = false
   opened.value = true
   await nextTick()
@@ -127,6 +130,7 @@ async function openForm() {
 async function close(said = '') {
   opened.value = false
   Object.assign(draft, empty())
+  vinsEdited.value = false
   sent.value = false
   await nextTick()
   document.getElementById(toggleId)?.focus()
@@ -345,6 +349,7 @@ const guide = new URL('https://runsten.app/docs/guide/skoda')
         spellcheck="false"
         autocapitalize="characters"
         class="value vins mb-2"
+        @update:model-value="vinsEdited = true"
       />
       <p class="text-body-small text-medium-emphasis mb-3">{{ t('skoda.help') }}</p>
       <div class="d-flex flex-wrap ga-3">
@@ -357,7 +362,13 @@ const guide = new URL('https://runsten.app/docs/guide/skoda')
         >
           {{ t('skoda.save') }}
         </v-btn>
-        <v-btn v-if="opened && credential" variant="text" class="cancel" @click="close()">
+        <v-btn
+          v-if="opened && credential"
+          variant="text"
+          class="cancel"
+          :disabled="saving"
+          @click="close()"
+        >
           {{ t('skoda.cancel') }}
         </v-btn>
       </div>

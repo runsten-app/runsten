@@ -12,6 +12,7 @@
 package skodaapi
 
 import (
+	"math"
 	"net/http"
 	"slices"
 	"strconv"
@@ -173,7 +174,8 @@ func (h *Handler) count(w http.ResponseWriter, vin string, now time.Time) bool {
 	if win.start.IsZero() || !now.Before(win.start.Add(time.Hour)) {
 		win = window{start: now}
 	}
-	reset := strconv.Itoa(int(win.start.Add(time.Hour).Sub(now).Round(time.Second).Seconds()))
+	// Rounded up: a wait left is never told as none.
+	reset := strconv.Itoa(int(math.Ceil(win.start.Add(time.Hour).Sub(now).Seconds())))
 	w.Header().Set("RateLimit-Limit", strconv.Itoa(h.behavior.PerHour))
 	w.Header().Set("RateLimit-Reset", reset)
 	if win.used >= h.behavior.PerHour {

@@ -200,6 +200,11 @@ func TestSkodaCredentialRefused(t *testing.T) {
 		t.Errorf("the cap: %d %s", resp.status, body)
 	}
 	wantError(t, body, codeTooManyVehicles)
+	// The same car pasted twice is one: within the cap.
+	if resp, body = do(t, noFollow(), http.MethodPut, u, jsonType, skodaBody(skodaapi.DevAPIKey, skodaVIN, strings.ToLower(skodaVIN)), c); resp.status != http.StatusOK || len(e.store.vehicles) != 1 {
+		t.Errorf("the same VIN twice: %d %s, vehicles %v", resp.status, body, e.store.vehicles)
+	}
+	e.skoda.set, e.store.vehicles = time.Time{}, nil
 	// The store failing.
 	e.server.MaxVehicles = 0
 	e.skoda.err = errors.New("database down")

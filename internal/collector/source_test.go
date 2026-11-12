@@ -631,6 +631,11 @@ func TestSourceVehicleLimit(t *testing.T) {
 			t.Errorf("a vehicle's limit told or paused: %+v", s)
 		}
 	}
+	for _, s := range st.statuses {
+		if s.VehicleID == a.VehicleID && s.NextAt.Before(clk.Now().Add(30*time.Minute)) {
+			t.Errorf("the vehicle held back is told due at %v", s.NextAt)
+		}
+	}
 	clk.Advance(31 * time.Minute)
 	src.vins = nil
 	poll(t, c)
