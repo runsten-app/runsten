@@ -49,6 +49,11 @@ type EndpointSpec struct {
 	// starting) is read sooner, never at the cost of the other endpoints or vehicles when
 	// the calls run short.
 	Watch bool
+	// Wakes: parked, a new upload of it read (the vehicle awake, perhaps about to drive)
+	// brings these endpoints forward, read in the same pass when they follow it in
+	// Endpoints and the budget allows; not for an account the policy reads at a pace of
+	// its own. The first upload read after a start is not taken as new.
+	Wakes []Endpoint
 }
 
 func (s EndpointSpec) pace(m mode) Pace {

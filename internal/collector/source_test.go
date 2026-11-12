@@ -37,6 +37,7 @@ type fakeSource struct {
 	upload   func(ep Endpoint, raw []byte) (Upload, error) // nil: nothing told
 	local    Endpoint                                      // read without a call (EndpointSpec.Local)
 	watch    bool                                          // the battery watched (EndpointSpec.Watch)
+	wakes    bool                                          // the battery wakes the availability (EndpointSpec.Wakes)
 	logins   int
 	calls    map[Endpoint][]time.Time
 }
@@ -63,6 +64,9 @@ func (f *fakeSource) Spec() SourceSpec {
 	for i := range spec.Endpoints {
 		spec.Endpoints[i].Local = spec.Endpoints[i].Endpoint == f.local
 		spec.Endpoints[i].Watch = f.watch && spec.Endpoints[i].Endpoint == psBattery
+		if f.wakes && spec.Endpoints[i].Endpoint == psBattery {
+			spec.Endpoints[i].Wakes = []Endpoint{psAvailability}
+		}
 	}
 	return spec
 }
@@ -259,6 +263,43 @@ func TestSourceWatch(t *testing.T) {
 				t.Errorf("availability read %d times in 4 hours, want 24: every 10 minutes", n)
 			}
 		})
+	}
+}
+
+// TestSourceWakes: parked, a new upload of the battery reads the availability in the same
+// pass; an upload already seen, or the first one read after a start, does not.
+func TestSourceWakes(t *testing.T) {
+	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+	src := newFakeSource(clk)
+	src.watch, src.wakes = true, true
+	t0 := clk.Now()
+	awake := t0.Add(time.Hour) // asleep before: its last upload, read again and again
+	src.upload = func(ep Endpoint, _ []byte) (Upload, error) {
+		if now := clk.Now(); ep == psBattery && !now.Before(awake) {
+			return Upload{At: now.Add(-20 * time.Second)}, nil
+		}
+		return Upload{At: t0.Add(-3 * time.Hour)}, nil
+	}
+	st := &sourceStore{memStore: memStore{targets: []Target{sourceTarget()}}}
+	c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+	c.AddSource(src, st)
+	for clk.Now().Before(awake.Add(5 * time.Minute)) {
+		poll(t, c)
+		clk.Advance(15 * time.Second)
+	}
+	var asleep, woken []time.Time
+	for _, at := range src.calls[psAvailability] {
+		if at.Before(awake) {
+			asleep = append(asleep, at)
+		} else {
+			woken = append(woken, at)
+		}
+	}
+	if len(asleep) != 6 {
+		t.Errorf("availability read %d times asleep in an hour, want 6: every 10 minutes", len(asleep))
+	}
+	if len(woken) < 5 || woken[0].Sub(awake) > time.Minute {
+		t.Errorf("availability read at %v once awake at %v, want with every new battery upload, the first within a minute", woken, awake)
 	}
 }
 

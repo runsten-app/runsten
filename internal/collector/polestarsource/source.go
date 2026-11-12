@@ -32,24 +32,33 @@ const Daily = 10_000
 // Spec implements collector.Source. The paces are set for a credential's 10,000 calls a
 // day: parked, the battery every active interval while the budget is ample (Watch),
 // for a charge's start, where a fast charge peaks, to be read sooner, every parked one
-// otherwise; the availability every parked interval, the rest every rare one; driving or
-// charging, the four telemetries every active interval; the target level, the health
+// otherwise; the availability every parked interval, and at once when the battery tells
+// a new upload, the rest every rare one; driving or charging, the four telemetries every
+// active interval; the target level, the health
 // and the exterior every rare interval, the last two being optional. A car parked all
 // day costs about 1,700 calls, one driving two hours and charging one about 2,200; past
 // five cars on a credential, the battery falls back to the parked pace as the budget
 // runs short.
+//
+// Measured on 23 cars (2026-11): driving or charging, the car uploads every 60 s, which
+// the active interval matches; parked, it uploads only while awake, about 15 times a day.
+// The availability alone tells a drive: read every parked interval, a drive's start was
+// known within 7 minutes (median), and drives shorter than that were missed. A new battery
+// upload, parked, is the car waking up, perhaps to drive: it brings the availability
+// forward, for about 15 calls a day.
 func (Source) Spec() collector.SourceSpec {
 	telemetry := func(d polestar.Domain, parked collector.Pace) collector.EndpointSpec {
 		return collector.EndpointSpec{
 			Endpoint: collector.Endpoint(d), API: polestar.Source,
 			Parked: parked, Driving: collector.PaceActive, Charging: collector.PaceActive,
-			Watch: d == polestar.Battery,
 		}
 	}
+	battery := telemetry(polestar.Battery, collector.PaceParked)
+	battery.Watch, battery.Wakes = true, []collector.Endpoint{collector.Endpoint(polestar.Availability)}
 	return collector.SourceSpec{
 		Name: polestar.Source,
 		Endpoints: []collector.EndpointSpec{
-			telemetry(polestar.Battery, collector.PaceParked),
+			battery,
 			telemetry(polestar.Availability, collector.PaceParked),
 			telemetry(polestar.Odometer, collector.PaceRare),
 			telemetry(polestar.Location, collector.PaceRare),

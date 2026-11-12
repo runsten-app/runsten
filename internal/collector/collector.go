@@ -741,10 +741,32 @@ func (c *Collector) read(ctx context.Context, t Target, vs *vehicleState, src *s
 	c.called(t, src, ep, now, raw, stored, err)
 	c.observe(t, vs, src, ep, raw, now)
 	if src.ext != nil {
+		prev, seen := vs.uploads[ep]
 		c.logUpload(t, vs, src, ep, now, raw)
+		if seen && vs.uploads[ep].at.After(prev.at) && c.reads[t.AccountID].Every == 0 {
+			vs.wake(src, ep, now)
+		}
 		c.awaitSettled(vs, src, ep, now, raw)
 	}
 	return err == nil
+}
+
+// wake brings forward, parked, the endpoints of src that a new upload of ep wakes
+// (EndpointSpec.Wakes). An account the policy reads at a pace of its own is left to it.
+func (vs *vehicleState) wake(src *source, ep Endpoint, now time.Time) {
+	if vs.mode != parked {
+		return
+	}
+	for _, spec := range src.Endpoints {
+		if spec.Endpoint != ep {
+			continue
+		}
+		for _, w := range spec.Wakes {
+			if vs.next[w].After(now) {
+				vs.next[w] = now
+			}
+		}
+	}
 }
 
 // awaitSettled reads ep again at the active pace when it is a settled endpoint of src
