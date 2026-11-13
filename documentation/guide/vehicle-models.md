@@ -4,7 +4,7 @@ description: "How Runsten recognizes the variant of your car, choosing it, the o
 
 # Vehicle models
 
-Runsten carries a catalog of the variants of the brands it reads: the electric Volvos and Polestars, the European Tesla Model 3 and Model Y, the electric BMWs and MINIs, the electric Hyundais, Kias and Genesis, the Škoda Enyaq, Enyaq Coupé and Elroq, and the plug-in hybrids (the T6 and T8 Volvos of the 60 and 90 series, the T4 and T5 of the XC40, and the Polestar 1): for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power (most plug-in hybrids have none), and the sources of every figure. It comes with Runsten: an update brings its corrections.
+Runsten carries a catalog of the variants of the brands it reads: the electric Volvos and Polestars, the European Tesla Model 3 and Model Y, the electric BMWs and MINIs from the i3 on, the electric Hyundais, Kias and Genesis, the Škoda Enyaq, Enyaq Coupé and Elroq, and the plug-in hybrids (the T6 and T8 Volvos of the 60 and 90 series, the T4 and T5 of the XC40, the Polestar 1, and the BMWs and MINIs from 2014 on: the 225xe and 225e, 230e, 320e, 330e, 530e, 550e, M5, 740e, 745e, 750e, i8, X1, X2, X3, X5, XM and the Countryman): for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power (most plug-in hybrids have none), and the sources of every figure. It comes with Runsten: an update brings its corrections.
 
 The model matters for two things: the net capacity, on which energies rest, and the onboard charger, which bounds the cost of an AC charge.
 
@@ -20,7 +20,7 @@ A Polestar read through the Data Portal tells its model year (from its VIN), but
 
 A Tesla tells its model, its model year (from its VIN) and its trim badge, but not its battery's capacity: it is recognized when exactly one variant fits its model, year and badge, a variant that lists no badge always fitting. Otherwise, choose yours among those that fit: until you do, its trips and charges have no energy ([Your Tesla](./tesla.md#its-variant)).
 
-A BMW or a MINI, read through BMW CarData, tells its model's name (i4 eDrive40: its family, i4, and its trim, eDrive40), its powertrain, its date of construction and a capacity of its battery: it is recognized from its family, its model year and that capacity. Two readings are assumed until a real car confirms them: the model year is the year of construction, or the next one for a car built from July on, when BMW's model year changes; and the capacity is the gross one ([Your BMW or Mini](./bmw.md)).
+A BMW or a MINI, read through BMW CarData, tells its model's name (i4 eDrive40: its family, i4, and its trim, eDrive40), its powertrain, its date of construction and a capacity of its battery: it is recognized from its family, its model year, that capacity and its trim. Two readings are assumed until a real car confirms them: the model year is the year of construction, or the next one for a car built from July on, when BMW's model year changes; and the capacity is the gross one ([Your BMW or Mini](./bmw.md)). Others are assumed too, until a real car's model name confirms them: a plug-in hybrid's family is its model's number for the Series (a 330e's is 330e, an X5 xDrive50e's X5), a Countryman plug-in hybrid's is Countryman, a John Cooper Works' is its model's (Cooper, Aceman), and an i3 with its range extender reads as an electric i3. When the model year or the capacity is read otherwise, choose the variant in the vehicle's settings; when the family or the powertrain is, its variant is not among those offered, if any are: [tell us](../contributing/variants.md).
 
 A Hyundai, a Kia or a Genesis, read through Pleos, tells its sales name (its family: IONIQ 5, EV3), its powertrain, its model year (from its VIN) and a capacity of its battery: it is recognized from them. How Pleos counts that capacity is assumed until a real car confirms it ([Your Hyundai, Kia or Genesis](./hyundai-kia.md)).
 
@@ -58,7 +58,7 @@ A car that reports its battery's capacity (a Volvo) does not say which: Volvo's 
 
 ## Plug-in hybrids
 
-A plug-in hybrid is read like any other car of its brand. Runsten knows a car is one when its manufacturer's API says so: a Volvo's tells its fuel type. Polestar's Data Portal does not: it reads every car as an electric one, so a Polestar 1 is never recognized as a plug-in hybrid. Tesla makes none.
+A plug-in hybrid is read like any other car of its brand. Runsten knows a car is one when its manufacturer's API says so: a Volvo's tells its fuel type, a BMW's or a MINI's its drive train. Polestar's Data Portal does not: it reads every car as an electric one, so a Polestar 1 is never recognized as a plug-in hybrid. Tesla makes none.
 
 What works for a plug-in hybrid:
 

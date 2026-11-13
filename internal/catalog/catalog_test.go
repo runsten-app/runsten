@@ -141,6 +141,9 @@ func TestAmbiguousPairs(t *testing.T) {
 		{"ix1-edrive20-2023", "ix1-edrive20-2026"},
 		{"ix1-xdrive30-2023", "ix1-edrive20-2026"},
 		{"ix2-edrive20-2024", "ix2-xdrive30-2024"},
+		// The Mini Cooper SE and Aceman SE share their battery with their John Cooper Works.
+		{"cooper-se-2024", "cooper-jcw-2025"},
+		{"aceman-se-2024", "aceman-jcw-2025"},
 		{"countryman-e-2024", "countryman-se-all4-2024"},
 		{"countryman-e-2024", "countryman-se-all4-2026"},
 		{"countryman-se-all4-2024", "countryman-se-all4-2026"},
