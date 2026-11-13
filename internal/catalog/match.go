@@ -91,7 +91,9 @@ type Reading struct {
 	ModelYear   int     // ≤ 0: unknown
 	CapacityKWh float64 // batteryCapacityKWH; ≤ 0: unknown
 	VIN         string
-	Trim        string // the vendor's badge (Tesla's trim_badging); empty: unknown
+	// Trim is the vendor's badge (Tesla's trim_badging, BMW's model name after its family);
+	// its spaces are dropped (50 xDrive: 50xdrive). Empty: unknown.
+	Trim string
 	// Powertrain is core.Snapshot's: Electric or PlugInHybrid are matched among the
 	// variants of theirs; empty (unknown) or any other (a combustion car) never is.
 	Powertrain Powertrain
@@ -178,7 +180,7 @@ func byMotorCode(vs []Variant, vin string) []Variant {
 // byTrim breaks ties with the vendor's badge, as byMotorCode with the VIN: a badge no
 // candidate lists rules nothing out, and a variant that lists none is kept.
 func byTrim(vs []Variant, trim string) []Variant {
-	trim = strings.ToLower(strings.TrimSpace(trim))
+	trim = strings.ToLower(strings.ReplaceAll(trim, " ", ""))
 	if trim == "" {
 		return vs
 	}
