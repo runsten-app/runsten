@@ -63,7 +63,7 @@ Runsten reads the battery level and its target (during a fast charge, the DC tar
 
 ## When the key ends
 
-Pleos shows the key's validity on its page in the Playground; the API does not tell it, and Runsten does not remind you before it passes (a reminder will come once the real duration is known). A key that expires, like one revoked or replaced, is refused: the Connection page says **Pleos refused the key** under each of its cars, and you issue a new key and give it with **Replace the key**. Nothing already read is lost.
+A key reads for **90 days**, as its page in the Playground shows. The API does not tell it, so Runsten estimates it: the Connection page shows **Expires** on the day 90 days after you gave the key, marked as an estimate, and asks you to renew it **two weeks before**, with a dot on the user menu and on the brand's tab from every page. The API gives the same date (`expires_at`, under `pleos` in `GET /api/v1/connection`), and so does [MQTT](mqtt.md) (`credential_status`, `credential_expires_at`), for a notification. The Playground's own date prevails: a key given days after it was issued expires sooner than estimated. A key that expires, like one revoked or replaced, is refused: the Connection page says **Pleos refused the key** under each of its cars, and you issue a new key and give it with **Replace the key**. Nothing already read is lost.
 
 Note that **revoking or reissuing the key ends the access tokens** issued with the one before it: every application that read with the old key stops, and Runsten asks a token again with the new one by itself.
 

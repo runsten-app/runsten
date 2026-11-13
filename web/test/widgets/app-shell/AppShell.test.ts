@@ -137,6 +137,28 @@ describe('AppShell', () => {
     )
   })
 
+  it('puts a dot on the menu and on the connection when a Pleos key is to be renewed', async () => {
+    fetchVehicles.mockResolvedValue([vehicles.items[2]])
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60_000).toISOString()
+    fetchConnection.mockResolvedValue({
+      pleos: {
+        hyundai: null,
+        kia: {
+          last4: '-dev',
+          set_at: '2026-09-28T05:00:00Z',
+          expires_at: expiresAt,
+          refused_at: null,
+        },
+        genesis: null,
+      },
+    })
+    const { wrapper, link } = await shell({}, '/', 'connection')
+    expect(wrapper.find('button.user-menu').attributes('aria-describedby')).toBeDefined()
+    expect(link?.querySelector('.attention-dot')?.textContent).toBe(
+      'The connection needs your attention',
+    )
+  })
+
   it('warns on the pages of a vehicle that nothing new is read', async () => {
     fetchVehicle.mockResolvedValue(vehicles.items[1])
     const router = testRouter()

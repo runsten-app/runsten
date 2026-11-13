@@ -2289,9 +2289,16 @@
       "title": "Votre clé a été refusée",
       "body": "Pleos l’a refusée le {time} : révoquée ou remplacée dans le Playground, ou expirée. Vos voitures ne sont plus lues tant que vous n’en donnez pas une autre ; ce qui a été lu reste."
     },
+    "renew": {
+      "title": "Renouvelez votre clé {brand}",
+      "soon": "Une clé Pleos lit pendant 90 jours : celle-ci devrait expirer le {date}, à compter du jour où vous l'avez donnée. Créez-en une nouvelle dans le Playground d'ici là et donnez-la ici.",
+      "past": "Une clé Pleos lit pendant 90 jours : celle-ci aurait dû expirer le {date}, à compter du jour où vous l'avez donnée. Créez-en une nouvelle dans le Playground et donnez-la ici."
+    },
     "current": "Votre clé",
     "last4": "Client ID se terminant par {last4}",
     "setAt": "Donnée",
+    "expiresAt": "Expire",
+    "expiresAbout": "{date}, estimation",
     "replace": "Remplacer la clé",
     "delete": {
       "button": "Retirer la clé",

@@ -2289,9 +2289,16 @@
       "title": "Uw sleutel werd geweigerd",
       "body": "Pleos weigerde hem op {time}: ingetrokken of vervangen in het Playground, of verlopen. Uw auto’s worden niet meer gelezen tot u een nieuwe geeft; wat gelezen is, blijft."
     },
+    "renew": {
+      "title": "Vernieuw uw {brand}-sleutel",
+      "soon": "Een Pleos-sleutel is 90 dagen geldig: deze zou op {date} moeten verlopen, gerekend vanaf het opgeven. Maak vóór die datum een nieuwe aan in de Playground en geef die hier op.",
+      "past": "Een Pleos-sleutel is 90 dagen geldig: deze had op {date} moeten verlopen, gerekend vanaf het opgeven. Maak een nieuwe aan in de Playground en geef die hier op."
+    },
     "current": "Uw sleutel",
     "last4": "Client ID eindigend op {last4}",
     "setAt": "Gegeven",
+    "expiresAt": "Verloopt",
+    "expiresAbout": "{date}, geschat",
     "replace": "Sleutel vervangen",
     "delete": {
       "button": "Sleutel verwijderen",

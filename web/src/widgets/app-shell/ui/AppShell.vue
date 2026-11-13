@@ -14,6 +14,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { VAppBar, VBottomNavigation } from 'vuetify/components'
+import { pleosBrands } from '@/entities/connection'
 import { needsAttention as healthNeedsAttention } from '@/entities/health'
 import { collectionState, needsAttention } from '@/entities/vehicle'
 import { UserMenu } from '@/features/auth'
@@ -21,6 +22,7 @@ import { ShortcutsHelp, shortcutsEnabled, useShortcuts } from '@/features/keyboa
 import { periodQuery } from '@/features/filter-period'
 import { placeQuery } from '@/features/filter-place'
 import { useConnectionSettings } from '@/features/manage-api-key'
+import { renewalDue as pleosRenewalDue } from '@/features/manage-pleos'
 import { renewalDue } from '@/features/manage-polestar'
 import { renewalDue as skodaRenewalDue } from '@/features/manage-skoda'
 import { rememberedVehicle, rememberVehicle, VehicleMenu } from '@/features/select-vehicle'
@@ -42,7 +44,7 @@ import { extensionAttention, extensionMenuItems, extensionNotices } from '../ext
 // them. The settings, the connection and the user's own pages share one menu. The bar
 // names the vehicle on every page, the account's included: the one seen last, else the
 // first; its menu leads to the account's other vehicles and to its settings. The connection is looked at when the reading fails, or the Polestar
-// credential is to be renewed: a dot on the menu and on it says so, from every page. A dot
+// credential, the MyŠkoda key or a Pleos key is to be renewed: a dot on the menu and on it says so, from every page. A dot
 // on the health's tab says the vehicle needs attention (a tyre, the service, a warning),
 // from every page of the vehicle.
 // garage: the page is the Garage, the account's vehicles side by side: the bar names it
@@ -100,7 +102,8 @@ const connectionAttention = computed(() =>
     return s.kind !== 'unread' && needsAttention(s)
   }) ||
   renewalDue(connectionSettings.value?.polestar, now.value) ||
-  skodaRenewalDue(connectionSettings.value?.skoda, now.value)
+  skodaRenewalDue(connectionSettings.value?.skoda, now.value) ||
+  pleosBrands.some((b) => pleosRenewalDue(connectionSettings.value?.pleos?.[b], now.value))
     ? t('connection.attention')
     : undefined,
 )

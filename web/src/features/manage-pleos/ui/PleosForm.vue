@@ -8,6 +8,7 @@ import { useFormat, useNow } from '@/shared/lib'
 import { ErrorSummary, FactItem } from '@/shared/ui'
 import { useDeletePleosCredential } from '../composables/useDeletePleosCredential'
 import { useSetPleosCredential } from '../composables/useSetPleosCredential'
+import { expiry } from '../model/expiry'
 import {
   fieldId,
   fields,
@@ -22,9 +23,10 @@ import {
 // Playground (the EU Data Act's access): a client ID and its secret. The brand is its
 // tab's, named in its texts with its app; the API of each is the same, the key and the cars are not. The
 // steps lead to the Playground and to the guide. The key is never shown again: the last
-// four characters of its client ID, and when it was given — the API tells no expiry,
-// and a key it refuses asks for another. Without one, the form is open; with one, it is
-// replaced behind a button.
+// four characters of its client ID, when it was given and when it should expire: 90 days
+// later, an estimate, the API telling no expiry; a reminder two weeks before, and a key
+// it refuses asks for another. Without one, the form is open; with one, it is replaced
+// behind a button.
 // off: the source is turned off for the account (the flag). A key given before stays
 // told and can be removed; none is taken.
 const props = defineProps<{ connection: ConnectionSettings; brand: PleosBrand; off?: boolean }>()
@@ -34,6 +36,11 @@ const now = useNow()
 const { setCredential, error, reset } = useSetPleosCredential(props.brand)
 
 const credential = computed((): PleosKey | null => props.connection.pleos?.[props.brand] ?? null)
+const state = computed(() => {
+  const c = credential.value
+  if (!c) return null
+  return c.refused_at ? 'refused' : expiry(c.expires_at, now.value)
+})
 const opened = ref(false)
 const open = computed(() => !props.off && (opened.value || !credential.value))
 const empty = (): Draft => ({ client_id: '', client_secret: '' })
@@ -223,13 +230,26 @@ const appName = computed(() => {
     </p>
 
     <v-alert
-      v-if="credential?.refused_at"
+      v-if="credential && state === 'refused' && credential.refused_at"
       type="error"
       variant="tonal"
       :title="t('pleos.refused.title')"
       class="refused mb-4"
     >
       {{ t('pleos.refused.body', { time: f.dateTime(credential.refused_at, now) }) }}
+    </v-alert>
+    <v-alert
+      v-else-if="credential && (state === 'soon' || state === 'past')"
+      type="warning"
+      variant="tonal"
+      :title="t('pleos.renew.title', { brand: brandName })"
+      class="renew mb-4"
+    >
+      {{
+        state === 'soon'
+          ? t('pleos.renew.soon', { date: f.day(credential.expires_at) })
+          : t('pleos.renew.past', { date: f.day(credential.expires_at) })
+      }}
     </v-alert>
 
     <dl v-if="credential" class="facts mb-4">
@@ -238,6 +258,10 @@ const appName = computed(() => {
         :value="t('pleos.last4', { last4: credential.last4 })"
       />
       <FactItem :label="t('pleos.setAt')" :value="f.dateTime(credential.set_at, now)" />
+      <FactItem
+        :label="t('pleos.expiresAt')"
+        :value="t('pleos.expiresAbout', { date: f.day(credential.expires_at) })"
+      />
     </dl>
 
     <div v-if="!open || credential" class="d-flex flex-wrap ga-2 mb-4">
@@ -245,6 +269,7 @@ const appName = computed(() => {
         v-if="!open && !off"
         :id="toggleId"
         :prepend-icon="mdiKeyVariant"
+        :color="state === 'valid' ? undefined : 'primary'"
         variant="tonal"
         class="toggle"
         @click="openForm"

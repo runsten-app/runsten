@@ -58,8 +58,8 @@ Under `<prefix>/vehicles/<vehicle id>/`, where the prefix is `runsten` by defaul
 | `service_distance_km` | the distance left until the service, in km |
 | `warning_brake_fluid`, `warning_coolant`, `warning_oil`, `warning_washer_fluid`, `warning_low_voltage_battery` | `warning` or `ok` |
 | `warning_lights` | `warning` when an exterior light fails; `ok` only when every light the car reports is known; the web interface names which |
-| `credential_status` | a Polestar's only: `valid`, `expiring` (two weeks before its expiry), `expired`, `refused` (Polestar refused it) or `missing` (none given) |
-| `credential_expires_at` | a Polestar's only: when its credential expires at the latest, in RFC 3339, UTC; empty without one |
+| `credential_status` | a Polestar's, a Hyundai's, a Kia's or a Genesis's only: `valid`, `expiring` (two weeks before its expiry), `expired`, `refused` (the brand refused it) or `missing` (none given) |
+| `credential_expires_at` | a Polestar's, a Hyundai's, a Kia's or a Genesis's only: when its credential expires at the latest (a Pleos key's 90 days after it was given, an estimate), in RFC 3339, UTC; empty without one |
 | `outside_temp_c`, `cabin_temp_c` | a Tesla's only: the temperature outside and in the cabin, in °C |
 | `climate`, `preconditioning`, `battery_heater` | a Tesla's only: `on` or `off`, whether the climate runs, the car preconditions, or heats its battery |
 | `climate_setpoint_c` | a Tesla's only: the cabin temperature its climate is set to, in °C, whether it runs or not |
@@ -107,8 +107,8 @@ With discovery on, each vehicle is a device named after the name you gave a Tesl
 | Days to service, Months to service | sensor | `service_days`, `service_months` |
 | Distance to service | sensor, distance, km | `service_distance_km` |
 | Brake fluid, Coolant, Oil, Washer fluid, 12 V battery, Lights | binary sensor, problem | `warning_…` |
-| Credential | binary sensor, problem: on unless `valid` (a Polestar's only) | `credential_status` |
-| Credential expiry | sensor, timestamp, diagnostic (a Polestar's only) | `credential_expires_at` |
+| Credential | binary sensor, problem: on unless `valid` (a Polestar's, a Hyundai's, a Kia's or a Genesis's only) | `credential_status` |
+| Credential expiry | sensor, timestamp, diagnostic (a Polestar's, a Hyundai's, a Kia's or a Genesis's only) | `credential_expires_at` |
 | Outside temperature, Cabin temperature | sensor, temperature, °C (a Tesla's only) | `outside_temp_c`, `cabin_temp_c` |
 | Climate, Preconditioning, Battery heater | binary sensor, running (a Tesla's only) | `climate`, `preconditioning`, `battery_heater` |
 | Climate setpoint | sensor, temperature, °C (a Tesla's only) | `climate_setpoint_c` |

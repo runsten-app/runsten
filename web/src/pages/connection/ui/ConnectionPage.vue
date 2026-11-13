@@ -7,7 +7,7 @@ import { limitsPage } from '@/entities/session'
 import { collectionState, needsAttention, vehicleLabels, type Vehicle } from '@/entities/vehicle'
 import { ApiKeyForm, useConnectionSettings } from '@/features/manage-api-key'
 import { BmwForm } from '@/features/manage-bmw'
-import { PleosForm } from '@/features/manage-pleos'
+import { PleosForm, renewalDue as pleosRenewalDue } from '@/features/manage-pleos'
 import { PolestarForm, renewalDue } from '@/features/manage-polestar'
 import { PolestarIdForm } from '@/features/manage-polestar-id'
 import { SkodaForm, renewalDue as skodaRenewalDue } from '@/features/manage-skoda'
@@ -42,7 +42,7 @@ import VehicleCollection from './VehicleCollection.vue'
 // #genesis, #skoda: the home's choice of a brand opens its tab; #pleos, of an older link, the first
 // of Hyundai, Kia and Genesis the account reads, else Hyundai's); without one, that of the vehicle the page was opened from, else the
 // first brand the account has a vehicle of, else Volvo's. A dot marks a tab whose vehicles need the user,
-// or whose credential is to be renewed (Polestar's).
+// or whose credential is to be renewed (Polestar's, a Pleos key, Škoda's).
 // On an instance without a Volvo application, Volvo's tab is left out, unless the account
 // has Volvos from before: it then says why they are not read. Tesla's is there only while
 // the flag source.tesla is on for the account, unless it has Teslas from before: it then
@@ -242,7 +242,8 @@ const alerted = computed(
         (b) =>
           ofBrand(b).some(attention) ||
           (b === 'polestar' && renewalDue(settings.value?.polestar, now.value)) ||
-          (b === 'skoda' && skodaRenewalDue(settings.value?.skoda, now.value)),
+          (b === 'skoda' && skodaRenewalDue(settings.value?.skoda, now.value)) ||
+          (isPleos(b) && pleosRenewalDue(settings.value?.pleos?.[b], now.value)),
       ),
     ),
 )
