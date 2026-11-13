@@ -3381,6 +3381,11 @@ components:
     PleosKey:
       additionalProperties: false
       properties:
+        expires_at:
+          description: "When it should expire: an estimate, the API telling no expiry. The Playground shows keys valid for 90 days (an assumption: seen by an owner), counted here from when it was given. The user creates another before then."
+          format: date-time
+          pattern: Z$
+          type: string
         last4:
           description: "The last four characters of the key's client ID, to tell it apart: the key itself, above all its secret, is never returned."
           type: string
@@ -3392,13 +3397,14 @@ components:
             - string
             - "null"
         set_at:
-          description: "When it was given. The API tells no expiry: the Playground does, and a key it refuses asks for another."
+          description: When it was given.
           format: date-time
           pattern: Z$
           type: string
       required:
         - last4
         - set_at
+        - expires_at
         - refused_at
       type: object
     PleosKeys:

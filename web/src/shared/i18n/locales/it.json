@@ -2289,9 +2289,16 @@
       "title": "La tua chiave è stata rifiutata",
       "body": "Pleos l’ha rifiutata il {time}: revocata o sostituita nel Playground, oppure scaduta. Le tue auto non vengono lette finché non ne dai un’altra; quanto è stato letto resta."
     },
+    "renew": {
+      "title": "Rinnovi la chiave {brand}",
+      "soon": "Una chiave Pleos legge per 90 giorni: questa dovrebbe scadere {date}, contando da quando l'ha inserita. Ne crei una nuova nel Playground prima di allora e la inserisca qui.",
+      "past": "Una chiave Pleos legge per 90 giorni: questa sarebbe dovuta scadere {date}, contando da quando l'ha inserita. Ne crei una nuova nel Playground e la inserisca qui."
+    },
     "current": "La tua chiave",
     "last4": "Client ID che termina in {last4}",
     "setAt": "Data",
+    "expiresAt": "Scadenza",
+    "expiresAbout": "{date}, stimata",
     "replace": "Sostituisci la chiave",
     "delete": {
       "button": "Rimuovi la chiave",

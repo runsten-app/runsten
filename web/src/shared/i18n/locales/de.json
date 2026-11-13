@@ -2289,9 +2289,16 @@
       "title": "Ihr Schlüssel wurde abgelehnt",
       "body": "Pleos hat ihn am {time} abgelehnt: im Playground entzogen oder ersetzt, oder abgelaufen. Ihre Autos werden erst wieder gelesen, wenn Sie einen neuen angeben; was gelesen wurde, bleibt."
     },
+    "renew": {
+      "title": "Erneuern Sie Ihren {brand}-Schlüssel",
+      "soon": "Ein Pleos-Schlüssel gilt 90 Tage: Dieser sollte am {date} ablaufen, gerechnet ab seiner Angabe. Legen Sie vorher im Playground einen neuen an und geben Sie ihn hier an.",
+      "past": "Ein Pleos-Schlüssel gilt 90 Tage: Dieser hätte am {date} ablaufen sollen, gerechnet ab seiner Angabe. Legen Sie im Playground einen neuen an und geben Sie ihn hier an."
+    },
     "current": "Ihr Schlüssel",
     "last4": "Client-ID, endend auf {last4}",
     "setAt": "Angegeben",
+    "expiresAt": "Gültig bis",
+    "expiresAbout": "{date}, geschätzt",
     "replace": "Schlüssel ersetzen",
     "delete": {
       "button": "Schlüssel entfernen",

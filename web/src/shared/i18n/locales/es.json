@@ -2289,9 +2289,16 @@
       "title": "Su clave fue rechazada",
       "body": "Pleos la rechazó el {time}: revocada o sustituida en el Playground, o caducada. Sus coches no se leen hasta que dé otra; lo leído se conserva."
     },
+    "renew": {
+      "title": "Renueve su clave de {brand}",
+      "soon": "Una clave de Pleos lee durante 90 días: esta debería caducar el {date}, contando desde que la indicó. Cree una nueva en el Playground antes de esa fecha e indíquela aquí.",
+      "past": "Una clave de Pleos lee durante 90 días: esta debería haber caducado el {date}, contando desde que la indicó. Cree una nueva en el Playground e indíquela aquí."
+    },
     "current": "Su clave",
     "last4": "Client ID que termina en {last4}",
     "setAt": "Dada",
+    "expiresAt": "Caduca",
+    "expiresAbout": "{date}, estimado",
     "replace": "Sustituir la clave",
     "delete": {
       "button": "Quitar la clave",

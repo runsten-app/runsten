@@ -92,7 +92,7 @@ describe('PleosForm', () => {
     expect(w().find('.cancel').exists()).toBe(false)
   })
 
-  it('with a key, tells it by its last four characters and when it was given, replaced behind a button', async () => {
+  it('with a key, tells it by its last four characters and its dates, replaced behind a button', async () => {
     form(given)
     const facts = w()
       .findAll('.fact')
@@ -100,11 +100,11 @@ describe('PleosForm', () => {
     expect(facts).toEqual([
       ['Your key', 'Client ID ending in -dev'],
       ['Given', '05:00'],
+      // The API tells no expiry: 90 days after it was given, an estimate.
+      ['Expires', 'Sunday, 27 December 2026, estimated'],
     ])
     expect(w().text()).not.toContain(secret)
-    // The API tells no expiry: the Playground does, and none is shown.
     expect(w().find('.renew').exists()).toBe(false)
-    expect(w().text()).not.toContain('Expires')
     expect(w().find('form').exists()).toBe(false)
     await w().find('.toggle').trigger('click')
     await flushPromises()
@@ -115,12 +115,30 @@ describe('PleosForm', () => {
     expect(document.activeElement).toBe(w().find('.toggle').element)
   })
 
-  it('tells a key refused', () => {
+  it('reminds to renew it two weeks before it should expire, and once past', async () => {
+    vi.setSystemTime(Date.parse('2026-12-14T06:00:00Z'))
+    form(given)
+    expect(w().find('.renew .v-alert-title').text()).toBe('Renew your Kia key')
+    expect(w().find('.renew').text()).toContain(
+      'this one should expire on Sunday, 27 December 2026, counted from when you gave it',
+    )
+    expect(w().find('.toggle').classes()).toContain('text-primary')
+    wrapper?.unmount()
+    vi.setSystemTime(Date.parse('2026-12-28T06:00:00Z'))
+    form(given)
+    expect(w().find('.renew').text()).toContain(
+      'this one should have expired on Sunday, 27 December 2026',
+    )
+  })
+
+  it('tells a key refused, rather than its expiry', () => {
+    vi.setSystemTime(Date.parse('2026-12-20T06:00:00Z'))
     const key = given.pleos?.kia
-    const kia = key ? { ...key, refused_at: '2026-09-28T05:30:00Z' } : null
+    const kia = key ? { ...key, refused_at: '2026-12-20T05:30:00Z' } : null
     form({ ...given, pleos: { hyundai: null, kia, genesis: null } })
     expect(w().find('.refused .v-alert-title').text()).toBe('Your key was refused')
     expect(w().find('.refused').text()).toContain('05:30')
+    expect(w().find('.renew').exists()).toBe(false)
   })
 
   it('tells what is wrong before sending, each value under its field', async () => {

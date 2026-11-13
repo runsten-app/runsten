@@ -1,4 +1,5 @@
 export { useDeletePleosCredential } from './composables/useDeletePleosCredential'
 export { useSetPleosCredential } from './composables/useSetPleosCredential'
+export { expiry, renewAhead, renewalDue } from './model/expiry'
 export { credentialLimits, validate } from './model/validate'
 export { default as PleosForm } from './ui/PleosForm.vue'

@@ -2289,9 +2289,16 @@
       "title": "Your key was refused",
       "body": "Pleos refused it on {time}: revoked or replaced in the Playground, or expired. Your cars are not read until you give a new one; what was read stays."
     },
+    "renew": {
+      "title": "Renew your {brand} key",
+      "soon": "A Pleos key reads for 90 days: this one should expire on {date}, counted from when you gave it. Create a new one in the Playground before then and give it here.",
+      "past": "A Pleos key reads for 90 days: this one should have expired on {date}, counted from when you gave it. Create a new one in the Playground and give it here."
+    },
     "current": "Your key",
     "last4": "Client ID ending in {last4}",
     "setAt": "Given",
+    "expiresAt": "Expires",
+    "expiresAbout": "{date}, estimated",
     "replace": "Replace the key",
     "delete": {
       "button": "Remove the key",

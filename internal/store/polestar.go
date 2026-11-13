@@ -103,24 +103,28 @@ func (s *Store) credentialConnection(ctx context.Context, accountID, provider st
 }
 
 // PublishCredentials implements the publisher's Store: the credential of each vehicle of
-// the account's Polestar connection, by vehicle ID; a zero one when the connection has
-// none.
+// the account's Polestar connection and of its Pleos keys, by vehicle ID, expiring the
+// provider's lifetime after it was given; a zero one when the connection has none.
 func (s *Store) PublishCredentials(ctx context.Context, accountID string) (map[string]publish.Credential, error) {
 	creds := map[string]publish.Credential{}
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `
-			SELECT v.id, c.credential_set_at, c.credential_refused_at
+			SELECT v.id, c.provider, c.credential_set_at, c.credential_refused_at
 			FROM vehicles v JOIN connections c ON c.account_id = v.account_id AND c.id = v.connection_id
-			WHERE c.provider = 'polestar'`)
+			WHERE c.provider IN ('polestar', 'pleos_hyundai', 'pleos_kia', 'pleos_genesis')`)
 		if err != nil {
 			return err //nolint:wrapcheck // wrapped by inAccount
 		}
-		var id string
+		var id, provider string
 		var setAt, refusedAt *time.Time
-		_, err = pgx.ForEachRow(rows, []any{&id, &setAt, &refusedAt}, func() error {
+		_, err = pgx.ForEachRow(rows, []any{&id, &provider, &setAt, &refusedAt}, func() error {
 			var c publish.Credential
 			if setAt != nil {
-				c.ExpiresAt = setAt.UTC().Add(api.PolestarLifetime)
+				lifetime := api.PolestarLifetime
+				if provider != "polestar" {
+					lifetime = api.PleosLifetime
+				}
+				c.ExpiresAt = setAt.UTC().Add(lifetime)
 				c.RefusedAt = utcOrZero(refusedAt)
 			}
 			creds[id] = c

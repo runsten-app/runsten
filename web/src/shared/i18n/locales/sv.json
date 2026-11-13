@@ -2289,9 +2289,16 @@
       "title": "Din nyckel vägrades",
       "body": "Pleos vägrade den {time}: återkallad eller utbytt i Playground, eller utgången. Dina bilar läses inte förrän du ger en ny; det som lästs finns kvar."
     },
+    "renew": {
+      "title": "Förnya {brand}-nyckeln",
+      "soon": "En Pleos-nyckel gäller i 90 dagar: den här bör gå ut {date}, räknat från när den angavs. Skapa en ny i Playground innan dess och ange den här.",
+      "past": "En Pleos-nyckel gäller i 90 dagar: den här borde ha gått ut {date}, räknat från när den angavs. Skapa en ny i Playground och ange den här."
+    },
     "current": "Din nyckel",
     "last4": "Client-ID som slutar på {last4}",
     "setAt": "Angiven",
+    "expiresAt": "Går ut",
+    "expiresAbout": "{date}, uppskattat",
     "replace": "Byt nyckeln",
     "delete": {
       "button": "Ta bort nyckeln",

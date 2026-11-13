@@ -2289,9 +2289,16 @@
       "title": "Nøkkelen din ble avvist",
       "body": "Pleos avviste den {time}: opphevet eller erstattet i Playground, eller utløpt. Bilene dine leses ikke før du gir en ny; det som er lest, blir værende."
     },
+    "renew": {
+      "title": "Forny {brand}-nøkkelen",
+      "soon": "En Pleos-nøkkel kan lese i 90 dager: denne bør utløpe {date}, regnet fra da den ble oppgitt. Opprett en ny i Playground før det, og oppgi den her.",
+      "past": "En Pleos-nøkkel kan lese i 90 dager: denne skulle ha utløpt {date}, regnet fra da den ble oppgitt. Opprett en ny i Playground, og oppgi den her."
+    },
     "current": "Nøkkelen din",
     "last4": "Client-ID som slutter på {last4}",
     "setAt": "Oppgitt",
+    "expiresAt": "Utløper",
+    "expiresAbout": "{date}, anslått",
     "replace": "Bytt nøkkelen",
     "delete": {
       "button": "Fjern nøkkelen",

@@ -53,8 +53,8 @@ type Store interface {
 	// updatedAt; nothing if its configuration changed since.
 	SaveMQTTStatus(ctx context.Context, accountID string, updatedAt time.Time, s publish.Status) error
 	// PublishCredentials returns the credential each vehicle of the account read with
-	// one (the Polestar Data Portal's) is read with, by vehicle ID; a zero Credential: its
-	// connection has none. The vehicles read otherwise are not in it.
+	// one (the Polestar Data Portal's, a Pleos key) is read with, by vehicle ID; a zero
+	// Credential: its connection has none. The vehicles read otherwise are not in it.
 	PublishCredentials(ctx context.Context, accountID string) (map[string]publish.Credential, error)
 }
 

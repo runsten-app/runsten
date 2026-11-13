@@ -903,12 +903,40 @@ describe('ConnectionPage', () => {
         ...selfHosted,
         pleos: {
           hyundai: null,
-          kia: { last4: '-dev', set_at: '2026-09-28T05:00:00Z', refused_at: null },
+          kia: {
+            last4: '-dev',
+            set_at: '2026-09-28T05:00:00Z',
+            expires_at: '2026-12-27T05:00:00Z',
+            refused_at: null,
+          },
           genesis: null,
         },
       })
       const { w } = await pageAt('/connection#pleos')
       expect(w.find('[role="tab"][aria-selected="true"]').text()).toContain('Kia')
+    })
+
+    // The key's expiry is an estimate: two weeks before, its tab asks for a new one.
+    it("puts a dot on the make's tab when its key is to be renewed", async () => {
+      flag.pleos = true
+      vi.setSystemTime(Date.parse('2026-12-14T06:00:00Z'))
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        pleos: {
+          hyundai: null,
+          kia: {
+            last4: '-dev',
+            set_at: '2026-09-28T05:00:00Z',
+            expires_at: '2026-12-27T05:00:00Z',
+            refused_at: null,
+          },
+          genesis: null,
+        },
+      })
+      const w = await page()
+      const tabs = w.findAll('[role="tab"]').map((t) => plain(t.text()))
+      expect(tabs).toContain('Kia Beta needs your attention')
+      expect(tabs).toContain('Hyundai Beta')
     })
 
     it('has no tab while its flag is off for an account without a key nor a car of it', async () => {
@@ -927,7 +955,12 @@ describe('ConnectionPage', () => {
         ...selfHosted,
         pleos: {
           hyundai: null,
-          kia: { last4: '-dev', set_at: '2026-09-28T05:00:00Z', refused_at: null },
+          kia: {
+            last4: '-dev',
+            set_at: '2026-09-28T05:00:00Z',
+            expires_at: '2026-12-27T05:00:00Z',
+            refused_at: null,
+          },
           genesis: null,
         },
       })

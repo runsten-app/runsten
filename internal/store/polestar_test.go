@@ -291,3 +291,44 @@ func TestPolestarCredentialIsolation(t *testing.T) {
 		t.Errorf("the credential opened as an application key: %q", k.Value)
 	}
 }
+
+// TestPublishPleosCredentials: a vehicle read with a Pleos key is published with its key,
+// expiring the Pleos lifetime after it was given, beside a Polestar's own lifetime.
+func TestPublishPleosCredentials(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	t0 := time.Date(2026, 10, 20, 8, 0, 0, 0, time.UTC)
+	a, va := newVehicle(t, s, "token-a", "YV1AAAAAAAAAAAAA1")
+	pc, err := s.SetPolestarCredential(ctx, a, credA, t0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	vp, err := s.AddVehicle(ctx, a, pc, polestarVIN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t1 := t0.Add(time.Hour)
+	kc, err := s.SetPleosCredential(ctx, a, "kia", api.PleosCredential{ClientID: "client-kia", ClientSecret: "secret-kia"}, t1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	vk, err := s.AddVehicle(ctx, a, kc, "KNAKIA00000000001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := publishCredentials(t, s, a)
+	want := map[string]publish.Credential{
+		vp: {ExpiresAt: t0.Add(api.PolestarLifetime)},
+		vk: {ExpiresAt: t1.Add(api.PleosLifetime)},
+	}
+	if _, volvo := got[va]; volvo || len(got) != len(want) || got[vp] != want[vp] || got[vk] != want[vk] {
+		t.Errorf("published credentials %+v, want %+v", got, want)
+	}
+	// Removed, the key leaves its vehicle published without one.
+	if err := s.DeletePleosCredential(ctx, a, "kia"); err != nil {
+		t.Fatal(err)
+	}
+	if got, ok := publishCredentials(t, s, a)[vk]; !ok || got != (publish.Credential{}) {
+		t.Errorf("after removal %+v, %v", got, ok)
+	}
+}
