@@ -2,9 +2,9 @@ package publish
 
 import "time"
 
-// A vehicle read with the owner's credential (the Polestar Data Portal's) loses its
-// reads when the credential expires, and what the car sends meanwhile is lost: the
-// portal gives the latest values, not their history. Its state and its expiry are
+// A vehicle read with the owner's credential (the Polestar Data Portal's, a Pleos key)
+// loses its reads when the credential expires, and what the car sends meanwhile is lost:
+// the API gives the latest values, not their history. Its state and its expiry are
 // published beside the vehicle's values, so that an automation can warn the owner, who
 // may never open the web interface.
 

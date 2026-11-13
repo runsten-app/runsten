@@ -16,8 +16,7 @@ import (
 // Pleos Playground and pasted here. It is checked before it is stored, by asking for a
 // token and listing the vehicles, which are then added to the account. The key is never
 // returned, logged nor exported: only the last four characters of its client ID, when
-// it was given, and whether it was refused. Its validity the API does not tell: the
-// Playground does, and a refused key asks for another.
+// it was given, when it should expire, and whether it was refused.
 
 // The brands the API reads, as its Brand header names them and the connection
 // providers carry: the brand is the user's tab, never guessed.
@@ -29,6 +28,11 @@ const (
 
 // PleosProvider is the connection provider of a brand's key.
 func PleosProvider(brand string) string { return "pleos_" + brand }
+
+// PleosLifetime is how long a key reads after it is issued, as the Pleos Playground
+// tells (an assumption: seen by an owner, the API telling no expiry; whether it counts
+// from the issue or from the first use is not known). The user creates another after it.
+const PleosLifetime = 90 * 24 * time.Hour
 
 // PleosCredential is a key the owner created in the Pleos Playground.
 type PleosCredential struct {
@@ -57,7 +61,8 @@ type PleosVehicles interface {
 
 type pleosKeyJSON struct {
 	Last4     string     `json:"last4" doc:"The last four characters of the key's client ID, to tell it apart: the key itself, above all its secret, is never returned."`
-	SetAt     time.Time  `json:"set_at" pattern:"Z$" doc:"When it was given. The API tells no expiry: the Playground does, and a key it refuses asks for another."`
+	SetAt     time.Time  `json:"set_at" pattern:"Z$" doc:"When it was given."`
+	ExpiresAt time.Time  `json:"expires_at" pattern:"Z$" doc:"When it should expire: an estimate, the API telling no expiry. The Playground shows keys valid for 90 days (an assumption: seen by an owner), counted here from when it was given. The user creates another before then."`
 	RefusedAt *time.Time `json:"refused_at" pattern:"Z$" doc:"When Pleos refused it (revoked or replaced in the Playground, or expired): its vehicles are not read until another. null: not refused."`
 }
 
@@ -90,7 +95,9 @@ func pleosOf(keys map[string]CredentialConnection) pleosKeysJSON {
 		if !ok || c.SetAt.IsZero() {
 			return null[pleosKeyJSON]{}
 		}
-		return known(pleosKeyJSON{Last4: c.Last4, SetAt: c.SetAt, RefusedAt: timeOrNil(c.RefusedAt)})
+		return known(pleosKeyJSON{
+			Last4: c.Last4, SetAt: c.SetAt, ExpiresAt: c.SetAt.Add(PleosLifetime), RefusedAt: timeOrNil(c.RefusedAt),
+		})
 	}
 	return pleosKeysJSON{Hyundai: of(PleosHyundai), Kia: of(PleosKia), Genesis: of(PleosGenesis)}
 }
