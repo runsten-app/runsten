@@ -4,7 +4,7 @@ description: "How Runsten recognizes the variant of your car, choosing it, the o
 
 # Vehicle models
 
-Runsten carries a catalog of the variants of the brands it reads: the electric Volvos and Polestars, the European Tesla Model 3 and Model Y, the electric BMWs and MINIs, the electric Hyundais, Kias and Genesis, the Škoda Enyaq, Enyaq Coupé and Elroq, and the plug-in hybrids (the T6 and T8 Volvos of the 60 and 90 series, the T4 and T5 of the XC40, and the Polestar 1): for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power (most plug-in hybrids have none), and the sources of every figure. It comes with Runsten: an update brings its corrections.
+Runsten carries a catalog of the variants of the brands it reads: the electric Volvos and Polestars, the European Tesla Model 3 and Model Y, the electric BMWs and MINIs from the i3 on, the electric Hyundais, Kias and Genesis, the Škoda Enyaq, Enyaq Coupé and Elroq, and the plug-in hybrids (the T6 and T8 Volvos of the 60 and 90 series, the T4 and T5 of the XC40, the Polestar 1, and the BMWs and MINIs from 2016 on: the 225xe and 225e, 230e, 320e, 330e, 530e, 550e, M5, 740e, 745e, 750e, i8, X1, X2, X3, X5, XM and the Countryman): for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power (most plug-in hybrids have none), and the sources of every figure. It comes with Runsten: an update brings its corrections.
 
 The model matters for two things: the net capacity, on which energies rest, and the onboard charger, which bounds the cost of an AC charge.
 
@@ -58,7 +58,7 @@ A car that reports its battery's capacity (a Volvo) does not say which: Volvo's 
 
 ## Plug-in hybrids
 
-A plug-in hybrid is read like any other car of its brand. Runsten knows a car is one when its manufacturer's API says so: a Volvo's tells its fuel type. Polestar's Data Portal does not: it reads every car as an electric one, so a Polestar 1 is never recognized as a plug-in hybrid. Tesla makes none.
+A plug-in hybrid is read like any other car of its brand. Runsten knows a car is one when its manufacturer's API says so: a Volvo's tells its fuel type, a BMW's or a MINI's its drive train. Polestar's Data Portal does not: it reads every car as an electric one, so a Polestar 1 is never recognized as a plug-in hybrid. Tesla makes none.
 
 What works for a plug-in hybrid:
 

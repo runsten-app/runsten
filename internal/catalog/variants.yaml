@@ -5,7 +5,7 @@
 # id, and an entry is corrected rather than removed.
 #
 # - family: exactly what the Volvo API returns in descriptions.model. BMW and Mini: the first
-#   word of basicData's modelName (i4, iX3, Cooper). Polestar families are
+#   word of basicData's modelName (i4, iX3, Cooper; a plug-in hybrid's X5 or 330e). Polestar families are
 #   provisional: no data source returns them yet. Tesla's: car_type as the Owner API's
 #   normalizer names it (Model 3, Model Y). Škoda's: the model's name, which the MyŠkoda
 #   Public API gives when the owner did not rename the car (Enyaq, Enyaq Coupé, Elroq).
@@ -1376,6 +1376,110 @@
       level: secondary
       for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
 
+# --- BMW i3 and i3s (I01) -------------------------------------------------------------
+#
+# BMW's ConnectedDrive names the car "i3" or "i3 (+ REX)" (bimmer_connected's fixtures, not
+# CarData's): its family is i3 either way. The i3s's name is assumed to begin with "i3s",
+# a family of its own; a car read "i3" shares the batteries of the i3s anyway. The range
+# extender (REx, a 9 l petrol engine) keeps the battery and the chargers of its BEV
+# (ADAC), and is one variant with it. Assumption: CarData tells the REx's driveTrain BEV,
+# as ConnectedDrive's ELECTRIC_WITH_RANGE_EXTENDER; read otherwise, it has no variant.
+# Model years: BMW's change in July, so the 94 Ah built from July 2016 is a 2017 and the
+# 120 Ah built from November 2018 a 2019; the years of two packs overlap where the
+# production switched, told apart by the capacity. DC: ev-database 47 or 49 kW,
+# Wikipedia and ADAC 50: the highest is kept.
+
+- id: i3-60ah-2014
+  brand: bmw
+  family: i3
+  name: i3 (60 Ah)
+  years: [2014, 2017]
+  gross_kwh: 21.6
+  net_kwh: 18.8
+  ac_max_kw: 3.7
+  ac_option_kw: 7.4
+  dc_max_kw: 50
+  sources:
+    - url: https://ev-database.org/car/1004/BMW-i3-60-Ah
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw]
+    - url: https://en.wikipedia.org/wiki/BMW_i3_(hatchback)
+      level: secondary
+      for: [dc_max_kw]
+
+- id: i3-94ah-2017
+  brand: bmw
+  family: i3
+  name: i3 (94 Ah)
+  years: [2017, 2019]
+  gross_kwh: 33.2
+  net_kwh: 27.2
+  ac_max_kw: 7.4
+  ac_option_kw: 11
+  dc_max_kw: 50
+  sources:
+    - url: https://ev-database.org/car/1068/BMW-i3-94-Ah
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw]
+    - url: https://ev-database.org/car/1104/BMW-i3-94-Ah
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/i3/i01/255582
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_option_kw, dc_max_kw]
+
+- id: i3-120ah-2019
+  brand: bmw
+  family: i3
+  name: i3 (120 Ah)
+  years: [2019, 2022]
+  gross_kwh: 42.2
+  net_kwh: 37.9
+  ac_max_kw: 11
+  dc_max_kw: 50
+  sources:
+    - url: https://ev-database.org/car/1145/BMW-i3-120-Ah
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+    - url: https://en.wikipedia.org/wiki/BMW_i3_(hatchback)
+      level: secondary
+      for: [dc_max_kw]
+
+- id: i3s-94ah-2018
+  brand: bmw
+  family: i3s
+  name: i3s (94 Ah)
+  years: [2018, 2019]
+  gross_kwh: 33.2
+  net_kwh: 27.2
+  ac_max_kw: 7.4
+  ac_option_kw: 11
+  dc_max_kw: 50
+  sources:
+    - url: https://ev-database.org/car/1105/BMW-i3s-94-Ah
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw]
+    - url: https://en.wikipedia.org/wiki/BMW_i3_(hatchback)
+      level: secondary
+      for: [dc_max_kw]
+
+- id: i3s-120ah-2019
+  brand: bmw
+  family: i3s
+  name: i3s (120 Ah)
+  years: [2019, 2022]
+  gross_kwh: 42.2
+  net_kwh: 37.9
+  ac_max_kw: 11
+  dc_max_kw: 50
+  sources:
+    - url: https://ev-database.org/car/1149/BMW-i3s-120-Ah
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+    - url: https://en.wikipedia.org/wiki/BMW_i3_(hatchback)
+      level: secondary
+      for: [dc_max_kw]
+
 # --- BMW i4 (G26) --------------------------------------------------------------------
 
 - id: i4-edrive35-2023
@@ -1747,6 +1851,7 @@
   family: iX
   name: iX xDrive60 (2025 refresh)
   years: [2025]
+  ambiguous_with: [ix-m70-2025]
   gross_kwh: 115
   net_kwh: 109.1
   ac_max_kw: 11
@@ -1756,6 +1861,22 @@
     - url: https://ev-database.org/car/3110/BMW-iX-xDrive60
       level: secondary
       for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+# ev-database tells the 22 kW AC maximum only, kept as the onboard charger: an upper
+# bound never narrows a cost by mistake.
+- id: ix-m70-2025
+  brand: bmw
+  family: iX
+  name: iX M70 xDrive (2025 refresh)
+  years: [2025]
+  gross_kwh: 115
+  net_kwh: 108.9
+  ac_max_kw: 22
+  dc_max_kw: 195
+  sources:
+    - url: https://ev-database.org/car/3111/BMW-iX-M70-xDrive
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
 
 # --- BMW iX1 and iX2 (U11, U10) ------------------------------------------------------
 
@@ -1839,18 +1960,22 @@
 
 # --- BMW iX3 (G08 and Neue Klasse) ---------------------------------------------------
 
-# ev-database 155 kW measured DC, BMW claims 150.
+# ev-database 155 kW measured DC, BMW claims 150. Ordered from November 2020, model year
+# 2021 (ev-database's first page); the 2021 refresh kept the battery.
 - id: ix3-2022
   brand: bmw
   family: iX3
   name: iX3 (G08)
-  years: [2022, 2025]
+  years: [2021, 2025]
   gross_kwh: 80
   net_kwh: 74
   ac_max_kw: 11
   dc_max_kw: 155
   sources:
     - url: https://ev-database.org/car/1535/BMW-iX3
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/1136/BMW-iX3
       level: secondary
       for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
 
@@ -1869,7 +1994,63 @@
       level: secondary
       for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
 
-# --- Mini Cooper, Aceman and Countryman (J01, J05, U25) ------------------------------
+# BMW gives the usable capacity and the chargers, not the gross one: ev-database's.
+- id: ix3-40-2026
+  brand: bmw
+  family: iX3
+  name: iX3 40 (Neue Klasse)
+  years: [2026]
+  gross_kwh: 86.9
+  net_kwh: 82.6
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 300
+  ambiguous_with: [ix3-40-xdrive-2026]
+  sources:
+    - url: https://newsroom.bmwgroup.com/emea/new-entry-level-bmw-ix3-added-to-the-range
+      level: manufacturer
+      for: [net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3505/BMW-iX3-40
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+- id: ix3-40-xdrive-2026
+  brand: bmw
+  family: iX3
+  name: iX3 40 xDrive (Neue Klasse)
+  years: [2026]
+  gross_kwh: 86.9
+  net_kwh: 82.6
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 300
+  sources:
+    - url: https://ev-database.org/car/3823/BMW-iX3-40-xDrive
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+
+# --- Mini Cooper, Aceman and Countryman (F56, J01, J05, U25) -------------------------
+#
+# The John Cooper Works are assumed named after their model in CarData (its family the
+# model's); a modelName beginning with "John Cooper Works" would give them none.
+
+# ev-database 49 kW DC; no source read gives BMW's 50.
+- id: cooper-se-f56-2020
+  brand: mini
+  family: Cooper
+  name: Cooper SE (F56)
+  years: [2020, 2024]
+  gross_kwh: 32.6
+  net_kwh: 28.9
+  ac_max_kw: 11
+  dc_max_kw: 49
+  sources:
+    - url: https://ev-database.org/car/1163/Mini-Cooper-SE
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/1409/Mini-Cooper-SE
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
 
 - id: cooper-e-2024
   brand: mini
@@ -1890,12 +2071,27 @@
   family: Cooper
   name: Cooper SE (J01)
   years: [2024]
+  ambiguous_with: [cooper-jcw-2025]
   gross_kwh: 54.2
   net_kwh: 49.2
   ac_max_kw: 11
   dc_max_kw: 95
   sources:
     - url: https://ev-database.org/car/1998/Mini-Cooper-SE
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: cooper-jcw-2025
+  brand: mini
+  family: Cooper
+  name: John Cooper Works Electric (J01)
+  years: [2025]
+  gross_kwh: 54.2
+  net_kwh: 49.2
+  ac_max_kw: 11
+  dc_max_kw: 95
+  sources:
+    - url: https://ev-database.org/car/3058/Mini-Cooper-JCW
       level: secondary
       for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
 
@@ -1910,6 +2106,35 @@
   dc_max_kw: 70
   sources:
     - url: https://ev-database.org/car/2190/Mini-Aceman-E
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: aceman-se-2024
+  brand: mini
+  family: Aceman
+  name: Aceman SE
+  years: [2024]
+  gross_kwh: 54.2
+  net_kwh: 49.2
+  ac_max_kw: 11
+  dc_max_kw: 95
+  ambiguous_with: [aceman-jcw-2025]
+  sources:
+    - url: https://ev-database.org/car/2191/Mini-Aceman-SE
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: aceman-jcw-2025
+  brand: mini
+  family: Aceman
+  name: John Cooper Works Aceman
+  years: [2025]
+  gross_kwh: 54.2
+  net_kwh: 49.2
+  ac_max_kw: 11
+  dc_max_kw: 95
+  sources:
+    - url: https://ev-database.org/car/3059/Mini-Aceman-JCW
       level: secondary
       for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
 
@@ -2879,6 +3104,561 @@
       level: secondary
       for: [dc_max_kw]
 
+
+# --- Plug-in hybrids: BMW and Mini -------------------------------------------------------
+#
+# Recognized only for a car CarData reads as a plug-in hybrid (driveTrain or
+# propulsionType PHEV, as ConnectedDrive's PLUGIN_HYBRID). The family is the first word of
+# the model's name, assumed as ConnectedDrive writes it ("X3 xDrive30e", bimmer_connected's
+# fixtures): X1, X2, X3, X5, XM and i8 for the X models and the i8, the model's number for
+# the Series (330e, 530e, 740Le: each its own family), and Countryman for the Mini, whose
+# name might rather begin with "Cooper" (Cooper SE Countryman ALL4). No source read gives
+# CarData's names of these cars. BMW's press kits give wallbox times rather than the
+# onboard charger: most chargers are ADAC's catalogue's, the top of its range ("AC:2,3-3,7"
+# is 3.7 kW). Gross capacities are BMW's where its newsroom tells them; ADAC's catalogue
+# labels some net capacities gross (the i8's 5.2 and 9.1), Wikipedia's are kept there.
+# Model years change in July, as the electric ones'. No DC charging.
+
+- id: 225xe-active-tourer-2016
+  brand: bmw
+  family: 225xe
+  name: 225xe iPerformance Active Tourer (F45, 7.6 kWh)
+  powertrain: plugin_hybrid
+  years: [2016, 2019]
+  gross_kwh: 7.6
+  net_kwh: 5.7
+  ac_max_kw: 3.7
+  sources:
+    - url: https://newsroom.bmwgroup.com/apac/the-new-bmw-225xe-active-tourer-iperformance-now-available-in-singapore--driving-dynamics-that-electrify
+      level: manufacturer
+      for: [gross_kwh, net_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/2er-reihe-active-tourer/f45/250568/
+      level: secondary
+      for: [ac_max_kw]
+
+- id: 225xe-active-tourer-2020
+  brand: bmw
+  family: 225xe
+  name: 225xe iPerformance Active Tourer (F45, 10 kWh)
+  powertrain: plugin_hybrid
+  years: [2020, 2022]
+  gross_kwh: 10
+  net_kwh: 8.8
+  ac_max_kw: 3.7
+  sources:
+    - url: https://paultan.org/2019/08/13/f45-bmw-225xe-active-tourer-receives-10-kwh-battery/
+      level: secondary
+      for: [gross_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/2er-reihe-active-gran-tourer/f45-f46-facelift/315811/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+
+# ADAC: AC up to 7.4 kW until March 2024, 11 kW since.
+- id: 225e-active-tourer-2023
+  brand: bmw
+  family: 225e
+  name: 225e xDrive Active Tourer (U06)
+  powertrain: plugin_hybrid
+  years: [2023, 2024]
+  gross_kwh: 16.3
+  net_kwh: 14.2
+  ac_max_kw: 7.4
+  sources:
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/2er-reihe-active-gran-tourer/u06/321695/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+- id: 225e-active-tourer-2025
+  brand: bmw
+  family: 225e
+  name: 225e xDrive Active Tourer (U06, 11 kW)
+  powertrain: plugin_hybrid
+  years: [2025]
+  gross_kwh: 16.3
+  net_kwh: 14.2
+  ac_max_kw: 11
+  sources:
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/2er-reihe-active-gran-tourer/u06/345277/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+# Only ADAC's page from March 2024 was read; the 230e of 2023 and 2024 has the 225e's
+# battery, and the later 11 kW charger is kept as an upper bound.
+- id: 230e-active-tourer-2023
+  brand: bmw
+  family: 230e
+  name: 230e xDrive Active Tourer (U06)
+  powertrain: plugin_hybrid
+  years: [2023]
+  gross_kwh: 16.3
+  net_kwh: 14.2
+  ac_max_kw: 11
+  sources:
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/2er-reihe-active-gran-tourer/u06/333396/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+- id: 330e-f30-2016
+  brand: bmw
+  family: 330e
+  name: 330e iPerformance (F30)
+  powertrain: plugin_hybrid
+  years: [2016, 2019]
+  gross_kwh: 7.6
+  net_kwh: 5.7
+  ac_max_kw: 3.7
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/the-new-bmw-330e
+      level: manufacturer
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+# Net: ADAC 10.4, Wikipedia 9.6; ADAC's catalogue is kept.
+- id: 330e-g20-2020
+  brand: bmw
+  family: 330e
+  name: 330e and 330e xDrive, saloon and Touring (G20, G21)
+  powertrain: plugin_hybrid
+  years: [2020, 2022]
+  gross_kwh: 12
+  net_kwh: 10.4
+  ac_max_kw: 3.7
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/bmw-drives-electrification-initiative-forward-bmw-3-series-model-range-expands-to-include-four-plug-in-hybrid-models
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/3er-reihe/g20-g21-g80/300175/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+
+# The 330e from July 2024 (19.5 kWh net, 11 kW AC in ADAC's catalogue) waits for a source
+# of its gross capacity.
+- id: 330e-g20-2023
+  brand: bmw
+  family: 330e
+  name: 330e and 330e xDrive, saloon and Touring (G20, G21 refresh)
+  powertrain: plugin_hybrid
+  years: [2023, 2024]
+  gross_kwh: 12
+  net_kwh: 11.2
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/3er-reihe/g20-g21-g80-g81-facelift/325203/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+- id: 320e-g20-2021
+  brand: bmw
+  family: 320e
+  name: 320e, saloon and Touring (G20, G21)
+  powertrain: plugin_hybrid
+  years: [2021, 2024]
+  gross_kwh: 12
+  ac_max_kw: 3.7
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/new-entry-level-models-with-plug-in-hybrid-drive-for-the-bmw-3-series-and-bmw-5-series
+      level: manufacturer
+      for: [gross_kwh, ac_max_kw]
+
+- id: 530e-g30-2017
+  brand: bmw
+  family: 530e
+  name: 530e iPerformance (G30, 9.2 kWh)
+  powertrain: plugin_hybrid
+  years: [2017, 2019]
+  gross_kwh: 9.2
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/5er-reihe/g30-g31-f90/266789/
+      level: secondary
+      for: [gross_kwh, ac_max_kw]
+
+# The 545e xDrive shares the pack; no source of its charger was read.
+- id: 530e-g30-2020
+  brand: bmw
+  family: 530e
+  name: 530e and 530e xDrive (G30, G31, 12 kWh)
+  powertrain: plugin_hybrid
+  years: [2020, 2023]
+  gross_kwh: 12
+  net_kwh: 10.8
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.bmwblog.com/2019/08/02/bmw-530e-receives-battery-update-and-optional-xdrive
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://insideevs.com/news/364479/bmw-specs-new-530e-phev/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+# BMW gives 19.4 kWh usable and 7.4 kW; ADAC 7.4 to 11 kW: the highest is kept. The gross
+# capacity is Wikipedia's alone, whose net (18.7) conflicts with BMW's.
+- id: 530e-g60-2024
+  brand: bmw
+  family: 530e
+  name: 530e and 530e xDrive (G60, G61)
+  powertrain: plugin_hybrid
+  years: [2024]
+  gross_kwh: 22.1
+  net_kwh: 19.4
+  ac_max_kw: 11
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/electrification-completed-new-bmw-5-series-sedan-now-also-available-with-plug-in-hybrid-drive
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/5er-reihe/g60-g61-g90-g99/328704/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+    - url: https://en.wikipedia.org/wiki/BMW_5_Series_(G60)
+      level: secondary
+      for: [gross_kwh]
+
+- id: 550e-g60-2024
+  brand: bmw
+  family: 550e
+  name: 550e xDrive (G60, G61)
+  powertrain: plugin_hybrid
+  years: [2024]
+  gross_kwh: 22.1
+  net_kwh: 19.4
+  ac_max_kw: 11
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/electrification-completed-new-bmw-5-series-sedan-now-also-available-with-plug-in-hybrid-drive
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/5er-reihe/g60-g61-g90-g99/328704/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+    - url: https://en.wikipedia.org/wiki/BMW_5_Series_(G60)
+      level: secondary
+      for: [gross_kwh]
+
+# BMW gives 18.6 kWh usable and 7.4 kW at launch, 11 kW from September 2024 (bmwblog,
+# ADAC): the highest is kept. The gross capacity is ADAC's.
+- id: m5-g90-2025
+  brand: bmw
+  family: M5
+  name: M5 and M5 Touring (G90, G99)
+  powertrain: plugin_hybrid
+  years: [2025]
+  gross_kwh: 22.1
+  net_kwh: 18.6
+  ac_max_kw: 11
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/the-all-new-bmw-m5
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://www.bmwblog.com/2024/09/25/bmw-m5-g90-faster-battery-charging/
+      level: secondary
+      for: [ac_max_kw]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/5er-reihe/g60-g61-g90-g99/336117/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+# InsideEVs gives BMW's 9.2 kWh gross and 7.4 usable, and the LCI's 3.7 kW wallbox.
+- id: 740e-g11-2016
+  brand: bmw
+  family: 740e
+  name: 740e iPerformance (G11)
+  powertrain: plugin_hybrid
+  years: [2016, 2019]
+  gross_kwh: 9.2
+  net_kwh: 7.4
+  ac_max_kw: 3.7
+  sources:
+    - url: https://insideevs.com/news/329698/bmw-introduces-plug-in-740e-740le-and-740le-xdrive-specs/
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://insideevs.com/news/342282/new-bmw-7-series-phev-gets-more-battery-capacity-and-range/
+      level: secondary
+      for: [ac_max_kw]
+
+- id: 740le-g12-2016
+  brand: bmw
+  family: 740Le
+  name: 740Le and 740Le xDrive iPerformance (G12)
+  powertrain: plugin_hybrid
+  years: [2016, 2019]
+  gross_kwh: 9.2
+  net_kwh: 7.4
+  ac_max_kw: 3.7
+  sources:
+    - url: https://insideevs.com/news/329698/bmw-introduces-plug-in-740e-740le-and-740le-xdrive-specs/
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://insideevs.com/news/342282/new-bmw-7-series-phev-gets-more-battery-capacity-and-range/
+      level: secondary
+      for: [ac_max_kw]
+
+- id: 745e-g11-2019
+  brand: bmw
+  family: 745e
+  name: 745e (G11)
+  powertrain: plugin_hybrid
+  years: [2019, 2022]
+  gross_kwh: 12
+  ac_max_kw: 3.7
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/electrically-powered-driving-pleasure-in-the-luxury-performance-segment-the-plug-in-hybrid-models-of-the-new-bmw-7-series
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://insideevs.com/news/342282/new-bmw-7-series-phev-gets-more-battery-capacity-and-range/
+      level: secondary
+      for: [ac_max_kw]
+
+- id: 745le-g12-2019
+  brand: bmw
+  family: 745Le
+  name: 745Le and 745Le xDrive (G12)
+  powertrain: plugin_hybrid
+  years: [2019, 2022]
+  gross_kwh: 12
+  ac_max_kw: 3.7
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/electrically-powered-driving-pleasure-in-the-luxury-performance-segment-the-plug-in-hybrid-models-of-the-new-bmw-7-series
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://insideevs.com/news/342282/new-bmw-7-series-phev-gets-more-battery-capacity-and-range/
+      level: secondary
+      for: [ac_max_kw]
+
+# ADAC: 18.7 kWh net and 7.4 kW until June 2023, then 17.6 kWh net and 11 kW, the same
+# gross 22.1 kWh; Wikipedia gives 18.7 and 7.4. Both kept, by model year.
+- id: 750e-g70-2023
+  brand: bmw
+  family: 750e
+  name: 750e xDrive (G70)
+  powertrain: plugin_hybrid
+  years: [2023, 2023]
+  gross_kwh: 22.1
+  net_kwh: 18.7
+  ac_max_kw: 7.4
+  sources:
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/7er-reihe/g70/324423/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+- id: 750e-g70-2024
+  brand: bmw
+  family: 750e
+  name: 750e xDrive (G70, 11 kW)
+  powertrain: plugin_hybrid
+  years: [2024, 2026]
+  gross_kwh: 22.1
+  net_kwh: 17.6
+  ac_max_kw: 11
+  sources:
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/7er-reihe/g70/345284/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/7er-reihe/g70/324423/
+      level: secondary
+      for: [gross_kwh]
+
+- id: i8-2014
+  brand: bmw
+  family: i8
+  name: i8 (I12, 7.1 kWh)
+  powertrain: plugin_hybrid
+  years: [2014, 2018]
+  gross_kwh: 7.1
+  net_kwh: 5.2
+  ac_max_kw: 3.7
+  sources:
+    - url: https://en.wikipedia.org/wiki/BMW_i8
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/i8/i08/238201/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+
+- id: i8-2018
+  brand: bmw
+  family: i8
+  name: i8 Coupé and Roadster (I12, I15, 11.6 kWh)
+  powertrain: plugin_hybrid
+  years: [2018, 2020]
+  gross_kwh: 11.6
+  ac_max_kw: 3.7
+  sources:
+    - url: https://en.wikipedia.org/wiki/BMW_i8
+      level: secondary
+      for: [gross_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/i8/i08-facelift/285097/
+      level: secondary
+      for: [ac_max_kw]
+
+- id: x1-xdrive25e-f48-2020
+  brand: bmw
+  family: X1
+  name: X1 xDrive25e (F48)
+  powertrain: plugin_hybrid
+  years: [2020, 2022]
+  gross_kwh: 10
+  net_kwh: 8.8
+  ac_max_kw: 3.7
+  sources:
+    - url: https://newsroom.bmwgroup.com/emea/introducing-the-new-bmw-x1-xdrive25e---followed-by-the-bmw-x2-xdrive25e
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/x1/f48-facelift/310237/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+
+# ADAC: AC up to 11 kW; Wikipedia 7.4: the highest is kept.
+- id: x1-u11-2023
+  brand: bmw
+  family: X1
+  name: X1 xDrive25e and xDrive30e (U11)
+  powertrain: plugin_hybrid
+  years: [2023]
+  gross_kwh: 16.3
+  net_kwh: 14.2
+  ac_max_kw: 11
+  sources:
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/x1/u11/330731/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/x1/u11/330735/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+- id: x2-xdrive25e-2020
+  brand: bmw
+  family: X2
+  name: X2 xDrive25e (F39)
+  powertrain: plugin_hybrid
+  years: [2020, 2023]
+  gross_kwh: 10
+  net_kwh: 8.8
+  ac_max_kw: 3.7
+  sources:
+    - url: https://newsroom.bmwgroup.com/emea/introducing-the-new-bmw-x1-xdrive25e---followed-by-the-bmw-x2-xdrive25e
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/x2/f39/323057/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+
+# Net: ADAC 11.2, Wikipedia 9.6; ADAC's catalogue is kept. The X3 30e xDrive (G45, from
+# 2025, 19.7 kWh usable) waits for a source of its gross capacity.
+- id: x3-xdrive30e-2020
+  brand: bmw
+  family: X3
+  name: X3 xDrive30e (G01)
+  powertrain: plugin_hybrid
+  years: [2020, 2024]
+  gross_kwh: 12
+  net_kwh: 11.2
+  ac_max_kw: 3.7
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/successful-sports-activity-vehicle-now-also-available-with-plug-in-hybrid-drive-the-new-bmw-x3-xdrive30e
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/x3/g01-f97-facelift/333405/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+
+# ADAC labels 6.8 kWh gross; BMW gives 9.2 gross and 6.8 net (paultan's 9.2).
+- id: x5-xdrive40e-2016
+  brand: bmw
+  family: X5
+  name: X5 xDrive40e (F15)
+  powertrain: plugin_hybrid
+  years: [2016, 2018]
+  gross_kwh: 9.2
+  net_kwh: 6.8
+  ac_max_kw: 3.7
+  sources:
+    - url: https://paultan.org/research/bmw/x5/f15/xdrive40e-m-sport-2016/
+      level: secondary
+      for: [gross_kwh, ac_max_kw]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/x5/f15-f85/248000/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+
+- id: x5-xdrive45e-2019
+  brand: bmw
+  family: X5
+  name: X5 xDrive45e (G05)
+  powertrain: plugin_hybrid
+  years: [2019, 2023]
+  gross_kwh: 24
+  net_kwh: 21.6
+  ac_max_kw: 3.7
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/electrifying-power-for-supreme-driving-pleasure-market-launch-of-the-new-bmw-x5-xdrive45e
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/x5/g05-f95/300232/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+
+# ADAC: 7.4 kW from April 2023, up to 11 kW from October 2025: the 7.4 kW of the first
+# page is the one read; the X5 of 2027 (G65) waits for a source of its gross capacity.
+- id: x5-xdrive50e-2023
+  brand: bmw
+  family: X5
+  name: X5 xDrive50e (G05 refresh)
+  powertrain: plugin_hybrid
+  years: [2023]
+  gross_kwh: 29.5
+  net_kwh: 25.7
+  ac_max_kw: 7.4
+  sources:
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/x5/g05-f95-facelift/327257/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+# BMW: 25.7 kWh usable and 7.4 kW at launch; ADAC 7.4 to 11 kW: the highest is kept.
+- id: xm-2023
+  brand: bmw
+  family: XM
+  name: XM, XM Label and XM 50e (G09)
+  powertrain: plugin_hybrid
+  years: [2023]
+  gross_kwh: 29.5
+  net_kwh: 25.7
+  ac_max_kw: 11
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/the-first-ever-bmw-xm
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/bmw/xm/g09/329561/
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+- id: countryman-cooper-se-all4-2017
+  brand: mini
+  family: Countryman
+  name: Countryman Cooper S E ALL4 (F60, 7.6 kWh)
+  powertrain: plugin_hybrid
+  years: [2017, 2020]
+  gross_kwh: 7.6
+  ac_max_kw: 3.7
+  sources:
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/mini/countryman/f60/263878/
+      level: secondary
+      for: [gross_kwh, ac_max_kw]
+    - url: https://en.wikipedia.org/wiki/Mini_Countryman_(F60)
+      level: secondary
+      for: [gross_kwh]
+
+# BMW gives 9.6 kWh gross, ADAC 10.0: the manufacturer's is kept.
+- id: countryman-cooper-se-all4-2021
+  brand: mini
+  family: Countryman
+  name: Countryman Cooper SE ALL4 (F60 refresh, 9.6 kWh)
+  powertrain: plugin_hybrid
+  years: [2021, 2024]
+  gross_kwh: 9.6
+  ac_max_kw: 3.7
+  sources:
+    - url: https://newsroom.bmwgroup.com/global/the-new-mini-countryman
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/mini/countryman/f60-facelift/313327/
+      level: secondary
+      for: [ac_max_kw]
 
 # --- Škoda Enyaq, Enyaq Coupé and Elroq (MEB) ----------------------------------------------
 #
