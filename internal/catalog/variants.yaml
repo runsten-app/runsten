@@ -2037,7 +2037,7 @@
   brand: hyundai
   family: IONIQ 6
   name: Ioniq 6 Standard Range
-  years: [2022]
+  years: [2022, 2025]
   gross_kwh: 53.8
   ac_max_kw: 11
   dc_max_kw: 175
@@ -2053,7 +2053,7 @@
   brand: hyundai
   family: IONIQ 6
   name: Ioniq 6 Long Range
-  years: [2022]
+  years: [2022, 2025]
   gross_kwh: 77.4
   net_kwh: 74
   ac_max_kw: 11
@@ -2065,6 +2065,51 @@
     - url: https://evspecshub.com/hyundai-ioniq-6-long-range-specs/
       level: secondary
       for: [net_kwh, dc_max_kw]
+
+# The facelift (model year 2026, ordered in Europe from January 2026) brings 63 and
+# 84 kWh batteries. Usable capacity: ev-database 60 for the 63 kWh, evkx 58, arenaev 58.8:
+# no source settles it, net_kwh is left out. For the 84 kWh, ev-database and evkx read 80,
+# arenaev 78.4 (a US listing): the most cited is kept. DC: Hyundai states 260 kW for the
+# 84 kWh, ev-database 263; for the 63 kWh ev-database 195, evkx 233; the highest is kept.
+# The RWD and AWD Long Range share the battery and the chargers: one variant.
+- id: ioniq6-standard-2026
+  brand: hyundai
+  family: IONIQ 6
+  name: Ioniq 6 Standard Range (facelift)
+  years: [2026]
+  gross_kwh: 63
+  ac_max_kw: 11
+  dc_max_kw: 233
+  sources:
+    - url: https://www.hyundai.news/eu/models/electrified/ioniq-6/press-kit/the-new-hyundai-ioniq-6.html
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://ev-database.org/car/3438/Hyundai-IONIQ-6-63-kWh-RWD
+      level: secondary
+      for: [ac_max_kw]
+    - url: https://evkx.net/models/hyundai/ioniq_6/ioniq_6_63_kwh_rwd/specifications/
+      level: secondary
+      for: [dc_max_kw]
+
+- id: ioniq6-long-2026
+  brand: hyundai
+  family: IONIQ 6
+  name: Ioniq 6 Long Range (facelift)
+  years: [2026]
+  gross_kwh: 84
+  net_kwh: 80
+  ac_max_kw: 11
+  dc_max_kw: 263
+  sources:
+    - url: https://www.hyundai.news/eu/models/electrified/ioniq-6/press-kit/the-new-hyundai-ioniq-6.html
+      level: manufacturer
+      for: [gross_kwh]
+    - url: https://ev-database.org/car/3439/Hyundai-IONIQ-6-84-kWh-RWD
+      level: secondary
+      for: [net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://evkx.net/models/hyundai/ioniq_6/ioniq_6_84_kwh_awd/
+      level: secondary
+      for: [net_kwh]
 
 - id: ioniq-electric-2016
   brand: hyundai
