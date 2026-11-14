@@ -20,7 +20,16 @@
       "driving_time_unknown": 1,
       "energy_kwh": 6,
       "energy_unknown": 2,
-      "consumption_kwh_per_100km": 18.75
+      "consumption_kwh_per_100km": 18.75,
+      "cost": {
+        "min_minor": 290,
+        "max_minor": 290
+      },
+      "cost_unknown": 2,
+      "cost_per_100km": {
+        "min_minor": 906,
+        "max_minor": 906
+      }
     },
     "charges": {
       "count": 2,
@@ -113,7 +122,16 @@
         "driving_time_unknown": 1,
         "energy_kwh": 6,
         "energy_unknown": 2,
-        "consumption_kwh_per_100km": 18.75
+        "consumption_kwh_per_100km": 18.75,
+        "cost": {
+          "min_minor": 290,
+          "max_minor": 290
+        },
+        "cost_unknown": 2,
+        "cost_per_100km": {
+          "min_minor": 906,
+          "max_minor": 906
+        }
       },
       "charges": {
         "count": 2,
@@ -205,7 +223,13 @@
         "driving_time_unknown": 0,
         "energy_kwh": 0,
         "energy_unknown": 0,
-        "consumption_kwh_per_100km": null
+        "consumption_kwh_per_100km": null,
+        "cost": {
+          "min_minor": 0,
+          "max_minor": 0
+        },
+        "cost_unknown": 0,
+        "cost_per_100km": null
       },
       "charges": {
         "count": 0,
@@ -297,7 +321,13 @@
         "driving_time_unknown": 0,
         "energy_kwh": 0,
         "energy_unknown": 0,
-        "consumption_kwh_per_100km": null
+        "consumption_kwh_per_100km": null,
+        "cost": {
+          "min_minor": 0,
+          "max_minor": 0
+        },
+        "cost_unknown": 0,
+        "cost_per_100km": null
       },
       "charges": {
         "count": 0,

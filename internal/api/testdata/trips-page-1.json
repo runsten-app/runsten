@@ -45,7 +45,8 @@
       "vehicle_reported": {
         "trip_meter_km": null,
         "consumption_kwh_per_100km": null
-      }
+      },
+      "cost": null
     },
     {
       "id": "2026-09-28T13:00:00.000000Z",
@@ -83,7 +84,8 @@
       "vehicle_reported": {
         "trip_meter_km": null,
         "consumption_kwh_per_100km": null
-      }
+      },
+      "cost": null
     }
   ],
   "next_cursor": "MTc5MDU5NjgwMDAwMDAwMC4xNzkwNjAwNDAwMDAwMDAw"

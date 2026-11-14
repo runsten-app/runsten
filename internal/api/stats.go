@@ -50,7 +50,10 @@ type tripStatsJSON struct {
 	EnergyKWh          float64  `json:"energy_kwh" doc:"The sum of the known energy estimates (ΔSoC × battery capacity)."`
 	EnergyUnknown      int      `json:"energy_unknown" minimum:"0"`
 	// An average: null over nothing, never 0.
-	ConsumptionKWhPer100km *float64 `json:"consumption_kwh_per_100km" doc:"An estimate: the energy over the distance of the trips where both are known and the distance positive, reconstructed ones included. null without such a trip, and for a plug-in hybrid (the vehicle's model.powertrain): its trips' energy is the battery's only, whatever the engine drove."`
+	ConsumptionKWhPer100km *float64          `json:"consumption_kwh_per_100km" doc:"An estimate: the energy over the distance of the trips where both are known and the distance positive, reconstructed ones included. null without such a trip, and for a plug-in hybrid (the vehicle's model.powertrain): its trips' energy is the battery's only, whatever the engine drove."`
+	Cost                   costSumJSON       `json:"cost" doc:"The sum of the known costs of the trips (trips.cost), each at the price of the kWh of the 30 days before it: what driving cost, as opposed to what the charges of the period cost. {0, 0} over no trip, and without the account's currency."`
+	CostUnknown            int               `json:"cost_unknown" minimum:"0" doc:"The trips whose cost is unknown, left out of cost: all of them without the account's currency."`
+	CostPer100km           null[costSumJSON] `json:"cost_per_100km" doc:"The cost of the trips whose cost and positive distance are both known, over that distance, for 100 km, in minor units: the lowest rounded down, the highest up. null without such a trip, and for a plug-in hybrid, as consumption_kwh_per_100km."`
 }
 
 // costSumJSON is a sum of costs known by bounds, in minor units of the account's
@@ -344,6 +347,10 @@ func tripStatsOf(s core.TripStats) tripStatsJSON {
 		DrivingTimeS: spanOf(s.DrivingTime), DrivingTimeUnknown: s.DrivingTimeUnknown,
 		EnergyKWh: s.EnergyKWh, EnergyUnknown: s.EnergyUnknown,
 		ConsumptionKWhPer100km: opt(s.ConsumptionKWhPer100km, same),
+		Cost:                   costSumOf(s.Cost), CostUnknown: s.Cost.Unknown,
+		CostPer100km: nullOf(s.CostPer100km, func(r core.MinorRange) costSumJSON {
+			return costSumJSON{MinMinor: r.Min, MaxMinor: r.Max}
+		}),
 	}
 }
 
@@ -478,6 +485,9 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 	costs := core.Costs{Charges: make([]core.Value[core.Cost], len(p.Charges)), Orphans: p.Orphans}
 	if !l.NoCosts {
 		costs.Charges = s.costs(p.PricedCharges, model.ChargerKW)
+	}
+	if costs.Trips, err = s.tripCostsOf(ctx, v, model, p.Trips, l); err != nil {
+		return nil, s.internal("trip costs not read", err)
 	}
 	sleep, err := s.sleepOf(ctx, v.ID, p, to)
 	if err != nil {

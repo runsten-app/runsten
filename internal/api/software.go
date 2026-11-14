@@ -77,8 +77,8 @@ func (s *Server) listSoftwareVersions(ctx context.Context, in *listInput) (*body
 	return listEvents(ctx, s, in, func(acc string, v Vehicle, q EventQuery) ([]core.SoftwareVersion, error) {
 		return s.Reader.ListSoftwareVersions(ctx, acc, v.ID, q) //nolint:wrapcheck // logged by listEvents, never shown
 	}, func(v core.SoftwareVersion) EventKey { return EventKey{DetectedAt: v.DetectedAt} },
-		func(vs []core.SoftwareVersion, _ AccountLimits) []softwareVersionJSON {
-			return each(softwareVersionOf)(vs)
+		func(vs []core.SoftwareVersion, _ Vehicle, _ AccountLimits) ([]softwareVersionJSON, error) {
+			return each(softwareVersionOf)(vs), nil
 		})
 }
 

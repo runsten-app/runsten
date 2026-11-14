@@ -100,7 +100,7 @@ func (s *Server) attach(p PricedCharges) []core.Value[core.EnteredCost] {
 // over the vehicle's whole history. charger is the vehicle's onboard charger (chargerOf):
 // the account's places and tariffs, bounded by the vehicle's power.
 func (s *Server) costs(p PricedCharges, charger core.Value[float64]) []core.Value[core.Cost] {
-	pricing := core.Pricing{Currency: p.Currency, Places: p.Places, OnboardChargerKW: charger, Params: s.CostParams}
+	pricing := s.pricing(p, charger)
 	attached := s.attach(p)
 	out := make([]core.Value[core.Cost], len(p.Charges))
 	for i, c := range p.Charges {

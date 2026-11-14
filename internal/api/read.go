@@ -598,10 +598,11 @@ type tripJSON struct {
 	EndAddress      *string            `json:"end_address" doc:"The address of end_position, as for start_address."`
 	OutsideTempC    *float64           `json:"outside_temp_c" doc:"The mean outside temperature, in °C, of the responses Runsten fetched while the trip ran, else of the latest one before it (a temperature that held), for a vehicle that tells it (Tesla). null for the others, a reconstructed or imported trip, and a trip derived before Runsten kept it: a rebuild of the derived data gives it."`
 	VehicleReported vehicleTripJSON    `json:"vehicle_reported" doc:"The vehicle's own trip figures, for comparison only: their exact semantics are unknown, and a reconstructed trip has none."`
+	Cost            null[tripCostJSON] `json:"cost" doc:"What the trip's energy cost, at the average price of the kWh that reached the battery over the 30 days before it (the vehicle's charges that started then): the same whatever the period read. null without the account's currency, without the trip's energy_kwh, and when no charge of those 30 days has both a cost and an energy: never 0 for want of one."`
 }
 
 // tripOf converts a trip, its positions at the account's places or at their addresses.
-func tripOf(t core.Trip, places []core.Place, book addressBook) tripJSON {
+func tripOf(t core.Trip, places []core.Place, book addressBook, cost core.Value[core.TripCost]) tripJSON {
 	start, end := placeAt(t.From, places), placeAt(t.To, places)
 	return tripJSON{
 		EventFields:     eventOf(t.DetectedAt, t.Reconstructed, t.Start, t.End, t.Sources, t.Import),
@@ -619,6 +620,7 @@ func tripOf(t core.Trip, places []core.Place, book addressBook) tripJSON {
 		VehicleReported: vehicleTripJSON{
 			TripMeterKm: opt(t.TripMeterKm, same), ConsumptionKWhPer100km: opt(t.ConsumptionKWhPer100km, same),
 		},
+		Cost: nullOf(cost, tripCostOf),
 	}
 }
 
@@ -704,7 +706,7 @@ func eventQuery(in *listInput) (EventQuery, error) {
 // listEvents is Urd: a page of events of the vehicle.
 func listEvents[E, J any](ctx context.Context, s *Server, in *listInput,
 	list func(accountID string, v Vehicle, q EventQuery) ([]E, error), key func(E) EventKey,
-	conv func([]E, AccountLimits) []J,
+	conv func([]E, Vehicle, AccountLimits) ([]J, error),
 ) (*body[page[J]], error) {
 	v, err := s.accountVehicle(ctx, in.Vehicle)
 	if err != nil {
@@ -738,7 +740,11 @@ func listEvents[E, J any](ctx context.Context, s *Server, in *listInput,
 		next := encodeCursor(key(events[want-1]))
 		p.NextCursor = &next
 	}
-	p.Items = append(p.Items, conv(events, l)...)
+	items, err := conv(events, v, l)
+	if err != nil {
+		return nil, err
+	}
+	p.Items = append(p.Items, items...)
 	return respond(p), nil
 }
 
@@ -770,9 +776,17 @@ func (s *Server) listTrips(ctx context.Context, in *listInput) (*body[page[tripJ
 			return nil, err //nolint:wrapcheck // logged by listEvents, never shown
 		}
 		return s.Reader.ListTrips(ctx, acc, v.ID, q)
-	}, func(t core.Trip) EventKey { return eventKey(t.Start, t.DetectedAt, t.Import) }, func(trips []core.Trip, _ AccountLimits) []tripJSON {
+	}, func(t core.Trip) EventKey { return eventKey(t.Start, t.DetectedAt, t.Import) }, func(trips []core.Trip, v Vehicle, l AccountLimits) ([]tripJSON, error) {
+		costs, err := s.tripCosts(ctx, v, trips, l)
+		if err != nil {
+			return nil, s.internal("trip costs not read", err)
+		}
 		book := s.addresses(ctx, places, tripPositions(trips...)...)
-		return each(func(t core.Trip) tripJSON { return tripOf(t, places, book) })(trips)
+		out := make([]tripJSON, len(trips))
+		for i, t := range trips {
+			out[i] = tripOf(t, places, book, costs[i])
+		}
+		return out, nil
 	})
 }
 
@@ -808,10 +822,10 @@ func (s *Server) listCharges(ctx context.Context, in *chargeListInput) (*body[pa
 		q.Place = chargesAt(in.Place)
 		priced, err = s.Reader.ListCharges(ctx, acc, v.ID, q)
 		return priced.Charges, err //nolint:wrapcheck // logged by listEvents, never shown
-	}, func(c core.Charge) EventKey { return eventKey(c.Start, c.DetectedAt, c.Import) }, func(page []core.Charge, l AccountLimits) []chargeJSON {
+	}, func(c core.Charge) EventKey { return eventKey(c.Start, c.DetectedAt, c.Import) }, func(page []core.Charge, _ Vehicle, l AccountLimits) ([]chargeJSON, error) {
 		// The costs of the whole read: its extra charge, left out of the page, is one of
 		// the vehicle's like the others.
-		return s.chargesOf(ctx, priced, charger, l)[:len(page)]
+		return s.chargesOf(ctx, priced, charger, l)[:len(page)], nil
 	})
 }
 
@@ -829,7 +843,13 @@ func (s *Server) getTrip(ctx context.Context, in *eventInput) (*body[tripJSON], 
 			return core.Trip{}, false, err //nolint:wrapcheck // logged by getEvent, never shown
 		}
 		return s.Reader.FindTrip(ctx, acc, vehicle, ref)
-	}, func(t core.Trip) core.Bounds { return t.End }, func(t core.Trip) tripJSON { return tripOf(t, places, s.addresses(ctx, places, tripPositions(t)...)) })
+	}, func(t core.Trip) core.Bounds { return t.End }, func(t core.Trip, v Vehicle, l AccountLimits) (tripJSON, error) {
+		costs, err := s.tripCosts(ctx, v, []core.Trip{t}, l)
+		if err != nil {
+			return tripJSON{}, s.internal("trip cost not read", err)
+		}
+		return tripOf(t, places, s.addresses(ctx, places, tripPositions(t)...), costs[0]), nil
+	})
 }
 
 // trackJSON is a GeoJSON LineString (RFC 7946).
@@ -903,7 +923,8 @@ func eventRef(id, kind string) (EventRef, error) {
 }
 
 func getEvent[E, J any](ctx context.Context, s *Server, in *eventInput, kind string,
-	find func(accountID, vehicleID string, ref EventRef) (E, bool, error), end func(E) core.Bounds, conv func(E) J,
+	find func(accountID, vehicleID string, ref EventRef) (E, bool, error), end func(E) core.Bounds,
+	conv func(E, Vehicle, AccountLimits) (J, error),
 ) (*body[J], error) {
 	v, err := s.accountVehicle(ctx, in.Vehicle)
 	if err != nil {
@@ -927,7 +948,11 @@ func getEvent[E, J any](ctx context.Context, s *Server, in *eventInput, kind str
 	if l.hides(end(e)) {
 		return nil, apiError(http.StatusNotFound, codeNotFound, "no such "+kind)
 	}
-	return respond(conv(e)), nil
+	j, err := conv(e, v, l)
+	if err != nil {
+		return nil, err
+	}
+	return respond(j), nil
 }
 
 // registerReads registers Verdandi and Urd.
