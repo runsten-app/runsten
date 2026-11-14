@@ -406,8 +406,8 @@
       "split": "Where that energy was charged",
       "note": "The average price of the kWh that went into the battery over the 30 days before the trip, applied to its energy.",
       "rangeNote": "A range: the times of some charges, and so their prices, are known only roughly.",
-      "leftOut": "{n} charge without a cost is not counted. | {n} charges without a cost are not counted.",
-      "noPrice": "No charge of the 30 days before the trip has a cost: give your places a tariff, or enter what a charge cost.",
+      "leftOut": "{n} charge without a cost or an energy is not counted. | {n} charges without a cost or an energy are not counted.",
+      "noPrice": "No charge of the 30 days before the trip has both a cost and an energy: give your places a tariff, or enter what a charge cost.",
       "noEnergy": "The trip's energy is unknown, and so is its cost.",
       "hybrid": "The electricity the trip used only: its fuel is not counted."
     }

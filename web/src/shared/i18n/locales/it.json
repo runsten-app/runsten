@@ -406,8 +406,8 @@
       "split": "Dove è stata caricata quell'energia",
       "note": "Il prezzo medio del kWh entrato nella batteria nei 30 giorni prima del viaggio, applicato alla sua energia.",
       "rangeNote": "Un intervallo: gli orari di alcune ricariche, e quindi i loro prezzi, sono noti solo approssimativamente.",
-      "leftOut": "{n} ricarica senza costo non è contata. | {n} ricariche senza costo non sono contate.",
-      "noPrice": "Nessuna ricarica dei 30 giorni prima del viaggio ha un costo: assegna una tariffa ai tuoi luoghi, o inserisci quanto è costata una ricarica.",
+      "leftOut": "{n} ricarica senza costo o senza energia non è contata. | {n} ricariche senza costo o senza energia non sono contate.",
+      "noPrice": "Nessuna ricarica dei 30 giorni prima del viaggio ha sia un costo sia un'energia: assegna una tariffa ai tuoi luoghi, o inserisci quanto è costata una ricarica.",
       "noEnergy": "L'energia del viaggio è sconosciuta, e così il suo costo.",
       "hybrid": "Solo l'elettricità usata dal viaggio: il carburante non è contato."
     }

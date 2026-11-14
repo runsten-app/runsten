@@ -406,8 +406,8 @@
       "split": "Hvor energien ble ladet",
       "note": "Gjennomsnittsprisen på kWh som gikk inn i batteriet de 30 dagene før turen, brukt på energien dens.",
       "rangeNote": "Et intervall: tidspunktene for noen ladinger, og dermed prisene, er bare omtrent kjent.",
-      "leftOut": "{n} lading uten kostnad telles ikke. | {n} ladinger uten kostnad telles ikke.",
-      "noPrice": "Ingen lading de 30 dagene før turen har en kostnad: gi stedene dine en tariff, eller legg inn hva en lading kostet.",
+      "leftOut": "{n} lading uten kostnad eller energi telles ikke. | {n} ladinger uten kostnad eller energi telles ikke.",
+      "noPrice": "Ingen lading de 30 dagene før turen har både en kostnad og en energi: gi stedene dine en tariff, eller legg inn hva en lading kostet.",
       "noEnergy": "Turens energi er ukjent, og dermed kostnaden.",
       "hybrid": "Bare strømmen turen brukte: drivstoffet telles ikke."
     }

@@ -406,8 +406,8 @@
       "split": "Waar die energie is geladen",
       "note": "De gemiddelde prijs van de kWh die in de 30 dagen vóór de rit de batterij in ging, toegepast op haar energie.",
       "rangeNote": "Een bereik: de tijden van sommige laadbeurten, en dus hun prijzen, zijn maar ongeveer bekend.",
-      "leftOut": "{n} laadbeurt zonder kosten telt niet mee. | {n} laadbeurten zonder kosten tellen niet mee.",
-      "noPrice": "Geen laadbeurt van de 30 dagen vóór de rit heeft kosten: geef je plaatsen een tarief, of vul in wat een laadbeurt kostte.",
+      "leftOut": "{n} laadbeurt zonder kosten of energie telt niet mee. | {n} laadbeurten zonder kosten of energie tellen niet mee.",
+      "noPrice": "Geen laadbeurt van de 30 dagen vóór de rit heeft zowel kosten als energie: geef je plaatsen een tarief, of vul in wat een laadbeurt kostte.",
       "noEnergy": "De energie van de rit is onbekend, en dus ook de kosten.",
       "hybrid": "Alleen de stroom die de rit gebruikte: de brandstof telt niet mee."
     }

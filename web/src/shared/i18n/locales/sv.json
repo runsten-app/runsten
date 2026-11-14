@@ -406,8 +406,8 @@
       "split": "Var energin laddades",
       "note": "Genomsnittspriset på de kWh som gick in i batteriet de 30 dagarna före resan, tillämpat på dess energi.",
       "rangeNote": "Ett intervall: tiderna för vissa laddningar, och därmed deras priser, är bara ungefär kända.",
-      "leftOut": "{n} laddning utan kostnad räknas inte. | {n} laddningar utan kostnad räknas inte.",
-      "noPrice": "Ingen laddning de 30 dagarna före resan har en kostnad: ge dina platser en taxa, eller ange vad en laddning kostade.",
+      "leftOut": "{n} laddning utan kostnad eller energi räknas inte. | {n} laddningar utan kostnad eller energi räknas inte.",
+      "noPrice": "Ingen laddning de 30 dagarna före resan har både en kostnad och en energi: ge dina platser en taxa, eller ange vad en laddning kostade.",
       "noEnergy": "Resans energi är okänd, och därmed kostnaden.",
       "hybrid": "Bara elen som resan använde: bränslet räknas inte."
     }

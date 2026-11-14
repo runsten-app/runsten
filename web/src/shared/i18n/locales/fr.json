@@ -406,8 +406,8 @@
       "split": "Où cette énergie a été chargée",
       "note": "Le prix moyen du kWh entré dans la batterie pendant les 30 jours avant le trajet, appliqué à son énergie.",
       "rangeNote": "Un intervalle : les heures de certaines charges, donc leurs prix, ne sont connues qu'à peu près.",
-      "leftOut": "{n} charge sans coût n'est pas comptée. | {n} charges sans coût ne sont pas comptées.",
-      "noPrice": "Aucune charge des 30 jours avant le trajet n'a de coût : donnez un tarif à vos lieux, ou saisissez ce qu'une charge a coûté.",
+      "leftOut": "{n} charge sans coût ou sans énergie n'est pas comptée. | {n} charges sans coût ou sans énergie ne sont pas comptées.",
+      "noPrice": "Aucune charge des 30 jours avant le trajet n'a à la fois un coût et une énergie : donnez un tarif à vos lieux, ou saisissez ce qu'une charge a coûté.",
       "noEnergy": "L'énergie du trajet est inconnue, son coût aussi.",
       "hybrid": "L'électricité utilisée par le trajet seulement : le carburant n'est pas compté."
     }

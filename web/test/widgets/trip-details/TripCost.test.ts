@@ -117,7 +117,7 @@ describe('TripCost', () => {
     expect(notes(c)).toEqual([
       i18n.global.t('trip.cost.note'),
       i18n.global.t('trip.cost.rangeNote'),
-      '1 charge without a cost is not counted.',
+      '1 charge without a cost or an energy is not counted.',
     ])
   })
 

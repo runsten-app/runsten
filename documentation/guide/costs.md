@@ -43,7 +43,7 @@ The power bounds how much energy each price can take, and narrows the range: the
 A trip costs its energy at the average price of the kWh that went into the battery over the **30 days before it**: what the vehicle's charges that started then cost, over the energy they added. Both are on the battery's side, so the losses of charging are in the price: "6 kWh at €0.48/kWh, €2.90". A trip after a week of fast charging costs more than one after a week at home, as on the bills; and a trip keeps its cost whatever period you look at.
 
 - Every charge with a cost counts: from a tariff, entered, or imported. A charge without a cost, or without an energy, is left out of the average, and the trip says how many.
-- When no charge of those 30 days has a cost, the trip's cost is unknown, never zero. So is the cost of a trip whose energy is unknown (one Runsten found from the odometer alone).
+- When no charge of those 30 days has both a cost and an energy, the trip's cost is unknown, never zero. So is the cost of a trip whose energy is unknown (one Runsten found from the odometer alone).
 - The cost is shown as one amount when its lowest and highest lie within 10 % of each other, else as a range: the charges' costs it rests on are ranges.
 - With a distance, the trip also tells its cost per 100 km.
 
