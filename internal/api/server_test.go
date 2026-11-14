@@ -241,7 +241,10 @@ type env struct {
 	pleos         *memPleos
 	pleosVehicles PleosVehicles
 	// skoda keeps the MyŠkoda key; the server's SkodaVehicles checks a new one.
-	skoda    *memSkoda
+	skoda *memSkoda
+	// renault keeps the My Renault sign-in; renaults signs an owner in.
+	renault  *memRenault
+	renaults *fakeRenault
 	reader   *memReader
 	settings *memSettings
 	brokers  *memBrokers
@@ -267,7 +270,7 @@ func newEnv(t *testing.T, maxFlows int) *env {
 // the simulator accepts (nil: any).
 func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []string) *env {
 	t.Helper()
-	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, bmw: &memBMW{}, bmws: &fakeBMW{}, pleos: &memPleos{}, pleosVehicles: pleosVehicles{}, skoda: &memSkoda{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, exports: &memAccountExports{}, archives: &memArchives{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}, stored: &fakeStoredPictures{}}
+	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, bmw: &memBMW{}, bmws: &fakeBMW{}, pleos: &memPleos{}, pleosVehicles: pleosVehicles{}, skoda: &memSkoda{}, renault: &memRenault{}, renaults: &fakeRenault{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, exports: &memAccountExports{}, archives: &memArchives{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}, stored: &fakeStoredPictures{}}
 	e.reader = newMemReader(e.settings)
 	t.Cleanup(func() {
 		// Every path that adds vehicles holds the account's lock (the cap would not hold).
@@ -319,6 +322,7 @@ func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []strin
 		BMW: e.bmw, BMWAccounts: e.bmws,
 		Pleos: e.pleos, PleosVehicles: e.pleosVehicles,
 		Skoda: e.skoda, SkodaVehicles: skodaDown{err: errors.New("no Škoda in this test")},
+		Renault: e.renault, RenaultAccounts: e.renaults,
 		InstanceKeyLast4: instanceKey[max(0, len(instanceKey)-4):], Brokers: e.brokers, ImportJobs: e.jobs, AccountExports: e.exports, ExportArchives: e.archives, Aximote: e.aximote, FileImports: e.files,
 		Pictures: e.pictures, StoredPictures: e.stored, Params: readerParams(), CostParams: core.DefaultCostParams(), CapacityParams: core.DefaultCapacityParams(),
 		Catalog: mustCatalog(t), Clock: e.clk, Log: quiet,

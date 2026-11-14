@@ -168,7 +168,7 @@ func TestTeslaToken(t *testing.T) {
 	if resp, body := do(t, noFollow(), http.MethodDelete, u+"/tesla", "", "", c); resp.status != http.StatusNoContent || body != "" {
 		t.Errorf("DELETE: %d %q", resp.status, body)
 	}
-	if _, body := get(t, noFollow(), u, c); !strings.HasSuffix(body, `"tesla":null,"polestar_id":null,"bmw":null,"pleos":{"hyundai":null,"kia":null,"genesis":null},"skoda":null}`+"\n") || !e.tesla.setAt.IsZero() {
+	if _, body := get(t, noFollow(), u, c); !strings.HasSuffix(body, `"tesla":null,"polestar_id":null,"bmw":null,"pleos":{"hyundai":null,"kia":null,"genesis":null},"skoda":null,"renault":null}`+"\n") || !e.tesla.setAt.IsZero() {
 		t.Errorf("after DELETE: %s", body)
 	}
 

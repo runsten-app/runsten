@@ -77,6 +77,7 @@ type connectionSettingsJSON struct {
 	BMW         null[bmwJSON]                `json:"bmw" doc:"The account's BMW CarData connection, which reads its BMWs and Minis (the flag source.bmw); null: none."`
 	Pleos       null[pleosKeysJSON]          `json:"pleos" doc:"The account's keys of the Pleos Vehicle Data API, one per brand — Hyundai, Kia, Genesis —, which read its cars of each (the flag source.pleos); null: none."`
 	Skoda       null[skodaKeyJSON]           `json:"skoda" doc:"The account's key of the MyŠkoda Public API, which reads its Škodas (the flag source.skoda); null: none."`
+	Renault     null[renaultJSON]            `json:"renault" doc:"The account's sign-in to My Renault, which reads its Renaults, Dacias and Alpines through the My Renault app's API (the flag source.renault); null: none."`
 }
 
 type apiKeyUpdateJSON struct {
@@ -139,6 +140,11 @@ func (s *Server) connectionSettings(ctx context.Context, account string) (connec
 		return connectionSettingsJSON{}, s.internal("Škoda connection not read", err)
 	}
 	out.Skoda = skodaOf(sc)
+	rc, err := s.Renault.RenaultConnection(ctx, account)
+	if err != nil {
+		return connectionSettingsJSON{}, s.internal("Renault connection not read", err)
+	}
+	out.Renault = renaultOf(rc)
 	return out, nil
 }
 

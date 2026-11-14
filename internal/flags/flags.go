@@ -28,6 +28,9 @@ const (
 	SourcePleos Name = "source.pleos"
 	// SourceSkoda: a Škoda is read through the MyŠkoda Public API, with its owner's key.
 	SourceSkoda Name = "source.skoda"
+	// SourceRenault: a Renault, a Dacia or an Alpine is read through the My Renault
+	// app's API, with its owner's sign-in (ADR 0050).
+	SourceRenault Name = "source.renault"
 	// PictureTesla: a Tesla's picture, as Tesla's configurator draws it, relayed.
 	PictureTesla Name = "picture.tesla"
 )
@@ -79,6 +82,13 @@ func All() []Flag {
 				"a self-hosted instance read by the car's owner is the personal use Škoda's terms allow. An instance " +
 				"that serves other people turns it off, the terms forbidding a commercial use of the API.",
 			Remove: "never while Škoda's terms allow a personal use only; else once the source is out of beta",
+		},
+		{
+			Name: SourceRenault, Default: false, Web: true,
+			Purpose: "The My Renault app's API as a source, for the Renaults, the Dacias and the Alpines: its connection " +
+				"and its reads. Off by default: the API is unofficial, against the app's terms, and many accounts read " +
+				"from one instance's addresses could have them blocked; a self-hosted instance turns it on.",
+			Remove: "when Renault opens an official API to its owners, or the source is offered everywhere",
 		},
 		{
 			Name: PictureTesla, Default: true,

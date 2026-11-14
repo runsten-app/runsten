@@ -43,6 +43,10 @@
 //	RUNSTEN_SKODA_API_URL       the MyŠkoda Public API, which reads the Škodas of the
 //	                            connections with a key when the flag source.skoda is on
 //	                            (default https://public.api.connect.skoda-auto.cz)
+//	RUNSTEN_RENAULT_GIGYA_URL   Renault's Gigya and Kamereon, and the keys of its apps,
+//	RUNSTEN_RENAULT_GIGYA_KEY   which read the Renaults, Dacias and Alpines of the
+//	RUNSTEN_RENAULT_KAMEREON_URL connections with a sign-in when the flag source.renault
+//	RUNSTEN_RENAULT_KAMEREON_KEY is on (defaults: renault-api's, for Europe)
 //	RUNSTEN_TESLA_API_URL       Tesla's Owner API address (default
 //	                            https://owner-api.teslamotors.com): the connections with
 //	                            a Tesla refresh token are read through it; another host
@@ -123,6 +127,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -133,6 +138,7 @@ import (
 	"runsten/internal/collector/pleossource"
 	"runsten/internal/collector/polestaridsource"
 	"runsten/internal/collector/polestarsource"
+	"runsten/internal/collector/renaultsource"
 	"runsten/internal/collector/skodasource"
 	"runsten/internal/collector/teslasource"
 	"runsten/internal/core"
@@ -149,6 +155,7 @@ import (
 	"runsten/internal/polestar"
 	"runsten/internal/polestarid"
 	"runsten/internal/publish/mqtt"
+	"runsten/internal/renault"
 	"runsten/internal/skoda"
 	"runsten/internal/store"
 	"runsten/internal/tesla"
@@ -164,6 +171,7 @@ type config struct {
 	polestarURL  string
 	pleosURL     string
 	skodaURL     string
+	renault      renault.Config
 	tesla        tesla.Hosts
 	polestarID   polestarid.Hosts
 	bmw          bmw.Hosts
@@ -360,6 +368,7 @@ func run(args []string) error {
 	cfg.quota.NoInstanceKey = cfg.apiKey == ""
 	log.Info("collector started", "version", version, "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
 		"polestar_base_url", cfg.polestarURL, "pleos_api_url", cfg.pleosURL, "skoda_api_url", cfg.skodaURL,
+		"renault_gigya_url", cfg.renault.GigyaURL, "renault_kamereon_url", cfg.renault.KamereonURL,
 		"tesla_api_url", cfg.tesla.API, "tesla_auth_url", cfg.tesla.Auth,
 		"polestar_id_auth_url", cfg.polestarID.Auth, "polestar_id_api_url", cfg.polestarID.API,
 		"polestar_id_discovery_url", cfg.polestarID.Discovery, "polestar_id_pccs_url", cfg.polestarID.PCCS,
@@ -414,6 +423,11 @@ func run(args []string) error {
 	// Škoda's terms allow; an instance serving others turns it off.
 	c.SetGate(skoda.Source, func(ctx context.Context, account string) bool {
 		return features.Enabled(ctx, flags.SourceSkoda, account)
+	})
+	c.AddSource(renaultsource.New(renault.NewClient(cfg.renault, hc), renaultCredential(st), clk), st)
+	// Renault's, off by default: the My Renault app's API is unofficial (ADR 0050 §8).
+	c.SetGate(renault.Source, func(ctx context.Context, account string) bool {
+		return features.Enabled(ctx, flags.SourceRenault, account)
 	})
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
@@ -544,6 +558,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		polestarURL: polestar.DefaultBaseURL,
 		pleosURL:    pleos.DefaultBaseURL,
 		skodaURL:    skoda.DefaultBaseURL,
+		renault:     renault.DefaultConfig(),
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		polestarID: polestarid.Hosts{
 			Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL,
@@ -609,9 +624,18 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 			*dst = b
 		}
 	}
+	// The keys of Renault's apps: public, in their pages and their code (ADR 0050 §3).
+	for name, dst := range map[string]*string{
+		"RUNSTEN_RENAULT_GIGYA_KEY": &cfg.renault.GigyaKey, "RUNSTEN_RENAULT_KAMEREON_KEY": &cfg.renault.KamereonKey,
+	} {
+		if v := strings.TrimSpace(getenv(name)); v != "" {
+			*dst = v
+		}
+	}
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.authURL, "RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL,
 		"RUNSTEN_PLEOS_API_URL": &cfg.pleosURL, "RUNSTEN_SKODA_API_URL": &cfg.skodaURL,
+		"RUNSTEN_RENAULT_GIGYA_URL": &cfg.renault.GigyaURL, "RUNSTEN_RENAULT_KAMEREON_URL": &cfg.renault.KamereonURL,
 		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
 		"RUNSTEN_POLESTAR_ID_DISCOVERY_URL": &cfg.polestarID.Discovery, "RUNSTEN_POLESTAR_ID_PCCS_URL": &cfg.polestarID.PCCS,
@@ -696,6 +720,20 @@ func pleosCredential(st *store.Store) func(ctx context.Context, accountID, conne
 	}
 }
 
+// renaultCredential reads the sign-in of a Renault connection from the store.
+func renaultCredential(st *store.Store) func(ctx context.Context, accountID, connectionID string) (renaultsource.Credential, error) {
+	return func(ctx context.Context, accountID, connectionID string) (renaultsource.Credential, error) {
+		c, err := st.RenaultCredential(ctx, accountID, connectionID)
+		if err != nil {
+			return renaultsource.Credential{}, fmt.Errorf("renault credential: %w", err)
+		}
+		return renaultsource.Credential{
+			Session:  renault.Session{LoginToken: c.LoginToken, Device: renault.Device{GMID: c.GMID, UCID: c.UCID}},
+			PersonID: c.PersonID, Country: c.Country,
+		}, nil
+	}
+}
+
 // skodaCredential reads the key of a Škoda connection from the store, and when it was set.
 func skodaCredential(st *store.Store) func(ctx context.Context, accountID, connectionID string) (skodasource.Credential, error) {
 	return func(ctx context.Context, accountID, connectionID string) (skodasource.Credential, error) {
@@ -718,5 +756,6 @@ func normalizers() derive.Normalizer {
 		bmw.Normalizer{},
 		pleos.Normalizer{},
 		skoda.Normalizer{},
+		renault.Normalizer{},
 	}, extensionNormalizers()...)...)
 }

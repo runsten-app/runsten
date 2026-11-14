@@ -192,7 +192,7 @@ func TestBMW(t *testing.T) {
 	if resp, body := do(t, noFollow(), http.MethodDelete, u+"/bmw", "", "", c); resp.status != http.StatusNoContent || body != "" {
 		t.Errorf("DELETE: %d %q", resp.status, body)
 	}
-	if _, body := get(t, noFollow(), u, c); !strings.HasSuffix(body, `"bmw":null,"pleos":{"hyundai":null,"kia":null,"genesis":null},"skoda":null}`+"\n") || !e.bmw.setAt.IsZero() {
+	if _, body := get(t, noFollow(), u, c); !strings.HasSuffix(body, `"bmw":null,"pleos":{"hyundai":null,"kia":null,"genesis":null},"skoda":null,"renault":null}`+"\n") || !e.bmw.setAt.IsZero() {
 		t.Errorf("after DELETE: %s", body)
 	}
 }
