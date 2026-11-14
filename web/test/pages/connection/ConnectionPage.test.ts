@@ -18,14 +18,15 @@ vi.mock('@/entities/session/extensions', () => ({
 }))
 
 // The flags, as the session gives them: source.tesla on, source.polestar-id, source.bmw,
-// source.pleos and source.skoda off (BMW's, Pleos's and Škoda's are on in the app, but the
-// other tests have three tabs), unless a test turns them over.
+// source.pleos, source.skoda and source.renault off (BMW's, Pleos's and Škoda's are on in
+// the app, but the other tests have three tabs), unless a test turns them over.
 const flag = vi.hoisted(() => ({
   tesla: true,
   polestarId: false,
   bmw: false,
   pleos: false,
   skoda: false,
+  renault: false,
 }))
 vi.mock('@/features/view-flags', async () => {
   const { computed } = await import('vue')
@@ -40,7 +41,9 @@ vi.mock('@/features/view-flags', async () => {
               ? flag.pleos
               : name === 'source.skoda'
                 ? flag.skoda
-                : flag.tesla,
+                : name === 'source.renault'
+                  ? flag.renault
+                  : flag.tesla,
       ),
   }
 })
@@ -76,6 +79,7 @@ const selfHosted: ConnectionSettings = {
   bmw: null,
   pleos: null,
   skoda: null,
+  renault: null,
 }
 // The hosted offer: no instance key, the account gives its own.
 const hosted: ConnectionSettings = {
@@ -90,6 +94,7 @@ const hosted: ConnectionSettings = {
   bmw: null,
   pleos: null,
   skoda: null,
+  renault: null,
 }
 
 const items = vehicles.items as Vehicle[]
@@ -101,6 +106,7 @@ beforeEach(() => {
   flag.bmw = false
   flag.pleos = false
   flag.skoda = false
+  flag.renault = false
   mocks.fetchVehicles.mockReset()
   mocks.fetchVehicles.mockResolvedValue(items)
   mocks.fetchConnection.mockReset()
@@ -1098,6 +1104,81 @@ describe('ConnectionPage', () => {
       )
       const panel = w.find('#connection-panel-skoda')
       expect(panel.find('.delete-credential').exists()).toBe(true)
+      expect(panel.find('.toggle').exists()).toBe(false)
+    })
+  })
+
+  describe('Renault', () => {
+    const renaultSignIn = (k: Partial<NonNullable<ConnectionSettings['renault']>> = {}) => ({
+      last4: '1a2b',
+      set_at: '2026-09-01T07:00:00Z',
+      refused_at: null,
+      ...k,
+    })
+    const renaultCar = (): Vehicle => {
+      const [car] = items
+      if (!car?.collection) throw new Error('fixture')
+      return {
+        ...car,
+        id: 'renault-1',
+        vin: 'VF1AG000000000001',
+        connection: { ...car.connection, provider: 'renault', credential: 'set', api_key: null },
+        collection: { ...car.collection, quota: [], last_failure: null },
+      }
+    }
+
+    it('has a tab marked beta while its flag is on, with its form and no dot', async () => {
+      flag.renault = true
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
+        'Volvo needs your attention',
+        'Polestar needs your attention',
+        'Tesla',
+        'Renault Beta',
+      ])
+      await w.find('#connection-tab-renault').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('#connection-panel-renault .renault-form').exists()).toBe(true),
+      )
+      const panel = w.find('#connection-panel-renault')
+      expect(panel.findAll('h2').map((h) => plain(h.text()))).toEqual(['Your My Renault account'])
+      expect(panel.find('#renault-email').exists()).toBe(true)
+      expect(panel.find('.renault-off').exists()).toBe(false)
+    })
+
+    it('has no tab while its flag is off, without a sign-in nor a Renault', async () => {
+      const w = await page()
+      expect(w.find('#connection-tab-renault').exists()).toBe(false)
+    })
+
+    it('is the tab of a vehicle read through My Renault, Dacias and Alpines too', async () => {
+      mocks.fetchVehicles.mockResolvedValue([...items, renaultCar()])
+      const w = await page()
+      expect(w.find('#connection-tab-renault').exists()).toBe(true)
+    })
+
+    it('puts a dot on its tab once Renault refused the sign-in', async () => {
+      flag.renault = true
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        renault: renaultSignIn({ refused_at: '2026-09-28T05:30:00Z' }),
+      })
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toContain(
+        'Renault Beta needs your attention',
+      )
+    })
+
+    it('keeps its tab while its flag is off for an account that has a sign-in', async () => {
+      mocks.fetchConnection.mockResolvedValue({ ...selfHosted, renault: renaultSignIn() })
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toContain('Renault Beta')
+      await w.find('#connection-tab-renault').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('#connection-panel-renault .renault-off').exists()).toBe(true),
+      )
+      const panel = w.find('#connection-panel-renault')
+      expect(panel.find('.delete-connection').exists()).toBe(true)
       expect(panel.find('.toggle').exists()).toBe(false)
     })
   })

@@ -18,7 +18,8 @@ import { extensionChoices, extensionMakeMentions, type HomeMake } from '../exten
 // (an instance without a key of its own). On an instance without a Volvo application, the
 // Volvo is left out; the Tesla, while the flag source.tesla is off for the account; the BMW
 // and the MINI, while source.bmw is; Hyundai, Kia and Genesis, while source.pleos is; Škoda,
-// while source.skoda is. A
+// while source.skoda is; Renault, while source.renault is (it also reads Dacia and Alpine,
+// told on its tab). A
 // downstream build may add its own choices under the makes, and a mention on a make's
 // tile (extensions.ts).
 const { t } = useI18n()
@@ -30,6 +31,7 @@ const teslaOn = useFlag('source.tesla')
 const bmwOn = useFlag('source.bmw')
 const pleosOn = useFlag('source.pleos')
 const skodaOn = useFlag('source.skoda')
+const renaultOn = useFlag('source.renault')
 const keyMissing = computed(
   () => !!connection.value && !connection.value.instance_key && !connection.value.api_key,
 )
@@ -69,6 +71,9 @@ const tiles = computed<Tile[]>(() => [
   ...(skodaOn.value
     ? [{ make: 'skoda' as const, to: { name: 'connection', hash: '#skoda' }, beta: true }]
     : []),
+  ...(renaultOn.value
+    ? [{ make: 'renault' as const, to: { name: 'connection', hash: '#renault' }, beta: true }]
+    : []),
 ])
 // The makes, written out: an interpolated key is invisible to the unused-key rule.
 const names = computed<Record<HomeMake, string>>(() => ({
@@ -81,6 +86,7 @@ const names = computed<Record<HomeMake, string>>(() => ({
   kia: t('home.make.kia'),
   genesis: t('home.make.genesis'),
   skoda: t('home.make.skoda'),
+  renault: t('home.make.renault'),
 }))
 const note = (tile: Tile) => mentions.value[tile.make] ?? (tile.beta ? t('home.beta') : undefined)
 

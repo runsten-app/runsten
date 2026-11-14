@@ -71,13 +71,15 @@ const nextRead = computed(() => {
           ? t('connection.facts.noneDuePleos')
           : provider === 'skoda'
             ? t('connection.facts.noneDueSkoda')
-            : provider === 'tesla'
-              ? t('connection.facts.noneDueToken')
-              : provider === 'tesla_fleet'
-                ? t('connection.facts.noneDueTeslaFleet')
-                : provider === 'polestar_id'
-                  ? t('connection.facts.noneDuePolestarId')
-                  : t('connection.facts.noneDueCredential')
+            : provider === 'renault'
+              ? t('connection.facts.noneDueRenault')
+              : provider === 'tesla'
+                ? t('connection.facts.noneDueToken')
+                : provider === 'tesla_fleet'
+                  ? t('connection.facts.noneDueTeslaFleet')
+                  : provider === 'polestar_id'
+                    ? t('connection.facts.noneDuePolestarId')
+                    : t('connection.facts.noneDueCredential')
     if (state.value.kind === 'unshared')
       return provider === 'bmw'
         ? t('connection.facts.noneDueUnsharedBmw')
@@ -85,11 +87,13 @@ const nextRead = computed(() => {
           ? t('connection.facts.noneDueUnsharedPleos')
           : provider === 'skoda'
             ? t('connection.facts.noneDueUnsharedSkoda')
-            : provider === 'tesla' || provider === 'tesla_fleet'
-              ? t('connection.facts.noneDueUnsharedTesla')
-              : provider === 'polestar_id'
-                ? t('connection.facts.noneDueUnsharedPolestarId')
-                : t('connection.facts.noneDueUnshared')
+            : provider === 'renault'
+              ? t('connection.facts.noneDueUnsharedRenault')
+              : provider === 'tesla' || provider === 'tesla_fleet'
+                ? t('connection.facts.noneDueUnsharedTesla')
+                : provider === 'polestar_id'
+                  ? t('connection.facts.noneDueUnsharedPolestarId')
+                  : t('connection.facts.noneDueUnshared')
     return t('connection.facts.noneDue')
   }
   return Date.parse(next) <= props.now ? t('connection.facts.due') : f.dateTime(next, props.now)

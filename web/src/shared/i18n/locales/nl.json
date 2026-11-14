@@ -48,7 +48,8 @@
       "hyundai": "Hyundai",
       "kia": "Kia",
       "genesis": "Genesis",
-      "skoda": "Škoda"
+      "skoda": "Škoda",
+      "renault": "Renault, Dacia, Alpine"
     },
     "beta": "Bèta"
   },
@@ -1361,7 +1362,8 @@
       "polestar": "Polestar",
       "tesla": "Tesla",
       "bmw": "BMW",
-      "skoda": "Škoda"
+      "skoda": "Škoda",
+      "renault": "Renault"
     },
     "brandAttention": "vraagt uw aandacht",
     "outcome": {
@@ -1430,18 +1432,23 @@
       "credentialRefusedBmw": "Niet uitgelezen: BMW heeft de koppeling geweigerd",
       "credentialRefusedPleos": "Niet uitgelezen: Pleos heeft de sleutel geweigerd",
       "credentialRefusedSkoda": "Niet gelezen: Škoda weigerde de sleutel",
+      "credentialRefusedRenault": "Niet gelezen: Renault weigerde de aanmelding",
       "credentialMissingBmw": "Niet uitgelezen: geen BMW gekoppeld",
       "credentialMissingPleos": "Niet uitgelezen: geen Pleos-sleutel opgegeven",
       "credentialMissingSkoda": "Niet gelezen: geen MyŠkoda-sleutel opgegeven",
+      "credentialMissingRenault": "Niet gelezen: niet aangemeld bij My Renault",
       "unsharedBmw": "Niet uitgelezen: het BMW-account is niet langer hoofdgebruiker van de auto",
       "unsharedPleos": "Niet uitgelezen: de auto deelt zijn gegevens niet langer met de sleutel",
       "unsharedSkoda": "Niet gelezen: de sleutel dekt deze auto niet meer",
+      "unsharedRenault": "Niet gelezen: de auto staat niet meer in het My Renault-account",
       "pausedBmw": "Door BMW gepauzeerd tot {time}",
       "pausedPleos": "Door Pleos gepauzeerd tot {time}",
       "pausedSkoda": "Gepauzeerd door Škoda tot {time}",
+      "pausedRenault": "Gepauzeerd door Renault tot {time}",
       "quotaBmw": "Dagelijks aantal aanroepen naar BMW bereikt tot {time}",
       "quotaPleos": "Dagelijks aantal aanroepen naar Pleos bereikt tot {time}",
-      "quotaSkoda": "Dagelijkse aanroepen naar Škoda bereikt tot {time}"
+      "quotaSkoda": "Dagelijkse aanroepen naar Škoda bereikt tot {time}",
+      "quotaRenault": "Dagelijkse aanroepen naar Renault bereikt tot {time}"
     },
     "notice": {
       "reauth": {
@@ -1485,15 +1492,20 @@
       "pausedBmw": "BMW heeft het aantal aanroepen beperkt. Het uitlezen wordt vanzelf hervat.",
       "pausedPleos": "Pleos heeft het aantal aanroepen beperkt. Het uitlezen wordt vanzelf hervat.",
       "pausedSkoda": "Škoda heeft het aantal aanroepen beperkt. Het uitlezen wordt vanzelf hervat.",
+      "pausedRenault": "Renault beperkte het aantal aanroepen: het account wordt misschien ook door een andere toepassing gelezen, bijvoorbeeld Home Assistant. Het lezen hervat vanzelf.",
       "credentialRefusedPleos": "Pleos heeft de sleutel geweigerd waarmee deze auto wordt uitgelezen: ingetrokken of vervangen in het Playground, of verlopen. Maak daar een nieuwe aan en geef die op de koppelingspagina: wat al is uitgelezen, blijft bewaard.",
       "credentialRefusedSkoda": "Škoda weigerde de sleutel waarmee deze auto wordt gelezen: verlopen, of verwijderd in de MyŠkoda-app. Maak er daar een nieuwe aan en geef die op de verbindingspagina: wat gelezen is, blijft.",
+      "credentialRefusedRenault": "Renault weigerde de aanmelding waarmee deze auto wordt gelezen: wachtwoord gewijzigd, of sessie beëindigd. Meld u opnieuw aan op de verbindingspagina: wat gelezen is, blijft.",
       "credentialMissingPleos": "Runsten leest deze auto uit met uw Pleos-sleutel, maar die is verwijderd: geef een nieuwe op de koppelingspagina.",
       "credentialMissingSkoda": "Runsten leest deze auto met uw MyŠkoda-sleutel, die werd verwijderd: geef een nieuwe op de verbindingspagina.",
+      "credentialMissingRenault": "Runsten leest deze auto met uw aanmelding bij My Renault, die werd verwijderd: meld u opnieuw aan op de verbindingspagina.",
       "unsharedPleos": "Pleos antwoordde dat deze auto zijn gegevens niet langer deelt met de sleutel: het delen uitgeschakeld in de verbonden diensten, of de auto uitgeschreven. Deelt de auto opnieuw, geef de sleutel dan opnieuw op de koppelingspagina: de auto wordt dan weer uitgelezen.",
       "unsharedSkoda": "Škoda antwoordde dat de sleutel deze auto niet meer leest: hij werd bij de sleutel uitgevinkt in de MyŠkoda-app. Maak een sleutel aan met deze auto aangevinkt en geef hem op de verbindingspagina: de auto wordt weer gelezen.",
+      "unsharedRenault": "Uw My Renault-account vermeldt deze auto niet meer als elektrisch: verkocht, uit het account gehaald of naar een ander verplaatst. Komt hij terug, meld u dan opnieuw aan op de verbindingspagina: de auto wordt weer gelezen.",
       "quotaBmw": "Runsten doet hoogstens 40 aanroepen per dag naar de API van BMW per koppeling, om u enkele van de 50 van BMW te laten: die zijn op. De stream, die geen limiet heeft, wordt nog steeds gelezen; de rest wordt vanzelf hervat.",
       "quotaPleos": "Runsten doet hoogstens 2000 aanroepen per dag naar de Pleos Vehicle Data API per sleutel, een eigen plafond (Pleos publiceert er geen): die zijn op. Het uitlezen wordt vanzelf hervat.",
-      "quotaSkoda": "Runsten doet hoogstens 2400 aanroepen per dag naar de MyŠkoda Public API per sleutel, boven Škoda’s eigen limiet van 20 per uur per auto: die zijn op. Het uitlezen wordt vanzelf hervat."
+      "quotaSkoda": "Runsten doet hoogstens 2400 aanroepen per dag naar de MyŠkoda Public API per sleutel, boven Škoda’s eigen limiet van 20 per uur per auto: die zijn op. Het uitlezen wordt vanzelf hervat.",
+      "quotaRenault": "Runsten doet hooguit 1.200 aanroepen per dag naar de API van de My Renault-app per account, om ver onder Renaults niet-gepubliceerde grenzen te blijven: ze zijn opgebruikt. Het lezen hervat vanzelf."
     },
     "facts": {
       "mode": "Uitleesmodus",
@@ -1520,9 +1532,11 @@
       "noneDueBmw": "Geen, tot BMW opnieuw is gekoppeld",
       "noneDuePleos": "Geen, tot er een Pleos-sleutel is opgegeven",
       "noneDueSkoda": "Geen, tot er een MyŠkoda-sleutel is opgegeven",
+      "noneDueRenault": "Geen, tot u zich opnieuw aanmeldt bij My Renault",
       "noneDueUnsharedBmw": "Geen: het BMW-account is niet langer hoofdgebruiker van de auto",
       "noneDueUnsharedPleos": "Geen: de auto deelt zijn gegevens niet langer met de sleutel",
-      "noneDueUnsharedSkoda": "Geen: de sleutel dekt de auto niet meer"
+      "noneDueUnsharedSkoda": "Geen: de sleutel dekt de auto niet meer",
+      "noneDueUnsharedRenault": "Geen: de auto staat niet meer in het My Renault-account"
     },
     "api": {
       "connectedVehicle": "voertuiggegevens",
@@ -1534,7 +1548,8 @@
       "polestarId": "API van de Polestar-app",
       "bmw": "BMW CarData",
       "pleos": "de Pleos Vehicle Data API",
-      "skoda": "de MyŠkoda Public API"
+      "skoda": "de MyŠkoda Public API",
+      "renault": "de API van de My Renault-app"
     },
     "failure": {
       "quota": "Quotum bereikt",
@@ -1563,15 +1578,19 @@
       "notFoundBmw": "Voertuig onbekend bij BMW",
       "notFoundPleos": "Voertuig onbekend bij Pleos",
       "notFoundSkoda": "Voertuig onbekend bij Škoda",
+      "notFoundRenault": "Voertuig onbekend bij Renault",
       "unavailableBmw": "BMW onbereikbaar",
       "unavailablePleos": "Pleos onbereikbaar",
       "unavailableSkoda": "Škoda onbereikbaar",
+      "unavailableRenault": "Renault onbereikbaar",
       "tokenBmw": "Geen token van BMW",
       "tokenPleos": "Geen token van Pleos",
       "tokenSkoda": "MyŠkoda-sleutel niet gelezen",
+      "tokenRenault": "My Renault-sessie niet gelezen",
       "credentialRefusedBmw": "BMW-koppeling geweigerd",
       "credentialRefusedPleos": "Pleos-sleutel geweigerd",
       "credentialRefusedSkoda": "MyŠkoda-sleutel geweigerd",
+      "credentialRefusedRenault": "Aanmelding bij My Renault geweigerd",
       "keyShared": "Sleutel gedeeld met een andere toepassing"
     },
     "key": {
@@ -1614,6 +1633,10 @@
     "skoda": {
       "title": "Uw MyŠkoda-sleutel",
       "off": "Škoda staat uit op deze instantie (de vlag source.skoda)."
+    },
+    "renault": {
+      "title": "Uw My Renault-account",
+      "off": "Renault staat uit op deze instantie (de vlag source.renault)."
     },
     "keyShared": {
       "text": "Een andere toepassing leest met dezelfde Pleos-sleutel — evcc, Home Assistant. De API laat maar één lezer tegelijk toe, dus elk neemt de plaats van de ander in. Houd deze sleutel voor Runsten alleen, of laat Runsten uw auto voor Home Assistant op uw MQTT-broker publiceren:",
@@ -2410,6 +2433,65 @@
       "featureUnavailable": "Škoda wordt op deze instantie niet aangeboden: de sleutel werd niet opgeslagen.",
       "unavailable": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
       "internal": "De sleutel kon niet worden opgeslagen. Probeer het zo meteen opnieuw."
+    }
+  },
+  "renault": {
+    "intro": "Runsten leest uw Renault, Dacia of Alpine via het account van de My Renault-app, dat ook het account van MyDacia en MyAlpine is. Deze toegang is niet officieel: hij kan ophouden te werken wanneer Renault zijn app wijzigt.",
+    "guide": "Lees de handleiding",
+    "newTab": "(opent in een nieuw tabblad)",
+    "refused": {
+      "title": "Uw aanmelding werd geweigerd",
+      "body": "Renault weigerde uw sessie op {time}: wachtwoord gewijzigd, of sessie beëindigd. Uw auto’s worden niet meer gelezen tot u zich opnieuw aanmeldt; wat gelezen is, blijft."
+    },
+    "others": "{n} voertuig van het account is niet elektrisch en wordt niet gelezen. | {n} voertuigen van het account zijn niet elektrisch en worden niet gelezen.",
+    "current": "Uw account",
+    "last4": "Account eindigend op {last4}",
+    "setAt": "Aangemeld",
+    "reconnect": "Opnieuw aanmelden",
+    "delete": {
+      "button": "Aanmelding verwijderen",
+      "title": "Uw aanmelding bij My Renault verwijderen?",
+      "text": "Uw auto’s blijven, met hun geschiedenis, maar worden niet meer gelezen tot u zich opnieuw aanmeldt.",
+      "error": "De aanmelding kon niet worden verwijderd. Probeer het zo meteen opnieuw.",
+      "cancel": "Annuleren",
+      "confirm": "Verwijderen"
+    },
+    "passwordNote": "Uw wachtwoord wordt één keer gebruikt, om u aan te melden: Runsten bewaart het nooit, alleen de sessie die Renault teruggeeft. Sommige accounts krijgen daarna een eenmalige code per e-mail.",
+    "email": "E-mailadres van uw My Renault-account",
+    "password": "Wachtwoord",
+    "help": "Runsten leest de auto elke 10 minuten, elke 5 tijdens het laden. De ritten zijn bij benadering, want de auto geeft geen contactsignaal, en Renault geeft het laadvermogen niet. Een andere toepassing die hetzelfde account leest, zoals Home Assistant, deelt haar limiet aan aanroepen met Runsten.",
+    "save": "Aanmelden",
+    "cancel": "Annuleren",
+    "saved": "Aangemeld: Runsten leest uw auto’s vanaf de volgende ronde.",
+    "deleted": "Aanmelding verwijderd.",
+    "code": {
+      "title": "Voer de code in",
+      "sent": "Renault stuurde een eenmalige code naar {address}.",
+      "label": "Eenmalige code",
+      "help": "De code is enkele minuten geldig. Komt hij niet aan, kijk dan in uw spammap, of ga terug en meld u opnieuw aan voor een nieuwe.",
+      "send": "Code bevestigen",
+      "back": "Terug"
+    },
+    "error": {
+      "summary": "De aanmelding is niet gelukt",
+      "emailRequired": "Vul het e-mailadres van uw My Renault-account in.",
+      "passwordRequired": "Vul uw wachtwoord in.",
+      "codeRequired": "Vul de code in die Renault stuurde.",
+      "email": "Dit is geen e-mailadres.",
+      "tooLong": "Hooguit {max} tekens.",
+      "codeFormat": "De code bestaat uit 4 tot 8 cijfers.",
+      "refused": "Renault weigerde het e-mailadres of het wachtwoord. Zijn ze juist, dan heeft Renault misschien de sleutel van zijn app gewijzigd: probeer het later opnieuw, of lees de handleiding.",
+      "wrongCode": "Renault weigerde deze code: controleer hem, of ga terug en meld u opnieuw aan voor een nieuwe.",
+      "expired": "De tien minuten van de code zijn voorbij: meld u opnieuw aan.",
+      "invalidBody": "Het e-mailadres of het wachtwoord werd geweigerd: vul ze opnieuw in.",
+      "noVehicle": "Dit account heeft geen elektrisch voertuig: voeg de auto eerst toe in de My Renault-app. Er werd niets opgeslagen.",
+      "tooManyVehicles": "Met deze auto’s zou uw account meer voertuigen hebben dan toegestaan: de aanmelding werd niet opgeslagen.",
+      "notAdmitted": "Uw account moet eerst een stap zetten, zoals voorwaarden aanvaarden: laad de pagina opnieuw. De aanmelding werd niet opgeslagen.",
+      "featureUnavailable": "Renault wordt op deze instantie niet aangeboden: de aanmelding werd niet opgeslagen.",
+      "rateLimited": "Te veel aanmeldingen wachten op hun code op deze instantie: probeer het over enkele minuten opnieuw.",
+      "sourceUnavailable": "My Renault antwoordde niet: er werd niets opgeslagen. Probeer het zo meteen opnieuw.",
+      "unavailable": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
+      "internal": "De aanmelding kon niet worden opgeslagen. Probeer het zo meteen opnieuw."
     }
   }
 }

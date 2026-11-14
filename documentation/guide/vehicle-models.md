@@ -4,7 +4,7 @@ description: "How Runsten recognizes the variant of your car, choosing it, the o
 
 # Vehicle models
 
-Runsten carries a catalog of the variants of the brands it reads: the electric Volvos and Polestars, the European Tesla Model 3 and Model Y, the electric BMWs and MINIs from the i3 on, the electric Hyundais, Kias and Genesis, the Škoda Enyaq, Enyaq Coupé and Elroq, and the plug-in hybrids (the T6 and T8 Volvos of the 60 and 90 series, the T4 and T5 of the XC40, the Polestar 1, and the BMWs and MINIs from 2014 on: the 225xe and 225e, 230e, 320e, 330e, 530e, 550e, M5, 740e, 745e, 750e, i8, X1, X2, X3, X5, XM and the Countryman): for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power (most plug-in hybrids have none), and the sources of every figure. It comes with Runsten: an update brings its corrections.
+Runsten carries a catalog of the variants of the brands it reads: the electric Volvos and Polestars, the European Tesla Model 3 and Model Y, the electric BMWs and MINIs from the i3 on, the electric Hyundais, Kias and Genesis, the Škoda Enyaq, Enyaq Coupé and Elroq, the electric Renaults, Dacias and Alpines, and the plug-in hybrids (the T6 and T8 Volvos of the 60 and 90 series, the T4 and T5 of the XC40, the Polestar 1, and the BMWs and MINIs from 2014 on: the 225xe and 225e, 230e, 320e, 330e, 530e, 550e, M5, 740e, 745e, 750e, i8, X1, X2, X3, X5, XM and the Countryman): for each, its model years, its gross and net battery capacities, its onboard charger (standard, and the optional 22 kW one), its DC power (most plug-in hybrids have none), and the sources of every figure. It comes with Runsten: an update brings its corrections.
 
 The model matters for two things: the net capacity, on which energies rest, and the onboard charger, which bounds the cost of an AC charge.
 
@@ -12,7 +12,7 @@ The model matters for two things: the net capacity, on which energies rest, and 
 
 The variant is worked out from what the manufacturer's API reports of the car and its VIN; nothing more is collected. What that is depends on the brand, below. The vehicle is recognized when exactly one variant fits, among those of its powertrain: a plug-in hybrid among the plug-in hybrids, an electric car among the electric ones, so that a hybrid is never taken for an electric car of a battery nearby. A car whose fuel type is not read yet, or that runs on fuel alone, has no variant.
 
-When several variants fit, or none, the vehicle has no variant until you choose one: its energies then rest on the capacity the car reports, if it reports one (a Volvo, a BMW, a MINI, a Hyundai, a Kia or a Genesis does; a Polestar, a Tesla or a Škoda does not).
+When several variants fit, or none, the vehicle has no variant until you choose one: its energies then rest on the capacity the car reports, if it reports one (a Volvo, a BMW, a MINI, a Hyundai, a Kia or a Genesis does; a Polestar, a Tesla, a Škoda or a Renault does not).
 
 A Volvo tells its model, its model year, its fuel type and a capacity of its battery: it is recognized from them.
 
@@ -25,6 +25,8 @@ A BMW or a MINI, read through BMW CarData, tells its model's name (i4 eDrive40: 
 A Hyundai, a Kia or a Genesis, read through Pleos, tells its sales name (its family: IONIQ 5, EV3), its powertrain, its model year (from its VIN) and a capacity of its battery: it is recognized from them. How Pleos counts that capacity is assumed until a real car confirms it ([Your Hyundai, Kia or Genesis](./hyundai-kia.md)).
 
 A Škoda, read through the MyŠkoda Public API, tells its model year (from its VIN) and, unless its owner renamed it in the app, its model's name; its family otherwise comes from its VIN (an assumption until real cars confirm it). It tells no capacity of its battery: an Enyaq, an Enyaq Coupé or an Elroq is recognized only when one variant alone fits its model and year, which is rare. Choose yours: until you do, its trips and charges have no energy ([Your Škoda](./skoda.md)).
+
+A Renault, a Dacia or an Alpine, read through the My Renault app's API, tells its brand, its model's code (which says its family and its generation: a Zoe phase 1 from a phase 2) and a battery code that tells the capacities apart when the model has several. It tells no capacity: the catalog gives it, and when several variants fit you choose yours. The Zoe, the Spring and the others are recognized from the code ([Your Renault, Dacia or Alpine](./renault.md)).
 
 ## Choosing
 
