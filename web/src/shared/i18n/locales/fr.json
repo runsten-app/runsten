@@ -1884,21 +1884,13 @@
     "portal": {
       "title": "Importer depuis le Volvo Data Portal",
       "beta": "Bêta",
-      "intro": "Dans l'UE, le Data Act vous permet de demander à Volvo Cars les données de votre voiture sur son Data Portal : demandez les trajets et les points de passage. Volvo envoie deux fichiers CSV, parfois après plusieurs heures ; choisissez-les ici. Seuls les trajets antérieurs à la première lecture du véhicule sont importés, avec leurs tracés tirés des points de passage. Importer à nouveau les remplace.",
+      "intro": "Dans l'UE, le Data Act vous permet de demander à Volvo Cars les données de votre voiture sur son Data Portal : demandez les trajets et les points de passage. Volvo les prépare, parfois en plusieurs heures, puis donne de nombreux fichiers à télécharger un par un : choisissez-les tous ici, tels quels. Seuls les trajets antérieurs à la première lecture du véhicule sont importés, avec leurs tracés tirés des points de passage. Importer à nouveau les remplace.",
       "open": "Choisir les fichiers",
       "link": "Volvo Data Portal",
       "newTab": "(s'ouvre dans un nouvel onglet)",
-      "trips": {
-        "label": "Fichier des trajets (CSV)",
-        "hint": "Obligatoire : le fichier dont les colonnes commencent par Start time, End time."
+      "files": {
+        "hint": "Tous les fichiers donnés par le portail, tels que téléchargés : ses fichiers ZIP, ou les fichiers CSV qu'ils contiennent."
       },
-      "waypoints": {
-        "label": "Fichier des points de passage (CSV)",
-        "hint": "Facultatif : ses positions, environ une par minute, tracent les trajets."
-      },
-      "clear": "Retirer : {file}",
-      "start": "Importer",
-      "cancel": "Annuler",
       "done": "Import terminé",
       "report": {
         "imported": "Aucun trajet importé. | Un trajet importé. | {n} trajets importés.",
@@ -1907,9 +1899,8 @@
       },
       "error": {
         "summary": "Les fichiers n'ont pas été importés",
-        "required": "Choisissez le fichier des trajets.",
-        "file": "Ce n'est pas un fichier du Volvo Data Portal : vérifiez que le fichier des trajets est celui avec Start time et End time, et celui des points de passage celui avec Timestamp.",
-        "tooLarge": "Les fichiers sont trop gros : 32 Mo au plus à eux deux.",
+        "file": "Ce ne sont pas les fichiers du Volvo Data Portal, ou les trajets n'y sont pas : choisissez tous les fichiers donnés par le portail, tels que téléchargés.",
+        "tooLarge": "Trop de fichiers ou trop gros : 1 000 fichiers et 32 Mo au plus en tout.",
         "network": "Runsten est injoignable. Réessayez dans un instant.",
         "internal": "Les fichiers n'ont pas pu être importés. Réessayez dans un instant."
       }

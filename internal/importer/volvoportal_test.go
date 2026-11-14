@@ -1,9 +1,13 @@
 package importer
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"math"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -78,7 +82,7 @@ func TestPortalTracks(t *testing.T) {
 	rows := []volvoportal.Trip{
 		{Start: start, End: start.Add(3 * time.Minute)},
 		{Start: start.Add(time.Hour), End: start.Add(time.Hour + time.Minute), StartLat: f(1), StartLon: f(2)},
-		{Start: start, End: start.Add(-time.Minute)}, // invalid
+		{Start: start.Add(2 * time.Hour), End: start.Add(time.Hour)}, // invalid
 	}
 	// Unsorted; one before the margin, one in it, one out of bounds, one after the end.
 	waypoints := []volvoportal.Waypoint{
@@ -129,7 +133,8 @@ func TestFilesVolvoDataPortal(t *testing.T) {
 		"2025-10-13T07:18:00Z,35.3,23.4\n2025-10-13T07:19:00Z,35.4,23.5\nnow,1,2\n"
 	s := &saver{}
 	files := NewFiles(s, clock.NewManual(t0))
-	rep, err := files.VolvoDataPortal(context.Background(), "acc", "veh", strings.NewReader(trips), strings.NewReader(waypoints))
+	ctx := context.Background()
+	rep, err := files.VolvoDataPortal(ctx, "acc", "veh", portalFiles(waypoints, trips))
 	if err != nil || rep.Saved != 1 || rep.Skipped != 1 || rep.Invalid != 2 || rep.Cutoff != cutoff || len(s.trips) != 2 {
 		t.Fatalf("%+v, %v", rep, err)
 	}
@@ -137,21 +142,57 @@ func TestFilesVolvoDataPortal(t *testing.T) {
 		t.Errorf("%+v", s.trips)
 	}
 
-	if _, err := files.VolvoDataPortal(context.Background(), "acc", "veh", strings.NewReader(trips), nil); err != nil ||
-		s.trips[0].Track != nil {
+	if _, err := files.VolvoDataPortal(ctx, "acc", "veh", portalFiles(trips)); err != nil || s.trips[0].Track != nil {
 		t.Errorf("without waypoints: %v, %s", err, s.trips[0].Track)
 	}
-	var fe *volvoportal.FormatError
-	if _, err := files.VolvoDataPortal(context.Background(), "acc", "veh", strings.NewReader(waypoints), nil); !errors.As(err, &fe) {
-		t.Errorf("waypoints as trips: %v", err)
+	// The same trips twice, as two of the portal's chunks may hold them, are written once;
+	// the rows the reader refused are counted in each.
+	if rep, err := files.VolvoDataPortal(ctx, "acc", "veh", portalFiles(trips, trips)); err != nil ||
+		len(s.trips) != 2 || rep.Invalid != 3 {
+		t.Errorf("twice: %+v, %d trips, %v", rep, len(s.trips), err)
 	}
-	if _, err := files.VolvoDataPortal(context.Background(), "acc", "veh", strings.NewReader(trips),
-		strings.NewReader(trips)); !errors.As(err, &fe) {
-		t.Errorf("trips as waypoints: %v", err)
+	var fe *volvoportal.FormatError
+	if _, err := files.VolvoDataPortal(ctx, "acc", "veh", portalFiles(waypoints)); !errors.As(err, &fe) {
+		t.Errorf("waypoints alone: %v", err)
 	}
 	boom := errors.New("boom")
 	s.err = boom
-	if _, err := files.VolvoDataPortal(context.Background(), "acc", "veh", strings.NewReader(trips), nil); !errors.Is(err, boom) {
+	if _, err := files.VolvoDataPortal(ctx, "acc", "veh", portalFiles(trips)); !errors.Is(err, boom) {
 		t.Errorf("the store failing: %v", err)
+	}
+}
+
+func portalFiles(texts ...string) []volvoportal.File {
+	files := make([]volvoportal.File, 0, len(texts))
+	for i, text := range texts {
+		files = append(files, volvoportal.File{Name: strconv.Itoa(i) + ".csv", R: strings.NewReader(text), Size: int64(len(text))})
+	}
+	return files
+}
+
+// TestFilesPortalAnswer imports the portal's made-up answer, as downloaded: every trip
+// gets its track, a trip's waypoints being in a ZIP of another name.
+func TestFilesPortalAnswer(t *testing.T) {
+	paths, err := filepath.Glob("../volvoportal/testdata/portal/*")
+	if err != nil || len(paths) == 0 {
+		t.Fatalf("%v %v", paths, err)
+	}
+	var files []volvoportal.File
+	for _, p := range paths {
+		data, err := os.ReadFile(p) //nolint:gosec // a fixture's name
+		if err != nil {
+			t.Fatal(err)
+		}
+		files = append(files, volvoportal.File{Name: filepath.Base(p), R: bytes.NewReader(data), Size: int64(len(data))})
+	}
+	s := &saver{}
+	rep, err := NewFiles(s, clock.NewManual(t0)).VolvoDataPortal(context.Background(), "acc", "veh", files)
+	if err != nil || rep.Invalid != 0 || len(s.trips) != 3 {
+		t.Fatalf("%+v, %d trips, %v", rep, len(s.trips), err)
+	}
+	for _, trip := range s.trips {
+		if n := strings.Count(string(trip.Track), "],["); n < 4 {
+			t.Errorf("trip of %v: %d points, %s", trip.Trip.Start.After, n+1, trip.Track)
+		}
 	}
 }

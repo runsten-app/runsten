@@ -74,10 +74,10 @@ A drive TeslaMate never closed, or a charge still in progress, is left out and c
 In the EU, the Data Act lets the user of a connected car ask its maker for the data it collects. Volvo Cars answers on its [Data Portal](https://data.volvocars.com/), which Runsten reads the files of. The import follows the files an owner published, and has not yet been tried on many.
 
 1. On the Data Portal, sign in with your Volvo ID, choose the car, and ask for the **trips** and the **waypoints**, over the period you want. The portal takes several hours to prepare them.
-2. Download the two CSV files it gives.
-3. In the vehicle's **Imported history**, under **Import from the Volvo Data Portal**, press **Choose the files**: the trips file, required, and the waypoints file, optional. Then **Import**.
+2. Download every file it gives: a ZIP per chunk of data, often a few dozen, plus `metadata.json` and `final.zip`. Leave them as they are.
+3. In the vehicle's **Imported history**, under **Import from the Volvo Data Portal**, press **Choose the files**, and choose them all at once: the import starts as soon as they are chosen.
 
-The import runs at once. Files of 32 MiB at most together: a year of waypoints is a few. A file without the columns of the portal's (the waypoints given as the trips, for one) or that is not a readable CSV is refused, and nothing is imported.
+The import runs at once. It tells the trips from the waypoints by their columns, not by the files' names: a trip's waypoints are not always in the ZIP whose name matches it. The ZIPs zipped together into one, or the CSV files taken out of them, are read as well; `metadata.json` and `final.zip` hold no trip and are ignored. At most 1,000 files and 32 MiB together, 256 MiB once unzipped: a year of waypoints is a few megabytes. Files without any trip, or a file that is neither the portal's ZIP nor its CSV, are refused, and nothing is imported.
 
 #### What is imported
 
@@ -85,7 +85,7 @@ The import runs at once. Files of 32 MiB at most together: a year of waypoints i
 - **Tracks**: the waypoints, about one a minute while driving, with a precise position. Those of a trip, from its start to its end, make its track.
 - **No charges**: the portal gives none.
 
-What the portal gives may be shorter than the period asked for: an owner found the last month missing. Fuel, regeneration and heading are given as 0 for an electric car: Runsten leaves them out. A trip that is unreadable or out of bounds (one that ends before it starts) is left out and counted in the report; a waypoint that is, is left out alone. Importing the same files again replaces the trips by their start time.
+What the portal gives may be shorter than the period asked for: an owner found the last month missing. Fuel, regeneration and heading are given as 0 for an electric car: Runsten leaves them out. A trip that is unreadable or out of bounds (one that ends before it starts) is left out and counted in the report; a waypoint that is, is left out alone. Importing the same files again replaces the trips by their start time; a trip given twice is imported once.
 
 ## BMW and Mini
 

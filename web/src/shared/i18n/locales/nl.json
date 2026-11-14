@@ -1884,21 +1884,13 @@
     "portal": {
       "title": "Importeren uit het Volvo Data Portal",
       "beta": "Bèta",
-      "intro": "In de EU kunt u dankzij de Data Act de gegevens van uw auto opvragen bij Volvo Cars, via het Data Portal: vraag de ritten (trips) en de routepunten (waypoints) op. Volvo stuurt twee CSV-bestanden, soms pas na enkele uren; kies ze hier. Alleen de ritten van vóór de eerste uitlezing van het voertuig worden geïmporteerd, met hun route uit de routepunten. Opnieuw importeren vervangt ze.",
+      "intro": "In de EU kunt u dankzij de Data Act de gegevens van uw auto opvragen bij Volvo Cars, via het Data Portal: vraag de ritten (trips) en de routepunten (waypoints) op. Volvo zet ze klaar, soms pas na enkele uren, en biedt dan veel bestanden aan die u één voor één downloadt: kies ze hier allemaal, zoals ze zijn. Alleen de ritten van vóór de eerste uitlezing van het voertuig worden geïmporteerd, met hun route uit de routepunten. Opnieuw importeren vervangt ze.",
       "open": "Bestanden kiezen",
       "link": "Volvo Data Portal",
       "newTab": "(opent in een nieuw tabblad)",
-      "trips": {
-        "label": "Rittenbestand (CSV)",
-        "hint": "Verplicht: het bestand waarvan de kolommen beginnen met Start time, End time."
+      "files": {
+        "hint": "Alle bestanden die het portal gaf, zoals gedownload: de ZIP-bestanden, of de CSV-bestanden erin."
       },
-      "waypoints": {
-        "label": "Routepuntenbestand (CSV)",
-        "hint": "Optioneel: de posities erin, ongeveer één per minuut, tekenen de route van de ritten."
-      },
-      "clear": "Verwijderen: {file}",
-      "start": "Importeren",
-      "cancel": "Annuleren",
       "done": "Import voltooid",
       "report": {
         "imported": "Geen rit geïmporteerd. | Eén rit geïmporteerd. | {n} ritten geïmporteerd.",
@@ -1907,9 +1899,8 @@
       },
       "error": {
         "summary": "De bestanden zijn niet geïmporteerd",
-        "required": "Kies het rittenbestand.",
-        "file": "Dit is geen bestand van het Volvo Data Portal: controleer of het rittenbestand het bestand met Start time en End time is, en het routepuntenbestand het bestand met Timestamp.",
-        "tooLarge": "De bestanden zijn te groot: samen hoogstens 32 MB.",
+        "file": "Dit zijn niet de bestanden van het Volvo Data Portal, of de ritten zitten er niet bij: kies alle bestanden die het portal gaf, zoals gedownload.",
+        "tooLarge": "Te veel of te grote bestanden: samen hoogstens 1.000 bestanden en 32 MB.",
         "network": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
         "internal": "De bestanden konden niet worden geïmporteerd. Probeer het zo meteen opnieuw."
       }

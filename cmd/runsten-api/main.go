@@ -767,8 +767,12 @@ func validateRedirectURI(raw string) error {
 // fileImports imports the files a user uploads, for the API.
 type fileImports struct{ f *importer.Files }
 
-func (i fileImports) ImportVolvoDataPortal(ctx context.Context, accountID, vehicleID string, trips, waypoints io.Reader) (api.FileImport, error) {
-	rep, err := i.f.VolvoDataPortal(ctx, accountID, vehicleID, trips, waypoints)
+func (i fileImports) ImportVolvoDataPortal(ctx context.Context, accountID, vehicleID string, uploaded []api.UploadedFile) (api.FileImport, error) {
+	files := make([]volvoportal.File, 0, len(uploaded))
+	for _, f := range uploaded {
+		files = append(files, volvoportal.File(f))
+	}
+	rep, err := i.f.VolvoDataPortal(ctx, accountID, vehicleID, files)
 	var fe *volvoportal.FormatError
 	switch {
 	case errors.As(err, &fe):

@@ -1884,21 +1884,13 @@
     "portal": {
       "title": "Importera från Volvo Data Portal",
       "beta": "Beta",
-      "intro": "I EU ger Data Act dig rätt att begära bilens data från Volvo Cars på deras Data Portal: begär resorna och vägpunkterna. Volvo skickar två CSV-filer, ibland efter flera timmar; välj dem här. Bara resor från före fordonets första avläsning importeras, med spår från vägpunkterna. En ny import ersätter dem.",
+      "intro": "I EU ger Data Act dig rätt att begära bilens data från Volvo Cars på deras Data Portal: begär resorna och vägpunkterna. Volvo förbereder dem, ibland under flera timmar, och ger sedan många filer att ladda ner en i taget: välj alla här, som de är. Bara resor från före fordonets första avläsning importeras, med spår från vägpunkterna. En ny import ersätter dem.",
       "open": "Välj filerna",
       "link": "Volvo Data Portal",
       "newTab": "(öppnas i en ny flik)",
-      "trips": {
-        "label": "Resefil (CSV)",
-        "hint": "Obligatorisk: filen vars kolumner börjar med Start time, End time."
+      "files": {
+        "hint": "Alla filer som portalen gav, som de laddades ner: ZIP-filerna, eller CSV-filerna i dem."
       },
-      "waypoints": {
-        "label": "Vägpunktsfil (CSV)",
-        "hint": "Valfri: dess positioner, ungefär en per minut, ritar resornas spår."
-      },
-      "clear": "Ta bort: {file}",
-      "start": "Importera",
-      "cancel": "Avbryt",
       "done": "Importen är klar",
       "report": {
         "imported": "Ingen resa importerad. | En resa importerad. | {n} resor importerade.",
@@ -1907,9 +1899,8 @@
       },
       "error": {
         "summary": "Filerna importerades inte",
-        "required": "Välj resefilen.",
-        "file": "Det här är ingen fil från Volvo Data Portal: kontrollera att resefilen är den med Start time och End time, och vägpunktsfilen den med Timestamp.",
-        "tooLarge": "Filerna är för stora: högst 32 MB tillsammans.",
+        "file": "Det här är inte filerna från Volvo Data Portal, eller så finns resorna inte bland dem: välj alla filer som portalen gav, som de laddades ner.",
+        "tooLarge": "För många eller för stora filer: högst 1 000 filer och 32 MB tillsammans.",
         "network": "Runsten kunde inte nås. Försök igen om en stund.",
         "internal": "Filerna kunde inte importeras. Försök igen om en stund."
       }
