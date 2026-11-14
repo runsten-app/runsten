@@ -78,6 +78,18 @@ func TestBatteryPowerOnZoePhase1(t *testing.T) {
 	if s := normalize(t, BatteryStatus, string(raw)); s.PowerW.OK {
 		t.Errorf("power on a Renault 5 = %+v", s.PowerW)
 	}
+	// The charge stopped: covered and absent, the last one not kept.
+	raw, _ = WithModel([]byte(zoe40Offset), "X101VE")
+	if s := normalize(t, BatteryStatus, string(raw)); s.PowerW.OK || s.Covers&core.FieldPower == 0 {
+		t.Errorf("power once stopped = %+v, covered %v", s.PowerW, s.Covers&core.FieldPower != 0)
+	}
+}
+
+// TestWithModelNull: a response that is not an object is refused, not a panic.
+func TestWithModelNull(t *testing.T) {
+	if _, err := WithModel([]byte("null"), "R5E1VE"); err == nil {
+		t.Error("null accepted")
+	}
 }
 
 func TestBatteryParked(t *testing.T) {

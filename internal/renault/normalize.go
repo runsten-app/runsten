@@ -2,6 +2,7 @@ package renault
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -81,6 +82,9 @@ func WithModel(raw []byte, code string) ([]byte, error) {
 	var v map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &v); err != nil {
 		return nil, fmt.Errorf("model: %w", err)
+	}
+	if v == nil {
+		return nil, errors.New("model: the response is not an object")
 	}
 	c, err := json.Marshal(code)
 	if err != nil {
@@ -209,8 +213,12 @@ func normalizeBattery(a map[string]any, m Model, s *core.Snapshot) {
 			s.Charging = core.Some(v, at)
 		}
 	}
-	if m.PowerInWatts && s.Charging.OK && s.Charging.V == core.ChargingActive {
-		if w, ok := number(a["chargingInstantaneousPower"]); ok && w >= 0 {
+	// A charge's power is the model's only while it charges; once it stops, covered and
+	// absent, so that the last charge's does not stay.
+	if m.PowerInWatts && s.Charging.OK {
+		if s.Charging.V != core.ChargingActive {
+			s.Covers |= core.FieldPower
+		} else if w, ok := number(a["chargingInstantaneousPower"]); ok && w >= 0 {
 			s.Covers |= core.FieldPower
 			s.PowerW = core.Some(w, at)
 		}
