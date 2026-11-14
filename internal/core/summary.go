@@ -55,6 +55,13 @@ type TripStats struct {
 	// ConsumptionKWhPer100km is an average: unknown without a trip whose energy and
 	// positive distance are both known.
 	ConsumptionKWhPer100km Value[float64]
+
+	// Cost sums the trips' known costs (TripCosts); its Unknown counts the others, its
+	// Entered stays 0.
+	Cost CostSum
+	// CostPer100km is the cost of the trips whose cost and positive distance are both
+	// known, over that distance, in minor units: unknown without such a trip.
+	CostPer100km Value[MinorRange]
 }
 
 // CostSum sums the costs of charges, in minor units: every total their bounds allow lies
@@ -326,14 +333,17 @@ type Summary struct {
 	ChargesByPlace       ChargesByPlace
 }
 
-// WithoutConsumption is s with every consumption unknown: a plug-in hybrid's trips
-// measure the battery's energy only, and nothing tells which kilometres the engine
-// drove, so an energy over the whole distance would pass for a low consumption.
+// WithoutConsumption is s with every consumption unknown, and every cost per 100 km: a
+// plug-in hybrid's trips measure the battery's energy only, and nothing tells which
+// kilometres the engine drove, so an energy over the whole distance would pass for a low
+// consumption. The trips' costs stay: the electricity they used.
 func (s Summary) WithoutConsumption() Summary {
 	s.Totals.Trips.ConsumptionKWhPer100km = Value[float64]{}
+	s.Totals.Trips.CostPer100km = Value[MinorRange]{}
 	s.Buckets = slices.Clone(s.Buckets)
 	for i := range s.Buckets {
 		s.Buckets[i].Trips.ConsumptionKWhPer100km = Value[float64]{}
+		s.Buckets[i].Trips.CostPer100km = Value[MinorRange]{}
 	}
 	s.TripsByDistance.Bands = slices.Clone(s.TripsByDistance.Bands)
 	for i := range s.TripsByDistance.Bands {
@@ -355,7 +365,8 @@ func (s Summary) WithoutConsumption() Summary {
 // first parked interval; any other event outside the period is ignored.
 //
 // costs holds the costs of charges, in the same order, and the orphaned entered costs:
-// those whose WindowAfter lies in the period count apart. places are the account's, in
+// those whose WindowAfter lies in the period count apart; and the costs of trips, in
+// their order. places are the account's, in
 // a stable order, which group the charges.
 //
 // at keeps the charges of one place in the charges' sums, the orphaned costs, which are
@@ -408,8 +419,12 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, slee
 	}
 
 	evs := make([]event, 0, len(trips)+len(charges))
-	for _, t := range trips {
-		add(t.Start.After, func(a *acc) { a.trip(t) })
+	for i, t := range trips {
+		var cost Value[TripCost]
+		if i < len(costs.Trips) {
+			cost = costs.Trips[i]
+		}
+		add(t.Start.After, func(a *acc) { a.trip(t, cost) })
 		reading(t.Start.After, t.StartOdometerKm, t.EndOdometerKm)
 		if in(t.Start.After, from, to) {
 			dist.add(t)
@@ -494,7 +509,7 @@ func (d *distanceAcc) add(t Trip) {
 		return
 	}
 	i := sort.Search(len(distanceLimits), func(i int) bool { return t.DistanceKm.V < distanceLimits[i] })
-	d.bands[i].trip(t)
+	d.bands[i].trip(t, Value[TripCost]{})
 }
 
 func (d *distanceAcc) result() TripsByDistance {
@@ -574,7 +589,7 @@ func (a *temperatureAcc) add(t Trip) {
 		return
 	}
 	b := a.bands.at(i)
-	b.trip(t)
+	b.trip(t, Value[TripCost]{})
 	if t.DistanceKm.OK {
 		b.speedKm += t.DistanceKm.V
 		b.speedTime.add(t.Start, t.End)
@@ -847,6 +862,8 @@ type acc struct {
 	s Stats
 	// Consumption: the energy and distance of the trips where both are known.
 	consKWh, consKm float64
+	// Cost per 100 km: the costs and distance of the trips where both are known.
+	costMin, costMax, costKm float64
 	// Parked time of the intervals with a known loss, and of those whose loss's energy is
 	// known too, with that energy.
 	lossTime, powerTime time.Duration
@@ -855,7 +872,7 @@ type acc struct {
 	odoLow, odoHigh Value[float64]
 }
 
-func (a *acc) trip(t Trip) {
+func (a *acc) trip(t Trip, cost Value[TripCost]) {
 	s := &a.s.Trips
 	s.Count++
 	if t.Reconstructed {
@@ -869,6 +886,17 @@ func (a *acc) trip(t Trip) {
 	if t.EnergyKWh.OK && t.DistanceKm.OK && t.DistanceKm.V > 0 {
 		a.consKWh += t.EnergyKWh.V
 		a.consKm += t.DistanceKm.V
+	}
+	if !cost.OK {
+		s.Cost.Unknown++
+		return
+	}
+	s.Cost.Min += cost.V.Min
+	s.Cost.Max += cost.V.Max
+	if t.DistanceKm.OK && t.DistanceKm.V > 0 {
+		a.costMin += float64(cost.V.Min)
+		a.costMax += float64(cost.V.Max)
+		a.costKm += t.DistanceKm.V
 	}
 }
 
@@ -966,6 +994,11 @@ func (a *acc) stats(minRate time.Duration) Stats {
 	s := a.s
 	if a.consKm > 0 {
 		s.Trips.ConsumptionKWhPer100km = Value[float64]{V: a.consKWh * 100 / a.consKm, OK: true}
+	}
+	if a.costKm > 0 {
+		var r MinorRange
+		r.Min, r.Max = round(a.costMin*100/a.costKm, a.costMax*100/a.costKm, 0)
+		s.Trips.CostPer100km = known(r)
 	}
 	if a.lossTime > 0 && a.lossTime >= minRate {
 		s.Parked.SoCLossPctPerDay = Value[float64]{V: s.Parked.SoCLossPct / a.lossTime.Hours() * 24, OK: true}

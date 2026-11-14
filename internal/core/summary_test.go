@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/rand/v2"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 	_ "time/tzdata" // Europe/Paris whatever the host
@@ -322,6 +323,7 @@ func TestSummarizeTrips(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			tt.want.Cost.Unknown = tt.want.Count // no trip cost given (TestSummarizeTripCosts)
 			if got := s.Totals.Trips; !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("trips = %+v\nwant    %+v", got, tt.want)
 			}
@@ -1106,6 +1108,12 @@ func history(seed uint64) ([]Trip, []Charge, Costs) {
 			odometer += tr.DistanceKm.V
 			tr.EndOdometerKm = val(odometer)
 			trips = append(trips, tr)
+			var cost Value[TripCost]
+			if r.IntN(5) > 0 {
+				lo := int64(r.IntN(500))
+				cost = known(TripCost{Min: lo, Max: lo + int64(r.IntN(50))})
+			}
+			costs.Trips = append(costs.Trips, cost)
 		}
 		t = end
 	}
@@ -1123,7 +1131,7 @@ func TestSummarizeTotalsAreSums(t *testing.T) {
 			t.Fatal(err)
 		}
 		if c := none.Totals.Charges; none.Totals.Trips.Count == 0 || c.Count == 0 || none.Totals.Parked.Intervals == 0 ||
-			c.Cost.Entered == 0 || c.Cost.Unknown == 0 || c.Orphaned.Count == 0 {
+			c.Cost.Entered == 0 || c.Cost.Unknown == 0 || c.Orphaned.Count == 0 || none.Totals.Trips.Cost.Unknown == 0 {
 			t.Fatalf("seed %d: empty history %+v", seed, none.Totals)
 		}
 		for _, bucket := range []Bucket{BucketDay, BucketWeek, BucketMonth} {
@@ -1155,12 +1163,13 @@ func TestSummarizeTotalsAreSums(t *testing.T) {
 	}
 }
 
-var valueKind = reflect.TypeFor[Value[float64]]()
+// isValue tells a Value apart: an average, or a value of a reading, never a sum.
+func isValue(t reflect.Type) bool { return strings.HasPrefix(t.Name(), "Value[") }
 
 // addNumbers adds the counts, sums and durations of b to a, leaving averages out.
 func addNumbers(a, b reflect.Value) {
 	switch {
-	case a.Type() == valueKind:
+	case isValue(a.Type()):
 	case a.Kind() == reflect.Struct:
 		for i := range a.NumField() {
 			addNumbers(a.Field(i), b.Field(i))
@@ -1177,7 +1186,7 @@ func addNumbers(a, b reflect.Value) {
 func checkSums(t *testing.T, path string, got, want reflect.Value) {
 	t.Helper()
 	switch {
-	case got.Type() == valueKind:
+	case isValue(got.Type()):
 	case got.Kind() == reflect.Struct:
 		for i := range got.NumField() {
 			checkSums(t, path+"."+got.Type().Field(i).Name, got.Field(i), want.Field(i))
