@@ -104,8 +104,8 @@
       "cost": {
         "tab": "Coût",
         "title": "Coût aux 100 km par mois",
-        "summary": "Ce que 100 km ont coûté à chaque voiture, mois par mois, sur les 12 derniers mois.",
-        "none": "Aucun mois n'a à la fois un coût et une distance connus.",
+        "summary": "Ce que 100 km ont coûté à chaque véhicule, mois par mois, sur les 12 derniers mois : l'énergie de ses trajets au prix du kWh des 30 jours avant chacun.",
+        "none": "Aucun mois n'a de trajet au coût et à la distance connus.",
         "hint": "Sur les 12 derniers mois, quelle que soit la période. Un coût connu par une fourchette est tracé à sa borne basse."
       },
       "charging": {
@@ -643,7 +643,7 @@
         "unit": "{currency}/100 km",
         "summary": "Coût aux 100 km : {average} sur la période.",
         "none": "Aucun coût aux 100 km connu dans cette période.",
-        "hint": "Sélectionnez un point pour voir les charges de l'intervalle."
+        "hint": "Sélectionnez un point pour voir les trajets de son intervalle."
       },
       "time": {
         "title": "Temps de conduite et de charge",

@@ -104,8 +104,8 @@
       "cost": {
         "tab": "Kostnad",
         "title": "Kostnad per 100 km per månad",
-        "summary": "Vad 100 km kostade varje bil, månad för månad, under de senaste 12 månaderna.",
-        "none": "Ingen månad har både känd kostnad och känd sträcka.",
+        "summary": "Vad 100 km kostade varje fordon, månad för månad, de senaste 12 månaderna: energin i dess resor till kWh-priset de 30 dagarna före varje.",
+        "none": "Ingen månad har en resa med känd kostnad och sträcka.",
         "hint": "Under de senaste 12 månaderna, oavsett period. En kostnad känd som ett intervall ritas vid sitt lägsta värde."
       },
       "charging": {
@@ -643,7 +643,7 @@
         "unit": "{currency}/100 km",
         "summary": "Kostnad per 100 km: {average} under perioden.",
         "none": "Ingen känd kostnad per 100 km under perioden.",
-        "hint": "Välj en punkt för att se intervallets laddningar."
+        "hint": "Välj en punkt för att se resorna i dess intervall."
       },
       "time": {
         "title": "Tid för körning och laddning",

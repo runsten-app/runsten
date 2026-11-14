@@ -219,29 +219,15 @@ const cost = computed(() => {
   return { series, tableSeries, summary, format, unit: f.currencySymbol(currency.code) }
 })
 
-// perHundred is a cost per 100 km, in minor units: the lowest rounded down, the highest
-// up, as the API rounds the costs. Unknown when a cost or a distance of its events is:
-// a part left out would bend the ratio, not just lower it.
-type Ratio = { min_minor: number; max_minor: number }
-function perHundred(
-  trips: { distance_km: number; distance_unknown: number },
-  charges: { count: number; cost: Ratio; cost_unknown: number },
-): Ratio | null {
-  if (trips.distance_km <= 0 || trips.distance_unknown > 0 || charges.cost_unknown > 0) return null
-  return {
-    min_minor: Math.floor((charges.cost.min_minor * 100) / trips.distance_km),
-    max_minor: Math.ceil((charges.cost.max_minor * 100) / trips.distance_km),
-  }
-}
-
-// costPerDistance is what each 100 km cost, the charges of an interval over its
-// distance: a line of the lowest cost, banded up to the highest. A rate, not a sum: an
-// interval without a charge costs nothing, one with a charge but no trip has no rate.
+// costPerDistance is what each 100 km cost, the trips of an interval each at the price
+// of the kWh of the 30 days before it, as the tile of the period: a line of the lowest
+// cost, banded up to the highest. A rate, not a sum: an interval without a trip of known
+// cost and distance has none, nor has a plug-in hybrid.
 const costPerDistance = computed(() => {
   const currency = stats.value?.currency
   if (!currency) return null
   const d = currency.minor_digits
-  const ratios = intervals.value.map((b) => perHundred(b.trips, b.charges))
+  const ratios = intervals.value.map((b) => b.trips.cost_per_100km)
   const min = ratios.map((r) => (r ? majorUnits(r.min_minor, d) : null))
   const max = ratios.map((r) => (r ? majorUnits(r.max_minor, d) : null))
   const series: Series[] = [
@@ -258,7 +244,7 @@ const costPerDistance = computed(() => {
     { label: t('stats.chart.cost.maxHeader'), data: max, color: color('chart-4') },
   ]
   const totals = stats.value?.totals
-  const average = totals && perHundred(totals.trips, totals.charges)
+  const average = totals?.trips.cost_per_100km
   const summary = average
     ? t('stats.chart.costPerDistance.summary', {
         average: f.amounts(average, currency).spoken,
@@ -476,7 +462,7 @@ const time = computed(() => {
       :unit="costPerDistance.unit"
       :interval-header="intervalHeader"
       :format="costPerDistance.format"
-      @select="(i: number) => open('charges', i)"
+      @select="(i: number) => open('trips', i)"
     />
   </div>
 </template>

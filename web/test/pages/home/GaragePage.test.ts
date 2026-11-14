@@ -46,12 +46,19 @@ type Item = (typeof vehicles.items)[0]
 const [xc40, , ex30] = vehicles.items as [Item, Item, Item]
 const two = [xc40, ex30] as unknown as Vehicle[]
 
-// The first vehicle's trips all known, so that its consumption is ranked.
+// The first vehicle's trips all known, so that its consumption and its cost are ranked:
+// €2.90 over 73 km.
 const first: Stats = {
   ...(stats as Stats),
   totals: {
     ...(stats as Stats).totals,
-    trips: { ...(stats as Stats).totals.trips, energy_unknown: 0 },
+    trips: {
+      ...(stats as Stats).totals.trips,
+      energy_unknown: 0,
+      cost: { min_minor: 290, max_minor: 290 },
+      cost_unknown: 0,
+      cost_per_100km: { min_minor: 397, max_minor: 397 },
+    },
   },
 }
 
@@ -67,6 +74,9 @@ const other: Stats = {
       distance_km: 300,
       energy_unknown: 0,
       consumption_kwh_per_100km: 25,
+      cost: { min_minor: 9000, max_minor: 9000 },
+      cost_unknown: 0,
+      cost_per_100km: { min_minor: 3000, max_minor: 3000 },
     },
     charges: {
       ...(stats as Stats).totals.charges,
@@ -132,8 +142,8 @@ describe('GaragePage', () => {
     const cost = wrapper.find('.garage-totals .cost dd').element
     expect(seen(cost)).toBe('€103.74 – €104.29')
     expect(heard(cost)).toBe('from €103.74 to €104.29')
-    // Over 373 km.
-    expect(seen(wrapper.find('.garage-totals .per-hundred dd').element)).toBe('€27.81 – €27.96')
+    // The trips' €92.90 over 373 km.
+    expect(seen(wrapper.find('.garage-totals .per-hundred dd').element)).toBe('€24.91')
     // Both read over the last 30 days.
     const asked = fetchStats.mock.calls.map((c) => c[1] as { bucket?: string })
     expect(asked.some((q) => !q.bucket)).toBe(true)

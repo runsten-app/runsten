@@ -104,8 +104,8 @@
       "cost": {
         "tab": "Cost",
         "title": "Cost per 100 km by month",
-        "summary": "What 100 km cost each vehicle, month by month, over the last 12 months.",
-        "none": "No month has both a known cost and a known distance.",
+        "summary": "What 100 km cost each vehicle, month by month, over the last 12 months: its trips' energy at the price of the kWh of the 30 days before each.",
+        "none": "No month has a trip of known cost and distance.",
         "hint": "Over the last 12 months, whatever the period. A cost known as a range is drawn at its lowest."
       },
       "charging": {
@@ -643,7 +643,7 @@
         "unit": "{currency}/100 km",
         "summary": "Cost per 100 km: {average} over the period.",
         "none": "No cost per 100 km known in this period.",
-        "hint": "Select a point to see the charges of its interval."
+        "hint": "Select a point to see the trips of its interval."
       },
       "time": {
         "title": "Time driving and charging",

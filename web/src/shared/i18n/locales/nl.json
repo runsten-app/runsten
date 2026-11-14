@@ -104,8 +104,8 @@
       "cost": {
         "tab": "Kosten",
         "title": "Kosten per 100 km per maand",
-        "summary": "Wat 100 km elk voertuig kostte, maand na maand, over de laatste 12 maanden.",
-        "none": "Geen maand heeft zowel bekende kosten als een bekende afstand.",
+        "summary": "Wat 100 km elk voertuig kostte, maand na maand, over de laatste 12 maanden: de energie van zijn ritten tegen de kWh-prijs van de 30 dagen vóór elke rit.",
+        "none": "Geen maand heeft een rit met bekende kosten en afstand.",
         "hint": "Over de laatste 12 maanden, ongeacht de periode. Kosten die als bereik bekend zijn, worden op hun laagste waarde getekend."
       },
       "charging": {
@@ -643,7 +643,7 @@
         "unit": "{currency}/100 km",
         "summary": "Kosten per 100 km: {average} over de periode.",
         "none": "Geen kosten per 100 km bekend in deze periode.",
-        "hint": "Selecteer een punt om de laadsessies van dat interval te zien."
+        "hint": "Kies een punt om de ritten van zijn interval te zien."
       },
       "time": {
         "title": "Rijtijd en laadtijd",
