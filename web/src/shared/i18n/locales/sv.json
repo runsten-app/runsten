@@ -48,7 +48,8 @@
       "hyundai": "Hyundai",
       "kia": "Kia",
       "genesis": "Genesis",
-      "skoda": "Škoda"
+      "skoda": "Škoda",
+      "renault": "Renault, Dacia, Alpine"
     },
     "beta": "Beta"
   },
@@ -1361,7 +1362,8 @@
       "polestar": "Polestar",
       "tesla": "Tesla",
       "bmw": "BMW",
-      "skoda": "Škoda"
+      "skoda": "Škoda",
+      "renault": "Renault"
     },
     "brandAttention": "behöver din uppmärksamhet",
     "outcome": {
@@ -1430,18 +1432,23 @@
       "credentialRefusedBmw": "Läses inte: BMW avvisade anslutningen",
       "credentialRefusedPleos": "Läses inte: Pleos vägrade nyckeln",
       "credentialRefusedSkoda": "Läses inte: Škoda nekade nyckeln",
+      "credentialRefusedRenault": "Läses inte: Renault nekade inloggningen",
       "credentialMissingBmw": "Läses inte: ingen BMW-anslutning",
       "credentialMissingPleos": "Läses inte: ingen Pleos-nyckel given",
       "credentialMissingSkoda": "Läses inte: ingen MyŠkoda-nyckel angiven",
+      "credentialMissingRenault": "Läses inte: inte inloggad i My Renault",
       "unsharedBmw": "Läses inte: BMW-kontot är inte längre bilens huvudanvändare",
       "unsharedPleos": "Läses inte: bilen delar inte längre sina data med nyckeln",
       "unsharedSkoda": "Läses inte: nyckeln omfattar inte längre bilen",
+      "unsharedRenault": "Läses inte: bilen finns inte längre i My Renault-kontot",
       "pausedBmw": "Pausad av BMW till {time}",
       "pausedPleos": "Pausad av Pleos till {time}",
       "pausedSkoda": "Pausad av Škoda till {time}",
+      "pausedRenault": "Pausad av Renault till {time}",
       "quotaBmw": "Dagens anrop till BMW förbrukade till {time}",
       "quotaPleos": "Dagens anrop till Pleos förbrukade till {time}",
-      "quotaSkoda": "Dagens anrop till Škoda förbrukade till {time}"
+      "quotaSkoda": "Dagens anrop till Škoda förbrukade till {time}",
+      "quotaRenault": "Dagens anrop till Renault förbrukade till {time}"
     },
     "notice": {
       "reauth": {
@@ -1485,15 +1492,20 @@
       "pausedBmw": "BMW begränsade antalet anrop. Läsningen återupptas av sig själv.",
       "pausedPleos": "Pleos begränsade antalet anrop. Läsningen återupptas av sig själv.",
       "pausedSkoda": "Škoda begränsade antalet anrop. Läsningen återupptas av sig själv.",
+      "pausedRenault": "Renault begränsade antalet anrop: kontot kan också läsas av ett annat program, till exempel Home Assistant. Läsningen återupptas av sig själv.",
       "credentialRefusedPleos": "Pleos vägrade nyckeln som den här bilen läses med: återkallad eller utbytt i Playground, eller utgången. Skapa en ny där och ge den på anslutningssidan: det som redan lästs finns kvar.",
       "credentialRefusedSkoda": "Škoda nekade nyckeln som den här bilen läses med: utgången, eller borttagen i MyŠkoda-appen. Skapa en ny där och ange den på anslutningssidan: det som lästs finns kvar.",
+      "credentialRefusedRenault": "Renault nekade inloggningen som den här bilen läses med: lösenordet har ändrats, eller sessionen har avslutats. Logga in igen på anslutningssidan: det som lästs finns kvar.",
       "credentialMissingPleos": "Runsten läser den här bilen med din Pleos-nyckel, som har tagits bort: ge en ny på anslutningssidan.",
       "credentialMissingSkoda": "Runsten läser den här bilen med din MyŠkoda-nyckel, som har tagits bort: ange en ny på anslutningssidan.",
+      "credentialMissingRenault": "Runsten läser den här bilen med din My Renault-inloggning, som har tagits bort: logga in igen på anslutningssidan.",
       "unsharedPleos": "Pleos svarade att den här bilen inte längre delar sina data med nyckeln: delningen avstängd i de uppkopplade tjänsterna, eller bilen avregistrerad. Delar bilen igen, ge nyckeln på nytt på anslutningssidan: bilen läses igen.",
       "unsharedSkoda": "Škoda svarade att nyckeln inte längre läser den här bilen: den avmarkerades för nyckeln i MyŠkoda-appen. Skapa en nyckel med bilen markerad och ange den på anslutningssidan: bilen läses igen.",
+      "unsharedRenault": "Ditt My Renault-konto listar inte längre den här bilen som elbil: såld, borttagen från kontot eller flyttad till ett annat. Om den kommer tillbaka, logga in igen på anslutningssidan: bilen läses igen.",
       "quotaBmw": "Runsten gör högst 40 anrop om dagen till BMW:s API per anslutning, för att lämna några av BMW:s 50 åt dig: de är förbrukade. Flödet, som saknar gräns, läses fortfarande; resten återupptas av sig själv.",
       "quotaPleos": "Runsten gör högst 2000 anrop om dagen till Pleos Vehicle Data API per nyckel, ett eget tak (Pleos publicerar inget): de är förbrukade. Läsningen återupptas av sig själv.",
-      "quotaSkoda": "Runsten gör högst 2 400 anrop om dagen till MyŠkoda Public API per nyckel, över Škodas egen gräns på 20 i timmen per bil: de är förbrukade. Läsningen återupptas av sig själv."
+      "quotaSkoda": "Runsten gör högst 2 400 anrop om dagen till MyŠkoda Public API per nyckel, över Škodas egen gräns på 20 i timmen per bil: de är förbrukade. Läsningen återupptas av sig själv.",
+      "quotaRenault": "Runsten gör högst 1 200 anrop per dygn till API:et i My Renault-appen per konto, för att hålla sig undan Renaults opublicerade gränser: de är förbrukade. Läsningen återupptas av sig själv."
     },
     "facts": {
       "mode": "Läsläge",
@@ -1520,9 +1532,11 @@
       "noneDueBmw": "Ingen förrän BMW ansluts igen",
       "noneDuePleos": "Ingen förrän en Pleos-nyckel anges",
       "noneDueSkoda": "Ingen förrän en MyŠkoda-nyckel anges",
+      "noneDueRenault": "Ingen förrän du loggar in i My Renault igen",
       "noneDueUnsharedBmw": "Ingen: BMW-kontot är inte längre bilens huvudanvändare",
       "noneDueUnsharedPleos": "Ingen: bilen delar inte längre sina data med nyckeln",
-      "noneDueUnsharedSkoda": "Ingen: nyckeln omfattar inte längre bilen"
+      "noneDueUnsharedSkoda": "Ingen: nyckeln omfattar inte längre bilen",
+      "noneDueUnsharedRenault": "Ingen: bilen finns inte längre i My Renault-kontot"
     },
     "api": {
       "connectedVehicle": "fordonsdata",
@@ -1534,7 +1548,8 @@
       "polestarId": "Polestar-appens API",
       "bmw": "BMW CarData",
       "pleos": "Pleos Vehicle Data API",
-      "skoda": "MyŠkoda Public API"
+      "skoda": "MyŠkoda Public API",
+      "renault": "API:et i My Renault-appen"
     },
     "failure": {
       "quota": "Kvot nådd",
@@ -1563,15 +1578,19 @@
       "notFoundBmw": "Fordonet okänt för BMW",
       "notFoundPleos": "Fordonet okänt för Pleos",
       "notFoundSkoda": "Fordonet okänt för Škoda",
+      "notFoundRenault": "Fordonet är okänt för Renault",
       "unavailableBmw": "BMW nås inte",
       "unavailablePleos": "Pleos nås inte",
       "unavailableSkoda": "Škoda kan inte nås",
+      "unavailableRenault": "Renault kan inte nås",
       "tokenBmw": "Ingen token från BMW",
       "tokenPleos": "Ingen token från Pleos",
       "tokenSkoda": "MyŠkoda-nyckeln lästes inte",
+      "tokenRenault": "My Renault-sessionen lästes inte",
       "credentialRefusedBmw": "BMW-anslutning avvisad",
       "credentialRefusedPleos": "Pleos-nyckel avvisad",
       "credentialRefusedSkoda": "MyŠkoda-nyckeln nekades",
+      "credentialRefusedRenault": "Inloggningen i My Renault nekades",
       "keyShared": "Nyckel delad med ett annat program"
     },
     "key": {
@@ -1614,6 +1633,10 @@
     "skoda": {
       "title": "Din MyŠkoda-nyckel",
       "off": "Škoda är avstängt på den här instansen (flaggan source.skoda)."
+    },
+    "renault": {
+      "title": "Ditt My Renault-konto",
+      "off": "Renault är avstängt på den här instansen (flaggan source.renault)."
     },
     "keyShared": {
       "text": "Ett annat program läser med samma Pleos-nyckel — evcc, Home Assistant. API:et tillåter bara en läsare åt gången, så var och en tar den andras plats. Behåll denna nyckel för Runsten ensam, eller låt Runsten i stället publicera din bil till din MQTT-mäklare för Home Assistant:",
@@ -2419,6 +2442,65 @@
       "featureUnavailable": "Škoda erbjuds inte på den här instansen: nyckeln sparades inte.",
       "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
       "internal": "Nyckeln kunde inte sparas. Försök igen om en stund."
+    }
+  },
+  "renault": {
+    "intro": "Runsten läser din Renault, Dacia eller Alpine via kontot i My Renault-appen, som också är kontot för MyDacia och MyAlpine. Den här åtkomsten är inofficiell: den kan sluta fungera när Renault ändrar sin app.",
+    "guide": "Läs guiden",
+    "newTab": "(öppnas i en ny flik)",
+    "refused": {
+      "title": "Din inloggning nekades",
+      "body": "Renault nekade din session {time}: lösenordet har ändrats, eller sessionen har avslutats. Dina bilar läses inte förrän du loggar in igen; det som lästs finns kvar."
+    },
+    "others": "{n} fordon på kontot är inte elektriskt och läses inte. | {n} fordon på kontot är inte elektriska och läses inte.",
+    "current": "Ditt konto",
+    "last4": "Konto som slutar på {last4}",
+    "setAt": "Inloggad",
+    "reconnect": "Logga in igen",
+    "delete": {
+      "button": "Ta bort inloggningen",
+      "title": "Ta bort din My Renault-inloggning?",
+      "text": "Dina bilar finns kvar, med sin historik, men läses inte förrän du loggar in igen.",
+      "error": "Inloggningen kunde inte tas bort. Försök igen om en stund.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    },
+    "passwordNote": "Ditt lösenord används en enda gång, för att logga in: Runsten sparar det aldrig, bara sessionen som Renault ger tillbaka. Vissa konton får därefter en engångskod med e-post.",
+    "email": "E-postadress till ditt My Renault-konto",
+    "password": "Lösenord",
+    "help": "Runsten läser bilen var 10:e minut, var 5:e under laddning. Resorna är ungefärliga, eftersom bilen inte ger någon tändningssignal, och Renault anger inte laddeffekten. Ett annat program som läser samma konto, som Home Assistant, delar sin gräns för anrop med Runsten.",
+    "save": "Logga in",
+    "cancel": "Avbryt",
+    "saved": "Inloggad: Runsten läser dina bilar från nästa omgång.",
+    "deleted": "Inloggningen borttagen.",
+    "code": {
+      "title": "Ange koden",
+      "sent": "Renault har skickat en engångskod till {address}.",
+      "label": "Engångskod",
+      "help": "Koden gäller i några minuter. Kommer den inte fram, titta i skräppostmappen, eller gå tillbaka och logga in igen för att få en ny.",
+      "send": "Bekräfta koden",
+      "back": "Tillbaka"
+    },
+    "error": {
+      "summary": "Inloggningen gick inte igenom",
+      "emailRequired": "Ange e-postadressen till ditt My Renault-konto.",
+      "passwordRequired": "Ange ditt lösenord.",
+      "codeRequired": "Ange koden som Renault skickade.",
+      "email": "Det här är ingen e-postadress.",
+      "tooLong": "Högst {max} tecken.",
+      "codeFormat": "Koden har 4 till 8 siffror.",
+      "refused": "Renault nekade e-postadressen eller lösenordet. Om de är rätt kan Renault ha ändrat nyckeln i sin app: försök igen senare, eller läs guiden.",
+      "wrongCode": "Renault nekade den här koden: kontrollera den, eller gå tillbaka och logga in igen för att få en ny.",
+      "expired": "Kodens tio minuter är slut: logga in igen.",
+      "invalidBody": "E-postadressen eller lösenordet nekades: skriv in dem igen.",
+      "noVehicle": "Det här kontot har inget elfordon: lägg först till bilen i My Renault-appen. Inget sparades.",
+      "tooManyVehicles": "Med de här bilarna skulle ditt konto ha fler fordon än det får: inloggningen sparades inte.",
+      "notAdmitted": "Ditt konto måste först ta ett steg, som att godkänna villkor: ladda om sidan. Inloggningen sparades inte.",
+      "featureUnavailable": "Renault erbjuds inte på den här instansen: inloggningen sparades inte.",
+      "rateLimited": "För många inloggningar väntar på sin kod på den här instansen: försök igen om några minuter.",
+      "sourceUnavailable": "My Renault svarade inte: inget sparades. Försök igen om en stund.",
+      "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
+      "internal": "Inloggningen kunde inte sparas. Försök igen om en stund."
     }
   }
 }

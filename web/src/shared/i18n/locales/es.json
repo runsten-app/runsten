@@ -48,7 +48,8 @@
       "hyundai": "Hyundai",
       "kia": "Kia",
       "genesis": "Genesis",
-      "skoda": "Škoda"
+      "skoda": "Škoda",
+      "renault": "Renault, Dacia, Alpine"
     },
     "beta": "Beta"
   },
@@ -1361,7 +1362,8 @@
       "polestar": "Polestar",
       "tesla": "Tesla",
       "bmw": "BMW",
-      "skoda": "Škoda"
+      "skoda": "Škoda",
+      "renault": "Renault"
     },
     "brandAttention": "requiere su atención",
     "outcome": {
@@ -1430,18 +1432,23 @@
       "credentialRefusedBmw": "No se lee: BMW rechazó la conexión",
       "credentialRefusedPleos": "No se lee: Pleos rechazó la clave",
       "credentialRefusedSkoda": "No leído: Škoda rechazó la clave",
+      "credentialRefusedRenault": "No leído: Renault rechazó el inicio de sesión",
       "credentialMissingBmw": "No se lee: no hay conexión con BMW",
       "credentialMissingPleos": "No se lee: no hay clave de Pleos",
       "credentialMissingSkoda": "No leído: no se ha dado ninguna clave de MyŠkoda",
+      "credentialMissingRenault": "No leído: sin sesión iniciada en My Renault",
       "unsharedBmw": "No se lee: la cuenta de BMW ya no es el usuario principal del vehículo",
       "unsharedPleos": "No se lee: el coche ya no comparte sus datos con la clave",
       "unsharedSkoda": "No leído: la clave ya no cubre este coche",
+      "unsharedRenault": "No leído: el coche ya no está en la cuenta de My Renault",
       "pausedBmw": "En pausa por BMW hasta {time}",
       "pausedPleos": "En pausa por Pleos hasta {time}",
       "pausedSkoda": "En pausa por Škoda hasta {time}",
+      "pausedRenault": "En pausa por Renault hasta {time}",
       "quotaBmw": "Límite diario de llamadas a BMW alcanzado hasta {time}",
       "quotaPleos": "Límite diario de llamadas a Pleos alcanzado hasta {time}",
-      "quotaSkoda": "Llamadas diarias a Škoda agotadas hasta {time}"
+      "quotaSkoda": "Llamadas diarias a Škoda agotadas hasta {time}",
+      "quotaRenault": "Llamadas diarias a Renault agotadas hasta {time}"
     },
     "notice": {
       "reauth": {
@@ -1485,15 +1492,20 @@
       "pausedBmw": "BMW limitó el número de llamadas. La lectura se reanudará por sí sola.",
       "pausedPleos": "Pleos limitó el número de llamadas. La lectura se reanudará por sí sola.",
       "pausedSkoda": "Škoda limitó el número de llamadas. La lectura se reanudará por sí sola.",
+      "pausedRenault": "Renault limitó el número de llamadas: puede que otra aplicación, Home Assistant por ejemplo, lea también la cuenta. La lectura se reanuda sola.",
       "credentialRefusedPleos": "Pleos rechazó la clave con la que se lee este coche: revocada o sustituida en el Playground, o caducada. Emita una nueva allí y désela en la página de conexión: lo ya leído se conserva.",
       "credentialRefusedSkoda": "Škoda rechazó la clave con la que se lee este coche: caducada o eliminada en la app MyŠkoda. Cree una nueva allí e indíquela en la página de conexión: lo leído se conserva.",
+      "credentialRefusedRenault": "Renault rechazó el inicio de sesión con el que se lee este coche: contraseña cambiada, o sesión terminada. Vuelva a iniciar sesión en la página de conexión: lo leído se conserva.",
       "credentialMissingPleos": "Runsten lee este coche con su clave de Pleos, que se eliminó: dé una nueva en la página de conexión.",
       "credentialMissingSkoda": "Runsten lee este coche con su clave de MyŠkoda, que se eliminó: indique una nueva en la página de conexión.",
+      "credentialMissingRenault": "Runsten lee este coche con su inicio de sesión de My Renault, que se eliminó: vuelva a iniciar sesión en la página de conexión.",
       "unsharedPleos": "Pleos respondió que este coche ya no comparte sus datos con la clave: el uso compartido apagado en sus servicios conectados, o el coche dado de baja. Si volviera a compartirse, dé de nuevo la clave en la página de conexión: el coche se leerá otra vez.",
       "unsharedSkoda": "Škoda respondió que la clave ya no lee este coche: se desmarcó de la clave en la app MyŠkoda. Cree una clave con este coche marcado e indíquela en la página de conexión: el coche se vuelve a leer.",
+      "unsharedRenault": "Su cuenta de My Renault ya no lista este coche como eléctrico: vendido, quitado de la cuenta, o pasado a otra. Si vuelve, inicie sesión de nuevo en la página de conexión: el coche se vuelve a leer.",
       "quotaBmw": "Runsten hace como máximo 40 llamadas al día a la API de BMW por conexión, para dejarle algunas de las 50 de BMW: se agotaron. El flujo, que no tiene límite, se sigue leyendo; el resto se reanudará por sí solo.",
       "quotaPleos": "Runsten hace como máximo 2000 llamadas al día a la Pleos Vehicle Data API por clave, un tope propio (Pleos no publica ninguno): se agotaron. La lectura se reanudará por sí sola.",
-      "quotaSkoda": "Runsten hace como máximo 2400 llamadas al día a la API pública de MyŠkoda por clave, por encima del límite propio de Škoda de 20 por hora y coche: se agotaron. La lectura se reanudará por sí sola."
+      "quotaSkoda": "Runsten hace como máximo 2400 llamadas al día a la API pública de MyŠkoda por clave, por encima del límite propio de Škoda de 20 por hora y coche: se agotaron. La lectura se reanudará por sí sola.",
+      "quotaRenault": "Runsten hace como máximo 1200 llamadas al día a la API de la app My Renault por cuenta, para mantenerse lejos de los límites no publicados de Renault: se agotaron. La lectura se reanuda sola."
     },
     "facts": {
       "mode": "Modo de consulta",
@@ -1520,9 +1532,11 @@
       "noneDueBmw": "Ninguna hasta que se vuelva a conectar BMW",
       "noneDuePleos": "Ninguna hasta que se dé una clave de Pleos",
       "noneDueSkoda": "Ninguna hasta que se indique una clave de MyŠkoda",
+      "noneDueRenault": "Ninguna hasta que vuelva a iniciar sesión en My Renault",
       "noneDueUnsharedBmw": "Ninguna: la cuenta de BMW ya no es el usuario principal del vehículo",
       "noneDueUnsharedPleos": "Ninguna: el coche ya no comparte sus datos con la clave",
-      "noneDueUnsharedSkoda": "Ninguna: la clave ya no cubre el coche"
+      "noneDueUnsharedSkoda": "Ninguna: la clave ya no cubre el coche",
+      "noneDueUnsharedRenault": "Ninguna: el coche ya no está en la cuenta de My Renault"
     },
     "api": {
       "connectedVehicle": "datos del vehículo",
@@ -1534,7 +1548,8 @@
       "polestarId": "API de la aplicación de Polestar",
       "bmw": "BMW CarData",
       "pleos": "la Pleos Vehicle Data API",
-      "skoda": "la API pública de MyŠkoda"
+      "skoda": "la API pública de MyŠkoda",
+      "renault": "la API de la app My Renault"
     },
     "failure": {
       "quota": "Cuota alcanzada",
@@ -1563,15 +1578,19 @@
       "notFoundBmw": "Vehículo desconocido para BMW",
       "notFoundPleos": "Vehículo desconocido para Pleos",
       "notFoundSkoda": "Vehículo desconocido para Škoda",
+      "notFoundRenault": "Vehículo desconocido para Renault",
       "unavailableBmw": "BMW no accesible",
       "unavailablePleos": "Pleos no accesible",
       "unavailableSkoda": "Škoda inaccesible",
+      "unavailableRenault": "Renault inaccesible",
       "tokenBmw": "Sin token de BMW",
       "tokenPleos": "Sin token de Pleos",
       "tokenSkoda": "Clave de MyŠkoda no leída",
+      "tokenRenault": "Sesión de My Renault no leída",
       "credentialRefusedBmw": "Conexión con BMW rechazada",
       "credentialRefusedPleos": "Clave de Pleos rechazada",
       "credentialRefusedSkoda": "Clave de MyŠkoda rechazada",
+      "credentialRefusedRenault": "Inicio de sesión de My Renault rechazado",
       "keyShared": "Clave compartida con otra aplicación"
     },
     "key": {
@@ -1614,6 +1633,10 @@
     "skoda": {
       "title": "Su clave de MyŠkoda",
       "off": "Škoda está desactivado en esta instancia (el indicador source.skoda)."
+    },
+    "renault": {
+      "title": "Su cuenta de My Renault",
+      "off": "Renault está desactivado en esta instancia (el indicador source.renault)."
     },
     "keyShared": {
       "text": "Otra aplicación lee con la misma clave de Pleos — evcc, Home Assistant. La API solo permite un lector a la vez, así que cada uno desplaza al otro. Reserve esta clave para Runsten, o deje que Runsten republique su coche en su broker MQTT para Home Assistant:",
@@ -2419,6 +2442,65 @@
       "featureUnavailable": "Škoda no se ofrece en esta instancia: la clave no se guardó.",
       "unavailable": "No se pudo contactar con Runsten. Inténtelo de nuevo en un momento.",
       "internal": "No se pudo guardar la clave. Inténtelo de nuevo en un momento."
+    }
+  },
+  "renault": {
+    "intro": "Runsten lee su Renault, Dacia o Alpine a través de la cuenta de la app My Renault, que es también la de MyDacia y MyAlpine. Este acceso no es oficial: puede dejar de funcionar cuando Renault cambie su app.",
+    "guide": "Leer la guía",
+    "newTab": "(se abre en una pestaña nueva)",
+    "refused": {
+      "title": "Su inicio de sesión fue rechazado",
+      "body": "Renault rechazó su sesión el {time}: contraseña cambiada, o sesión terminada. Sus coches no se leen hasta que vuelva a iniciar sesión; lo leído se conserva."
+    },
+    "others": "{n} vehículo de la cuenta no es eléctrico y no se lee. | {n} vehículos de la cuenta no son eléctricos y no se leen.",
+    "current": "Su cuenta",
+    "last4": "Cuenta terminada en {last4}",
+    "setAt": "Sesión iniciada",
+    "reconnect": "Volver a iniciar sesión",
+    "delete": {
+      "button": "Quitar el inicio de sesión",
+      "title": "¿Quitar su inicio de sesión de My Renault?",
+      "text": "Sus coches se quedan, con su historial, pero dejan de leerse hasta que vuelva a iniciar sesión.",
+      "error": "No se pudo quitar el inicio de sesión. Inténtelo de nuevo en un momento.",
+      "cancel": "Cancelar",
+      "confirm": "Quitar"
+    },
+    "passwordNote": "Su contraseña se usa una sola vez, para iniciar sesión: Runsten nunca la guarda, solo la sesión que Renault devuelve. A algunas cuentas se les envía después un código de un solo uso por correo electrónico.",
+    "email": "Correo electrónico de su cuenta de My Renault",
+    "password": "Contraseña",
+    "help": "Runsten lee el coche cada 10 minutos, cada 5 mientras carga. Los viajes son aproximados, porque el coche no da señal de contacto, y Renault no da la potencia de carga. Otra aplicación que lea la misma cuenta, como Home Assistant, comparte con Runsten su límite de llamadas.",
+    "save": "Iniciar sesión",
+    "cancel": "Cancelar",
+    "saved": "Sesión iniciada: Runsten lee sus coches desde su próxima pasada.",
+    "deleted": "Inicio de sesión quitado.",
+    "code": {
+      "title": "Introduzca el código",
+      "sent": "Renault envió un código de un solo uso a {address}.",
+      "label": "Código de un solo uso",
+      "help": "El código dura unos minutos. Si no llega, mire la carpeta de correo no deseado, o vuelva atrás para iniciar sesión de nuevo y recibir otro.",
+      "send": "Confirmar el código",
+      "back": "Volver"
+    },
+    "error": {
+      "summary": "El inicio de sesión no se completó",
+      "emailRequired": "Introduzca el correo electrónico de su cuenta de My Renault.",
+      "passwordRequired": "Introduzca su contraseña.",
+      "codeRequired": "Introduzca el código que envió Renault.",
+      "email": "No es una dirección de correo electrónico.",
+      "tooLong": "Como máximo {max} caracteres.",
+      "codeFormat": "El código tiene de 4 a 8 cifras.",
+      "refused": "Renault rechazó el correo o la contraseña. Si son correctos, puede que Renault haya cambiado la clave de su app: inténtelo más tarde, o lea la guía.",
+      "wrongCode": "Renault rechazó este código: compruébelo, o vuelva atrás para iniciar sesión de nuevo y recibir otro.",
+      "expired": "Pasaron los diez minutos del código: vuelva a iniciar sesión.",
+      "invalidBody": "El correo o la contraseña fue rechazado: escríbalos de nuevo.",
+      "noVehicle": "Esta cuenta no tiene ningún vehículo eléctrico: añada primero el coche en la app My Renault. No se guardó nada.",
+      "tooManyVehicles": "Con estos coches, su cuenta tendría más vehículos de los que puede: el inicio de sesión no se guardó.",
+      "notAdmitted": "Su cuenta debe dar primero un paso, como aceptar condiciones: recargue la página. El inicio de sesión no se guardó.",
+      "featureUnavailable": "Renault no se ofrece en esta instancia: el inicio de sesión no se guardó.",
+      "rateLimited": "Demasiados inicios de sesión esperan su código en esta instancia: inténtelo de nuevo en unos minutos.",
+      "sourceUnavailable": "My Renault no respondió: no se guardó nada. Inténtelo de nuevo en un momento.",
+      "unavailable": "No se pudo contactar con Runsten. Inténtelo de nuevo en un momento.",
+      "internal": "No se pudo guardar el inicio de sesión. Inténtelo de nuevo en un momento."
     }
   }
 }

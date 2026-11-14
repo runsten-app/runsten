@@ -6,6 +6,8 @@ import type {
   PleosCredentialUpdate,
   PolestarCredentialUpdate,
   PolestarIdAuthorization,
+  RenaultSignIn,
+  RenaultSignInBody,
   SkodaCredentialUpdate,
 } from '../model/Connection'
 
@@ -73,6 +75,18 @@ export function setSkodaCredential(body: SkodaCredentialUpdate): Promise<Connect
 
 export async function deleteSkodaCredential(): Promise<void> {
   await unwrap(api.DELETE('/connection/skoda'))
+}
+
+export function signInRenault(body: RenaultSignInBody): Promise<RenaultSignIn> {
+  return unwrap(api.POST('/connection/renault/sign-in', { body }))
+}
+
+export function setRenaultCode(code: string): Promise<RenaultSignIn> {
+  return unwrap(api.POST('/connection/renault/code', { body: { code } }))
+}
+
+export async function deleteRenault(): Promise<void> {
+  await unwrap(api.DELETE('/connection/renault'))
 }
 
 export function startBmwAuthorization(clientId: string): Promise<BmwDevice> {

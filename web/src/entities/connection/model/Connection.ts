@@ -36,3 +36,11 @@ export const pleosBrands: PleosBrand[] = ['hyundai', 'kia', 'genesis']
 // a new one, with the VIN of each car it reads (the API lists none).
 export type SkodaKey = components['schemas']['SkodaKey']
 export type SkodaCredentialUpdate = components['schemas']['SkodaCredentialUpdate']
+// Renault is what the user is shown again of the account's sign-in to My Renault (the
+// same account as MyDacia and MyAlpine): the last four characters of its person id, when
+// the owner signed in, and whether Renault refused it since; never the password nor the
+// token. RenaultSignIn is a sign-in's answer: the connection, or the address the one-time
+// code was sent to, which RenaultSignInBody and the code complete.
+export type Renault = components['schemas']['Renault']
+export type RenaultSignIn = components['schemas']['RenaultSignIn']
+export type RenaultSignInBody = components['schemas']['RenaultSignInBody']
