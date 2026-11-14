@@ -28,15 +28,16 @@ func newSource(t *testing.T) (*Source, *clock.Manual, *renaultapi.Handler) {
 	return newSourceWith(t, nil)
 }
 
-// failing fails the calls whose path ends in suffix while on is set.
+// failing fails the calls whose path ends in suffix, or holds part, while on is set.
 type failing struct {
-	next   http.RoundTripper
-	suffix string
-	on     atomic.Bool
+	next         http.RoundTripper
+	suffix, part string
+	on           atomic.Bool
 }
 
 func (f *failing) RoundTrip(r *http.Request) (*http.Response, error) {
-	if f.on.Load() && strings.HasSuffix(r.URL.Path, f.suffix) {
+	if f.on.Load() && ((f.suffix != "" && strings.HasSuffix(r.URL.Path, f.suffix)) ||
+		(f.part != "" && strings.Contains(r.URL.Path, f.part))) {
 		return nil, errors.New("connection reset")
 	}
 	return f.next.RoundTrip(r) //nolint:wrapcheck // the test's transport
@@ -236,8 +237,8 @@ func TestMovedAccountListingFails(t *testing.T) {
 	h.AccountChanged()
 	f.on.Store(true)
 	_, err = sess.Fetch(ctx, simVIN, collector.Endpoint(renault.BatteryStatus))
-	if kindOf(err) == collector.KindUnshared {
-		t.Errorf("taken for unshared: %v", err)
+	if !errors.Is(err, errListingPartial) {
+		t.Errorf("not a passing failure: %v", err)
 	}
 	src.mu.Lock()
 	_, kept := src.lists["c"].vehicles[simVIN]
@@ -265,5 +266,24 @@ func TestNewCarListingFails(t *testing.T) {
 	_, err = sess.Fetch(ctx, simVIN, collector.Endpoint(renault.Cockpit))
 	if err == nil || kindOf(err) == collector.KindUnshared {
 		t.Errorf("a car not listed yet, an account not listed: %v", err)
+	}
+}
+
+// TestPersonFails: the person not read while the account moved: the session's reads
+// fail, each, none taken for unshared.
+func TestPersonFails(t *testing.T) {
+	f := &failing{part: "/persons/"}
+	src, _, h := newSourceWith(t, f)
+	ctx := context.Background()
+	sess, _, err := src.Login(ctx, "a", "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.AccountChanged()
+	f.on.Store(true)
+	for _, ep := range []renault.Endpoint{renault.BatteryStatus, renault.Cockpit} {
+		if _, err := sess.Fetch(ctx, simVIN, collector.Endpoint(ep)); err == nil || kindOf(err) == collector.KindUnshared {
+			t.Errorf("%s: %v", ep, err)
+		}
 	}
 }

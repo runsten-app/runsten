@@ -250,8 +250,9 @@ type session struct {
 	cred         Credential
 	connectionID string
 	vehicles     map[string]vehicle
-	relisted     bool // the vehicles were listed again in this session
-	partial      bool // that listing missed an account
+	relisted     bool  // the vehicles were listed again in this session
+	partial      bool  // that listing missed an account
+	listErr      error // that listing failed: the session's reads that need it fail so
 }
 
 // errNotListed is a vehicle the account no longer lists.
@@ -313,13 +314,17 @@ func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) 
 }
 
 // relocate lists the account's vehicles again, once a session, and returns where vin is
-// read now; false: not listed. A listing that fails returns its error, the list dropped
-// to be listed at the next login.
+// read now; false: not listed. A listing that fails returns its error, to every later
+// read of the session that needs it too, the list dropped to be listed at the next login.
 func (s *session) relocate(ctx context.Context, vin string) (vehicle, bool, error) {
+	if s.listErr != nil {
+		return vehicle{}, false, s.listErr
+	}
 	if !s.relisted {
 		s.relisted = true
 		l, err := s.src.relist(ctx, s.jwt, s.cred, s.connectionID, s.vehicles)
 		if err != nil {
+			s.listErr = err
 			s.src.forget(s.connectionID)
 			return vehicle{}, false, err
 		}
