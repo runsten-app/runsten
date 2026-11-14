@@ -46,8 +46,8 @@ func (v Variant) validate() error {
 	if !idPattern.MatchString(v.ID) {
 		errs = append(errs, fmt.Errorf("id %q: lowercase words joined by hyphens expected", v.ID))
 	}
-	if !slices.Contains([]Brand{Volvo, Polestar, Tesla, BMW, Mini, Hyundai, Kia, Genesis, Skoda}, v.Brand) {
-		errs = append(errs, fmt.Errorf("brand %q: volvo, polestar, tesla, bmw, mini, hyundai, kia, genesis or skoda expected", v.Brand))
+	if !slices.Contains([]Brand{Volvo, Polestar, Tesla, BMW, Mini, Hyundai, Kia, Genesis, Skoda, Renault, Dacia, Alpine}, v.Brand) {
+		errs = append(errs, fmt.Errorf("brand %q: volvo, polestar, tesla, bmw, mini, hyundai, kia, genesis, skoda, renault, dacia or alpine expected", v.Brand))
 	}
 	if v.Family == "" || v.Name == "" {
 		errs = append(errs, errors.New("family and name are required"))
@@ -60,10 +60,6 @@ func (v Variant) validate() error {
 	}
 	if v.GrossKWh <= 0 || v.ACMaxKW <= 0 || (v.DCMaxKW != nil && *v.DCMaxKW <= 0) {
 		errs = append(errs, errors.New("gross_kwh, ac_max_kw and dc_max_kw must be > 0"))
-	}
-	// Every electric car of the catalog charges on DC; most plug-in hybrids do not.
-	if v.DCMaxKW == nil && v.Powertrain == Electric {
-		errs = append(errs, errors.New("dc_max_kw is required for an electric variant"))
 	}
 	if n := v.NetKWh; n != nil && (*n <= 0 || *n > v.GrossKWh) {
 		errs = append(errs, errors.New("net_kwh must be in ]0, gross_kwh]"))

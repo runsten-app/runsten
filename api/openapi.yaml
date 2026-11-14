@@ -1478,7 +1478,7 @@ components:
               type: string
             - type: "null"
         provider:
-          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis; skoda: the owner's key of the MyŠkoda Public API."
+          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis; skoda: the owner's key of the MyŠkoda Public API; renault: the owner's sign-in to My Renault, for a Renault, a Dacia or an Alpine."
           enum:
             - volvo
             - polestar
@@ -1490,6 +1490,7 @@ components:
             - pleos_kia
             - pleos_genesis
             - skoda
+            - renault
           type: string
         reauth_at:
           description: When the grant was found lost; null while active.
@@ -1566,6 +1567,11 @@ components:
           oneOf:
             - $ref: "#/components/schemas/PolestarID"
             - type: "null"
+        renault:
+          description: "The account's sign-in to My Renault, which reads its Renaults, Dacias and Alpines through the My Renault app's API (the flag source.renault); null: none."
+          oneOf:
+            - $ref: "#/components/schemas/Renault"
+            - type: "null"
         skoda:
           description: "The account's key of the MyŠkoda Public API, which reads its Škodas (the flag source.skoda); null: none."
           oneOf:
@@ -1591,6 +1597,7 @@ components:
         - bmw
         - pleos
         - skoda
+        - renault
       type: object
     Cost:
       additionalProperties: false
@@ -1979,6 +1986,7 @@ components:
             - scope_missing
             - key_expired
             - vin_not_covered
+            - wrong_code
             - internal
           type: string
         message:
@@ -4281,6 +4289,83 @@ components:
         - version
         - url
       type: object
+    Renault:
+      additionalProperties: false
+      properties:
+        last4:
+          description: "The last four characters of the account's person id at Renault, to tell a sign-in apart: the login token is never returned, the password never kept."
+          type: string
+        refused_at:
+          description: "When Renault refused the sign-in (a password changed, the session ended): its vehicles are not read until the owner signs in again. null: not refused."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        set_at:
+          description: When the owner signed in.
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - last4
+        - set_at
+        - refused_at
+      type: object
+    RenaultCodeBody:
+      additionalProperties: false
+      properties:
+        code:
+          description: The one-time code Renault emailed.
+          pattern: ^[0-9]{4,8}$
+          type: string
+      required:
+        - code
+      type: object
+    RenaultSignIn:
+      additionalProperties: false
+      properties:
+        code_sent_to:
+          description: "The account asked for its one-time code, sent to this address (masked as Renault tells it): POST /connection/renault/code completes the sign-in, within ten minutes. null: signed in."
+          type:
+            - string
+            - "null"
+        connection:
+          description: The connection, once signed in; null while the code is awaited.
+          oneOf:
+            - $ref: "#/components/schemas/ConnectionSettings"
+            - type: "null"
+        others:
+          description: How many vehicles of the account are not electric, and not read.
+          format: int64
+          type: integer
+      required:
+        - code_sent_to
+        - connection
+        - others
+      type: object
+    RenaultSignInBody:
+      additionalProperties: false
+      properties:
+        email:
+          description: The email of the My Renault account (the same for MyDacia and MyAlpine).
+          format: email
+          maxLength: 254
+          type: string
+        language:
+          description: "The language of the one-time code's email, when the account asks for one (fr, en, de…): the user's."
+          pattern: ^[a-z]{2}$
+          type: string
+        password:
+          description: Its password. It signs in once and is never stored.
+          maxLength: 256
+          minLength: 1
+          type: string
+      required:
+        - email
+        - password
+        - language
+      type: object
     Series:
       additionalProperties: false
       properties:
@@ -4444,6 +4529,9 @@ components:
             source.polestar-id:
               description: "The Polestar ID as a source, for the Polestars the Data Portal does not read (outside the EU/EEA): its connection and its reads. Off by default: the Polestar app's API is unofficial, and many accounts read from one instance's addresses could have them blocked; a self-hosted instance turns it on."
               type: boolean
+            source.renault:
+              description: "The My Renault app's API as a source, for the Renaults, the Dacias and the Alpines: its connection and its reads. Off by default: the API is unofficial, against the app's terms, and many accounts read from one instance's addresses could have them blocked; a self-hosted instance turns it on."
+              type: boolean
             source.skoda:
               description: "The MyŠkoda Public API as a source, for the Škodas: its connection and its reads. On by default: a self-hosted instance read by the car's owner is the personal use Škoda's terms allow. An instance that serves other people turns it off, the terms forbidding a commercial use of the API."
               type: boolean
@@ -4456,6 +4544,7 @@ components:
             - source.bmw
             - source.pleos
             - source.skoda
+            - source.renault
           type: object
         limits:
           description: "What the account's offer hides, as of now; null: nothing, the whole history is shown. Only an instance that limits its accounts sets it."
@@ -7033,6 +7122,173 @@ paths:
       summary: Connect the account's Polestar ID with its email and password
       tags:
         - connection
+  /connection/renault:
+    delete:
+      description: The sign-in is erased. The Renaults stay, with their history, and are no longer read until the owner signs in again.
+      operationId: deleteRenaultCredential
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Remove the account's My Renault sign-in
+      tags:
+        - connection
+  /connection/renault/code:
+    post:
+      description: The code Renault emailed completes the sign-in started within ten minutes; the account's electric vehicles are then added.
+      operationId: postRenaultCode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenaultCodeBody"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RenaultSignIn"
+          description: "Signed in: the connection, and how many vehicles are not electric."
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `wrong_code`: Renault refused the code; the sign-in still waits. `credential_refused`: Renault refused the sign-in."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: Renault is not offered to the account (the flag `source.renault`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`authorization_expired`: no sign-in waits for a code, or it expired. `no_vehicle`: the account has no electric vehicle. `too_many_vehicles`: the account would have more vehicles than the instance lets it have. Nothing is stored."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: My Renault did not answer; nothing is stored."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Enter the one-time code of the My Renault sign-in
+      tags:
+        - connection
+  /connection/renault/sign-in:
+    post:
+      description: "The owner's email and password of My Renault (the same account as MyDacia and MyAlpine) sign in once: Runsten keeps the login token Renault gives, never the password. When the account asks for its one-time code, Renault emails it and `code_sent_to` says where: POST /connection/renault/code completes the sign-in. Otherwise the account's electric vehicles are added, and the connection returned. A sign-in replaces the previous one, its vehicles kept."
+      operationId: postRenaultSignIn
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenaultSignInBody"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RenaultSignIn"
+          description: Signed in, or the code sent.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `credential_refused`: Renault refused the email or the password (or its app's key changed)."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: Renault is not offered to the account (the flag `source.renault`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`no_vehicle`: the account has no electric vehicle. `too_many_vehicles`: the account would have more vehicles than the instance lets it have. Nothing is stored."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many sign-ins wait for their code on the instance."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: My Renault did not answer; nothing is stored."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Sign in to the account's My Renault
+      tags:
+        - connection
   /connection/skoda:
     delete:
       description: The key is erased. The Škodas stay, with their history, and are no longer read until another key is given.
@@ -9381,7 +9637,7 @@ paths:
         - events
   /vehicles/{vehicle}/imports/volvo_data_portal:
     post:
-      description: "The trips the Volvo Data Portal (data.volvocars.com) gave an owner who asked for their vehicle's data under the EU Data Act, with their tracks when the waypoints' file is given. Written at once: only what starts before the vehicle's first reading; a trip imported before, the same start, is replaced. At most 32 MiB of files."
+      description: "The trips the Volvo Data Portal (data.volvocars.com) gave an owner who asked for their vehicle's data under the EU Data Act, with their tracks when the waypoints are among the files: every file the portal gave at once, as downloaded. Written at once: only what starts before the vehicle's first reading; a trip imported before, the same start, is replaced. At most 1,000 files, 32 MiB together."
       operationId: importVolvoDataPortal
       parameters:
         - description: The vehicle ID.
@@ -9395,27 +9651,21 @@ paths:
         content:
           multipart/form-data:
             encoding:
-              trips:
-                contentType: application/octet-stream
-              waypoints:
+              files:
                 contentType: application/octet-stream
             schema:
               additionalProperties: false
               properties:
-                trips:
-                  contentEncoding: binary
-                  contentMediaType: application/octet-stream
-                  description: "The trips' file the portal gave (CSV): Start time, End time, positions, odometers, distance, energy."
-                  format: binary
-                  type: string
-                waypoints:
-                  contentEncoding: binary
-                  contentMediaType: application/octet-stream
-                  description: "The waypoints' file the portal gave (CSV), about one a minute while driving: they make the trips' tracks. Optional."
-                  format: binary
-                  type: string
+                files:
+                  items:
+                    contentEncoding: binary
+                    contentMediaType: application/octet-stream
+                    description: "The files the portal gave, as downloaded: its ZIPs of one data.csv each, a ZIP of them all, or the CSVs. The trips (Start time, End time, positions, odometers, distance, energy) and the waypoints, about one a minute while driving, which make their tracks, told apart by their header; metadata.json and final.zip are ignored."
+                    format: binary
+                    type: string
+                  type: array
               required:
-                - trips
+                - files
               type: object
       responses:
         "200":
@@ -9429,7 +9679,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_body`: not a multipart form with the trips' file, or more than 32 MiB. `invalid_file`: a file is not the portal's (not CSV, or a column missing); the message tells which and why."
+          description: "`invalid_body`: not a multipart form with the files, more than 1,000 files or 32 MiB. `invalid_file`: a file is not the portal's (not a ZIP of its CSVs, nor one of them), no trips among them, or more than 256 MiB once unzipped; the message tells which and why."
         "401":
           content:
             application/json:

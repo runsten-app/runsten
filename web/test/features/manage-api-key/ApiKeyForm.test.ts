@@ -27,6 +27,7 @@ const hosted: ConnectionSettings = {
   bmw: null,
   pleos: { hyundai: null, kia: null, genesis: null },
   skoda: null,
+  renault: null,
 }
 const withKey = connection as ConnectionSettings
 let wrapper: VueWrapper | undefined

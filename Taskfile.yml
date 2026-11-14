@@ -57,7 +57,9 @@ vars:
   # Polestar ID and the Polestar app's API under /polestar-id (its gRPC at the root), its
   # flag on; BMW CarData under /gcdm/oauth and /customers, its stream on :9000; the Pleos
   # Vehicle Data API under /pleos (its key below, its faults under /sim/pleos); the MyŠkoda
-  # Public API under /skoda (its key below, its faults under /sim/skoda).
+  # Public API under /skoda (its key below, its faults under /sim/skoda); the My Renault
+  # app's API under /renault (Gigya under /renault/gigya, Kamereon under /renault/kamereon,
+  # their keys the simulator's, its faults under /sim/renault), its flag on.
   # Development-only encryption key (32 zero bytes).
   DEV_ENV: >-
     RUNSTEN_DATABASE_URL="{{.DB_DEV}}"
@@ -73,7 +75,9 @@ vars:
     RUNSTEN_BMW_STREAM_URL=tcp://localhost:9000
     RUNSTEN_PLEOS_API_URL=http://localhost:8080/pleos
     RUNSTEN_SKODA_API_URL=http://localhost:8080/skoda
-    RUNSTEN_FLAGS=source.polestar-id=true
+    RUNSTEN_RENAULT_GIGYA_URL=http://localhost:8080/renault/gigya RUNSTEN_RENAULT_GIGYA_KEY=runsten-dev-gigya-key
+    RUNSTEN_RENAULT_KAMEREON_URL=http://localhost:8080/renault/kamereon RUNSTEN_RENAULT_KAMEREON_KEY=runsten-dev-kamereon-key
+    RUNSTEN_FLAGS=source.polestar-id=true,source.renault=true
 
   # The simulator's Polestar ID (polestaridapi.DevEmail and DevPassword), development
   # only, as the body of PUT /api/v1/connection/polestar-id/password.
@@ -93,6 +97,13 @@ vars:
   # The simulator's MyŠkoda key (skodaapi.DevAPIKey), development only, given with the
   # VINs it covers (GET /sim/skoda/vehicles) to PUT /api/v1/connection/skoda.
   DEV_SKODA_KEY: runsten-dev-skoda-key
+
+  # The simulator's My Renault account (renaultapi.DevEmail, DevPassword and DevCode),
+  # development only: signed in with POST /api/v1/connection/renault/sign-in, then the
+  # one-time code with POST /api/v1/connection/renault/code when the account asks for it.
+  DEV_RENAULT_EMAIL: driver@runsten.test
+  DEV_RENAULT_PASSWORD: runsten-dev-password
+  DEV_RENAULT_CODE: "123456"
 
 tasks:
   default:
@@ -390,9 +401,11 @@ tasks:
   # check), which reads those of brand tesla, and its Polestar ID, which reads those of
   # source polestar_id, and its Pleos key, per brand, which reads those of brand hyundai,
   # kia or genesis, and its MyŠkoda key with the VINs it covers, which reads those of
-  # brand skoda. A scenario without one of them connects the others only.
+  # brand skoda, and its My Renault account (and its one-time code when asked), which reads
+  # those of brand renault, dacia or alpine. A scenario without one of them connects the
+  # others only.
   connect-sim:
-    desc: Sign in as the development user, connect the simulated Volvo ID as a browser would (curl), and give the simulated Polestar credential, Tesla refresh token, Polestar ID, Pleos key and MyŠkoda key
+    desc: Sign in as the development user, connect the simulated Volvo ID as a browser would (curl), and give the simulated Polestar credential, Tesla refresh token, Polestar ID, Pleos key, MyŠkoda key and My Renault account
     silent: true
     cmds:
       - |
@@ -453,6 +466,20 @@ tasks:
             *) echo "MyŠkoda key refused: HTTP $status" >&2; exit 1 ;;
           esac
         fi
+        reply=$(mktemp)
+        trap 'rm -f "$jar" "$reply"' EXIT
+        status=$(curl -sS -b "$jar" -X POST -H 'Content-Type: application/json' -o "$reply" -w '%{http_code}' \
+          -d '{"email":"{{.DEV_RENAULT_EMAIL}}","password":"{{.DEV_RENAULT_PASSWORD}}"}' http://127.0.0.1:8081/api/v1/connection/renault/sign-in) || exit 1
+        if [ "$status" = 200 ] && grep -q '"code_sent_to":"' "$reply"; then
+          status=$(curl -sS -b "$jar" -X POST -H 'Content-Type: application/json' -o /dev/null -w '%{http_code}' \
+            -d '{"code":"{{.DEV_RENAULT_CODE}}"}' http://127.0.0.1:8081/api/v1/connection/renault/code) || exit 1
+        fi
+        case "$status" in
+          200) echo "My Renault account signed in"; connected=1 ;;
+          409) echo "My Renault account: no Renault, Dacia or Alpine in the scenario" ;;
+          403) echo "My Renault account: not offered (the flag source.renault is off)" ;;
+          *) echo "My Renault account refused: HTTP $status" >&2; exit 1 ;;
+        esac
         [ "$connected" = 1 ] || { echo "no vehicle connected" >&2; exit 1; }
 
   # In the foreground, removed when it stops: tilt up runs it as a service.

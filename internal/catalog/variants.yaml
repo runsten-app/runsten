@@ -1,4 +1,4 @@
-# Electric and plug-in hybrid variants of Volvo, Polestar, Tesla, BMW, Mini, Hyundai, Kia, Genesis and Škoda vehicles.
+# Electric and plug-in hybrid variants of Volvo, Polestar, Tesla, BMW, Mini, Hyundai, Kia, Genesis, Škoda, Renault, Dacia and Alpine vehicles.
 #
 # One entry per variant: a powertrain and battery over a range of model years. Its id is
 # stored by users once they choose it, so it never changes: correcting a figure keeps the
@@ -8,7 +8,9 @@
 #   word of basicData's modelName (i4, iX3, Cooper; a plug-in hybrid's X5 or 330e). Polestar families are
 #   provisional: no data source returns them yet. Tesla's: car_type as the Owner API's
 #   normalizer names it (Model 3, Model Y). Škoda's: the model's name, which the MyŠkoda
-#   Public API gives when the owner did not rename the car (Enyaq, Enyaq Coupé, Elroq).
+#   Public API gives when the owner did not rename the car (Enyaq, Enyaq Coupé, Elroq). Renault's, Dacia's
+#   and Alpine's: the model's name as internal/renault/models.go writes it from the model
+#   code (Renault 5 E-Tech, Zoe, Spring, Alpine A290).
 # - trims: values of a vendor's trim badge (Tesla's trim_badging), lower case, sourced as
 #   a figure: like the motor codes, they only rule out the variants that list others.
 #   BMW's: the model's name after its family, its spaces dropped (iX3 50 xDrive: 50xdrive),
@@ -18,7 +20,8 @@
 #   one; electric when left out.
 # - gross_kwh, net_kwh: battery capacity; net_kwh is left out when no source settles it.
 # - ac_max_kw: standard onboard charger; ac_option_kw: the optional one (22 kW), if any.
-# - dc_max_kw: maximum DC power; left out of a plug-in hybrid without DC charging.
+# - dc_max_kw: maximum DC power; left out of a variant without DC charging (a plug-in
+#   hybrid's, the 22 kWh Zoe's, the Twingo Electric's).
 # - api_kwh: values of batteryCapacityKWH seen for the variant, each with where it was seen.
 # - motor_codes: VIN positions 6-7, from unofficial tables: they only break ties.
 # - sources: every figure is backed by at least one source, listed in its "for"; its level
@@ -31,8 +34,8 @@
 #
 # Variants that no reading can separate (same family, overlapping years, capacities within
 # the tolerances, no motor code apart) must name each other in ambiguous_with: Match then
-# offers both, and the user chooses. Tesla's and Škoda's are exempt: neither the Owner API
-# nor the MyŠkoda Public API tells a capacity, ambiguity is the rule there.
+# offers both, and the user chooses. Tesla's, Škoda's, Renault's, Dacia's and Alpine's are exempt: neither the Owner
+# API, the MyŠkoda Public API nor Kamereon tells a capacity, ambiguity is the rule there.
 
 # --- Volvo XC40 and C40 (CMA) ---------------------------------------------------------
 
@@ -4306,3 +4309,334 @@
     - url: https://cdn.skoda-storyboard.com/2024/10/TD-Elroq-en_new_7a3c9a44.pdf
       level: manufacturer
       for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw, chemistry]
+
+# --- Renault, Dacia and Alpine (Renault source, ADR 0050) -------------------------------
+#
+# The Renault source tells the brand (brand.label) and the model's family (from its model
+# code), never a capacity nor a model year: the variants of a family are all candidates and
+# the user chooses, as for Tesla and Škoda (their brands read no capacity: no
+# ambiguous_with). Families are the models' names as internal/renault/models.go writes
+# them. Renault publishes usable (net) capacities; the gross ones are ev-database's
+# "nominal" capacity or a press figure, and differ by a kWh or two between sources.
+# Conflicts on a maximum power keep the highest value.
+
+# R5 40 kWh: 7.4 kW AC single-phase as standard, 11 kW three-phase optional; DC (80 kW) is
+# an option. Gross: ev-database's 43 kWh nominal.
+- id: r5-40-2024
+  brand: renault
+  family: Renault 5 E-Tech
+  name: Renault 5 E-Tech 40 kWh
+  years: [2024]
+  gross_kwh: 43
+  net_kwh: 40
+  chemistry: nmc
+  ac_max_kw: 7.4
+  ac_option_kw: 11
+  dc_max_kw: 80
+  sources:
+    - url: https://www.renault.ie/CountriesData/Ireland/images/PDF/spec/r5-spec.pdf
+      level: manufacturer
+      for: [ac_max_kw, ac_option_kw]
+    - url: https://ev-database.org/car/2134/Renault-5-E-Tech-40kWh-120hp
+      level: secondary
+      for: [gross_kwh, net_kwh, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/Renault_5_E-Tech
+      level: secondary
+      for: [chemistry]
+
+- id: r5-52-2024
+  brand: renault
+  family: Renault 5 E-Tech
+  name: Renault 5 E-Tech 52 kWh
+  years: [2024]
+  gross_kwh: 55
+  net_kwh: 52
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 100
+  sources:
+    - url: https://www.renault.ie/CountriesData/Ireland/images/PDF/spec/r5-spec.pdf
+      level: manufacturer
+      for: [net_kwh, ac_max_kw]
+    - url: https://ev-database.org/car/2135/Renault-5-E-Tech-52kWh-150hp
+      level: secondary
+      for: [gross_kwh, net_kwh, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/Renault_5_E-Tech
+      level: secondary
+      for: [chemistry]
+
+# Renault 4 E-Tech: the 5's batteries and chargers (same platform, AmpR Small). The 40 kWh
+# lists 11 kW AC at ArenaEV, the 5's 7.4 kW standard is not confirmed for it: 11 kept.
+- id: r4-40-2025
+  brand: renault
+  family: Renault 4 E-Tech
+  name: Renault 4 E-Tech 40 kWh
+  years: [2025]
+  gross_kwh: 43
+  net_kwh: 40
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 80
+  sources:
+    - url: https://m.arenaev.com/renault_4_e_tech_120_hp_40_kwh_2025-specs-amps-750.php
+      level: secondary
+      for: [net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3126/Renault-4-E-Tech-40kWh-120hp
+      level: secondary
+      for: [gross_kwh, net_kwh, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/Renault_5_E-Tech
+      level: secondary
+      for: [chemistry]
+
+# Gross (dc 100 kW): ev-database says 55 kWh nominal for the 5's 52 kWh pack, ArenaEV 54:
+# the 5's 55 is kept.
+- id: r4-52-2025
+  brand: renault
+  family: Renault 4 E-Tech
+  name: Renault 4 E-Tech 52 kWh
+  years: [2025]
+  gross_kwh: 55
+  net_kwh: 52
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 100
+  sources:
+    - url: https://m.arenaev.com/renault_4_e_tech_150_hp_52_kwh_2025-specs-amps-751.php
+      level: secondary
+      for: [net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3127/Renault-4-E-Tech-52kWh-150hp
+      level: secondary
+      for: [gross_kwh, net_kwh, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/Renault_5_E-Tech
+      level: secondary
+      for: [chemistry]
+
+# Mégane E-Tech: EV40 7.4 kW AC and 85 kW DC (no DC on the first deliveries); EV60 11 kW AC
+# (ev-database; a 22 kW option exists on the 220 hp, not sourced) and 130 kW DC. Gross:
+# greencarscompare's nominal 43.3 and 65 kWh.
+- id: megane-ev40-2022
+  brand: renault
+  family: Megane E-Tech
+  name: Mégane E-Tech EV40
+  years: [2022]
+  gross_kwh: 43
+  net_kwh: 40
+  ac_max_kw: 7.4
+  dc_max_kw: 85
+  sources:
+    - url: https://ev-database.org/car/1536/Renault-Megane-E-Tech-EV40-130hp
+      level: secondary
+      for: [gross_kwh, net_kwh]
+    - url: https://www.arenaev.com/renault_megane_e_tech_ev40-specs-151.php
+      level: secondary
+      for: [ac_max_kw, dc_max_kw]
+
+- id: megane-ev60-2022
+  brand: renault
+  family: Megane E-Tech
+  name: Mégane E-Tech EV60
+  years: [2022]
+  gross_kwh: 65
+  net_kwh: 60
+  ac_max_kw: 11
+  dc_max_kw: 130
+  sources:
+    - url: https://ev-database.org/car/1521/Renault-Megane-E-Tech-EV60-220hp
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+# Scénic E-Tech: Renault's usable 60 and 87 kWh, gross 63 and 91 (evspecs.org). The 60 kWh
+# takes 130 kW DC (Renault; some sources say 150), the 87 kWh 150 kW and 22 kW AC as an option.
+- id: scenic-60-2024
+  brand: renault
+  family: Scenic E-Tech
+  name: Scénic E-Tech 60 kWh
+  years: [2024]
+  gross_kwh: 63
+  net_kwh: 60
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 130
+  sources:
+    - url: https://www.renault.ie/CountriesData/Ireland/images/PDF/spec/scenic-spec.pdf
+      level: manufacturer
+      for: [net_kwh, dc_max_kw]
+    - url: https://www.evspecs.org/compare/renault_scenic-e-tech-electric_60-kwh,renault_scenic-e-tech-electric_87-kwh,
+      level: secondary
+      for: [gross_kwh, ac_max_kw]
+    - url: https://en.wikipedia.org/wiki/Renault_Scenic_E-Tech
+      level: secondary
+      for: [chemistry]
+
+- id: scenic-87-2024
+  brand: renault
+  family: Scenic E-Tech
+  name: Scénic E-Tech 87 kWh
+  years: [2024]
+  gross_kwh: 91
+  net_kwh: 87
+  chemistry: nmc
+  ac_max_kw: 11
+  ac_option_kw: 22
+  dc_max_kw: 150
+  sources:
+    - url: https://www.renault.ie/CountriesData/Ireland/images/PDF/spec/scenic-spec.pdf
+      level: manufacturer
+      for: [net_kwh, dc_max_kw]
+    - url: https://www.evspecs.org/compare/renault_scenic-e-tech-electric_60-kwh,renault_scenic-e-tech-electric_87-kwh,
+      level: secondary
+      for: [gross_kwh, ac_max_kw, ac_option_kw]
+    - url: https://en.wikipedia.org/wiki/Renault_Scenic_E-Tech
+      level: secondary
+      for: [chemistry]
+
+# Zoe: one family for phase 1 (X101VE) and phase 2 (X102VE), whose model code Runsten reads
+# but the catalog does not: the three batteries are told apart by the user. Years are those
+# of the battery, 2012-2019 for the 22 kWh overall (the Q210/R240 chargers: 43 kW AC on the
+# early cars, 22 kW after). The 22 kWh has no DC charging. Gross: Wikipedia (25.92, 45.61,
+# 55 kWh); greencarscompare and ev-database give 44.1 for the ZE40. ZE40 DC: none, as
+# below; the few 41 kWh cars of the 2019 facelift with the CCS option are not told apart.
+- id: zoe-22-2013
+  brand: renault
+  family: Zoe
+  name: Zoe 22 kWh
+  years: [2013, 2018]
+  gross_kwh: 26
+  net_kwh: 22
+  ac_max_kw: 22
+  ac_option_kw: 43
+  sources:
+    - url: https://en.wikipedia.org/wiki/Renault_Zoe
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw]
+
+# The Z.E. 40 of 2016-2019 charges on AC alone (43 kW with the Q90 option): the 50 kW CCS
+# port came with the 2019 facelift, the Z.E. 50's.
+- id: zoe-41-2016
+  brand: renault
+  family: Zoe
+  name: Zoe Z.E. 40
+  years: [2016, 2019]
+  gross_kwh: 45
+  net_kwh: 41
+  ac_max_kw: 22
+  ac_option_kw: 43
+  sources:
+    - url: https://en.wikipedia.org/wiki/Renault_Zoe
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, ac_option_kw]
+    - url: https://greencarscompare.com/global/compare/cars/renault-zoe-ze40-r110-vs-renault-zoe-r135/
+      level: secondary
+      for: [net_kwh, ac_max_kw]
+
+- id: zoe-52-2019
+  brand: renault
+  family: Zoe
+  name: Zoe Z.E. 50
+  years: [2019, 2024]
+  gross_kwh: 55
+  net_kwh: 52
+  ac_max_kw: 22
+  dc_max_kw: 50
+  sources:
+    - url: https://en.wikipedia.org/wiki/Renault_Zoe
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/1205/Renault-Zoe-ZE50-R135
+      level: secondary
+      for: [net_kwh, dc_max_kw]
+
+# Twingo Electric (2020): 22 kWh usable, 22 kW AC, no DC (its port takes none).
+- id: twingo-electric-2020
+  brand: renault
+  family: Twingo Electric
+  name: Twingo Electric
+  years: [2020, 2024]
+  gross_kwh: 23
+  net_kwh: 22
+  ac_max_kw: 22
+  sources:
+    - url: https://en.wikipedia.org/wiki/Renault_Twingo
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+# Twingo E-Tech (2026): 27.5 kWh usable LFP (CATL), 29 kWh nominal; 6.6 kW AC, 11 kW and
+# 50 kW DC with the Advanced Charge pack.
+- id: twingo-etech-2026
+  brand: renault
+  family: Twingo E-Tech
+  name: Twingo E-Tech
+  years: [2026]
+  gross_kwh: 29
+  net_kwh: 27.5
+  chemistry: lfp
+  ac_max_kw: 6.6
+  ac_option_kw: 11
+  dc_max_kw: 50
+  sources:
+    - url: https://ev-database.org/car/3392/Renault-Twingo-E-Tech-275-kWh
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, ac_option_kw, dc_max_kw]
+
+# Dacia Spring: 26.8 kWh usable (Dacia's technical sheet), 27.4 gross (evspecs.org);
+# ev-database's 26.8 nominal and 25.0 usable are not kept. The 2026 LFP Extreme (24.3 kWh)
+# is not listed. 6.6 kW AC, 30 kW DC (optional, then standard). The 2024 facelift keeps the
+# battery.
+- id: spring-2021
+  brand: dacia
+  family: Spring
+  name: Spring 2021
+  years: [2021, 2023]
+  gross_kwh: 27.4
+  net_kwh: 26.8
+  ac_max_kw: 6.6
+  dc_max_kw: 30
+  sources:
+    - url: https://media.dacia.com/wp-content/uploads/2024/08/8a48f14a90b19d47407b87e81197ecab.pdf
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://www.evspecs.org/tech-specs/dacia/spring-2021-2024/electric-45
+      level: secondary
+      for: [gross_kwh]
+    - url: https://ev-database.org/car/1319/Dacia-Spring-Electric
+      level: secondary
+      for: [ac_max_kw, dc_max_kw]
+
+- id: spring-2024
+  brand: dacia
+  family: Spring
+  name: Spring 2024
+  years: [2024]
+  gross_kwh: 27.4
+  net_kwh: 26.8
+  ac_max_kw: 6.6
+  dc_max_kw: 30
+  sources:
+    - url: https://media.dacia.com/wp-content/uploads/2024/08/8a48f14a90b19d47407b87e81197ecab.pdf
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://www.evspecs.org/tech-specs/dacia/spring-2021-2024/electric-45
+      level: secondary
+      for: [gross_kwh]
+    - url: https://ev-database.org/car/2127/Dacia-Spring-Electric-65
+      level: secondary
+      for: [ac_max_kw, dc_max_kw]
+
+# Alpine A290: 52 kWh usable, 55 nominal; 11 kW AC, 100 kW DC (ev-database: 101 for the 180 hp).
+- id: a290-52-2024
+  brand: alpine
+  family: Alpine A290
+  name: Alpine A290
+  years: [2024]
+  gross_kwh: 55
+  net_kwh: 52
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 101
+  sources:
+    - url: https://ev-database.org/car/2269/Alpine-A290-Electric-220-hp
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/Renault_5_E-Tech
+      level: secondary
+      for: [chemistry]

@@ -24,6 +24,7 @@ import { placeQuery } from '@/features/filter-place'
 import { useConnectionSettings } from '@/features/manage-api-key'
 import { renewalDue as pleosRenewalDue } from '@/features/manage-pleos'
 import { renewalDue } from '@/features/manage-polestar'
+import { renewalDue as renaultRenewalDue } from '@/features/manage-renault'
 import { renewalDue as skodaRenewalDue } from '@/features/manage-skoda'
 import { rememberedVehicle, rememberVehicle, VehicleMenu } from '@/features/select-vehicle'
 import { useHealth } from '@/features/view-health'
@@ -103,6 +104,7 @@ const connectionAttention = computed(() =>
   }) ||
   renewalDue(connectionSettings.value?.polestar, now.value) ||
   skodaRenewalDue(connectionSettings.value?.skoda, now.value) ||
+  renaultRenewalDue(connectionSettings.value?.renault) ||
   pleosBrands.some((b) => pleosRenewalDue(connectionSettings.value?.pleos?.[b], now.value))
     ? t('connection.attention')
     : undefined,

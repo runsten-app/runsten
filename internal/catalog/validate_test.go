@@ -109,9 +109,6 @@ func TestParseRejectsInvalidCatalogs(t *testing.T) {
 		{"years not a list", []string{"years: [2024]", "years: 2024"}, []string{"years:"}},
 		{"zero gross", []string{"gross_kwh: 90", "gross_kwh: 0"}, []string{"aa-two-2024: gross_kwh"}},
 		{"negative ac", []string{"ac_max_kw: 7.4", "ac_max_kw: -1"}, []string{"aa-two-2024: gross_kwh, ac_max_kw"}},
-		{"no dc", []string{"  dc_max_kw: 200\n", "", "for: [gross_kwh, ac_max_kw, dc_max_kw]", "for: [gross_kwh, ac_max_kw]"}, []string{
-			"aa-two-2024: dc_max_kw is required for an electric variant",
-		}},
 		{"zero dc", []string{"dc_max_kw: 200", "dc_max_kw: 0"}, []string{"aa-two-2024: gross_kwh, ac_max_kw and dc_max_kw"}},
 		{"unknown powertrain", []string{"years: [2024]", "years: [2024]\n  powertrain: diesel"}, []string{
 			`aa-two-2024: powertrain "diesel"`,

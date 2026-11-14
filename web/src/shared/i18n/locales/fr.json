@@ -48,7 +48,8 @@
       "hyundai": "Hyundai",
       "kia": "Kia",
       "genesis": "Genesis",
-      "skoda": "Škoda"
+      "skoda": "Škoda",
+      "renault": "Renault, Dacia, Alpine"
     },
     "beta": "Bêta"
   },
@@ -1175,7 +1176,7 @@
       "help": "Runsten reconnaît la variante du véhicule d'après ce qu'il transmet, quand une seule correspond. Votre choix prime sur la reconnaissance, et se voit partout où le véhicule apparaît."
     },
     "history": {
-      "title": "Historique importé",
+      "title": "Import",
       "help": "Trajets et charges d'avant que Runsten ne lise le véhicule, importés d'autres apps. Supprimer un import laisse ce que Runsten a lu."
     },
     "loading": "Chargement du véhicule",
@@ -1385,7 +1386,8 @@
       "polestar": "Polestar",
       "tesla": "Tesla",
       "bmw": "BMW",
-      "skoda": "Škoda"
+      "skoda": "Škoda",
+      "renault": "Renault"
     },
     "brandAttention": "demande votre attention",
     "outcome": {
@@ -1454,18 +1456,23 @@
       "credentialRefusedBmw": "Non lu : BMW a refusé la connexion",
       "credentialRefusedPleos": "Non lu : Pleos a refusé la clé",
       "credentialRefusedSkoda": "Non lu : Škoda a refusé la clé",
+      "credentialRefusedRenault": "Non lue : Renault a refusé la connexion",
       "credentialMissingBmw": "Non lu : aucune connexion BMW",
       "credentialMissingPleos": "Non lu : aucune clé Pleos donnée",
       "credentialMissingSkoda": "Non lu : aucune clé MyŠkoda donnée",
+      "credentialMissingRenault": "Non lue : pas de connexion à My Renault",
       "unsharedBmw": "Non lu : le compte BMW n'est plus l'utilisateur principal de la voiture",
       "unsharedPleos": "Non lu : la voiture ne partage plus ses données avec la clé",
       "unsharedSkoda": "Non lu : la clé ne couvre plus cette voiture",
+      "unsharedRenault": "Non lue : la voiture n’est plus dans le compte My Renault",
       "pausedBmw": "En pause par BMW jusqu'à {time}",
       "pausedPleos": "En pause par Pleos jusqu'à {time}",
       "pausedSkoda": "En pause par Škoda jusqu’à {time}",
+      "pausedRenault": "En pause chez Renault jusqu’à {time}",
       "quotaBmw": "Appels du jour à BMW atteints jusqu'à {time}",
       "quotaPleos": "Appels du jour à Pleos atteints jusqu'à {time}",
-      "quotaSkoda": "Appels du jour à Škoda atteints jusqu’à {time}"
+      "quotaSkoda": "Appels du jour à Škoda atteints jusqu’à {time}",
+      "quotaRenault": "Appels quotidiens à Renault atteints jusqu’à {time}"
     },
     "notice": {
       "reauth": {
@@ -1509,15 +1516,20 @@
       "pausedBmw": "BMW a limité le nombre d'appels. La lecture reprend d'elle-même.",
       "pausedPleos": "Pleos a limité le nombre d'appels. La lecture reprend d'elle-même.",
       "pausedSkoda": "Škoda a limité le nombre d’appels. La lecture reprend d’elle-même.",
+      "pausedRenault": "Renault a limité le nombre d’appels : le compte est peut-être lu aussi par une autre application, Home Assistant par exemple. La lecture reprend d’elle-même.",
       "credentialRefusedPleos": "Pleos a refusé la clé avec laquelle cette voiture est lue : révoquée ou remplacée dans le Playground, ou expirée. Créez-en une nouvelle là-bas et donnez-la sur la page Connexion : ce qui a été lu reste.",
       "credentialRefusedSkoda": "Škoda a refusé la clé avec laquelle cette voiture est lue : expirée, ou supprimée dans l’app MyŠkoda. Créez-en une nouvelle dans l’app et donnez-la sur la page Connexion : ce qui a été lu reste.",
+      "credentialRefusedRenault": "Renault a refusé la connexion avec laquelle cette voiture est lue : mot de passe changé, ou session terminée. Reconnectez-vous sur la page Connexion : ce qui a été lu reste.",
       "credentialMissingPleos": "Runsten lit cette voiture avec votre clé Pleos, qui a été retirée : donnez-en une nouvelle sur la page Connexion.",
       "credentialMissingSkoda": "Runsten lit cette voiture avec votre clé MyŠkoda, qui a été retirée : donnez-en une nouvelle sur la page Connexion.",
+      "credentialMissingRenault": "Runsten lit cette voiture avec votre connexion My Renault, qui a été retirée : reconnectez-vous sur la page Connexion.",
       "unsharedPleos": "Pleos a répondu que cette voiture ne partage plus ses données avec la clé : le partage coupé dans ses services connectés, ou la voiture désenregistrée. Si elle partage à nouveau, redonnez la clé sur la page Connexion : la voiture est lue à nouveau.",
       "unsharedSkoda": "Škoda a répondu que la clé ne lit plus cette voiture : elle a été décochée de la clé dans l’app MyŠkoda. Créez une clé avec cette voiture cochée et donnez-la sur la page Connexion : la voiture est lue à nouveau.",
+      "unsharedRenault": "Votre compte My Renault ne liste plus cette voiture comme électrique : vendue, retirée du compte, ou passée sur un autre. Si elle revient, reconnectez-vous sur la page Connexion : la voiture est de nouveau lue.",
       "quotaBmw": "Runsten fait au plus 40 appels par jour à l'API de BMW par connexion, pour vous en laisser quelques-uns des 50 de BMW : ils sont épuisés. Le flux, qui n'a pas de limite, est toujours lu ; le reste reprend de lui-même.",
       "quotaPleos": "Runsten fait au plus 2 000 appels par jour à la Pleos Vehicle Data API par clé, un plafond à lui (Pleos n'en publie aucun) : ils sont épuisés. La lecture reprend d'elle-même.",
-      "quotaSkoda": "Runsten fait au plus 2 400 appels par jour à l’API publique MyŠkoda par clé, au-delà de la limite de Škoda de 20 par heure et par voiture : ils sont épuisés. La lecture reprend d’elle-même."
+      "quotaSkoda": "Runsten fait au plus 2 400 appels par jour à l’API publique MyŠkoda par clé, au-delà de la limite de Škoda de 20 par heure et par voiture : ils sont épuisés. La lecture reprend d’elle-même.",
+      "quotaRenault": "Runsten fait au plus 1 200 appels par jour à l’API de l’app My Renault et par compte, pour rester loin des limites non publiées de Renault : ils sont épuisés. La lecture reprend d’elle-même."
     },
     "facts": {
       "mode": "Mode de lecture",
@@ -1544,9 +1556,11 @@
       "noneDueBmw": "Aucune avant la reconnexion de BMW",
       "noneDuePleos": "Aucune tant qu'aucune clé Pleos n'est donnée",
       "noneDueSkoda": "Aucune tant qu’aucune clé MyŠkoda n’est donnée",
+      "noneDueRenault": "Aucune tant que vous ne vous reconnectez pas à My Renault",
       "noneDueUnsharedBmw": "Aucune : le compte BMW n'est plus l'utilisateur principal de la voiture",
       "noneDueUnsharedPleos": "Aucune : la voiture ne partage plus ses données avec la clé",
-      "noneDueUnsharedSkoda": "Aucune : la clé ne couvre plus la voiture"
+      "noneDueUnsharedSkoda": "Aucune : la clé ne couvre plus la voiture",
+      "noneDueUnsharedRenault": "Aucune : la voiture n’est plus dans le compte My Renault"
     },
     "api": {
       "connectedVehicle": "données du véhicule",
@@ -1558,7 +1572,8 @@
       "polestarId": "API de l'app Polestar",
       "bmw": "BMW CarData",
       "pleos": "l’API Pleos Vehicle Data",
-      "skoda": "l’API publique MyŠkoda"
+      "skoda": "l’API publique MyŠkoda",
+      "renault": "l’API de l’app My Renault"
     },
     "failure": {
       "quota": "Quota atteint",
@@ -1587,15 +1602,19 @@
       "notFoundBmw": "Véhicule inconnu de BMW",
       "notFoundPleos": "Véhicule inconnu de Pleos",
       "notFoundSkoda": "Véhicule inconnu de Škoda",
+      "notFoundRenault": "Véhicule inconnu de Renault",
       "unavailableBmw": "BMW injoignable",
       "unavailablePleos": "Pleos injoignable",
       "unavailableSkoda": "Škoda injoignable",
+      "unavailableRenault": "Renault injoignable",
       "tokenBmw": "Aucun jeton de BMW",
       "tokenPleos": "Aucun jeton de Pleos",
       "tokenSkoda": "Clé MyŠkoda non lue",
+      "tokenRenault": "Session My Renault non lue",
       "credentialRefusedBmw": "Connexion BMW refusée",
       "credentialRefusedPleos": "Clé Pleos refusée",
       "credentialRefusedSkoda": "Clé MyŠkoda refusée",
+      "credentialRefusedRenault": "Connexion My Renault refusée",
       "keyShared": "Clé partagée avec une autre application"
     },
     "key": {
@@ -1638,6 +1657,10 @@
     "skoda": {
       "title": "Votre clé MyŠkoda",
       "off": "Škoda n’est pas proposé sur cette instance (le drapeau source.skoda)."
+    },
+    "renault": {
+      "title": "Votre compte My Renault",
+      "off": "Renault est désactivé sur cette instance (le flag source.renault)."
     },
     "keyShared": {
       "text": "Une autre application lit avec la même clé Pleos — evcc, Home Assistant. L’API n’autorise qu’un lecteur à la fois, et chacun prend la place de l’autre. Gardez cette clé pour Runsten seul, ou laissez plutôt Runsten republier votre voiture sur votre broker MQTT pour Home Assistant :",
@@ -1908,21 +1931,13 @@
     "portal": {
       "title": "Importer depuis le Volvo Data Portal",
       "beta": "Bêta",
-      "intro": "Dans l'UE, le Data Act vous permet de demander à Volvo Cars les données de votre voiture sur son Data Portal : demandez les trajets et les points de passage. Volvo envoie deux fichiers CSV, parfois après plusieurs heures ; choisissez-les ici. Seuls les trajets antérieurs à la première lecture du véhicule sont importés, avec leurs tracés tirés des points de passage. Importer à nouveau les remplace.",
+      "intro": "Dans l'UE, le Data Act vous permet de demander à Volvo Cars les données de votre voiture sur son Data Portal : demandez les trajets et les points de passage. Volvo les prépare, parfois en plusieurs heures, puis donne de nombreux fichiers à télécharger un par un : choisissez-les tous ici, tels quels. Seuls les trajets antérieurs à la première lecture du véhicule sont importés, avec leurs tracés tirés des points de passage. Importer à nouveau les remplace.",
       "open": "Choisir les fichiers",
       "link": "Volvo Data Portal",
       "newTab": "(s'ouvre dans un nouvel onglet)",
-      "trips": {
-        "label": "Fichier des trajets (CSV)",
-        "hint": "Obligatoire : le fichier dont les colonnes commencent par Start time, End time."
+      "files": {
+        "hint": "Tous les fichiers donnés par le portail, tels que téléchargés : ses fichiers ZIP, ou les fichiers CSV qu'ils contiennent."
       },
-      "waypoints": {
-        "label": "Fichier des points de passage (CSV)",
-        "hint": "Facultatif : ses positions, environ une par minute, tracent les trajets."
-      },
-      "clear": "Retirer : {file}",
-      "start": "Importer",
-      "cancel": "Annuler",
       "done": "Import terminé",
       "report": {
         "imported": "Aucun trajet importé. | Un trajet importé. | {n} trajets importés.",
@@ -1931,9 +1946,8 @@
       },
       "error": {
         "summary": "Les fichiers n'ont pas été importés",
-        "required": "Choisissez le fichier des trajets.",
-        "file": "Ce n'est pas un fichier du Volvo Data Portal : vérifiez que le fichier des trajets est celui avec Start time et End time, et celui des points de passage celui avec Timestamp.",
-        "tooLarge": "Les fichiers sont trop gros : 32 Mo au plus à eux deux.",
+        "file": "Ce ne sont pas les fichiers du Volvo Data Portal, ou les trajets n'y sont pas : choisissez tous les fichiers donnés par le portail, tels que téléchargés.",
+        "tooLarge": "Trop de fichiers ou trop gros : 1 000 fichiers et 32 Mo au plus en tout.",
         "network": "Runsten est injoignable. Réessayez dans un instant.",
         "internal": "Les fichiers n'ont pas pu être importés. Réessayez dans un instant."
       }
@@ -2443,6 +2457,65 @@
       "featureUnavailable": "Škoda n’est pas proposé sur cette instance : la clé n’a pas été enregistrée.",
       "unavailable": "Runsten n’a pas pu être joint. Réessayez dans un instant.",
       "internal": "La clé n’a pas pu être enregistrée. Réessayez dans un instant."
+    }
+  },
+  "renault": {
+    "intro": "Runsten lit votre Renault, Dacia ou Alpine par le compte de l’app My Renault, qui est aussi celui de MyDacia et de MyAlpine. Cet accès n’est pas officiel : il peut cesser de fonctionner quand Renault change son app.",
+    "guide": "Lire le guide",
+    "newTab": "(s’ouvre dans un nouvel onglet)",
+    "refused": {
+      "title": "Votre connexion a été refusée",
+      "body": "Renault a refusé votre session le {time} : mot de passe changé, ou session terminée. Vos voitures ne sont plus lues tant que vous ne vous reconnectez pas ; ce qui a été lu reste."
+    },
+    "others": "{n} véhicule du compte n’est pas électrique et n’est pas lu. | {n} véhicules du compte ne sont pas électriques et ne sont pas lus.",
+    "current": "Votre compte",
+    "last4": "Compte se terminant par {last4}",
+    "setAt": "Connecté",
+    "reconnect": "Se reconnecter",
+    "delete": {
+      "button": "Retirer la connexion",
+      "title": "Retirer votre connexion My Renault ?",
+      "text": "Vos voitures restent, avec leur historique, mais ne sont plus lues tant que vous ne vous reconnectez pas.",
+      "error": "La connexion n’a pas pu être retirée. Réessayez dans un instant.",
+      "cancel": "Annuler",
+      "confirm": "Retirer"
+    },
+    "passwordNote": "Votre mot de passe sert une seule fois, pour vous connecter : Runsten ne le garde jamais, seulement la session que Renault renvoie. Certains comptes reçoivent ensuite un code à usage unique par e-mail.",
+    "email": "E-mail de votre compte My Renault",
+    "password": "Mot de passe",
+    "help": "Runsten lit la voiture toutes les 10 minutes, toutes les 5 pendant une charge. Les trajets sont approximatifs, la voiture ne donnant aucun signal de contact, et Renault ne donne pas la puissance de charge. Une autre application qui lit le même compte, comme Home Assistant, partage avec Runsten sa limite d’appels.",
+    "save": "Se connecter",
+    "cancel": "Annuler",
+    "saved": "Connecté : Runsten lit vos voitures dès sa prochaine passe.",
+    "deleted": "Connexion retirée.",
+    "code": {
+      "title": "Saisissez le code",
+      "sent": "Renault a envoyé un code à usage unique à {address}.",
+      "label": "Code à usage unique",
+      "help": "Le code est valable quelques minutes. S’il n’arrive pas, vérifiez vos courriers indésirables, ou revenez en arrière pour vous connecter de nouveau et en recevoir un autre.",
+      "send": "Valider le code",
+      "back": "Retour"
+    },
+    "error": {
+      "summary": "La connexion n’a pas abouti",
+      "emailRequired": "Saisissez l’e-mail de votre compte My Renault.",
+      "passwordRequired": "Saisissez votre mot de passe.",
+      "codeRequired": "Saisissez le code envoyé par Renault.",
+      "email": "Ce n’est pas une adresse e-mail.",
+      "tooLong": "{max} caractères au plus.",
+      "codeFormat": "Le code compte de 4 à 8 chiffres.",
+      "refused": "Renault a refusé l’e-mail ou le mot de passe. S’ils sont justes, Renault a peut-être changé la clé de son app : réessayez plus tard, ou lisez le guide.",
+      "wrongCode": "Renault a refusé ce code : vérifiez-le, ou revenez en arrière pour vous connecter de nouveau et en recevoir un autre.",
+      "expired": "Les dix minutes du code sont écoulées : connectez-vous de nouveau.",
+      "invalidBody": "L’e-mail ou le mot de passe a été refusé : saisissez-les à nouveau.",
+      "noVehicle": "Ce compte n’a aucun véhicule électrique : ajoutez d’abord la voiture dans l’app My Renault. Rien n’a été enregistré.",
+      "tooManyVehicles": "Avec ces voitures, votre compte aurait plus de véhicules qu’il ne peut : la connexion n’a pas été enregistrée.",
+      "notAdmitted": "Votre compte doit d’abord franchir une étape, comme accepter des conditions : rechargez la page. La connexion n’a pas été enregistrée.",
+      "featureUnavailable": "Renault n’est pas proposé sur cette instance : la connexion n’a pas été enregistrée.",
+      "rateLimited": "Trop de connexions attendent leur code sur cette instance : réessayez dans quelques minutes.",
+      "sourceUnavailable": "My Renault n’a pas répondu : rien n’a été enregistré. Réessayez dans un instant.",
+      "unavailable": "Runsten n’a pas pu être joint. Réessayez dans un instant.",
+      "internal": "La connexion n’a pas pu être enregistrée. Réessayez dans un instant."
     }
   }
 }

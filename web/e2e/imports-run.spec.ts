@@ -30,7 +30,7 @@ test('Imports: from Aximote on the screen, deleted once confirmed, then imported
   await signIn(page)
   const vehicle = await vehicleId(page)
   await page.goto(`/vehicles/${vehicle}/settings/history`)
-  const section = page.getByRole('region', { name: 'Imported history' })
+  const section = page.getByRole('region', { name: 'Import', exact: true })
   const aximote = section.getByRole('listitem').filter({ hasText: 'Imported from Aximote' })
 
   // Again: the same events, replaced.

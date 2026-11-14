@@ -18,8 +18,12 @@ vi.mock('@/entities/vehicle-import', async (original) => ({
 }))
 
 const report = reportFixture as FileImport
-const trips = new File(['Start time,End time\n'], 'trips.csv', { type: 'text/csv' })
-const waypoints = new File(['Timestamp\n'], 'waypoints.csv', { type: 'text/csv' })
+const trips = new File(['PK'], '00-a-null-01_trip_2026-07-13T02_00_00Z.zip', {
+  type: 'application/zip',
+})
+const waypoints = new File(['PK'], '00-a-null-01_waypoint_2026-07-13T02_00_00Z.zip', {
+  type: 'application/zip',
+})
 let wrapper: VueWrapper | undefined
 
 beforeEach(() => {
@@ -41,55 +45,44 @@ async function mounted() {
   })
   wrapper = m.wrapper
   await flushPromises()
-  await m.wrapper.find('.portal-import .toggle').trigger('click')
-  await flushPromises()
   return { w: m.wrapper, queryClient }
 }
 
-// choose sets the file of a file field, as the browser's picker does.
-async function choose(w: VueWrapper, field: 'trips' | 'waypoints', file: File) {
-  const input = w.find(`.portal-import .${field} input[type="file"]`)
-  Object.defineProperty(input.element, 'files', { value: [file], configurable: true })
+// choose picks the files, as the browser's picker does once the button opened it.
+async function choose(w: VueWrapper, ...files: File[]) {
+  const input = w.find('.portal-import input.picker')
+  Object.defineProperty(input.element, 'files', { value: files, configurable: true })
   await input.trigger('change')
-}
-
-async function submit(w: VueWrapper) {
-  await w.find('.portal-form').trigger('submit')
   await flushPromises()
 }
 
 const status = (w: VueWrapper) => w.find('.portal-import [role="status"]').text()
-const summary = (w: VueWrapper) =>
-  w.findAll('.portal-import .error-summary li').map((li) => li.text())
 
 describe('VolvoDataPortalImport', () => {
-  it('waits behind a button, which opens the form on its first field and gets the focus back', async () => {
+  it('opens the browser’s picker for many files from its button', async () => {
     const { w } = await mounted()
-    expect(document.activeElement?.id).toBe('portal-trips')
-    await w.find('.portal-form .cancel').trigger('click')
-    await flushPromises()
-    expect(w.find('.portal-form').exists()).toBe(false)
-    const toggle = w.find('.portal-import .toggle')
-    expect(toggle.text()).toBe('Choose the files')
-    expect(document.activeElement).toBe(toggle.element)
+    const input = w.find('.portal-import input.picker')
+    expect(input.attributes('multiple')).toBeDefined()
+    expect(input.attributes('accept')).toContain('.zip')
+    const click = vi.spyOn(input.element as HTMLInputElement, 'click')
+    const button = w.find('.portal-import .toggle')
+    expect(button.text()).toBe('Choose the files')
+    expect(button.attributes('aria-describedby')).toBe('portal-files-hint')
+    await button.trigger('click')
+    expect(click).toHaveBeenCalledOnce()
   })
 
-  it('imports the trips and the waypoints, shows the report, and reads again what changed', async () => {
+  it('imports the files as soon as they are chosen, shows the report, and reads again what changed', async () => {
     const { w, queryClient } = await mounted()
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
     expect(w.find('.portal-import a').attributes()).toMatchObject({
       href: 'https://data.volvocars.com/',
       target: '_blank',
     })
-    await choose(w, 'trips', trips)
-    await choose(w, 'waypoints', waypoints)
     api.importVolvoDataPortal.mockResolvedValue(report)
-    await submit(w)
-    expect(api.importVolvoDataPortal).toHaveBeenCalledWith('v1', trips, waypoints)
+    await choose(w, trips, waypoints)
+    expect(api.importVolvoDataPortal).toHaveBeenCalledWith('v1', [trips, waypoints])
     expect(status(w)).toBe('Import finished')
-    // The form closes on the report, its button focused.
-    expect(w.find('.portal-form').exists()).toBe(false)
-    expect(document.activeElement?.id).toBe('portal-import-toggle')
     const lines = w.findAll('.portal-import .import-report p').map((p) => p.text())
     expect(lines).toEqual([
       '2 trips imported.',
@@ -101,62 +94,50 @@ describe('VolvoDataPortalImport', () => {
     )
     expect(keys).toContainEqual(importKeys.list('v1'))
     expect(keys).toContainEqual(tripKeys.lists('v1'))
+    // Cleared, so that the same files may be chosen again.
+    expect((w.find('.portal-import input.picker').element as HTMLInputElement).value).toBe('')
   })
 
-  it('keeps the form while the files are sent', async () => {
+  it('shows the button busy while the files are sent', async () => {
     const { w } = await mounted()
-    await choose(w, 'trips', trips)
     let finish: (r: FileImport) => void = () => {}
     api.importVolvoDataPortal.mockReturnValue(new Promise<FileImport>((r) => (finish = r)))
-    await w.find('.portal-form').trigger('submit')
-    await flushPromises()
-    expect(w.find('.portal-form .cancel').attributes('disabled')).toBeDefined()
+    await choose(w, trips)
+    expect(w.find('.portal-import .toggle').classes()).toContain('v-btn--loading')
     finish(report)
     await flushPromises()
-    expect(w.find('.portal-form').exists()).toBe(false)
     expect(status(w)).toBe('Import finished')
   })
 
-  it('imports the trips alone', async () => {
+  it('reports the trips alone when nothing was left', async () => {
     const { w } = await mounted()
-    await choose(w, 'trips', trips)
     api.importVolvoDataPortal.mockResolvedValue({ ...report, skipped: 0, invalid: 0 })
-    await submit(w)
-    expect(api.importVolvoDataPortal).toHaveBeenCalledWith('v1', trips, undefined)
+    await choose(w, trips)
     expect(w.findAll('.portal-import .import-report p')).toHaveLength(1)
   })
 
-  it('names the button that removes a file chosen', async () => {
+  it('does nothing when the picker is closed without a file', async () => {
     const { w } = await mounted()
-    await choose(w, 'waypoints', waypoints)
-    const clear = w.find('.portal-import .waypoints [role="button"]')
-    expect(clear.attributes('aria-label')).toBe('Remove: Waypoints file (CSV)')
-  })
-
-  it('asks for the trips file first', async () => {
-    const { w } = await mounted()
-    await submit(w)
+    await choose(w)
     expect(api.importVolvoDataPortal).not.toHaveBeenCalled()
-    expect(summary(w)).toEqual(['Choose the trips file.'])
-    expect(document.activeElement?.classList.contains('error-summary')).toBe(true)
+    expect(w.find('.portal-import .import-error').exists()).toBe(false)
   })
 
   it.each([
-    ['invalid_file', 400, 'This is not a file of the Volvo Data Portal'],
-    ['invalid_body', 400, 'The files are too large'],
+    ['invalid_file', 400, 'These are not the files of the Volvo Data Portal'],
+    ['invalid_body', 400, 'Too many files or too large'],
     ['network', 0, 'Runsten could not be reached'],
     ['internal', 500, 'The files could not be imported'],
   ] as const)('tells why the files were refused: %s', async (code, httpStatus, text) => {
     const { w } = await mounted()
-    await choose(w, 'trips', trips)
     api.importVolvoDataPortal.mockRejectedValue(new ApiError(httpStatus, code, code))
-    await submit(w)
-    expect(summary(w)[0]).toContain(text)
-    expect(w.find('.portal-import .trips').text()).toContain(text)
+    await choose(w, trips)
+    expect(w.find('.portal-import .import-error').text()).toContain(text)
     expect(w.find('.portal-import .import-report').exists()).toBe(false)
-    // Another file clears the error.
-    await choose(w, 'trips', new File(['x'], 'other.csv'))
-    await flushPromises()
-    expect(summary(w)).toEqual([])
+    // Other files clear the error.
+    api.importVolvoDataPortal.mockResolvedValue(report)
+    await choose(w, waypoints, trips)
+    expect(w.find('.portal-import .import-error').exists()).toBe(false)
+    expect(status(w)).toBe('Import finished')
   })
 })

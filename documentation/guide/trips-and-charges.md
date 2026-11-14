@@ -34,7 +34,7 @@ A vehicle's history may start before Runsten read it: trips and charges imported
 
 An imported trip with a track draws it on its map, where your instance shows maps and you have not hidden them; otherwise, as a trip Runsten read, it has its two ends only: Runsten draws no track of the trips it reads.
 
-They count in the lists and the statistics like the others. The vehicle's settings list them by app, in **Imported history**, and delete one app's at once; what Runsten read stays.
+They count in the lists and the statistics like the others. The vehicle's settings list them by app, in **Import**, and delete one app's at once; what Runsten read stays.
 
 ## Energies
 

@@ -48,7 +48,8 @@
       "hyundai": "Hyundai",
       "kia": "Kia",
       "genesis": "Genesis",
-      "skoda": "Škoda"
+      "skoda": "Škoda",
+      "renault": "Renault, Dacia, Alpine"
     },
     "beta": "Beta"
   },
@@ -1175,7 +1176,7 @@
       "help": "Runsten recognizes the vehicle's variant from what it reports, when only one fits. Your choice outranks the recognition, and shows wherever the vehicle does."
     },
     "history": {
-      "title": "Imported history",
+      "title": "Import",
       "help": "Trips and charges from before Runsten read the vehicle, imported from other apps. Deleting an import leaves what Runsten read."
     },
     "loading": "Loading the vehicle",
@@ -1385,7 +1386,8 @@
       "polestar": "Polestar",
       "tesla": "Tesla",
       "bmw": "BMW",
-      "skoda": "Škoda"
+      "skoda": "Škoda",
+      "renault": "Renault"
     },
     "brandAttention": "needs your attention",
     "outcome": {
@@ -1454,18 +1456,23 @@
       "credentialRefusedBmw": "Not read: BMW refused the connection",
       "credentialRefusedPleos": "Not read: Pleos refused the key",
       "credentialRefusedSkoda": "Not read: Škoda refused the key",
+      "credentialRefusedRenault": "Not read: Renault refused the sign-in",
       "credentialMissingBmw": "Not read: no BMW connected",
       "credentialMissingPleos": "Not read: no Pleos key given",
       "credentialMissingSkoda": "Not read: no MyŠkoda key given",
+      "credentialMissingRenault": "Not read: not signed in to My Renault",
       "unsharedBmw": "Not read: the BMW account is no longer the car's main user",
       "unsharedPleos": "Not read: the car no longer shares its data with the key",
       "unsharedSkoda": "Not read: the key no longer covers this car",
+      "unsharedRenault": "Not read: the car is no longer in the My Renault account",
       "pausedBmw": "Paused by BMW until {time}",
       "pausedPleos": "Paused by Pleos until {time}",
       "pausedSkoda": "Paused by Škoda until {time}",
+      "pausedRenault": "Paused by Renault until {time}",
       "quotaBmw": "Daily calls to BMW reached until {time}",
       "quotaPleos": "Daily calls to Pleos reached until {time}",
-      "quotaSkoda": "Daily calls to Škoda reached until {time}"
+      "quotaSkoda": "Daily calls to Škoda reached until {time}",
+      "quotaRenault": "Daily calls to Renault reached until {time}"
     },
     "notice": {
       "reauth": {
@@ -1509,15 +1516,20 @@
       "pausedBmw": "BMW limited the number of calls. Reading resumes by itself.",
       "pausedPleos": "Pleos limited the number of calls. Reading resumes by itself.",
       "pausedSkoda": "Škoda limited the number of calls. Reading resumes by itself.",
+      "pausedRenault": "Renault limited the number of calls: the account may also be read by another application, Home Assistant for instance. Reading resumes by itself.",
       "credentialRefusedPleos": "Pleos refused the key this car is read with: revoked or replaced in the Playground, or expired. Issue a new one there and give it on the connection page: what was read stays.",
       "credentialRefusedSkoda": "Škoda refused the key this car is read with: expired, or deleted in the MyŠkoda app. Create a new one there and give it on the connection page: what was read stays.",
+      "credentialRefusedRenault": "Renault refused the sign-in this car is read with: password changed, or session ended. Sign in again on the connection page: what was read stays.",
       "credentialMissingPleos": "Runsten reads this car with your Pleos key, which was removed: give a new one on the connection page.",
       "credentialMissingSkoda": "Runsten reads this car with your MyŠkoda key, which was removed: give a new one on the connection page.",
+      "credentialMissingRenault": "Runsten reads this car through your My Renault sign-in, which was removed: sign in again on the connection page.",
       "unsharedPleos": "Pleos answered that this car no longer shares its data with the key: the sharing was turned off in its connected services, or the car was unregistered. Should it share again, give the key again on the connection page: the car is read again.",
       "unsharedSkoda": "Škoda answered that the key no longer reads this car: it was unticked from the key in the MyŠkoda app. Create a key with this car ticked and give it on the connection page: the car is read again.",
+      "unsharedRenault": "Your My Renault account no longer lists this car as electric: sold, removed from the account, or moved to another. Should it come back, sign in again on the connection page: the car is read again.",
       "quotaBmw": "Runsten makes at most 40 calls a day to BMW's API per connection, to leave a few of BMW's 50 to you: they are used up. The stream, which has no limit, is still read; the rest resumes by itself.",
       "quotaPleos": "Runsten makes at most 2,000 calls a day to the Pleos Vehicle Data API per key, a cap of its own (Pleos publishes none): they are used up. Reading resumes by itself.",
-      "quotaSkoda": "Runsten makes at most 2,400 calls a day to the MyŠkoda Public API per key, above Škoda’s own limit of 20 an hour per car: they are used up. Reading resumes by itself."
+      "quotaSkoda": "Runsten makes at most 2,400 calls a day to the MyŠkoda Public API per key, above Škoda’s own limit of 20 an hour per car: they are used up. Reading resumes by itself.",
+      "quotaRenault": "Runsten makes at most 1,200 calls a day to the My Renault app's API per account, to stay clear of Renault's unpublished limits: they are used up. Reading resumes by itself."
     },
     "facts": {
       "mode": "Polling mode",
@@ -1544,9 +1556,11 @@
       "noneDueBmw": "None until BMW is connected again",
       "noneDuePleos": "None until a Pleos key is given",
       "noneDueSkoda": "None until a MyŠkoda key is given",
+      "noneDueRenault": "None until you sign in to My Renault again",
       "noneDueUnsharedBmw": "None: the BMW account is no longer the car's main user",
       "noneDueUnsharedPleos": "None: the car is no longer shared with the key",
-      "noneDueUnsharedSkoda": "None: the key no longer covers the car"
+      "noneDueUnsharedSkoda": "None: the key no longer covers the car",
+      "noneDueUnsharedRenault": "None: the car is no longer in the My Renault account"
     },
     "api": {
       "connectedVehicle": "vehicle data",
@@ -1558,7 +1572,8 @@
       "polestarId": "Polestar app API",
       "bmw": "BMW CarData",
       "pleos": "the Pleos Vehicle Data API",
-      "skoda": "the MyŠkoda Public API"
+      "skoda": "the MyŠkoda Public API",
+      "renault": "the My Renault app's API"
     },
     "failure": {
       "quota": "Quota reached",
@@ -1587,15 +1602,19 @@
       "notFoundBmw": "Vehicle unknown to BMW",
       "notFoundPleos": "Vehicle unknown to Pleos",
       "notFoundSkoda": "Vehicle unknown to Škoda",
+      "notFoundRenault": "Vehicle unknown to Renault",
       "unavailableBmw": "BMW unreachable",
       "unavailablePleos": "Pleos unreachable",
       "unavailableSkoda": "Škoda unreachable",
+      "unavailableRenault": "Renault unreachable",
       "tokenBmw": "No token from BMW",
       "tokenPleos": "No token from Pleos",
       "tokenSkoda": "MyŠkoda key not read",
+      "tokenRenault": "My Renault session not read",
       "credentialRefusedBmw": "BMW connection refused",
       "credentialRefusedPleos": "Pleos key refused",
       "credentialRefusedSkoda": "MyŠkoda key refused",
+      "credentialRefusedRenault": "My Renault sign-in refused",
       "keyShared": "Key shared with another application"
     },
     "key": {
@@ -1638,6 +1657,10 @@
     "skoda": {
       "title": "Your MyŠkoda key",
       "off": "Škoda is turned off on this instance (the flag source.skoda)."
+    },
+    "renault": {
+      "title": "Your My Renault account",
+      "off": "Renault is turned off on this instance (the flag source.renault)."
     },
     "keyShared": {
       "text": "Another application reads with the same Pleos key — evcc, Home Assistant. The API allows only one reader at a time, so each takes the other’s place. Keep this key for Runsten alone, or let Runsten republish your car to your MQTT broker for Home Assistant instead:",
@@ -1908,21 +1931,13 @@
     "portal": {
       "title": "Import from the Volvo Data Portal",
       "beta": "Beta",
-      "intro": "In the EU, the Data Act lets you ask Volvo Cars for your car's data on its Data Portal: ask for the trips and the waypoints. Volvo sends two CSV files, sometimes after several hours; choose them here. Only the trips from before the vehicle's first reading are imported, with their tracks from the waypoints. Importing again replaces them.",
+      "intro": "In the EU, the Data Act lets you ask Volvo Cars for your car's data on its Data Portal: ask for the trips and the waypoints. Volvo prepares them, sometimes over several hours, then gives many files to download one by one: choose them all here, as they are. Only the trips from before the vehicle's first reading are imported, with their tracks from the waypoints. Importing again replaces them.",
       "open": "Choose the files",
       "link": "Volvo Data Portal",
       "newTab": "(opens in a new tab)",
-      "trips": {
-        "label": "Trips file (CSV)",
-        "hint": "Required: the file whose columns start with Start time, End time."
+      "files": {
+        "hint": "All the files the portal gave, as downloaded: its ZIP files, or the CSV files inside them."
       },
-      "waypoints": {
-        "label": "Waypoints file (CSV)",
-        "hint": "Optional: its positions, about one a minute, draw the trips' tracks."
-      },
-      "clear": "Remove: {file}",
-      "start": "Import",
-      "cancel": "Cancel",
       "done": "Import finished",
       "report": {
         "imported": "No trip imported. | One trip imported. | {n} trips imported.",
@@ -1931,9 +1946,8 @@
       },
       "error": {
         "summary": "The files were not imported",
-        "required": "Choose the trips file.",
-        "file": "This is not a file of the Volvo Data Portal: check that the trips file is the one with Start time and End time, and the waypoints file the one with Timestamp.",
-        "tooLarge": "The files are too large: 32 MB at most together.",
+        "file": "These are not the files of the Volvo Data Portal, or the trips are not among them: choose every file the portal gave, as downloaded.",
+        "tooLarge": "Too many files or too large: 1,000 files and 32 MB at most together.",
         "network": "Runsten could not be reached. Try again in a moment.",
         "internal": "The files could not be imported. Try again in a moment."
       }
@@ -2443,6 +2457,65 @@
       "featureUnavailable": "Škoda is not offered on this instance: the key was not saved.",
       "unavailable": "Runsten could not be reached. Try again in a moment.",
       "internal": "The key could not be saved. Try again in a moment."
+    }
+  },
+  "renault": {
+    "intro": "Runsten reads your Renault, Dacia or Alpine through the account of the My Renault app, which is also the account of MyDacia and MyAlpine. This access is unofficial: it may stop working when Renault changes its app.",
+    "guide": "Read the guide",
+    "newTab": "(opens in a new tab)",
+    "refused": {
+      "title": "Your sign-in was refused",
+      "body": "Renault refused your session on {time}: password changed, or session ended. Your cars are not read until you sign in again; what was read stays."
+    },
+    "others": "{n} vehicle of the account is not electric and is not read. | {n} vehicles of the account are not electric and are not read.",
+    "current": "Your account",
+    "last4": "Account ending in {last4}",
+    "setAt": "Signed in",
+    "reconnect": "Sign in again",
+    "delete": {
+      "button": "Remove the sign-in",
+      "title": "Remove your My Renault sign-in?",
+      "text": "Your cars stay, with their history, but are no longer read until you sign in again.",
+      "error": "The sign-in could not be removed. Try again in a moment.",
+      "cancel": "Cancel",
+      "confirm": "Remove"
+    },
+    "passwordNote": "Your password is used once, to sign in: Runsten never stores it, only the session Renault returns. Some accounts are then sent a one-time code by email.",
+    "email": "Email of your My Renault account",
+    "password": "Password",
+    "help": "Runsten reads the car every 10 minutes, every 5 while it charges. Trips are approximate, since the car gives no ignition signal, and Renault does not give the charging power. Another application reading the same account, such as Home Assistant, shares its limit of calls with Runsten.",
+    "save": "Sign in",
+    "cancel": "Cancel",
+    "saved": "Signed in: Runsten reads your cars from its next pass.",
+    "deleted": "Sign-in removed.",
+    "code": {
+      "title": "Enter the code",
+      "sent": "Renault sent a one-time code to {address}.",
+      "label": "One-time code",
+      "help": "The code lasts a few minutes. If it does not arrive, check your spam folder, or go back to sign in again for a new one.",
+      "send": "Confirm the code",
+      "back": "Back"
+    },
+    "error": {
+      "summary": "The sign-in did not go through",
+      "emailRequired": "Enter the email of your My Renault account.",
+      "passwordRequired": "Enter your password.",
+      "codeRequired": "Enter the code Renault sent.",
+      "email": "This is not an email address.",
+      "tooLong": "At most {max} characters.",
+      "codeFormat": "The code is 4 to 8 digits.",
+      "refused": "Renault refused the email or the password. If they are right, Renault may have changed its app's key: try again later, or read the guide.",
+      "wrongCode": "Renault refused this code: check it, or go back to sign in again for a new one.",
+      "expired": "The code's ten minutes are over: sign in again.",
+      "invalidBody": "The email or the password was refused: type them again.",
+      "noVehicle": "This account has no electric vehicle: add the car in the My Renault app first. Nothing was saved.",
+      "tooManyVehicles": "With these cars, your account would have more vehicles than it may: the sign-in was not saved.",
+      "notAdmitted": "Your account must take a step first, such as accepting terms: reload the page. The sign-in was not saved.",
+      "featureUnavailable": "Renault is not offered on this instance: the sign-in was not saved.",
+      "rateLimited": "Too many sign-ins are waiting for their code on this instance: try again in a few minutes.",
+      "sourceUnavailable": "My Renault did not answer: nothing was saved. Try again in a moment.",
+      "unavailable": "Runsten could not be reached. Try again in a moment.",
+      "internal": "The sign-in could not be saved. Try again in a moment."
     }
   }
 }

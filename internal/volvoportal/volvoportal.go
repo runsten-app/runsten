@@ -3,7 +3,7 @@
 // trips, and the waypoints recorded while driving. It returns their values as they are,
 // in the portal's units, and knows no business code.
 //
-// Both files are CSV, comma-separated, times in RFC 3339. Their columns are found by
+// Both files are CSV, comma-separated, times in RFC 3339, each delivered zipped alone. Their columns are found by
 // their header, compared without case nor whitespace, so that a reordered file is still
 // read; a column of no use is ignored, an empty cell is absent.
 package volvoportal
@@ -46,63 +46,59 @@ func (e *FormatError) Error() string { return "not a file of the Volvo Data Port
 // MaxRows is the most rows a file may have: a year of waypoints is about 30,000.
 const MaxRows = 500_000
 
-// ReadTrips reads the trips' file. A row whose times are unreadable is left out and
-// counted in invalid.
-func ReadTrips(r io.Reader) (trips []Trip, invalid int, err error) {
-	err = read(r, []string{"start time", "end time"}, func(row row) {
-		start, okStart := row.time("start time")
-		end, okEnd := row.time("end time")
-		if !okStart || !okEnd {
-			invalid++
-			return
+var (
+	tripColumns     = []string{"start time", "end time"}
+	waypointColumns = []string{"timestamp", "latitude", "longitude"}
+)
+
+// readTrip is a row of the trips' file; false when its times are unreadable or a value
+// is not a number.
+func readTrip(row row) (Trip, bool) {
+	start, okStart := row.time("start time")
+	end, okEnd := row.time("end time")
+	if !okStart || !okEnd {
+		return Trip{}, false
+	}
+	t := Trip{Start: start, End: end}
+	nums := []struct {
+		col string
+		v   **float64
+	}{
+		{"start latitude (decimal degrees)", &t.StartLat},
+		{"start longitude (decimal degrees)", &t.StartLon},
+		{"end latitude (decimal degrees)", &t.EndLat},
+		{"end longitude (decimal degrees)", &t.EndLon},
+		{"start odometer (meters)", &t.StartOdometerM},
+		{"end odometer (meters)", &t.EndOdometerM},
+		{"distance (meters)", &t.DistanceM},
+		{"fuel consumption (liters)", &t.FuelL},
+		{"electrical consumption (kwh)", &t.EnergyKWh},
+		{"electrical regeneration (kwh)", &t.RegenerationKWh},
+	}
+	for _, n := range nums {
+		v, ok := row.number(n.col)
+		if !ok {
+			return Trip{}, false
 		}
-		t := Trip{Start: start, End: end}
-		nums := []struct {
-			col string
-			v   **float64
-		}{
-			{"start latitude (decimal degrees)", &t.StartLat},
-			{"start longitude (decimal degrees)", &t.StartLon},
-			{"end latitude (decimal degrees)", &t.EndLat},
-			{"end longitude (decimal degrees)", &t.EndLon},
-			{"start odometer (meters)", &t.StartOdometerM},
-			{"end odometer (meters)", &t.EndOdometerM},
-			{"distance (meters)", &t.DistanceM},
-			{"fuel consumption (liters)", &t.FuelL},
-			{"electrical consumption (kwh)", &t.EnergyKWh},
-			{"electrical regeneration (kwh)", &t.RegenerationKWh},
-		}
-		for _, n := range nums {
-			v, ok := row.number(n.col)
-			if !ok {
-				invalid++
-				return
-			}
-			*n.v = v
-		}
-		trips = append(trips, t)
-	})
-	return trips, invalid, err
+		*n.v = v
+	}
+	return t, true
 }
 
-// ReadWaypoints reads the waypoints' file. A row without its time or its position, or
-// with a value that is not a number, is left out and counted in invalid.
-func ReadWaypoints(r io.Reader) (waypoints []Waypoint, invalid int, err error) {
-	err = read(r, []string{"timestamp", "latitude", "longitude"}, func(row row) {
-		var w Waypoint
-		at, okAt := row.time("timestamp")
-		lat, okLat := row.number("latitude")
-		lon, okLon := row.number("longitude")
-		odo, okOdo := row.number("odometer")
-		speed, okSpeed := row.number("speed (kph)")
-		if !okAt || !okLat || !okLon || !okOdo || !okSpeed || lat == nil || lon == nil {
-			invalid++
-			return
-		}
-		w.At, w.Lat, w.Lon, w.OdometerM, w.SpeedKmh = at, *lat, *lon, odo, speed
-		waypoints = append(waypoints, w)
-	})
-	return waypoints, invalid, err
+// readWaypoint is a row of the waypoints' file; false without its time or its position,
+// or with a value that is not a number.
+func readWaypoint(row row) (Waypoint, bool) {
+	var w Waypoint
+	at, okAt := row.time("timestamp")
+	lat, okLat := row.number("latitude")
+	lon, okLon := row.number("longitude")
+	odo, okOdo := row.number("odometer")
+	speed, okSpeed := row.number("speed (kph)")
+	if !okAt || !okLat || !okLon || !okOdo || !okSpeed || lat == nil || lon == nil {
+		return Waypoint{}, false
+	}
+	w.At, w.Lat, w.Lon, w.OdometerM, w.SpeedKmh = at, *lat, *lon, odo, speed
+	return w, true
 }
 
 type row struct {
@@ -136,27 +132,35 @@ func (r row) number(col string) (*float64, bool) {
 	return &v, true
 }
 
-// read reads the header, checks it has the required columns, then calls each with the
-// rows, up to MaxRows.
-func read(r io.Reader, required []string, each func(row)) error {
+// table is a CSV file whose header is read.
+type table struct {
+	c    *csv.Reader
+	cols map[string]int
+}
+
+func open(r io.Reader) (table, error) {
 	c := csv.NewReader(r)
 	c.FieldsPerRecord = -1
 	c.ReuseRecord = true
 	header, err := c.Read()
 	if err != nil {
-		return formatErr(err)
+		return table{}, formatErr(err)
 	}
 	cols := make(map[string]int, len(header))
 	for i, h := range header {
 		cols[normalize(h)] = i
 	}
-	for _, name := range required {
-		if _, ok := cols[normalize(name)]; !ok {
-			return &FormatError{Reason: fmt.Sprintf("no column %q", name)}
-		}
-	}
+	return table{c: c, cols: cols}, nil
+}
+
+func (t table) has(col string) bool {
+	_, ok := t.cols[normalize(col)]
+	return ok
+}
+
+func (t table) rows(each func(row)) error {
 	for n := 0; ; n++ {
-		fields, err := c.Read()
+		fields, err := t.c.Read()
 		switch {
 		case errors.Is(err, io.EOF):
 			return nil
@@ -165,7 +169,7 @@ func read(r io.Reader, required []string, each func(row)) error {
 		case n >= MaxRows:
 			return &FormatError{Reason: fmt.Sprintf("more than %d rows", MaxRows)}
 		}
-		each(row{cols: cols, fields: fields})
+		each(row{cols: t.cols, fields: fields})
 	}
 }
 

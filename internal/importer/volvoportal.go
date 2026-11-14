@@ -3,7 +3,6 @@ package importer
 import (
 	"context"
 	"fmt"
-	"io"
 	"math"
 	"slices"
 	"strconv"
@@ -42,28 +41,21 @@ type Report struct {
 	Invalid int // rows the checks refused, left out
 }
 
-// VolvoDataPortal imports the trips' file of the Volvo Data Portal and, when given, its
-// waypoints' file, which makes the trips' tracks. A file that is not the portal's
-// returns a *volvoportal.FormatError, and nothing is written.
-func (f *Files) VolvoDataPortal(ctx context.Context, accountID, vehicleID string, trips, waypoints io.Reader) (Report, error) {
-	rows, invalid, err := volvoportal.ReadTrips(trips)
+// VolvoDataPortal imports the files the Volvo Data Portal gave, as downloaded: the
+// trips, with their tracks from the waypoints among them. Files that are not the portal's
+// return a *volvoportal.FormatError, and nothing is written.
+func (f *Files) VolvoDataPortal(ctx context.Context, accountID, vehicleID string, files []volvoportal.File) (Report, error) {
+	ex, err := volvoportal.ReadFiles(files)
 	if err != nil {
-		return Report{}, fmt.Errorf("trips: %w", err)
-	}
-	var points []volvoportal.Waypoint
-	if waypoints != nil {
-		// A waypoint left out only thins a track: it is not counted.
-		if points, _, err = volvoportal.ReadWaypoints(waypoints); err != nil {
-			return Report{}, fmt.Errorf("waypoints: %w", err)
-		}
+		return Report{}, err //nolint:wrapcheck // the reader's, which names the file
 	}
 	at := f.clk.Now()
-	out, refused := convertPortalTrips(rows, points, at)
+	out, refused := convertPortalTrips(ex.Trips, ex.Waypoints, at)
 	res, err := f.store.SaveImport(ctx, accountID, vehicleID, out, nil)
 	if err != nil {
 		return Report{}, fmt.Errorf("saving: %w", err)
 	}
-	return Report{Result: res, Invalid: invalid + refused}, nil
+	return Report{Result: res, Invalid: ex.Invalid + refused}, nil
 }
 
 // convertPortalTrips converts the portal's trips, each with its track when at least two
@@ -73,7 +65,14 @@ func convertPortalTrips(rows []volvoportal.Trip, waypoints []volvoportal.Waypoin
 	slices.SortStableFunc(waypoints, func(a, b volvoportal.Waypoint) int { return a.At.Compare(b.At) })
 	var out []ImportedTrip
 	invalid := 0
+	// A trip is identified by its start: the same one twice, in two of the portal's
+	// chunks or two uploads of a file, is written once.
+	seen := make(map[int64]bool, len(rows))
 	for _, r := range rows {
+		if seen[r.Start.UnixMilli()] {
+			continue
+		}
+		seen[r.Start.UnixMilli()] = true
 		trip, ok := convertPortalTrip(r, at)
 		if !ok {
 			invalid++

@@ -1,0 +1,7 @@
+{
+  "c3::default::cold_battery_status": {
+    "description": "Indication that the battery might be cold.",
+    "dataType": "String",
+    "unitOfMeasurement": "-"
+  }
+}

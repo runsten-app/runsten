@@ -51,22 +51,17 @@ export async function startAximoteImport(
   )
 }
 
-// importVolvoDataPortal imports the files the Volvo Data Portal gave: the trips, and the
-// waypoints that make their tracks, if any. Written at once: the report comes back.
-export async function importVolvoDataPortal(
-  vehicle: string,
-  trips: File,
-  waypoints?: File,
-): Promise<FileImport> {
+// importVolvoDataPortal imports the files the Volvo Data Portal gave, as downloaded: its
+// ZIPs or their CSVs, trips and waypoints together. Written at once: the report comes back.
+export async function importVolvoDataPortal(vehicle: string, files: File[]): Promise<FileImport> {
   const form = new FormData()
-  form.append('trips', trips)
-  if (waypoints) form.append('waypoints', waypoints)
+  for (const f of files) form.append('files', f)
   return unwrap(
     api.POST('/vehicles/{vehicle}/imports/volvo_data_portal', {
       params: { path: { vehicle } },
       // The generated type names the files as strings: the form is sent as it is, and
       // the browser sets its boundary.
-      body: form as unknown as { trips: string; waypoints?: string },
+      body: form as unknown as { files: string[] },
       bodySerializer: (b) => b as unknown as FormData,
     }),
   )

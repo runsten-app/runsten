@@ -31,7 +31,13 @@ vi.mock('@/entities/connection', async (original) => ({
 
 // The flags source.tesla, source.bmw, source.pleos and source.skoda, as the session gives
 // them: on unless a test turns one off.
-const flag = vi.hoisted(() => ({ tesla: true, bmw: true, pleos: true, skoda: true }))
+const flag = vi.hoisted(() => ({
+  tesla: true,
+  bmw: true,
+  pleos: true,
+  skoda: true,
+  renault: true,
+}))
 vi.mock('@/features/view-flags', async () => {
   const { computed } = await import('vue')
   return {
@@ -43,7 +49,9 @@ vi.mock('@/features/view-flags', async () => {
             ? flag.pleos
             : name === 'source.skoda'
               ? flag.skoda
-              : flag.tesla,
+              : name === 'source.renault'
+                ? flag.renault
+                : flag.tesla,
       ),
   }
 })
@@ -71,6 +79,7 @@ beforeEach(() => {
   flag.bmw = true
   flag.pleos = true
   flag.skoda = true
+  flag.renault = true
   fetchVehicles.mockReset()
   fetchConnection.mockReset()
   // Self-hosting: the instance's key reads the vehicles.
@@ -152,6 +161,10 @@ describe('HomePage', () => {
     const skoda = wrapper.find('a.skoda')
     expect(skoda.attributes('href')).toBe('/connection#skoda')
     expect(skoda.text()).toBe('Škoda, Beta')
+    // A Renault, a Dacia or an Alpine, through the My Renault account: one tile, in beta.
+    const renault = wrapper.find('a.renault')
+    expect(renault.attributes('href')).toBe('/connection#renault')
+    expect(renault.text()).toBe('Renault, Dacia, Alpine, Beta')
     // How each is read is told by its tab: the home only says it guides.
     expect(wrapper.text()).toContain(
       'Which car is yours? Choose its make: Runsten guides you through connecting it.',
@@ -234,6 +247,14 @@ describe('HomePage', () => {
     const { wrapper } = await home()
     expect(wrapper.find('a.kia').exists()).toBe(true)
     expect(wrapper.find('a.skoda').exists()).toBe(false)
+  })
+
+  it('leaves the Renault out while its flag is off', async () => {
+    flag.renault = false
+    fetchVehicles.mockResolvedValue([])
+    const { wrapper } = await home()
+    expect(wrapper.find('a.skoda').exists()).toBe(true)
+    expect(wrapper.find('a.renault').exists()).toBe(false)
   })
 
   it("shows the extensions' choices after the makes, and their mentions", async () => {

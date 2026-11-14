@@ -73,6 +73,14 @@
 //	RUNSTEN_SKODA_API_URL        the MyŠkoda Public API, which checks a key on each VIN
 //	                             when the flag source.skoda is on (default
 //	                             https://public.api.connect.skoda-auto.cz)
+//	RUNSTEN_RENAULT_GIGYA_URL    Renault's Gigya, which signs an owner in to My Renault when
+//	                             the flag source.renault is on (default
+//	                             https://accounts.eu1.gigya.com), and
+//	RUNSTEN_RENAULT_GIGYA_KEY    the key of Renault's apps there (default renault-api's)
+//	RUNSTEN_RENAULT_KAMEREON_URL Renault's Kamereon, which lists the owner's vehicles
+//	                             (default https://api-wired-prod-1-euw1.wrd-aws.com), and
+//	RUNSTEN_RENAULT_KAMEREON_KEY the key of Renault's apps there: Renault changed them once,
+//	                             an instance follows without a release
 //	RUNSTEN_POLESTAR_BASE_URL    Polestar Data Portal's M2M API, which checks a credential
 //	                             before it is stored (default
 //	                             https://pc-api.polestar.com/eu-north-1/data-portal/m2m)
@@ -166,6 +174,7 @@ import (
 	"runsten/internal/polestar"
 	"runsten/internal/polestarid"
 	"runsten/internal/release"
+	"runsten/internal/renault"
 	"runsten/internal/skoda"
 	"runsten/internal/store"
 	"runsten/internal/tesla"
@@ -209,6 +218,7 @@ type config struct {
 	polestarURL string
 	pleosURL    string
 	skodaURL    string
+	renault     renault.Config
 	tesla       tesla.Hosts
 	polestarID  polestarid.Hosts
 	bmw         bmw.Hosts
@@ -390,6 +400,8 @@ func run(args []string) error {
 		PleosVehicles:      pleosVehicles{pleos.NewClient(cfg.pleosURL, hc)},
 		Skoda:              st,
 		SkodaVehicles:      skodaVehicles{skoda.NewClient(cfg.skodaURL, hc)},
+		Renault:            st,
+		RenaultAccounts:    renaultAccounts{renault.NewClient(cfg.renault, hc)},
 		InstanceKey:        cfg.apiKey != "",
 		InstanceKeyLast4:   cfg.apiKey[max(0, len(cfg.apiKey)-4):],
 		ClientID:           cfg.app.ClientID,
@@ -571,6 +583,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		polestarURL: polestar.DefaultBaseURL,
 		pleosURL:    pleos.DefaultBaseURL,
 		skodaURL:    skoda.DefaultBaseURL,
+		renault:     renault.DefaultConfig(),
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		polestarID:  polestarid.Hosts{Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL},
 		bmw:         bmw.Hosts{Auth: bmw.DefaultAuthURL, API: bmw.DefaultAPIURL},
@@ -601,10 +614,19 @@ func loadConfig(getenv func(string) string) (config, error) {
 		cfg.appURL = strings.TrimSuffix(v, "/") + "/"
 	}
 	errs = append(errs, loadVolvoApp(&cfg, getenv)...)
+	// The keys of Renault's apps: public, in their pages and their code (ADR 0050 §3).
+	for name, dst := range map[string]*string{
+		"RUNSTEN_RENAULT_GIGYA_KEY": &cfg.renault.GigyaKey, "RUNSTEN_RENAULT_KAMEREON_KEY": &cfg.renault.KamereonKey,
+	} {
+		if v := strings.TrimSpace(getenv(name)); v != "" {
+			*dst = v
+		}
+	}
 	for name, dst := range map[string]*string{
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.app.BaseURL, "RUNSTEN_AXIMOTE_BASE_URL": &cfg.aximoteURL,
 		"RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL, "RUNSTEN_PLEOS_API_URL": &cfg.pleosURL,
-		"RUNSTEN_SKODA_API_URL": &cfg.skodaURL,
+		"RUNSTEN_SKODA_API_URL":     &cfg.skodaURL,
+		"RUNSTEN_RENAULT_GIGYA_URL": &cfg.renault.GigyaURL, "RUNSTEN_RENAULT_KAMEREON_URL": &cfg.renault.KamereonURL,
 		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
 		"RUNSTEN_BMW_AUTH_URL": &cfg.bmw.Auth, "RUNSTEN_BMW_API_URL": &cfg.bmw.API,
@@ -767,8 +789,12 @@ func validateRedirectURI(raw string) error {
 // fileImports imports the files a user uploads, for the API.
 type fileImports struct{ f *importer.Files }
 
-func (i fileImports) ImportVolvoDataPortal(ctx context.Context, accountID, vehicleID string, trips, waypoints io.Reader) (api.FileImport, error) {
-	rep, err := i.f.VolvoDataPortal(ctx, accountID, vehicleID, trips, waypoints)
+func (i fileImports) ImportVolvoDataPortal(ctx context.Context, accountID, vehicleID string, uploaded []api.UploadedFile) (api.FileImport, error) {
+	files := make([]volvoportal.File, 0, len(uploaded))
+	for _, f := range uploaded {
+		files = append(files, volvoportal.File(f))
+	}
+	rep, err := i.f.VolvoDataPortal(ctx, accountID, vehicleID, files)
 	var fe *volvoportal.FormatError
 	switch {
 	case errors.As(err, &fe):
@@ -994,6 +1020,7 @@ func normalizers() derive.Normalizer {
 		bmw.Normalizer{},
 		pleos.Normalizer{},
 		skoda.Normalizer{},
+		renault.Normalizer{},
 	}, extensionNormalizers()...)...)
 }
 

@@ -115,8 +115,8 @@ type Vehicle struct {
 	// Provider is the connection's: volvo (a Volvo ID, the fields below up to
 	// KeyRefused), polestar (a credential of the Data Portal), tesla (a refresh
 	// token of the Owner API), pleos_hyundai, pleos_kia or pleos_genesis (the owner's
-	// key of the Pleos Vehicle Data API, per brand), or skoda (the owner's key of the
-	// MyŠkoda Public API).
+	// key of the Pleos Vehicle Data API, per brand), skoda (the owner's key of the
+	// MyŠkoda Public API), or renault (the owner's sign-in to My Renault).
 	Provider     string
 	AuthorizedAt time.Time // zero: unknown (a token pasted by hand)
 	RefreshedAt  time.Time // issue of the current refresh token; zero: none
@@ -299,6 +299,10 @@ type Config struct {
 	// a new one on each VIN.
 	Skoda         SkodaKeys
 	SkodaVehicles SkodaVehicles
+	// Renault keeps the account's sign-in to My Renault, and RenaultAccounts signs an
+	// owner in.
+	Renault         RenaultCredentials
+	RenaultAccounts RenaultAccounts
 	// TeslaMateImports is how many TeslaMate backups the instance reads at once; 0:
 	// DefaultTeslaMateImports. One where the API has little memory.
 	TeslaMateImports int
@@ -347,8 +351,10 @@ type Server struct {
 	// aaosLogging are the exports of AAOS Logging being read, bounded as the backups.
 	aaosLogging teslaMateImports
 	// bmwFlows are BMW's device flows pending.
-	bmwFlows    bmwFlows
-	errorSchema *huma.Schema // the body of the errors
+	bmwFlows bmwFlows
+	// renaultPending are the Renault sign-ins waiting for their one-time code.
+	renaultPending renaultPending
+	errorSchema    *huma.Schema // the body of the errors
 }
 
 // New creates the server.
@@ -398,6 +404,7 @@ func New(cfg Config) *Server {
 	s.registerBMW(s.api)
 	s.registerPleos(s.api)
 	s.registerSkoda(s.api)
+	s.registerRenault(s.api)
 	s.registerAccount(s.api)
 	s.registerAccountExport(s.api)
 	s.registerTokens(s.api)
