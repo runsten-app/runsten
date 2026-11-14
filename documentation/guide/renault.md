@@ -46,7 +46,7 @@ On the **Connection** page (in the menu under your name), in the **Renault** tab
 
 Reading does not wake the car: Renault returns the last values it received, each dated by the car. Reading more often than the car sends gives nothing more.
 
-Renault does not publish its **quota**. Home Assistant's integration keeps to about **60 calls an hour per account**, and Runsten keeps below that. The quota is the account's, **shared with every other client** that reads it, such as Home Assistant: they leave Runsten fewer calls. When Renault says the quota is spent, Runsten pauses the account for **15 minutes**, by itself. To keep the car in Home Assistant, you can let Runsten republish it to your MQTT broker rather than have Home Assistant read it too ([Home Assistant and MQTT](./mqtt.md)).
+Renault does not publish its **quota**. Home Assistant's integration keeps to about **60 calls an hour per account**. Runsten gives each account a budget of about **1,080 calls a day**, about 45 an hour on average, of which up to 45 may be spent at once. One car takes about 16 calls an hour while parked, and more while it charges. With several cars on the account, the budget runs short, and some reads wait: the cadences above are then longer. The quota is the account's, **shared with every other client** that reads it, such as Home Assistant: they leave Runsten fewer calls. When Renault says the quota is spent, Runsten pauses the account for **15 minutes**, by itself. To keep the car in Home Assistant, you can let Runsten republish it to your MQTT broker rather than have Home Assistant read it too ([Home Assistant and MQTT](./mqtt.md)).
 
 ## When it is not read
 
