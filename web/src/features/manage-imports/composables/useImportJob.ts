@@ -56,8 +56,7 @@ export function useStartImport(vehicle: MaybeRefOrGetter<string>) {
 export function useImportVolvoDataPortal(vehicle: MaybeRefOrGetter<string>) {
   const queryClient = useQueryClient()
   const { mutateAsync, isPending, error, reset } = useMutation({
-    mutationFn: (p: { trips: File; waypoints?: File }) =>
-      importVolvoDataPortal(toValue(vehicle), p.trips, p.waypoints),
+    mutationFn: (files: File[]) => importVolvoDataPortal(toValue(vehicle), files),
     onSuccess: () => afterImportChange(queryClient, toValue(vehicle)),
   })
   return { importFiles: mutateAsync, isPending, error, reset }

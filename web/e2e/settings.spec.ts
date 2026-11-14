@@ -136,7 +136,7 @@ test("Vehicle settings: a family the catalog lacks, from the bar's vehicle menu"
   await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/settings$`))
   // Two areas, each a link of the sub-navigation: the model first.
   const areas = page.getByRole('navigation', { name: 'Vehicle settings areas' })
-  await expect(areas.getByRole('link')).toHaveText(['Vehicle', 'Imported history'])
+  await expect(areas.getByRole('link')).toHaveText(['Vehicle', 'Import'])
   await expect(areas.getByRole('link', { name: 'Vehicle', exact: true })).toHaveAttribute(
     'aria-current',
     'page',
@@ -164,10 +164,10 @@ test("Vehicle settings: a family the catalog lacks, from the bar's vehicle menu"
   await expect(section.getByRole('region', { name: 'Delete this vehicle' })).toBeVisible()
   await checkView(page, testInfo, 'vehicle-settings')
 
-  await areas.getByRole('link', { name: 'Imported history' }).click()
+  await areas.getByRole('link', { name: 'Import', exact: true }).click()
   await expect(page).toHaveURL(new RegExp(`/vehicles/${vehicle}/settings/history$`))
-  await expect(page.getByRole('region', { name: 'Imported history' })).toBeVisible()
-  await expect(areas.getByRole('link', { name: 'Imported history' })).toHaveAttribute(
+  await expect(page.getByRole('region', { name: 'Import', exact: true })).toBeVisible()
+  await expect(areas.getByRole('link', { name: 'Import', exact: true })).toHaveAttribute(
     'aria-current',
     'page',
   )

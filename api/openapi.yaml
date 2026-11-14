@@ -9230,7 +9230,7 @@ paths:
         - events
   /vehicles/{vehicle}/imports/volvo_data_portal:
     post:
-      description: "The trips the Volvo Data Portal (data.volvocars.com) gave an owner who asked for their vehicle's data under the EU Data Act, with their tracks when the waypoints' file is given. Written at once: only what starts before the vehicle's first reading; a trip imported before, the same start, is replaced. At most 32 MiB of files."
+      description: "The trips the Volvo Data Portal (data.volvocars.com) gave an owner who asked for their vehicle's data under the EU Data Act, with their tracks when the waypoints are among the files: every file the portal gave at once, as downloaded. Written at once: only what starts before the vehicle's first reading; a trip imported before, the same start, is replaced. At most 1,000 files, 32 MiB together."
       operationId: importVolvoDataPortal
       parameters:
         - description: The vehicle ID.
@@ -9244,27 +9244,21 @@ paths:
         content:
           multipart/form-data:
             encoding:
-              trips:
-                contentType: application/octet-stream
-              waypoints:
+              files:
                 contentType: application/octet-stream
             schema:
               additionalProperties: false
               properties:
-                trips:
-                  contentEncoding: binary
-                  contentMediaType: application/octet-stream
-                  description: "The trips' file the portal gave (CSV): Start time, End time, positions, odometers, distance, energy."
-                  format: binary
-                  type: string
-                waypoints:
-                  contentEncoding: binary
-                  contentMediaType: application/octet-stream
-                  description: "The waypoints' file the portal gave (CSV), about one a minute while driving: they make the trips' tracks. Optional."
-                  format: binary
-                  type: string
+                files:
+                  items:
+                    contentEncoding: binary
+                    contentMediaType: application/octet-stream
+                    description: "The files the portal gave, as downloaded: its ZIPs of one data.csv each, a ZIP of them all, or the CSVs. The trips (Start time, End time, positions, odometers, distance, energy) and the waypoints, about one a minute while driving, which make their tracks, told apart by their header; metadata.json and final.zip are ignored."
+                    format: binary
+                    type: string
+                  type: array
               required:
-                - trips
+                - files
               type: object
       responses:
         "200":
@@ -9278,7 +9272,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_body`: not a multipart form with the trips' file, or more than 32 MiB. `invalid_file`: a file is not the portal's (not CSV, or a column missing); the message tells which and why."
+          description: "`invalid_body`: not a multipart form with the files, more than 1,000 files or 32 MiB. `invalid_file`: a file is not the portal's (not a ZIP of its CSVs, nor one of them), no trips among them, or more than 256 MiB once unzipped; the message tells which and why."
         "401":
           content:
             application/json:

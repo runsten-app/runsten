@@ -1151,7 +1151,7 @@
       "help": "Runsten recognizes the vehicle's variant from what it reports, when only one fits. Your choice outranks the recognition, and shows wherever the vehicle does."
     },
     "history": {
-      "title": "Imported history",
+      "title": "Import",
       "help": "Trips and charges from before Runsten read the vehicle, imported from other apps. Deleting an import leaves what Runsten read."
     },
     "loading": "Loading the vehicle",
@@ -1884,21 +1884,13 @@
     "portal": {
       "title": "Import from the Volvo Data Portal",
       "beta": "Beta",
-      "intro": "In the EU, the Data Act lets you ask Volvo Cars for your car's data on its Data Portal: ask for the trips and the waypoints. Volvo sends two CSV files, sometimes after several hours; choose them here. Only the trips from before the vehicle's first reading are imported, with their tracks from the waypoints. Importing again replaces them.",
+      "intro": "In the EU, the Data Act lets you ask Volvo Cars for your car's data on its Data Portal: ask for the trips and the waypoints. Volvo prepares them, sometimes over several hours, then gives many files to download one by one: choose them all here, as they are. Only the trips from before the vehicle's first reading are imported, with their tracks from the waypoints. Importing again replaces them.",
       "open": "Choose the files",
       "link": "Volvo Data Portal",
       "newTab": "(opens in a new tab)",
-      "trips": {
-        "label": "Trips file (CSV)",
-        "hint": "Required: the file whose columns start with Start time, End time."
+      "files": {
+        "hint": "All the files the portal gave, as downloaded: its ZIP files, or the CSV files inside them."
       },
-      "waypoints": {
-        "label": "Waypoints file (CSV)",
-        "hint": "Optional: its positions, about one a minute, draw the trips' tracks."
-      },
-      "clear": "Remove: {file}",
-      "start": "Import",
-      "cancel": "Cancel",
       "done": "Import finished",
       "report": {
         "imported": "No trip imported. | One trip imported. | {n} trips imported.",
@@ -1907,9 +1899,8 @@
       },
       "error": {
         "summary": "The files were not imported",
-        "required": "Choose the trips file.",
-        "file": "This is not a file of the Volvo Data Portal: check that the trips file is the one with Start time and End time, and the waypoints file the one with Timestamp.",
-        "tooLarge": "The files are too large: 32 MB at most together.",
+        "file": "These are not the files of the Volvo Data Portal, or the trips are not among them: choose every file the portal gave, as downloaded.",
+        "tooLarge": "Too many files or too large: 1,000 files and 32 MB at most together.",
         "network": "Runsten could not be reached. Try again in a moment.",
         "internal": "The files could not be imported. Try again in a moment."
       }

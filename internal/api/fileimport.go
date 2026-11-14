@@ -17,11 +17,11 @@ import (
 // FileImports imports the files a user uploads, at once: the history another
 // application or the manufacturer gave them (ADR 0030).
 type FileImports interface {
-	// ImportVolvoDataPortal imports the trips' file of the Volvo Data Portal and, when
-	// not nil, its waypoints' file, which makes the trips' tracks. An error wrapping
-	// ErrImportFile is a file that is not the portal's: its message tells why, and
-	// nothing is written.
-	ImportVolvoDataPortal(ctx context.Context, accountID, vehicleID string, trips, waypoints io.Reader) (FileImport, error)
+	// ImportVolvoDataPortal imports the files the Volvo Data Portal gave, as downloaded:
+	// its ZIPs, or the CSVs they hold; the trips, with their tracks from the waypoints.
+	// An error wrapping ErrImportFile is a file that is not the portal's, or no trips
+	// among them: its message tells why, and nothing is written.
+	ImportVolvoDataPortal(ctx context.Context, accountID, vehicleID string, files []UploadedFile) (FileImport, error)
 	// ImportTeslaMate imports the history of the car of the VIN in a TeslaMate backup,
 	// read from r as it comes, its costs in currency (none when empty). An error wrapping
 	// ErrImportFile is a file that is not TeslaMate's backup, one wrapping
@@ -31,6 +31,13 @@ type FileImports interface {
 	// bytes. An error wrapping ErrImportFile is an upload that is not the export, or one
 	// incomplete: its message tells why, and nothing is written.
 	ImportAAOSLogging(ctx context.Context, accountID, vehicleID string, r io.ReaderAt, size int64) (FileImport, error)
+}
+
+// UploadedFile is a file of a form, by its name.
+type UploadedFile struct {
+	Name string
+	R    io.ReaderAt
+	Size int64
 }
 
 // ErrImportFile is a file that is not the one expected.
@@ -46,6 +53,10 @@ type FileImport struct {
 // waypoints is a few megabytes.
 const maxImportFiles = 32 << 20
 
+// maxPortalFiles bounds how many files an import of the portal's takes: it answers in a
+// few dozen.
+const maxPortalFiles = 1000
+
 type fileImportJSON struct {
 	Source   string    `json:"source" doc:"The source the events were imported from." example:"volvo_data_portal"`
 	Imported int       `json:"imported" minimum:"0" doc:"Events written, new or replacing those of an earlier import of the same source."`
@@ -55,8 +66,7 @@ type fileImportJSON struct {
 }
 
 type volvoDataPortalFiles struct {
-	Trips     huma.FormFile `form:"trips" required:"true" doc:"The trips' file the portal gave (CSV): Start time, End time, positions, odometers, distance, energy."`
-	Waypoints huma.FormFile `form:"waypoints" required:"false" doc:"The waypoints' file the portal gave (CSV), about one a minute while driving: they make the trips' tracks. Optional."`
+	Files []huma.FormFile `form:"files" required:"true" doc:"The files the portal gave, as downloaded: its ZIPs of one data.csv each, a ZIP of them all, or the CSVs. The trips (Start time, End time, positions, odometers, distance, energy) and the waypoints, about one a minute while driving, which make their tracks, told apart by their header; metadata.json and final.zip are ignored."`
 }
 
 type volvoDataPortalInput struct {
@@ -93,9 +103,9 @@ func (s *Server) multipart(limit int64, idle time.Duration) func(huma.Context, f
 const volvoDataPortalPath = "/vehicles/{vehicle}/imports/volvo_data_portal"
 
 func (s *Server) importVolvoDataPortal(ctx context.Context, in *volvoDataPortalInput) (*body[fileImportJSON], error) {
-	files := in.RawBody.Data()
+	files := in.RawBody.Data().Files
 	defer func() {
-		for _, f := range []huma.FormFile{files.Trips, files.Waypoints} {
+		for _, f := range files {
 			if f.IsSet {
 				_ = f.Close()
 			}
@@ -112,19 +122,22 @@ func (s *Server) importVolvoDataPortal(ctx context.Context, in *volvoDataPortalI
 	}
 	// The form is strict, as every body: huma decodes the known fields only.
 	for name := range in.RawBody.Form.File {
-		if name != "trips" && name != "waypoints" {
+		if name != "files" {
 			return nil, apiError(http.StatusBadRequest, codeInvalidBody, "unknown field "+strconv.Quote(name))
 		}
 	}
 	for name := range in.RawBody.Form.Value {
 		return nil, apiError(http.StatusBadRequest, codeInvalidBody, "unknown field "+strconv.Quote(name))
 	}
-	var waypoints io.Reader
-	if files.Waypoints.IsSet {
-		waypoints = files.Waypoints
+	if len(files) > maxPortalFiles {
+		return nil, apiError(http.StatusBadRequest, codeInvalidBody, "more than "+strconv.Itoa(maxPortalFiles)+" files")
+	}
+	uploaded := make([]UploadedFile, 0, len(files))
+	for _, f := range files {
+		uploaded = append(uploaded, UploadedFile{Name: f.Filename, R: f, Size: f.Size})
 	}
 	account := sessionFrom(ctx).AccountID
-	res, err := s.FileImports.ImportVolvoDataPortal(ctx, account, v.ID, files.Trips, waypoints)
+	res, err := s.FileImports.ImportVolvoDataPortal(ctx, account, v.ID, uploaded)
 	switch {
 	case errors.Is(err, ErrImportFile):
 		return nil, apiError(http.StatusBadRequest, codeInvalidFile, err.Error())
@@ -144,13 +157,14 @@ func (s *Server) registerFileImports(api huma.API) {
 		OperationID: "importVolvoDataPortal", Method: http.MethodPost, Path: volvoDataPortalPath,
 		Tags: []string{"events"}, Summary: "Import the files of the Volvo Data Portal",
 		Description: "The trips the Volvo Data Portal (data.volvocars.com) gave an owner who asked for their " +
-			"vehicle's data under the EU Data Act, with their tracks when the waypoints' file is given. Written at " +
-			"once: only what starts before the vehicle's first reading; a trip imported before, the same start, is " +
-			"replaced. At most 32 MiB of files.",
+			"vehicle's data under the EU Data Act, with their tracks when the waypoints are among the files: every " +
+			"file the portal gave at once, as downloaded. Written at once: only what starts before the vehicle's " +
+			"first reading; a trip imported before, the same start, is replaced. At most 1,000 files, 32 MiB together.",
 		Middlewares: huma.Middlewares{s.requireMultipart},
 	}, "What was imported.", writeErrors(map[int]string{
-		http.StatusBadRequest: "`invalid_body`: not a multipart form with the trips' file, or more than 32 MiB. " +
-			"`invalid_file`: a file is not the portal's (not CSV, or a column missing); the message tells which and why.",
+		http.StatusBadRequest: "`invalid_body`: not a multipart form with the files, more than 1,000 files or 32 MiB. " +
+			"`invalid_file`: a file is not the portal's (not a ZIP of its CSVs, nor one of them), no trips among them, " +
+			"or more than 256 MiB once unzipped; the message tells which and why.",
 		http.StatusForbidden:            errCrossOrigin + " " + errSessionOnly,
 		http.StatusNotFound:             errVehicle,
 		http.StatusConflict:             "`not_volvo`: the vehicle is not a Volvo (a Polestar, a Tesla); nothing is imported.",

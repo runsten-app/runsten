@@ -13,11 +13,10 @@ import (
 )
 
 // fakeFileImports reads the files it is given, and reports one event per line of the
-// trips' file but its header.
+// trips' files but their header.
 type fakeFileImports struct {
-	trips, waypoints string
-	gotWaypoints     bool
-	err              error
+	portal []string // the portal's files read, "name: contents"
+	err    error
 	// TeslaMate's: the backup read, the VIN and the currency given.
 	backup, vin, currency string
 	// AAOS Logging's: the export read, and its size.
@@ -56,20 +55,42 @@ func (f *fakeFileImports) ImportTeslaMate(_ context.Context, _, _, vin, currency
 	return FileImport{Imported: strings.Count(f.backup, "\n"), Skipped: 0, Invalid: 1, Cutoff: h(4, 0)}, nil
 }
 
-func (f *fakeFileImports) ImportVolvoDataPortal(_ context.Context, _, _ string, trips, waypoints io.Reader) (FileImport, error) {
+func (f *fakeFileImports) ImportVolvoDataPortal(_ context.Context, _, _ string, files []UploadedFile) (FileImport, error) {
 	if f.err != nil {
 		return FileImport{}, f.err
 	}
-	b, _ := io.ReadAll(trips)
-	f.trips, f.gotWaypoints, f.waypoints = string(b), waypoints != nil, ""
-	if waypoints != nil {
-		w, _ := io.ReadAll(waypoints)
-		f.waypoints = string(w)
+	f.portal = nil
+	trips := 0
+	for _, file := range files {
+		b, _ := io.ReadAll(io.NewSectionReader(file.R, 0, file.Size))
+		f.portal = append(f.portal, file.Name+": "+string(b))
+		if strings.HasPrefix(string(b), "Start time") {
+			trips += strings.Count(string(b), "\n") - 1
+		}
 	}
-	if !strings.HasPrefix(f.trips, "Start time") {
-		return FileImport{}, fmt.Errorf("trips: %w: no column \"start time\"", ErrImportFile)
+	if trips == 0 {
+		return FileImport{}, fmt.Errorf("%w: no trips' file among them", ErrImportFile)
 	}
-	return FileImport{Imported: strings.Count(f.trips, "\n") - 1, Skipped: 1, Invalid: 2, Cutoff: h(4, 0)}, nil
+	return FileImport{Imported: trips, Skipped: 1, Invalid: 2, Cutoff: h(4, 0)}, nil
+}
+
+// portalForm is a multipart body with the files given, name then contents, all in the
+// field files; its content type.
+func portalForm(t *testing.T, files ...string) (string, string) {
+	t.Helper()
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	for ; len(files) >= 2; files = files[2:] {
+		part, err := w.CreateFormFile("files", files[0])
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = part.Write([]byte(files[1]))
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return b.String(), w.FormDataContentType()
 }
 
 // form is a multipart body with the files given, by field name; its content type.
@@ -101,40 +122,46 @@ func TestImportVolvoDataPortal(t *testing.T) {
 	path := "/vehicles/" + car + "/imports/volvo_data_portal"
 	url := e.api.URL + "/api/v1" + path
 
-	body, ct := form(t, map[string]string{"trips": portalTrips, "waypoints": portalWaypoints})
+	body, ct := portalForm(t, "waypoint.csv", portalWaypoints, "trip.csv", portalTrips)
 	resp, out := do(t, noFollow(), http.MethodPost, url, ct, body, c)
 	if resp.status != http.StatusOK {
 		t.Fatalf("%d %s", resp.status, out)
 	}
 	golden(t, "import-volvo-data-portal.json", out)
-	if e.files.trips != portalTrips || !e.files.gotWaypoints || e.files.waypoints != portalWaypoints {
-		t.Errorf("files read: %+v", e.files)
+	if len(e.files.portal) != 2 || e.files.portal[0] != "waypoint.csv: "+portalWaypoints || e.files.portal[1] != "trip.csv: "+portalTrips {
+		t.Errorf("files read: %q", e.files.portal)
 	}
 	if !strings.Contains(logs.String(), "files imported") {
 		t.Errorf("logs:\n%s", logs)
 	}
 
-	body, ct = form(t, map[string]string{"trips": portalTrips})
-	if resp, out := do(t, noFollow(), http.MethodPost, url, ct, body, c); resp.status != http.StatusOK || e.files.gotWaypoints {
-		t.Errorf("without waypoints: %d %s", resp.status, out)
+	body, ct = portalForm(t, "trip.csv", portalTrips)
+	if resp, out := do(t, noFollow(), http.MethodPost, url, ct, body, c); resp.status != http.StatusOK || len(e.files.portal) != 1 {
+		t.Errorf("one file: %d %s", resp.status, out)
 	}
 
+	many := make([]string, 0, 2*(maxPortalFiles+1))
+	for i := range maxPortalFiles + 1 {
+		many = append(many, fmt.Sprintf("%d.csv", i), portalTrips)
+	}
 	for _, tc := range []struct {
 		name   string
-		files  map[string]string
+		body   func() (string, string)
 		status int
 		code   errorCode
 	}{
-		{"no trips", map[string]string{"waypoints": portalWaypoints}, http.StatusBadRequest, codeInvalidBody},
-		{"no file", map[string]string{}, http.StatusBadRequest, codeInvalidBody},
-		{"the waypoints as trips", map[string]string{"trips": portalWaypoints}, http.StatusBadRequest, codeInvalidFile},
-		{"another file", map[string]string{"trips": portalTrips, "charges": "x"}, http.StatusBadRequest, codeInvalidBody},
+		{"no trips", func() (string, string) { return portalForm(t, "w.csv", portalWaypoints) }, http.StatusBadRequest, codeInvalidFile},
+		{"no file", func() (string, string) { return portalForm(t) }, http.StatusBadRequest, codeInvalidBody},
+		{"too many files", func() (string, string) { return portalForm(t, many...) }, http.StatusBadRequest, codeInvalidBody},
+		{"another field", func() (string, string) {
+			return form(t, map[string]string{"files": portalTrips, "trips": portalTrips})
+		}, http.StatusBadRequest, codeInvalidBody},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			body, ct := form(t, tc.files)
+			body, ct := tc.body()
 			resp, out := do(t, noFollow(), http.MethodPost, url, ct, body, c)
 			if resp.status != tc.status {
-				t.Errorf("%d %s", resp.status, out)
+				t.Errorf("%d %.300s", resp.status, out)
 			}
 			wantError(t, out, tc.code)
 		})
@@ -143,7 +170,7 @@ func TestImportVolvoDataPortal(t *testing.T) {
 	t.Run("a field", func(t *testing.T) {
 		var b bytes.Buffer
 		w := multipart.NewWriter(&b)
-		part, _ := w.CreateFormFile("trips", "trips.csv")
+		part, _ := w.CreateFormFile("files", "trips.csv")
 		_, _ = part.Write([]byte(portalTrips))
 		_ = w.WriteField("timezone", "Europe/Paris")
 		_ = w.Close()
@@ -155,7 +182,7 @@ func TestImportVolvoDataPortal(t *testing.T) {
 	})
 
 	t.Run("too large", func(t *testing.T) {
-		body, ct := form(t, map[string]string{"trips": portalTrips + strings.Repeat("x", maxImportFiles)})
+		body, ct := portalForm(t, "trips.csv", portalTrips+strings.Repeat("x", maxImportFiles))
 		resp, out := do(t, noFollow(), http.MethodPost, url, ct, body, c)
 		if resp.status != http.StatusBadRequest {
 			t.Errorf("%d %.200s", resp.status, out)
@@ -166,17 +193,17 @@ func TestImportVolvoDataPortal(t *testing.T) {
 	if resp, out := do(t, noFollow(), http.MethodPost, url, jsonType, `{}`, c); resp.status != http.StatusUnsupportedMediaType {
 		t.Errorf("JSON: %d %s", resp.status, out)
 	}
-	body, ct = form(t, map[string]string{"trips": portalTrips})
+	body, ct = portalForm(t, "trips.csv", portalTrips)
 	if resp, out := do(t, noFollow(), http.MethodPost, e.api.URL+"/api/v1/vehicles/"+foreign+"/imports/volvo_data_portal",
 		ct, body, c); resp.status != http.StatusNotFound {
 		t.Errorf("another account's vehicle: %d %s", resp.status, out)
 	}
 
 	// A Polestar has no history at the Volvo Data Portal: nothing is read of the files.
-	e.files.trips = ""
+	e.files.portal = nil
 	resp, out = do(t, noFollow(), http.MethodPost, e.api.URL+"/api/v1/vehicles/"+shared+"/imports/volvo_data_portal", ct, body, c)
-	if resp.status != http.StatusConflict || e.files.trips != "" {
-		t.Errorf("a Polestar: %d %s, files read %q", resp.status, out, e.files.trips)
+	if resp.status != http.StatusConflict || e.files.portal != nil {
+		t.Errorf("a Polestar: %d %s, files read %q", resp.status, out, e.files.portal)
 	}
 	wantError(t, out, codeNotVolvo)
 

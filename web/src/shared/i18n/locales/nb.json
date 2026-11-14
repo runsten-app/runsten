@@ -1151,7 +1151,7 @@
       "help": "Runsten gjenkjenner bilens variant ut fra det den rapporterer, når bare én passer. Ditt valg går foran gjenkjenningen, og vises overalt der bilen vises."
     },
     "history": {
-      "title": "Importert historikk",
+      "title": "Import",
       "help": "Turer og ladinger fra før Runsten leste bilen, importert fra andre apper. Sletter du en import, beholdes det Runsten selv har lest."
     },
     "loading": "Laster inn bilen",
@@ -1884,21 +1884,13 @@
     "portal": {
       "title": "Importer fra Volvo Data Portal",
       "beta": "Beta",
-      "intro": "I EU gir dataforordningen (Data Act) deg rett til å be Volvo Cars om bilens data på Data Portal: be om turene (trips) og veipunktene (waypoints). Volvo sender to CSV-filer, noen ganger etter flere timer; velg dem her. Bare turene fra før bilens første avlesning importeres, med sporene fra veipunktene. Importerer du på nytt, erstattes de.",
+      "intro": "I EU gir dataforordningen (Data Act) deg rett til å be Volvo Cars om bilens data på Data Portal: be om turene (trips) og veipunktene (waypoints). Volvo klargjør dem, noen ganger over flere timer, og gir deretter mange filer som må lastes ned én etter én: velg alle her, som de er. Bare turene fra før bilens første avlesning importeres, med sporene fra veipunktene. Importerer du på nytt, erstattes de.",
       "open": "Velg filene",
       "link": "Volvo Data Portal",
       "newTab": "(åpnes i en ny fane)",
-      "trips": {
-        "label": "Turfil (CSV)",
-        "hint": "Påkrevd: filen der kolonnene starter med Start time, End time."
+      "files": {
+        "hint": "Alle filene portalen ga, slik de ble lastet ned: ZIP-filene, eller CSV-filene i dem."
       },
-      "waypoints": {
-        "label": "Veipunktfil (CSV)",
-        "hint": "Valgfritt: posisjonene i den, omtrent én i minuttet, tegner sporene til turene."
-      },
-      "clear": "Fjern: {file}",
-      "start": "Importer",
-      "cancel": "Avbryt",
       "done": "Importen er ferdig",
       "report": {
         "imported": "Ingen tur importert. | Én tur importert. | {n} turer importert.",
@@ -1907,9 +1899,8 @@
       },
       "error": {
         "summary": "Filene ble ikke importert",
-        "required": "Velg turfilen.",
-        "file": "Dette er ikke en fil fra Volvo Data Portal: sjekk at turfilen er den med Start time og End time, og veipunktfilen den med Timestamp.",
-        "tooLarge": "Filene er for store: høyst 32 MB til sammen.",
+        "file": "Dette er ikke filene fra Volvo Data Portal, eller turene er ikke blant dem: velg alle filene portalen ga, slik de ble lastet ned.",
+        "tooLarge": "For mange eller for store filer: høyst 1000 filer og 32 MB til sammen.",
         "network": "Fikk ikke kontakt med Runsten. Prøv igjen om litt.",
         "internal": "Filene kunne ikke importeres. Prøv igjen om litt."
       }

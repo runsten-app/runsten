@@ -1151,7 +1151,7 @@
       "help": "Runsten erkennt die Variante des Fahrzeugs an dem, was es meldet, wenn nur eine passt. Ihre Auswahl hat Vorrang vor der Erkennung und gilt überall, wo das Fahrzeug erscheint."
     },
     "history": {
-      "title": "Importierter Verlauf",
+      "title": "Import",
       "help": "Fahrten und Ladevorgänge aus der Zeit, bevor Runsten das Fahrzeug gelesen hat, aus anderen Apps importiert. Das Löschen eines Imports lässt bestehen, was Runsten selbst gelesen hat."
     },
     "loading": "Fahrzeug wird geladen",
@@ -1884,21 +1884,13 @@
     "portal": {
       "title": "Aus dem Volvo Data Portal importieren",
       "beta": "Beta",
-      "intro": "In der EU können Sie dank des Data Act bei Volvo Cars über dessen Data Portal die Daten Ihres Autos anfordern: Fordern Sie die Fahrten („trips“) und die Wegpunkte („waypoints“) an. Volvo schickt zwei CSV-Dateien, manchmal erst nach einigen Stunden; wählen Sie sie hier aus. Importiert werden nur die Fahrten aus der Zeit vor dem ersten Messwert des Fahrzeugs, mit ihren Routen aus den Wegpunkten. Ein erneuter Import ersetzt sie.",
+      "intro": "In der EU können Sie dank des Data Act bei Volvo Cars über dessen Data Portal die Daten Ihres Autos anfordern: Fordern Sie die Fahrten („trips“) und die Wegpunkte („waypoints“) an. Volvo bereitet sie vor, manchmal über mehrere Stunden, und stellt dann viele Dateien zum einzelnen Herunterladen bereit: Wählen Sie hier alle aus, so wie sie sind. Importiert werden nur die Fahrten aus der Zeit vor dem ersten Messwert des Fahrzeugs, mit ihren Routen aus den Wegpunkten. Ein erneuter Import ersetzt sie.",
       "open": "Dateien auswählen",
       "link": "Volvo Data Portal",
       "newTab": "(öffnet in einem neuen Tab)",
-      "trips": {
-        "label": "Fahrtendatei (CSV)",
-        "hint": "Erforderlich: die Datei, deren Spalten mit Start time, End time beginnen."
+      "files": {
+        "hint": "Alle Dateien, die das Portal bereitgestellt hat, so wie heruntergeladen: die ZIP-Dateien oder die darin enthaltenen CSV-Dateien."
       },
-      "waypoints": {
-        "label": "Wegpunktdatei (CSV)",
-        "hint": "Optional: Ihre Positionen, etwa eine pro Minute, zeichnen die Routen der Fahrten."
-      },
-      "clear": "Entfernen: {file}",
-      "start": "Importieren",
-      "cancel": "Abbrechen",
       "done": "Import abgeschlossen",
       "report": {
         "imported": "Keine Fahrt importiert. | Eine Fahrt importiert. | {n} Fahrten importiert.",
@@ -1907,9 +1899,8 @@
       },
       "error": {
         "summary": "Die Dateien wurden nicht importiert",
-        "required": "Wählen Sie die Fahrtendatei.",
-        "file": "Das ist keine Datei aus dem Volvo Data Portal: Prüfen Sie, ob die Fahrtendatei die mit Start time und End time ist und die Wegpunktdatei die mit Timestamp.",
-        "tooLarge": "Die Dateien sind zu groß: höchstens 32 MB zusammen.",
+        "file": "Das sind nicht die Dateien aus dem Volvo Data Portal, oder die Fahrten sind nicht dabei: Wählen Sie alle Dateien, die das Portal bereitgestellt hat, so wie heruntergeladen.",
+        "tooLarge": "Zu viele oder zu große Dateien: höchstens 1.000 Dateien und 32 MB zusammen.",
         "network": "Runsten war nicht erreichbar. Versuchen Sie es gleich noch einmal.",
         "internal": "Die Dateien konnten nicht importiert werden. Versuchen Sie es gleich noch einmal."
       }

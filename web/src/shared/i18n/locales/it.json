@@ -1151,7 +1151,7 @@
       "help": "Runsten riconosce la versione del veicolo da ciò che esso indica, quando ne corrisponde una sola. La Sua scelta prevale sul riconoscimento e compare ovunque compaia il veicolo."
     },
     "history": {
-      "title": "Cronologia importata",
+      "title": "Importazione",
       "help": "Viaggi e ricariche di prima che Runsten leggesse il veicolo, importati da altre app. Eliminare un’importazione lascia ciò che Runsten ha letto."
     },
     "loading": "Caricamento del veicolo",
@@ -1884,21 +1884,13 @@
     "portal": {
       "title": "Importa dal Volvo Data Portal",
       "beta": "Beta",
-      "intro": "Nell’UE, il Data Act Le consente di chiedere a Volvo Cars i dati della Sua auto sul suo Data Portal: richieda i viaggi (trips) e i punti di passaggio (waypoints). Volvo invia due file CSV, a volte dopo diverse ore; li scelga qui. Vengono importati solo i viaggi precedenti alla prima lettura del veicolo, con i loro tracciati ricavati dai punti di passaggio. Una nuova importazione li sostituisce.",
+      "intro": "Nell’UE, il Data Act Le consente di chiedere a Volvo Cars i dati della Sua auto sul suo Data Portal: richieda i viaggi (trips) e i punti di passaggio (waypoints). Volvo li prepara, a volte in diverse ore, poi mette a disposizione molti file da scaricare uno per uno: li scelga tutti qui, così come sono. Vengono importati solo i viaggi precedenti alla prima lettura del veicolo, con i loro tracciati ricavati dai punti di passaggio. Una nuova importazione li sostituisce.",
       "open": "Scegli i file",
       "link": "Volvo Data Portal",
       "newTab": "(si apre in una nuova scheda)",
-      "trips": {
-        "label": "File dei viaggi (CSV)",
-        "hint": "Obbligatorio: il file le cui colonne iniziano con Start time, End time."
+      "files": {
+        "hint": "Tutti i file forniti dal portale, così come scaricati: i suoi file ZIP, o i file CSV che contengono."
       },
-      "waypoints": {
-        "label": "File dei punti di passaggio (CSV)",
-        "hint": "Facoltativo: le sue posizioni, circa una al minuto, tracciano i percorsi dei viaggi."
-      },
-      "clear": "Rimuovi: {file}",
-      "start": "Importa",
-      "cancel": "Annulla",
       "done": "Importazione completata",
       "report": {
         "imported": "Nessun viaggio importato. | Un viaggio importato. | {n} viaggi importati.",
@@ -1907,9 +1899,8 @@
       },
       "error": {
         "summary": "I file non sono stati importati",
-        "required": "Scelga il file dei viaggi.",
-        "file": "Questo non è un file del Volvo Data Portal: verifichi che il file dei viaggi sia quello con Start time e End time, e il file dei punti di passaggio quello con Timestamp.",
-        "tooLarge": "I file sono troppo grandi: al massimo 32 MB in totale.",
+        "file": "Questi non sono i file del Volvo Data Portal, oppure i viaggi non sono tra questi: scelga tutti i file forniti dal portale, così come scaricati.",
+        "tooLarge": "Troppi file o troppo grandi: al massimo 1000 file e 32 MB in totale.",
         "network": "Runsten non è raggiungibile. Riprovi tra qualche istante.",
         "internal": "Impossibile importare i file. Riprovi tra qualche istante."
       }
