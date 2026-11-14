@@ -32,23 +32,33 @@ export function costKnown(c: Pick<Charges, 'count' | 'cost_unknown'>): boolean {
   return c.count === 0 || c.cost_unknown < c.count
 }
 
-// perHundred is what 100 km cost, the charges over the distance, in minor units: the
-// lowest rounded down, the highest up, as the API rounds the costs; a cost known exactly
-// rounds to the nearest, a range of a cent being the rounding's, not the cost's. Unknown
-// when a cost or a distance is: a part left out would bend the ratio, not just lower it.
-export function perHundred(
-  trips: Pick<Trips, 'distance_km' | 'distance_unknown'>,
-  charges: Pick<Charges, 'cost' | 'cost_unknown'>,
-): Amounts | null {
-  if (trips.distance_km <= 0 || trips.distance_unknown > 0 || charges.cost_unknown > 0) return null
-  if (charges.cost.min_minor === charges.cost.max_minor) {
-    const v = Math.round((charges.cost.min_minor * 100) / trips.distance_km)
+// perHundred is what 100 km cost a vehicle over a period or an interval, as its
+// statistics give it: its trips' energy at the price of the kWh of the 30 days before
+// each, over their distance. Unknown without a trip of known cost and distance, and for
+// a plug-in hybrid, whose trips' energy is the battery's alone.
+export function perHundred(trips: Pick<Trips, 'cost_per_100km'>): Amounts | null {
+  return trips.cost_per_100km
+}
+
+// accountPerHundred is what 100 km cost the account: its trips' costs over their
+// distance. Unknown as soon as a vehicle that drove has a trip of unknown cost or
+// distance, or no cost per 100 km (a plug-in hybrid): a part left out would bend the
+// ratio, not just lower it. The lowest rounded down and the highest up, as the API
+// rounds the costs; a cost known exactly rounds to the nearest.
+function accountPerHundred(periods: PeriodStats[]): Amounts | null {
+  const drove = periods.map((p) => p.trips).filter((t) => t.count > 0)
+  const whole = (t: Trips) =>
+    t.cost_unknown === 0 && t.distance_unknown === 0 && t.cost_per_100km !== null
+  if (!drove.length || !drove.every(whole)) return null
+  const km = drove.reduce((a, t) => a + t.distance_km, 0)
+  const min = drove.reduce((a, t) => a + t.cost.min_minor, 0)
+  const max = drove.reduce((a, t) => a + t.cost.max_minor, 0)
+  if (km <= 0) return null
+  if (min === max) {
+    const v = Math.round((min * 100) / km)
     return { min_minor: v, max_minor: v }
   }
-  return {
-    min_minor: Math.floor((charges.cost.min_minor * 100) / trips.distance_km),
-    max_minor: Math.ceil((charges.cost.max_minor * 100) / trips.distance_km),
-  }
+  return { min_minor: Math.floor((min * 100) / km), max_minor: Math.ceil((max * 100) / km) }
 }
 
 // AccountTotals are the vehicles' periods added up: what the account drove and paid.
@@ -84,7 +94,7 @@ export function accountTotals(periods: PeriodStats[]): AccountTotals {
     cost: charges.cost,
     costUnknown: charges.cost_unknown,
     costKnown: periods.some((p) => p.charges.count > 0 && costKnown(p.charges)),
-    perHundred: perHundred(trips, charges),
+    perHundred: accountPerHundred(periods),
   }
 }
 

@@ -105,8 +105,8 @@
       "cost": {
         "tab": "Coste",
         "title": "Coste cada 100 km por mes",
-        "summary": "Lo que costaron 100 km a cada vehículo, mes a mes, en los últimos 12 meses.",
-        "none": "Ningún mes tiene a la vez un coste y una distancia conocidos.",
+        "summary": "Lo que costaron 100 km a cada vehículo, mes a mes, en los últimos 12 meses: la energía de sus trayectos al precio del kWh de los 30 días anteriores a cada uno.",
+        "none": "Ningún mes tiene un trayecto con coste y distancia conocidos.",
         "hint": "En los últimos 12 meses, sea cual sea el periodo. Un coste conocido como un intervalo se dibuja en su valor más bajo."
       },
       "charging": {
@@ -392,7 +392,26 @@
       "statsLink": "Ver las estadísticas de {month}"
     },
     "energyImportedNote": "La energía es la que indicó la aplicación.",
-    "outsideTemp": "Temperatura exterior (promedio)"
+    "outsideTemp": "Temperatura exterior (promedio)",
+    "cost": {
+      "title": "Coste",
+      "unknown": "Coste desconocido",
+      "per100km": "{amount}/100 km",
+      "per100kmSpoken": "{amount} cada 100 km",
+      "price": "Precio del kWh",
+      "basis": "Según",
+      "charges": "{n} carga de los 30 días anteriores | {n} cargas de los 30 días anteriores",
+      "elsewhereAC": "AC en otro lugar",
+      "elsewhereDC": "DC en otro lugar",
+      "share": "{name} {share} · {price}",
+      "split": "Dónde se cargó esa energía",
+      "note": "El precio medio del kWh que entró en la batería durante los 30 días anteriores al trayecto, aplicado a su energía.",
+      "rangeNote": "Un intervalo: las horas de algunas cargas, y por tanto sus precios, solo se conocen de forma aproximada.",
+      "leftOut": "{n} carga sin coste o sin energía no se cuenta. | {n} cargas sin coste o sin energía no se cuentan.",
+      "noPrice": "Ninguna carga de los 30 días anteriores al trayecto tiene a la vez coste y energía: da una tarifa a tus lugares, o introduce lo que costó una carga.",
+      "noEnergy": "La energía del trayecto es desconocida, y también su coste.",
+      "hybrid": "Solo la electricidad que usó el trayecto: el combustible no se cuenta."
+    }
   },
   "charges": {
     "title": "Cargas",
@@ -568,7 +587,12 @@
       "parkedAsleep": "en reposo el {value} del tiempo leído",
       "cost": "Costo de las cargas",
       "costNote": "Estimado a partir de las tarifas, o indicado; un rango cuando no se conocen las horas de las cargas",
-      "costUnknown": "desconocido en {n} carga | desconocido en {n} cargas"
+      "costUnknown": "desconocido en {n} carga | desconocido en {n} cargas",
+      "costPer100km": "Coste cada 100 km",
+      "costPer100kmNote": "Sobre los trayectos con coste y distancia conocidos",
+      "tripCostUnknown": "desconocido para {n} trayecto | desconocido para {n} trayectos",
+      "drivingCost": "Coste de conducción",
+      "drivingCostNote": "Lo que usaron los trayectos del periodo, al precio del kWh de los 30 días anteriores a cada uno"
     },
     "chart": {
       "odometer": {
@@ -620,7 +644,7 @@
         "unit": "{currency}/100 km",
         "summary": "Costo por 100 km: {average} en el período.",
         "none": "Ningún costo por 100 km conocido en este período.",
-        "hint": "Seleccione un punto para ver las cargas de su intervalo."
+        "hint": "Selecciona un punto para ver los trayectos de su intervalo."
       },
       "time": {
         "title": "Tiempo de conducción y de carga",

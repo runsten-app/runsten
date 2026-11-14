@@ -11,6 +11,7 @@ The **Stats** tab shows the totals of a period, this month by default, a shortcu
 - the consumption;
 - the energy charged, by AC and by DC;
 - with a currency, the cost of the charges: the lowest cost, with its uncertainty up to the highest;
+- with a currency, the driving cost and the cost per 100 km: what the period's trips used, each at the price of the kWh of the 30 days before it ([The cost of a trip](./costs.md#the-cost-of-a-trip)). It differs from the cost of the charges when a month charges and the next one drives;
 - the charge lost while parked, with the power it stands for and, for a car that tells it, the share of the time it slept.
 
 <Screen view="stats" alt="The Stats tab: distance, consumption, energy charged and cost, by day." />

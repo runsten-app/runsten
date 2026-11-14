@@ -99,6 +99,7 @@ const tiles = computed<Tile[]>(() => {
       ],
     },
     ...costTile(ch),
+    ...drivingCostTiles(tr),
     {
       key: 'parked',
       label: t('stats.tile.parked'),
@@ -145,6 +146,47 @@ function costTile(ch: NonNullable<typeof stats.value>['totals']['charges']): Til
         ...note(ch.cost_unknown, t('stats.tile.costUnknown', ch.cost_unknown)),
         ...note(ch.cost_entered, t('stats.charges.costEntered', ch.cost_entered)),
       ],
+    },
+  ]
+}
+
+// drivingCostTiles are what the period's trips used, each at the price of the kWh of the
+// 30 days before it, and that over their distance: driving, as opposed to charging, which
+// differ when a month charges and the next drives. A plug-in hybrid has no cost per
+// 100 km, as it has no consumption.
+function drivingCostTiles(tr: NonNullable<typeof stats.value>['totals']['trips']): Tile[] {
+  const currency = stats.value?.currency
+  if (!currency) return []
+  const note = (n: number, text: string) => (n ? [text] : [])
+  const per100 = f.estimate(tr.cost_per_100km, currency.code)
+  // All unknown: no sum of nothing, which would read as free.
+  const none = tr.count > 0 && tr.cost_unknown === tr.count
+  const total = none ? { text: f.unknown(), spoken: f.unknown() } : f.amounts(tr.cost, currency)
+  const bounds =
+    !none && tr.cost.min_minor !== tr.cost.max_minor
+      ? {
+          min: f.amount(tr.cost.min_minor, currency),
+          max: f.amount(tr.cost.max_minor, currency),
+        }
+      : undefined
+  return [
+    {
+      key: 'cost-per-100km',
+      label: t('stats.tile.costPer100km'),
+      value: per100.text,
+      spoken: per100.spoken,
+      notes: [
+        t('stats.tile.costPer100kmNote'),
+        ...note(tr.cost_unknown, t('stats.tile.tripCostUnknown', tr.cost_unknown)),
+      ],
+    },
+    {
+      key: 'driving-cost',
+      label: t('stats.tile.drivingCost'),
+      value: total.text,
+      spoken: total.spoken,
+      range: bounds,
+      notes: [t('stats.tile.drivingCostNote')],
     },
   ]
 }

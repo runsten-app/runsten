@@ -29,7 +29,7 @@ const bestCost = computed(() =>
   best(
     compared.value.map((v) => {
       const s = v.period?.totals
-      return s ? (perHundred(s.trips, s.charges)?.max_minor ?? null) : null
+      return s ? (perHundred(s.trips)?.max_minor ?? null) : null
     }),
   ),
 )

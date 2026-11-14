@@ -105,8 +105,8 @@
       "cost": {
         "tab": "Cost",
         "title": "Cost per 100 km by month",
-        "summary": "What 100 km cost each vehicle, month by month, over the last 12 months.",
-        "none": "No month has both a known cost and a known distance.",
+        "summary": "What 100 km cost each vehicle, month by month, over the last 12 months: its trips' energy at the price of the kWh of the 30 days before each.",
+        "none": "No month has a trip of known cost and distance.",
         "hint": "Over the last 12 months, whatever the period. A cost known as a range is drawn at its lowest."
       },
       "charging": {
@@ -392,7 +392,26 @@
       "statsLink": "See the statistics of {month}"
     },
     "energyImportedNote": "The energy is the one the app gave.",
-    "outsideTemp": "Outside temperature (average)"
+    "outsideTemp": "Outside temperature (average)",
+    "cost": {
+      "title": "Cost",
+      "unknown": "Unknown cost",
+      "per100km": "{amount}/100 km",
+      "per100kmSpoken": "{amount} per 100 km",
+      "price": "Price per kWh",
+      "basis": "Based on",
+      "charges": "{n} charge in the 30 days before | {n} charges in the 30 days before",
+      "elsewhereAC": "AC elsewhere",
+      "elsewhereDC": "DC elsewhere",
+      "share": "{name} {share} · {price}",
+      "split": "Where that energy was charged",
+      "note": "The average price of the kWh that went into the battery over the 30 days before the trip, applied to its energy.",
+      "rangeNote": "A range: the times of some charges, and so their prices, are known only roughly.",
+      "leftOut": "{n} charge without a cost or an energy is not counted. | {n} charges without a cost or an energy are not counted.",
+      "noPrice": "No charge of the 30 days before the trip has both a cost and an energy: give your places a tariff, or enter what a charge cost.",
+      "noEnergy": "The trip's energy is unknown, and so is its cost.",
+      "hybrid": "The electricity the trip used only: its fuel is not counted."
+    }
   },
   "charges": {
     "title": "Charges",
@@ -568,7 +587,12 @@
       "parkedAsleep": "asleep {value} of the time read",
       "cost": "Cost of charges",
       "costNote": "Estimated from the tariffs, or entered; a range when the times of the charges are not known",
-      "costUnknown": "unknown for {n} charge | unknown for {n} charges"
+      "costUnknown": "unknown for {n} charge | unknown for {n} charges",
+      "costPer100km": "Cost per 100 km",
+      "costPer100kmNote": "Over the trips with a known cost and distance",
+      "tripCostUnknown": "unknown for {n} trip | unknown for {n} trips",
+      "drivingCost": "Driving cost",
+      "drivingCostNote": "What the period's trips used, at the price of the kWh of the 30 days before each"
     },
     "chart": {
       "odometer": {
@@ -620,7 +644,7 @@
         "unit": "{currency}/100 km",
         "summary": "Cost per 100 km: {average} over the period.",
         "none": "No cost per 100 km known in this period.",
-        "hint": "Select a point to see the charges of its interval."
+        "hint": "Select a point to see the trips of its interval."
       },
       "time": {
         "title": "Time driving and charging",

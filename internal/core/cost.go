@@ -232,10 +232,12 @@ type Pricing struct {
 }
 
 // Costs are the costs of a list of charges: Charges[i] is the cost of the i-th charge,
-// unknown when absent. Orphans are the entered costs that no charge takes.
+// unknown when absent. Orphans are the entered costs that no charge takes. Trips[i] is
+// the cost of the i-th trip of a list, as TripCosts gives it.
 type Costs struct {
 	Charges []Value[Cost]
 	Orphans []EnteredCost
+	Trips   []Value[TripCost]
 }
 
 // Costs attaches the entered costs to the charges, and gives the cost of each charge.

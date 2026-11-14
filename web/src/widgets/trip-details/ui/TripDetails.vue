@@ -21,6 +21,7 @@ import {
   type MapMarker,
 } from '@/shared/ui'
 import TripConsumption from './TripConsumption.vue'
+import TripCost from './TripCost.vue'
 
 // TripDetails is everything Runsten knows of a trip, and says what it does not.
 const props = defineProps<{ vehicle: string; id: string }>()
@@ -159,6 +160,10 @@ const newPlace = (p: Position) => ({
             </p>
           </v-card-text>
         </v-card>
+      </v-col>
+
+      <v-col cols="12" md="6">
+        <TripCost :vehicle :trip />
       </v-col>
 
       <v-col cols="12" md="6">

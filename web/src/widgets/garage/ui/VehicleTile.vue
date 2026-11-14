@@ -75,9 +75,7 @@ const totals = computed(() => props.data.period?.totals)
 const currency = computed(() => props.data.period?.currency ?? null)
 const consumption = computed(() => totals.value?.trips.consumption_kwh_per_100km ?? null)
 const ranked = computed(() => (totals.value ? rankedConsumption(totals.value.trips) : null))
-const cost = computed<Amounts | null>(() =>
-  totals.value ? perHundred(totals.value.trips, totals.value.charges) : null,
-)
+const cost = computed<Amounts | null>(() => (totals.value ? perHundred(totals.value.trips) : null))
 // A vehicle that drove nothing over the period is said so, not ranked: no figure of it
 // is worse than another's.
 const drove = computed(() => (totals.value?.trips.count ?? 0) > 0)

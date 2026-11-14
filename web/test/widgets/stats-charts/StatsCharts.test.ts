@@ -162,7 +162,7 @@ describe('StatsCharts', () => {
       'Select a bar to see the trips of its interval.',
       'The state of charge lost between events, per day: meaningful over weeks, not over a night. A day parked less than 12 hours has none.',
       'Select a bar to see the charges of its interval.',
-      'Select a point to see the charges of its interval.',
+      'Select a point to see the trips of its interval.',
     ])
     // The second interval: 28 September in Paris, 22:00 to 22:00 UTC; its days here, in UTC.
     frames[0]?.vm.$emit('select', 1)
@@ -184,7 +184,7 @@ describe('StatsCharts', () => {
     await router.push('/vehicles/v1/stats')
     frames[6]?.vm.$emit('select', 2)
     await flushPromises()
-    expect(router.currentRoute.value.name).toBe('charges')
+    expect(router.currentRoute.value.name).toBe('trips')
     expect(router.currentRoute.value.query).toEqual({ from: '2026-09-29', to: '2026-09-30' })
   })
 
@@ -258,12 +258,16 @@ describe('StatsCharts', () => {
   })
 
   it('draws what 100 km cost: the lowest, banded up to the highest', async () => {
-    const w = await charts(stats)
-    // 13.74 to 14.29 € over 73 km, the lowest rounded down and the highest up; no rate
-    // without a distance.
+    const s = structuredClone(stats) as Stats
+    const first = s.buckets[0]
+    if (first) first.trips.cost_per_100km = { min_minor: 882, max_minor: 958 }
+    s.totals.trips.cost_per_100km = { min_minor: 882, max_minor: 958 }
+    const w = await charts(s)
+    // The trips' cost per 100 km of each interval, as the tile's of the period; none
+    // without a trip of known cost and distance.
     expect(datasets(w, 'cost-per-distance').map((d) => [d.label, d.data])).toEqual([
-      ['Lowest cost', [18.82, null, null]],
-      ['Range, up to the highest cost', [19.58, null, null]],
+      ['Lowest cost', [8.82, null, null]],
+      ['Range, up to the highest cost', [9.58, null, null]],
     ])
     const frame = chartOf(w, 'cost-per-distance')
     expect(frame?.props('unit')).toBe('€/100 km')
@@ -274,7 +278,7 @@ describe('StatsCharts', () => {
         .at(0)
         ?.findAll('td')
         .map((d) => d.text()),
-    ).toEqual(['€18.82/100 km', '€19.58/100 km'])
+    ).toEqual(['€8.82/100 km', '€9.58/100 km'])
     expect(
       w
         .findAll('.cost-per-distance tbody tr')
@@ -283,15 +287,14 @@ describe('StatsCharts', () => {
         .map((d) => d.text()),
     ).toEqual(['Unknown', 'Unknown'])
     expect(plain(w.find('.cost-per-distance canvas').attributes('aria-label'))).toBe(
-      'Cost per 100 km: from €18.82 to €19.58 over the period.',
+      'Cost per 100 km: from €8.82 to €9.58 over the period.',
     )
   })
 
-  it('has no cost per 100 km where a cost or a distance is unknown', async () => {
+  it('has no cost per 100 km where the trips have none (a plug-in hybrid)', async () => {
     const s = structuredClone(stats) as Stats
-    const first = s.buckets[0]
-    if (first) first.trips.distance_unknown = 1
-    s.totals.charges.cost_unknown = 1
+    for (const b of s.buckets) b.trips.cost_per_100km = null
+    s.totals.trips.cost_per_100km = null
     const w = await charts(s)
     expect(datasets(w, 'cost-per-distance').map((d) => d.data)).toEqual([
       [null, null, null],

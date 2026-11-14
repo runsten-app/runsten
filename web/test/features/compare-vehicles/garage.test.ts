@@ -14,16 +14,43 @@ import stats from '@fixtures/stats.json'
 
 const totals = stats.totals as PeriodStats
 
-// period gives a period's trips and charges, the rest of the fixture's.
+// period gives a period's trips, their costs, and its charges, the rest of the
+// fixture's. tripCost is the trips' cost, null when none is known; per100 their cost per
+// 100 km, the API's.
 function period(
   distance: number,
   cost: [number, number] | null,
-  extra: { distanceUnknown?: number; charges?: number; costUnknown?: number } = {},
+  extra: {
+    distanceUnknown?: number
+    charges?: number
+    costUnknown?: number
+    tripCost?: [number, number] | null
+    tripCostUnknown?: number
+    per100?: [number, number] | null
+  } = {},
 ): PeriodStats {
   const charges = extra.charges ?? 1
+  const tripCost = extra.tripCost === undefined ? cost : extra.tripCost
+  const per100 =
+    extra.per100 !== undefined
+      ? extra.per100
+      : tripCost && distance > 0
+        ? ([
+            Math.floor((tripCost[0] * 100) / distance),
+            Math.ceil((tripCost[1] * 100) / distance),
+          ] as [number, number])
+        : null
   return {
     ...totals,
-    trips: { ...totals.trips, distance_km: distance, distance_unknown: extra.distanceUnknown ?? 0 },
+    trips: {
+      ...totals.trips,
+      count: 2,
+      distance_km: distance,
+      distance_unknown: extra.distanceUnknown ?? 0,
+      cost: { min_minor: tripCost?.[0] ?? 0, max_minor: tripCost?.[1] ?? 0 },
+      cost_unknown: tripCost ? (extra.tripCostUnknown ?? 0) : 2,
+      cost_per_100km: per100 && { min_minor: per100[0], max_minor: per100[1] },
+    },
     charges: {
       ...totals.charges,
       count: charges,
@@ -51,21 +78,13 @@ describe('periodDays', () => {
 })
 
 describe('perHundred', () => {
-  it('divides the cost by the distance, the lowest down and the highest up', () => {
-    const p = period(300, [1000, 1001])
-    expect(perHundred(p.trips, p.charges)).toEqual({ min_minor: 333, max_minor: 334 })
+  it("is the statistics' cost per 100 km of the trips, whatever the charges cost", () => {
+    const p = period(300, [9000, 9000], { tripCost: [1000, 1001] })
+    expect(perHundred(p.trips)).toEqual({ min_minor: 333, max_minor: 334 })
   })
-  it('rounds a cost known exactly to the nearest', () => {
-    const p = period(300, [1000, 1000])
-    expect(perHundred(p.trips, p.charges)).toEqual({ min_minor: 333, max_minor: 333 })
-  })
-  it('is unknown without a distance, or with a part unknown', () => {
-    const none = period(0, [1000, 1000])
-    expect(perHundred(none.trips, none.charges)).toBeNull()
-    const lost = period(100, [1000, 1000], { distanceUnknown: 1 })
-    expect(perHundred(lost.trips, lost.charges)).toBeNull()
-    const unpriced = period(100, [1000, 1000], { charges: 2, costUnknown: 1 })
-    expect(perHundred(unpriced.trips, unpriced.charges)).toBeNull()
+  it('is unknown where the statistics have none: a plug-in hybrid, no trip of known cost', () => {
+    expect(perHundred(period(300, [1000, 1000], { per100: null }).trips)).toBeNull()
+    expect(perHundred(period(300, [1000, 1000], { tripCost: null }).trips)).toBeNull()
   })
 })
 
@@ -78,19 +97,38 @@ describe('costKnown', () => {
 })
 
 describe('accountTotals', () => {
-  it('adds the vehicles up, and what 100 km cost on average', () => {
-    const t = accountTotals([period(100, [500, 600]), period(300, [1500, 1500])])
-    // A range over the account: its bounds.
+  it("adds the vehicles up, and what 100 km cost on average, from the trips' costs", () => {
+    const t = accountTotals([
+      period(100, [9000, 9000], { tripCost: [500, 600] }),
+      period(300, [1500, 1500]),
+    ])
+    // A range over the account: its bounds. The charges' cost is what was paid, the
+    // average per 100 km what the trips used.
     expect(t.distanceKm).toBe(400)
-    expect(t.cost).toEqual({ min_minor: 2000, max_minor: 2100 })
+    expect(t.cost).toEqual({ min_minor: 10500, max_minor: 10500 })
     expect(t.costKnown).toBe(true)
     expect(t.perHundred).toEqual({ min_minor: 500, max_minor: 525 })
+    const exact = accountTotals([period(100, [500, 500]), period(200, [1001, 1001])])
+    expect(exact.perHundred).toEqual({ min_minor: 500, max_minor: 500 })
   })
-  it('has no average with a cost unknown, and no cost when none is known', () => {
+  it('has no average with a trip of unknown cost or distance, or a plug-in hybrid', () => {
+    const partly = accountTotals([
+      period(100, [500, 500]),
+      period(100, [500, 500], { tripCostUnknown: 1 }),
+    ])
+    expect(partly.perHundred).toBeNull()
+    const lost = accountTotals([period(100, [500, 500], { distanceUnknown: 1 })])
+    expect(lost.perHundred).toBeNull()
+    const hybrid = accountTotals([
+      period(100, [500, 500]),
+      period(100, [500, 500], { per100: null }),
+    ])
+    expect(hybrid.perHundred).toBeNull()
+  })
+  it('has no cost when none is known', () => {
     const partly = accountTotals([period(100, [500, 500]), period(100, null)])
     expect(partly.costKnown).toBe(true)
     expect(partly.costUnknown).toBe(1)
-    expect(partly.perHundred).toBeNull()
     const never = accountTotals([period(100, null), period(100, null)])
     expect(never.costKnown).toBe(false)
   })

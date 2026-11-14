@@ -105,8 +105,8 @@
       "cost": {
         "tab": "Kostnad",
         "title": "Kostnad per 100 km per måned",
-        "summary": "Hva 100 km kostet hver bil, måned for måned, de siste 12 månedene.",
-        "none": "Ingen måned har både kjent kostnad og kjent distanse.",
+        "summary": "Hva 100 km kostet hvert kjøretøy, måned for måned, de siste 12 månedene: energien til turene til kWh-prisen de 30 dagene før hver.",
+        "none": "Ingen måned har en tur med kjent kostnad og distanse.",
         "hint": "De siste 12 månedene, uansett periode. En kostnad kjent som et intervall tegnes på sin laveste verdi."
       },
       "charging": {
@@ -392,7 +392,26 @@
       "statsLink": "Se statistikken for {month}"
     },
     "energyImportedNote": "Energien er den appen oppga.",
-    "outsideTemp": "Utetemperatur (snitt)"
+    "outsideTemp": "Utetemperatur (snitt)",
+    "cost": {
+      "title": "Kostnad",
+      "unknown": "Ukjent kostnad",
+      "per100km": "{amount}/100 km",
+      "per100kmSpoken": "{amount} per 100 km",
+      "price": "Pris per kWh",
+      "basis": "Basert på",
+      "charges": "{n} lading de 30 dagene før | {n} ladinger de 30 dagene før",
+      "elsewhereAC": "AC andre steder",
+      "elsewhereDC": "DC andre steder",
+      "share": "{name} {share} · {price}",
+      "split": "Hvor energien ble ladet",
+      "note": "Gjennomsnittsprisen på kWh som gikk inn i batteriet de 30 dagene før turen, brukt på energien dens.",
+      "rangeNote": "Et intervall: tidspunktene for noen ladinger, og dermed prisene, er bare omtrent kjent.",
+      "leftOut": "{n} lading uten kostnad eller energi telles ikke. | {n} ladinger uten kostnad eller energi telles ikke.",
+      "noPrice": "Ingen lading de 30 dagene før turen har både en kostnad og en energi: gi stedene dine en tariff, eller legg inn hva en lading kostet.",
+      "noEnergy": "Turens energi er ukjent, og dermed kostnaden.",
+      "hybrid": "Bare strømmen turen brukte: drivstoffet telles ikke."
+    }
   },
   "charges": {
     "title": "Ladinger",
@@ -568,7 +587,12 @@
       "parkedAsleep": "i dvale {value} av den leste tiden",
       "cost": "Ladekostnad",
       "costNote": "Anslått ut fra tariffene, eller registrert; et intervall når ladingenes tidspunkter er ukjente",
-      "costUnknown": "ukjent for {n} lading | ukjent for {n} ladinger"
+      "costUnknown": "ukjent for {n} lading | ukjent for {n} ladinger",
+      "costPer100km": "Kostnad per 100 km",
+      "costPer100kmNote": "Over turene med kjent kostnad og distanse",
+      "tripCostUnknown": "ukjent for {n} tur | ukjent for {n} turer",
+      "drivingCost": "Kjørekostnad",
+      "drivingCostNote": "Det periodens turer brukte, til kWh-prisen de 30 dagene før hver"
     },
     "chart": {
       "odometer": {
@@ -620,7 +644,7 @@
         "unit": "{currency}/100 km",
         "summary": "Kostnad per 100 km: {average} i perioden.",
         "none": "Ingen kjent kostnad per 100 km i denne perioden.",
-        "hint": "Velg et punkt for å se ladingene i intervallet."
+        "hint": "Velg et punkt for å se turene i intervallet."
       },
       "time": {
         "title": "Tid brukt på kjøring og lading",

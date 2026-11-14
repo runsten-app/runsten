@@ -59,6 +59,19 @@ export function formatAmounts(
   return { text: lo === hi ? min : f.formatRange(lo, hi), min, max }
 }
 
+// closeBounds is how near the bounds of an estimated cost must be to show as one amount: a
+// trip's cost rests on an average price per kWh, whose range is no more telling than
+// its spread of a few percent.
+export const closeBounds = 0.1
+
+// nearAmounts is an estimate shown as one amount when its bounds lie within closeBounds
+// of each other, their middle to the minor unit; otherwise its bounds, as they are.
+export function nearAmounts(a: Amounts): Amounts {
+  if (a.max_minor - a.min_minor > closeBounds * a.min_minor) return a
+  const mid = Math.round((a.min_minor + a.max_minor) / 2)
+  return { min_minor: mid, max_minor: mid }
+}
+
 // parseAmount reads an amount typed in major units, with a decimal point or a comma
 // ("12,34", "12.3", "12"), as an integer of minor units, without floating point. null if
 // it is not a plain positive number, or has more decimals than the currency.

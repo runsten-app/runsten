@@ -107,7 +107,7 @@ const cost = computed(() => {
     label: label(v.id),
     data: months.value.map((_, i) => {
       const b = v.months?.buckets[i]
-      const r = b && perHundred(b.trips, b.charges)
+      const r = b && perHundred(b.trips)
       return r ? majorUnits(r.min_minor, c.minor_digits) : null
     }),
     color: color(v.id),

@@ -97,24 +97,32 @@ var tripsHeader = []string{
 	"start_range_km", "end_range_km", "energy_kwh", "capacity_kwh", "capacity_source",
 	"start_lat", "start_lon", "start_place", "start_address", "end_lat", "end_lon", "end_place", "end_address",
 	"outside_temp_c", "vehicle_trip_meter_km", "vehicle_consumption_kwh_per_100km", "imported", "sources",
+	"cost_currency", "cost_min", "cost_max", "cost_per_100km_min", "cost_per_100km_max", "cost_price_per_kwh_min",
+	"cost_price_per_kwh_max", "cost_charges",
 }
 
 func (s *Server) tripsCSV(ctx context.Context, in *csvInput) (*csvOutput, error) {
 	var places []core.Place
-	trips, _, err := csvEvents(ctx, s, in, func(acc string, v Vehicle, q EventQuery) ([]core.Trip, error) {
+	var vehicle Vehicle
+	trips, l, err := csvEvents(ctx, s, in, func(acc string, v Vehicle, q EventQuery) ([]core.Trip, error) {
 		var err error
 		if places, err = s.Settings.Places(ctx, acc); err != nil {
 			return nil, err //nolint:wrapcheck // logged by csvEvents, never shown
 		}
+		vehicle = v
 		return s.Reader.ListTrips(ctx, acc, v.ID, q)
 	})
 	if err != nil {
 		return nil, err
 	}
+	costs, err := s.tripCosts(ctx, vehicle, trips, l)
+	if err != nil {
+		return nil, s.internal("trip costs not read", err)
+	}
 	book := s.addresses(ctx, places, tripPositions(trips...)...)
 	rows := make([][]string, len(trips))
 	for i, t := range trips {
-		j := tripOf(t, places, book)
+		j := tripOf(t, places, book, costs[i])
 		rows[i] = slices.Concat(eventCells(j.EventFields), []string{
 			num(j.DistanceKm), num(j.StartOdometerKm), num(j.EndOdometerKm), num(j.StartSoCPct), num(j.EndSoCPct),
 			num(j.StartRangeKm), num(j.EndRangeKm), num(j.EnergyKWh),
@@ -122,7 +130,7 @@ func (s *Server) tripsCSV(ctx context.Context, in *csvInput) (*csvOutput, error)
 			positionCells(j.StartPosition, j.StartPlace, j.StartAddress),
 			positionCells(j.EndPosition, j.EndPlace, j.EndAddress),
 			[]string{num(j.OutsideTempC), num(j.VehicleReported.TripMeterKm), num(j.VehicleReported.ConsumptionKWhPer100km)},
-			provenanceCells(j.EventFields))
+			provenanceCells(j.EventFields), tripCostCells(j.Cost))
 	}
 	return s.csvFile("trips", tripsHeader, rows)
 }
@@ -211,6 +219,24 @@ func costCells(c null[costJSON], digits int) []string {
 	}
 }
 
+// tripCostCells write a trip's cost as costCells, and the price per kWh as the API
+// gives it; after the provenance, the columns that came last.
+func tripCostCells(c null[tripCostJSON]) []string {
+	if !c.ok {
+		return make([]string, 8)
+	}
+	cur, _ := core.CurrencyOf(string(c.v.Currency))
+	out := []string{
+		string(c.v.Currency), major(c.v.MinMinor, cur.MinorDigits), major(c.v.MaxMinor, cur.MinorDigits), "", "",
+		strconv.FormatFloat(c.v.Price.PricePerKWh.Min, 'f', -1, 64), strconv.FormatFloat(c.v.Price.PricePerKWh.Max, 'f', -1, 64),
+		strconv.Itoa(c.v.Price.Charges),
+	}
+	if p := c.v.Per100km; p.ok {
+		out[3], out[4] = major(p.v.MinMinor, cur.MinorDigits), major(p.v.MaxMinor, cur.MinorDigits)
+	}
+	return out
+}
+
 func instant(t time.Time) string { return t.UTC().Format(time.RFC3339) }
 
 func num(v *float64) string {
@@ -267,7 +293,9 @@ func (s *Server) registerCSV(api huma.API) {
 		"(`start_after` is `start.after`). Times are RFC 3339 in UTC, numbers have a decimal point, an unknown value " +
 		"is an empty cell, `sources` are separated by spaces. A text that would begin with `=`, `+`, `-` or `@` is " +
 		"prefixed with `'`, so that no spreadsheet takes it for a formula."
-	csvOperation(s, api, "tripsCSV", "trips", "The trips of a vehicle, as CSV", description, errs, s.tripsCSV)
+	csvOperation(s, api, "tripsCSV", "trips", "The trips of a vehicle, as CSV", description+
+		" A trip's cost is in major units of the currency (`cost_min`, `cost_max`, and for 100 km `cost_per_100km_min` and `cost_per_100km_max`), "+
+		"its price per kWh as `price.price_per_kwh` (`cost_price_per_kwh_min` and `_max`), on `cost_charges` charges.", errs, s.tripsCSV)
 	chargeErrs := maps.Clone(errs)
 	chargeErrs[http.StatusBadRequest] = "`invalid_parameter`: `from`, `to` or `place`; the message names the parameter."
 	csvOperation(s, api, "chargesCSV", "charges", "The charges of a vehicle, as CSV", description+

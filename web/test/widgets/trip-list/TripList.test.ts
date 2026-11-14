@@ -6,16 +6,28 @@ import { TripList } from '@/widgets/trip-list'
 import page1 from '@fixtures/trips-page-1.json'
 import page2 from '@fixtures/trips-page-2.json'
 import imported from '@fixtures/trip-imported.json'
-import { mountWith, testRouter } from '@test/utils'
+import costed from '@fixtures/trip-cost.json'
+import settings from '@fixtures/settings.json'
+import unset from '@fixtures/settings-unset.json'
+import { heard, mountWith, seen, testRouter } from '@test/utils'
 
-const { fetchTrips } = vi.hoisted(() => ({ fetchTrips: vi.fn() }))
+const { fetchTrips, fetchSettings } = vi.hoisted(() => ({
+  fetchTrips: vi.fn(),
+  fetchSettings: vi.fn(),
+}))
 vi.mock('@/entities/trip', async (original) => ({
   ...(await original<typeof import('@/entities/trip')>()),
   fetchTrips,
 }))
+vi.mock('@/entities/settings', async (original) => ({
+  ...(await original<typeof import('@/entities/settings')>()),
+  fetchSettings,
+}))
 
 beforeEach(() => {
   fetchTrips.mockReset()
+  fetchSettings.mockReset()
+  fetchSettings.mockResolvedValue(settings)
 })
 
 const vehicle = 'v1'
@@ -30,6 +42,29 @@ async function mounted(props: Record<string, unknown> = {}, path = `/vehicles/${
 }
 
 describe('TripList', () => {
+  it("shows each trip's cost on its right, its cost per 100 km below, else unknown", async () => {
+    const range = { ...costed.cost, min_minor: 310, max_minor: 345 }
+    fetchTrips.mockResolvedValue({
+      items: [costed, { ...costed, id: 'b', cost: range }, { ...costed, id: 'c', cost: null }],
+      next_cursor: null,
+    })
+    const w = await mounted()
+    const costs = w.findAll('.trip-cost')
+    expect(costs.map((c) => seen(c.element))).toEqual([
+      '€2.90 €9.06/100 km',
+      '€3.10 – €3.45 €9.06/100 km',
+      'Unknown cost',
+    ])
+    expect(heard(costs[1]?.element ?? document.body)).toBe('from €3.10 to €3.45 €9.06 per 100 km')
+  })
+
+  it('shows no cost without a currency', async () => {
+    fetchSettings.mockResolvedValue(unset)
+    fetchTrips.mockResolvedValue({ items: [costed], next_cursor: null })
+    const w = await mounted()
+    expect(w.find('.trip-cost').exists()).toBe(false)
+  })
+
   it('shows the trips by day, each a link to its details', async () => {
     fetchTrips.mockResolvedValue(page2)
     const w = await mounted({}, `/vehicles/${vehicle}/trips?from=2026-09-28`)

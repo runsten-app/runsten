@@ -105,8 +105,8 @@
       "cost": {
         "tab": "Coût",
         "title": "Coût aux 100 km par mois",
-        "summary": "Ce que 100 km ont coûté à chaque voiture, mois par mois, sur les 12 derniers mois.",
-        "none": "Aucun mois n'a à la fois un coût et une distance connus.",
+        "summary": "Ce que 100 km ont coûté à chaque véhicule, mois par mois, sur les 12 derniers mois : l'énergie de ses trajets au prix du kWh des 30 jours avant chacun.",
+        "none": "Aucun mois n'a de trajet au coût et à la distance connus.",
         "hint": "Sur les 12 derniers mois, quelle que soit la période. Un coût connu par une fourchette est tracé à sa borne basse."
       },
       "charging": {
@@ -392,7 +392,26 @@
       "statsLink": "Voir les statistiques de {month}"
     },
     "energyImportedNote": "L'énergie est celle que l'app a donnée.",
-    "outsideTemp": "Température extérieure (moyenne)"
+    "outsideTemp": "Température extérieure (moyenne)",
+    "cost": {
+      "title": "Coût",
+      "unknown": "Coût inconnu",
+      "per100km": "{amount}/100 km",
+      "per100kmSpoken": "{amount} aux 100 km",
+      "price": "Prix du kWh",
+      "basis": "Sur",
+      "charges": "{n} charge des 30 jours avant | {n} charges des 30 jours avant",
+      "elsewhereAC": "AC ailleurs",
+      "elsewhereDC": "DC ailleurs",
+      "share": "{name} {share} · {price}",
+      "split": "Où cette énergie a été chargée",
+      "note": "Le prix moyen du kWh entré dans la batterie pendant les 30 jours avant le trajet, appliqué à son énergie.",
+      "rangeNote": "Un intervalle : les heures de certaines charges, donc leurs prix, ne sont connues qu'à peu près.",
+      "leftOut": "{n} charge sans coût ou sans énergie n'est pas comptée. | {n} charges sans coût ou sans énergie ne sont pas comptées.",
+      "noPrice": "Aucune charge des 30 jours avant le trajet n'a à la fois un coût et une énergie : donnez un tarif à vos lieux, ou saisissez ce qu'une charge a coûté.",
+      "noEnergy": "L'énergie du trajet est inconnue, son coût aussi.",
+      "hybrid": "L'électricité utilisée par le trajet seulement : le carburant n'est pas compté."
+    }
   },
   "charges": {
     "title": "Charges",
@@ -568,7 +587,12 @@
       "parkedAsleep": "en veille {value} du temps relevé",
       "cost": "Coût des charges",
       "costNote": "Estimé d'après les tarifs, ou saisi ; un intervalle quand l'heure des charges n'est pas connue",
-      "costUnknown": "inconnu pour {n} charge | inconnu pour {n} charges"
+      "costUnknown": "inconnu pour {n} charge | inconnu pour {n} charges",
+      "costPer100km": "Coût aux 100 km",
+      "costPer100kmNote": "Sur les trajets au coût et à la distance connus",
+      "tripCostUnknown": "inconnu pour {n} trajet | inconnu pour {n} trajets",
+      "drivingCost": "Coût de la conduite",
+      "drivingCostNote": "Ce que les trajets de la période ont consommé, au prix du kWh des 30 jours avant chacun"
     },
     "chart": {
       "odometer": {
@@ -620,7 +644,7 @@
         "unit": "{currency}/100 km",
         "summary": "Coût aux 100 km : {average} sur la période.",
         "none": "Aucun coût aux 100 km connu dans cette période.",
-        "hint": "Sélectionnez un point pour voir les charges de l'intervalle."
+        "hint": "Sélectionnez un point pour voir les trajets de son intervalle."
       },
       "time": {
         "title": "Temps de conduite et de charge",

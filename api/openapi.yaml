@@ -2433,6 +2433,46 @@ components:
       required:
         - last4
       type: object
+    KwhPrice:
+      additionalProperties: false
+      properties:
+        charges:
+          description: "The charges of the window the price rests on: those with both a cost (charges.cost, entered and imported ones included) and an energy."
+          format: int64
+          minimum: 1
+          type: integer
+        energy_kwh:
+          description: "The energy the charges added to the battery: energy_measured_kwh, else energy_soc_kwh (energy_power_kwh for a rise of the state of charge below 2 points), as their costs bill."
+          exclusiveMinimum: 0
+          format: double
+          type: number
+        left_out:
+          description: The charges of the window left out, their cost or their energy unknown.
+          format: int64
+          minimum: 0
+          type: integer
+        price_per_kwh:
+          $ref: "#/components/schemas/PricePerKWh"
+          description: "The average price of the kWh that reached the battery over the window: the costs of its charges over the energy they added, both on the battery's side."
+        shares:
+          description: "Where energy_kwh was charged: by place, in the order of the places, then outside every place on AC and on DC; none empty."
+          items:
+            $ref: "#/components/schemas/PriceShare"
+          minItems: 1
+          type: array
+        window_start:
+          description: "The start of the window of the charges: 30 days before the trip's start.after, which ends it."
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - window_start
+        - price_per_kwh
+        - energy_kwh
+        - charges
+        - left_out
+        - shares
+      type: object
     Limits:
       additionalProperties: false
       properties:
@@ -3623,6 +3663,53 @@ components:
       required:
         - max
         - decimals
+      type: object
+    PricePerKWh:
+      additionalProperties: false
+      properties:
+        max:
+          description: The highest price of a kWh, rounded up to 5 decimals.
+          format: double
+          minimum: 0
+          type: number
+        min:
+          description: The lowest price of a kWh, in major units of the currency (euros), rounded down to 5 decimals.
+          format: double
+          minimum: 0
+          type: number
+      required:
+        - min
+        - max
+      type: object
+    PriceShare:
+      additionalProperties: false
+      properties:
+        energy_kwh:
+          description: The energy these charges added to the battery.
+          exclusiveMinimum: 0
+          format: double
+          type: number
+        place:
+          description: The place of these charges (charges.place); null for the charges at no place.
+          oneOf:
+            - $ref: "#/components/schemas/PlaceRef"
+            - type: "null"
+        price_per_kwh:
+          $ref: "#/components/schemas/PricePerKWh"
+          description: What these charges cost over the energy they added.
+        type:
+          description: "Outside every place, the type of these charges: ac (those of unknown type included, as their efficiency assumes) or dc. null at a place."
+          oneOf:
+            - enum:
+                - AC
+                - DC
+              type: string
+            - type: "null"
+      required:
+        - place
+        - type
+        - energy_kwh
+        - price_per_kwh
       type: object
     PriceWindow:
       additionalProperties: false
@@ -5127,6 +5214,11 @@ components:
                 - api
               type: string
             - type: "null"
+        cost:
+          description: "What the trip's energy cost, at the average price of the kWh that reached the battery over the 30 days before it (the vehicle's charges that started then): the same whatever the period read. null without the account's currency, without the trip's energy_kwh, and when no charge of those 30 days has both a cost and an energy: never 0 for want of one."
+          oneOf:
+            - $ref: "#/components/schemas/TripCost"
+            - type: "null"
         detected_at:
           description: The first reading that revealed the event; for an imported event, when it was last imported.
           format: date-time
@@ -5253,6 +5345,7 @@ components:
         - end_address
         - outside_temp_c
         - vehicle_reported
+        - cost
         - id
         - detected_at
         - reconstructed
@@ -5262,6 +5355,48 @@ components:
         - end
         - capacity_kwh
         - capacity_source
+      type: object
+    TripCost:
+      additionalProperties: false
+      properties:
+        currency:
+          description: The account's currency, the unit of the _minor fields.
+          enum:
+            - CHF
+            - CZK
+            - DKK
+            - EUR
+            - GBP
+            - ISK
+            - NOK
+            - PLN
+            - SEK
+            - USD
+          type: string
+        max_minor:
+          description: The highest amount, at the highest price per kWh, rounded up. Equal to min_minor when the charges' costs were exact.
+          format: int64
+          minimum: 0
+          type: integer
+        min_minor:
+          description: "The lowest amount the trip's energy may have cost, in minor units of the currency: energy_kwh at the lowest price per kWh, rounded down. 0 for a trip that gained energy."
+          format: int64
+          minimum: 0
+          type: integer
+        per_100km:
+          description: "The cost over the trip's distance, for 100 km, in minor units: the lowest rounded down, the highest up. null without a positive distance, and for a plug-in hybrid (the vehicle's model.powertrain), whose trips' energy is the battery's only."
+          oneOf:
+            - $ref: "#/components/schemas/CostSum"
+            - type: "null"
+        price:
+          $ref: "#/components/schemas/KwhPrice"
+          description: The price per kWh the cost rests on, and the charges behind it.
+      required:
+        - currency
+        - min_minor
+        - max_minor
+        - per_100km
+        - price
       type: object
     TripMap:
       additionalProperties: false
@@ -5312,6 +5447,19 @@ components:
           type:
             - number
             - "null"
+        cost:
+          $ref: "#/components/schemas/CostSum"
+          description: "The sum of the known costs of the trips (trips.cost), each at the price of the kWh of the 30 days before it: what driving cost, as opposed to what the charges of the period cost. {0, 0} over no trip, and without the account's currency."
+        cost_per_100km:
+          description: "The cost of the trips whose cost and positive distance are both known, over that distance, for 100 km, in minor units: the lowest rounded down, the highest up. null without such a trip, and for a plug-in hybrid, as consumption_kwh_per_100km."
+          oneOf:
+            - $ref: "#/components/schemas/CostSum"
+            - type: "null"
+        cost_unknown:
+          description: "The trips whose cost is unknown, left out of cost: all of them without the account's currency."
+          format: int64
+          minimum: 0
+          type: integer
         count:
           description: The trips that started in the period or interval, reconstructed ones included.
           format: int64
@@ -5357,6 +5505,9 @@ components:
         - energy_kwh
         - energy_unknown
         - consumption_kwh_per_100km
+        - cost
+        - cost_unknown
+        - cost_per_100km
       type: object
     TripsByDistance:
       additionalProperties: false
@@ -10419,7 +10570,7 @@ paths:
         - events
   /vehicles/{vehicle}/trips.csv:
     get:
-      description: "Every event of the period the list would give, as a CSV file (RFC 4180, UTF-8, a header row) for a spreadsheet: oldest first, one row per event, its fields flattened and named after the JSON ones (`start_after` is `start.after`). Times are RFC 3339 in UTC, numbers have a decimal point, an unknown value is an empty cell, `sources` are separated by spaces. A text that would begin with `=`, `+`, `-` or `@` is prefixed with `'`, so that no spreadsheet takes it for a formula."
+      description: "Every event of the period the list would give, as a CSV file (RFC 4180, UTF-8, a header row) for a spreadsheet: oldest first, one row per event, its fields flattened and named after the JSON ones (`start_after` is `start.after`). Times are RFC 3339 in UTC, numbers have a decimal point, an unknown value is an empty cell, `sources` are separated by spaces. A text that would begin with `=`, `+`, `-` or `@` is prefixed with `'`, so that no spreadsheet takes it for a formula. A trip's cost is in major units of the currency (`cost_min`, `cost_max`, and for 100 km `cost_per_100km_min` and `cost_per_100km_max`), its price per kWh as `price.price_per_kwh` (`cost_price_per_kwh_min` and `_max`), on `cost_charges` charges."
       operationId: tripsCSV
       parameters:
         - description: The vehicle ID.

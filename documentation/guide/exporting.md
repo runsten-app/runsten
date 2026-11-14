@@ -8,7 +8,7 @@ Runsten keeps what your car's API answered, as it answered it, and gives it back
 
 ## Trips and charges
 
-Above the **Trips** and **Charges** lists, **Download CSV** saves the list's period as a CSV file for a spreadsheet: one row per trip or charge, the columns named after the API's fields (`start_after`, `energy_soc_kwh`, `cost_min`…). The charges' file follows the place chosen ([Charges by place](./trips-and-charges.md#charges-by-place)).
+Above the **Trips** and **Charges** lists, **Download CSV** saves the list's period as a CSV file for a spreadsheet: one row per trip or charge, the columns named after the API's fields (`start_after`, `energy_soc_kwh`, `cost_min`…); a trip's cost and its cost per 100 km come last. The charges' file follows the place chosen ([Charges by place](./trips-and-charges.md#charges-by-place)).
 
 ## Every reading
 

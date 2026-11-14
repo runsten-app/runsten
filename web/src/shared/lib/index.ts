@@ -34,6 +34,7 @@ export {
   formatMajor,
   majorUnits,
   minorDigits,
+  nearAmounts,
   parseAmount,
   type Amounts,
 } from './money-format'

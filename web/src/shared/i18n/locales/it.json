@@ -105,8 +105,8 @@
       "cost": {
         "tab": "Costo",
         "title": "Costo ogni 100 km per mese",
-        "summary": "Quanto sono costati 100 km a ogni veicolo, mese per mese, negli ultimi 12 mesi.",
-        "none": "Nessun mese ha insieme un costo e una distanza noti.",
+        "summary": "Quanto sono costati 100 km a ciascun veicolo, mese per mese, negli ultimi 12 mesi: l'energia dei suoi viaggi al prezzo del kWh dei 30 giorni prima di ciascuno.",
+        "none": "Nessun mese ha un viaggio con costo e distanza noti.",
         "hint": "Sugli ultimi 12 mesi, qualunque sia il periodo. Un costo noto come intervallo è tracciato al suo valore più basso."
       },
       "charging": {
@@ -392,7 +392,26 @@
       "statsLink": "Vedi le statistiche di {month}"
     },
     "energyImportedNote": "L’energia è quella fornita dall’app.",
-    "outsideTemp": "Temperatura esterna (media)"
+    "outsideTemp": "Temperatura esterna (media)",
+    "cost": {
+      "title": "Costo",
+      "unknown": "Costo sconosciuto",
+      "per100km": "{amount}/100 km",
+      "per100kmSpoken": "{amount} ogni 100 km",
+      "price": "Prezzo del kWh",
+      "basis": "In base a",
+      "charges": "{n} ricarica dei 30 giorni prima | {n} ricariche dei 30 giorni prima",
+      "elsewhereAC": "AC altrove",
+      "elsewhereDC": "DC altrove",
+      "share": "{name} {share} · {price}",
+      "split": "Dove è stata caricata quell'energia",
+      "note": "Il prezzo medio del kWh entrato nella batteria nei 30 giorni prima del viaggio, applicato alla sua energia.",
+      "rangeNote": "Un intervallo: gli orari di alcune ricariche, e quindi i loro prezzi, sono noti solo approssimativamente.",
+      "leftOut": "{n} ricarica senza costo o senza energia non è contata. | {n} ricariche senza costo o senza energia non sono contate.",
+      "noPrice": "Nessuna ricarica dei 30 giorni prima del viaggio ha sia un costo sia un'energia: assegna una tariffa ai tuoi luoghi, o inserisci quanto è costata una ricarica.",
+      "noEnergy": "L'energia del viaggio è sconosciuta, e così il suo costo.",
+      "hybrid": "Solo l'elettricità usata dal viaggio: il carburante non è contato."
+    }
   },
   "charges": {
     "title": "Ricariche",
@@ -568,7 +587,12 @@
       "parkedAsleep": "in sospensione per {value} del tempo letto",
       "cost": "Costo delle ricariche",
       "costNote": "Stimato dalle tariffe, o inserito; un intervallo quando gli orari delle ricariche non sono noti",
-      "costUnknown": "sconosciuto per {n} ricarica | sconosciuto per {n} ricariche"
+      "costUnknown": "sconosciuto per {n} ricarica | sconosciuto per {n} ricariche",
+      "costPer100km": "Costo ogni 100 km",
+      "costPer100kmNote": "Sui viaggi con costo e distanza noti",
+      "tripCostUnknown": "sconosciuto per {n} viaggio | sconosciuto per {n} viaggi",
+      "drivingCost": "Costo di guida",
+      "drivingCostNote": "Quanto hanno usato i viaggi del periodo, al prezzo del kWh dei 30 giorni prima di ciascuno"
     },
     "chart": {
       "odometer": {
@@ -620,7 +644,7 @@
         "unit": "{currency}/100 km",
         "summary": "Costo ogni 100 km: {average} nel periodo.",
         "none": "Nessun costo ogni 100 km noto in questo periodo.",
-        "hint": "Selezioni un punto per vedere le ricariche del suo intervallo."
+        "hint": "Seleziona un punto per vedere i viaggi del suo intervallo."
       },
       "time": {
         "title": "Tempo di guida e di ricarica",

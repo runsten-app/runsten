@@ -105,8 +105,8 @@
       "cost": {
         "tab": "Kosten",
         "title": "Kosten pro 100 km nach Monat",
-        "summary": "Was 100 km jedes Fahrzeug Monat für Monat in den letzten 12 Monaten kosteten.",
-        "none": "Kein Monat hat zugleich bekannte Kosten und eine bekannte Strecke.",
+        "summary": "Was 100 km jedes Fahrzeug gekostet haben, Monat für Monat über die letzten 12 Monate: die Energie seiner Fahrten zum kWh-Preis der jeweils 30 Tage davor.",
+        "none": "Kein Monat hat eine Fahrt mit bekannten Kosten und Strecke.",
         "hint": "Über die letzten 12 Monate, unabhängig vom Zeitraum. Kosten, die als Spanne bekannt sind, werden mit ihrem unteren Wert gezeichnet."
       },
       "charging": {
@@ -392,7 +392,26 @@
       "statsLink": "Statistik für {month} ansehen"
     },
     "energyImportedNote": "Die Energie ist die von der App angegebene.",
-    "outsideTemp": "Außentemperatur (Durchschnitt)"
+    "outsideTemp": "Außentemperatur (Durchschnitt)",
+    "cost": {
+      "title": "Kosten",
+      "unknown": "Kosten unbekannt",
+      "per100km": "{amount}/100 km",
+      "per100kmSpoken": "{amount} pro 100 km",
+      "price": "Preis pro kWh",
+      "basis": "Grundlage",
+      "charges": "{n} Ladevorgang der 30 Tage davor | {n} Ladevorgänge der 30 Tage davor",
+      "elsewhereAC": "AC anderswo",
+      "elsewhereDC": "DC anderswo",
+      "share": "{name} {share} · {price}",
+      "split": "Wo diese Energie geladen wurde",
+      "note": "Der Durchschnittspreis der kWh, die in den 30 Tagen vor der Fahrt in die Batterie gingen, auf ihre Energie angewendet.",
+      "rangeNote": "Eine Spanne: Die Zeiten mancher Ladevorgänge, und damit ihre Preise, sind nur ungefähr bekannt.",
+      "leftOut": "{n} Ladevorgang ohne Kosten oder Energie wird nicht gezählt. | {n} Ladevorgänge ohne Kosten oder Energie werden nicht gezählt.",
+      "noPrice": "Kein Ladevorgang der 30 Tage vor der Fahrt hat sowohl Kosten als auch eine Energie: Geben Sie Ihren Orten einen Tarif, oder tragen Sie ein, was ein Ladevorgang gekostet hat.",
+      "noEnergy": "Die Energie der Fahrt ist unbekannt, ihre Kosten ebenso.",
+      "hybrid": "Nur der Strom, den die Fahrt verbraucht hat: Der Kraftstoff wird nicht gezählt."
+    }
   },
   "charges": {
     "title": "Ladevorgänge",
@@ -568,7 +587,12 @@
       "parkedAsleep": "{value} der gelesenen Zeit im Ruhezustand",
       "cost": "Ladekosten",
       "costNote": "Aus den Tarifen geschätzt oder erfasst; eine Spanne, wenn die Zeiten der Ladevorgänge nicht bekannt sind",
-      "costUnknown": "unbekannt bei {n} Ladevorgang | unbekannt bei {n} Ladevorgängen"
+      "costUnknown": "unbekannt bei {n} Ladevorgang | unbekannt bei {n} Ladevorgängen",
+      "costPer100km": "Kosten pro 100 km",
+      "costPer100kmNote": "Über die Fahrten mit bekannten Kosten und Strecke",
+      "tripCostUnknown": "unbekannt für {n} Fahrt | unbekannt für {n} Fahrten",
+      "drivingCost": "Fahrkosten",
+      "drivingCostNote": "Was die Fahrten des Zeitraums verbraucht haben, zum kWh-Preis der jeweils 30 Tage davor"
     },
     "chart": {
       "odometer": {
@@ -620,7 +644,7 @@
         "unit": "{currency}/100 km",
         "summary": "Kosten pro 100 km: {average} im Zeitraum.",
         "none": "Keine bekannten Kosten pro 100 km in diesem Zeitraum.",
-        "hint": "Wählen Sie einen Punkt, um die Ladevorgänge seines Intervalls zu sehen."
+        "hint": "Wählen Sie einen Punkt, um die Fahrten seines Intervalls zu sehen."
       },
       "time": {
         "title": "Zeit beim Fahren und Laden",

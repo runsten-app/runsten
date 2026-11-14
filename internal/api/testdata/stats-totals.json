@@ -20,7 +20,13 @@
       "driving_time_unknown": 1,
       "energy_kwh": 6,
       "energy_unknown": 2,
-      "consumption_kwh_per_100km": 18.75
+      "consumption_kwh_per_100km": 18.75,
+      "cost": {
+        "min_minor": 0,
+        "max_minor": 0
+      },
+      "cost_unknown": 3,
+      "cost_per_100km": null
     },
     "charges": {
       "count": 2,

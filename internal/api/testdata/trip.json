@@ -43,5 +43,6 @@
   "vehicle_reported": {
     "trip_meter_km": 32.2,
     "consumption_kwh_per_100km": 18.1
-  }
+  },
+  "cost": null
 }
