@@ -298,3 +298,57 @@ func (renaultDown) RenaultSignIn(context.Context, string, string, string) (Renau
 func (renaultDown) RenaultVerify(context.Context, any, string, string, string) (RenaultSignIn, error) {
 	return RenaultSignIn{}, errors.New("no answer")
 }
+
+// TestRenaultSuperseded: a sign-in made without a code while another waits for its code
+// supersedes it: that code, entered after, connects nothing.
+func TestRenaultSuperseded(t *testing.T) {
+	e := newEnv(t, 10)
+	e.server.Flags = &accountFlags{}
+	c := e.session(t, "admin")
+	u := e.api.URL + apiPrefix + "/connection/renault"
+	e.renaults.vins, e.renaults.tfa = []string{renaultVIN}, true
+	do(t, noFollow(), http.MethodPost, u+"/sign-in", jsonType, renaultBody(renaultEmail, renaultPassword), c)
+	e.renaults.mu.Lock()
+	e.renaults.tfa = false
+	e.renaults.mu.Unlock()
+	if resp, body := do(t, noFollow(), http.MethodPost, u+"/sign-in", jsonType, renaultBody(renaultEmail, renaultPassword), c); resp.status != http.StatusOK {
+		t.Fatalf("sign-in without a code: %d %s", resp.status, body)
+	}
+	resp, body := do(t, noFollow(), http.MethodPost, u+"/code", jsonType, `{"code":"123456"}`, c)
+	if resp.status != http.StatusConflict {
+		t.Errorf("the superseded code: %d %s", resp.status, body)
+	}
+	wantError(t, body, codeAuthorizationExpired)
+}
+
+// TestRenaultPendingIdentity: a sign-in is taken only by the request that read it, and
+// leaves on its own at its expiry.
+func TestRenaultPendingIdentity(t *testing.T) {
+	var p renaultPending
+	now := time.Date(2026, 11, 14, 8, 0, 0, 0, time.UTC)
+	a, _ := p.put("acc", renaultWaiting{email: "a", expires: now.Add(renaultCodeLife)}, now)
+	b, _ := p.put("acc", renaultWaiting{email: "b", expires: now.Add(renaultCodeLife)}, now)
+	if p.take("acc", a.id) {
+		t.Error("the replaced sign-in taken")
+	}
+	if w, ok := p.get("acc", now); !ok || w.id != b.id {
+		t.Errorf("the replacement lost: %+v %v", w, ok)
+	}
+	if !p.take("acc", b.id) || p.take("acc", b.id) {
+		t.Error("the current sign-in not taken once")
+	}
+	// Its timer forgets it, with its password, without another request.
+	p.put("acc", renaultWaiting{password: "secret", expires: now.Add(10 * time.Millisecond)}, now)
+	for i := 0; ; i++ {
+		p.mu.Lock()
+		n := len(p.waiting)
+		p.mu.Unlock()
+		if n == 0 {
+			break
+		}
+		if i == 400 {
+			t.Fatal("the expired sign-in kept")
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}

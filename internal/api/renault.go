@@ -81,23 +81,29 @@ const (
 )
 
 // renaultWaiting is a sign-in waiting for its code, in memory: the password with it, to
-// sign in again once the code is entered.
+// sign in again once the code is entered. Its id tells it from a later sign-in of the
+// same account, which replaces it.
 type renaultWaiting struct {
+	id              uint64
 	email, password string
 	state           any
 	expires         time.Time
 }
 
 // renaultPending are the sign-ins waiting for their code, one per account: a new
-// sign-in replaces the previous. A restart forgets them: the owner signs in again.
+// sign-in replaces the previous. A restart forgets them: the owner signs in again. An
+// entry leaves at its expiry by a timer of its own, so that no password outlives its
+// code on an idle instance.
 type renaultPending struct {
 	mu      sync.Mutex
 	waiting map[string]renaultWaiting
+	seq     uint64
 	max     int // 0: renaultMaxPending
 }
 
-// put keeps the account's sign-in; false when the instance has too many waiting.
-func (p *renaultPending) put(account string, w renaultWaiting, now time.Time) bool {
+// put keeps the account's sign-in, and returns it with its id; false when the instance
+// has too many waiting.
+func (p *renaultPending) put(account string, w renaultWaiting, now time.Time) (renaultWaiting, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.waiting == nil {
@@ -113,10 +119,13 @@ func (p *renaultPending) put(account string, w renaultWaiting, now time.Time) bo
 		limit = renaultMaxPending
 	}
 	if _, ok := p.waiting[account]; !ok && len(p.waiting) >= limit {
-		return false
+		return renaultWaiting{}, false
 	}
+	p.seq++
+	w.id = p.seq
 	p.waiting[account] = w
-	return true
+	time.AfterFunc(w.expires.Sub(now), func() { p.take(account, w.id) })
+	return w, true
 }
 
 // get returns the account's sign-in waiting, if not expired.
@@ -131,7 +140,19 @@ func (p *renaultPending) get(account string, now time.Time) (renaultWaiting, boo
 	return w, ok
 }
 
-// drop forgets the account's sign-in waiting.
+// take forgets the account's sign-in waiting if it is still the one of id, and reports
+// whether it was: false, a later sign-in replaced it, or it was dropped.
+func (p *renaultPending) take(account string, id uint64) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if w, ok := p.waiting[account]; ok && w.id == id {
+		delete(p.waiting, account)
+		return true
+	}
+	return false
+}
+
+// drop forgets the account's sign-in waiting, whichever it is.
 func (p *renaultPending) drop(account string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -191,13 +212,16 @@ func (s *Server) postRenaultSignIn(ctx context.Context, in *renaultSignInInput) 
 	}
 	if res.Pending != nil {
 		w := renaultWaiting{email: in.Body.Email, password: in.Body.Password, state: res.Pending.State, expires: s.Clock.Now().Add(renaultCodeLife)}
-		if !s.renaultPending.put(account, w, s.Clock.Now()) {
+		if _, ok := s.renaultPending.put(account, w, s.Clock.Now()); !ok {
 			return nil, apiError(http.StatusTooManyRequests, codeRateLimited, "too many sign-ins are waiting, try again later")
 		}
 		s.Log.Info("Renault code sent", "account", account)
 		mail := res.Pending.MaskedMail
 		return respond(renaultSignInJSON{CodeSentTo: &mail}), nil
 	}
+	// Signed in without a code: a sign-in still waiting for one is superseded, and its
+	// code, entered later, connects nothing.
+	s.renaultPending.drop(account)
 	out, err := s.renaultConnect(ctx, account, res)
 	if err != nil {
 		return nil, err
@@ -222,9 +246,14 @@ func (s *Server) postRenaultCode(ctx context.Context, in *renaultCodeInput) (*bo
 	if errors.As(err, &wrong) && wrong.WrongCode() {
 		return nil, apiError(http.StatusBadRequest, codeWrongCode, "Renault refused this code: check it, or sign in again for another")
 	}
-	s.renaultPending.drop(account)
+	// Taken only if still this request's: a sign-in made meanwhile replaced it, or
+	// connected without a code, and this one's must not overwrite it.
+	current := s.renaultPending.take(account, w.id)
 	if err != nil {
 		return nil, s.renaultRefusal(err)
+	}
+	if !current {
+		return nil, apiError(http.StatusConflict, codeAuthorizationExpired, "another sign-in replaced this one: enter its code, or sign in again")
 	}
 	out, err := s.renaultConnect(ctx, account, res)
 	if err != nil {
