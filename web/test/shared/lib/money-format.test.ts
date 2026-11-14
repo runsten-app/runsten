@@ -7,6 +7,7 @@ import {
   formatMajor,
   majorUnits,
   minorDigits,
+  nearAmounts,
   parseAmount,
 } from '@/shared/lib'
 import settings from '@fixtures/settings.json'
@@ -58,6 +59,24 @@ describe('formatAmounts', () => {
 
   it('keeps a currency without decimals', () => {
     expect(plain(formatAmounts({ min_minor: 5, max_minor: 6 }, isk, 'en-GB').text)).toBe('ISK 5–6')
+  })
+})
+
+// An estimate from an average price shows as one amount within 10 %: the middle, to the
+// cent; beyond, its bounds as they are. Zero alone is one amount.
+describe('nearAmounts', () => {
+  it.each([
+    [290, 290, 290, 290],
+    [310, 340, 325, 325],
+    [300, 330, 315, 315],
+    [300, 331, 300, 331],
+    [0, 0, 0, 0],
+    [0, 1, 0, 1],
+  ])('%i–%i is %i–%i', (min, max, lo, hi) => {
+    expect(nearAmounts({ min_minor: min, max_minor: max })).toEqual({
+      min_minor: lo,
+      max_minor: hi,
+    })
   })
 })
 

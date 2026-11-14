@@ -148,9 +148,51 @@ describe('StatsTiles', () => {
     expect(tile(await tiles(), 'cost').value).toBe('€0.00')
   })
 
+  // What driving cost differs from what charging cost: the trips' energy at the price
+  // of the kWh of the 30 days before each.
+  it('tells the driving cost, as bounds, and the cost per 100 km, one amount when close', async () => {
+    const s = structuredClone(stats) as Stats
+    s.totals.trips = {
+      ...s.totals.trips,
+      count: 4,
+      cost: { min_minor: 3690, max_minor: 3820 },
+      cost_unknown: 1,
+      cost_per_100km: { min_minor: 255, max_minor: 265 },
+    }
+    fetchStats.mockResolvedValue(s)
+    const w = await tiles()
+    expect(tile(w, 'cost-per-100km')).toEqual({
+      label: 'Cost per 100 km',
+      value: '€2.60',
+      notes: ['Over the trips with a known cost and distance', 'unknown for 1 trip'],
+    })
+    const driving = w.find('.tile.driving-cost')
+    expect(driving.find('dt').text()).toBe('Driving cost')
+    expect(driving.findAll('.bound').map((b) => plain(b.text()))).toEqual([
+      'At least €36.90',
+      'At most €38.20',
+    ])
+    s.totals.trips.cost = { min_minor: 3690, max_minor: 3690 }
+    s.totals.trips.cost_per_100km = { min_minor: 200, max_minor: 300 }
+    const exact = await tiles({ vehicle: 'v2' })
+    expect(tile(exact, 'driving-cost').value).toBe('€36.90')
+    expect(tile(exact, 'cost-per-100km').value).toBe('€2.00 – €3.00')
+  })
+
+  it('says unknown when no trip has a cost, or none has a distance', async () => {
+    const s = structuredClone(stats) as Stats
+    s.totals.trips = { ...s.totals.trips, cost_unknown: s.totals.trips.count, cost_per_100km: null }
+    fetchStats.mockResolvedValue(s)
+    const w = await tiles()
+    expect(tile(w, 'driving-cost').value).toBe('Unknown')
+    expect(tile(w, 'cost-per-100km').value).toBe('Unknown')
+  })
+
   it('shows no cost without a currency, nor the costs without a charge', async () => {
     fetchStats.mockResolvedValue({ ...stats, currency: null })
     const w = await tiles()
+    expect(w.find('.tile.driving-cost').exists()).toBe(false)
+    expect(w.find('.tile.cost-per-100km').exists()).toBe(false)
     expect(w.find('.tile.cost').exists()).toBe(false)
     expect(w.find('.orphans').exists()).toBe(false)
   })

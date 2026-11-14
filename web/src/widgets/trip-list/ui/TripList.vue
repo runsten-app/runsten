@@ -4,7 +4,9 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { TripSummary } from '@/entities/trip'
 import { useTrips } from '@/features/browse-trips'
+import { useSettings } from '@/features/edit-settings'
 import { periodQuery } from '@/features/filter-period'
+import { useLimits } from '@/features/view-limits'
 import { isApiError } from '@/shared/api'
 import { groupByDay, useFormat } from '@/shared/lib'
 
@@ -18,6 +20,12 @@ const { trips, isPending, error, hasMore, loadMore, isLoadingMore, loadMoreFaile
   () => props.from,
   () => props.to,
 )
+
+// The costs need the account's currency, and an offer that has them: else none is shown,
+// not even unknown.
+const { settings } = useSettings()
+const { lacks } = useLimits()
+const costs = computed(() => !!settings.value?.currency && !lacks('costs'))
 
 const groups = computed(() => groupByDay(trips.value))
 // The details keep the period, for the way back.
@@ -48,6 +56,7 @@ const errorMessage = computed(() => {
           <TripSummary
             :trip
             :day="g.day"
+            :costs
             :to="{ name: 'trip', params: { vehicle, id: trip.id }, query }"
           />
         </div>

@@ -391,7 +391,26 @@
       "statsLink": "Bekijk de statistieken van {month}"
     },
     "energyImportedNote": "De energie is die van de app.",
-    "outsideTemp": "Buitentemperatuur (gemiddeld)"
+    "outsideTemp": "Buitentemperatuur (gemiddeld)",
+    "cost": {
+      "title": "Kosten",
+      "unknown": "Kosten onbekend",
+      "per100km": "{amount}/100 km",
+      "per100kmSpoken": "{amount} per 100 km",
+      "price": "Prijs per kWh",
+      "basis": "Op basis van",
+      "charges": "{n} laadbeurt van de 30 dagen ervoor | {n} laadbeurten van de 30 dagen ervoor",
+      "elsewhereAC": "AC elders",
+      "elsewhereDC": "DC elders",
+      "share": "{name} {share} · {price}",
+      "split": "Waar die energie is geladen",
+      "note": "De gemiddelde prijs van de kWh die in de 30 dagen vóór de rit de batterij in ging, toegepast op haar energie.",
+      "rangeNote": "Een bereik: de tijden van sommige laadbeurten, en dus hun prijzen, zijn maar ongeveer bekend.",
+      "leftOut": "{n} laadbeurt zonder kosten telt niet mee. | {n} laadbeurten zonder kosten tellen niet mee.",
+      "noPrice": "Geen laadbeurt van de 30 dagen vóór de rit heeft kosten: geef je plaatsen een tarief, of vul in wat een laadbeurt kostte.",
+      "noEnergy": "De energie van de rit is onbekend, en dus ook de kosten.",
+      "hybrid": "Alleen de stroom die de rit gebruikte: de brandstof telt niet mee."
+    }
   },
   "charges": {
     "title": "Laadsessies",
@@ -567,7 +586,12 @@
       "parkedAsleep": "{value} van de uitgelezen tijd in slaap",
       "cost": "Laadkosten",
       "costNote": "Geschat met de tarieven, of ingevoerd; een marge als de tijdstippen van de laadsessies niet bekend zijn",
-      "costUnknown": "onbekend voor {n} laadsessie | onbekend voor {n} laadsessies"
+      "costUnknown": "onbekend voor {n} laadsessie | onbekend voor {n} laadsessies",
+      "costPer100km": "Kosten per 100 km",
+      "costPer100kmNote": "Over de ritten met bekende kosten en afstand",
+      "tripCostUnknown": "onbekend voor {n} rit | onbekend voor {n} ritten",
+      "drivingCost": "Rijkosten",
+      "drivingCostNote": "Wat de ritten van de periode gebruikten, tegen de kWh-prijs van de 30 dagen vóór elke rit"
     },
     "chart": {
       "odometer": {

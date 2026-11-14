@@ -391,7 +391,26 @@
       "statsLink": "Se statistiken för {month}"
     },
     "energyImportedNote": "Energin är den som appen gav.",
-    "outsideTemp": "Utetemperatur (medel)"
+    "outsideTemp": "Utetemperatur (medel)",
+    "cost": {
+      "title": "Kostnad",
+      "unknown": "Okänd kostnad",
+      "per100km": "{amount}/100 km",
+      "per100kmSpoken": "{amount} per 100 km",
+      "price": "Pris per kWh",
+      "basis": "Baserat på",
+      "charges": "{n} laddning de 30 dagarna innan | {n} laddningar de 30 dagarna innan",
+      "elsewhereAC": "AC på annat håll",
+      "elsewhereDC": "DC på annat håll",
+      "share": "{name} {share} · {price}",
+      "split": "Var energin laddades",
+      "note": "Genomsnittspriset på de kWh som gick in i batteriet de 30 dagarna före resan, tillämpat på dess energi.",
+      "rangeNote": "Ett intervall: tiderna för vissa laddningar, och därmed deras priser, är bara ungefär kända.",
+      "leftOut": "{n} laddning utan kostnad räknas inte. | {n} laddningar utan kostnad räknas inte.",
+      "noPrice": "Ingen laddning de 30 dagarna före resan har en kostnad: ge dina platser en taxa, eller ange vad en laddning kostade.",
+      "noEnergy": "Resans energi är okänd, och därmed kostnaden.",
+      "hybrid": "Bara elen som resan använde: bränslet räknas inte."
+    }
   },
   "charges": {
     "title": "Laddningar",
@@ -567,7 +586,12 @@
       "parkedAsleep": "sovande {value} av den avlästa tiden",
       "cost": "Laddningarnas kostnad",
       "costNote": "Uppskattad enligt tarifferna, eller angiven; ett intervall när laddningarnas tider inte är kända",
-      "costUnknown": "okänd för {n} laddning | okänd för {n} laddningar"
+      "costUnknown": "okänd för {n} laddning | okänd för {n} laddningar",
+      "costPer100km": "Kostnad per 100 km",
+      "costPer100kmNote": "Över resorna med känd kostnad och sträcka",
+      "tripCostUnknown": "okänd för {n} resa | okänd för {n} resor",
+      "drivingCost": "Körkostnad",
+      "drivingCostNote": "Det periodens resor använde, till kWh-priset de 30 dagarna före varje"
     },
     "chart": {
       "odometer": {

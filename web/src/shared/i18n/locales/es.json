@@ -391,7 +391,26 @@
       "statsLink": "Ver las estadísticas de {month}"
     },
     "energyImportedNote": "La energía es la que indicó la aplicación.",
-    "outsideTemp": "Temperatura exterior (promedio)"
+    "outsideTemp": "Temperatura exterior (promedio)",
+    "cost": {
+      "title": "Coste",
+      "unknown": "Coste desconocido",
+      "per100km": "{amount}/100 km",
+      "per100kmSpoken": "{amount} cada 100 km",
+      "price": "Precio del kWh",
+      "basis": "Según",
+      "charges": "{n} carga de los 30 días anteriores | {n} cargas de los 30 días anteriores",
+      "elsewhereAC": "AC en otro lugar",
+      "elsewhereDC": "DC en otro lugar",
+      "share": "{name} {share} · {price}",
+      "split": "Dónde se cargó esa energía",
+      "note": "El precio medio del kWh que entró en la batería durante los 30 días anteriores al trayecto, aplicado a su energía.",
+      "rangeNote": "Un intervalo: las horas de algunas cargas, y por tanto sus precios, solo se conocen de forma aproximada.",
+      "leftOut": "{n} carga sin coste no se cuenta. | {n} cargas sin coste no se cuentan.",
+      "noPrice": "Ninguna carga de los 30 días anteriores al trayecto tiene coste: da una tarifa a tus lugares, o introduce lo que costó una carga.",
+      "noEnergy": "La energía del trayecto es desconocida, y también su coste.",
+      "hybrid": "Solo la electricidad que usó el trayecto: el combustible no se cuenta."
+    }
   },
   "charges": {
     "title": "Cargas",
@@ -567,7 +586,12 @@
       "parkedAsleep": "en reposo el {value} del tiempo leído",
       "cost": "Costo de las cargas",
       "costNote": "Estimado a partir de las tarifas, o indicado; un rango cuando no se conocen las horas de las cargas",
-      "costUnknown": "desconocido en {n} carga | desconocido en {n} cargas"
+      "costUnknown": "desconocido en {n} carga | desconocido en {n} cargas",
+      "costPer100km": "Coste cada 100 km",
+      "costPer100kmNote": "Sobre los trayectos con coste y distancia conocidos",
+      "tripCostUnknown": "desconocido para {n} trayecto | desconocido para {n} trayectos",
+      "drivingCost": "Coste de conducción",
+      "drivingCostNote": "Lo que usaron los trayectos del periodo, al precio del kWh de los 30 días anteriores a cada uno"
     },
     "chart": {
       "odometer": {

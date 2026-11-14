@@ -27,7 +27,9 @@ import {
   currencyUnit,
   formatAmount,
   formatAmounts,
+  closeBounds,
   formatMajor,
+  nearAmounts,
   type Amounts,
 } from './money-format'
 import {
@@ -130,6 +132,23 @@ export function useFormat() {
     chargeCost: (c: ChargeCost | null): Spoken => {
       if (c && c.max_minor === 0) return { text: t('cost.free'), spoken: t('cost.free') }
       return amounts(c, c && currencyUnit(c.currency))
+    },
+    // estimate shows a cost estimated from an average price, a trip's: one amount when
+    // its bounds are close (nearAmounts), else the range.
+    estimate: (a: Amounts | null, currency: string | null): Spoken =>
+      amounts(a && nearAmounts(a), currency ? currencyUnit(currency) : null),
+    // priceRange shows the bounds of a price per kWh as estimate does an amount.
+    priceRange: (p: { min: number; max: number }, currency: string): Spoken => {
+      const c = currencyUnit(currency)
+      if (p.max - p.min <= closeBounds * p.min) {
+        const one = formatPricePerKwh((p.min + p.max) / 2, c, intl.value)
+        return { text: one, spoken: one }
+      }
+      const [min, max] = [
+        formatPricePerKwh(p.min, c, intl.value),
+        formatPricePerKwh(p.max, c, intl.value),
+      ]
+      return { text: `${min} – ${max}`, spoken: t('cost.range', { min, max }) }
     },
     currencyName: (code: string) => currencyName(code, intl.value),
     currencySymbol: (code: string) => currencySymbol(code, intl.value),
