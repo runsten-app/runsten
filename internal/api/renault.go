@@ -97,6 +97,10 @@ type renaultWaiting struct {
 type renaultPending struct {
 	mu      sync.Mutex
 	waiting map[string]renaultWaiting
+	// connect makes a sign-in's last step one: taking or dropping the waiting entry,
+	// and storing the credential. A verification that took its entry then cannot
+	// overwrite a sign-in stored meanwhile, nor the reverse.
+	connect sync.Mutex
 	seq     uint64
 	max     int // 0: renaultMaxPending
 }
@@ -124,7 +128,8 @@ func (p *renaultPending) put(account string, w renaultWaiting, now time.Time) (r
 	p.seq++
 	w.id = p.seq
 	p.waiting[account] = w
-	time.AfterFunc(w.expires.Sub(now), func() { p.take(account, w.id) })
+	id := w.id // the id alone: the timer must not hold the password
+	time.AfterFunc(w.expires.Sub(now), func() { p.take(account, id) })
 	return w, true
 }
 
@@ -221,6 +226,8 @@ func (s *Server) postRenaultSignIn(ctx context.Context, in *renaultSignInInput) 
 	}
 	// Signed in without a code: a sign-in still waiting for one is superseded, and its
 	// code, entered later, connects nothing.
+	s.renaultPending.connect.Lock()
+	defer s.renaultPending.connect.Unlock()
 	s.renaultPending.drop(account)
 	out, err := s.renaultConnect(ctx, account, res)
 	if err != nil {
@@ -248,6 +255,8 @@ func (s *Server) postRenaultCode(ctx context.Context, in *renaultCodeInput) (*bo
 	}
 	// Taken only if still this request's: a sign-in made meanwhile replaced it, or
 	// connected without a code, and this one's must not overwrite it.
+	s.renaultPending.connect.Lock()
+	defer s.renaultPending.connect.Unlock()
 	current := s.renaultPending.take(account, w.id)
 	if err != nil {
 		return nil, s.renaultRefusal(err)
@@ -301,6 +310,8 @@ func (s *Server) renaultOffered(ctx context.Context, account string) error {
 
 func (s *Server) deleteRenault(ctx context.Context, _ *struct{}) (*struct{}, error) {
 	account := sessionFrom(ctx).AccountID
+	s.renaultPending.connect.Lock()
+	defer s.renaultPending.connect.Unlock()
 	s.renaultPending.drop(account)
 	if err := s.Renault.DeleteRenaultCredential(ctx, account); err != nil {
 		return nil, s.internal("Renault sign-in not deleted", err)

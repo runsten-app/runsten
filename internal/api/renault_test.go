@@ -352,3 +352,51 @@ func TestRenaultPendingIdentity(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 }
+
+// pausedVerify holds a code's verification until released, the sign-in it completes
+// still waiting meanwhile.
+type pausedVerify struct {
+	*fakeRenault
+	entered, release chan struct{}
+}
+
+func (p pausedVerify) RenaultVerify(ctx context.Context, state any, email, password, code string) (RenaultSignIn, error) {
+	close(p.entered)
+	<-p.release
+	return p.fakeRenault.RenaultVerify(ctx, state, email, password, code)
+}
+
+// TestRenaultSupersededInFlight: a code being verified while a sign-in without a code
+// completes connects nothing once its verification returns.
+func TestRenaultSupersededInFlight(t *testing.T) {
+	e := newEnv(t, 10)
+	e.server.Flags = &accountFlags{}
+	c := e.session(t, "admin")
+	u := e.api.URL + apiPrefix + "/connection/renault"
+	e.renaults.vins, e.renaults.tfa = []string{renaultVIN}, true
+	do(t, noFollow(), http.MethodPost, u+"/sign-in", jsonType, renaultBody(renaultEmail, renaultPassword), c)
+	p := pausedVerify{fakeRenault: e.renaults, entered: make(chan struct{}), release: make(chan struct{})}
+	e.server.RenaultAccounts = p
+	type answer struct {
+		status int
+		body   string
+	}
+	done := make(chan answer)
+	go func() {
+		resp, body := do(t, noFollow(), http.MethodPost, u+"/code", jsonType, `{"code":"123456"}`, c)
+		done <- answer{resp.status, body}
+	}()
+	<-p.entered
+	e.renaults.mu.Lock()
+	e.renaults.tfa = false
+	e.renaults.mu.Unlock()
+	if resp, body := do(t, noFollow(), http.MethodPost, u+"/sign-in", jsonType, renaultBody(renaultEmail, renaultPassword), c); resp.status != http.StatusOK {
+		t.Fatalf("sign-in without a code: %d %s", resp.status, body)
+	}
+	close(p.release)
+	a := <-done
+	if a.status != http.StatusConflict {
+		t.Errorf("the code verified meanwhile: %d %s", a.status, a.body)
+	}
+	wantError(t, a.body, codeAuthorizationExpired)
+}
