@@ -34,7 +34,8 @@
         "text": "Hyundai, Kia and Genesis (beta)",
         "link": "/docs/guide/hyundai-kia"
       },
-      { "text": "Škoda (beta)", "link": "/docs/guide/skoda" }
+      { "text": "Škoda (beta)", "link": "/docs/guide/skoda" },
+      { "text": "Renault, Dacia and Alpine (beta)", "link": "/docs/guide/renault" }
     ]
   },
   {
