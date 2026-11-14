@@ -246,3 +246,24 @@ func TestMovedAccountListingFails(t *testing.T) {
 		t.Error("the car dropped from the list")
 	}
 }
+
+// TestNewCarListingFails: a car the list does not hold yet, while an account's listing
+// fails, is not taken for unshared.
+func TestNewCarListingFails(t *testing.T) {
+	f := &failing{suffix: "/vehicles"}
+	src, _, _ := newSourceWith(t, f)
+	ctx := context.Background()
+	got, _, err := src.Login(ctx, "a", "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sess := got.(*session) //nolint:forcetypeassert // the source's own
+	src.mu.Lock()
+	delete(src.lists["c"].vehicles, simVIN) // enrolled after the listing
+	src.mu.Unlock()
+	f.on.Store(true)
+	_, err = sess.Fetch(ctx, simVIN, collector.Endpoint(renault.Cockpit))
+	if err == nil || kindOf(err) == collector.KindUnshared {
+		t.Errorf("a car not listed yet, an account not listed: %v", err)
+	}
+}

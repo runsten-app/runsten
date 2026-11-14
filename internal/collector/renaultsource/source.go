@@ -267,9 +267,13 @@ func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) 
 	v, ok := s.vehicles[vin]
 	if !ok {
 		var err error
-		if v, ok, err = s.relocate(ctx, vin); err != nil {
+		switch v, ok, err = s.relocate(ctx, vin); {
+		case err != nil:
 			return nil, sourceError(err)
-		} else if !ok {
+		case !ok && s.partial:
+			// Not listed, but an account was not: the car may be there.
+			return nil, fmt.Errorf("renault: %s not read, an account not listed: %w", ep, errListingPartial)
+		case !ok:
 			return nil, &collector.SourceError{Kind: collector.KindUnshared, Err: errNotListed}
 		}
 	}
