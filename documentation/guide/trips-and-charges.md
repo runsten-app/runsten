@@ -4,7 +4,7 @@ description: "Read the trips and charges of your car in Runsten: times as ranges
 
 # Trips and charges
 
-The **Trips** and **Charges** tabs list the events of a period, by day, newest first, under a line of totals: "3 trips started in the period · 73 km · 18.8 kWh/100 km (estimated)". Each line names where the event happened when a place or an address does: a trip from where to where, a charge where it took place. The period stays in the address of the page: a link to it opens the same list. Above each list, its CSV files: the events of the period, and every value the car reported over it ([Exporting your data](./exporting.md)).
+The **Trips** and **Charges** tabs list the events of a period, by day, newest first, under a line of totals: "3 trips started in the period · 73 km · 18.8 kWh/100 km (estimated)". Each line names where the event happened when a place or an address does: a trip from where to where, a charge where it took place. With a currency, a trip shows on its right what it cost, and below it its cost per 100 km ([The cost of a trip](./costs.md#the-cost-of-a-trip)). The period stays in the address of the page: a link to it opens the same list. Above each list, its CSV files: the events of the period, and every value the car reported over it ([Exporting your data](./exporting.md)).
 
 <Screen view="trips" alt="The Trips tab: the trips of a period, by day, under their totals." />
 
