@@ -70,6 +70,8 @@ type Source struct {
 type list struct {
 	at       time.Time
 	vehicles map[string]vehicle
+	// partial: an account's listing failed, its cars kept as listed before.
+	partial bool
 }
 
 // vehicle is where a vehicle is read: its Kamereon account, and its model's code.
@@ -162,9 +164,9 @@ func (s *Source) relist(ctx context.Context, jwt string, cred Credential, connec
 	return l, nil
 }
 
-// list reads the person's accounts, and the vehicles of each of type MYRENAULT. An
-// account whose listing fails keeps its vehicles of prev: a passing error is not a car
-// removed. Without a previous list, any failure fails the listing, tried again at the
+// list reads the person's accounts, and the vehicles of each of type MYRENAULT. When an
+// account's listing fails, the cars of prev the others do not list are kept: a passing
+// error is not a car removed. Without a previous list, any failure fails the listing, tried again at the
 // next login.
 func (s *Source) list(ctx context.Context, jwt string, cred Credential, prev map[string]vehicle) (list, error) {
 	p, err := s.client.Person(ctx, jwt, cred.PersonID, cred.Country)
@@ -172,6 +174,7 @@ func (s *Source) list(ctx context.Context, jwt string, cred Credential, prev map
 		return list{}, fmt.Errorf("renault person: %w", err)
 	}
 	l := list{at: s.clk.Now(), vehicles: map[string]vehicle{}}
+	failed := false
 	for _, a := range p.Accounts {
 		if a.Type != renault.AccountMyRenault {
 			continue
@@ -181,15 +184,21 @@ func (s *Source) list(ctx context.Context, jwt string, cred Credential, prev map
 			if prev == nil {
 				return list{}, fmt.Errorf("renault vehicles: %w", err)
 			}
-			for vin, v := range prev {
-				if v.account == a.ID {
-					l.vehicles[vin] = v
-				}
-			}
+			failed = true
 			continue
 		}
 		for _, v := range vs {
 			l.vehicles[v.VIN] = vehicle{account: a.ID, model: v.ModelCode}
+		}
+	}
+	// An account not listed may hold any car of prev, under its former account's id or
+	// a new one: a car the others do not list stays as it was, not taken for removed.
+	if failed {
+		l.partial = true
+		for vin, v := range prev {
+			if _, ok := l.vehicles[vin]; !ok {
+				l.vehicles[vin] = v
+			}
 		}
 	}
 	return l, nil
@@ -242,10 +251,14 @@ type session struct {
 	connectionID string
 	vehicles     map[string]vehicle
 	relisted     bool // the vehicles were listed again in this session
+	partial      bool // that listing missed an account
 }
 
 // errNotListed is a vehicle the account no longer lists.
 var errNotListed = errors.New("renault: the account does not list the vehicle")
+
+// errListingPartial is a listing that missed an account.
+var errListingPartial = errors.New("renault: an account's vehicles could not be listed")
 
 // Fetch implements collector.Session. An endpoint the vehicle's model does not serve is
 // not called; a response of the car's state carries the model's code, which its
@@ -279,6 +292,11 @@ func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) 
 		case found && nv.account != v.account:
 			v = nv
 			raw, err = s.src.client.Fetch(ctx, s.jwt, v.account, s.cred.Country, vin, e)
+		case s.partial:
+			// An account could not be listed: the car may be there, under a new id.
+			// Told as a passing failure, not unshared; the list, the car kept, is
+			// listed again within the hour.
+			return nil, fmt.Errorf("renault: %s not read, an account not listed: %w", e, errListingPartial)
 		}
 	}
 	if err != nil {
@@ -301,7 +319,7 @@ func (s *session) relocate(ctx context.Context, vin string) (vehicle, bool, erro
 			s.src.forget(s.connectionID)
 			return vehicle{}, false, err
 		}
-		s.vehicles = l.vehicles
+		s.vehicles, s.partial = l.vehicles, l.partial
 	}
 	v, ok := s.vehicles[vin]
 	return v, ok, nil

@@ -222,3 +222,27 @@ func TestListingFails(t *testing.T) {
 		t.Errorf("a first listing failed: %v", err)
 	}
 }
+
+// TestMovedAccountListingFails: Renault moved the account, and its listing by the new id
+// fails: the car is kept as listed before, and not taken for unshared.
+func TestMovedAccountListingFails(t *testing.T) {
+	f := &failing{suffix: "-moved/vehicles"}
+	src, _, h := newSourceWith(t, f)
+	ctx := context.Background()
+	sess, _, err := src.Login(ctx, "a", "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.AccountChanged()
+	f.on.Store(true)
+	_, err = sess.Fetch(ctx, simVIN, collector.Endpoint(renault.BatteryStatus))
+	if kindOf(err) == collector.KindUnshared {
+		t.Errorf("taken for unshared: %v", err)
+	}
+	src.mu.Lock()
+	_, kept := src.lists["c"].vehicles[simVIN]
+	src.mu.Unlock()
+	if !kept {
+		t.Error("the car dropped from the list")
+	}
+}
