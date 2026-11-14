@@ -295,7 +295,7 @@ func (c *Client) kamereon(ctx context.Context, jwt, path, country, name string) 
 	req.Header.Set("x-gigya-id_token", jwt)
 	resp, err := c.hc.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", name, err)
+		return nil, fmt.Errorf("%s: %w", name, withoutQuery(err))
 	}
 	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBody))
@@ -365,13 +365,29 @@ func withDevice(req *http.Request, d Device) {
 	}
 }
 
+// withoutQuery takes the query out of a transport error's URL: Gigya's GETs carry the
+// login token, the assertions and the one-time code there, which must reach no log. The
+// error underneath, a timeout or a cancellation, stays.
+func withoutQuery(err error) error {
+	var ue *url.Error
+	if !errors.As(err, &ue) {
+		return err
+	}
+	u, perr := url.Parse(ue.URL)
+	if perr != nil {
+		return &url.Error{Op: ue.Op, URL: "(url withheld)", Err: ue.Err}
+	}
+	u.RawQuery, u.User = "", nil
+	return &url.Error{Op: ue.Op, URL: u.String(), Err: ue.Err}
+}
+
 // gigya sends req and returns the cookies the response sets and its body, when the
 // body's errorCode is 0: Gigya tells its errors there, the HTTP status mirroring them.
 func (c *Client) gigya(req *http.Request, name string) ([]*http.Cookie, []byte, error) {
 	req.Header.Set("Accept", "application/json")
 	resp, err := c.hc.Do(req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%s: %w", name, err)
+		return nil, nil, fmt.Errorf("%s: %w", name, withoutQuery(err))
 	}
 	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBody))

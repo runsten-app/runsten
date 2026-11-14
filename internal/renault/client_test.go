@@ -3,8 +3,11 @@ package renault
 import (
 	"context"
 	"errors"
+	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -198,5 +201,20 @@ func TestRefusals(t *testing.T) {
 	}
 	if _, err := c.Fetch(ctx, jwt.Value, account, p.Country, simVIN, "charges"); !errors.Is(err, ErrUnknownEndpoint) {
 		t.Errorf("an unknown endpoint: %v", err)
+	}
+}
+
+// TestTransportErrorWithoutQuery: a call that fails on the way keeps its query, with its
+// tokens and code, out of the error, and stays a timeout.
+func TestTransportErrorWithoutQuery(t *testing.T) {
+	c := NewClient(Config{GigyaURL: "http://127.0.0.1:1", GigyaKey: "k"}, &http.Client{Timeout: time.Second})
+	var out struct{}
+	err := c.gigyaGet(context.Background(), "accounts.tfa.finalizeTFA", "finalize", url.Values{"regToken": {"secret-token"}, "code": {"123456"}}, Device{}, &out)
+	if err == nil || strings.Contains(err.Error(), "secret-token") || strings.Contains(err.Error(), "123456") {
+		t.Errorf("error %v", err)
+	}
+	var ue *url.Error
+	if !errors.As(err, &ue) {
+		t.Errorf("not a transport error any more: %v", err)
 	}
 }
