@@ -1151,7 +1151,7 @@
       "help": "Runsten erkennt die Variante des Fahrzeugs an dem, was es meldet, wenn nur eine passt. Ihre Auswahl hat Vorrang vor der Erkennung und gilt überall, wo das Fahrzeug erscheint."
     },
     "history": {
-      "title": "Importierter Verlauf",
+      "title": "Import",
       "help": "Fahrten und Ladevorgänge aus der Zeit, bevor Runsten das Fahrzeug gelesen hat, aus anderen Apps importiert. Das Löschen eines Imports lässt bestehen, was Runsten selbst gelesen hat."
     },
     "loading": "Fahrzeug wird geladen",

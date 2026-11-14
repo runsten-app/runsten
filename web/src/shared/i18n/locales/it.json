@@ -1151,7 +1151,7 @@
       "help": "Runsten riconosce la versione del veicolo da ciò che esso indica, quando ne corrisponde una sola. La Sua scelta prevale sul riconoscimento e compare ovunque compaia il veicolo."
     },
     "history": {
-      "title": "Cronologia importata",
+      "title": "Importazione",
       "help": "Viaggi e ricariche di prima che Runsten leggesse il veicolo, importati da altre app. Eliminare un’importazione lascia ciò che Runsten ha letto."
     },
     "loading": "Caricamento del veicolo",

@@ -1151,7 +1151,7 @@
       "help": "Runsten herkent de uitvoering van het voertuig aan wat het meldt, als er maar één past. Uw keuze gaat voor de herkenning, en wordt overal getoond waar het voertuig verschijnt."
     },
     "history": {
-      "title": "Geïmporteerde geschiedenis",
+      "title": "Importeren",
       "help": "Ritten en laadsessies van vóór Runsten het voertuig uitlas, geïmporteerd uit andere apps. Een import verwijderen laat staan wat Runsten zelf heeft uitgelezen."
     },
     "loading": "Voertuig laden",

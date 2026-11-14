@@ -1151,7 +1151,7 @@
       "help": "Runsten reconnaît la variante du véhicule d'après ce qu'il transmet, quand une seule correspond. Votre choix prime sur la reconnaissance, et se voit partout où le véhicule apparaît."
     },
     "history": {
-      "title": "Historique importé",
+      "title": "Import",
       "help": "Trajets et charges d'avant que Runsten ne lise le véhicule, importés d'autres apps. Supprimer un import laisse ce que Runsten a lu."
     },
     "loading": "Chargement du véhicule",

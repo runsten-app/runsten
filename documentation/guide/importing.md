@@ -18,7 +18,7 @@ Every import is in **beta**: tell us if one of yours is refused, or if a trip or
 
 ## How an import works
 
-- **Where**: in the vehicle's settings (the menu of its name in the bar), under **Imported history**. Each import has its own part there, and its report shows in the same place.
+- **Where**: in the vehicle's settings (the menu of its name in the bar), under **Import**. Each import has its own part there, and its report shows in the same place.
 - **Only what came before**: only what started before Runsten's first reading of the vehicle (or before the import, for a vehicle not read yet) is imported, so it never duplicates what Runsten saw. The report tells how many events were imported, how many were left because they start at or after that reading, and how many were left because they are unfinished or out of bounds.
 - **Importing again** replaces what was imported, one by one: nothing is counted twice. **Deleting the import**, in the same place, removes every trip and charge it brought, with their tracks; what Runsten read stays.
 - **Tracks**: a track is fine-grained location data. Runsten keeps it with the trip, reads it only to draw it on the trip's map, and deletes it with the import.
@@ -43,7 +43,7 @@ Runsten reads that plain file, or the same gzipped (`teslamate.bck.gz`). A backu
 
 #### Importing it
 
-From the web interface: in the vehicle's **Imported history**, under **Import from TeslaMate**, press **Choose the backup**. Check **Import TeslaMate's costs** if they are in the account's currency: TeslaMate keeps none, and Runsten does not guess it. Then **Import**. The browser compresses the backup before sending it (a few years are about a gigabyte, several times less compressed): it still takes a few minutes on a slow connection, the page open.
+From the web interface: in the vehicle's settings, under **Import**, then **Import from TeslaMate**, press **Choose the backup**. Check **Import TeslaMate's costs** if they are in the account's currency: TeslaMate keeps none, and Runsten does not guess it. Then **Import**. The browser compresses the backup before sending it (a few years are about a gigabyte, several times less compressed): it still takes a few minutes on a slow connection, the page open.
 
 On a self-hosted instance, the command line needs no upload at all, and the backup may even go straight from TeslaMate's database to Runsten:
 
@@ -75,7 +75,7 @@ In the EU, the Data Act lets the user of a connected car ask its maker for the d
 
 1. On the Data Portal, sign in with your Volvo ID, choose the car, and ask for the **trips** and the **waypoints**, over the period you want. The portal takes several hours to prepare them.
 2. Download every file it gives: a ZIP per chunk of data, often a few dozen, plus `metadata.json` and `final.zip`. Leave them as they are.
-3. In the vehicle's **Imported history**, under **Import from the Volvo Data Portal**, press **Choose the files**, and choose them all at once: the import starts as soon as they are chosen.
+3. In the vehicle's settings, under **Import**, then **Import from the Volvo Data Portal**, press **Choose the files**, and choose them all at once: the import starts as soon as they are chosen.
 
 The import runs at once. It tells the trips from the waypoints by their columns, not by the files' names: a trip's waypoints are not always in the ZIP whose name matches it. The ZIPs zipped together into one, or the CSV files taken out of them, are read as well; `metadata.json` and `final.zip` hold no trip and are ignored. At most 1,000 files and 32 MiB together, 256 MiB once unzipped: a year of waypoints is a few megabytes. Files without any trip, or a file that is neither the portal's ZIP nor its CSV, are refused, and nothing is imported.
 
@@ -107,7 +107,7 @@ A session still running at Runsten's first reading is left to the charge Runsten
 Aximote, an app that logs the trips and charges of many brands, gives its history to Runsten. The import follows Aximote's documentation, and has not yet been tried on many real accounts.
 
 1. In the Aximote app, create a personal access token (it starts with `axm_pat_`).
-2. In the vehicle's **Imported history**, under **Add history**, paste it in **Aximote token**, then **Find my vehicles**.
+2. In the vehicle's settings, under **Import**, then **Add history**, paste it in **Aximote token**, then **Find my vehicles**.
 3. Runsten lists the vehicles of your Aximote account. The one with this vehicle's VIN is chosen; when none has it, choose the one whose history this is: Runsten never guesses.
 4. **Import**. The import goes on in the background: you can leave the page. Its progress, then its report, show in the same place.
 
@@ -132,7 +132,7 @@ A trip still under way or a charge in progress is left out and counted as unfini
 
 1. In AAOS Logging, turn on the Google Drive sync, and let it sync: the app writes to `AAOSLogging/<car>_<id>/Sync/V3` on your Drive.
 2. In Google Drive, on the web, download the car's folder, `AAOSLogging/<car>_<id>`: Drive gives a ZIP file. Leave it as it is. Its `Sync` folder alone is enough, or its `Sync/V3` folder, or the `Commits` and `Artifacts` folders inside `V3` chosen together: the car's `Backup` folder is not read.
-3. In the vehicle's **Imported history**, under **Import from AAOS Logging**, press **Choose the export**, choose the ZIP, then **Import**.
+3. In the vehicle's settings, under **Import**, then **Import from AAOS Logging**, press **Choose the export**, choose the ZIP, then **Import**.
 
 The import runs at once. A ZIP of 512 MiB at most. Runsten reads the newest generation the app synced, and checks every file of it against its commit, size and SHA-256: a folder downloaded while the app was still syncing, one with a file missing, or the whole `AAOSLogging` folder of several cars, is refused, and nothing is imported. Download it again once the app has synced, or the one car's folder.
 

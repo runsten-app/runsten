@@ -55,7 +55,7 @@ describe('VehicleSettingsPage', () => {
 
   it.each([
     ['model', 'Vehicle'],
-    ['history', 'Imported history'],
+    ['history', 'Import'],
   ] as const)('leads to its areas, %s the one shown', async (area, shown) => {
     mocks.fetchVehicle.mockResolvedValue(ex30)
     const w = await page(ex30?.id ?? '', area)
@@ -64,7 +64,7 @@ describe('VehicleSettingsPage', () => {
     const links = nav.findAll('a')
     expect(links.map((a) => [a.text(), a.attributes('href')])).toEqual([
       ['Vehicle', `/vehicles/${ex30?.id}/settings`],
-      ['Imported history', `/vehicles/${ex30?.id}/settings/history`],
+      ['Import', `/vehicles/${ex30?.id}/settings/history`],
     ])
     expect(nav.find('[aria-current="page"]').text()).toBe(shown)
     expect(w.find('.area h2').text()).toBe(shown)

@@ -1151,7 +1151,7 @@
       "help": "Runsten recognizes the vehicle's variant from what it reports, when only one fits. Your choice outranks the recognition, and shows wherever the vehicle does."
     },
     "history": {
-      "title": "Imported history",
+      "title": "Import",
       "help": "Trips and charges from before Runsten read the vehicle, imported from other apps. Deleting an import leaves what Runsten read."
     },
     "loading": "Loading the vehicle",

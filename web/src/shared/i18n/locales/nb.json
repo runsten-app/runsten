@@ -1151,7 +1151,7 @@
       "help": "Runsten gjenkjenner bilens variant ut fra det den rapporterer, når bare én passer. Ditt valg går foran gjenkjenningen, og vises overalt der bilen vises."
     },
     "history": {
-      "title": "Importert historikk",
+      "title": "Import",
       "help": "Turer og ladinger fra før Runsten leste bilen, importert fra andre apper. Sletter du en import, beholdes det Runsten selv har lest."
     },
     "loading": "Laster inn bilen",

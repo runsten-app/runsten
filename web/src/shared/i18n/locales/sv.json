@@ -1151,7 +1151,7 @@
       "help": "Runsten känner igen fordonets variant utifrån det fordonet rapporterar, när bara en passar. Ditt val går före igenkänningen och syns överallt där fordonet visas."
     },
     "history": {
-      "title": "Importerad historik",
+      "title": "Import",
       "help": "Resor och laddningar från innan Runsten läste fordonet, importerade från andra appar. Att ta bort en import lämnar det Runsten läst."
     },
     "loading": "Läser in fordonet",
