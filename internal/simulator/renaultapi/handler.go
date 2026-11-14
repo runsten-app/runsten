@@ -53,8 +53,10 @@ const (
 	DevKamereonKey   = "runsten-dev-kamereon-key"
 	personID         = "person-runsten-dev"
 	myRenaultAccount = "account-runsten-dev"
-	sfdcAccount      = "account-runsten-dev-crm"
-	emailID          = "sim-email-id"
+	// movedAccount is the MYRENAULT account's id once AccountChanged moved it.
+	movedAccount = "account-runsten-dev-moved"
+	sfdcAccount  = "account-runsten-dev-crm"
+	emailID      = "sim-email-id"
 )
 
 // Keys are the keys of Renault's apps the simulator accepts.
@@ -516,9 +518,17 @@ func (h *Handler) person(q kamereonReq) (int, any) {
 		"idp":    map[string]any{"idpType": "GIGYA", "idpStatus": "ACTIVE", "login": DevEmail, "loginType": "EMAIL"},
 		"emails": []map[string]any{{"emailType": "MAIN", "emailValue": DevEmail, "validityFlag": true}},
 		"accounts": []map[string]any{
-			account(myRenaultAccount, "MYRENAULT"), account(sfdcAccount, "SFDC"),
+			account(h.myRenault(), "MYRENAULT"), account(sfdcAccount, "SFDC"),
 		},
 	}
+}
+
+// myRenault is the MYRENAULT account's id, moved by AccountChanged. h.mu is held.
+func (h *Handler) myRenault() string {
+	if h.accountChanged {
+		return movedAccount
+	}
+	return myRenaultAccount
 }
 
 // countryOf is the country asked for, which a person answers with as their own.
@@ -532,11 +542,11 @@ func accessDenied() map[string]any {
 // vehicles lists the vehicles of the MYRENAULT account; the CRM's holds none.
 func (h *Handler) vehicles(q kamereonReq) (int, any) {
 	account := q.r.PathValue("accountId")
-	if account != myRenaultAccount && account != sfdcAccount {
+	if account != h.myRenault() && account != sfdcAccount {
 		return http.StatusForbidden, accessDenied()
 	}
 	links := []map[string]any{}
-	if account == myRenaultAccount {
+	if account == h.myRenault() {
 		for _, vin := range h.vins {
 			links = append(links, h.link(vin, q.now))
 		}
@@ -553,9 +563,13 @@ func (h *Handler) details(q kamereonReq) (int, any) {
 	return http.StatusOK, detailsOf(src, q.now)
 }
 
-// owned finds the vehicle of a call of the MYRENAULT account, or the error to answer.
+// owned finds the vehicle of a call of the MYRENAULT account, or the error to answer: a
+// call by the account's id before it moved is told err.func.not.connected.
 func (h *Handler) owned(q kamereonReq) (Source, int, any) {
-	if q.r.PathValue("accountId") != myRenaultAccount {
+	switch account := q.r.PathValue("accountId"); {
+	case h.accountChanged && account == myRenaultAccount:
+		return nil, http.StatusForbidden, kamereonError("FUNCTIONAL", "err.func.not.connected", "Access is denied for this resource")
+	case account != h.myRenault():
 		return nil, http.StatusForbidden, accessDenied()
 	}
 	src := h.byVIN[q.r.PathValue("vin")]
@@ -566,7 +580,7 @@ func (h *Handler) owned(q kamereonReq) (Source, int, any) {
 }
 
 // car answers a read of the car adapter, from the car's report: the faults first (the
-// account's id changed, the car's privacy mode on its position), then the endpoints the
+// car's privacy mode on its position), then the endpoints the
 // model does not serve.
 func (h *Handler) car(endpoint string) func(q kamereonReq) (int, any) {
 	return func(q kamereonReq) (int, any) {
@@ -576,8 +590,6 @@ func (h *Handler) car(endpoint string) func(q kamereonReq) (int, any) {
 		}
 		rep := src.ReportAt(q.now)
 		switch {
-		case h.accountChanged:
-			return http.StatusForbidden, kamereonError("FUNCTIONAL", "err.func.not.connected", "Access is denied for this resource")
 		case h.privacy && endpoint == "location":
 			return http.StatusForbidden, kamereonError("FUNCTIONAL", "err.func.privacy.on", "Privacy mode currently ON")
 		case !served(rep.Spec.Trim, endpoint):

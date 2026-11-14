@@ -3,6 +3,7 @@ package renaultapi
 import (
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
@@ -91,9 +92,15 @@ func TestAccountChangedFault(t *testing.T) {
 			t.Errorf("%s: %d %s", ep, r.status, r.raw)
 		}
 	}
-	// The person and the list are still read: a new discovery is what finds the new id.
-	if r := f.kamereon(t, jwt, "accounts/"+myRenaultAccount+"/vehicles"); r.status != http.StatusOK {
-		t.Errorf("vehicles: %d", r.status)
+	// The person tells the new id, which lists the car and reads it.
+	if r := f.kamereon(t, jwt, "persons/"+personID); !strings.Contains(r.raw, movedAccount) {
+		t.Errorf("person: %s", r.raw)
+	}
+	if r := f.kamereon(t, jwt, "accounts/"+movedAccount+"/vehicles"); r.status != http.StatusOK || !strings.Contains(r.raw, testVIN) {
+		t.Errorf("vehicles: %d %s", r.status, r.raw)
+	}
+	if r := f.kamereon(t, jwt, strings.Replace(carPath("cockpit"), myRenaultAccount, movedAccount, 1)); r.status != http.StatusOK {
+		t.Errorf("cockpit by the new id: %d %s", r.status, r.raw)
 	}
 }
 

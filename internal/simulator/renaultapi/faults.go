@@ -43,8 +43,9 @@ func (h *Handler) Privacy() {
 	h.mu.Unlock()
 }
 
-// AccountChanged has every read of a car answer err.func.not.connected, as when Renault
-// changed the account's id (October 2026): only a new discovery reads again.
+// AccountChanged moves the MYRENAULT account to another id, as Renault did in October
+// 2026: a read by the former id answers err.func.not.connected, and only the person's
+// accounts, listed again, tell the new one.
 func (h *Handler) AccountChanged() {
 	h.mu.Lock()
 	h.accountChanged = true

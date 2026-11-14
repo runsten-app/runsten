@@ -3,8 +3,11 @@ package renaultsource
 import (
 	"context"
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -22,6 +25,26 @@ const simVIN = "VF1RAE0B0S0000001"
 // in, as runsten-api does when the owner connects.
 func newSource(t *testing.T) (*Source, *clock.Manual, *renaultapi.Handler) {
 	t.Helper()
+	return newSourceWith(t, nil)
+}
+
+// failing fails the calls whose path ends in suffix while on is set.
+type failing struct {
+	next   http.RoundTripper
+	suffix string
+	on     atomic.Bool
+}
+
+func (f *failing) RoundTrip(r *http.Request) (*http.Response, error) {
+	if f.on.Load() && strings.HasSuffix(r.URL.Path, f.suffix) {
+		return nil, errors.New("connection reset")
+	}
+	return f.next.RoundTrip(r) //nolint:wrapcheck // the test's transport
+}
+
+// newSourceWith is newSource with the client's calls going through f, when not nil.
+func newSourceWith(t *testing.T, f *failing) (*Source, *clock.Manual, *renaultapi.Handler) {
+	t.Helper()
 	data, err := os.ReadFile("../../../scenarios/renault5.yaml") //nolint:gosec // the test's own scenario
 	if err != nil {
 		t.Fatal(err)
@@ -38,10 +61,15 @@ func newSource(t *testing.T) (*Source, *clock.Manual, *renaultapi.Handler) {
 	h := renaultapi.NewHandler([]renaultapi.Source{sim}, clk, renaultapi.DevKeys(), renaultapi.DefaultBehavior())
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
+	hc := srv.Client()
+	if f != nil {
+		f.next = hc.Transport
+		hc.Transport = f
+	}
 	client := renault.NewClient(renault.Config{
 		GigyaURL: srv.URL + renaultapi.GigyaPrefix, GigyaKey: renaultapi.DevGigyaKey,
 		KamereonURL: srv.URL + renaultapi.KamereonPrefix, KamereonKey: renaultapi.DevKamereonKey,
-	}, srv.Client())
+	}, hc)
 	ctx := context.Background()
 	d, err := client.Bootstrap(ctx)
 	if err != nil {
@@ -113,17 +141,6 @@ func TestRefusals(t *testing.T) {
 		t.Errorf("the privacy mode: %v", err)
 	}
 	h.Clear()
-	h.AccountChanged()
-	if _, err := sess.Fetch(ctx, simVIN, collector.Endpoint(renault.BatteryStatus)); kindOf(err) != collector.KindUnshared {
-		t.Errorf("the account changed: %v", err)
-	}
-	src.mu.Lock()
-	_, listed := src.lists["c"]
-	src.mu.Unlock()
-	if listed {
-		t.Error("the account's vehicles not to be listed again")
-	}
-	h.Clear()
 	h.Revoke()
 	if _, _, err := src.Login(ctx, "a", "c"); kindOf(err) != collector.KindCredentialRefused {
 		t.Errorf("the login token revoked: %v", err)
@@ -155,5 +172,53 @@ func TestListedHourly(t *testing.T) {
 	clk.Advance(30 * time.Minute)
 	if _, _, err := src.Login(ctx, "a", "c"); err != nil || src.lists["c"].at.Equal(at) {
 		t.Errorf("not listed again after the hour: %v", err)
+	}
+}
+
+// TestAccountMoved: Renault moved the account to another id; the vehicles are listed
+// again, and the car read by the new one, not taken for unshared.
+func TestAccountMoved(t *testing.T) {
+	src, _, h := newSource(t)
+	ctx := context.Background()
+	sess, _, err := src.Login(ctx, "a", "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := src.lists["c"].vehicles[simVIN].account
+	h.AccountChanged()
+	if _, err := sess.Fetch(ctx, simVIN, collector.Endpoint(renault.BatteryStatus)); err != nil {
+		t.Fatalf("read after the move: %v", err)
+	}
+	src.mu.Lock()
+	after := src.lists["c"].vehicles[simVIN].account
+	src.mu.Unlock()
+	if after == before || after == "" {
+		t.Errorf("account %q, before %q", after, before)
+	}
+	if _, err := sess.Fetch(ctx, simVIN, collector.Endpoint(renault.Cockpit)); err != nil {
+		t.Errorf("the next read: %v", err)
+	}
+}
+
+// TestListingFails: a listing that fails keeps the vehicles listed before; with none
+// listed before, the login fails, to be tried again, and no car is taken for unshared.
+func TestListingFails(t *testing.T) {
+	f := &failing{suffix: "/vehicles"}
+	src, clk, _ := newSourceWith(t, f)
+	ctx := context.Background()
+	if _, _, err := src.Login(ctx, "a", "c"); err != nil {
+		t.Fatal(err)
+	}
+	clk.Advance(listEvery)
+	f.on.Store(true)
+	sess, _, err := src.Login(ctx, "a", "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := sess.Fetch(ctx, simVIN, collector.Endpoint(renault.Cockpit)); err != nil {
+		t.Errorf("the car listed before, read: %v", err)
+	}
+	if _, _, err := src.Login(ctx, "a", "other"); err == nil || kindOf(err) == collector.KindUnshared {
+		t.Errorf("a first listing failed: %v", err)
 	}
 }

@@ -132,46 +132,65 @@ func (s *Source) Login(ctx context.Context, accountID, connectionID string) (col
 			ttl = life
 		}
 	}
-	sess := &session{src: s, jwt: jwt.Value, country: cred.Country, connectionID: connectionID}
+	sess := &session{src: s, jwt: jwt.Value, cred: cred, connectionID: connectionID}
 	s.mu.Lock()
 	l, ok := s.lists[connectionID]
 	s.mu.Unlock()
 	if !ok || s.clk.Now().Sub(l.at) >= listEvery {
-		if l, err = s.list(ctx, jwt.Value, cred); err != nil {
+		var prev map[string]vehicle
+		if ok {
+			prev = l.vehicles
+		}
+		if l, err = s.relist(ctx, jwt.Value, cred, connectionID, prev); err != nil {
 			return nil, 0, sourceError(err)
 		}
-		s.mu.Lock()
-		s.lists[connectionID] = l
-		s.mu.Unlock()
 	}
 	sess.vehicles = l.vehicles
 	return sess, ttl, nil
 }
 
-// list reads the person's accounts, and the vehicles of each of type MYRENAULT; an
-// account that fails is left out, the others listed.
-func (s *Source) list(ctx context.Context, jwt string, cred Credential) (list, error) {
+// relist lists the connection's vehicles and keeps the list, prev being the last one
+// (nil: none).
+func (s *Source) relist(ctx context.Context, jwt string, cred Credential, connectionID string, prev map[string]vehicle) (list, error) {
+	l, err := s.list(ctx, jwt, cred, prev)
+	if err != nil {
+		return list{}, err
+	}
+	s.mu.Lock()
+	s.lists[connectionID] = l
+	s.mu.Unlock()
+	return l, nil
+}
+
+// list reads the person's accounts, and the vehicles of each of type MYRENAULT. An
+// account whose listing fails keeps its vehicles of prev: a passing error is not a car
+// removed. Without a previous list, any failure fails the listing, tried again at the
+// next login.
+func (s *Source) list(ctx context.Context, jwt string, cred Credential, prev map[string]vehicle) (list, error) {
 	p, err := s.client.Person(ctx, jwt, cred.PersonID, cred.Country)
 	if err != nil {
 		return list{}, fmt.Errorf("renault person: %w", err)
 	}
 	l := list{at: s.clk.Now(), vehicles: map[string]vehicle{}}
-	var lastErr error
 	for _, a := range p.Accounts {
 		if a.Type != renault.AccountMyRenault {
 			continue
 		}
 		vs, err := s.client.Vehicles(ctx, jwt, a.ID, cred.Country)
 		if err != nil {
-			lastErr = err
+			if prev == nil {
+				return list{}, fmt.Errorf("renault vehicles: %w", err)
+			}
+			for vin, v := range prev {
+				if v.account == a.ID {
+					l.vehicles[vin] = v
+				}
+			}
 			continue
 		}
 		for _, v := range vs {
 			l.vehicles[v.VIN] = vehicle{account: a.ID, model: v.ModelCode}
 		}
-	}
-	if len(l.vehicles) == 0 && lastErr != nil {
-		return list{}, fmt.Errorf("renault vehicles: %w", lastErr)
 	}
 	return l, nil
 }
@@ -218,9 +237,11 @@ func (*Source) Upload(_ collector.Endpoint, raw []byte) (collector.Upload, error
 // goroutine.
 type session struct {
 	src          *Source
-	jwt, country string
+	jwt          string
+	cred         Credential
 	connectionID string
 	vehicles     map[string]vehicle
+	relisted     bool // the vehicles were listed again in this session
 }
 
 // errNotListed is a vehicle the account no longer lists.
@@ -232,8 +253,12 @@ var errNotListed = errors.New("renault: the account does not list the vehicle")
 func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) ([]byte, error) {
 	v, ok := s.vehicles[vin]
 	if !ok {
-		s.src.forget(s.connectionID)
-		return nil, &collector.SourceError{Kind: collector.KindUnshared, Err: errNotListed}
+		var err error
+		if v, ok, err = s.relocate(ctx, vin); err != nil {
+			return nil, sourceError(err)
+		} else if !ok {
+			return nil, &collector.SourceError{Kind: collector.KindUnshared, Err: errNotListed}
+		}
 	}
 	e := renault.Endpoint(ep)
 	if !renault.Serves(v.model, e) {
@@ -241,18 +266,45 @@ func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) 
 			Kind: collector.KindNotAvailable, Err: fmt.Errorf("renault: model %s does not serve %s", v.model, e),
 		}
 	}
-	raw, err := s.src.client.Fetch(ctx, s.jwt, v.account, s.country, vin, e)
-	if err != nil {
-		var ae *renault.APIError
-		if errors.As(err, &ae) && ae.Kind == renault.KindUnshared {
-			s.src.forget(s.connectionID)
+	raw, err := s.src.client.Fetch(ctx, s.jwt, v.account, s.cred.Country, vin, e)
+	var ae *renault.APIError
+	if errors.As(err, &ae) && ae.Kind == renault.KindUnshared {
+		// Renault moves an account to another id at times: the vehicles listed again
+		// tell its new one, read again before the car is taken for unshared.
+		nv, found, lerr := s.relocate(ctx, vin)
+		switch {
+		case lerr != nil:
+			// Not listed: unknown whether the car left, so not told unshared.
+			return nil, sourceError(lerr)
+		case found && nv.account != v.account:
+			v = nv
+			raw, err = s.src.client.Fetch(ctx, s.jwt, v.account, s.cred.Country, vin, e)
 		}
+	}
+	if err != nil {
 		return nil, sourceError(err)
 	}
 	if e == renault.Details {
 		return raw, nil
 	}
 	return renault.WithModel(raw, v.model) //nolint:wrapcheck // renault's, which says what failed
+}
+
+// relocate lists the account's vehicles again, once a session, and returns where vin is
+// read now; false: not listed. A listing that fails returns its error, the list dropped
+// to be listed at the next login.
+func (s *session) relocate(ctx context.Context, vin string) (vehicle, bool, error) {
+	if !s.relisted {
+		s.relisted = true
+		l, err := s.src.relist(ctx, s.jwt, s.cred, s.connectionID, s.vehicles)
+		if err != nil {
+			s.src.forget(s.connectionID)
+			return vehicle{}, false, err
+		}
+		s.vehicles = l.vehicles
+	}
+	v, ok := s.vehicles[vin]
+	return v, ok, nil
 }
 
 // sourceError tells the collector what a refusal of the API means.
