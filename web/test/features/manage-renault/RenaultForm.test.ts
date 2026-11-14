@@ -310,6 +310,26 @@ describe('RenaultForm', () => {
     expect(document.activeElement).toBe(emailField().element)
   })
 
+  it('removed while a new sign-in awaits its code, goes back to the first step', async () => {
+    api.signInRenault.mockResolvedValue(codeSent)
+    api.deleteRenault.mockResolvedValue(undefined)
+    form(given)
+    await w().find('.toggle').trigger('click')
+    await flushPromises()
+    await fill()
+    await submit()
+    expect(codeField().exists()).toBe(true)
+    await w().find('.delete-connection').trigger('click')
+    await flushPromises()
+    document.querySelector<HTMLButtonElement>('.confirm-delete')?.click()
+    await flushPromises()
+    props.connection = none
+    await flushPromises()
+    expect(codeField().exists()).toBe(false)
+    expect(document.activeElement).toBe(emailField().element)
+    expect((emailField().element as HTMLInputElement).value).toBe('')
+  })
+
   it('takes no sign-in while the source is off, one given before still removable', () => {
     form(given, { off: true })
     expect(w().find('.toggle').exists()).toBe(false)

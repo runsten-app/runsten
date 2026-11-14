@@ -117,18 +117,24 @@ async function focusSummary() {
 }
 
 const toggleId = 'renault-toggle'
-async function openForm() {
+
+// The form back at its first step, empty: the email and password asked, no code awaited.
+function resetSteps() {
   email.value = password.value = codeDraft.value = ''
   sentTo.value = null
   others.value = 0
   sent.value = false
-  opened.value = true
-  await nextTick()
   // A request still running keeps its state: its error is yet to be told.
   if (!saving.value) {
     signIn.reset()
     code.reset()
   }
+}
+
+async function openForm() {
+  resetSteps()
+  opened.value = true
+  await nextTick()
   status.value = ''
   document.getElementById(emailId)?.focus()
 }
@@ -228,7 +234,9 @@ function askDelete() {
 async function confirmDelete() {
   try {
     await remove()
-    // The form opens at once, for the next sign-in: the connection is read again later.
+    // The form opens at once, at its first step, for the next sign-in: a code awaited
+    // went with the sign-in. The connection is read again later.
+    resetSteps()
     opened.value = true
     deletedNow.value = true
     confirming.value = false
