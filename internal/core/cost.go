@@ -80,6 +80,8 @@ type Place struct {
 	// Efficiency replaces the default of CostParams for the charges of the place.
 	Efficiency Value[float64]
 	Tariff     []TariffVersion
+	// Rule gives the trips to or from the place a purpose (PurposeOf).
+	Rule Value[PurposeRule]
 }
 
 // Prices is the price schedule of the place.

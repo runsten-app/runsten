@@ -174,7 +174,8 @@ func (s *Store) Pricing(ctx context.Context, accountID string, p core.CostParams
 
 func queryPlaces(ctx context.Context, tx pgx.Tx, where string, args ...any) ([]core.Place, error) {
 	rows, err := tx.Query(ctx, `
-		SELECT id, name, lat, lon, radius_m, time_zone, without_position, max_power_kw, efficiency
+		SELECT id, name, lat, lon, radius_m, time_zone, without_position, max_power_kw, efficiency,
+			trip_purpose, trip_purpose_scope
 		FROM places WHERE `+where+` ORDER BY created_at, id`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("places: %w", err)
@@ -183,17 +184,23 @@ func queryPlaces(ctx context.Context, tx pgx.Tx, where string, args ...any) ([]c
 	var p core.Place
 	var zone string
 	var power, eff *float64
+	var purpose, scope *string
 	_, err = pgx.ForEachRow(rows, []any{
 		&p.ID, &p.Name, &p.Position.Lat, &p.Position.Lon, &p.RadiusM, &zone, &p.WithoutPosition, &power, &eff,
+		&purpose, &scope,
 	}, func() error {
 		loc, err := time.LoadLocation(zone)
 		if err != nil {
 			// The ID only: a place's name may tell where its owner lives.
 			return fmt.Errorf("time zone of place %s: %w", p.ID, err)
 		}
+		var rule core.Value[core.PurposeRule]
+		if purpose != nil && scope != nil {
+			rule = core.Value[core.PurposeRule]{V: core.PurposeRule{Purpose: core.Purpose(*purpose), Scope: core.PurposeScope(*scope)}, OK: true}
+		}
 		out = append(out, core.Place{
 			ID: p.ID, Name: p.Name, Position: p.Position, RadiusM: p.RadiusM, Location: loc,
-			WithoutPosition: p.WithoutPosition, MaxPowerKW: val(power), Efficiency: val(eff),
+			WithoutPosition: p.WithoutPosition, MaxPowerKW: val(power), Efficiency: val(eff), Rule: rule,
 		})
 		return nil
 	})
@@ -242,6 +249,23 @@ func placeError(err error) error {
 	return fmt.Errorf("place: %w", err)
 }
 
+// rulePurpose and ruleScope are the columns of a place's rule: both NULL without one.
+func rulePurpose(r core.Value[core.PurposeRule]) *string {
+	if !r.OK {
+		return nil
+	}
+	v := string(r.V.Purpose)
+	return &v
+}
+
+func ruleScope(r core.Value[core.PurposeRule]) *string {
+	if !r.OK {
+		return nil
+	}
+	v := string(r.V.Scope)
+	return &v
+}
+
 func zoneName(loc *time.Location) string {
 	if loc == nil {
 		return "UTC"
@@ -266,10 +290,11 @@ func (s *Store) CreatePlace(ctx context.Context, accountID string, p core.Place)
 			return api.ErrTooManyPlaces
 		}
 		err := tx.QueryRow(ctx, `
-			INSERT INTO places (account_id, name, lat, lon, radius_m, time_zone, without_position, max_power_kw, efficiency)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+			INSERT INTO places (account_id, name, lat, lon, radius_m, time_zone, without_position, max_power_kw, efficiency,
+				trip_purpose, trip_purpose_scope)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
 			accountID, p.Name, p.Position.Lat, p.Position.Lon, p.RadiusM, zoneName(p.Location), p.WithoutPosition,
-			opt(p.MaxPowerKW), opt(p.Efficiency)).Scan(&id)
+			opt(p.MaxPowerKW), opt(p.Efficiency), rulePurpose(p.Rule), ruleScope(p.Rule)).Scan(&id)
 		if err != nil {
 			return placeError(err)
 		}
@@ -287,10 +312,10 @@ func (s *Store) ReplacePlace(ctx context.Context, accountID string, p core.Place
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		tag, err := tx.Exec(ctx, `
 			UPDATE places SET name = $2, lat = $3, lon = $4, radius_m = $5, time_zone = $6,
-				without_position = $7, max_power_kw = $8, efficiency = $9
+				without_position = $7, max_power_kw = $8, efficiency = $9, trip_purpose = $10, trip_purpose_scope = $11
 			WHERE id = $1`,
 			p.ID, p.Name, p.Position.Lat, p.Position.Lon, p.RadiusM, zoneName(p.Location), p.WithoutPosition,
-			opt(p.MaxPowerKW), opt(p.Efficiency))
+			opt(p.MaxPowerKW), opt(p.Efficiency), rulePurpose(p.Rule), ruleScope(p.Rule))
 		switch {
 		case err != nil:
 			return placeError(err)

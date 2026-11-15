@@ -53,6 +53,7 @@ func work() core.Place {
 	return core.Place{
 		Name: "Travail", Position: core.Position{Lat: 45.7797, Lon: 4.927}, RadiusM: 250,
 		Tariff: []core.TariffVersion{{ValidFrom: core.Date{Year: 2026, Month: time.March, Day: 30}}},
+		Rule:   core.Value[core.PurposeRule]{V: core.PurposeRule{Purpose: core.PurposeCommute, Scope: core.ScopeEnd}, OK: true},
 	}
 }
 
