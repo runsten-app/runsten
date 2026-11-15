@@ -265,7 +265,8 @@ charge=$(get "/api/v1/vehicles/$vehicle/charges" | jq -c '[.items[] | select(.ty
 charge_id=$(echo "$charge" | jq -r .id)
 place=$(echo "$charge" | jq -c '{name: "Station", position: .position, radius_m: 100, time_zone: "Europe/Paris",
 	without_position: false, max_power_kw: null, efficiency: null,
-	tariff: [{valid_from: "2000-01-01", price_per_kwh: 0.5, windows: []}]}')
+	tariff: [{valid_from: "2000-01-01", price_per_kwh: 0.5, windows: []}],
+	trip_purpose: null, trip_purpose_scope: null}')
 send POST /api/v1/places "$place" | jq -e '.name == "Station"' >/dev/null || fail "place"
 # One price over the whole window: a single amount, the energy from the grid at 0.50 €,
 # with the default DC efficiency.
