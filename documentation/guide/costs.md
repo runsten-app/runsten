@@ -14,6 +14,7 @@ A place is a circle, a position and a radius (100 m by default), with a tariff: 
 - A charge outside every place offers **Create a place here**, at its position.
 - A place may also take the AC charges that have no position (one place at most).
 - A place may state its charger's power, which narrows the cost of a charge across several prices, and its charging efficiency (by default 88 % in AC, 95 % in DC).
+- A place may give the trips to or from it a purpose, under **Trips to and from this place**: Business, Commute or Personal ([The purpose of a trip](./trips-and-charges.md#the-purpose-of-a-trip)).
 
 ## Tariffs
 
