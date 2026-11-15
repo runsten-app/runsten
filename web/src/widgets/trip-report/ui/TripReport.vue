@@ -28,6 +28,13 @@ const { trips, isPending, error } = useAllTrips(
 )
 const { vehicle } = useVehicle(() => props.vehicle)
 
+// The vehicle's name and its VIN, once: a vehicle without a name is its VIN.
+const vehicleName = computed(() => {
+  const v = vehicle.value
+  if (!v) return ''
+  const label = vehicleLabel(v)
+  return label === v.vin ? v.vin : `${label} · ${v.vin}`
+})
 const rows = computed(() => [...trips.value].reverse())
 const title = computed(() =>
   props.purpose
@@ -83,7 +90,7 @@ const totals = computed(() => {
         <h1 class="text-headline-small">{{ title }}</h1>
         <p class="text-body-medium">{{ period }}</p>
         <p v-if="vehicle" class="vehicle text-body-medium text-medium-emphasis">
-          {{ vehicleLabel(vehicle) }} · {{ vehicle.vin }}
+          {{ vehicleName }}
         </p>
       </div>
     </header>

@@ -3,7 +3,7 @@ import { mdiArrowLeft, mdiPrinterOutline } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import { periodQuery } from '@/features/filter-period'
+import { usePeriod } from '@/features/filter-period'
 import { purposeQuery } from '@/features/mark-trip-purpose'
 import { TripReport } from '@/widgets/trip-report'
 
@@ -12,12 +12,13 @@ import { TripReport } from '@/widgets/trip-report'
 const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const route = useRoute()
-const period = computed(() => periodQuery(route.query))
+// The period's days in the URL, as the list's; the API takes their instants.
+const { days, period } = usePeriod()
 const purpose = computed(() => purposeQuery(route.query))
 const list = computed(() => ({
   name: 'trips',
   params: { vehicle: props.vehicle },
-  query: { ...period.value, purpose: purpose.value },
+  query: { ...days.value, purpose: purpose.value },
 }))
 const print = () => window.print()
 </script>
@@ -34,7 +35,10 @@ const print = () => window.print()
           {{ t('report.print') }}
         </v-btn>
       </div>
-      <TripReport :vehicle :from="period.from" :to="period.to" :purpose />
+      <TripReport v-if="period.valid" :vehicle :from="period.from" :to="period.to" :purpose />
+      <v-alert v-else type="error" variant="tonal" class="invalid-period">
+        {{ t('period.error.rejected') }}
+      </v-alert>
     </v-container>
   </v-main>
 </template>

@@ -31,7 +31,7 @@ describe('TripReportPage', () => {
     await flushPromises()
     expect(fetchTrips).toHaveBeenCalledWith(
       'v1',
-      expect.objectContaining({ from: '2026-09-01', purpose: 'commute' }),
+      expect.objectContaining({ from: '2026-09-01T00:00:00.000Z', purpose: 'commute' }),
     )
     expect(wrapper.find('.back').attributes('href')).toBe(
       '/vehicles/v1/trips?from=2026-09-01&purpose=commute',
@@ -39,5 +39,14 @@ describe('TripReportPage', () => {
     const print = vi.spyOn(window, 'print').mockImplementation(() => {})
     await wrapper.find('.print').trigger('click')
     expect(print).toHaveBeenCalled()
+  })
+
+  it('tells a period that is not one, and asks nothing', async () => {
+    const router = testRouter()
+    await router.push('/vehicles/v1/trips/report?from=2026-09-30&to=2026-09-01')
+    const { wrapper } = mountWith(TripReportPage, { router, props: { vehicle: 'v1' } })
+    await flushPromises()
+    expect(wrapper.find('.invalid-period').text()).toBe('This period is not valid.')
+    expect(fetchTrips).not.toHaveBeenCalled()
   })
 })
