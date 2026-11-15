@@ -805,6 +805,7 @@
       "referenceApi": "Zoals gemeld door de auto",
       "change": "Verloop",
       "since": "sinds {date}",
+      "changeSince": "{change} sinds {date}",
       "inTwelveMonths": "Over 12 maanden aan gegevens",
       "cycles": "Equivalente cycli",
       "cyclesNote": "Energie uitgedrukt in volledige laadbeurten",

@@ -805,6 +805,7 @@
       "referenceApi": "Come indicata dall’auto",
       "change": "Andamento",
       "since": "dal giorno {date}",
+      "changeSince": "{change} dal giorno {date}",
       "inTwelveMonths": "In 12 mesi di dati",
       "cycles": "Cicli equivalenti",
       "cyclesNote": "Energia pari a cariche complete",

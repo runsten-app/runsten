@@ -805,6 +805,7 @@
       "referenceApi": "Según informa el vehículo",
       "change": "Evolución",
       "since": "desde el {date}",
+      "changeSince": "{change} desde el {date}",
       "inTwelveMonths": "En 12 meses de datos",
       "cycles": "Ciclos equivalentes",
       "cyclesNote": "La energía de otras tantas cargas completas",
