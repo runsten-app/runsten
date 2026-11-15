@@ -805,6 +805,7 @@
       "referenceApi": "Som bilen anger den",
       "change": "Utveckling",
       "since": "sedan {date}",
+      "changeSince": "{change} sedan {date}",
       "inTwelveMonths": "Efter 12 månaders data",
       "cycles": "Ekvivalenta cykler",
       "cyclesNote": "Energi motsvarande lika många fulla laddningar",

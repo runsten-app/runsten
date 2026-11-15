@@ -8,7 +8,7 @@ The **Health** tab shows the vehicle's latest health, and, folded, the tyres' pr
 
 <Screen view="health" alt="The Health tab: the battery, the tyres, the service and the warnings." />
 
-- **Battery**: its estimated capacity, which leads to the [battery page](./battery.md): its estimates and their evolution.
+- **Battery**: its estimated capacity, its evolution once it rests on 12 months of charges (as on the [battery page](./battery.md)), and a small line of its monthly median over the whole history, the reference capacity dashed, once two months have one. It leads to the battery page: its estimates, one by one, and their chart.
 - **Software**, for a car that tells its version (a Tesla): the version running, since when, and the update waiting for it (its progress, or the time it is scheduled for). **See the version history** leads to every version the car had, newest first, each with:
   - when the car took it: between the last time Runsten read the previous version and the first time it read this one;
   - how long the car ran it, until the next one or until now; for the first version Runsten read, at least since that reading;

@@ -805,6 +805,7 @@
       "referenceApi": "As reported by the car",
       "change": "Evolution",
       "since": "since {date}",
+      "changeSince": "{change} since {date}",
       "inTwelveMonths": "In 12 months of data",
       "cycles": "Equivalent cycles",
       "cyclesNote": "Full charges' worth of energy",

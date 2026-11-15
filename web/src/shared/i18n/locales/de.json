@@ -805,6 +805,7 @@
       "referenceApi": "Vom Auto gemeldet",
       "change": "Entwicklung",
       "since": "seit {date}",
+      "changeSince": "{change} seit {date}",
       "inTwelveMonths": "Über 12 Monate Daten",
       "cycles": "Äquivalente Vollzyklen",
       "cyclesNote": "Geladene Energie, in vollen Ladungen gerechnet",

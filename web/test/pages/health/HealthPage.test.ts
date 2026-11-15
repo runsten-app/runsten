@@ -13,6 +13,9 @@ import tyres from '@fixtures/tyres.json'
 import vehicles from '@fixtures/vehicles.json'
 import { mountWith, testRouter } from '@test/utils'
 
+// Intl's narrow and non-breaking spaces read as plain ones.
+const plain = (s: string) => s.replace(/[\u00a0\u202f]/g, ' ')
+
 vi.mock('vue-chartjs', () => import('@test/chart-stub'))
 const mocks = vi.hoisted(() => ({
   fetchHealth: vi.fn(),
@@ -130,6 +133,32 @@ describe('HealthPage', () => {
     expect(tile.find('h2').text()).toBe('Battery')
     expect(tile.find('dt').text()).toBe('Remaining capacity')
     expect(tile.find('a').attributes('href')).toBe(`/vehicles/${vehicle}/battery`)
+  })
+
+  // The evolution as the battery page words it, and the monthly medians as a line: an
+  // image whose label says its ends, as the battery page's chart.
+  it('draws the estimated capacity over time in the battery’s tile', async () => {
+    const tile = (await mounted()).find('.battery-summary')
+    expect(plain(tile.find('.change').text())).toBe('-2% since 5 Aug 2025')
+    const curve = tile.find('.capacity-sparkline')
+    expect(curve.attributes('role')).toBe('img')
+    expect(plain(curve.attributes('aria-label') ?? '')).toMatch(
+      /^Estimated capacity from 76 kWh in Aug 2025 to .+ kWh in .+\.$/,
+    )
+    expect(curve.findAll('path.median').length).toBeGreaterThan(0)
+    expect(curve.find('line.reference').exists()).toBe(true)
+    expect(curve.find('.ends').text()).toMatch(/^Aug 2025/)
+  })
+
+  it('keeps the battery’s figure alone without a trend', async () => {
+    mocks.getBattery.mockResolvedValue({
+      ...battery,
+      change: null,
+      months: battery.months.slice(0, 1),
+    })
+    const tile = (await mounted()).find('.battery-summary')
+    expect(tile.find('.change').exists()).toBe(false)
+    expect(tile.find('.capacity-sparkline').exists()).toBe(false)
   })
 
   it('says nothing needs attention only of what the vehicle reports', async () => {

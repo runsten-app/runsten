@@ -805,6 +805,7 @@
       "referenceApi": "Slik bilen oppgir den",
       "change": "Utvikling",
       "since": "siden {date}",
+      "changeSince": "{change} siden {date}",
       "inTwelveMonths": "På 12 måneders data",
       "cycles": "Ekvivalente sykluser",
       "cyclesNote": "Energi tilsvarende fulle ladinger",
