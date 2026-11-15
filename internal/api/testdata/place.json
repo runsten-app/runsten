@@ -92,5 +92,7 @@
         }
       ]
     }
-  ]
+  ],
+  "trip_purpose": null,
+  "trip_purpose_scope": null
 }

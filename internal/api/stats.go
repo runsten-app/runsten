@@ -56,6 +56,31 @@ type tripStatsJSON struct {
 	CostPer100km           null[costSumJSON] `json:"cost_per_100km" doc:"The cost of the trips whose cost and positive distance are both known, over that distance, for 100 km, in minor units: the lowest rounded down, the highest up. null without such a trip, and for a plug-in hybrid, as consumption_kwh_per_100km."`
 }
 
+// purposeTotalsJSON are the trips of one purpose.
+type purposeTotalsJSON struct {
+	Count       int         `json:"count" minimum:"0"`
+	DistanceKm  float64     `json:"distance_km" minimum:"0" doc:"The sum of the known distances."`
+	Cost        costSumJSON `json:"cost" doc:"The sum of the known costs of the trips (trips.cost)."`
+	CostUnknown int         `json:"cost_unknown" minimum:"0" doc:"The trips whose cost is unknown, left out of cost."`
+}
+
+type tripsByPurposeJSON struct {
+	Business purposeTotalsJSON `json:"business"`
+	Commute  purposeTotalsJSON `json:"commute"`
+	Personal purposeTotalsJSON `json:"personal"`
+	None     purposeTotalsJSON `json:"none" doc:"The trips without a purpose."`
+}
+
+func tripsByPurposeOf(b core.TripsByPurpose) tripsByPurposeJSON {
+	of := func(t core.PurposeTotals) purposeTotalsJSON {
+		return purposeTotalsJSON{
+			Count: t.Count, DistanceKm: t.DistanceKm, Cost: costSumJSON{MinMinor: t.Cost.Min, MaxMinor: t.Cost.Max},
+			CostUnknown: t.CostUnknown,
+		}
+	}
+	return tripsByPurposeJSON{Business: of(b.Business), Commute: of(b.Commute), Personal: of(b.Personal), None: of(b.None)}
+}
+
 // costSumJSON is a sum of costs known by bounds, in minor units of the account's
 // currency: every total their bounds allow lies within.
 type costSumJSON struct {
@@ -337,6 +362,7 @@ type statsJSON struct {
 	ParkedByTemperature  parkedByTemperatureJSON  `json:"parked_by_temperature" doc:"How the parked intervals of the period, counted as totals.parked, spread by outside temperature: the phantom drain in the cold and in the heat."`
 	ChargesByTemperature chargesByTemperatureJSON `json:"charges_by_temperature" doc:"How the observed charges of the period, of the place asked for, spread by their mean outside temperature (charges.outside_temp_c), AC apart from DC."`
 	ChargesBySoC         chargesBySoCJSON         `json:"charges_by_soc" doc:"How the observed charges of the period spread by the state of charge they started and ended at."`
+	TripsByPurpose       tripsByPurposeJSON       `json:"trips_by_purpose" doc:"The trips of the period, reconstructed ones included, by purpose (trips.purpose), with or without a split."`
 	ChargesByPlace       chargesByPlaceJSON       `json:"charges_by_place" doc:"The charges of the period, reconstructed ones included, by the place their cost takes (charges.place), then outside every place by type, then without a position: each charge in one group."`
 }
 
@@ -476,6 +502,7 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 		out.ChargesByTemperature = chargesByTemperatureOf(core.ChargesByTemperature{})
 		out.ChargesBySoC = chargesBySoCOf(core.ChargesBySoC{})
 		out.ChargesByPlace = chargesByPlaceOf(core.NoChargesByPlace())
+		out.TripsByPurpose = tripsByPurposeOf(core.TripsByPurpose{})
 		return respond(out), nil
 	}
 	model, err := s.modelNow(ctx, v)
@@ -489,6 +516,11 @@ func (s *Server) getStats(ctx context.Context, in *statsInput) (*body[statsJSON]
 	if costs.Trips, err = s.tripCostsOf(ctx, v, model, p.Trips, l); err != nil {
 		return nil, s.internal("trip costs not read", err)
 	}
+	purposes, err := s.tripPurposes(ctx, v.ID, p.Trips, p.Places)
+	if err != nil {
+		return nil, s.internal("trip purposes not read", err)
+	}
+	out.TripsByPurpose = tripsByPurposeOf(core.SumByPurpose(p.Trips, purposes, costs.Trips, from, to))
 	sleep, err := s.sleepOf(ctx, v.ID, p, to)
 	if err != nil {
 		return nil, err

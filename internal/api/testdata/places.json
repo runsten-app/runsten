@@ -94,7 +94,9 @@
             }
           ]
         }
-      ]
+      ],
+      "trip_purpose": null,
+      "trip_purpose_scope": null
     },
     {
       "id": "5e1f0000-0000-4000-8000-000000000002",
@@ -114,7 +116,9 @@
           "price_per_kwh": 0,
           "windows": []
         }
-      ]
+      ],
+      "trip_purpose": "commute",
+      "trip_purpose_scope": "end"
     }
   ]
 }

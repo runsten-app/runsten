@@ -28,6 +28,14 @@ type csvInput struct {
 	To      time.Time `query:"to" doc:"Keeps the events that may have happened, at least partly, before this time. With from, it must come after from." example:"2026-10-01T00:00:00Z"`
 }
 
+// tripsCSVInput is csvInput with the purpose of the trips.
+type tripsCSVInput struct {
+	Vehicle string            `path:"vehicle" doc:"The vehicle ID."`
+	From    time.Time         `query:"from" doc:"Keeps the events that may have happened, at least partly, at or after this time, as the lists do." example:"2026-09-01T00:00:00Z"`
+	To      time.Time         `query:"to" doc:"Keeps the events that may have happened, at least partly, before this time. With from, it must come after from." example:"2026-10-01T00:00:00Z"`
+	Purpose purposeFilterJSON `query:"purpose" doc:"Keeps the trips of this purpose, as the list does with the same parameter; none keeps those without one." example:"business"`
+}
+
 // chargesCSVInput is csvInput with the place of the charges.
 type chargesCSVInput struct {
 	Vehicle string    `path:"vehicle" doc:"The vehicle ID."`
@@ -98,13 +106,13 @@ var tripsHeader = []string{
 	"start_lat", "start_lon", "start_place", "start_address", "end_lat", "end_lon", "end_place", "end_address",
 	"outside_temp_c", "vehicle_trip_meter_km", "vehicle_consumption_kwh_per_100km", "imported", "sources",
 	"cost_currency", "cost_min", "cost_max", "cost_per_100km_min", "cost_per_100km_max", "cost_price_per_kwh_min",
-	"cost_price_per_kwh_max", "cost_charges",
+	"cost_price_per_kwh_max", "cost_charges", "purpose", "purpose_origin",
 }
 
-func (s *Server) tripsCSV(ctx context.Context, in *csvInput) (*csvOutput, error) {
+func (s *Server) tripsCSV(ctx context.Context, in *tripsCSVInput) (*csvOutput, error) {
 	var places []core.Place
 	var vehicle Vehicle
-	trips, l, err := csvEvents(ctx, s, in, func(acc string, v Vehicle, q EventQuery) ([]core.Trip, error) {
+	trips, l, err := csvEvents(ctx, s, &csvInput{Vehicle: in.Vehicle, From: in.From, To: in.To}, func(acc string, v Vehicle, q EventQuery) ([]core.Trip, error) {
 		var err error
 		if places, err = s.Settings.Places(ctx, acc); err != nil {
 			return nil, err //nolint:wrapcheck // logged by csvEvents, never shown
@@ -115,6 +123,17 @@ func (s *Server) tripsCSV(ctx context.Context, in *csvInput) (*csvOutput, error)
 	if err != nil {
 		return nil, err
 	}
+	purposes, err := s.tripPurposes(ctx, vehicle.ID, trips, places)
+	if err != nil {
+		return nil, s.internal("trip purposes not read", err)
+	}
+	kept, ps := trips[:0:0], purposes[:0:0]
+	for i, t := range trips {
+		if in.Purpose.matches(purposes[i]) {
+			kept, ps = append(kept, t), append(ps, purposes[i])
+		}
+	}
+	trips = kept
 	costs, err := s.tripCosts(ctx, vehicle, trips, l)
 	if err != nil {
 		return nil, s.internal("trip costs not read", err)
@@ -122,7 +141,7 @@ func (s *Server) tripsCSV(ctx context.Context, in *csvInput) (*csvOutput, error)
 	book := s.addresses(ctx, places, tripPositions(trips...)...)
 	rows := make([][]string, len(trips))
 	for i, t := range trips {
-		j := tripOf(t, places, book, costs[i])
+		j := tripOf(t, places, book, costs[i], ps[i])
 		rows[i] = slices.Concat(eventCells(j.EventFields), []string{
 			num(j.DistanceKm), num(j.StartOdometerKm), num(j.EndOdometerKm), num(j.StartSoCPct), num(j.EndSoCPct),
 			num(j.StartRangeKm), num(j.EndRangeKm), num(j.EnergyKWh),
@@ -130,7 +149,7 @@ func (s *Server) tripsCSV(ctx context.Context, in *csvInput) (*csvOutput, error)
 			positionCells(j.StartPosition, j.StartPlace, j.StartAddress),
 			positionCells(j.EndPosition, j.EndPlace, j.EndAddress),
 			[]string{num(j.OutsideTempC), num(j.VehicleReported.TripMeterKm), num(j.VehicleReported.ConsumptionKWhPer100km)},
-			provenanceCells(j.EventFields), tripCostCells(j.Cost))
+			provenanceCells(j.EventFields), tripCostCells(j.Cost), purposeCells(j.TripPurposeFields))
 	}
 	return s.csvFile("trips", tripsHeader, rows)
 }
@@ -217,6 +236,11 @@ func costCells(c null[costJSON], digits int) []string {
 		string(c.v.Currency), major(c.v.MinMinor, digits), major(c.v.MaxMinor, digits), string(c.v.Source),
 		num(c.v.EnergyKWh), num(c.v.Efficiency), textCell(c.v.Note),
 	}
+}
+
+// purposeCells write a trip's purpose and its origin.
+func purposeCells(p TripPurposeFields) []string {
+	return []string{string(p.Purpose.v), string(p.PurposeOrigin.v)}
 }
 
 // tripCostCells write a trip's cost as costCells, and the price per kWh as the API

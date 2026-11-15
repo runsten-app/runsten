@@ -601,11 +601,12 @@ type tripJSON struct {
 	EndAddress      *string            `json:"end_address" doc:"The address of end_position, as for start_address."`
 	OutsideTempC    *float64           `json:"outside_temp_c" doc:"The mean outside temperature, in °C, of the responses Runsten fetched while the trip ran, else of the latest one before it (a temperature that held), for a vehicle that tells it (Tesla). null for the others, a reconstructed or imported trip, and a trip derived before Runsten kept it: a rebuild of the derived data gives it."`
 	VehicleReported vehicleTripJSON    `json:"vehicle_reported" doc:"The vehicle's own trip figures, for comparison only: their exact semantics are unknown, and a reconstructed trip has none."`
-	Cost            null[tripCostJSON] `json:"cost" doc:"What the trip's energy cost, at the average price of the kWh that reached the battery over the 30 days before it (the vehicle's charges that started then): the same whatever the period read. null without the account's currency, without the trip's energy_kwh, and when no charge of those 30 days has both a cost and an energy: never 0 for want of one."`
+	TripPurposeFields
+	Cost null[tripCostJSON] `json:"cost" doc:"What the trip's energy cost, at the average price of the kWh that reached the battery over the 30 days before it (the vehicle's charges that started then): the same whatever the period read. null without the account's currency, without the trip's energy_kwh, and when no charge of those 30 days has both a cost and an energy: never 0 for want of one."`
 }
 
 // tripOf converts a trip, its positions at the account's places or at their addresses.
-func tripOf(t core.Trip, places []core.Place, book addressBook, cost core.Value[core.TripCost]) tripJSON {
+func tripOf(t core.Trip, places []core.Place, book addressBook, cost core.Value[core.TripCost], purpose core.Value[core.TripPurpose]) tripJSON {
 	start, end := placeAt(t.From, places), placeAt(t.To, places)
 	return tripJSON{
 		EventFields:     eventOf(t.DetectedAt, t.Reconstructed, t.Start, t.End, t.Sources, t.Import),
@@ -623,7 +624,8 @@ func tripOf(t core.Trip, places []core.Place, book addressBook, cost core.Value[
 		VehicleReported: vehicleTripJSON{
 			TripMeterKm: opt(t.TripMeterKm, same), ConsumptionKWhPer100km: opt(t.ConsumptionKWhPer100km, same),
 		},
-		Cost: nullOf(cost, tripCostOf),
+		TripPurposeFields: purposeFieldsOf(purpose),
+		Cost:              nullOf(cost, tripCostOf),
 	}
 }
 
@@ -771,23 +773,76 @@ func tripPositions(trips ...core.Trip) []core.Value[core.Position] {
 	return out
 }
 
-func (s *Server) listTrips(ctx context.Context, in *listInput) (*body[page[tripJSON]], error) {
+// tripListInput is listInput with the purpose of the trips.
+type tripListInput struct {
+	Vehicle string            `path:"vehicle" doc:"The vehicle ID."`
+	From    time.Time         `query:"from" doc:"Keeps the events that may have happened, at least partly, at or after this time: those with end.before after it. An event whose bounds straddle it is kept." example:"2026-09-28T00:00:00Z"`
+	To      time.Time         `query:"to" doc:"Keeps the events that may have happened, at least partly, before this time: those with start.after before it. With from, it must come after from." example:"2026-09-29T00:00:00Z"`
+	Cursor  string            `query:"cursor" doc:"The next_cursor of the previous page. It stays valid when from or to change."`
+	Limit   int               `query:"limit" minimum:"1" maximum:"200" default:"50" doc:"The maximum number of events of the page."`
+	Purpose purposeFilterJSON `query:"purpose" doc:"Keeps the trips of this purpose (by hand or by a place's rule); none keeps those without one." example:"business"`
+}
+
+// tripBatch is how many trips a filtered list reads at a time.
+const tripBatch = 200
+
+// listTrips is listEvents of the trips, with their purposes. Filtered by purpose, it reads
+// the trips a batch at a time until the page is full: a purpose is the places' rules as
+// much as the marks, known only once the trips are read.
+func (s *Server) listTrips(ctx context.Context, in *tripListInput) (*body[page[tripJSON]], error) {
 	var places []core.Place
-	return listEvents(ctx, s, in, func(acc string, v Vehicle, q EventQuery) ([]core.Trip, error) {
+	purposes := map[EventKey]core.Value[core.TripPurpose]{}
+	key := func(t core.Trip) EventKey { return eventKey(t.Start, t.DetectedAt, t.Import) }
+	list := &listInput{Vehicle: in.Vehicle, From: in.From, To: in.To, Cursor: in.Cursor, Limit: in.Limit}
+	return listEvents(ctx, s, list, func(acc string, v Vehicle, q EventQuery) ([]core.Trip, error) {
 		var err error
 		if places, err = s.Settings.Places(ctx, acc); err != nil {
 			return nil, err //nolint:wrapcheck // logged by listEvents, never shown
 		}
-		return s.Reader.ListTrips(ctx, acc, v.ID, q)
-	}, func(t core.Trip) EventKey { return eventKey(t.Start, t.DetectedAt, t.Import) }, func(trips []core.Trip, v Vehicle, l AccountLimits) ([]tripJSON, error) {
+		if in.Purpose == "" {
+			return s.Reader.ListTrips(ctx, acc, v.ID, q)
+		}
+		var out []core.Trip
+		batch := q
+		batch.Limit = tripBatch
+		for {
+			trips, err := s.Reader.ListTrips(ctx, acc, v.ID, batch)
+			if err != nil {
+				return nil, err //nolint:wrapcheck // logged by listEvents, never shown
+			}
+			ps, err := s.tripPurposes(ctx, v.ID, trips, places)
+			if err != nil {
+				return nil, err
+			}
+			for i, t := range trips {
+				if in.Purpose.matches(ps[i]) {
+					out = append(out, t)
+					purposes[key(t)] = ps[i]
+				}
+			}
+			if len(out) >= q.Limit || len(trips) < batch.Limit {
+				return out[:min(len(out), q.Limit)], nil
+			}
+			k := key(trips[len(trips)-1])
+			batch.After = &k
+		}
+	}, key, func(trips []core.Trip, v Vehicle, l AccountLimits) ([]tripJSON, error) {
 		costs, err := s.tripCosts(ctx, v, trips, l)
 		if err != nil {
 			return nil, s.internal("trip costs not read", err)
 		}
+		ps := make([]core.Value[core.TripPurpose], len(trips))
+		if in.Purpose != "" {
+			for i, t := range trips {
+				ps[i] = purposes[key(t)]
+			}
+		} else if ps, err = s.tripPurposes(ctx, v.ID, trips, places); err != nil {
+			return nil, s.internal("trip purposes not read", err)
+		}
 		book := s.addresses(ctx, places, tripPositions(trips...)...)
 		out := make([]tripJSON, len(trips))
 		for i, t := range trips {
-			out[i] = tripOf(t, places, book, costs[i])
+			out[i] = tripOf(t, places, book, costs[i], ps[i])
 		}
 		return out, nil
 	})
@@ -851,7 +906,11 @@ func (s *Server) getTrip(ctx context.Context, in *eventInput) (*body[tripJSON], 
 		if err != nil {
 			return tripJSON{}, s.internal("trip cost not read", err)
 		}
-		return tripOf(t, places, s.addresses(ctx, places, tripPositions(t)...), costs[0]), nil
+		ps, err := s.tripPurposes(ctx, v.ID, []core.Trip{t}, places)
+		if err != nil {
+			return tripJSON{}, s.internal("trip purpose not read", err)
+		}
+		return tripOf(t, places, s.addresses(ctx, places, tripPositions(t)...), costs[0], ps[0]), nil
 	})
 }
 

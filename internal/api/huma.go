@@ -250,6 +250,16 @@ func (n null[T]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(n.v) //nolint:wrapcheck // marshaler
 }
 
+// UnmarshalJSON reads the value, or null.
+func (n *null[T]) UnmarshalJSON(b []byte) error {
+	if string(b) == "null" {
+		*n = null[T]{}
+		return nil
+	}
+	n.ok = true
+	return json.Unmarshal(b, &n.v) //nolint:wrapcheck // unmarshaler
+}
+
 // Schema is oneOf [T, null].
 func (null[T]) Schema(r huma.Registry) *huma.Schema {
 	return &huma.Schema{OneOf: []*huma.Schema{r.Schema(reflect.TypeFor[T](), true, ""), {Type: "null"}}}

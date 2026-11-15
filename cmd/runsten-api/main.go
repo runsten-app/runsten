@@ -356,6 +356,7 @@ func run(args []string) error {
 		Models:           st,
 		Deletion:         st,
 		Costs:            st,
+		Marks:            st,
 		Imports:          st,
 		ImportJobs:       st,
 		Aximote:          aximoteVehicles{ax},

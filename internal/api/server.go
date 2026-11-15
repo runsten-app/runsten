@@ -221,6 +221,8 @@ type Config struct {
 	Models   VehicleModels
 	Deletion VehicleDeletion
 	Costs    ChargeCosts
+	// Marks are the purposes the user marked the trips with.
+	Marks TripMarks
 	// Imports are the vehicles' events imported from other applications; ImportJobs
 	// the imports asked for, run by the import worker; Aximote lists the vehicles of an
 	// Aximote account.
@@ -397,6 +399,7 @@ func New(cfg Config) *Server {
 	s.registerCharging(s.api)
 	s.registerSettings(s.api)
 	s.registerCosts(s.api)
+	s.registerMarks(s.api)
 	s.registerConnection(s.api)
 	s.registerPolestar(s.api)
 	s.registerTesla(s.api)

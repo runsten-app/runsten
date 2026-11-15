@@ -59,6 +59,8 @@ type memReader struct {
 	open     map[string]core.ChargeInProgress // the charges in progress, by vehicle
 	net      core.NetCapacity                 // the one of the last InProgress
 	entered  []EnteredCost
+	marks    map[string]core.Value[core.TripMark] // by vehicle and trip ID (tripKey)
+	markErr  error                                // returned by the methods of TripMarks when set
 	settings *memSettings
 	next     int // of the entered costs' IDs
 	writes   int // calls of the methods that write the entered costs
@@ -72,8 +74,52 @@ func newMemReader(settings *memSettings) *memReader {
 	return &memReader{
 		vehicles: map[string][]Vehicle{}, trips: map[string][]core.Trip{},
 		charges: map[string][]core.Charge{}, current: map[string][]core.Record{}, sleep: map[string][]core.Record{},
-		settings: settings,
+		marks: map[string]core.Value[core.TripMark]{}, settings: settings,
 	}
+}
+
+// tripKey names a vehicle's trip in memReader.marks.
+func tripKey(vehicle string, ref EventRef) string {
+	if ref.Source != "" {
+		return vehicle + "/" + ref.Source + ":" + ref.SourceID
+	}
+	return vehicle + "/" + ref.DetectedAt.UTC().Format(time.RFC3339Nano)
+}
+
+func tripRef(t core.Trip) EventRef {
+	if t.Import.OK {
+		return EventRef{Source: t.Import.V.Source, SourceID: t.Import.V.SourceID}
+	}
+	return EventRef{DetectedAt: t.DetectedAt}
+}
+
+func (m *memReader) TripMarks(_ context.Context, _, vehicle string, trips []core.Trip) ([]core.Value[core.TripMark], error) {
+	out := make([]core.Value[core.TripMark], len(trips))
+	for i, t := range trips {
+		out[i] = m.marks[tripKey(vehicle, tripRef(t))]
+	}
+	return out, m.markErr
+}
+
+func (m *memReader) SetTripMarks(_ context.Context, acc, vehicle string, refs []EventRef, mark core.Value[core.TripMark]) error {
+	if m.markErr != nil {
+		return m.markErr
+	}
+	for _, ref := range refs {
+		if m.accountOf(vehicle) != acc || !slices.ContainsFunc(m.trips[vehicle], func(t core.Trip) bool {
+			return tripKey(vehicle, tripRef(t)) == tripKey(vehicle, ref)
+		}) {
+			return ErrNotFound
+		}
+	}
+	for _, ref := range refs {
+		if mark.OK {
+			m.marks[tripKey(vehicle, ref)] = mark
+		} else {
+			delete(m.marks, tripKey(vehicle, ref))
+		}
+	}
+	return nil
 }
 
 func costID(n int) string { return fmt.Sprintf("c0570000-0000-4000-8000-%012d", n) }

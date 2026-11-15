@@ -193,14 +193,16 @@ type tariffVersionJSON struct {
 // PlaceFields are the fields of a place but its ID: the body of a write. Exported, so
 // that huma reads the fields of placeJSON, which embeds it.
 type PlaceFields struct {
-	Name            string              `json:"name" minLength:"1" maxLength:"60" doc:"Shown to the user only: never in the logs nor the errors."`
-	Position        positionJSON        `json:"position" doc:"The center of the place."`
-	RadiusM         float64             `json:"radius_m" minimum:"20" maximum:"1000" doc:"A charge, or the start or end of a trip, whose position is within this distance, in metres, is at the place; the nearest place wins." example:"100"`
-	TimeZone        string              `json:"time_zone" minLength:"1" doc:"The IANA time zone of the tariff's days and windows." example:"Europe/Paris"`
-	WithoutPosition bool                `json:"without_position" doc:"The place also takes the AC charges, and those of unknown type, that have no position. At most one place of the account."`
-	MaxPowerKW      *float64            `json:"max_power_kw" exclusiveMinimum:"0" maximum:"400" doc:"The power of the place's charger: it narrows the cost of a charge across several prices. null when unknown."`
-	Efficiency      *float64            `json:"efficiency" exclusiveMinimum:"0" maximum:"1" doc:"The share of the energy drawn from the grid that reaches the battery, in place of the default of the settings (default_efficiency). null for the default."`
-	Tariff          []tariffVersionJSON `json:"tariff" minItems:"1" maxItems:"50" nullable:"false" doc:"The versions of the tariff, one per valid_from, oldest first in a response. At least one: a place gives a price to its charges."`
+	Name            string                 `json:"name" minLength:"1" maxLength:"60" doc:"Shown to the user only: never in the logs nor the errors."`
+	Position        positionJSON           `json:"position" doc:"The center of the place."`
+	RadiusM         float64                `json:"radius_m" minimum:"20" maximum:"1000" doc:"A charge, or the start or end of a trip, whose position is within this distance, in metres, is at the place; the nearest place wins." example:"100"`
+	TimeZone        string                 `json:"time_zone" minLength:"1" doc:"The IANA time zone of the tariff's days and windows." example:"Europe/Paris"`
+	WithoutPosition bool                   `json:"without_position" doc:"The place also takes the AC charges, and those of unknown type, that have no position. At most one place of the account."`
+	MaxPowerKW      *float64               `json:"max_power_kw" exclusiveMinimum:"0" maximum:"400" doc:"The power of the place's charger: it narrows the cost of a charge across several prices. null when unknown."`
+	Efficiency      *float64               `json:"efficiency" exclusiveMinimum:"0" maximum:"1" doc:"The share of the energy drawn from the grid that reaches the battery, in place of the default of the settings (default_efficiency). null for the default."`
+	Tariff          []tariffVersionJSON    `json:"tariff" minItems:"1" maxItems:"50" nullable:"false" doc:"The versions of the tariff, one per valid_from, oldest first in a response. At least one: a place gives a price to its charges."`
+	TripPurpose     null[purposeJSON]      `json:"trip_purpose" doc:"The purpose this place's rule gives the trips of trip_purpose_scope, unless marked by hand (PUT /vehicles/{vehicle}/trip-marks). null without a rule."`
+	TripPurposeEnds null[purposeScopeJSON] `json:"trip_purpose_scope" doc:"The trips of the rule. end: those that end at the place, the way there and not the way back. either: those that start or end there. null without a rule; set with trip_purpose, and only then."`
 }
 
 type placeJSON struct {
@@ -249,7 +251,9 @@ func placeOf(p core.Place) placeJSON {
 	out := placeJSON{ID: p.ID, PlaceFields: PlaceFields{
 		Name: p.Name, Position: positionOf(p.Position), RadiusM: p.RadiusM, TimeZone: loc.String(),
 		WithoutPosition: p.WithoutPosition, MaxPowerKW: opt(p.MaxPowerKW, same), Efficiency: opt(p.Efficiency, same),
-		Tariff: []tariffVersionJSON{},
+		Tariff:          []tariffVersionJSON{},
+		TripPurpose:     nullOf(p.Rule, func(r core.PurposeRule) purposeJSON { return purposeJSON(r.Purpose) }),
+		TripPurposeEnds: nullOf(p.Rule, func(r core.PurposeRule) purposeScopeJSON { return purposeScopeJSON(r.Scope) }),
 	}}
 	versions := slices.SortedFunc(slices.Values(p.Tariff), func(a, b core.TariffVersion) int {
 		return cmp.Or(cmp.Compare(a.ValidFrom.Year, b.ValidFrom.Year), cmp.Compare(a.ValidFrom.Month, b.ValidFrom.Month),
@@ -311,6 +315,14 @@ func corePlace(id string, f PlaceFields) (core.Place, error) {
 	}
 	if f.Efficiency != nil {
 		p.Efficiency = core.Value[float64]{V: *f.Efficiency, OK: true}
+	}
+	switch {
+	case f.TripPurpose.ok != f.TripPurposeEnds.ok:
+		return core.Place{}, invalidBody("trip_purpose_scope", "set with trip_purpose, and only then")
+	case f.TripPurpose.ok:
+		p.Rule = core.Value[core.PurposeRule]{V: core.PurposeRule{
+			Purpose: core.Purpose(f.TripPurpose.v), Scope: core.PurposeScope(f.TripPurposeEnds.v),
+		}, OK: true}
 	}
 	var dates []core.Date
 	for i, v := range f.Tariff {

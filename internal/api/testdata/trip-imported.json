@@ -41,5 +41,8 @@
     "trip_meter_km": null,
     "consumption_kwh_per_100km": null
   },
+  "purpose": null,
+  "purpose_origin": null,
+  "purpose_place": null,
   "cost": null
 }
