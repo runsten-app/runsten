@@ -60,8 +60,9 @@ type TripPurpose struct {
 
 // PurposeOf is the purpose of a trip: the one marked by hand (marked, even without a
 // purpose), else the rule of the place it ends at, or starts at when that place's rule
-// takes both ends. Two rules that disagree give none: a trip from a place marked Business
-// to one marked Personal is left for the user to tell. Absent: the trip has no purpose.
+// takes both ends. Two rules that apply and disagree give none: a trip from a place
+// whose Business rule takes both ends to one marked Personal is left for the user to
+// tell. Absent: the trip has no purpose.
 func PurposeOf(t Trip, mark Value[TripMark], places []Place) Value[TripPurpose] {
 	if mark.OK {
 		return known(TripPurpose{Purpose: mark.V.Purpose, Origin: PurposeByHand})

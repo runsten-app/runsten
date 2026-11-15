@@ -157,9 +157,19 @@ func TestTripMarks(t *testing.T) {
 		if got := read(t, a, v); got[1] != "" {
 			t.Errorf("cleared, the moved mark came back: %v", got)
 		}
-		// The others are kept: never lost.
-		if n := count(ctx, t, s, a, "trip_marks"); n != 4 {
-			t.Errorf("%d marks left, want 4", n)
+		// The others are kept: never lost. Two moved marks overlap the trip at 2 h: neither
+		// is its, so writing its mark deletes neither.
+		if err := s.SetTripMarks(ctx, a, v, []api.EventRef{ref(all[2])}, mark(core.PurposeCommute)); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.SetTripMarks(ctx, a, v, []api.EventRef{ref(all[2])}, mark(core.PurposePersonal)); err != nil {
+			t.Fatal(err)
+		}
+		if got := read(t, a, v); got[2] != "personal" {
+			t.Errorf("marked again: %v", got)
+		}
+		if n := count(ctx, t, s, a, "trip_marks"); n != 5 {
+			t.Errorf("%d marks left, want 5: the 3 moved ones kept, and the trips at 6 h and 2 h", n)
 		}
 	})
 }

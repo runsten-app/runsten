@@ -85,6 +85,16 @@ func TestTripPurpose(t *testing.T) {
 		}
 	}
 
+	// given sets the marks a subtest starts from: each one runs alone as well.
+	given := func(t *testing.T) {
+		t.Helper()
+		for purpose, id := range map[string]string{"rule": morning, "none": evening} {
+			if status, body := mark(t, purpose, id); status != http.StatusNoContent {
+				t.Fatalf("given: %d %s", status, body)
+			}
+		}
+	}
+
 	t.Run("by rule", func(t *testing.T) {
 		want(t, "", map[string]string{morning: "commute/rule/Work", reconstructed: "-/-/-", evening: "-/-/-"})
 		_, body := get(t, noFollow(), base+"/trips/"+morning, c)
@@ -110,6 +120,7 @@ func TestTripPurpose(t *testing.T) {
 	})
 
 	t.Run("filtered", func(t *testing.T) {
+		given(t)
 		want(t, "?purpose=commute", map[string]string{morning: "commute/rule/Work"})
 		want(t, "?purpose=business", map[string]string{})
 		want(t, "?purpose=none", map[string]string{reconstructed: "-/-/-", evening: "-/hand/-"})
@@ -129,6 +140,7 @@ func TestTripPurpose(t *testing.T) {
 	})
 
 	t.Run("in the CSV file", func(t *testing.T) {
+		given(t)
 		_, body := get(t, noFollow(), base+"/trips.csv?purpose=commute", c)
 		lines := strings.Split(strings.TrimSpace(body), "\r\n")
 		if len(lines) != 2 || !strings.HasPrefix(lines[1], morning) || !strings.HasSuffix(lines[1], ",commute,rule") {

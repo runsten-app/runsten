@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -12,14 +13,18 @@ import (
 	"runsten/internal/core"
 )
 
-// movedMark selects, as m, the marks of vehicle $1 whose derived trip is no longer
+// movedMarkAs selects, as alias, the marks of vehicle $1 whose derived trip is no longer
 // detected at their trip_detected_at (a change of the detection moved it) and whose
 // window overlaps one trip of the vehicle only: that trip is theirs. A mark whose window
 // overlaps several, or none, is kept and takes none: it is never lost.
-const movedMark = `m.vehicle_id = $1 AND m.trip_detected_at IS NOT NULL
+func movedMarkAs(alias string) string {
+	return strings.NewReplacer("m.", alias+".").Replace(`m.vehicle_id = $1 AND m.trip_detected_at IS NOT NULL
 	AND NOT EXISTS (SELECT FROM trips d WHERE d.vehicle_id = $1 AND d.detected_at = m.trip_detected_at)
 	AND (SELECT count(*) FROM trips d WHERE d.vehicle_id = $1
-		AND d.started_after < m.window_before AND m.window_after < d.ended_before) = 1`
+		AND d.started_after < m.window_before AND m.window_after < d.ended_before) = 1`)
+}
+
+var movedMark = movedMarkAs("m")
 
 // TripMarks implements api.TripMarks: marks[i] is the mark trips[i], the vehicle's,
 // takes. A derived trip takes the mark set at its detection time, else a moved one
@@ -130,7 +135,10 @@ func setTripMark(ctx context.Context, tx pgx.Tx, accountID, vehicleID string, re
 		if !set {
 			return nil
 		}
-		_, err = tx.Exec(ctx, `INSERT INTO trip_marks (account_id, vehicle_id, source, source_id, purpose) VALUES ($1, $2, $3, $4, $5)`,
+		// Upserted: another write of the same trip may have inserted since the delete.
+		_, err = tx.Exec(ctx, `INSERT INTO trip_marks (account_id, vehicle_id, source, source_id, purpose) VALUES ($1, $2, $3, $4, $5)
+			ON CONFLICT (vehicle_id, source, source_id) WHERE source IS NOT NULL
+			DO UPDATE SET purpose = EXCLUDED.purpose, marked_at = now()`,
 			accountID, vehicleID, ref.Source, ref.SourceID, purpose)
 		if err != nil {
 			return fmt.Errorf("insert trip mark: %w", err)
@@ -146,9 +154,13 @@ func setTripMark(ctx context.Context, tx pgx.Tx, accountID, vehicleID string, re
 	case err != nil:
 		return fmt.Errorf("trip: %w", err)
 	}
-	// The trip's mark, and a moved one it takes: else that one would come back.
+	// The trip's mark, and the moved one it takes, as TripMarks does: else that one would
+	// come back. Two moved marks overlapping the trip are neither its: both are kept.
 	_, err = tx.Exec(ctx, `DELETE FROM trip_marks m WHERE m.vehicle_id = $1 AND (m.trip_detected_at = $2
-		OR (m.window_after < $4 AND $3 < m.window_before AND `+movedMark+`))`, vehicleID, ref.DetectedAt, after, before)
+		OR (m.window_after < $4 AND $3 < m.window_before AND `+movedMark+`
+			AND NOT EXISTS (SELECT FROM trip_marks o WHERE o.id <> m.id
+				AND o.window_after < $4 AND $3 < o.window_before AND `+movedMarkAs("o")+`)))`,
+		vehicleID, ref.DetectedAt, after, before)
 	if err != nil {
 		return fmt.Errorf("delete trip mark: %w", err)
 	}
@@ -157,7 +169,10 @@ func setTripMark(ctx context.Context, tx pgx.Tx, accountID, vehicleID string, re
 	}
 	_, err = tx.Exec(ctx, `
 		INSERT INTO trip_marks (account_id, vehicle_id, trip_detected_at, window_after, window_before, purpose)
-		VALUES ($1, $2, $3, $4, $5, $6)`, accountID, vehicleID, ref.DetectedAt, after, before, purpose)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (vehicle_id, trip_detected_at) WHERE trip_detected_at IS NOT NULL
+		DO UPDATE SET window_after = EXCLUDED.window_after, window_before = EXCLUDED.window_before,
+			purpose = EXCLUDED.purpose, marked_at = now()`, accountID, vehicleID, ref.DetectedAt, after, before, purpose)
 	if err != nil {
 		return fmt.Errorf("insert trip mark: %w", err)
 	}
