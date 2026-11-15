@@ -6,6 +6,7 @@ import { ChargesPage } from '@/pages/charges'
 import { HomePage } from '@/pages/home'
 import { LoginPage } from '@/pages/login'
 import { TripPage } from '@/pages/trip'
+import { TripReportPage } from '@/pages/trip-report'
 import { TripsPage } from '@/pages/trips'
 import { VehiclePage } from '@/pages/vehicle'
 import { isApiError } from '@/shared/api'
@@ -42,6 +43,8 @@ export function createAppRouter(history: RouterHistory, queryClient: QueryClient
         path: '/vehicles/:vehicle/trips',
         children: [
           { path: '', name: 'trips', component: TripsPage, props: true },
+          // Before :id, which it would match: no trip's ID is report.
+          { path: 'report', name: 'trip-report', component: TripReportPage, props: true },
           { path: ':id', name: 'trip', component: TripPage, props: true },
         ],
       },

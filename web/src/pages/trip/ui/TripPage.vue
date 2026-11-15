@@ -4,17 +4,18 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { periodQuery } from '@/features/filter-period'
+import { purposeQuery } from '@/features/mark-trip-purpose'
 import { AppShell } from '@/widgets/app-shell'
 import { TripDetails } from '@/widgets/trip-details'
 
 const props = defineProps<{ vehicle: string; id: string }>()
 const { t } = useI18n()
 const route = useRoute()
-// Back to the list as it was left: the same period.
+// Back to the list as it was left: the same period and purpose.
 const list = computed(() => ({
   name: 'trips',
   params: { vehicle: props.vehicle },
-  query: periodQuery(route.query),
+  query: { ...periodQuery(route.query), purpose: purposeQuery(route.query) },
 }))
 </script>
 

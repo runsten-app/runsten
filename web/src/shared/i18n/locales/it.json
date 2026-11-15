@@ -1369,6 +1369,16 @@
       "notFound": "Questo luogo non esiste più.",
       "unavailable": "Runsten non è raggiungibile. Riprovi tra qualche istante.",
       "internal": "Si è verificato un errore. Riprovi più tardi."
+    },
+    "trips": {
+      "title": "Viaggi verso e da questo luogo",
+      "help": "Una regola segna il motivo di questi viaggi. Un viaggio segnato a mano mantiene il suo segno.",
+      "markAs": "Segnali come",
+      "noRule": "Nessuna regola",
+      "scope": "Quali viaggi",
+      "end": "Quelli che arrivano qui",
+      "endHelp": "L'andata, non il ritorno",
+      "either": "Quelli che partono o arrivano qui"
     }
   },
   "connection": {
@@ -2517,5 +2527,45 @@
       "unavailable": "Runsten non è raggiungibile. Riprova tra un momento.",
       "internal": "Non è stato possibile salvare l’accesso. Riprova tra un momento."
     }
+  },
+  "purpose": {
+    "business": "Lavoro",
+    "commute": "Casa-lavoro",
+    "personal": "Personale",
+    "none": "Nessuno",
+    "unmarked": "Senza motivo",
+    "all": "Tutti",
+    "mark": "Motivo",
+    "of": "Motivo del viaggio: {purpose}",
+    "auto": "auto",
+    "fromRule": "Dalla regola di {place}",
+    "byHand": "Segnato a mano",
+    "backToRule": "Torna alla regola",
+    "clear": "Togli il segno",
+    "filter": "Motivo dei viaggi",
+    "select": "Seleziona",
+    "done": "Fatto",
+    "selected": "{n} viaggio selezionato | {n} viaggi selezionati",
+    "selectTrip": "Seleziona un viaggio del {day}",
+    "error": "Non è stato possibile segnare i viaggi. Riprova.",
+    "title": "Motivo",
+    "help": {
+      "rule": "Dalla regola di {place}: {purpose}. Scegline un altro per sostituirla.",
+      "hand": "Segnato a mano.",
+      "none": "Nessuna regola di un luogo si applica a questo viaggio."
+    }
+  },
+  "report": {
+    "open": "Resoconto",
+    "title": "Viaggi",
+    "titleOf": "Viaggi: {purpose}",
+    "allTime": "Tutto lo storico",
+    "date": "Data",
+    "from": "Partenza",
+    "to": "Arrivo",
+    "trips": "{n} viaggio | {n} viaggi",
+    "print": "Stampa o salva in PDF",
+    "note": "La distanza è quella del contachilometri. Il costo è l'elettricità usata dal viaggio, al prezzo medio delle ricariche del veicolo nei 30 giorni precedenti.",
+    "unpriced": "{n} viaggio non ha un costo noto: è escluso dal totale. | {n} viaggi non hanno un costo noto: sono esclusi dal totale."
   }
 }

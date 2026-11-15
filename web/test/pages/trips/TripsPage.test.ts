@@ -72,6 +72,7 @@ describe('TripsPage', () => {
     expect(mocks.fetchTrips).toHaveBeenCalledWith(vehicle, {
       from: '2026-09-01T00:00:00.000Z',
       to: '2026-10-01T00:00:00.000Z',
+      purpose: undefined,
       cursor: undefined,
     })
     expect(wrapper.findAll('.trip-summary')).toHaveLength(1)
@@ -149,5 +150,31 @@ describe('TripsPage', () => {
       undefined,
       undefined,
     ])
+  })
+
+  it('reads the trips of the purpose of the URL, to the report and the CSV file too', async () => {
+    const { wrapper } = await page('?from=2026-09-01&to=2026-09-30&purpose=business')
+    expect(mocks.fetchTrips).toHaveBeenCalledWith(
+      vehicle,
+      expect.objectContaining({ purpose: 'business' }),
+    )
+    expect(wrapper.find('.trip-report-link').attributes('href')).toBe(
+      `/vehicles/${vehicle}/trips/report?from=2026-09-01&to=2026-09-30&purpose=business`,
+    )
+    expect(wrapper.find('.csv-download').attributes('href')).toContain('purpose=business')
+  })
+
+  it('selects trips to mark them at once, and starts over on another filter', async () => {
+    const { wrapper, router } = await page('?from=2026-09-01')
+    expect(wrapper.find('.selection-bar').exists()).toBe(false)
+    await wrapper.find('.select-trips').trigger('click')
+    expect(wrapper.find('.select-trips').text()).toBe('Done')
+    await wrapper.findAll('.select-trip input')[0]?.setValue(true)
+    expect(wrapper.find('.selection-bar').text()).toContain('1 trip selected')
+    await router.replace({ query: { from: '2026-09-01', purpose: 'none' } })
+    await flushPromises()
+    expect(wrapper.find('.selection-bar').text()).toContain('0 trips selected')
+    await wrapper.find('.select-trips').trigger('click')
+    expect(wrapper.find('.selection-bar').exists()).toBe(false)
   })
 })

@@ -1369,6 +1369,16 @@
       "notFound": "Dette stedet finnes ikke lenger.",
       "unavailable": "Får ikke kontakt med Runsten. Prøv igjen om litt.",
       "internal": "Noe gikk galt. Prøv igjen senere."
+    },
+    "trips": {
+      "title": "Turer til og fra dette stedet",
+      "help": "En regel merker formålet med disse turene. En tur merket for hånd beholder merket sitt.",
+      "markAs": "Merk dem som",
+      "noRule": "Ingen regel",
+      "scope": "Hvilke turer",
+      "end": "Som slutter her",
+      "endHelp": "Turen dit, ikke hjem igjen",
+      "either": "Som starter eller slutter her"
     }
   },
   "connection": {
@@ -2517,5 +2527,45 @@
       "unavailable": "Runsten kunne ikke nås. Prøv igjen om litt.",
       "internal": "Innloggingen kunne ikke lagres. Prøv igjen om litt."
     }
+  },
+  "purpose": {
+    "business": "Jobb",
+    "commute": "Til og fra jobb",
+    "personal": "Privat",
+    "none": "Ingen",
+    "unmarked": "Uten formål",
+    "all": "Alle",
+    "mark": "Formål",
+    "of": "Formålet med turen: {purpose}",
+    "auto": "auto",
+    "fromRule": "Etter regelen for {place}",
+    "byHand": "Merket for hånd",
+    "backToRule": "Tilbake til regelen",
+    "clear": "Fjern merket",
+    "filter": "Formålet med turene",
+    "select": "Velg",
+    "done": "Ferdig",
+    "selected": "{n} tur valgt | {n} turer valgt",
+    "selectTrip": "Velg en tur fra {day}",
+    "error": "Turene kunne ikke merkes. Prøv igjen.",
+    "title": "Formål",
+    "help": {
+      "rule": "Etter regelen for {place}: {purpose}. Velg et annet for å overstyre den.",
+      "hand": "Merket for hånd.",
+      "none": "Ingen stedsregel gjelder for denne turen."
+    }
+  },
+  "report": {
+    "open": "Rapport",
+    "title": "Turer",
+    "titleOf": "Turer: {purpose}",
+    "allTime": "Hele historikken",
+    "date": "Dato",
+    "from": "Fra",
+    "to": "Til",
+    "trips": "{n} tur | {n} turer",
+    "print": "Skriv ut eller lagre som PDF",
+    "note": "Avstanden er kilometertellerens. Kostnaden er strømmen turen brukte, til gjennomsnittsprisen for bilens ladinger de 30 dagene før.",
+    "unpriced": "{n} tur har ingen kjent kostnad: den er holdt utenfor summen. | {n} turer har ingen kjent kostnad: de er holdt utenfor summen."
   }
 }

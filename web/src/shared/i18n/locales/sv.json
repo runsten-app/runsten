@@ -1369,6 +1369,16 @@
       "notFound": "Den här platsen finns inte längre.",
       "unavailable": "Runsten kan inte nås. Försök igen om en stund.",
       "internal": "Något gick fel. Försök igen senare."
+    },
+    "trips": {
+      "title": "Resor till och från den här platsen",
+      "help": "En regel markerar syftet med de här resorna. En resa som markerats för hand behåller sin markering.",
+      "markAs": "Markera dem som",
+      "noRule": "Ingen regel",
+      "scope": "Vilka resor",
+      "end": "Som slutar här",
+      "endHelp": "Ditresan, inte hemresan",
+      "either": "Som börjar eller slutar här"
     }
   },
   "connection": {
@@ -2517,5 +2527,45 @@
       "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
       "internal": "Inloggningen kunde inte sparas. Försök igen om en stund."
     }
+  },
+  "purpose": {
+    "business": "Tjänst",
+    "commute": "Till och från jobbet",
+    "personal": "Privat",
+    "none": "Inget",
+    "unmarked": "Utan syfte",
+    "all": "Alla",
+    "mark": "Syfte",
+    "of": "Resans syfte: {purpose}",
+    "auto": "auto",
+    "fromRule": "Enligt regeln för {place}",
+    "byHand": "Markerad för hand",
+    "backToRule": "Tillbaka till regeln",
+    "clear": "Ta bort markeringen",
+    "filter": "Resornas syfte",
+    "select": "Välj",
+    "done": "Klar",
+    "selected": "{n} resa vald | {n} resor valda",
+    "selectTrip": "Välj en resa från {day}",
+    "error": "Resorna kunde inte markeras. Försök igen.",
+    "title": "Syfte",
+    "help": {
+      "rule": "Enligt regeln för {place}: {purpose}. Välj ett annat för att ersätta den.",
+      "hand": "Markerad för hand.",
+      "none": "Ingen platsregel gäller för den här resan."
+    }
+  },
+  "report": {
+    "open": "Rapport",
+    "title": "Resor",
+    "titleOf": "Resor: {purpose}",
+    "allTime": "Hela historiken",
+    "date": "Datum",
+    "from": "Från",
+    "to": "Till",
+    "trips": "{n} resa | {n} resor",
+    "print": "Skriv ut eller spara som PDF",
+    "note": "Sträckan är vägmätarens. Kostnaden är elen som resan använde, till snittpriset för bilens laddningar under de 30 dagarna innan.",
+    "unpriced": "{n} resa har ingen känd kostnad: den ingår inte i summan. | {n} resor har ingen känd kostnad: de ingår inte i summan."
   }
 }

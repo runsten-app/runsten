@@ -245,6 +245,8 @@ describe('PlaceForm, a new place', () => {
       without_position: true,
       max_power_kw: 7.4,
       efficiency: null,
+      trip_purpose: null,
+      trip_purpose_scope: null,
       tariff: [
         {
           valid_from: '2026-09-27',
@@ -495,6 +497,43 @@ describe('PlaceForm, the tariff', () => {
     expect(w().find('.add-version').attributes('disabled')).toBeDefined()
     expect(w().find('#place-v0-add-window').attributes('disabled')).toBeDefined()
     expect(w().text()).toContain('Empty for the default: 0.8 in AC, 0.9 in DC.')
+  })
+})
+
+describe('PlaceForm, the trips', () => {
+  it('gives the trips to or from the place a purpose, and which ones', async () => {
+    const withRule = { ...place, trip_purpose: 'commute', trip_purpose_scope: 'either' }
+    api.replacePlace.mockResolvedValue(withRule)
+    await form({ place: withRule as Place })
+    const select = w().find('.trip-rule').findComponent({ name: 'VSelect' })
+    expect(select.props('modelValue')).toBe('commute')
+    expect(w().find<HTMLInputElement>('.scope input[value="either"]').element.checked).toBe(true)
+    await w().find('.scope input[value="end"]').setValue(true)
+    await submit()
+    expect(api.replacePlace).toHaveBeenLastCalledWith(
+      place.id,
+      expect.objectContaining({ trip_purpose: 'commute', trip_purpose_scope: 'end' }),
+    )
+    // No rule: no scope either, sent or shown.
+    select.vm.$emit('update:modelValue', '')
+    await flushPromises()
+    expect(w().find('.scope').exists()).toBe(false)
+    await submit()
+    expect(api.replacePlace).toHaveBeenLastCalledWith(
+      place.id,
+      expect.objectContaining({ trip_purpose: null, trip_purpose_scope: null }),
+    )
+  })
+
+  it('offers no rule, then each purpose', async () => {
+    await form({ place: place as Place })
+    const select = w().find('.trip-rule').findComponent({ name: 'VSelect' })
+    expect(select.props('items').map((i: { title: string }) => i.title)).toEqual([
+      'No rule',
+      'Business',
+      'Commute',
+      'Personal',
+    ])
   })
 })
 

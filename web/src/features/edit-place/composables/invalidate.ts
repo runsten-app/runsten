@@ -6,7 +6,8 @@ import { tripKeys } from '@/entities/trip'
 
 // afterChange refreshes what a change of a place touches: the list of places, the
 // charges without a price, and the place and cost of the charges, in the lists, the
-// details and the statistics, and the spots of the trip maps.
+// details and the statistics, the spots of the trip maps, and the trips, whose ends and
+// purposes the places name.
 export async function afterChange(queryClient: QueryClient) {
   await Promise.all(
     [
@@ -16,6 +17,8 @@ export async function afterChange(queryClient: QueryClient) {
       chargeKeys.details(),
       statsKeys.every(),
       tripKeys.allMaps(),
+      tripKeys.all(),
+      tripKeys.details(),
     ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
   )
 }

@@ -187,4 +187,32 @@ describe('TripList', () => {
       }
     }
   })
+
+  it('reads the trips of one purpose, and keeps it on the way to a trip', async () => {
+    fetchTrips.mockResolvedValue(page2)
+    const w = await mounted({ purpose: 'commute' }, `/vehicles/${vehicle}/trips?purpose=commute`)
+    expect(fetchTrips).toHaveBeenCalledWith(vehicle, {
+      from: undefined,
+      to: undefined,
+      purpose: 'commute',
+      cursor: undefined,
+    })
+    expect(w.find('a.trip-summary').attributes('href')).toContain('purpose=commute')
+    expect(w.findAll('.purpose-menu')).toHaveLength(page2.items.length)
+  })
+
+  it('selects trips with a box before each, while selecting', async () => {
+    fetchTrips.mockResolvedValue(page1)
+    expect((await mounted()).find('.select-trip').exists()).toBe(false)
+    const first = page1.items[0]?.id
+    const w = await mounted({ selecting: true, selected: [] })
+    const boxes = w.findAll('.select-trip input')
+    expect(boxes).toHaveLength(page1.items.length)
+    expect(boxes[0]?.attributes('aria-label')).toMatch(/^Select a trip of /)
+    await boxes[0]?.setValue(true)
+    expect(w.findComponent(TripList).emitted('update:selected')?.at(-1)).toEqual([[first]])
+    const again = await mounted({ selecting: true, selected: [first] })
+    await again.findAll('.select-trip input')[0]?.setValue(false)
+    expect(again.findComponent(TripList).emitted('update:selected')?.at(-1)).toEqual([[]])
+  })
 })

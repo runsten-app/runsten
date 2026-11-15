@@ -1369,6 +1369,16 @@
       "notFound": "This place no longer exists.",
       "unavailable": "Runsten cannot be reached. Try again in a moment.",
       "internal": "Something went wrong. Try again later."
+    },
+    "trips": {
+      "title": "Trips to and from this place",
+      "help": "A rule marks the purpose of these trips. A trip marked by hand keeps its mark.",
+      "markAs": "Mark them as",
+      "noRule": "No rule",
+      "scope": "Which trips",
+      "end": "Ending here",
+      "endHelp": "The way there, not the way back",
+      "either": "Starting or ending here"
     }
   },
   "connection": {
@@ -2517,5 +2527,45 @@
       "unavailable": "Runsten could not be reached. Try again in a moment.",
       "internal": "The sign-in could not be saved. Try again in a moment."
     }
+  },
+  "purpose": {
+    "business": "Business",
+    "commute": "Commute",
+    "personal": "Personal",
+    "none": "None",
+    "unmarked": "Unmarked",
+    "all": "All",
+    "mark": "Purpose",
+    "of": "Purpose of the trip: {purpose}",
+    "auto": "auto",
+    "fromRule": "From the rule of {place}",
+    "byHand": "Marked by hand",
+    "backToRule": "Back to the rule",
+    "clear": "Clear the mark",
+    "filter": "Purpose of the trips",
+    "select": "Select",
+    "done": "Done",
+    "selected": "{n} trip selected | {n} trips selected",
+    "selectTrip": "Select a trip of {day}",
+    "error": "The trips could not be marked. Try again.",
+    "title": "Purpose",
+    "help": {
+      "rule": "From the rule of {place}: {purpose}. Choose another to override it.",
+      "hand": "Marked by hand.",
+      "none": "No place's rule applies to this trip."
+    }
+  },
+  "report": {
+    "open": "Report",
+    "title": "Trips",
+    "titleOf": "{purpose} trips",
+    "allTime": "Whole history",
+    "date": "Date",
+    "from": "From",
+    "to": "To",
+    "trips": "{n} trip | {n} trips",
+    "print": "Print or save as PDF",
+    "note": "The distance is the odometer's. The cost is the electricity the trip used, at the average price of the vehicle's charges over the 30 days before it.",
+    "unpriced": "{n} trip has no known cost: it is left out of the total. | {n} trips have no known cost: they are left out of the total."
   }
 }

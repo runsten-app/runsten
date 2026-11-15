@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { usePurposeLabel } from '@/entities/trip'
 import { useStats } from '@/features/view-stats'
 import { useFormat, type Spoken } from '@/shared/lib'
 import { SpokenText } from '@/shared/ui'
@@ -71,6 +72,30 @@ function costParts(s: Totals['charges']): Spoken[] {
   return parts
 }
 
+// The trips by purpose, once one has a purpose: how far, and what they cost.
+const purposeLabel = usePurposeLabel()
+const purposeOrder = ['business', 'commute', 'personal', 'none'] as const
+const byPurpose = computed(() => {
+  const b = stats.value?.trips_by_purpose
+  if (props.kind !== 'trips' || !b || b.none.count === stats.value?.totals.trips.count) return []
+  const currency = stats.value?.currency ?? null
+  return purposeOrder
+    .filter((p) => b[p].count)
+    .map((p) => {
+      const s = b[p]
+      const name = purposeLabel(p)
+      const parts = [name, f.quantity(s.distance_km, 'km')]
+      const spokenParts = [...parts]
+      if (currency && s.cost_unknown < s.count) {
+        const a = f.amounts(s.cost, currency)
+        parts.push(a.text)
+        spokenParts.push(a.spoken)
+      }
+      return { purpose: p, km: s.distance_km, text: parts.join(' '), spoken: spokenParts.join(' ') }
+    })
+})
+const totalKm = computed(() => byPurpose.value.reduce((sum, p) => sum + p.km, 0))
+
 // Nothing without an event: the list says it is empty.
 const parts = computed<Spoken[]>(() => {
   const s = stats.value?.totals
@@ -90,4 +115,57 @@ const parts = computed<Spoken[]>(() => {
   <p v-else-if="error" class="period-totals text-body-medium text-medium-emphasis mb-3">
     {{ t('stats.error') }}
   </p>
+  <div v-if="byPurpose.length" class="by-purpose mb-3">
+    <div v-if="totalKm" class="split mb-1" aria-hidden="true">
+      <span
+        v-for="p in byPurpose"
+        :key="p.purpose"
+        :class="['segment', p.purpose]"
+        :style="{ inlineSize: `${(p.km / totalKm) * 100}%` }"
+      />
+    </div>
+    <p class="text-body-small text-medium-emphasis">
+      <template v-for="(p, i) in byPurpose" :key="p.purpose"
+        ><template v-if="i"> · </template
+        ><span :class="['dot', p.purpose]" aria-hidden="true" /><SpokenText
+          :text="p.text"
+          :spoken="p.spoken"
+      /></template>
+    </p>
+  </div>
 </template>
+
+<style scoped>
+.split {
+  display: flex;
+  block-size: 6px;
+  max-inline-size: 32rem;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgb(var(--v-theme-track));
+}
+.segment,
+.dot {
+  background: rgb(var(--v-theme-on-surface));
+  opacity: 0.25;
+}
+.dot {
+  display: inline-block;
+  inline-size: 0.6em;
+  block-size: 0.6em;
+  border-radius: 2px;
+  margin-inline-end: 0.3em;
+}
+.business {
+  background: rgb(var(--v-theme-secondary));
+  opacity: 1;
+}
+.commute {
+  background: rgb(var(--v-theme-chart-5));
+  opacity: 1;
+}
+.personal {
+  background: rgb(var(--v-theme-chart-3));
+  opacity: 1;
+}
+</style>

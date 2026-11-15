@@ -29,6 +29,9 @@ export type PlaceDraft = {
   withoutPosition: boolean
   maxPower: string
   efficiency: string
+  // The rule that gives the trips to or from the place a purpose: '' for none.
+  tripPurpose: '' | 'business' | 'commute' | 'personal'
+  tripPurposeScope: 'end' | 'either'
   timeZone: string
   tariff: VersionDraft[]
 }
@@ -46,6 +49,8 @@ export function draftOf(place: Place): PlaceDraft {
     withoutPosition: place.without_position,
     maxPower: place.max_power_kw === null ? '' : String(place.max_power_kw),
     efficiency: place.efficiency === null ? '' : String(place.efficiency),
+    tripPurpose: place.trip_purpose ?? '',
+    tripPurposeScope: place.trip_purpose_scope ?? 'end',
     timeZone: place.time_zone,
     tariff: place.tariff.map((v) => ({
       key: key(),
@@ -82,6 +87,8 @@ export function emptyDraft(o: {
     withoutPosition: false,
     maxPower: '',
     efficiency: '',
+    tripPurpose: '',
+    tripPurposeScope: 'end',
     timeZone: o.timeZone,
     tariff: [{ key: key(), validFrom: o.today, price: '', windows: [] }],
   }

@@ -3,10 +3,10 @@ import { mdiDownload } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { chargesCsvPath } from '@/entities/charge'
-import { tripsCsvPath } from '@/entities/trip'
+import { tripsCsvPath, type PurposeFilter } from '@/entities/trip'
 
 // CsvDownload downloads the trips or charges of the list's period, and the charges of
-// its place, as a CSV file, for a spreadsheet: a link, not a fetch, so that the browser
+// its place, the trips of their purpose, as a CSV file, for a spreadsheet: a link, not a fetch, so that the browser
 // saves the file as it comes.
 const props = defineProps<{
   kind: 'trips' | 'charges'
@@ -14,12 +14,13 @@ const props = defineProps<{
   from?: string
   to?: string
   place?: string
+  purpose?: PurposeFilter
 }>()
 const { t } = useI18n()
 const href = computed(() => {
   const query = { from: props.from, to: props.to }
   return props.kind === 'trips'
-    ? tripsCsvPath(props.vehicle, query)
+    ? tripsCsvPath(props.vehicle, { ...query, purpose: props.purpose })
     : chargesCsvPath(props.vehicle, { ...query, place: props.place })
 })
 const label = computed(() => (props.kind === 'trips' ? t('trips.csv') : t('charges.csv')))
