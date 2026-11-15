@@ -1369,6 +1369,16 @@
       "notFound": "Diesen Ort gibt es nicht mehr.",
       "unavailable": "Runsten ist nicht erreichbar. Versuchen Sie es gleich noch einmal.",
       "internal": "Etwas ist schiefgelaufen. Versuchen Sie es später erneut."
+    },
+    "trips": {
+      "title": "Fahrten zu und von diesem Ort",
+      "help": "Eine Regel legt den Zweck dieser Fahrten fest. Eine von Hand markierte Fahrt behält ihre Markierung.",
+      "markAs": "Markieren als",
+      "noRule": "Keine Regel",
+      "scope": "Welche Fahrten",
+      "end": "Die hier enden",
+      "endHelp": "Die Hinfahrt, nicht die Rückfahrt",
+      "either": "Die hier beginnen oder enden"
     }
   },
   "connection": {
@@ -2517,5 +2527,45 @@
       "unavailable": "Runsten war nicht erreichbar. Versuchen Sie es gleich noch einmal.",
       "internal": "Die Anmeldung konnte nicht gespeichert werden. Versuchen Sie es gleich noch einmal."
     }
+  },
+  "purpose": {
+    "business": "Geschäftlich",
+    "commute": "Arbeitsweg",
+    "personal": "Privat",
+    "none": "Keiner",
+    "unmarked": "Ohne Zweck",
+    "all": "Alle",
+    "mark": "Zweck",
+    "of": "Zweck der Fahrt: {purpose}",
+    "auto": "auto",
+    "fromRule": "Nach der Regel von {place}",
+    "byHand": "Von Hand gesetzt",
+    "backToRule": "Zurück zur Regel",
+    "clear": "Markierung entfernen",
+    "filter": "Zweck der Fahrten",
+    "select": "Auswählen",
+    "done": "Fertig",
+    "selected": "{n} Fahrt ausgewählt | {n} Fahrten ausgewählt",
+    "selectTrip": "Eine Fahrt vom {day} auswählen",
+    "error": "Die Fahrten konnten nicht markiert werden. Bitte erneut versuchen.",
+    "title": "Zweck",
+    "help": {
+      "rule": "Nach der Regel von {place}: {purpose}. Wählen Sie einen anderen, um sie zu ersetzen.",
+      "hand": "Von Hand gesetzt.",
+      "none": "Für diese Fahrt gilt keine Regel eines Ortes."
+    }
+  },
+  "report": {
+    "open": "Bericht",
+    "title": "Fahrten",
+    "titleOf": "Fahrten: {purpose}",
+    "allTime": "Gesamter Verlauf",
+    "date": "Datum",
+    "from": "Von",
+    "to": "Nach",
+    "trips": "{n} Fahrt | {n} Fahrten",
+    "print": "Drucken oder als PDF speichern",
+    "note": "Die Strecke ist die des Kilometerzählers. Die Kosten sind der Strom, den die Fahrt verbraucht hat, zum Durchschnittspreis der Ladevorgänge des Fahrzeugs in den 30 Tagen davor.",
+    "unpriced": "{n} Fahrt hat keine bekannten Kosten: Sie fehlt in der Summe. | {n} Fahrten haben keine bekannten Kosten: Sie fehlen in der Summe."
   }
 }

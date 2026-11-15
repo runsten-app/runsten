@@ -655,6 +655,44 @@
     ],
     "left_out": 0
   },
+  "trips_by_purpose": {
+    "business": {
+      "count": 0,
+      "distance_km": 0,
+      "cost": {
+        "min_minor": 0,
+        "max_minor": 0
+      },
+      "cost_unknown": 0
+    },
+    "commute": {
+      "count": 0,
+      "distance_km": 0,
+      "cost": {
+        "min_minor": 0,
+        "max_minor": 0
+      },
+      "cost_unknown": 0
+    },
+    "personal": {
+      "count": 0,
+      "distance_km": 0,
+      "cost": {
+        "min_minor": 0,
+        "max_minor": 0
+      },
+      "cost_unknown": 0
+    },
+    "none": {
+      "count": 0,
+      "distance_km": 0,
+      "cost": {
+        "min_minor": 0,
+        "max_minor": 0
+      },
+      "cost_unknown": 0
+    }
+  },
   "charges_by_place": {
     "places": [],
     "outside": {

@@ -1369,6 +1369,16 @@
       "notFound": "Ce lieu n'existe plus.",
       "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
       "internal": "Une erreur s'est produite. Réessayez plus tard."
+    },
+    "trips": {
+      "title": "Trajets vers et depuis ce lieu",
+      "help": "Une règle marque le motif de ces trajets. Un trajet marqué à la main garde sa marque.",
+      "markAs": "Les marquer comme",
+      "noRule": "Aucune règle",
+      "scope": "Quels trajets",
+      "end": "Qui arrivent ici",
+      "endHelp": "L'aller, pas le retour",
+      "either": "Qui partent ou arrivent ici"
     }
   },
   "connection": {
@@ -2517,5 +2527,45 @@
       "unavailable": "Runsten n’a pas pu être joint. Réessayez dans un instant.",
       "internal": "La connexion n’a pas pu être enregistrée. Réessayez dans un instant."
     }
+  },
+  "purpose": {
+    "business": "Professionnel",
+    "commute": "Domicile-travail",
+    "personal": "Personnel",
+    "none": "Aucun",
+    "unmarked": "Non marqués",
+    "all": "Tous",
+    "mark": "Motif",
+    "of": "Motif du trajet : {purpose}",
+    "auto": "auto",
+    "fromRule": "Par la règle de {place}",
+    "byHand": "Marqué à la main",
+    "backToRule": "Revenir à la règle",
+    "clear": "Retirer la marque",
+    "filter": "Motif des trajets",
+    "select": "Sélectionner",
+    "done": "Terminé",
+    "selected": "{n} trajet sélectionné | {n} trajets sélectionnés",
+    "selectTrip": "Sélectionner un trajet du {day}",
+    "error": "Les trajets n'ont pas pu être marqués. Réessayez.",
+    "title": "Motif",
+    "help": {
+      "rule": "Par la règle de {place} : {purpose}. Choisissez-en un autre pour la remplacer.",
+      "hand": "Marqué à la main.",
+      "none": "Aucune règle de lieu ne s'applique à ce trajet."
+    }
+  },
+  "report": {
+    "open": "Rapport",
+    "title": "Trajets",
+    "titleOf": "Trajets : {purpose}",
+    "allTime": "Tout l'historique",
+    "date": "Date",
+    "from": "Départ",
+    "to": "Arrivée",
+    "trips": "{n} trajet | {n} trajets",
+    "print": "Imprimer ou enregistrer en PDF",
+    "note": "La distance est celle du compteur. Le coût est l'électricité consommée par le trajet, au prix moyen des recharges du véhicule sur les 30 jours précédents.",
+    "unpriced": "{n} trajet n'a pas de coût connu : il est exclu du total. | {n} trajets n'ont pas de coût connu : ils sont exclus du total."
   }
 }

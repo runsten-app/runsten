@@ -22,6 +22,7 @@ export function testRouter(routes: RouteRecordRaw[] = []): Router {
       { path: '/login', name: 'login', component: Empty },
       { path: '/vehicles/:vehicle', name: 'vehicle', component: Empty },
       { path: '/vehicles/:vehicle/trips', name: 'trips', component: Empty },
+      { path: '/vehicles/:vehicle/trips/report', name: 'trip-report', component: Empty },
       { path: '/vehicles/:vehicle/trips/:id', name: 'trip', component: Empty },
       { path: '/vehicles/:vehicle/charges', name: 'charges', component: Empty },
       { path: '/vehicles/:vehicle/charges/:id', name: 'charge', component: Empty },

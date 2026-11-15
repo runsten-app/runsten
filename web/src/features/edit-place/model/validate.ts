@@ -165,6 +165,8 @@ export function validate(d: PlaceDraft, limits: Limits): Checked {
       max_power_kw: maxPower,
       efficiency,
       tariff,
+      trip_purpose: d.tripPurpose || null,
+      trip_purpose_scope: d.tripPurpose ? d.tripPurposeScope : null,
     },
   }
 }

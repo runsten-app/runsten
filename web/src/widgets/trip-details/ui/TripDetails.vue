@@ -3,6 +3,7 @@ import { mdiOpenInNew } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTrip, useTripTrack } from '@/features/browse-trips'
+import { PurposePicker } from '@/features/mark-trip-purpose'
 import { isApiError } from '@/shared/api'
 import {
   formatCoordinate,
@@ -109,6 +110,10 @@ const newPlace = (p: Position) => ({
     </v-alert>
 
     <v-row>
+      <v-col cols="12">
+        <PurposePicker :vehicle :trip />
+      </v-col>
+
       <v-col v-if="!trip.reconstructed" cols="12" md="6">
         <v-card class="h-100 when">
           <v-card-title tag="h2" class="text-title-medium">{{ t('event.when') }}</v-card-title>

@@ -149,4 +149,42 @@ describe('PeriodTotals', () => {
       /^3 resor totalt · varav 1 rekonstruerad · 73 km/,
     )
   })
+
+  it('splits the trips by purpose once one has a purpose, by distance and cost', async () => {
+    const s = structuredClone(totals) as Stats
+    s.trips_by_purpose.business = {
+      count: 1,
+      distance_km: 40,
+      cost: { min_minor: 290, max_minor: 290 },
+      cost_unknown: 0,
+    }
+    s.trips_by_purpose.none = {
+      count: 2,
+      distance_km: 33,
+      cost: { min_minor: 0, max_minor: 0 },
+      cost_unknown: 2,
+    }
+    fetchStats.mockResolvedValue(s)
+    const { wrapper } = mountWith(PeriodTotals, { props: { vehicle, kind: 'trips' } })
+    await flushPromises()
+    const split = wrapper.find('.by-purpose')
+    expect(plain(seen(split.element))).toBe('Business 40 km €2.90 · Unmarked 33 km')
+    expect(split.findAll('.segment').map((e) => e.attributes('style'))).toEqual([
+      expect.stringContaining('inline-size: 54.79'),
+      expect.stringContaining('inline-size: 45.2'),
+    ])
+  })
+
+  it('shows no split while no trip has a purpose, nor for the charges', async () => {
+    fetchStats.mockResolvedValue(totals)
+    const { wrapper } = mountWith(PeriodTotals, { props: { vehicle, kind: 'trips' } })
+    await flushPromises()
+    expect(wrapper.find('.by-purpose').exists()).toBe(false)
+    const s = structuredClone(totals) as Stats
+    s.trips_by_purpose.business.count = 1
+    fetchStats.mockResolvedValue(s)
+    const charges = mountWith(PeriodTotals, { props: { vehicle, kind: 'charges' } })
+    await flushPromises()
+    expect(charges.wrapper.find('.by-purpose').exists()).toBe(false)
+  })
 })

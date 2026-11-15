@@ -1369,6 +1369,16 @@
       "notFound": "Deze locatie bestaat niet meer.",
       "unavailable": "Runsten is niet bereikbaar. Probeer het zo meteen opnieuw.",
       "internal": "Er is iets misgegaan. Probeer het later opnieuw."
+    },
+    "trips": {
+      "title": "Ritten van en naar deze plaats",
+      "help": "Een regel markeert het doel van deze ritten. Een met de hand gemarkeerde rit houdt zijn markering.",
+      "markAs": "Markeren als",
+      "noRule": "Geen regel",
+      "scope": "Welke ritten",
+      "end": "Die hier eindigen",
+      "endHelp": "De heenweg, niet de terugweg",
+      "either": "Die hier beginnen of eindigen"
     }
   },
   "connection": {
@@ -2517,5 +2527,45 @@
       "unavailable": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
       "internal": "De aanmelding kon niet worden opgeslagen. Probeer het zo meteen opnieuw."
     }
+  },
+  "purpose": {
+    "business": "Zakelijk",
+    "commute": "Woon-werk",
+    "personal": "Privé",
+    "none": "Geen",
+    "unmarked": "Zonder doel",
+    "all": "Alle",
+    "mark": "Doel",
+    "of": "Doel van de rit: {purpose}",
+    "auto": "auto",
+    "fromRule": "Volgens de regel van {place}",
+    "byHand": "Met de hand gemarkeerd",
+    "backToRule": "Terug naar de regel",
+    "clear": "Markering weghalen",
+    "filter": "Doel van de ritten",
+    "select": "Selecteren",
+    "done": "Klaar",
+    "selected": "{n} rit geselecteerd | {n} ritten geselecteerd",
+    "selectTrip": "Een rit van {day} selecteren",
+    "error": "De ritten konden niet worden gemarkeerd. Probeer het opnieuw.",
+    "title": "Doel",
+    "help": {
+      "rule": "Volgens de regel van {place}: {purpose}. Kies een ander om die te vervangen.",
+      "hand": "Met de hand gemarkeerd.",
+      "none": "Geen regel van een plaats geldt voor deze rit."
+    }
+  },
+  "report": {
+    "open": "Rapport",
+    "title": "Ritten",
+    "titleOf": "Ritten: {purpose}",
+    "allTime": "Hele geschiedenis",
+    "date": "Datum",
+    "from": "Van",
+    "to": "Naar",
+    "trips": "{n} rit | {n} ritten",
+    "print": "Afdrukken of als pdf opslaan",
+    "note": "De afstand is die van de kilometerteller. De kosten zijn de stroom die de rit gebruikte, tegen de gemiddelde prijs van de laadbeurten van het voertuig in de 30 dagen ervoor.",
+    "unpriced": "{n} rit heeft geen bekende kosten: die telt niet mee in het totaal. | {n} ritten hebben geen bekende kosten: die tellen niet mee in het totaal."
   }
 }

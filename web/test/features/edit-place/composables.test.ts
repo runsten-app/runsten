@@ -27,7 +27,8 @@ beforeEach(() => {
 })
 
 const { id, ...fields } = place as Place
-// What a change of a place makes stale: the places, and the costs of the charges.
+// What a change of a place makes stale: the places, the costs of the charges, and the
+// trips, whose ends and purposes the places name.
 const stale = [
   placeKeys.list(),
   placeKeys.unpricedAll(),
@@ -35,6 +36,8 @@ const stale = [
   chargeKeys.details(),
   statsKeys.every(),
   tripKeys.allMaps(),
+  tripKeys.all(),
+  tripKeys.details(),
 ]
 
 describe('usePlaces and usePlace', () => {

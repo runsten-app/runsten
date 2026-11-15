@@ -299,6 +299,7 @@ describe('TripDetails', () => {
   it('titles its cards with headings', async () => {
     const w = await mounted(trip)
     expect(w.findAll('.v-card-title').map((h) => [h.element.tagName, h.text()])).toEqual([
+      ['H2', 'Purpose'],
       ['H2', 'When'],
       ['H2', 'Figures'],
       ['H2', 'Consumption'],

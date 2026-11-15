@@ -4,6 +4,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave } from 'vue-router'
 import type { Place } from '@/entities/place'
+import { purposes, usePurposeLabel } from '@/entities/trip'
 import type { DefaultEfficiency, Limits } from '@/entities/settings'
 import { isApiError } from '@/shared/api'
 import {
@@ -229,6 +230,12 @@ const priceSuffix = computed(() =>
   props.currency ? `${f.currencySymbol(props.currency.code)}/kWh` : '/kWh',
 )
 const advanced = ref(draft.value.efficiency !== '')
+
+const purposeLabel = usePurposeLabel()
+const ruleItems = computed(() => [
+  { value: '', title: t('place.trips.noRule') },
+  ...purposes.map((p) => ({ value: p, title: purposeLabel(p) })),
+])
 const versionsFull = computed(() => draft.value.tariff.length >= props.limits.versions_per_place)
 
 async function focusId(id: string) {
@@ -405,6 +412,35 @@ function startOn(s: { index: number; day: string }) {
           class="number mt-3"
         />
       </details>
+    </section>
+
+    <section class="mb-6 trip-rule" aria-labelledby="place-trips-title">
+      <h2 id="place-trips-title" class="text-title-large mb-2">{{ t('place.trips.title') }}</h2>
+      <p class="text-body-medium mb-3">{{ t('place.trips.help') }}</p>
+      <v-select
+        v-model="draft.tripPurpose"
+        :items="ruleItems"
+        :label="t('place.trips.markAs')"
+        class="number"
+      />
+      <v-radio-group
+        v-if="draft.tripPurpose"
+        v-model="draft.tripPurposeScope"
+        :label="t('place.trips.scope')"
+        class="scope"
+      >
+        <v-radio value="end">
+          <template #label>
+            <span>
+              {{ t('place.trips.end') }}
+              <span class="d-block text-body-small text-medium-emphasis">
+                {{ t('place.trips.endHelp') }}
+              </span>
+            </span>
+          </template>
+        </v-radio>
+        <v-radio :label="t('place.trips.either')" value="either" />
+      </v-radio-group>
     </section>
 
     <section class="mb-6" aria-labelledby="place-tariff-title">

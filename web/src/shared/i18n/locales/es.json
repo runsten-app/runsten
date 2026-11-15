@@ -1369,6 +1369,16 @@
       "notFound": "Este lugar ya no existe.",
       "unavailable": "No se puede acceder a Runsten. Inténtelo de nuevo en un momento.",
       "internal": "Algo salió mal. Inténtelo de nuevo más tarde."
+    },
+    "trips": {
+      "title": "Trayectos hacia y desde este lugar",
+      "help": "Una regla marca el motivo de estos trayectos. Un trayecto marcado a mano conserva su marca.",
+      "markAs": "Marcarlos como",
+      "noRule": "Sin regla",
+      "scope": "Qué trayectos",
+      "end": "Los que terminan aquí",
+      "endHelp": "La ida, no la vuelta",
+      "either": "Los que empiezan o terminan aquí"
     }
   },
   "connection": {
@@ -2517,5 +2527,45 @@
       "unavailable": "No se pudo contactar con Runsten. Inténtelo de nuevo en un momento.",
       "internal": "No se pudo guardar el inicio de sesión. Inténtelo de nuevo en un momento."
     }
+  },
+  "purpose": {
+    "business": "Trabajo",
+    "commute": "Casa-trabajo",
+    "personal": "Personal",
+    "none": "Ninguno",
+    "unmarked": "Sin motivo",
+    "all": "Todos",
+    "mark": "Motivo",
+    "of": "Motivo del trayecto: {purpose}",
+    "auto": "auto",
+    "fromRule": "Por la regla de {place}",
+    "byHand": "Marcado a mano",
+    "backToRule": "Volver a la regla",
+    "clear": "Quitar la marca",
+    "filter": "Motivo de los trayectos",
+    "select": "Seleccionar",
+    "done": "Hecho",
+    "selected": "{n} trayecto seleccionado | {n} trayectos seleccionados",
+    "selectTrip": "Seleccionar un trayecto del {day}",
+    "error": "No se pudieron marcar los trayectos. Inténtalo de nuevo.",
+    "title": "Motivo",
+    "help": {
+      "rule": "Por la regla de {place}: {purpose}. Elige otro para sustituirla.",
+      "hand": "Marcado a mano.",
+      "none": "Ninguna regla de lugar se aplica a este trayecto."
+    }
+  },
+  "report": {
+    "open": "Informe",
+    "title": "Trayectos",
+    "titleOf": "Trayectos: {purpose}",
+    "allTime": "Todo el historial",
+    "date": "Fecha",
+    "from": "Origen",
+    "to": "Destino",
+    "trips": "{n} trayecto | {n} trayectos",
+    "print": "Imprimir o guardar como PDF",
+    "note": "La distancia es la del cuentakilómetros. El coste es la electricidad que usó el trayecto, al precio medio de las cargas del vehículo en los 30 días anteriores.",
+    "unpriced": "{n} trayecto no tiene coste conocido: queda fuera del total. | {n} trayectos no tienen coste conocido: quedan fuera del total."
   }
 }

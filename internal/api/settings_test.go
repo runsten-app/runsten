@@ -141,11 +141,12 @@ var homeBody = `{"name":"` + homeName + `","position":{"lat":45.764,"lon":4.8357
 	`{"valid_from":"2026-08-01","price_per_kwh":0.2142,"windows":[` +
 	`{"days":["mon","tue","wed","thu","fri","sat","sun"],"from":"23:00","to":"07:00","months":[11,12,1,2,3],"price_per_kwh":0.1589},` +
 	`{"days":["mon","tue","wed","thu","fri","sat","sun"],"from":"02:00","to":"07:00","months":[4,5,6,7,8,9,10],"price_per_kwh":0.1589},` +
-	`{"days":["sat","sun"],"from":"00:00","to":"00:00","months":[],"price_per_kwh":0.19}]}]}`
+	`{"days":["sat","sun"],"from":"00:00","to":"00:00","months":[],"price_per_kwh":0.19}]}],"trip_purpose":null,"trip_purpose_scope":null}`
 
 // workBody is a place with a single price: free charging at work.
 const workBody = `{"name":"Work","position":{"lat":45.7797,"lon":4.927},"radius_m":250,"time_zone":"Europe/Paris",` +
-	`"without_position":false,"max_power_kw":null,"efficiency":0.9,"tariff":[{"valid_from":"2026-01-01","price_per_kwh":0,"windows":[]}]}`
+	`"without_position":false,"max_power_kw":null,"efficiency":0.9,"tariff":[{"valid_from":"2026-01-01","price_per_kwh":0,"windows":[]}],` +
+	`"trip_purpose":"commute","trip_purpose_scope":"end"}`
 
 const jsonType = "application/json"
 
@@ -260,11 +261,13 @@ func TestPlacesJSON(t *testing.T) {
 		moved := `{"name":"Home","position":{"lat":45.7641,"lon":4.8358},"radius_m":20,"time_zone":"Europe/Stockholm",` +
 			`"without_position":false,"max_power_kw":null,"efficiency":0.8,"tariff":[` +
 			`{"valid_from":"2026-09-01","price_per_kwh":1.23456,"windows":[]},` +
-			`{"valid_from":"2025-12-31","price_per_kwh":100,"windows":[{"days":["sun","mon"],"from":"23:59","to":"00:00","months":[12],"price_per_kwh":0.00001}]}]}`
+			`{"valid_from":"2025-12-31","price_per_kwh":100,"windows":[{"days":["sun","mon"],"from":"23:59","to":"00:00","months":[12],"price_per_kwh":0.00001}]}],` +
+			`"trip_purpose":"personal","trip_purpose_scope":"either"}`
 		want := `{"name":"Home","position":{"lat":45.7641,"lon":4.8358},"radius_m":20,"time_zone":"Europe/Stockholm",` +
 			`"without_position":false,"max_power_kw":null,"efficiency":0.8,"tariff":[` +
 			`{"valid_from":"2025-12-31","price_per_kwh":100,"windows":[{"days":["sun","mon"],"from":"23:59","to":"00:00","months":[12],"price_per_kwh":0.00001}]},` +
-			`{"valid_from":"2026-09-01","price_per_kwh":1.23456,"windows":[]}]}`
+			`{"valid_from":"2026-09-01","price_per_kwh":1.23456,"windows":[]}],` +
+			`"trip_purpose":"personal","trip_purpose_scope":"either"}`
 		resp, body := do(t, noFollow(), http.MethodPut, home, jsonType, moved, c)
 		if resp.status != http.StatusOK {
 			t.Fatalf("replace: %d %s", resp.status, body)

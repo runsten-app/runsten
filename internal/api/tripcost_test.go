@@ -86,7 +86,7 @@ func TestTripCost(t *testing.T) {
 
 	t.Run("in the CSV file", func(t *testing.T) {
 		_, body := get(t, noFollow(), base+"/trips.csv", c)
-		if !strings.Contains(body, ",EUR,2.90,2.90,9.06,9.06,0.48295,0.48295,1\r\n") {
+		if !strings.Contains(body, ",EUR,2.90,2.90,9.06,9.06,0.48295,0.48295,1,,\r\n") {
 			t.Errorf("trips.csv:\n%s", body)
 		}
 	})

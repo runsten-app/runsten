@@ -1,18 +1,27 @@
 import { useInfiniteQuery } from '@tanstack/vue-query'
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-import { fetchTrips, tripKeys } from '@/entities/trip'
+import { fetchTrips, tripKeys, type PurposeFilter } from '@/entities/trip'
 
-// useTrips reads the trips of a vehicle in a period (RFC 3339 instants, either open),
-// newest first, a page at a time: loadMore asks the next one while there is one.
+// useTrips reads the trips of a vehicle in a period (RFC 3339 instants, either open), of
+// one purpose or all, newest first, a page at a time: loadMore asks the next one while
+// there is one.
 export function useTrips(
   vehicle: MaybeRefOrGetter<string>,
   from: MaybeRefOrGetter<string | undefined>,
   to: MaybeRefOrGetter<string | undefined>,
+  purpose: MaybeRefOrGetter<PurposeFilter | undefined> = undefined,
 ) {
   const q = useInfiniteQuery({
-    queryKey: computed(() => tripKeys.list(toValue(vehicle), toValue(from), toValue(to))),
+    queryKey: computed(() =>
+      tripKeys.list(toValue(vehicle), toValue(from), toValue(to), toValue(purpose)),
+    ),
     queryFn: ({ pageParam }) =>
-      fetchTrips(toValue(vehicle), { from: toValue(from), to: toValue(to), cursor: pageParam }),
+      fetchTrips(toValue(vehicle), {
+        from: toValue(from),
+        to: toValue(to),
+        purpose: toValue(purpose),
+        cursor: pageParam,
+      }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (p) => p.next_cursor ?? undefined,
   })

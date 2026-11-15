@@ -3227,6 +3227,23 @@ components:
             - Europe/Paris
           minLength: 1
           type: string
+        trip_purpose:
+          description: The purpose this place's rule gives the trips of trip_purpose_scope, unless marked by hand (PUT /vehicles/{vehicle}/trip-marks). null without a rule.
+          oneOf:
+            - enum:
+                - business
+                - commute
+                - personal
+              type: string
+            - type: "null"
+        trip_purpose_scope:
+          description: "The trips of the rule. end: those that end at the place, the way there and not the way back. either: those that start or end there. null without a rule; set with trip_purpose, and only then."
+          oneOf:
+            - enum:
+                - end
+                - either
+              type: string
+            - type: "null"
         without_position:
           description: The place also takes the AC charges, and those of unknown type, that have no position. At most one place of the account.
           type: boolean
@@ -3240,6 +3257,8 @@ components:
         - max_power_kw
         - efficiency
         - tariff
+        - trip_purpose
+        - trip_purpose_scope
       type: object
     PlaceCharges:
       additionalProperties: false
@@ -3332,6 +3351,23 @@ components:
             - Europe/Paris
           minLength: 1
           type: string
+        trip_purpose:
+          description: The purpose this place's rule gives the trips of trip_purpose_scope, unless marked by hand (PUT /vehicles/{vehicle}/trip-marks). null without a rule.
+          oneOf:
+            - enum:
+                - business
+                - commute
+                - personal
+              type: string
+            - type: "null"
+        trip_purpose_scope:
+          description: "The trips of the rule. end: those that end at the place, the way there and not the way back. either: those that start or end there. null without a rule; set with trip_purpose, and only then."
+          oneOf:
+            - enum:
+                - end
+                - either
+              type: string
+            - type: "null"
         without_position:
           description: The place also takes the AC charges, and those of unknown type, that have no position. At most one place of the account.
           type: boolean
@@ -3344,6 +3380,8 @@ components:
         - max_power_kw
         - efficiency
         - tariff
+        - trip_purpose
+        - trip_purpose_scope
       type: object
     PlaceList:
       additionalProperties: false
@@ -3763,6 +3801,32 @@ components:
         - to
         - months
         - price_per_kwh
+      type: object
+    PurposeTotals:
+      additionalProperties: false
+      properties:
+        cost:
+          $ref: "#/components/schemas/CostSum"
+          description: The sum of the known costs of the trips (trips.cost).
+        cost_unknown:
+          description: The trips whose cost is unknown, left out of cost.
+          format: int64
+          minimum: 0
+          type: integer
+        count:
+          format: int64
+          minimum: 0
+          type: integer
+        distance_km:
+          description: The sum of the known distances.
+          format: double
+          minimum: 0
+          type: number
+      required:
+        - count
+        - distance_km
+        - cost
+        - cost_unknown
       type: object
     Quota:
       additionalProperties: false
@@ -5030,6 +5094,9 @@ components:
         trips_by_distance:
           $ref: "#/components/schemas/TripsByDistance"
           description: How the observed trips of the period spread by distance, with or without a split.
+        trips_by_purpose:
+          $ref: "#/components/schemas/TripsByPurpose"
+          description: The trips of the period, reconstructed ones included, by purpose (trips.purpose), with or without a split.
         trips_by_temperature:
           $ref: "#/components/schemas/TripsByTemperature"
           description: How the observed trips of the period spread by their mean outside temperature (trips.outside_temp_c), with or without a split.
@@ -5046,6 +5113,7 @@ components:
         - parked_by_temperature
         - charges_by_temperature
         - charges_by_soc
+        - trips_by_purpose
         - charges_by_place
       type: object
     TariffVersion:
@@ -5282,6 +5350,28 @@ components:
           type:
             - number
             - "null"
+        purpose:
+          description: "What the trip was made for: business, commute (the way between home and work, which each country counts its own way: as business in some, apart in others) or personal. Marked by hand, else given by the rule of the place the trip ends at, or starts at when that place's rule takes both ends; two rules that disagree give none. null without one."
+          oneOf:
+            - enum:
+                - business
+                - commute
+                - personal
+              type: string
+            - type: "null"
+        purpose_origin:
+          description: "hand: marked by the user, which no rule overrides; purpose may then be null, the user said the trip has none. rule: given by purpose_place's rule. null when the trip has neither."
+          oneOf:
+            - enum:
+                - hand
+                - rule
+              type: string
+            - type: "null"
+        purpose_place:
+          description: The place whose rule gave the purpose; null otherwise.
+          oneOf:
+            - $ref: "#/components/schemas/PlaceRef"
+            - type: "null"
         reconstructed:
           description: "The event was never seen, only revealed by the odometer or the state of charge: it lies somewhere within [start.after, end.before], and start and end are that same interval."
           type: boolean
@@ -5355,6 +5445,9 @@ components:
         - end
         - capacity_kwh
         - capacity_source
+        - purpose
+        - purpose_origin
+        - purpose_place
       type: object
     TripCost:
       additionalProperties: false
@@ -5437,6 +5530,32 @@ components:
         - trips_without_position
         - spots
         - links
+      type: object
+    TripMarksBody:
+      additionalProperties: false
+      properties:
+        purpose:
+          description: "business, commute or personal: the trips take it by hand. none: they have none, by hand, whatever the places' rules. rule: their marks are deleted, and the places' rules apply again."
+          enum:
+            - business
+            - commute
+            - personal
+            - none
+            - rule
+          type: string
+        trips:
+          description: The IDs of the vehicle's trips, derived or imported.
+          examples:
+            - - "2026-09-28T07:01:00.000000Z"
+          items:
+            type: string
+          maxItems: 200
+          minItems: 1
+          type: array
+          uniqueItems: true
+      required:
+        - trips
+        - purpose
       type: object
     TripStats:
       additionalProperties: false
@@ -5525,6 +5644,24 @@ components:
       required:
         - bands
         - left_out
+      type: object
+    TripsByPurpose:
+      additionalProperties: false
+      properties:
+        business:
+          $ref: "#/components/schemas/PurposeTotals"
+        commute:
+          $ref: "#/components/schemas/PurposeTotals"
+        none:
+          $ref: "#/components/schemas/PurposeTotals"
+          description: The trips without a purpose.
+        personal:
+          $ref: "#/components/schemas/PurposeTotals"
+      required:
+        - business
+        - commute
+        - personal
+        - none
       type: object
     TripsByTemperature:
       additionalProperties: false
@@ -10467,6 +10604,69 @@ paths:
       summary: Where a vehicle went over a period
       tags:
         - events
+  /vehicles/{vehicle}/trip-marks:
+    put:
+      description: "Marks one trip or several (a selection of the list) by hand: a mark by hand always wins over the rules of the places (`trip_purpose` of a place). It is not derived data: a rebuild keeps it, and finds its trip again by its detection time or else by its window. All or none: a trip not found writes nothing."
+      operationId: putTripMarks
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripMarksBody"
+        required: true
+      responses:
+        "204":
+          description: The trips are marked.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account, or no such trip for it (or one the account's history hides)."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Mark trips with their purpose
+      tags:
+        - trips
   /vehicles/{vehicle}/trips:
     get:
       description: Newest first, by `start.after` then `detected_at`. Figures are `null` when the readings do not give them. The events derived from the readings and those imported from another application (`imported`) come in one list.
@@ -10517,6 +10717,20 @@ paths:
             maximum: 200
             minimum: 1
             type: integer
+        - description: Keeps the trips of this purpose (by hand or by a place's rule); none keeps those without one.
+          explode: false
+          in: query
+          name: purpose
+          schema:
+            description: Keeps the trips of this purpose (by hand or by a place's rule); none keeps those without one.
+            enum:
+              - business
+              - commute
+              - personal
+              - none
+            examples:
+              - business
+            type: string
       responses:
         "200":
           content:
@@ -10599,6 +10813,20 @@ paths:
             examples:
               - "2026-10-01T00:00:00Z"
             format: date-time
+            type: string
+        - description: Keeps the trips of this purpose, as the list does with the same parameter; none keeps those without one.
+          explode: false
+          in: query
+          name: purpose
+          schema:
+            description: Keeps the trips of this purpose, as the list does with the same parameter; none keeps those without one.
+            enum:
+              - business
+              - commute
+              - personal
+              - none
+            examples:
+              - business
             type: string
       responses:
         "200":
