@@ -13,6 +13,9 @@ export const tripKeys = {
   maps: (vehicle: string) => ['trip-map', vehicle] as const,
   map: (vehicle: string, from?: string, to?: string) =>
     ['trip-map', vehicle, from ?? null, to ?? null] as const,
+  // Every trip of a period, of one purpose or all, at once: a report, under the lists.
+  report: (vehicle: string, from?: string, to?: string, purpose?: string) =>
+    ['trips', vehicle, from ?? null, to ?? null, purpose ?? null, 'all'] as const,
   detail: (vehicle: string, id: string) => ['trip', vehicle, id] as const,
   track: (vehicle: string, id: string) => ['trip', vehicle, id, 'track'] as const,
 }

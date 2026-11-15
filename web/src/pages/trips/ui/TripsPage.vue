@@ -11,15 +11,18 @@ import { PeriodTotals } from '@/widgets/period-totals'
 import { TripList } from '@/widgets/trip-list'
 import { TripMap } from '@/widgets/trip-map'
 
-defineProps<{ vehicle: string }>()
+const props = defineProps<{ vehicle: string }>()
 const { t } = useI18n()
 const { days, period } = usePeriod()
 const { purpose } = usePurposeFilter()
 
-// Selecting marks several trips at once; a new filter starts the selection over.
+// Selecting marks several trips at once; another vehicle or filter starts it over.
 const selecting = ref(false)
 const selected = ref<string[]>([])
-watch([() => JSON.stringify(period.value), purpose], () => (selected.value = []))
+watch(
+  [() => props.vehicle, () => JSON.stringify(period.value), purpose],
+  () => (selected.value = []),
+)
 function toggleSelecting() {
   selecting.value = !selecting.value
   selected.value = []

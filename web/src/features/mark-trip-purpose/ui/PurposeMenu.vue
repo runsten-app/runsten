@@ -11,7 +11,9 @@ import { useMarkTrips } from '../composables/useMarkTrips'
 const props = defineProps<{ vehicle: string; trip: Trip }>()
 const { t } = useI18n()
 const purposeLabel = usePurposeLabel()
-const { markTrips, isPending, error } = useMarkTrips()
+const { markTrips, isPending, error, reset } = useMarkTrips()
+// A failure is told in words, not by the button's color alone.
+const failed = computed({ get: () => !!error.value, set: (v) => v || reset() })
 
 const label = computed(() => {
   const p = props.trip.purpose
@@ -73,6 +75,9 @@ function mark(m: Mark) {
       />
     </v-list>
   </v-menu>
+  <v-snackbar v-model="failed" color="error" class="purpose-error">
+    {{ t('purpose.error') }}
+  </v-snackbar>
 </template>
 
 <style scoped>

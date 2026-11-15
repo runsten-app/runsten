@@ -131,7 +131,7 @@ describe('PurposeMenu', () => {
     none.wrapper.unmount()
   })
 
-  it('turns red when the mark fails', async () => {
+  it('says in words when the mark fails', async () => {
     setTripMarks.mockRejectedValue(new ApiError(500, 'internal', 'boom'))
     const { wrapper } = await mounted(trip)
     await wrapper.find('.purpose-menu').trigger('click')
@@ -139,6 +139,9 @@ describe('PurposeMenu', () => {
     ;(document.querySelectorAll('.v-overlay--active .v-list-item')[2] as HTMLElement).click()
     await flushPromises()
     expect(wrapper.find('.purpose-menu').classes()).toContain('text-error')
+    expect(document.querySelector('.purpose-error')?.textContent).toContain(
+      'The trips could not be marked. Try again.',
+    )
     wrapper.unmount()
   })
 })
@@ -204,6 +207,34 @@ describe('MarkSelectionBar', () => {
     await buttons[3]?.trigger('click')
     await flushPromises()
     expect(setTripMarks).toHaveBeenLastCalledWith(vehicle, ['a', 'b'], 'rule')
+  })
+
+  it('marks more than the API takes at once a batch at a time', async () => {
+    const many = Array.from({ length: 450 }, (_, i) => `t${i}`)
+    const { wrapper } = mountWith(MarkSelectionBar, { props: { vehicle, selected: many } })
+    await wrapper.findAll('.v-btn')[0]?.trigger('click')
+    await flushPromises()
+    expect(setTripMarks.mock.calls.map(([, ids, m]) => [ids.length, ids[0], m])).toEqual([
+      [200, 't0', 'business'],
+      [200, 't200', 'business'],
+      [50, 't400', 'business'],
+    ])
+  })
+
+  it('refreshes the trips after a failed batch, the ones before it marked', async () => {
+    setTripMarks
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new ApiError(500, 'internal', 'boom'))
+    const many = Array.from({ length: 250 }, (_, i) => `t${i}`)
+    const { wrapper, queryClient } = mountWith(MarkSelectionBar, {
+      props: { vehicle, selected: many },
+    })
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    await wrapper.findAll('.v-btn')[0]?.trigger('click')
+    await flushPromises()
+    expect(setTripMarks).toHaveBeenCalledTimes(2)
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['trips', vehicle] })
+    expect(wrapper.find('.v-alert').text()).toBe('The trips could not be marked. Try again.')
   })
 
   it('tells a failure, and stays', async () => {

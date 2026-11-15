@@ -30,8 +30,8 @@ export type PlaceDraft = {
   maxPower: string
   efficiency: string
   // The rule that gives the trips to or from the place a purpose: '' for none.
-  tripPurpose: '' | 'business' | 'commute' | 'personal'
-  tripPurposeScope: 'end' | 'either'
+  tripPurpose: NonNullable<Place['trip_purpose']> | ''
+  tripPurposeScope: NonNullable<Place['trip_purpose_scope']>
   timeZone: string
   tariff: VersionDraft[]
 }

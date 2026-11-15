@@ -1,6 +1,6 @@
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent } from 'vue'
+import { defineComponent, h, ref } from 'vue'
 import { TripsPage } from '@/pages/trips'
 import page2 from '@fixtures/trips-page-2.json'
 import totals from '@fixtures/stats-totals.json'
@@ -176,5 +176,20 @@ describe('TripsPage', () => {
     expect(wrapper.find('.selection-bar').text()).toContain('0 trips selected')
     await wrapper.find('.select-trips').trigger('click')
     expect(wrapper.find('.selection-bar').exists()).toBe(false)
+  })
+
+  it('starts the selection over on another vehicle', async () => {
+    const router = testRouter()
+    await router.push(`/vehicles/${vehicle}/trips?from=2026-09-01`)
+    const current = ref(vehicle)
+    const Host = { setup: () => () => h(TripsPage, { vehicle: current.value }) }
+    const { wrapper } = mountWith(Host, { router })
+    await flushPromises()
+    await wrapper.find('.select-trips').trigger('click')
+    await wrapper.findAll('.select-trip input')[0]?.setValue(true)
+    expect(wrapper.find('.selection-bar').text()).toContain('1 trip selected')
+    current.value = vehicles.items[1]?.id ?? 'other'
+    await flushPromises()
+    expect(wrapper.find('.selection-bar').text()).toContain('0 trips selected')
   })
 })

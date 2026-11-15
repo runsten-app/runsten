@@ -61,6 +61,10 @@ describe('trip API', () => {
       'business',
     ])
     expect(tripKeys.all()).toEqual(tripKeys.lists(vehicle).slice(0, 1))
+    expect(tripKeys.report(vehicle, 'a', 'b', 'none')).toEqual([
+      ...tripKeys.list(vehicle, 'a', 'b', 'none'),
+      'all',
+    ])
     expect(tripKeys.list(vehicle).slice(0, 2)).toEqual(tripKeys.lists(vehicle))
     expect(tripKeys.detail(vehicle, trip.id)).toEqual(['trip', vehicle, trip.id])
   })

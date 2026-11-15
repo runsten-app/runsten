@@ -14,18 +14,18 @@ export function useAllTrips(
   purpose: MaybeRefOrGetter<PurposeFilter | undefined>,
 ) {
   const { data, isPending, error } = useQuery({
-    queryKey: computed(() => [
-      ...tripKeys.list(toValue(vehicle), toValue(from), toValue(to), toValue(purpose)),
-      'all',
-    ]),
+    queryKey: computed(() =>
+      tripKeys.report(toValue(vehicle), toValue(from), toValue(to), toValue(purpose)),
+    ),
     queryFn: async () => {
+      // Read once: every page follows the filter its first one was read with.
+      const id = toValue(vehicle)
+      const query = { from: toValue(from), to: toValue(to), purpose: toValue(purpose) }
       const out: Trip[] = []
       let cursor: string | undefined
       do {
-        const page = await fetchTrips(toValue(vehicle), {
-          from: toValue(from),
-          to: toValue(to),
-          purpose: toValue(purpose),
+        const page = await fetchTrips(id, {
+          ...query,
           limit: allPages,
           cursor,
         })
