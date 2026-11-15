@@ -141,12 +141,28 @@ describe('HealthPage', () => {
     const tile = (await mounted()).find('.battery-summary')
     expect(plain(tile.find('.change').text())).toBe('-2% since 5 Aug 2025')
     const curve = tile.find('.capacity-sparkline')
-    expect(curve.attributes('role')).toBe('img')
-    expect(plain(curve.attributes('aria-label') ?? '')).toMatch(
+    const image = curve.find('figure')
+    expect(image.attributes('role')).toBe('img')
+    expect(plain(image.attributes('aria-label') ?? '')).toMatch(
       /^Estimated capacity from 76 kWh in Aug 2025 to .+ kWh in .+\.$/,
     )
     expect(curve.findAll('path.median').length).toBeGreaterThan(0)
     expect(curve.find('line.reference').exists()).toBe(true)
+    // The band's edges, the quartiles, around its fill.
+    expect(curve.findAll('path.band').length).toBeGreaterThan(0)
+    expect(curve.findAll('path.edge').length).toBe(curve.findAll('path.band').length * 2)
+    // Each month's figures for screen readers, out of the image.
+    const rows = curve.findAll('table.d-sr-only tbody tr')
+    expect(rows).toHaveLength(battery.months.length)
+    expect(rows[0]?.findAll('th, td').map((c) => plain(c.text()))).toEqual([
+      'Aug 2025',
+      '76 kWh',
+      '76 kWh',
+      '76.3 kWh',
+      '75 kWh',
+    ])
+    // A month without a median is unknown, never 0.
+    expect(rows[2]?.text()).toContain('Unknown')
     expect(curve.find('.ends').text()).toMatch(/^Aug 2025/)
   })
 
