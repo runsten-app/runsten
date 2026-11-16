@@ -1289,6 +1289,75 @@ func TestSummarizeParkedPowerAndSleep(t *testing.T) {
 	}
 }
 
+// Only the stops of MinParkedStop or more count in the rate and the power, and in the
+// time MinParkedForRate asks; the others count in the total loss.
+func TestSummarizeParkedMinStop(t *testing.T) {
+	from, to := pt("2026-06-01 00:00"), pt("2026-06-04 00:00")
+	cap75 := known(Capacity{KWh: 75, Source: CapacityCatalogNet})
+	type stop struct {
+		d    time.Duration
+		loss float64
+	}
+	// trips drives a short trip after each stop, from 75 %, losing the stop's points
+	// parked: each trip ends within 5 minutes after start+10 min, the next starts after
+	// the stop.
+	trips := func(stops ...stop) []Trip {
+		t0, soc := pt("2026-06-01 06:00"), 75.0
+		out := []Trip{}
+		tr := drive(t0, t0.Add(10*time.Minute), 1, 0.2, soc, soc)
+		tr.Capacity = cap75
+		out = append(out, tr)
+		for _, st := range stops {
+			t0 = t0.Add(15*time.Minute + st.d)
+			soc -= st.loss
+			tr := drive(t0, t0.Add(10*time.Minute), 1, 0.2, soc, soc)
+			tr.Capacity = cap75
+			out = append(out, tr)
+		}
+		return out
+	}
+	perDay := func(loss float64, d time.Duration) Value[float64] { return val(loss / d.Hours() * 24) }
+	power := func(loss float64, d time.Duration) Value[float64] { return val(loss * 75 / 100 * 1000 / d.Hours()) }
+	for _, tt := range []struct {
+		name  string
+		stops []stop
+		want  ParkedStats
+	}{
+		{
+			name:  "a long stop and a short one: the short one in the total only",
+			stops: []stop{{13 * time.Hour, 2}, {time.Hour, 1}},
+			want: ParkedStats{
+				Intervals: 2, Time: 14 * time.Hour, SoCLossPct: 3,
+				SoCLossPctPerDay: perDay(2, 13*time.Hour), PowerW: power(2, 13*time.Hour),
+			},
+		},
+		{
+			// 12 hours parked, but 7 of them in stops that count: no rate.
+			name:  "7 hours and 5 hours: no rate",
+			stops: []stop{{7 * time.Hour, 1}, {5 * time.Hour, 1}},
+			want:  ParkedStats{Intervals: 2, Time: 12 * time.Hour, SoCLossPct: 2},
+		},
+		{
+			name:  "two stops of exactly 6 hours",
+			stops: []stop{{6 * time.Hour, 1}, {6 * time.Hour, 1}},
+			want: ParkedStats{
+				Intervals: 2, Time: 12 * time.Hour, SoCLossPct: 2,
+				SoCLossPctPerDay: perDay(2, 12*time.Hour), PowerW: power(2, 12*time.Hour),
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			s, err := Summarize(trips(tt.stops...), nil, Costs{}, nil, nil, from, to, paris, BucketNone, ChargesAt{}, DefaultParams())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := s.Totals.Parked; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parked = %+v\nwant     %+v", got, tt.want)
+			}
+		})
+	}
+}
+
 // A parked interval takes the mean temperature of the observed events around it, those
 // that tell one; without, it is left out.
 func TestSummarizeParkedByTemperature(t *testing.T) {

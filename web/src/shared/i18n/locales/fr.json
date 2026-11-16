@@ -666,7 +666,7 @@
         "unit": "%/jour",
         "summary": "Perte à l’arrêt : {average} en moyenne sur la période.",
         "none": "Aucune perte à l’arrêt connue sur cette période.",
-        "hint": "La charge perdue sur les arrêts de 6 heures ou plus, par jour : parlante sur des semaines, pas sur une nuit. Un jour à l’arrêt moins de 12 heures n’en a pas."
+        "hint": "La charge perdue sur les arrêts de 6 heures ou plus, par jour : parlante sur des semaines, pas sur une nuit. Un jour qui en compte moins de 12 heures n’en a pas."
       },
       "byDistance": {
         "title": "Trajets par distance",

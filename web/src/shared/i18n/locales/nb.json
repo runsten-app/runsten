@@ -666,7 +666,7 @@
         "unit": "%/dag",
         "summary": "Tap mens parkert: {average} i snitt i perioden.",
         "none": "Ikke noe kjent tap mens parkert i denne perioden.",
-        "hint": "Ladenivået som går tapt ved parkeringer på 6 timer eller mer, per dag: meningsfullt over uker, ikke over en natt. En dag med mindre enn 12 timer parkert har ingen verdi."
+        "hint": "Ladenivået som går tapt ved parkeringer på 6 timer eller mer, per dag: meningsfullt over uker, ikke over en natt. En dag med mindre enn 12 timer av slike parkeringer har ingen verdi."
       },
       "byDistance": {
         "title": "Turer etter distanse",

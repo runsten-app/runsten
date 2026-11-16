@@ -666,7 +666,7 @@
         "unit": "%/giorno",
         "summary": "Perdita in sosta: {average} in media nel periodo.",
         "none": "Nessuna perdita in sosta nota in questo periodo.",
-        "hint": "Lo stato di carica perso nelle soste di 6 ore o più, al giorno: significativo su più settimane, non su una notte. Un giorno con meno di 12 ore di sosta non ha valore."
+        "hint": "Lo stato di carica perso nelle soste di 6 ore o più, al giorno: significativo su più settimane, non su una notte. Un giorno con meno di 12 ore di tali soste non ha valore."
       },
       "byDistance": {
         "title": "Viaggi per distanza",

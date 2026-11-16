@@ -160,7 +160,7 @@ describe('StatsCharts', () => {
       'Select a bar to see the charges of its interval.',
       'Select a point to see the trips of its interval.',
       'Select a bar to see the trips of its interval.',
-      'The state of charge lost over stops of 6 hours or more, per day: meaningful over weeks, not over a night. A day parked less than 12 hours has none.',
+      'The state of charge lost over stops of 6 hours or more, per day: meaningful over weeks, not over a night. A day with less than 12 hours of such stops has none.',
       'Select a bar to see the charges of its interval.',
       'Select a point to see the trips of its interval.',
     ])

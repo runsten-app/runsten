@@ -666,7 +666,7 @@
         "unit": "%/day",
         "summary": "Loss while parked: {average} on average over the period.",
         "none": "No loss while parked known in this period.",
-        "hint": "The state of charge lost over stops of 6 hours or more, per day: meaningful over weeks, not over a night. A day parked less than 12 hours has none."
+        "hint": "The state of charge lost over stops of 6 hours or more, per day: meaningful over weeks, not over a night. A day with less than 12 hours of such stops has none."
       },
       "byDistance": {
         "title": "Trips by distance",

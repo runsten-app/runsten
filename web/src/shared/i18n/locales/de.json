@@ -666,7 +666,7 @@
         "unit": "%/Tag",
         "summary": "Verlust im Stand: {average} im Durchschnitt über den Zeitraum.",
         "none": "Kein bekannter Verlust im Stand in diesem Zeitraum.",
-        "hint": "Der Ladezustand, der bei Standzeiten ab 6 Stunden verloren geht, pro Tag: aussagekräftig über Wochen, nicht über eine Nacht. Ein Tag mit weniger als 12 Stunden Standzeit hat keinen Wert."
+        "hint": "Der Ladezustand, der bei Standzeiten ab 6 Stunden verloren geht, pro Tag: aussagekräftig über Wochen, nicht über eine Nacht. Ein Tag mit weniger als 12 Stunden solcher Standzeiten hat keinen Wert."
       },
       "byDistance": {
         "title": "Fahrten nach Strecke",
