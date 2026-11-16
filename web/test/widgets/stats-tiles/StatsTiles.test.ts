@@ -87,6 +87,23 @@ describe('StatsTiles', () => {
     expect(tile(none, 'parked').notes.join(' ')).not.toMatch(/ W |asleep/)
   })
 
+  it('leads from the loss while parked to each stop, over the same period', async () => {
+    fetchStats.mockResolvedValue(stats)
+    const router = testRouter()
+    await router.push('/vehicles/v1/stats?from=2026-09-01&to=2026-09-30')
+    const { wrapper } = mountWith(StatsTiles, { router, props })
+    await flushPromises()
+    const link = wrapper.find('.tile.parked a.more')
+    expect(link.text()).toBe('See each stop')
+    expect(link.attributes('href')).toBe('/vehicles/v1/stats/parked?from=2026-09-01&to=2026-09-30')
+    // No stop, no link.
+    const s = structuredClone(stats) as Stats
+    s.totals.parked.intervals = 0
+    fetchStats.mockResolvedValue(s)
+    const none = await tiles({ vehicle: 'v2' })
+    expect(none.find('.tile.parked a').exists()).toBe(false)
+  })
+
   it('says unknown, never 0, for an average over nothing', async () => {
     const s = structuredClone(stats) as Stats
     s.totals.trips.consumption_kwh_per_100km = null

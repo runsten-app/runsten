@@ -585,6 +585,7 @@
       "parkedUnknown": "ukjent for {n} intervall | ukjent for {n} intervaller",
       "parkedPower": "{value} tapt i snitt",
       "parkedAsleep": "i dvale {value} av den leste tiden",
+      "parkedStops": "Se hver parkering",
       "cost": "Ladekostnad",
       "costNote": "Anslått ut fra tariffene, eller registrert; et intervall når ladingenes tidspunkter er ukjente",
       "costUnknown": "ukjent for {n} lading | ukjent for {n} ladinger",
@@ -2168,6 +2169,32 @@
     "unread": "Den nyeste versjonen kunne ikke leses ennå.",
     "releases": "Alle versjonene",
     "newTab": "(åpnes i en ny fane)"
+  },
+  "parked": {
+    "stops": "{n} parkering | {n} parkeringer",
+    "rated": "{n} parkering på {min} eller mer | {n} parkeringer på {min} eller mer",
+    "when": "Parkert",
+    "duration": "Varighet",
+    "loss": "Tapt lading",
+    "power": "Effekt",
+    "asleep": "I dvale",
+    "temperature": "Ute",
+    "after": {
+      "trip": "etter en tur",
+      "charge": "etter en lading"
+    },
+    "before": {
+      "trip": "før en tur",
+      "charge": "før en lading"
+    },
+    "notRated": "ikke i raten",
+    "shortNote": "En parkering under {min} teller i periodens tap, ikke i raten per dag: rett etter en kjøretur er bilen fortsatt våken, og ladenivået stabiliserer seg.",
+    "estimate": "Anslått ut fra ladenivået, på ett prosentpoeng nær: en parkering på noen timer kan vise ett mer eller mindre.",
+    "none": "Ingen parkering i denne perioden.",
+    "noneRated": "Ingen parkering på {min} eller mer i denne perioden.",
+    "includeShort": "Ta med parkeringen under {min} | Ta med de {n} parkeringene under {min}",
+    "loading": "Laster parkeringene",
+    "error": "Parkeringene kunne ikke lastes."
   },
   "software": {
     "title": "Programvare",

@@ -1,5 +1,6 @@
 export { useBandLabel } from './composables/useBandLabel'
 export { useBucket } from './composables/useBucket'
+export { useParked } from './composables/useParked'
 export { useStats } from './composables/useStats'
 export { statsViews, useStatsView, type StatsView } from './composables/useStatsView'
 export { default as BucketToggle } from './ui/BucketToggle.vue'

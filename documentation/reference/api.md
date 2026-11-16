@@ -43,6 +43,7 @@ A request body is sent as `application/json`, but the files of an import, as `mu
 | `POST /api/v1/vehicles/{id}/imports/volvo_data_portal` | import the files of the Volvo Data Portal, at once: a `multipart/form-data` body with the `trips` file and, optionally, the `waypoints` file (32 MiB at most); the report |
 | `POST /api/v1/vehicles/{id}/imports/aaos_logging` | import the export of AAOS Logging, at once: a `multipart/form-data` body with the `export` file, the ZIP Google Drive gives for the car's folder (512 MiB at most); the report |
 | `GET /api/v1/vehicles/{id}/stats` | totals of a period (`from`, `to`) and the odometer at its ends, by `day`, `week` or `month` in a time zone (`bucket`, `tz`) |
+| `GET /api/v1/vehicles/{id}/parked` | the stops of a period (`from`, `to`), newest first: the parked intervals behind the statistics' loss while parked, each with its time, its loss, its power, its time asleep, its temperature and the events around it |
 | `GET /api/v1/vehicles/{id}/battery` | the estimated battery capacity over the whole history |
 | `GET`, `PUT /api/v1/settings` | the account's currency, and the accepted ones |
 | `GET`, `POST /api/v1/places` | the places, with their tariffs; create one |

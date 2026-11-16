@@ -1997,6 +1997,22 @@ components:
         - code
         - message
       type: object
+    EventRef:
+      additionalProperties: false
+      properties:
+        id:
+          description: Its ID, as the lists give it (GET /trips/{id} or /charges/{id}).
+          type: string
+        kind:
+          description: A trip or a charge.
+          enum:
+            - trip
+            - charge
+          type: string
+      required:
+        - kind
+        - id
+      type: object
     Export:
       additionalProperties: false
       properties:
@@ -3004,6 +3020,33 @@ components:
         - items
         - next_cursor
       type: object
+    Parked:
+      additionalProperties: false
+      properties:
+        from:
+          description: "The start of the period: from, else the vehicle's first event; the history the account does not see is left out."
+          format: date-time
+          type: string
+        items:
+          description: The stops whose next event starts in the period, as the statistics count them (parked.intervals), newest first; but a stop after an event before the history the account sees, which is not shown.
+          items:
+            $ref: "#/components/schemas/ParkedStop"
+          type: array
+        min_stop_s:
+          description: The time from which a stop counts in the rate of the loss while parked (rated).
+          format: int64
+          minimum: 0
+          type: integer
+        to:
+          description: The end of the period, excluded.
+          format: date-time
+          type: string
+      required:
+        - from
+        - to
+        - min_stop_s
+        - items
+      type: object
     ParkedBand:
       additionalProperties: false
       properties:
@@ -3158,6 +3201,105 @@ components:
         - sleep_read_s
         - asleep_s
         - asleep_share
+      type: object
+    ParkedStop:
+      additionalProperties: false
+      properties:
+        after:
+          $ref: "#/components/schemas/EventRef"
+          description: The event after it.
+        asleep_s:
+          description: The part of sleep_read_s they told it asleep or out of reach.
+          format: int64
+          minimum: 0
+          type: integer
+        asleep_share:
+          description: asleep_s over sleep_read_s; null without sleep_read_s.
+          format: double
+          maximum: 1
+          minimum: 0
+          type:
+            - number
+            - "null"
+        before:
+          $ref: "#/components/schemas/EventRef"
+          description: The event before the stop.
+        end_soc_pct:
+          description: The state of charge at the start of the next event; null when it did not tell it.
+          format: double
+          type:
+            - number
+            - "null"
+        from:
+          description: "The latest end of the event before: the stop's sure part starts there."
+          format: date-time
+          type: string
+        outside_temp_c:
+          description: The mean of the outside temperatures of the observed events around it, as parked_by_temperature takes it; null without one.
+          format: double
+          type:
+            - number
+            - "null"
+        power_w:
+          description: "soc_loss_kwh over time_s, in W; null without both. An estimate: the state of charge has a resolution of one point, and a stop of a few hours may read one more or less."
+          format: double
+          minimum: 0
+          type:
+            - number
+            - "null"
+        rated:
+          description: "The stop lasts at least min_stop_s: its loss counts in the statistics' soc_loss_pct_per_day and power_w."
+          type: boolean
+        sleep_read_s:
+          description: The part of time_s the vehicle's responses told whether it slept over, as in the statistics; 0 for a vehicle that does not tell it.
+          format: int64
+          minimum: 0
+          type: integer
+        soc_loss_kwh:
+          description: soc_loss_pct × the battery capacity of the event before, else after; null without one.
+          format: double
+          minimum: 0
+          type:
+            - number
+            - "null"
+        soc_loss_pct:
+          description: "The points lost, as the statistics count them: a rise below the noise threshold counts as 0; null without a state of charge at both ends, or for a rise that only a charge explains."
+          format: double
+          minimum: 0
+          type:
+            - number
+            - "null"
+        start_soc_pct:
+          description: The state of charge at the end of the event before; null when it did not tell it.
+          format: double
+          type:
+            - number
+            - "null"
+        time_s:
+          description: to − from, 0 when they overlap.
+          format: int64
+          minimum: 0
+          type: integer
+        to:
+          description: The earliest start of the next event. Before from when the two events' bounds overlap.
+          format: date-time
+          type: string
+      required:
+        - from
+        - to
+        - time_s
+        - start_soc_pct
+        - end_soc_pct
+        - soc_loss_pct
+        - soc_loss_kwh
+        - power_w
+        - sleep_read_s
+        - asleep_s
+        - asleep_share
+        - outside_temp_c
+        - rated
+        - before
+        - after
       type: object
     PeriodStats:
       additionalProperties: false
@@ -9980,6 +10122,89 @@ paths:
       summary: Choose a vehicle's variant and onboard charger
       tags:
         - vehicles
+  /vehicles/{vehicle}/parked:
+    get:
+      description: "The parked intervals between two consecutive events (trips and charges) whose second event starts in the period, newest first: the detail of the statistics' `parked`, with the same rules, so that their sums agree. Each tells its time, its state of charge at both ends and the loss, the power it stands for, the share of it asleep, its outside temperature, and the events around it. The loss is an estimate from the state of charge."
+      operationId: getVehicleParked
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+        - description: The start of the period [from, to). Without it, the period starts with the vehicle's first event.
+          explode: false
+          in: query
+          name: from
+          schema:
+            description: The start of the period [from, to). Without it, the period starts with the vehicle's first event.
+            examples:
+              - "2026-09-01T00:00:00+02:00"
+            format: date-time
+            type: string
+        - description: The end of the period, excluded; it must come after from. Without it, now.
+          explode: false
+          in: query
+          name: to
+          schema:
+            description: The end of the period, excluded; it must come after from. Without it, now.
+            examples:
+              - "2026-10-01T00:00:00+02:00"
+            format: date-time
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Parked"
+          description: The stops.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_parameter`: `from` or `to`; the message names the parameter."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: The stops of a vehicle over a period
+      tags:
+        - stats
   /vehicles/{vehicle}/picture:
     get:
       description: "The vendor's picture of the vehicle from the outside, relayed by Runsten so that the browser calls no third party: fetched from the vendor's CDN, at most 640 pixels wide, kept a day (Volvo; Tesla's configurator, while the flag picture.tesla is on); or the one the collector read with the owner's access and stored, as the vendor gives it (BMW). Only for a vehicle whose `sheet.picture` is true."

@@ -585,6 +585,7 @@
       "parkedUnknown": "sconosciuta per {n} intervallo | sconosciuta per {n} intervalli",
       "parkedPower": "{value} persi in media",
       "parkedAsleep": "in sospensione per {value} del tempo letto",
+      "parkedStops": "Vedi ogni sosta",
       "cost": "Costo delle ricariche",
       "costNote": "Stimato dalle tariffe, o inserito; un intervallo quando gli orari delle ricariche non sono noti",
       "costUnknown": "sconosciuto per {n} ricarica | sconosciuto per {n} ricariche",
@@ -2168,6 +2169,32 @@
     "unread": "Non è stato ancora possibile leggere l’ultima versione.",
     "releases": "Tutte le versioni",
     "newTab": "(si apre in una nuova scheda)"
+  },
+  "parked": {
+    "stops": "{n} sosta | {n} soste",
+    "rated": "{n} sosta di {min} o più | {n} soste di {min} o più",
+    "when": "In sosta",
+    "duration": "Durata",
+    "loss": "Carica persa",
+    "power": "Potenza",
+    "asleep": "In standby",
+    "temperature": "Esterno",
+    "after": {
+      "trip": "dopo un viaggio",
+      "charge": "dopo una ricarica"
+    },
+    "before": {
+      "trip": "prima di un viaggio",
+      "charge": "prima di una ricarica"
+    },
+    "notRated": "fuori dal tasso",
+    "shortNote": "Una sosta inferiore a {min} conta nella perdita del periodo, non nel tasso al giorno: subito dopo la guida l'auto è ancora sveglia e la sua carica si assesta.",
+    "estimate": "Stimato dallo stato di carica, con la precisione di un punto: una sosta di poche ore può segnarne uno in più o in meno.",
+    "none": "Nessuna sosta in questo periodo.",
+    "noneRated": "Nessuna sosta di {min} o più in questo periodo.",
+    "includeShort": "Includi la sosta inferiore a {min} | Includi le {n} soste inferiori a {min}",
+    "loading": "Caricamento delle soste",
+    "error": "Impossibile caricare le soste."
   },
   "software": {
     "title": "Software",

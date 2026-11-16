@@ -585,6 +585,7 @@
       "parkedUnknown": "desconocida en {n} intervalo | desconocida en {n} intervalos",
       "parkedPower": "{value} perdidos en promedio",
       "parkedAsleep": "en reposo el {value} del tiempo leído",
+      "parkedStops": "Ver cada parada",
       "cost": "Costo de las cargas",
       "costNote": "Estimado a partir de las tarifas, o indicado; un rango cuando no se conocen las horas de las cargas",
       "costUnknown": "desconocido en {n} carga | desconocido en {n} cargas",
@@ -2168,6 +2169,32 @@
     "unread": "Aún no se pudo leer la última versión.",
     "releases": "Todas las versiones",
     "newTab": "(se abre en una pestaña nueva)"
+  },
+  "parked": {
+    "stops": "{n} parada | {n} paradas",
+    "rated": "{n} parada de {min} o más | {n} paradas de {min} o más",
+    "when": "Estacionado",
+    "duration": "Duración",
+    "loss": "Carga perdida",
+    "power": "Potencia",
+    "asleep": "En reposo",
+    "temperature": "Exterior",
+    "after": {
+      "trip": "tras un trayecto",
+      "charge": "tras una carga"
+    },
+    "before": {
+      "trip": "antes de un trayecto",
+      "charge": "antes de una carga"
+    },
+    "notRated": "fuera de la tasa",
+    "shortNote": "Una parada de menos de {min} cuenta en la pérdida del periodo, no en la tasa por día: justo después de conducir, el coche sigue despierto y su carga se estabiliza.",
+    "estimate": "Estimado a partir del nivel de carga, con un punto de precisión: una parada de pocas horas puede marcar uno más o uno menos.",
+    "none": "Ninguna parada en este periodo.",
+    "noneRated": "Ninguna parada de {min} o más en este periodo.",
+    "includeShort": "Incluir la parada de menos de {min} | Incluir las {n} paradas de menos de {min}",
+    "loading": "Cargando las paradas",
+    "error": "No se pudieron cargar las paradas."
   },
   "software": {
     "title": "Software",

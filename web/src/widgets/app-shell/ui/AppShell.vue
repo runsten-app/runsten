@@ -69,6 +69,8 @@ const sections: Record<string, Section> = {
   charges: 'charges',
   charge: 'charges',
   stats: 'stats',
+  // The stops behind the loss while parked are a detail of the statistics.
+  parked: 'stats',
 }
 const current = computed(() => sections[String(route.name)])
 // The connection, opened from a vehicle, leads back to it; within it, the vehicle it was

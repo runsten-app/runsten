@@ -1358,6 +1358,49 @@ func TestSummarizeParkedMinStop(t *testing.T) {
 	}
 }
 
+// ParkedStops lists the intervals Summarize counts, each with its events and its figures.
+func TestParkedStops(t *testing.T) {
+	from, to := pt("2026-06-01 00:00"), pt("2026-06-03 00:00")
+	cap75 := known(Capacity{KWh: 75, Source: CapacityCatalogNet})
+	before := drive(pt("2026-05-31 17:00"), pt("2026-05-31 18:00"), 10, 2, 80, 72) // opens the first
+	before.Capacity = cap75
+	morning := drive(pt("2026-06-01 08:00"), pt("2026-06-01 09:00"), 10, 2, 70, 66)
+	morning.OutsideTempC = val(10)
+	charge := plug(pt("2026-06-01 10:00"), pt("2026-06-01 11:00"), AC, 10, 10, 66, 80)
+	charge.OutsideTempC = val(14)
+	after := drive(pt("2026-06-03 08:00"), pt("2026-06-03 09:00"), 10, 2, 79, 70) // after the period
+	trips, charges := []Trip{after, morning, before}, []Charge{charge}
+	sleep := []SleepSpan{{From: pt("2026-05-31 20:00"), To: pt("2026-06-01 06:00"), Asleep: true}}
+
+	got := ParkedStops(trips, charges, sleep, from, to, DefaultParams())
+	night := 13*time.Hour + 55*time.Minute // 18:05 → 08:00
+	want := []ParkedStop{
+		{
+			From: pt("2026-05-31 18:05"), To: pt("2026-06-01 08:00"), Time: night,
+			StartSoC: val(72), EndSoC: val(70), LossPct: val(2), LossKWh: val(1.5), PowerW: val(1500 / night.Hours()),
+			SleepRead: 10 * time.Hour, Asleep: 10 * time.Hour, TempC: val(10), Rated: true,
+			Before: EventRef{Index: 2}, After: EventRef{Index: 1},
+		},
+		{
+			// 09:05 → 10:00: under MinParkedStop; no capacity on either side.
+			From: pt("2026-06-01 09:05"), To: pt("2026-06-01 10:00"), Time: 55 * time.Minute,
+			StartSoC: val(66), EndSoC: val(66), LossPct: val(0), TempC: val(12),
+			Before: EventRef{Index: 1}, After: EventRef{Charge: true},
+		},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("stops\n got %+v\nwant %+v", got, want)
+	}
+	// The same intervals as the statistics count.
+	s, err := Summarize(trips, charges, Costs{}, nil, sleep, from, to, paris, BucketNone, ChargesAt{}, DefaultParams())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p := s.Totals.Parked; p.Intervals != len(got) || p.SoCLossPct != 2 || p.Time != night+55*time.Minute {
+		t.Errorf("parked %+v", p)
+	}
+}
+
 // A parked interval takes the mean temperature of the observed events around it, those
 // that tell one; without, it is left out.
 func TestSummarizeParkedByTemperature(t *testing.T) {

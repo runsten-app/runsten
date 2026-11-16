@@ -585,6 +585,7 @@
       "parkedUnknown": "onbekend voor {n} interval | onbekend voor {n} intervallen",
       "parkedPower": "gemiddeld {value} verloren",
       "parkedAsleep": "{value} van de uitgelezen tijd in slaap",
+      "parkedStops": "Bekijk elke stilstand",
       "cost": "Laadkosten",
       "costNote": "Geschat met de tarieven, of ingevoerd; een marge als de tijdstippen van de laadsessies niet bekend zijn",
       "costUnknown": "onbekend voor {n} laadsessie | onbekend voor {n} laadsessies",
@@ -2168,6 +2169,32 @@
     "unread": "De laatste release kon nog niet worden gelezen.",
     "releases": "Alle releases",
     "newTab": "(opent in een nieuw tabblad)"
+  },
+  "parked": {
+    "stops": "{n} stilstand | {n} stilstanden",
+    "rated": "{n} stilstand van {min} of meer | {n} stilstanden van {min} of meer",
+    "when": "Geparkeerd",
+    "duration": "Duur",
+    "loss": "Verloren lading",
+    "power": "Vermogen",
+    "asleep": "In slaap",
+    "temperature": "Buiten",
+    "after": {
+      "trip": "na een rit",
+      "charge": "na een laadsessie"
+    },
+    "before": {
+      "trip": "voor een rit",
+      "charge": "voor een laadsessie"
+    },
+    "notRated": "niet in het tempo",
+    "shortNote": "Een stilstand korter dan {min} telt mee in het verlies van de periode, niet in het tempo per dag: vlak na een rit is de auto nog wakker en stabiliseert zijn laadniveau.",
+    "estimate": "Geschat uit het laadniveau, op één procentpunt nauwkeurig: een stilstand van enkele uren kan er één meer of minder tonen.",
+    "none": "Geen stilstand in deze periode.",
+    "noneRated": "Geen stilstand van {min} of meer in deze periode.",
+    "includeShort": "De stilstand korter dan {min} meenemen | De {n} stilstanden korter dan {min} meenemen",
+    "loading": "Stilstanden laden",
+    "error": "De stilstanden konden niet worden geladen."
   },
   "software": {
     "title": "Software",
