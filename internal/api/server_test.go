@@ -781,9 +781,10 @@ func TestRedirect(t *testing.T) {
 }
 
 // readerParams are the default parameters, but a rate of the loss while parked whatever
-// the parked time: the fixtures' days are parked a few hours.
+// the parked time and the stops': the fixtures' days are parked a few hours.
 func readerParams() core.Params {
 	p := core.DefaultParams()
 	p.MinParkedForRate = 0
+	p.MinParkedStop = 0
 	return p
 }

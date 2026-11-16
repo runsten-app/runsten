@@ -118,13 +118,14 @@ type ParkedStats struct {
 
 	SoCLossPct     float64
 	SoCLossUnknown int // intervals without a SoC at both ends, or with a charge between
-	// SoCLossPctPerDay is SoCLossPct over the time of the intervals with a known loss:
-	// unknown when that time is under Params.MinParkedForRate.
+	// SoCLossPctPerDay is the loss of the intervals with a known loss of at least
+	// Params.MinParkedStop, over their time: unknown when that time is under
+	// Params.MinParkedForRate.
 	SoCLossPctPerDay Value[float64]
 	// PowerW is the mean power lost, in W: the energy of the SoC lost (the loss × the
 	// battery capacity of the event before, else after) over the time of the intervals
-	// whose loss and capacity are both known. Unknown when that time is under
-	// Params.MinParkedForRate.
+	// of at least Params.MinParkedStop whose loss and capacity are both known. Unknown when
+	// that time is under Params.MinParkedForRate.
 	PowerW Value[float64]
 	// SleepRead is the part of Time the readings told the vehicle's sleep state over
 	// (SleepSpans), and Asleep the part of it they told it asleep or out of reach: none
@@ -462,7 +463,7 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, slee
 	})
 	sleep = sortedSpans(sleep)
 	for i := 1; i < len(evs); i++ {
-		iv := parkedOf(evs[i-1], evs[i], sleep, p.MinChargeSoC)
+		iv := parkedOf(evs[i-1], evs[i], sleep, p.MinChargeSoC, p.MinParkedStop)
 		add(evs[i].start.After, func(a *acc) { a.parked(iv) })
 		if in(evs[i].start.After, from, to) {
 			parkedTemp.add(iv)
@@ -825,13 +826,16 @@ type parkedInterval struct {
 	sleepRead, asleep time.Duration
 	// tempC is the mean of the events' outside temperatures, those known.
 	tempC Value[float64]
+	// rated: the interval is long enough for its loss to count in the rate and the power.
+	rated bool
 }
 
 // parkedOf is the interval between prev and next. A rise of the SoC below minRise is
-// noise, counted as no loss.
-func parkedOf(prev, next event, sleep []SleepSpan, minRise float64) parkedInterval {
+// noise, counted as no loss; an interval shorter than minStop counts in no rate.
+func parkedOf(prev, next event, sleep []SleepSpan, minRise float64, minStop time.Duration) parkedInterval {
 	from := prev.end.Before
 	iv := parkedInterval{time: max(0, next.start.After.Sub(from))}
+	iv.rated = iv.time >= minStop
 	if loss := prev.endSoC.V - next.startSoC.V; prev.endSoC.OK && next.startSoC.OK && loss > -minRise {
 		iv.lossPct = Value[float64]{V: max(0, loss), OK: true}
 		c := prev.capacity
@@ -864,10 +868,11 @@ type acc struct {
 	consKWh, consKm float64
 	// Cost per 100 km: the costs and distance of the trips where both are known.
 	costMin, costMax, costKm float64
-	// Parked time of the intervals with a known loss, and of those whose loss's energy is
-	// known too, with that energy.
+	// The intervals that count in the rate (parkedInterval.rated): the time of those with
+	// a known loss, with that loss, and of those whose loss's energy is known too, with
+	// that energy.
 	lossTime, powerTime time.Duration
-	lossKWh             float64
+	ratedLoss, lossKWh  float64
 	// The lowest and highest odometers of the events.
 	odoLow, odoHigh Value[float64]
 }
@@ -950,6 +955,10 @@ func (a *acc) parked(iv parkedInterval) {
 		return
 	}
 	s.SoCLossPct += iv.lossPct.V
+	if !iv.rated {
+		return
+	}
+	a.ratedLoss += iv.lossPct.V
 	a.lossTime += iv.time
 	if iv.lossKWh.OK {
 		a.lossKWh += iv.lossKWh.V
@@ -1001,7 +1010,7 @@ func (a *acc) stats(minRate time.Duration) Stats {
 		s.Trips.CostPer100km = known(r)
 	}
 	if a.lossTime > 0 && a.lossTime >= minRate {
-		s.Parked.SoCLossPctPerDay = Value[float64]{V: s.Parked.SoCLossPct / a.lossTime.Hours() * 24, OK: true}
+		s.Parked.SoCLossPctPerDay = Value[float64]{V: a.ratedLoss / a.lossTime.Hours() * 24, OK: true}
 	}
 	if a.powerTime > 0 && a.powerTime >= minRate {
 		s.Parked.PowerW = Value[float64]{V: a.lossKWh * 1000 / a.powerTime.Hours(), OK: true}

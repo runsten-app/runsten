@@ -895,13 +895,28 @@ func TestSummarizeParked(t *testing.T) {
 			perDay: []int{1, 0},
 		},
 		{
-			// Trips and charges together, given unsorted: trip, charge, trip.
+			// Trips and charges together, given unsorted: trip, charge, trip. The 55
+			// minutes after the charge are under MinParkedStop: their loss counts in the
+			// total, not in the rate.
 			name: "trips and charges in order of start",
 			trips: []Trip{
 				drive(morning.Add(4*time.Hour), morning.Add(5*time.Hour), 10, 2, 88, 85),
 				drive(evening.Add(-time.Hour), evening, 10, 2, 80, 72),
 			},
 			charges: []Charge{plug(morning, morning.Add(3*time.Hour), AC, 16, 15, 71, 90)},
+			want: ParkedStats{
+				Intervals: 2, Time: parked + 55*time.Minute, SoCLossPct: 3, SoCLossPctPerDay: perDay(1, parked),
+			},
+			perDay: []int{0, 2},
+		},
+		{
+			name: "MinParkedStop 0: every interval in the rate",
+			trips: []Trip{
+				drive(morning.Add(4*time.Hour), morning.Add(5*time.Hour), 10, 2, 88, 85),
+				drive(evening.Add(-time.Hour), evening, 10, 2, 80, 72),
+			},
+			charges: []Charge{plug(morning, morning.Add(3*time.Hour), AC, 16, 15, 71, 90)},
+			params:  func(p *Params) { p.MinParkedStop = 0 },
 			want: ParkedStats{
 				Intervals: 2, Time: parked + 55*time.Minute, SoCLossPct: 3, SoCLossPctPerDay: perDay(3, parked+55*time.Minute),
 			},
@@ -1271,6 +1286,75 @@ func TestSummarizeParkedPowerAndSleep(t *testing.T) {
 	}
 	if p := s.Totals.Parked; p.PowerW.OK || p.AsleepShare.OK || p.SoCLossUnknown != 1 {
 		t.Errorf("parked = %+v", p)
+	}
+}
+
+// Only the stops of MinParkedStop or more count in the rate and the power, and in the
+// time MinParkedForRate asks; the others count in the total loss.
+func TestSummarizeParkedMinStop(t *testing.T) {
+	from, to := pt("2026-06-01 00:00"), pt("2026-06-04 00:00")
+	cap75 := known(Capacity{KWh: 75, Source: CapacityCatalogNet})
+	type stop struct {
+		d    time.Duration
+		loss float64
+	}
+	// trips drives a short trip after each stop, from 75 %, losing the stop's points
+	// parked: each trip ends within 5 minutes after start+10 min, the next starts after
+	// the stop.
+	trips := func(stops ...stop) []Trip {
+		t0, soc := pt("2026-06-01 06:00"), 75.0
+		out := []Trip{}
+		tr := drive(t0, t0.Add(10*time.Minute), 1, 0.2, soc, soc)
+		tr.Capacity = cap75
+		out = append(out, tr)
+		for _, st := range stops {
+			t0 = t0.Add(15*time.Minute + st.d)
+			soc -= st.loss
+			tr := drive(t0, t0.Add(10*time.Minute), 1, 0.2, soc, soc)
+			tr.Capacity = cap75
+			out = append(out, tr)
+		}
+		return out
+	}
+	perDay := func(loss float64, d time.Duration) Value[float64] { return val(loss / d.Hours() * 24) }
+	power := func(loss float64, d time.Duration) Value[float64] { return val(loss * 75 / 100 * 1000 / d.Hours()) }
+	for _, tt := range []struct {
+		name  string
+		stops []stop
+		want  ParkedStats
+	}{
+		{
+			name:  "a long stop and a short one: the short one in the total only",
+			stops: []stop{{13 * time.Hour, 2}, {time.Hour, 1}},
+			want: ParkedStats{
+				Intervals: 2, Time: 14 * time.Hour, SoCLossPct: 3,
+				SoCLossPctPerDay: perDay(2, 13*time.Hour), PowerW: power(2, 13*time.Hour),
+			},
+		},
+		{
+			// 12 hours parked, but 7 of them in stops that count: no rate.
+			name:  "7 hours and 5 hours: no rate",
+			stops: []stop{{7 * time.Hour, 1}, {5 * time.Hour, 1}},
+			want:  ParkedStats{Intervals: 2, Time: 12 * time.Hour, SoCLossPct: 2},
+		},
+		{
+			name:  "two stops of exactly 6 hours",
+			stops: []stop{{6 * time.Hour, 1}, {6 * time.Hour, 1}},
+			want: ParkedStats{
+				Intervals: 2, Time: 12 * time.Hour, SoCLossPct: 2,
+				SoCLossPctPerDay: perDay(2, 12*time.Hour), PowerW: power(2, 12*time.Hour),
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			s, err := Summarize(trips(tt.stops...), nil, Costs{}, nil, nil, from, to, paris, BucketNone, ChargesAt{}, DefaultParams())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := s.Totals.Parked; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parked = %+v\nwant     %+v", got, tt.want)
+			}
+		})
 	}
 }
 
