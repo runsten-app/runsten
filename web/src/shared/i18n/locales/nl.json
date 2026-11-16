@@ -585,7 +585,7 @@
       "parkedUnknown": "onbekend voor {n} interval | onbekend voor {n} intervallen",
       "parkedPower": "gemiddeld {value} verloren",
       "parkedAsleep": "{value} van de uitgelezen tijd in slaap",
-      "parkedStops": "Bekijk elke stilstand",
+      "parkedStops": "Bekijk het detail, stilstand per stilstand",
       "cost": "Laadkosten",
       "costNote": "Geschat met de tarieven, of ingevoerd; een marge als de tijdstippen van de laadsessies niet bekend zijn",
       "costUnknown": "onbekend voor {n} laadsessie | onbekend voor {n} laadsessies",

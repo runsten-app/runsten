@@ -585,7 +585,7 @@
       "parkedUnknown": "ukjent for {n} intervall | ukjent for {n} intervaller",
       "parkedPower": "{value} tapt i snitt",
       "parkedAsleep": "i dvale {value} av den leste tiden",
-      "parkedStops": "Se hver parkering",
+      "parkedStops": "Se detaljene, parkering for parkering",
       "cost": "Ladekostnad",
       "costNote": "Anslått ut fra tariffene, eller registrert; et intervall når ladingenes tidspunkter er ukjente",
       "costUnknown": "ukjent for {n} lading | ukjent for {n} ladinger",

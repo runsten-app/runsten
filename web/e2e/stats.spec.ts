@@ -75,7 +75,10 @@ test('Stats: the loss while parked leads to each stop, over the same period', as
   await page.goto(`/vehicles/${await vehicleId(page)}/stats`)
   await expect(page).toHaveURL(/\/stats\?from=/)
   const from = new URL(page.url()).searchParams.get('from')
-  await page.locator('.tile.parked').getByRole('link', { name: 'See each stop' }).click()
+  await page
+    .locator('.tile.parked')
+    .getByRole('link', { name: 'See the detail, stop by stop' })
+    .click()
   await expect(page).toHaveURL(new RegExp(`/stats/parked\\?from=${from}&to=`))
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Loss while parked')
   await expect(page.getByRole('link', { name: 'Stats' })).toHaveAttribute('aria-current', 'page')

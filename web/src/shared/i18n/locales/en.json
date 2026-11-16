@@ -585,7 +585,7 @@
       "parkedUnknown": "unknown for {n} interval | unknown for {n} intervals",
       "parkedPower": "{value} lost on average",
       "parkedAsleep": "asleep {value} of the time read",
-      "parkedStops": "See each stop",
+      "parkedStops": "See the detail, stop by stop",
       "cost": "Cost of charges",
       "costNote": "Estimated from the tariffs, or entered; a range when the times of the charges are not known",
       "costUnknown": "unknown for {n} charge | unknown for {n} charges",

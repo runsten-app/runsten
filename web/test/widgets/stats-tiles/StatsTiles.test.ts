@@ -94,7 +94,7 @@ describe('StatsTiles', () => {
     const { wrapper } = mountWith(StatsTiles, { router, props })
     await flushPromises()
     const link = wrapper.find('.tile.parked a.more')
-    expect(link.text()).toBe('See each stop')
+    expect(link.text()).toBe('See the detail, stop by stop')
     expect(link.attributes('href')).toBe('/vehicles/v1/stats/parked?from=2026-09-01&to=2026-09-30')
     // No stop, no link.
     const s = structuredClone(stats) as Stats

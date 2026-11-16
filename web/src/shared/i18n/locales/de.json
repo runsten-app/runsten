@@ -585,7 +585,7 @@
       "parkedUnknown": "unbekannt für {n} Intervall | unbekannt für {n} Intervalle",
       "parkedPower": "durchschnittlich {value} Verlust",
       "parkedAsleep": "{value} der gelesenen Zeit im Ruhezustand",
-      "parkedStops": "Jede Standzeit ansehen",
+      "parkedStops": "Details ansehen, Standzeit für Standzeit",
       "cost": "Ladekosten",
       "costNote": "Aus den Tarifen geschätzt oder erfasst; eine Spanne, wenn die Zeiten der Ladevorgänge nicht bekannt sind",
       "costUnknown": "unbekannt bei {n} Ladevorgang | unbekannt bei {n} Ladevorgängen",
