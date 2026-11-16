@@ -43,7 +43,7 @@ describe('ParkedStops', () => {
     expect(rows).toHaveLength(4)
     // The oldest: a charge, then 2 h 55 parked, nothing lost, at 8.5 °C.
     const last = rows[3]
-    expect(plain(last?.find('.duration').text())).toBe('2 hrs, 55 mins')
+    expect(plain(last?.find('.duration').text())).toBe('2.9 hours')
     expect(plain(last?.find('.loss').text())).toBe('0% 62% → 62%')
     expect(plain(last?.find('.power').text())).toBe('0 W')
     expect(plain(last?.find('.temperature').text())).toBe('8.5°C')
@@ -53,6 +53,12 @@ describe('ParkedStops', () => {
       '/vehicles/v1/charges/2026-09-28T04:00:00.000000Z',
       '/vehicles/v1/trips/2026-09-28T07:01:00.000000Z',
     ])
+    // Days beyond a day, to a tenth, as a vampire drain tells them.
+    const long = structuredClone(parked) as Parked
+    const first = long.items[0]
+    if (first) first.time_s = Math.round(3.7 * 86400)
+    const days = await stops(long)
+    expect(plain(days.find('tbody tr .duration').text())).toBe('3.7 days')
     // Unknown, never 0, where the state of charge is missing.
     expect(plain(rows[0]?.find('.loss').text())).toMatch(/^Unknown/)
     expect(plain(rows[0]?.find('.asleep').text())).toBe('0%')

@@ -13,7 +13,7 @@ import { useFormat } from '@/shared/lib'
 // is asked (the page's toggle, beside its period): a shorter one counts in the period's total, not in the rate per day, since
 // just after a drive a car is still awake and its state of charge settles.
 const props = defineProps<{ vehicle: string; from?: string; to?: string; all: boolean }>()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const f = useFormat()
 const { parked, isPending, error } = useParked(
   () => props.vehicle,
@@ -23,6 +23,18 @@ const { parked, isPending, error } = useParked(
 const every = computed(() => parked.value?.items ?? [])
 const stops = computed(() => (props.all ? every.value : every.value.filter((s) => s.rated)))
 const seconds = (s: number) => f.totalDuration({ min: s, max: s })
+// A stop's duration as a vampire drain tells it: hours under a day, days beyond, to a
+// tenth ("7.4 hours", "3.7 days"); a total's whole hours would read 88 hours for 3.7 days.
+function lasted(s: number): string {
+  if (s < 3600) return seconds(s)
+  const days = s >= 86400
+  return new Intl.NumberFormat(locale.value, {
+    style: 'unit',
+    unit: days ? 'day' : 'hour',
+    unitDisplay: 'long',
+    maximumFractionDigits: 1,
+  }).format(days ? s / 86400 : s / 3600)
+}
 const minStop = computed(() => seconds(parked.value?.min_stop_s ?? 0))
 const short = computed(() => stops.value.some((s) => !s.rated))
 const title = computed(() =>
@@ -89,7 +101,7 @@ const errorMessage = computed(() =>
                 </span>
               </th>
               <td class="num duration">
-                {{ seconds(s.time_s) }}
+                {{ lasted(s.time_s) }}
                 <span v-if="!s.rated" class="when d-block">{{ t('parked.notRated') }}</span>
               </td>
               <td class="num loss">
