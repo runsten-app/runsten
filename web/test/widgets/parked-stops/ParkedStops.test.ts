@@ -44,9 +44,11 @@ describe('ParkedStops', () => {
     // The oldest: a charge, then 2 h 55 parked, nothing lost, at 8.5 °C.
     const last = rows[3]
     expect(plain(last?.find('.duration').text())).toBe('2.9 hours')
-    expect(plain(last?.find('.loss').text())).toBe('0% 62% → 62%')
+    expect(plain(last?.find('.loss').text())).toBe('0% 62% → 62% · 0 kWh')
     expect(plain(last?.find('.power').text())).toBe('0 W')
     expect(plain(last?.find('.temperature').text())).toBe('8.5°C')
+    // Both ends, the end's date only when it differs.
+    expect(plain(last?.find('th span').text())).toBe('28 Sept 2026, 04:00 → 06:55')
     const links = last?.findAll('th a') ?? []
     expect(links.map((a) => a.text())).toEqual(['after a charge', 'before a trip'])
     expect(links.map((a) => a.attributes('href'))).toEqual([

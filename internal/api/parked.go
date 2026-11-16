@@ -45,7 +45,7 @@ type parkedJSON struct {
 	From     time.Time        `json:"from" doc:"The start of the period: from, else the vehicle's first event; the history the account does not see is left out."`
 	To       time.Time        `json:"to" doc:"The end of the period, excluded."`
 	MinStopS int64            `json:"min_stop_s" minimum:"0" doc:"The time from which a stop counts in the rate of the loss while parked (rated)."`
-	Items    []parkedStopJSON `json:"items" nullable:"false" doc:"The stops whose next event starts in the period, as the statistics count them (parked.intervals), newest first."`
+	Items    []parkedStopJSON `json:"items" nullable:"false" doc:"The stops whose next event starts in the period, as the statistics count them (parked.intervals), newest first; but a stop after an event before the history the account sees, which is not shown."`
 }
 
 // getParked lists the parked intervals of a period, those the statistics sum.
@@ -92,7 +92,19 @@ func (s *Server) getParked(ctx context.Context, in *parkedInput) (*body[parkedJS
 		t := p.Trips[r.Index]
 		return eventRefJSON{Kind: "trip", ID: eventOf(t.DetectedAt, t.Reconstructed, t.Start, t.End, t.Sources, t.Import).ID}
 	}
+	end := func(r core.EventRef) core.Bounds {
+		if r.Charge {
+			return p.Charges[r.Index].End
+		}
+		return p.Trips[r.Index].End
+	}
 	for _, st := range core.ParkedStops(p.Trips, p.Charges, sleep, out.From, to, s.Params) {
+		// The event before the period opens its first stop, but one before the history
+		// the account sees is not shown: neither its ID nor its end. The statistics count
+		// that stop's loss, never the event.
+		if l.hides(end(st.Before)) {
+			continue
+		}
 		share := core.Value[float64]{}
 		if st.SleepRead > 0 {
 			share = core.Value[float64]{V: st.Asleep.Seconds() / st.SleepRead.Seconds(), OK: true}

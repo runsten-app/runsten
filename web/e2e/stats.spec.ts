@@ -81,6 +81,8 @@ test('Stats: the loss while parked leads to each stop, over the same period', as
   await expect(page.getByRole('link', { name: 'Stats' })).toHaveAttribute('aria-current', 'page')
   // The errand's stops are short: shown on demand, each leading to its events.
   const short = page.getByLabel(/^Include the (\d+ )?stops? under/)
+  // The switch shows once the stops are read: wait for them before looking for it.
+  await expect(page.locator('.parked-stops, p.none').first()).toBeVisible()
   if (await short.isVisible()) {
     await short.check()
     await expect(page).toHaveURL(/short=1/)

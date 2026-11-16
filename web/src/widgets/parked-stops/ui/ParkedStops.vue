@@ -50,6 +50,12 @@ const afterEvent = (kind: string) =>
   kind === 'charge' ? t('parked.after.charge') : t('parked.after.trip')
 const beforeEvent = (kind: string) =>
   kind === 'charge' ? t('parked.before.charge') : t('parked.before.trip')
+// From what to what, and the energy when the battery's capacity is known.
+const lossDetail = (s: ParkedStop) =>
+  [
+    f.change(s.start_soc_pct, s.end_soc_pct, 'percent'),
+    ...(s.soc_loss_kwh === null ? [] : [f.quantity(s.soc_loss_kwh, 'kWh', 2)]),
+  ].join(' · ')
 const asleep = (s: ParkedStop) =>
   s.asleep_share === null ? f.unknown() : f.quantity(s.asleep_share * 100, 'percent')
 
@@ -86,7 +92,11 @@ const errorMessage = computed(() =>
               :class="['stop', { short: !s.rated }]"
             >
               <th scope="row">
-                <span class="d-block">{{ f.time(s.from) }}</span>
+                <!-- Both ends: a duration in days cannot tell when the car left. The end's
+                     date only when it differs. -->
+                <span class="d-block"
+                  >{{ f.time(s.from) }} → {{ f.time(s.to, f.dayKey(s.from)) }}</span
+                >
                 <span class="around d-block">
                   <router-link
                     :to="{ name: s.before.kind, params: { vehicle, id: s.before.id } }"
@@ -106,9 +116,7 @@ const errorMessage = computed(() =>
               </td>
               <td class="num loss">
                 {{ loss(s) }}
-                <span class="when d-block">{{
-                  f.change(s.start_soc_pct, s.end_soc_pct, 'percent')
-                }}</span>
+                <span class="when d-block">{{ lossDetail(s) }}</span>
               </td>
               <td class="num power">{{ f.quantity(s.power_w, 'W') }}</td>
               <td class="num asleep">{{ asleep(s) }}</td>

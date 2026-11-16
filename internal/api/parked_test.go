@@ -77,6 +77,21 @@ func TestParkedJSON(t *testing.T) {
 	if resp.status != http.StatusNotFound {
 		t.Errorf("another vehicle: %d %s", resp.status, body)
 	}
+	// The event before the history the account sees opens no stop: neither its ID nor
+	// its end is shown.
+	e.server.Limits = &historyLimit{account: account, from: h(12, 0)}
+	resp, body = get(t, noFollow(), base+car+"/parked", c)
+	var limited parkedJSON
+	if err := json.Unmarshal([]byte(body), &limited); resp.status != http.StatusOK || err != nil || len(limited.Items) == 0 {
+		t.Fatalf("limited: %d %s", resp.status, body)
+	}
+	for _, it := range limited.Items {
+		if it.From.Before(h(12, 0)) {
+			t.Errorf("a stop after a hidden event: %+v", it)
+		}
+	}
+	e.server.Limits = nil
+
 	e.server.Readings = failingReadings{}
 	defer func() { e.server.Readings = e.reader }()
 	if resp, body := get(t, noFollow(), base+car+"/parked", c); resp.status != http.StatusInternalServerError {
