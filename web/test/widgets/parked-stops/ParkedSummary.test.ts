@@ -64,10 +64,13 @@ describe('ParkedSummary', () => {
     expect(link.attributes('href')).toBe('/vehicles/v1/stats/parked?from=2026-08-28&to=2026-09-26')
   })
 
-  it('says when the loss is not known', async () => {
-    mocks.fetchStats.mockResolvedValue(withParked({ soc_loss_pct_per_day: null, power_w: null }))
+  it('says when the loss is not known, and still tells the time asleep', async () => {
+    mocks.fetchStats.mockResolvedValue(
+      withParked({ soc_loss_pct_per_day: null, power_w: null, asleep_share: 0.95 }),
+    )
     const w = await mounted()
     expect(w.find('.value').text()).toBe('Not known over the last 30 days')
+    expect(plain(w.find('.notes').text())).toBe('asleep 95% of the time read')
     expect(w.find('a.open').exists()).toBe(true)
   })
 

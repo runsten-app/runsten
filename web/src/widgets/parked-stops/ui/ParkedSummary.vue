@@ -31,8 +31,7 @@ const parked = computed(() => stats.value?.totals.parked ?? null)
 const figure = computed(() => {
   const pk = parked.value
   if (!pk) return null
-  if (pk.soc_loss_pct_per_day === null)
-    return { value: t('parked.summary.none'), known: false, notes: [] }
+  // The time asleep needs no rate: a single stop of 8 hours tells it.
   const notes: string[] = []
   if (pk.power_w !== null)
     notes.push(t('stats.tile.parkedPower', { value: f.quantity(pk.power_w, 'W') }))
@@ -40,6 +39,8 @@ const figure = computed(() => {
     notes.push(
       t('stats.tile.parkedAsleep', { value: f.quantity(pk.asleep_share * 100, 'percent') }),
     )
+  if (pk.soc_loss_pct_per_day === null)
+    return { value: t('parked.summary.none'), known: false, notes }
   return {
     value: t('stats.tile.perDay', { value: f.quantity(pk.soc_loss_pct_per_day, 'percent', 1) }),
     known: true,
