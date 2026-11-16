@@ -52,7 +52,7 @@ const figure = computed(() => {
   <v-card v-if="shown" class="tile parked-summary">
     <v-card-title tag="h2">{{ t('stats.tile.parked') }}</v-card-title>
     <v-card-text>
-      <dl v-if="figure" class="mb-3">
+      <dl v-if="figure">
         <div>
           <dt class="text-medium-emphasis">{{ t('parked.summary.window') }}</dt>
           <dd>
@@ -94,5 +94,6 @@ dt {
 }
 .open {
   display: inline-block;
+  margin-top: 12px;
 }
 </style>
