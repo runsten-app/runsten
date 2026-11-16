@@ -419,7 +419,6 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, slee
 		add(t, func(a *acc) { a.odometer(kms...) })
 	}
 
-	evs := make([]event, 0, len(trips)+len(charges))
 	for i, t := range trips {
 		var cost Value[TripCost]
 		if i < len(costs.Trips) {
@@ -431,7 +430,6 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, slee
 			dist.add(t)
 			temp.add(t)
 		}
-		evs = append(evs, event{t.DetectedAt, t.Start, t.End, t.StartSoC, t.EndSoC, t.Capacity, eventTemp(t.Reconstructed, t.OutsideTempC)})
 	}
 	for i, c := range charges {
 		var cost Value[Cost]
@@ -439,7 +437,6 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, slee
 			cost = costs.Charges[i]
 		}
 		reading(c.Start.After, c.OdometerKm)
-		evs = append(evs, event{c.DetectedAt, c.Start, c.End, c.StartSoC, c.EndSoC, c.Capacity, eventTemp(c.Reconstructed, c.OutsideTempC)})
 		if !at.Keeps(c, places) {
 			continue
 		}
@@ -458,9 +455,7 @@ func Summarize(trips []Trip, charges []Charge, costs Costs, places []Place, slee
 			})
 		}
 	}
-	slices.SortStableFunc(evs, func(a, b event) int {
-		return cmp.Or(a.start.After.Compare(b.start.After), a.detectedAt.Compare(b.detectedAt))
-	})
+	evs := eventsOf(trips, charges)
 	sleep = sortedSpans(sleep)
 	for i := 1; i < len(evs); i++ {
 		iv := parkedOf(evs[i-1], evs[i], sleep, p.MinChargeSoC, p.MinParkedStop)
@@ -802,6 +797,83 @@ type event struct {
 	startSoC, endSoC Value[float64]
 	capacity         Value[Capacity]
 	tempC            Value[float64]
+	ref              EventRef
+}
+
+// eventsOf are the trips and charges in the order the parked intervals run between them:
+// by start, then by detection.
+func eventsOf(trips []Trip, charges []Charge) []event {
+	evs := make([]event, 0, len(trips)+len(charges))
+	for i, t := range trips {
+		evs = append(evs, event{
+			t.DetectedAt, t.Start, t.End, t.StartSoC, t.EndSoC, t.Capacity,
+			eventTemp(t.Reconstructed, t.OutsideTempC),
+			EventRef{Index: i},
+		})
+	}
+	for i, c := range charges {
+		evs = append(evs, event{
+			c.DetectedAt, c.Start, c.End, c.StartSoC, c.EndSoC, c.Capacity,
+			eventTemp(c.Reconstructed, c.OutsideTempC),
+			EventRef{Charge: true, Index: i},
+		})
+	}
+	slices.SortStableFunc(evs, func(a, b event) int {
+		return cmp.Or(a.start.After.Compare(b.start.After), a.detectedAt.Compare(b.detectedAt))
+	})
+	return evs
+}
+
+// EventRef points at a trip or a charge of those given: its index in their slice.
+type EventRef struct {
+	Charge bool
+	Index  int
+}
+
+// ParkedStop is a parked interval between two consecutive events, as Summarize counts it.
+type ParkedStop struct {
+	// From and To bound its sure part: the latest end of the event before, the earliest
+	// start of the next; Time is To − From, 0 when the events' bounds overlap.
+	From, To time.Time
+	Time     time.Duration
+	// StartSoC and EndSoC are the event before's SoC at its end, the next's at its start.
+	StartSoC, EndSoC Value[float64]
+	// LossPct and LossKWh as Summarize counts them; PowerW is LossKWh over Time, unknown
+	// without both.
+	LossPct, LossKWh, PowerW Value[float64]
+	SleepRead, Asleep        time.Duration
+	TempC                    Value[float64]
+	// Rated: at least Params.MinParkedStop, its loss counts in the rate and the power.
+	Rated         bool
+	Before, After EventRef
+}
+
+// ParkedStops are the parked intervals Summarize counts over [from, to): those whose
+// next event starts in it, in their order. trips and charges are given as to Summarize,
+// the latest event before from included; sleep as well.
+func ParkedStops(trips []Trip, charges []Charge, sleep []SleepSpan, from, to time.Time, p Params) []ParkedStop {
+	evs := eventsOf(trips, charges)
+	sleep = sortedSpans(sleep)
+	var out []ParkedStop
+	for i := 1; i < len(evs); i++ {
+		prev, next := evs[i-1], evs[i]
+		if !in(next.start.After, from, to) {
+			continue
+		}
+		iv := parkedOf(prev, next, sleep, p.MinChargeSoC, p.MinParkedStop)
+		st := ParkedStop{
+			From: prev.end.Before, To: next.start.After, Time: iv.time,
+			StartSoC: prev.endSoC, EndSoC: next.startSoC,
+			LossPct: iv.lossPct, LossKWh: iv.lossKWh,
+			SleepRead: iv.sleepRead, Asleep: iv.asleep, TempC: iv.tempC, Rated: iv.rated,
+			Before: prev.ref, After: next.ref,
+		}
+		if iv.lossKWh.OK && iv.time > 0 {
+			st.PowerW = Value[float64]{V: iv.lossKWh.V * 1000 / iv.time.Hours(), OK: true}
+		}
+		out = append(out, st)
+	}
+	return out
 }
 
 // eventTemp is the outside temperature an event gives the parked intervals around it: a

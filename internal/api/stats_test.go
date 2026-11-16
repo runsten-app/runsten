@@ -93,10 +93,13 @@ type stats struct {
 		} `json:"trips"`
 		Charges chargeStats `json:"charges"`
 		Parked  struct {
-			Intervals   int      `json:"intervals"`
-			SleepReadS  int64    `json:"sleep_read_s"`
-			AsleepS     int64    `json:"asleep_s"`
-			AsleepShare *float64 `json:"asleep_share"`
+			Intervals      int      `json:"intervals"`
+			TimeS          int64    `json:"time_s"`
+			SoCLossPct     float64  `json:"soc_loss_pct"`
+			SoCLossUnknown int      `json:"soc_loss_unknown"`
+			SleepReadS     int64    `json:"sleep_read_s"`
+			AsleepS        int64    `json:"asleep_s"`
+			AsleepShare    *float64 `json:"asleep_share"`
 		} `json:"parked"`
 	} `json:"totals"`
 }
