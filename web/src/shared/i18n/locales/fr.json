@@ -581,7 +581,7 @@
       "charges": "Charges",
       "parked": "Perte garée",
       "perDay": "{value} par jour",
-      "parkedNote": "L'état de charge perdu entre deux événements : significatif sur des semaines, pas sur une nuit",
+      "parkedNote": "L'état de charge perdu sur les arrêts de 6 heures ou plus : significatif sur des semaines, pas sur une nuit",
       "parkedUnknown": "inconnue pour {n} intervalle | inconnue pour {n} intervalles",
       "parkedPower": "{value} perdus en moyenne",
       "parkedAsleep": "en veille {value} du temps relevé",
@@ -666,7 +666,7 @@
         "unit": "%/jour",
         "summary": "Perte à l’arrêt : {average} en moyenne sur la période.",
         "none": "Aucune perte à l’arrêt connue sur cette période.",
-        "hint": "La charge perdue entre deux événements, par jour : parlante sur des semaines, pas sur une nuit. Un jour à l’arrêt moins de 12 heures n’en a pas."
+        "hint": "La charge perdue sur les arrêts de 6 heures ou plus, par jour : parlante sur des semaines, pas sur une nuit. Un jour à l’arrêt moins de 12 heures n’en a pas."
       },
       "byDistance": {
         "title": "Trajets par distance",

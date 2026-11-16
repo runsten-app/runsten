@@ -581,7 +581,7 @@
       "charges": "Laadsessies",
       "parked": "Verlies bij stilstand",
       "perDay": "{value} per dag",
-      "parkedNote": "Het laadniveau dat tussen gebeurtenissen verloren ging: zinvol over weken, niet over één nacht",
+      "parkedNote": "Het laadniveau dat verloren gaat bij stilstand van 6 uur of meer: zinvol over weken, niet over één nacht",
       "parkedUnknown": "onbekend voor {n} interval | onbekend voor {n} intervallen",
       "parkedPower": "gemiddeld {value} verloren",
       "parkedAsleep": "{value} van de uitgelezen tijd in slaap",
@@ -666,7 +666,7 @@
         "unit": "%/dag",
         "summary": "Verlies bij stilstand: gemiddeld {average} over de periode.",
         "none": "Geen verlies bij stilstand bekend in deze periode.",
-        "hint": "Het laadniveau dat tussen gebeurtenissen verloren ging, per dag: zinvol over weken, niet over één nacht. Een dag met minder dan 12 uur stilstand heeft er geen."
+        "hint": "Het laadniveau dat verloren gaat bij stilstand van 6 uur of meer, per dag: zinvol over weken, niet over één nacht. Een dag met minder dan 12 uur stilstand heeft er geen."
       },
       "byDistance": {
         "title": "Ritten naar afstand",

@@ -581,7 +581,7 @@
       "charges": "Ladinger",
       "parked": "Tap mens parkert",
       "perDay": "{value} per dag",
-      "parkedNote": "Ladenivået som gikk tapt mellom hendelsene: meningsfullt over uker, ikke over en natt",
+      "parkedNote": "Ladenivået som går tapt ved parkeringer på 6 timer eller mer: meningsfullt over uker, ikke over en natt",
       "parkedUnknown": "ukjent for {n} intervall | ukjent for {n} intervaller",
       "parkedPower": "{value} tapt i snitt",
       "parkedAsleep": "i dvale {value} av den leste tiden",
@@ -666,7 +666,7 @@
         "unit": "%/dag",
         "summary": "Tap mens parkert: {average} i snitt i perioden.",
         "none": "Ikke noe kjent tap mens parkert i denne perioden.",
-        "hint": "Ladenivået som gikk tapt mellom hendelsene, per dag: meningsfullt over uker, ikke over en natt. En dag med mindre enn 12 timer parkert har ingen verdi."
+        "hint": "Ladenivået som går tapt ved parkeringer på 6 timer eller mer, per dag: meningsfullt over uker, ikke over en natt. En dag med mindre enn 12 timer parkert har ingen verdi."
       },
       "byDistance": {
         "title": "Turer etter distanse",

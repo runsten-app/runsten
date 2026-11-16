@@ -581,7 +581,7 @@
       "charges": "Ladevorgänge",
       "parked": "Verlust im Stand",
       "perDay": "{value} pro Tag",
-      "parkedNote": "Der zwischen den Ereignissen verlorene Ladezustand: aussagekräftig über Wochen, nicht über eine Nacht",
+      "parkedNote": "Der Ladezustand, der bei Standzeiten ab 6 Stunden verloren geht: aussagekräftig über Wochen, nicht über eine Nacht",
       "parkedUnknown": "unbekannt für {n} Intervall | unbekannt für {n} Intervalle",
       "parkedPower": "durchschnittlich {value} Verlust",
       "parkedAsleep": "{value} der gelesenen Zeit im Ruhezustand",
@@ -666,7 +666,7 @@
         "unit": "%/Tag",
         "summary": "Verlust im Stand: {average} im Durchschnitt über den Zeitraum.",
         "none": "Kein bekannter Verlust im Stand in diesem Zeitraum.",
-        "hint": "Der zwischen den Ereignissen verlorene Ladezustand pro Tag: aussagekräftig über Wochen, nicht über eine Nacht. Ein Tag mit weniger als 12 Stunden Standzeit hat keinen Wert."
+        "hint": "Der Ladezustand, der bei Standzeiten ab 6 Stunden verloren geht, pro Tag: aussagekräftig über Wochen, nicht über eine Nacht. Ein Tag mit weniger als 12 Stunden Standzeit hat keinen Wert."
       },
       "byDistance": {
         "title": "Fahrten nach Strecke",

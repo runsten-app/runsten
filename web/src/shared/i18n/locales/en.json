@@ -581,7 +581,7 @@
       "charges": "Charges",
       "parked": "Loss while parked",
       "perDay": "{value} per day",
-      "parkedNote": "The state of charge lost between events: meaningful over weeks, not over a night",
+      "parkedNote": "The state of charge lost over stops of 6 hours or more: meaningful over weeks, not over a night",
       "parkedUnknown": "unknown for {n} interval | unknown for {n} intervals",
       "parkedPower": "{value} lost on average",
       "parkedAsleep": "asleep {value} of the time read",
@@ -666,7 +666,7 @@
         "unit": "%/day",
         "summary": "Loss while parked: {average} on average over the period.",
         "none": "No loss while parked known in this period.",
-        "hint": "The state of charge lost between events, per day: meaningful over weeks, not over a night. A day parked less than 12 hours has none."
+        "hint": "The state of charge lost over stops of 6 hours or more, per day: meaningful over weeks, not over a night. A day parked less than 12 hours has none."
       },
       "byDistance": {
         "title": "Trips by distance",

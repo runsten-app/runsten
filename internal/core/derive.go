@@ -70,6 +70,13 @@ type Params struct {
 	// day. Assumption: from half a day parked, a point more or less moves the rate by 2
 	// points a day at most. 0: any time.
 	MinParkedForRate time.Duration
+	// MinParkedStop is the parked interval below which its loss counts in the totals but
+	// not in the rate nor the power. Just after a drive a car stays awake a while and its
+	// SoC settles, and the SoC has a resolution of one point: a point lost in an hour after
+	// a trip weighs as much as one lost over days asleep, for a sliver of the time, and the
+	// rate would read well above the loss in standby. TeslaMate's vampire drain leaves out
+	// the short stops for the same reason. 0: every interval.
+	MinParkedStop time.Duration
 }
 
 // DefaultParams returns the parameters used without explicit configuration.
@@ -88,6 +95,7 @@ func DefaultParams() Params {
 		VehicleTimestamps:   true,
 		Capacity:            CapacityCatalogNet,
 		MinParkedForRate:    12 * time.Hour,
+		MinParkedStop:       6 * time.Hour,
 	}
 }
 

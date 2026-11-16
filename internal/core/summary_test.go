@@ -895,13 +895,28 @@ func TestSummarizeParked(t *testing.T) {
 			perDay: []int{1, 0},
 		},
 		{
-			// Trips and charges together, given unsorted: trip, charge, trip.
+			// Trips and charges together, given unsorted: trip, charge, trip. The 55
+			// minutes after the charge are under MinParkedStop: their loss counts in the
+			// total, not in the rate.
 			name: "trips and charges in order of start",
 			trips: []Trip{
 				drive(morning.Add(4*time.Hour), morning.Add(5*time.Hour), 10, 2, 88, 85),
 				drive(evening.Add(-time.Hour), evening, 10, 2, 80, 72),
 			},
 			charges: []Charge{plug(morning, morning.Add(3*time.Hour), AC, 16, 15, 71, 90)},
+			want: ParkedStats{
+				Intervals: 2, Time: parked + 55*time.Minute, SoCLossPct: 3, SoCLossPctPerDay: perDay(1, parked),
+			},
+			perDay: []int{0, 2},
+		},
+		{
+			name: "MinParkedStop 0: every interval in the rate",
+			trips: []Trip{
+				drive(morning.Add(4*time.Hour), morning.Add(5*time.Hour), 10, 2, 88, 85),
+				drive(evening.Add(-time.Hour), evening, 10, 2, 80, 72),
+			},
+			charges: []Charge{plug(morning, morning.Add(3*time.Hour), AC, 16, 15, 71, 90)},
+			params:  func(p *Params) { p.MinParkedStop = 0 },
 			want: ParkedStats{
 				Intervals: 2, Time: parked + 55*time.Minute, SoCLossPct: 3, SoCLossPctPerDay: perDay(3, parked+55*time.Minute),
 			},
