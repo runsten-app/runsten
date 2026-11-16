@@ -2194,7 +2194,11 @@
     "noneRated": "Aucun arrêt de {min} ou plus sur la période.",
     "includeShort": "Inclure l'arrêt de moins de {min} | Inclure les {n} arrêts de moins de {min}",
     "loading": "Chargement des arrêts",
-    "error": "Les arrêts n'ont pas pu être chargés."
+    "error": "Les arrêts n'ont pas pu être chargés.",
+    "summary": {
+      "window": "Sur les 30 derniers jours",
+      "none": "Inconnue sur les 30 derniers jours"
+    }
   },
   "software": {
     "title": "Logiciel",

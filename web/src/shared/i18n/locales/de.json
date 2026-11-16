@@ -2194,7 +2194,11 @@
     "noneRated": "Keine Standzeit ab {min} in diesem Zeitraum.",
     "includeShort": "Die Standzeit unter {min} einbeziehen | Die {n} Standzeiten unter {min} einbeziehen",
     "loading": "Standzeiten werden geladen",
-    "error": "Die Standzeiten konnten nicht geladen werden."
+    "error": "Die Standzeiten konnten nicht geladen werden.",
+    "summary": {
+      "window": "In den letzten 30 Tagen",
+      "none": "In den letzten 30 Tagen unbekannt"
+    }
   },
   "software": {
     "title": "Software",

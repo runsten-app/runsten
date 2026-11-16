@@ -2194,7 +2194,11 @@
     "noneRated": "No stop of {min} or more in this period.",
     "includeShort": "Include the stop under {min} | Include the {n} stops under {min}",
     "loading": "Loading the stops",
-    "error": "The stops could not be loaded."
+    "error": "The stops could not be loaded.",
+    "summary": {
+      "window": "Over the last 30 days",
+      "none": "Not known over the last 30 days"
+    }
   },
   "software": {
     "title": "Software",

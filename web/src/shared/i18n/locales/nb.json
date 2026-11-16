@@ -2194,7 +2194,11 @@
     "noneRated": "Ingen parkering på {min} eller mer i denne perioden.",
     "includeShort": "Ta med parkeringen under {min} | Ta med de {n} parkeringene under {min}",
     "loading": "Laster parkeringene",
-    "error": "Parkeringene kunne ikke lastes."
+    "error": "Parkeringene kunne ikke lastes.",
+    "summary": {
+      "window": "De siste 30 dagene",
+      "none": "Ukjent de siste 30 dagene"
+    }
   },
   "software": {
     "title": "Programvare",

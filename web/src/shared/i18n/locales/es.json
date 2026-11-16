@@ -2194,7 +2194,11 @@
     "noneRated": "Ninguna parada de {min} o más en este periodo.",
     "includeShort": "Incluir la parada de menos de {min} | Incluir las {n} paradas de menos de {min}",
     "loading": "Cargando las paradas",
-    "error": "No se pudieron cargar las paradas."
+    "error": "No se pudieron cargar las paradas.",
+    "summary": {
+      "window": "En los últimos 30 días",
+      "none": "Desconocida en los últimos 30 días"
+    }
   },
   "software": {
     "title": "Software",

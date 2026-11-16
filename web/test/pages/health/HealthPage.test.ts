@@ -5,6 +5,7 @@ import { VExpansionPanelText } from 'vuetify/components'
 import { HealthPage } from '@/pages/health'
 import battery from '@fixtures/battery.json'
 import openingsState from '@fixtures/state-openings.json'
+import stats from '@fixtures/stats.json'
 import health from '@fixtures/health.json'
 import unknown from '@fixtures/health-unknown.json'
 import noSoftware from '@fixtures/state-unknown.json'
@@ -24,6 +25,7 @@ const mocks = vi.hoisted(() => ({
   fetchVehicles: vi.fn(),
   fetchVehicleState: vi.fn(),
   getBattery: vi.fn(),
+  fetchStats: vi.fn(),
 }))
 vi.mock('@/entities/health', async (original) => ({
   ...(await original<typeof import('@/entities/health')>()),
@@ -34,6 +36,10 @@ vi.mock('@/entities/health', async (original) => ({
 vi.mock('@/entities/battery', async (original) => ({
   ...(await original<typeof import('@/entities/battery')>()),
   getBattery: mocks.getBattery,
+}))
+vi.mock('@/entities/stats', async (original) => ({
+  ...(await original<typeof import('@/entities/stats')>()),
+  fetchStats: mocks.fetchStats,
 }))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
@@ -50,6 +56,7 @@ beforeEach(() => {
   // A state that tells no software: the versions alone tell it.
   mocks.fetchVehicleState.mockResolvedValue(noSoftware)
   mocks.getBattery.mockResolvedValue(battery)
+  mocks.fetchStats.mockResolvedValue(stats)
 })
 
 const vehicle = vehicles.items[0]?.id ?? ''

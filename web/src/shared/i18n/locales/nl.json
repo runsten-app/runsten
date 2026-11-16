@@ -2194,7 +2194,11 @@
     "noneRated": "Geen stilstand van {min} of meer in deze periode.",
     "includeShort": "De stilstand korter dan {min} meenemen | De {n} stilstanden korter dan {min} meenemen",
     "loading": "Stilstanden laden",
-    "error": "De stilstanden konden niet worden geladen."
+    "error": "De stilstanden konden niet worden geladen.",
+    "summary": {
+      "window": "Over de afgelopen 30 dagen",
+      "none": "Onbekend over de afgelopen 30 dagen"
+    }
   },
   "software": {
     "title": "Software",
