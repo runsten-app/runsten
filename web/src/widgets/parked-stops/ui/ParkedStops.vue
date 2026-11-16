@@ -50,6 +50,8 @@ const afterEvent = (kind: string) =>
   kind === 'charge' ? t('parked.after.charge') : t('parked.after.trip')
 const beforeEvent = (kind: string) =>
   kind === 'charge' ? t('parked.before.charge') : t('parked.before.trip')
+// Both ends of a stop, as f.change joins two values; the end's date only when it differs.
+const ends = (s: ParkedStop) => `${f.time(s.from)} → ${f.time(s.to, f.dayKey(s.from))}`
 // From what to what, and the energy when the battery's capacity is known.
 const lossDetail = (s: ParkedStop) =>
   [
@@ -94,9 +96,7 @@ const errorMessage = computed(() =>
               <th scope="row">
                 <!-- Both ends: a duration in days cannot tell when the car left. The end's
                      date only when it differs. -->
-                <span class="d-block"
-                  >{{ f.time(s.from) }} → {{ f.time(s.to, f.dayKey(s.from)) }}</span
-                >
+                <span class="d-block">{{ ends(s) }}</span>
                 <span class="around d-block">
                   <router-link
                     :to="{ name: s.before.kind, params: { vehicle, id: s.before.id } }"
