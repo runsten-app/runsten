@@ -585,6 +585,7 @@
       "parkedUnknown": "inconnue pour {n} intervalle | inconnue pour {n} intervalles",
       "parkedPower": "{value} perdus en moyenne",
       "parkedAsleep": "en veille {value} du temps relevé",
+      "parkedStops": "Voir chaque arrêt",
       "cost": "Coût des charges",
       "costNote": "Estimé d'après les tarifs, ou saisi ; un intervalle quand l'heure des charges n'est pas connue",
       "costUnknown": "inconnu pour {n} charge | inconnu pour {n} charges",
@@ -2168,6 +2169,32 @@
     "unread": "La dernière version n'a pas encore pu être lue.",
     "releases": "Toutes les versions",
     "newTab": "(s'ouvre dans un nouvel onglet)"
+  },
+  "parked": {
+    "stops": "{n} arrêt | {n} arrêts",
+    "rated": "{n} arrêt de {min} ou plus | {n} arrêts de {min} ou plus",
+    "when": "À l'arrêt",
+    "duration": "Durée",
+    "loss": "Charge perdue",
+    "power": "Puissance",
+    "asleep": "En veille",
+    "temperature": "Dehors",
+    "after": {
+      "trip": "après un trajet",
+      "charge": "après une charge"
+    },
+    "before": {
+      "trip": "avant un trajet",
+      "charge": "avant une charge"
+    },
+    "notRated": "hors du taux",
+    "shortNote": "Un arrêt de moins de {min} compte dans la perte de la période, pas dans le taux par jour : juste après un trajet, la voiture est encore éveillée et sa charge se stabilise.",
+    "estimate": "Estimé d'après l'état de charge, à un point près : un arrêt de quelques heures peut en compter un de plus ou de moins.",
+    "none": "Aucun arrêt sur la période.",
+    "noneRated": "Aucun arrêt de {min} ou plus sur la période.",
+    "includeShort": "Inclure l'arrêt de moins de {min} | Inclure les {n} arrêts de moins de {min}",
+    "loading": "Chargement des arrêts",
+    "error": "Les arrêts n'ont pas pu être chargés."
   },
   "software": {
     "title": "Logiciel",

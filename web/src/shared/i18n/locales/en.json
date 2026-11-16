@@ -585,6 +585,7 @@
       "parkedUnknown": "unknown for {n} interval | unknown for {n} intervals",
       "parkedPower": "{value} lost on average",
       "parkedAsleep": "asleep {value} of the time read",
+      "parkedStops": "See each stop",
       "cost": "Cost of charges",
       "costNote": "Estimated from the tariffs, or entered; a range when the times of the charges are not known",
       "costUnknown": "unknown for {n} charge | unknown for {n} charges",
@@ -2168,6 +2169,32 @@
     "unread": "The latest release could not be read yet.",
     "releases": "All the releases",
     "newTab": "(opens in a new tab)"
+  },
+  "parked": {
+    "stops": "{n} stop | {n} stops",
+    "rated": "{n} stop of {min} or more | {n} stops of {min} or more",
+    "when": "Parked",
+    "duration": "Duration",
+    "loss": "Charge lost",
+    "power": "Power",
+    "asleep": "Asleep",
+    "temperature": "Outside",
+    "after": {
+      "trip": "after a trip",
+      "charge": "after a charge"
+    },
+    "before": {
+      "trip": "before a trip",
+      "charge": "before a charge"
+    },
+    "notRated": "not in the rate",
+    "shortNote": "A stop under {min} counts in the period's loss, not in the rate per day: just after a drive the car is still awake and its charge settles.",
+    "estimate": "Estimated from the state of charge, to a point: a stop of a few hours may read one more or less.",
+    "none": "No stop in this period.",
+    "noneRated": "No stop of {min} or more in this period.",
+    "includeShort": "Include the stop under {min} | Include the {n} stops under {min}",
+    "loading": "Loading the stops",
+    "error": "The stops could not be loaded."
   },
   "software": {
     "title": "Software",

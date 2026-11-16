@@ -585,6 +585,7 @@
       "parkedUnknown": "unbekannt für {n} Intervall | unbekannt für {n} Intervalle",
       "parkedPower": "durchschnittlich {value} Verlust",
       "parkedAsleep": "{value} der gelesenen Zeit im Ruhezustand",
+      "parkedStops": "Jede Standzeit ansehen",
       "cost": "Ladekosten",
       "costNote": "Aus den Tarifen geschätzt oder erfasst; eine Spanne, wenn die Zeiten der Ladevorgänge nicht bekannt sind",
       "costUnknown": "unbekannt bei {n} Ladevorgang | unbekannt bei {n} Ladevorgängen",
@@ -2168,6 +2169,32 @@
     "unread": "Die neueste Version konnte noch nicht gelesen werden.",
     "releases": "Alle Versionen",
     "newTab": "(öffnet in einem neuen Tab)"
+  },
+  "parked": {
+    "stops": "{n} Standzeit | {n} Standzeiten",
+    "rated": "{n} Standzeit ab {min} | {n} Standzeiten ab {min}",
+    "when": "Geparkt",
+    "duration": "Dauer",
+    "loss": "Verlorene Ladung",
+    "power": "Leistung",
+    "asleep": "Im Schlaf",
+    "temperature": "Außen",
+    "after": {
+      "trip": "nach einer Fahrt",
+      "charge": "nach einer Ladung"
+    },
+    "before": {
+      "trip": "vor einer Fahrt",
+      "charge": "vor einer Ladung"
+    },
+    "notRated": "nicht in der Rate",
+    "shortNote": "Eine Standzeit unter {min} zählt zum Verlust des Zeitraums, nicht zur Rate pro Tag: Direkt nach einer Fahrt ist das Auto noch wach und sein Ladestand pendelt sich ein.",
+    "estimate": "Aus dem Ladezustand geschätzt, auf einen Punkt genau: Eine Standzeit von wenigen Stunden kann einen mehr oder weniger zeigen.",
+    "none": "Keine Standzeit in diesem Zeitraum.",
+    "noneRated": "Keine Standzeit ab {min} in diesem Zeitraum.",
+    "includeShort": "Die Standzeit unter {min} einbeziehen | Die {n} Standzeiten unter {min} einbeziehen",
+    "loading": "Standzeiten werden geladen",
+    "error": "Die Standzeiten konnten nicht geladen werden."
   },
   "software": {
     "title": "Software",

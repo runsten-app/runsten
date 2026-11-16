@@ -67,3 +67,26 @@ test('Stats: the totals and the charts of this month, each chart with its table'
   await expect(page).toHaveURL(/\/trips\?from=\d{4}-\d{2}-\d{2}&to=\d{4}-\d{2}-\d{2}$/)
   await expect(page.getByRole('link', { name: 'Trips' })).toHaveAttribute('aria-current', 'page')
 })
+
+test('Stats: the loss while parked leads to each stop, over the same period', async ({
+  page,
+}, testInfo) => {
+  await signIn(page)
+  await page.goto(`/vehicles/${await vehicleId(page)}/stats`)
+  await expect(page).toHaveURL(/\/stats\?from=/)
+  const from = new URL(page.url()).searchParams.get('from')
+  await page.locator('.tile.parked').getByRole('link', { name: 'See each stop' }).click()
+  await expect(page).toHaveURL(new RegExp(`/stats/parked\\?from=${from}&to=`))
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Loss while parked')
+  await expect(page.getByRole('link', { name: 'Stats' })).toHaveAttribute('aria-current', 'page')
+  // The errand's stops are short: shown on demand, each leading to its events.
+  const short = page.getByLabel(/^Include the (\d+ )?stops? under/)
+  if (await short.isVisible()) {
+    await short.check()
+    await expect(page).toHaveURL(/short=1/)
+  }
+  const rows = page.locator('.parked-stops tbody tr')
+  await expect(rows).not.toHaveCount(0)
+  await expect(rows.first().locator('th a')).toHaveCount(2)
+  await checkView(page, testInfo, 'parked')
+})

@@ -14,4 +14,7 @@ export const statsKeys = {
       q.bucket ?? null,
       q.place ?? null,
     ] as const,
+  // Under the vehicle's statistics: what refreshes them refreshes the stops too.
+  parked: (vehicle: string, from?: string, to?: string) =>
+    ['stats', vehicle, 'parked', from ?? null, to ?? null] as const,
 }

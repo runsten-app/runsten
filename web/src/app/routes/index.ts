@@ -62,6 +62,13 @@ export function createAppRouter(history: RouterHistory, queryClient: QueryClient
         component: () => import('@/pages/stats').then((m) => m.StatsPage),
         props: true,
       },
+      // The stops behind the loss while parked, from the statistics' tile.
+      {
+        path: '/vehicles/:vehicle/stats/parked',
+        name: 'parked',
+        component: () => import('@/pages/parked').then((m) => m.ParkedPage),
+        props: true,
+      },
       // The battery's estimated capacity, from the health page: loaded on demand like the
       // statistics.
       {

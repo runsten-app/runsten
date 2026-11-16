@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, type RouteLocationRaw } from 'vue-router'
 import { useStats } from '@/features/view-stats'
 import { isApiError } from '@/shared/api'
 import { useFormat, type Bucket } from '@/shared/lib'
@@ -13,6 +14,7 @@ import { TileFigure } from '@/shared/ui'
 const props = defineProps<{ vehicle: string; from?: string; to?: string; bucket: Bucket }>()
 const { t } = useI18n()
 const f = useFormat()
+const route = useRoute()
 const { stats, isPending, error } = useStats(
   () => props.vehicle,
   () => props.from,
@@ -28,6 +30,8 @@ type Tile = {
   spoken?: string
   range?: { min: string; max: string }
   notes: string[]
+  // A page that details the figure, over the same period.
+  link?: { text: string; to: RouteLocationRaw }
 }
 
 const tiles = computed<Tile[]>(() => {
@@ -122,6 +126,17 @@ const tiles = computed<Tile[]>(() => {
           }),
         ),
       ],
+      // Only when there is a stop to see.
+      link: pk.intervals
+        ? {
+            text: t('stats.tile.parkedStops'),
+            to: {
+              name: 'parked',
+              params: { vehicle: props.vehicle },
+              query: { from: route.query.from, to: route.query.to },
+            },
+          }
+        : undefined,
     },
   ]
 })
@@ -236,6 +251,12 @@ const errorMessage = computed(() => {
           size="kpi"
         />
         <span v-for="n in tile.notes" :key="n" class="note d-block">{{ n }}</span>
+        <router-link
+          v-if="tile.link"
+          :to="tile.link.to"
+          class="more text-primary d-inline-block mt-2"
+          >{{ tile.link.text }}</router-link
+        >
       </dd>
     </div>
   </dl>
