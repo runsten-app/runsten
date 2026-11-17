@@ -1739,7 +1739,7 @@
   },
   "accessTokens": {
     "title": "Accès à l'API",
-    "help": "Un jeton d'accès personnel permet à un programme de lire vos données par l'API, sans votre mot de passe : un script, Home Assistant, un assistant IA. Il ne fait que lire, et seulement ce que vous voyez ici. Révoquez-le quand le programme n'en a plus besoin.",
+    "help": "Un jeton d'accès personnel permet à un programme de lire vos données par l'API, sans votre mot de passe : un script, Home Assistant, un assistant IA, l'application mobile. Il ne lit que ce que vous voyez ici, et ne change rien, sauf si vous lui permettez de marquer le motif de vos trajets. Révoquez-le quand le programme n'en a plus besoin.",
     "loading": "Chargement des jetons d'accès",
     "none": "Aucun jeton d'accès pour l'instant.",
     "createdAt": "Créé {at}",
@@ -1748,6 +1748,7 @@
     "noExpiry": "n'expire jamais",
     "expiresAt": "expire {at}",
     "expiredAt": "a expiré {at}",
+    "marksTrips": "marque le motif des trajets",
     "new": "Nouveau jeton d'accès",
     "name": "Nom",
     "nameHelp": "Pour distinguer vos jetons, par exemple le programme qui l'utilise.",
@@ -1758,6 +1759,8 @@
       "365d": "Dans un an",
       "never": "Jamais"
     },
+    "markTrips": "Peut marquer le motif des trajets",
+    "markTripsHelp": "Professionnel, domicile-travail ou personnel, comme dans la liste des trajets : le seul changement qu'il peut faire.",
     "create": "Créer le jeton",
     "cancel": "Annuler",
     "created": {

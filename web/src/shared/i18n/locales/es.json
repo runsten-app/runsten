@@ -1739,7 +1739,7 @@
   },
   "accessTokens": {
     "title": "Acceso a la API",
-    "help": "Un token de acceso personal permite que un programa lea sus datos mediante la API sin su contraseña: un script, Home Assistant, un asistente de IA. Solo lee, y solo lo que usted ve aquí. Revóquelo cuando el programa ya no lo necesite.",
+    "help": "Un token de acceso personal permite que un programa lea sus datos mediante la API sin su contraseña: un script, Home Assistant, un asistente de IA, la aplicación móvil. Solo lee lo que usted ve aquí, y no cambia nada, salvo que usted le permita marcar el motivo de sus trayectos. Revóquelo cuando el programa ya no lo necesite.",
     "loading": "Cargando los tokens de acceso",
     "none": "Aún no hay ningún token de acceso.",
     "createdAt": "Creado: {at}",
@@ -1748,6 +1748,7 @@
     "noExpiry": "no caduca nunca",
     "expiresAt": "caduca: {at}",
     "expiredAt": "caducó: {at}",
+    "marksTrips": "marca el motivo de los trayectos",
     "new": "Nuevo token de acceso",
     "name": "Nombre",
     "nameHelp": "Para distinguir sus tokens, por ejemplo el programa que lo usa.",
@@ -1758,6 +1759,8 @@
       "365d": "En un año",
       "never": "Nunca"
     },
+    "markTrips": "Puede marcar el motivo de los trayectos",
+    "markTripsHelp": "Trabajo, casa-trabajo o personal, como en la lista de trayectos: el único cambio que puede hacer.",
     "create": "Crear el token",
     "cancel": "Cancelar",
     "created": {

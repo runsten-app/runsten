@@ -33,7 +33,7 @@ func newFakeTokens(clk clock.Clock) *fakeTokens {
 
 func tokenID(n int) string { return fmt.Sprintf("7a0e3c1e-0000-4000-8000-%012d", n) }
 
-func (f *fakeTokens) IssueToken(_ context.Context, accountID, userID, name string, ttl time.Duration) (string, auth.Token, error) {
+func (f *fakeTokens) IssueToken(_ context.Context, accountID, userID, name string, ttl time.Duration, scopes ...auth.Scope) (string, auth.Token, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.err != nil {
@@ -42,9 +42,14 @@ func (f *fakeTokens) IssueToken(_ context.Context, accountID, userID, name strin
 	if name = strings.TrimSpace(name); name == "" {
 		return "", auth.Token{}, auth.ErrInvalidTokenName
 	}
+	for _, sc := range scopes {
+		if !slices.Contains(auth.Scopes(), sc) {
+			return "", auth.Token{}, auth.ErrUnknownScope
+		}
+	}
 	f.next++
 	now := f.clk.Now()
-	t := auth.Token{ID: tokenID(f.next), AccountID: accountID, UserID: userID, Name: name, CreatedAt: now}
+	t := auth.Token{ID: tokenID(f.next), AccountID: accountID, UserID: userID, Name: name, CreatedAt: now, Scopes: scopes}
 	if ttl > 0 {
 		t.ExpiresAt = now.Add(ttl)
 	}
@@ -96,10 +101,11 @@ func (f *fakeTokens) RevokeToken(_ context.Context, accountID, userID, id string
 	return auth.ErrUnknownToken
 }
 
-// token issues an access token to username directly, and returns its secret and ID.
-func (e *env) token(t *testing.T, username string) (string, string) {
+// token issues an access token to admin directly, given scopes, and returns its secret
+// and ID.
+func (e *env) token(t *testing.T, scopes ...auth.Scope) (string, string) {
 	t.Helper()
-	secret, tok, err := e.tokens.IssueToken(context.Background(), users[username], "user-"+username, "test", 0)
+	secret, tok, err := e.tokens.IssueToken(context.Background(), users["admin"], "user-admin", "test", 0, scopes...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +137,7 @@ func TestAccessTokensJSON(t *testing.T) {
 	u := e.api.URL + "/api/v1/tokens"
 
 	// Issued with the session, the secret in this response only.
-	resp, body := do(t, noFollow(), http.MethodPost, u, jsonType, `{"name":"  Home Assistant ","expiry":"90d"}`, c)
+	resp, body := do(t, noFollow(), http.MethodPost, u, jsonType, `{"name":"  Home Assistant ","expiry":"90d","scopes":[]}`, c)
 	if resp.status != http.StatusCreated {
 		t.Fatalf("create: %d %s", resp.status, body)
 	}
@@ -141,11 +147,18 @@ func TestAccessTokensJSON(t *testing.T) {
 		!created.ExpiresAt.Equal(e.clk.Now().Add(90*24*time.Hour)) {
 		t.Fatalf("created %s (%v)", body, err)
 	}
-	if resp, body := do(t, noFollow(), http.MethodPost, u, jsonType, `{"name":"forever","expiry":"never"}`, c); resp.status != http.StatusCreated ||
-		!strings.Contains(body, `"expires_at":null`) {
-		t.Errorf("without expiry: %d %s", resp.status, body)
+	if !slices.Equal(created.Scopes, []string{}) {
+		t.Errorf("without scopes: %s", body)
 	}
-	for _, bad := range []string{`{"name":"   ","expiry":"30d"}`, `{"name":"x","expiry":"1d"}`, `{"name":"x"}`, `{"name":"","expiry":"30d"}`} {
+	if resp, body := do(t, noFollow(), http.MethodPost, u, jsonType, `{"name":"forever","expiry":"never","scopes":["trips:mark"]}`, c); resp.status != http.StatusCreated ||
+		!strings.Contains(body, `"expires_at":null`) || !strings.Contains(body, `"scopes":["trips:mark"]`) {
+		t.Errorf("without expiry, marking trips: %d %s", resp.status, body)
+	}
+	for _, bad := range []string{
+		`{"name":"   ","expiry":"30d","scopes":[]}`, `{"name":"x","expiry":"1d","scopes":[]}`, `{"name":"x","scopes":[]}`,
+		`{"name":"","expiry":"30d","scopes":[]}`,
+		`{"name":"x","expiry":"30d"}`, `{"name":"x","expiry":"30d","scopes":null}`, `{"name":"x","expiry":"30d","scopes":["admin"]}`, `{"name":"x","expiry":"30d","scopes":["trips:mark","trips:mark"]}`,
+	} {
 		resp, body := do(t, noFollow(), http.MethodPost, u, jsonType, bad, c)
 		if resp.status != http.StatusBadRequest {
 			t.Errorf("%s: %d", bad, resp.status)
@@ -153,7 +166,7 @@ func TestAccessTokensJSON(t *testing.T) {
 		wantError(t, body, "invalid_body")
 	}
 
-	resp, body = do(t, noFollow(), http.MethodPost, u, "text/plain", `{"name":"x","expiry":"30d"}`, c)
+	resp, body = do(t, noFollow(), http.MethodPost, u, "text/plain", `{"name":"x","expiry":"30d","scopes":[]}`, c)
 	if resp.status != http.StatusUnsupportedMediaType {
 		t.Errorf("not JSON: %d", resp.status)
 	}
@@ -161,7 +174,8 @@ func TestAccessTokensJSON(t *testing.T) {
 
 	// Listed without the secrets; another user's are not.
 	_, body = get(t, noFollow(), u, c)
-	if strings.Contains(body, "rst_") || strings.Count(body, `"id"`) != 2 || !strings.Contains(body, `"name":"Home Assistant"`) {
+	if strings.Contains(body, "rst_") || strings.Count(body, `"id"`) != 2 || !strings.Contains(body, `"name":"Home Assistant"`) ||
+		!strings.Contains(body, `"scopes":["trips:mark"]`) || !strings.Contains(body, `"scopes":[]`) {
 		t.Errorf("list %s", body)
 	}
 	if _, body := get(t, noFollow(), u, e.session(t, "other")); body != `{"items":[]}`+"\n" {
@@ -217,7 +231,7 @@ func TestAccessTokensJSON(t *testing.T) {
 	}
 
 	// Expired.
-	secret, _ := e.token(t, "admin")
+	secret, _ := e.token(t)
 	e.tokens.mu.Lock()
 	tok := e.tokens.tokens[secret]
 	tok.ExpiresAt = e.clk.Now()
@@ -228,10 +242,10 @@ func TestAccessTokensJSON(t *testing.T) {
 	}
 
 	// Failures: never a detail.
-	live, _ := e.token(t, "admin")
+	live, _ := e.token(t)
 	e.tokens.err = errors.New("boom")
 	for _, r := range []struct{ method, url, body string }{
-		{http.MethodGet, u, ""}, {http.MethodPost, u, `{"name":"x","expiry":"30d"}`}, {http.MethodDelete, u + "/" + tokenID(1), ""},
+		{http.MethodGet, u, ""}, {http.MethodPost, u, `{"name":"x","expiry":"30d","scopes":[]}`}, {http.MethodDelete, u + "/" + tokenID(1), ""},
 	} {
 		resp, body := do(t, noFollow(), r.method, r.url, jsonType, r.body, c)
 		if resp.status != http.StatusInternalServerError {
@@ -247,20 +261,41 @@ func TestAccessTokensJSON(t *testing.T) {
 }
 
 // TestAccessTokenOnEveryOperation: a token reads every GET but the session's and the
-// tokens', is refused everything else, and is rate limited.
+// tokens', makes the writes of its scopes only, is refused everything else, and is rate
+// limited.
 func TestAccessTokenOnEveryOperation(t *testing.T) {
 	e := newEnv(t, 10)
 	path := strings.NewReplacer("{vehicle}", car, "{id}", "2026-09-28T07:01:00Z", "{place}", placeID(1), "{token}", tokenID(1))
 	sessionOnly := []string{"GET /session", "DELETE /session", "GET /tokens", "POST /tokens", "DELETE /tokens/{token}", "GET /mqtt"}
+	scoped := map[string]auth.Scope{"PUT /vehicles/{vehicle}/trip-marks": auth.ScopeMarkTrips}
 	for _, op := range specOperations(t) {
 		if op == "POST /session" {
 			continue
 		}
 		method, p, _ := strings.Cut(op, " ")
 		u := e.api.URL + apiPrefix + path.Replace(p)
-		secret, id := e.token(t, "admin")
-		if method != http.MethodGet || slices.Contains(sessionOnly, op) {
-			resp, body := withBearer(t, method, u, "Bearer "+secret, jsonType, "{}")
+		secret, id := e.token(t)
+		// Every scope but the operation's own: never enough.
+		others := slices.DeleteFunc(auth.Scopes(), func(sc auth.Scope) bool { return sc == scoped[op] })
+		scopedSecret, scopedID := e.token(t, auth.Scopes()...)
+		otherSecret, _ := e.token(t, others...)
+		if scope, ok := scoped[op]; ok {
+			for _, s := range []string{secret, otherSecret} {
+				resp, body := withBearer(t, method, u, "Bearer "+s, jsonType, "{}")
+				if resp.status != http.StatusForbidden ||
+					resp.header.Get("WWW-Authenticate") != `Bearer error="insufficient_scope", scope="`+string(scope)+`"` {
+					t.Errorf("%s without its scope: %d %v", op, resp.status, resp.header)
+				}
+				wantError(t, body, "insufficient_scope")
+			}
+			// With it, the operation runs: here, refusing the empty body.
+			if resp, body := withBearer(t, method, u, "Bearer "+scopedSecret, jsonType, "{}"); resp.status != http.StatusBadRequest {
+				t.Errorf("%s with its scope: %d %s", op, resp.status, body)
+			}
+			id = scopedID
+		}
+		if _, ok := scoped[op]; !ok && (method != http.MethodGet || slices.Contains(sessionOnly, op)) {
+			resp, body := withBearer(t, method, u, "Bearer "+scopedSecret, jsonType, "{}")
 			if resp.status != http.StatusForbidden || resp.header.Get("WWW-Authenticate") != `Bearer error="insufficient_scope"` {
 				t.Errorf("%s with a token: %d", op, resp.status)
 			}
@@ -270,7 +305,11 @@ func TestAccessTokenOnEveryOperation(t *testing.T) {
 		for range tokenBurst {
 			e.server.tokenLimiter.take(id, e.clk.Now())
 		}
-		resp, body := withBearer(t, method, u, "Bearer "+secret, "", "")
+		limited := secret
+		if _, ok := scoped[op]; ok {
+			limited = scopedSecret
+		}
+		resp, body := withBearer(t, method, u, "Bearer "+limited, jsonType, "{}")
 		if resp.status != http.StatusTooManyRequests || resp.header.Get("Retry-After") != "1" {
 			t.Errorf("%s past the rate: %d %v", op, resp.status, resp.header)
 		}

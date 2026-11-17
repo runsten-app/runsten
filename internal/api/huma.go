@@ -46,9 +46,10 @@ Conventions:
   and ` + "`Referrer-Policy: no-referrer`" + `.
 
 Every route but ` + "`POST /session`" + ` requires the session cookie it sets, or, to read, a
-personal access token (` + "`Authorization: Bearer rst_…`" + `, issued by ` + "`POST /tokens`" + `). A token only
-reads: it serves the ` + "`GET`" + ` routes but those of the session and of the tokens (403
-` + "`insufficient_scope`" + ` otherwise), at most 120 requests at once then 2 per second (429
+personal access token (` + "`Authorization: Bearer rst_…`" + `, issued by ` + "`POST /tokens`" + `). A token
+reads: it serves the ` + "`GET`" + ` routes but those of the session and of the tokens, and the writes its
+scopes allow, nothing else (403 ` + "`insufficient_scope`" + ` otherwise). Its one scope, ` + "`trips:mark`" + `,
+allows ` + "`PUT /vehicles/{vehicle}/trip-marks`" + `. A token makes at most 120 requests at once then 2 per second (429
 ` + "`rate_limited`" + `, with ` + "`Retry-After`" + `). Requests that
 change state (` + "`POST`, `PUT`, `DELETE`" + `) from another origin are refused (403
 ` + "`cross_origin`" + `), after the ` + "`Sec-Fetch-Site`" + ` or ` + "`Origin`" + ` header. A request body must be
@@ -99,7 +100,9 @@ func humaConfig() huma.Config {
 		},
 		"accessToken": {
 			Type: "http", Scheme: "bearer",
-			Description: "A personal access token, `rst_` then 43 characters, issued by `POST /tokens`: it reads only.",
+			Description: "A personal access token, `rst_` then 43 characters, issued by `POST /tokens`: it reads, " +
+				"and makes the writes of its scopes. An operation that a scope allows lists it in its requirement " +
+				"(`trips:mark`: `PUT /vehicles/{vehicle}/trip-marks`).",
 		},
 	}
 	return cfg
@@ -285,6 +288,22 @@ func (s *Server) operation(op huma.Operation, success string, errs map[int]strin
 		return op
 	}
 	op.Security = readSecurity
+	return s.rateLimited(op)
+}
+
+// scopedOperation completes an operation that changes state, which requires a session,
+// or an access token given scope.
+func (s *Server) scopedOperation(op huma.Operation, scope auth.Scope, success string, errs map[int]string) huma.Operation {
+	op = s.publicOperation(op, success, errs)
+	op.Security = append(slices.Clone(sessionSecurity), map[string][]string{"accessToken": {string(scope)}})
+	op.Middlewares = append(huma.Middlewares{s.requireScope(scope)}, op.Middlewares...)
+	forbidden := strings.TrimSpace(descriptionOf(op, http.StatusForbidden) + " " + errScope(scope))
+	op.Responses[strconv.Itoa(http.StatusForbidden)] = s.errorResponse(forbidden)
+	return s.rateLimited(op)
+}
+
+// rateLimited documents the 429 of the operations an access token may call.
+func (s *Server) rateLimited(op huma.Operation) huma.Operation {
 	limited := s.errorResponse(errRateLimited)
 	one := 1.0
 	limited.Headers = map[string]*huma.Param{
@@ -336,7 +355,7 @@ func (s *Server) publicOperation(op huma.Operation, success string, errs map[int
 // Errors common to the operations.
 const (
 	errUnauthorized = "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
-	errReadOnly     = "`insufficient_scope`: an access token only reads; this operation requires a session."
+	errReadOnly     = "`insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
 	errSessionOnly  = "`insufficient_scope`: this operation requires a session, never an access token."
 	errRateLimited  = "`rate_limited`: too many requests with this access token."
 	errCrossOrigin  = "`cross_origin`: a request that changes state, from another origin."
@@ -349,6 +368,11 @@ const (
 		"field, or more than 1 MiB; the message names the field, never its value."
 	errMediaType = "`unsupported_media_type`: the body is not `application/json`."
 )
+
+// errScope is the 403 of an operation that an access token makes only with scope.
+func errScope(scope auth.Scope) string {
+	return "`insufficient_scope`: an access token without the scope `" + string(scope) + "`; this operation requires a session or that scope."
+}
 
 // writeErrors are the errors of an operation that reads a JSON body, and more.
 func writeErrors(more map[int]string) map[int]string {
@@ -379,17 +403,23 @@ type sessionKey struct{}
 // token if they read: it answers 401 without either, 403 to a token that would change
 // state, and passes the session on in the context.
 func (s *Server) requireSession(ctx huma.Context, next func(huma.Context)) {
-	s.require(ctx, next, true)
+	s.require(ctx, next, true, "")
 }
 
 // requireSessionOnly is that of the operations that need a session, never a token.
 func (s *Server) requireSessionOnly(ctx huma.Context, next func(huma.Context)) {
-	s.require(ctx, next, false)
+	s.require(ctx, next, false, "")
 }
 
-func (s *Server) require(ctx huma.Context, next func(huma.Context), tokens bool) {
+// requireScope is that of the operations that change state with a session, or with an
+// access token given scope.
+func (s *Server) requireScope(scope auth.Scope) func(huma.Context, func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) { s.require(ctx, next, true, scope) }
+}
+
+func (s *Server) require(ctx huma.Context, next func(huma.Context), tokens bool, scope auth.Scope) {
 	r, w := unwrap(ctx)
-	sess, fail, err := s.authenticate(w, r, tokens)
+	sess, fail, err := s.authenticate(w, r, tokens, scope)
 	switch {
 	case err != nil:
 		s.Log.Error("session check failed", "err", err)

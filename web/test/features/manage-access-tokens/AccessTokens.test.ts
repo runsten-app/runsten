@@ -23,6 +23,7 @@ const homeAssistant: AccessToken = {
   created_at: '2026-09-01T08:00:00Z',
   last_used_at: '2026-10-03T07:00:00Z',
   expires_at: null,
+  scopes: [],
 }
 const oldScript: AccessToken = {
   id: '7a0e3c1e-0000-4000-8000-000000000002',
@@ -30,6 +31,7 @@ const oldScript: AccessToken = {
   created_at: '2026-06-01T08:00:00Z',
   last_used_at: null,
   expires_at: '2026-08-30T08:00:00Z',
+  scopes: [],
 }
 const created: CreatedAccessToken = {
   token: secret,
@@ -38,6 +40,7 @@ const created: CreatedAccessToken = {
   created_at: '2026-10-03T07:05:00Z',
   last_used_at: null,
   expires_at: '2027-01-01T07:05:00Z',
+  scopes: [],
 }
 let wrapper: VueWrapper | undefined
 
@@ -93,7 +96,11 @@ describe('AccessTokens', () => {
     api.fetchAccessTokens.mockResolvedValue([created, homeAssistant, oldScript])
     await w.find('form').trigger('submit')
     await flushPromises()
-    expect(api.createAccessToken).toHaveBeenCalledWith({ name: 'Claude Code', expiry: '90d' })
+    expect(api.createAccessToken).toHaveBeenCalledWith({
+      name: 'Claude Code',
+      expiry: '90d',
+      scopes: [],
+    })
     expect(w.find('form').exists()).toBe(false)
     expect(w.find('.created').text()).toContain('Token “Claude Code” created')
     expect(w.find<HTMLInputElement>('#access-token-secret').element.value).toBe(secret)
@@ -111,6 +118,30 @@ describe('AccessTokens', () => {
     expect(w.find('.created').exists()).toBe(false)
     expect(w.text()).not.toContain(secret)
     expect(document.activeElement?.id).toBe('access-token-new')
+  })
+
+  it('lets a token mark the trips’ purpose, off by default, and says so in the list', async () => {
+    const phone: CreatedAccessToken = { ...created, name: 'Phone', scopes: ['trips:mark'] }
+    const w = await mounted()
+    expect(w.findAll('.scopes')).toHaveLength(0)
+    await w.find('.new').trigger('click')
+    const box = w.find<HTMLInputElement>('#access-token-mark-trips')
+    expect(box.element.checked).toBe(false)
+    expect(w.find('.mark-trips').text()).toContain("May mark the trips' purpose")
+    await w.find('#access-token-name').setValue('Phone')
+    await box.setValue(true)
+    api.createAccessToken.mockResolvedValue(phone)
+    api.fetchAccessTokens.mockResolvedValue([phone, homeAssistant])
+    await w.find('form').trigger('submit')
+    await flushPromises()
+    expect(api.createAccessToken).toHaveBeenCalledWith({
+      name: 'Phone',
+      expiry: '90d',
+      scopes: ['trips:mark'],
+    })
+    const items = w.findAll('.token')
+    expect(items[0]?.find('.scopes').text()).toBe("· marks the trips' purpose")
+    expect(items[1]?.find('.scopes').exists()).toBe(false)
   })
 
   it('says how to copy by hand without the clipboard', async () => {

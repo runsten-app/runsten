@@ -6,6 +6,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 
+	"runsten/internal/auth"
 	"runsten/internal/core"
 )
 
@@ -158,14 +159,14 @@ func (s *Server) putTripMarks(ctx context.Context, in *tripMarksInput) (*struct{
 }
 
 func (s *Server) registerMarks(api huma.API) {
-	huma.Register(api, s.operation(huma.Operation{
+	huma.Register(api, s.scopedOperation(huma.Operation{
 		OperationID: "putTripMarks", Method: http.MethodPut, Path: "/vehicles/{vehicle}/trip-marks", Tags: []string{"trips"},
 		Summary: "Mark trips with their purpose",
 		Description: "Marks one trip or several (a selection of the list) by hand: a mark by hand always wins over the " +
 			"rules of the places (`trip_purpose` of a place). It is not derived data: a rebuild keeps it, and finds its " +
 			"trip again by its detection time or else by its window. All or none: a trip not found writes nothing.",
 		DefaultStatus: http.StatusNoContent, Middlewares: huma.Middlewares{s.requireJSON},
-	}, "The trips are marked.", writeErrors(map[int]string{
+	}, auth.ScopeMarkTrips, "The trips are marked.", writeErrors(map[int]string{
 		http.StatusNotFound: "`not_found`: no such vehicle in the account, or no such trip for it (or one the account's history hides).",
 	})), s.putTripMarks)
 }

@@ -45,9 +45,9 @@ export default ts.config(
   {
     languageOptions: { globals: { ...globals.browser } },
   },
-  // The browser tests and their configuration run in Node (Playwright's runner).
+  // The browser tests, their configuration (Playwright's runner) and scripts/ run in Node.
   {
-    files: ['e2e/**', 'playwright.config.ts'],
+    files: ['e2e/**', 'playwright.config.ts', 'scripts/**'],
     languageOptions: { globals: { ...globals.node } },
   },
   ...vueI18n.configs.recommended,

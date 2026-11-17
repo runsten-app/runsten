@@ -128,9 +128,9 @@ func (s *Store) CreateToken(ctx context.Context, t auth.Token, tokenHash []byte)
 	var id string
 	err := s.inAccount(ctx, t.AccountID, func(tx pgx.Tx) error {
 		return tx.QueryRow(ctx, `
-			INSERT INTO api_tokens (account_id, user_id, name, token_hash, created_at, expires_at)
-			VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-			t.AccountID, t.UserID, t.Name, tokenHash, t.CreatedAt, nullTime(t.ExpiresAt)).Scan(&id)
+			INSERT INTO api_tokens (account_id, user_id, name, token_hash, created_at, expires_at, scopes)
+			VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+			t.AccountID, t.UserID, t.Name, tokenHash, t.CreatedAt, nullTime(t.ExpiresAt), scopeNames(t.Scopes)).Scan(&id)
 	})
 	return id, err
 }
@@ -138,7 +138,7 @@ func (s *Store) CreateToken(ctx context.Context, t auth.Token, tokenHash []byte)
 // TokenByHash implements auth.Store.
 func (s *Store) TokenByHash(ctx context.Context, tokenHash []byte) (auth.Token, bool, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT id, account_id, user_id, name, created_at, last_used_at, expires_at FROM runsten_api_token($1)`, tokenHash)
+		SELECT id, account_id, user_id, name, created_at, last_used_at, expires_at, scopes FROM runsten_api_token($1)`, tokenHash)
 	if err != nil {
 		return auth.Token{}, false, fmt.Errorf("access token: %w", err)
 	}
@@ -162,7 +162,7 @@ func (s *Store) ListTokens(ctx context.Context, accountID, userID string) ([]aut
 	var ts []auth.Token
 	err := s.readInAccount(ctx, accountID, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `
-			SELECT id, account_id, user_id, name, created_at, last_used_at, expires_at FROM api_tokens
+			SELECT id, account_id, user_id, name, created_at, last_used_at, expires_at, scopes FROM api_tokens
 			WHERE user_id = $1 ORDER BY created_at DESC, id`, userID)
 		if err != nil {
 			return fmt.Errorf("list access tokens: %w", err)
@@ -184,14 +184,28 @@ func (s *Store) DeleteToken(ctx context.Context, accountID, userID, tokenID stri
 	return deleted, err
 }
 
+// scopeNames are the scopes of a token as the column holds them: never NULL.
+func scopeNames(scopes []auth.Scope) []string {
+	names := make([]string, 0, len(scopes))
+	for _, sc := range scopes {
+		names = append(names, string(sc))
+	}
+	return names
+}
+
 func scanTokens(rows pgx.Rows) ([]auth.Token, error) {
 	var (
 		ts               []auth.Token
 		t                auth.Token
 		lastUsed, expiry *time.Time
+		scopes           []string
 	)
-	_, err := pgx.ForEachRow(rows, []any{&t.ID, &t.AccountID, &t.UserID, &t.Name, &t.CreatedAt, &lastUsed, &expiry}, func() error {
+	_, err := pgx.ForEachRow(rows, []any{&t.ID, &t.AccountID, &t.UserID, &t.Name, &t.CreatedAt, &lastUsed, &expiry, &scopes}, func() error {
 		t.CreatedAt = t.CreatedAt.UTC()
+		t.Scopes = nil
+		for _, sc := range scopes {
+			t.Scopes = append(t.Scopes, auth.Scope(sc))
+		}
 		t.LastUsedAt, t.ExpiresAt = time.Time{}, time.Time{}
 		if lastUsed != nil {
 			t.LastUsedAt = lastUsed.UTC()

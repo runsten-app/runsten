@@ -1739,7 +1739,7 @@
   },
   "accessTokens": {
     "title": "API-Zugriff",
-    "help": "Mit einem persönlichen Zugriffstoken kann ein Programm Ihre Daten ohne Ihr Passwort über die API lesen: ein Skript, Home Assistant, ein KI-Assistent. Es kann nur lesen, und nur das, was Sie hier sehen. Widerrufen Sie es, wenn das Programm es nicht mehr braucht.",
+    "help": "Mit einem persönlichen Zugriffstoken kann ein Programm Ihre Daten ohne Ihr Passwort über die API lesen: ein Skript, Home Assistant, ein KI-Assistent, die mobile App. Es liest nur das, was Sie hier sehen, und ändert nichts, es sei denn, Sie erlauben ihm, den Zweck Ihrer Fahrten zu markieren. Widerrufen Sie es, wenn das Programm es nicht mehr braucht.",
     "loading": "Zugriffstokens werden geladen",
     "none": "Noch kein Zugriffstoken.",
     "createdAt": "Erstellt: {at}",
@@ -1748,6 +1748,7 @@
     "noExpiry": "läuft nie ab",
     "expiresAt": "läuft ab: {at}",
     "expiredAt": "abgelaufen: {at}",
+    "marksTrips": "markiert den Zweck der Fahrten",
     "new": "Neues Zugriffstoken",
     "name": "Name",
     "nameHelp": "Um Ihre Tokens auseinanderzuhalten, etwa das Programm, das es verwendet.",
@@ -1758,6 +1759,8 @@
       "365d": "In einem Jahr",
       "never": "Nie"
     },
+    "markTrips": "Darf den Zweck der Fahrten markieren",
+    "markTripsHelp": "Geschäftlich, Arbeitsweg oder privat, wie in der Liste der Fahrten: die einzige Änderung, die es vornehmen kann.",
     "create": "Token erstellen",
     "cancel": "Abbrechen",
     "created": {

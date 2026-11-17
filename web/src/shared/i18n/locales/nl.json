@@ -1739,7 +1739,7 @@
   },
   "accessTokens": {
     "title": "API-toegang",
-    "help": "Met een persoonlijk toegangstoken kan een programma uw gegevens via de API lezen zonder uw wachtwoord: een script, Home Assistant, een AI-assistent. Het kan alleen lezen, en alleen wat u hier ziet. Trek het in zodra het programma het niet meer nodig heeft.",
+    "help": "Met een persoonlijk toegangstoken kan een programma uw gegevens via de API lezen zonder uw wachtwoord: een script, Home Assistant, een AI-assistent, de mobiele app. Het leest alleen wat u hier ziet, en verandert niets, tenzij u het toestaat het doel van uw ritten te markeren. Trek het in zodra het programma het niet meer nodig heeft.",
     "loading": "Toegangstokens laden",
     "none": "Nog geen toegangstoken.",
     "createdAt": "Aangemaakt {at}",
@@ -1748,6 +1748,7 @@
     "noExpiry": "verloopt nooit",
     "expiresAt": "verloopt {at}",
     "expiredAt": "verlopen {at}",
+    "marksTrips": "markeert het doel van de ritten",
     "new": "Nieuw toegangstoken",
     "name": "Naam",
     "nameHelp": "Om uw tokens uit elkaar te houden, bijvoorbeeld het programma dat het gebruikt.",
@@ -1758,6 +1759,8 @@
       "365d": "Over een jaar",
       "never": "Nooit"
     },
+    "markTrips": "Mag het doel van de ritten markeren",
+    "markTripsHelp": "Zakelijk, woon-werk of privé, zoals in de lijst van ritten: de enige wijziging die het kan doen.",
     "create": "Token aanmaken",
     "cancel": "Annuleren",
     "created": {
