@@ -13,15 +13,16 @@ tool (
 require (
 	github.com/danielgtaylor/huma/v2 v2.40.0
 	github.com/eclipse/paho.mqtt.golang v1.5.1
-	github.com/jackc/pgx/v5 v5.12.0
+	github.com/jackc/pgx/v5 v5.13.0
+	github.com/minio/minio-go/v7 v7.4.1
 	github.com/mochi-mqtt/server/v2 v2.7.9
 	github.com/open-feature/go-sdk v1.20.0
-	github.com/pb33f/libopenapi v0.42.3
-	github.com/pb33f/libopenapi-validator v0.16.2
+	github.com/pb33f/libopenapi v0.42.5
+	github.com/pb33f/libopenapi-validator v0.16.3
 	go.yaml.in/yaml/v3 v3.0.6
-	golang.org/x/crypto v0.58.0
+	golang.org/x/crypto v0.59.0
 	golang.org/x/oauth2 v0.38.0
-	golang.org/x/term v0.47.0
+	golang.org/x/term v0.48.0
 	google.golang.org/protobuf v1.36.12
 )
 
@@ -172,7 +173,6 @@ require (
 	github.com/mgechev/revive v1.17.0 // indirect
 	github.com/minio/crc64nvme v1.1.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
-	github.com/minio/minio-go/v7 v7.4.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moricho/tparallel v0.3.2 // indirect
@@ -249,13 +249,13 @@ require (
 	go.uber.org/multierr v1.10.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20260811152304-ee035b5b010f // indirect
-	golang.org/x/mod v0.41.0 // indirect
+	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/net v0.62.0 // indirect
-	golang.org/x/sync v0.24.0 // indirect
-	golang.org/x/sys v0.49.0 // indirect
-	golang.org/x/telemetry v0.0.0-20260924152758-ed294f943157 // indirect
-	golang.org/x/text v0.43.0 // indirect
-	golang.org/x/tools v0.51.0 // indirect
+	golang.org/x/sync v0.25.0 // indirect
+	golang.org/x/sys v0.50.0 // indirect
+	golang.org/x/telemetry v0.0.0-20261009151841-97e8ea77aa2a // indirect
+	golang.org/x/text v0.44.0 // indirect
+	golang.org/x/tools v0.52.0 // indirect
 	golang.org/x/vuln v1.8.0 // indirect
 	gopkg.in/ini.v1 v1.67.3 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
