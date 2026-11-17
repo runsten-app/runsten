@@ -575,7 +575,7 @@ func TestPricingCosts(t *testing.T) {
 }
 
 func TestCurrencies(t *testing.T) {
-	for _, code := range []string{"EUR", "GBP", "SEK", "NOK", "DKK", "CHF", "PLN", "CZK", "USD"} {
+	for _, code := range []string{"EUR", "GBP", "SEK", "NOK", "DKK", "CHF", "PLN", "RON", "CZK", "USD"} {
 		if c, ok := CurrencyOf(code); !ok || c.MinorDigits != 2 {
 			t.Errorf("%s = %+v, %v", code, c, ok)
 		}

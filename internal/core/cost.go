@@ -50,6 +50,7 @@ var currencies = []Currency{
 	{"ISK", 0},
 	{"NOK", 2},
 	{"PLN", 2},
+	{"RON", 2},
 	{"SEK", 2},
 	{"USD", 2},
 }
