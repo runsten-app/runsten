@@ -585,7 +585,7 @@
       "parkedUnknown": "desconocida en {n} intervalo | desconocida en {n} intervalos",
       "parkedPower": "{value} perdidos en promedio",
       "parkedAsleep": "en reposo el {value} del tiempo leído",
-      "parkedStops": "Ver cada parada",
+      "parkedStops": "Ver el detalle, parada a parada",
       "cost": "Costo de las cargas",
       "costNote": "Estimado a partir de las tarifas, o indicado; un rango cuando no se conocen las horas de las cargas",
       "costUnknown": "desconocido en {n} carga | desconocido en {n} cargas",
@@ -2194,7 +2194,11 @@
     "noneRated": "Ninguna parada de {min} o más en este periodo.",
     "includeShort": "Incluir la parada de menos de {min} | Incluir las {n} paradas de menos de {min}",
     "loading": "Cargando las paradas",
-    "error": "No se pudieron cargar las paradas."
+    "error": "No se pudieron cargar las paradas.",
+    "summary": {
+      "window": "En los últimos 30 días",
+      "none": "Desconocida en los últimos 30 días"
+    }
   },
   "software": {
     "title": "Software",

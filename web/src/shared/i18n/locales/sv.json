@@ -585,7 +585,7 @@
       "parkedUnknown": "okänd för {n} intervall | okänd för {n} intervall",
       "parkedPower": "{value} förlorat i genomsnitt",
       "parkedAsleep": "sovande {value} av den avlästa tiden",
-      "parkedStops": "Se varje parkering",
+      "parkedStops": "Se detaljerna, parkering för parkering",
       "cost": "Laddningarnas kostnad",
       "costNote": "Uppskattad enligt tarifferna, eller angiven; ett intervall när laddningarnas tider inte är kända",
       "costUnknown": "okänd för {n} laddning | okänd för {n} laddningar",
@@ -2194,7 +2194,11 @@
     "noneRated": "Ingen parkering på {min} eller mer under perioden.",
     "includeShort": "Ta med parkeringen under {min} | Ta med de {n} parkeringarna under {min}",
     "loading": "Laddar parkeringarna",
-    "error": "Parkeringarna kunde inte laddas."
+    "error": "Parkeringarna kunde inte laddas.",
+    "summary": {
+      "window": "De senaste 30 dagarna",
+      "none": "Okänd de senaste 30 dagarna"
+    }
   },
   "software": {
     "title": "Programvara",

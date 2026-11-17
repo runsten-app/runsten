@@ -1,5 +1,5 @@
 ---
-description: "A vehicle's health in Runsten: its battery's estimated capacity, its tyres and their pressures over time, its next service, its warnings, and what each brand reports."
+description: "A vehicle's health in Runsten: its battery's estimated capacity, its loss while parked, its tyres and their pressures over time, its next service, its warnings, and what each brand reports."
 ---
 
 # Health
@@ -9,6 +9,7 @@ The **Health** tab shows the vehicle's latest health, and, folded, the tyres' pr
 <Screen view="health" alt="The Health tab: the battery, the tyres, the service and the warnings." />
 
 - **Battery**: its estimated capacity, its evolution once it rests on 12 months of charges (as on the [battery page](./battery.md)), and a small line of its monthly median over the whole history, the reference capacity dashed, once two months have one. It leads to the battery page: its estimates, one by one, and their chart.
+- **Loss while parked**: the charge the car lost per day while parked over the last 30 days, on stops of 6 hours or more, with the power it stands for and its share of time asleep, as the [statistics](./statistics.md) give it. **See the detail, stop by stop** leads to each stop of those 30 days: what it lost, how long the car slept, in what weather. Shown when the statistics are.
 - **Software**, for a car that tells its version (a Tesla): the version running, since when, and the update waiting for it (its progress, or the time it is scheduled for). **See the version history** leads to every version the car had, newest first, each with:
   - when the car took it: between the last time Runsten read the previous version and the first time it read this one;
   - how long the car ran it, until the next one or until now; for the first version Runsten read, at least since that reading;

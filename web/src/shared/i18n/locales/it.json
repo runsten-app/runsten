@@ -585,7 +585,7 @@
       "parkedUnknown": "sconosciuta per {n} intervallo | sconosciuta per {n} intervalli",
       "parkedPower": "{value} persi in media",
       "parkedAsleep": "in sospensione per {value} del tempo letto",
-      "parkedStops": "Vedi ogni sosta",
+      "parkedStops": "Vedi il dettaglio, sosta per sosta",
       "cost": "Costo delle ricariche",
       "costNote": "Stimato dalle tariffe, o inserito; un intervallo quando gli orari delle ricariche non sono noti",
       "costUnknown": "sconosciuto per {n} ricarica | sconosciuto per {n} ricariche",
@@ -2194,7 +2194,11 @@
     "noneRated": "Nessuna sosta di {min} o più in questo periodo.",
     "includeShort": "Includi la sosta inferiore a {min} | Includi le {n} soste inferiori a {min}",
     "loading": "Caricamento delle soste",
-    "error": "Impossibile caricare le soste."
+    "error": "Impossibile caricare le soste.",
+    "summary": {
+      "window": "Negli ultimi 30 giorni",
+      "none": "Sconosciuta negli ultimi 30 giorni"
+    }
   },
   "software": {
     "title": "Software",

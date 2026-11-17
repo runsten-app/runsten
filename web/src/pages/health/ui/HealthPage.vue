@@ -15,6 +15,7 @@ import { useFormat, useNow } from '@/shared/lib'
 import { AppShell } from '@/widgets/app-shell'
 import { BatterySummary } from '@/widgets/battery-tiles'
 import { HealthTiles } from '@/widgets/health-tiles'
+import { ParkedSummary } from '@/widgets/parked-stops'
 import { SoftwareSummary } from '@/widgets/software-history'
 
 // The pressures' chart comes on demand, with Chart.js, and only for a vehicle that gives
@@ -25,7 +26,8 @@ const TyreChart = defineAsyncComponent(() =>
 
 // HealthPage shows the vehicle's health: under its title, what needs attention, and how
 // fresh it is; its battery's estimated capacity, which leads to
-// the battery's page, and the version of its software when it tells it, which leads to
+// the battery's page, its loss while parked over the last 30 days, which leads to its
+// stops, and the version of its software when it tells it, which leads to
 // their history; then what it
 // last told of its tyres, its service and its warnings, and, folded, the tyres' pressures
 // over time. The battery's and the versions come first and stay whatever the vehicle told:
@@ -87,6 +89,7 @@ const verdict = computed(() => {
       }}</time>
     </p>
     <BatterySummary :vehicle="vehicle" class="mb-3" />
+    <ParkedSummary :vehicle="vehicle" class="mb-3" />
     <SoftwareSummary :vehicle="vehicle" class="mb-3" />
     <v-alert v-if="error && !health" type="error" variant="tonal">{{ t('health.error') }}</v-alert>
     <v-progress-linear v-else-if="isPending" indeterminate :aria-label="t('health.loading')" />

@@ -579,13 +579,13 @@
       "energyPower": "D'après la puissance de charge : {value}",
       "energyPowerUnknown": "sans relevé de puissance pour {n} charge | sans relevé de puissance pour {n} charges",
       "charges": "Charges",
-      "parked": "Perte garée",
+      "parked": "Perte à l’arrêt",
       "perDay": "{value} par jour",
       "parkedNote": "L'état de charge perdu sur les arrêts de 6 heures ou plus : significatif sur des semaines, pas sur une nuit",
       "parkedUnknown": "inconnue pour {n} intervalle | inconnue pour {n} intervalles",
       "parkedPower": "{value} perdus en moyenne",
       "parkedAsleep": "en veille {value} du temps relevé",
-      "parkedStops": "Voir chaque arrêt",
+      "parkedStops": "Voir le détail, arrêt par arrêt",
       "cost": "Coût des charges",
       "costNote": "Estimé d'après les tarifs, ou saisi ; un intervalle quand l'heure des charges n'est pas connue",
       "costUnknown": "inconnu pour {n} charge | inconnu pour {n} charges",
@@ -2194,7 +2194,11 @@
     "noneRated": "Aucun arrêt de {min} ou plus sur la période.",
     "includeShort": "Inclure l'arrêt de moins de {min} | Inclure les {n} arrêts de moins de {min}",
     "loading": "Chargement des arrêts",
-    "error": "Les arrêts n'ont pas pu être chargés."
+    "error": "Les arrêts n'ont pas pu être chargés.",
+    "summary": {
+      "window": "Sur les 30 derniers jours",
+      "none": "Inconnue sur les 30 derniers jours"
+    }
   },
   "software": {
     "title": "Logiciel",
