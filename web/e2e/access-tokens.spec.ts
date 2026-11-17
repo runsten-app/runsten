@@ -37,6 +37,12 @@ test('Settings: an access token reads the API, never writes, until revoked', asy
     const write = await program.put('/api/v1/settings', { data: { currency: 'EUR' } })
     expect(write.status()).toBe(403)
     expect((await write.json()).error.code).toBe('insufficient_scope')
+    // Not given the scope trips:mark: it cannot mark a trip either.
+    const mark = await program.put(`/api/v1/vehicles/${car}/trip-marks`, {
+      data: { trips: ['2026-01-01T00:00:00Z'], purpose: 'personal' },
+    })
+    expect(mark.status()).toBe(403)
+    expect((await mark.json()).error.code).toBe('insufficient_scope')
     expect((await program.get('/api/v1/tokens')).status()).toBe(403)
 
     await section

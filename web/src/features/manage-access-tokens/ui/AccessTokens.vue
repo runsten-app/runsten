@@ -13,9 +13,10 @@ import {
 } from '../composables/useAccessTokens'
 
 // AccessTokens lists the user's personal access tokens, issues one, and revokes them. A
-// token lets a program (a script, Home Assistant, an assistant) read the API without
-// the user's password; it only reads. Its secret is shown once, right after it is
-// issued, with a button to copy it: only its hash is kept.
+// token lets a program (a script, Home Assistant, an assistant, a phone) read the API
+// without the user's password; it reads, and marks the trips' purpose only if the user
+// lets it (the scope trips:mark). Its secret is shown once, right after it is issued,
+// with a button to copy it: only its hash is kept.
 const { t } = useI18n()
 const f = useFormat()
 const now = useNow()
@@ -28,6 +29,7 @@ const toggleId = 'access-token-new'
 const opened = ref(false)
 const name = ref('')
 const expiry = ref<Expiry>('90d')
+const markTrips = ref(false)
 const sent = ref(false)
 const status = ref('')
 const created = ref<CreatedAccessToken | null>(null)
@@ -72,6 +74,7 @@ const summaryRef = ref<InstanceType<typeof ErrorSummary> | null>(null)
 async function openForm() {
   name.value = ''
   expiry.value = '90d'
+  markTrips.value = false
   sent.value = false
   created.value = null
   status.value = ''
@@ -94,7 +97,11 @@ async function submit() {
     return summaryRef.value?.focus()
   }
   try {
-    created.value = await createAccessToken({ name: name.value.trim(), expiry: expiry.value })
+    created.value = await createAccessToken({
+      name: name.value.trim(),
+      expiry: expiry.value,
+      scopes: markTrips.value ? ['trips:mark'] : [],
+    })
     opened.value = false
     copied.value = false
     await nextTick()
@@ -197,6 +204,9 @@ async function confirmRevoke() {
               {{ t('accessTokens.createdAt', { at: f.dateTime(tok.created_at, now) }) }} ·
               {{ t('accessTokens.lastUsed', { at: usage(tok.last_used_at) }) }} ·
               <span :class="{ 'text-error': expired(tok) }" class="ends">{{ ends(tok) }}</span>
+              <span v-if="tok.scopes.includes('trips:mark')" class="scopes">
+                · {{ t('accessTokens.marksTrips') }}</span
+              >
             </p>
           </div>
           <v-btn
@@ -283,6 +293,14 @@ async function confirmRevoke() {
         :items="expiries"
         :label="t('accessTokens.expiry.label')"
         class="expiry mb-2"
+      />
+      <v-checkbox
+        id="access-token-mark-trips"
+        v-model="markTrips"
+        :label="t('accessTokens.markTrips')"
+        :hint="t('accessTokens.markTripsHelp')"
+        persistent-hint
+        class="mark-trips mb-4"
       />
       <div class="d-flex flex-wrap ga-3">
         <v-btn type="submit" color="primary" :loading="creating" class="create">
