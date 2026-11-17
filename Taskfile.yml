@@ -217,8 +217,8 @@ tasks:
     desc: "Front end: known vulnerabilities in dependencies (npm audit)"
     deps: [web-install]
     cmds:
-      - "{{.NPM}} audit --omit=dev --audit-level=moderate"
-      - "{{.NPM}} audit --audit-level=high"
+      - "cd web && node scripts/audit.mjs moderate --omit=dev"
+      - "cd web && node scripts/audit.mjs high"
 
   web-build:
     desc: "Front end: build into web/dist"
