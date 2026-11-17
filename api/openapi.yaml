@@ -1613,6 +1613,7 @@ components:
             - ISK
             - NOK
             - PLN
+            - RON
             - SEK
             - USD
           type: string
@@ -1739,6 +1740,7 @@ components:
             - ISK
             - NOK
             - PLN
+            - RON
             - SEK
             - USD
           type: string
@@ -2892,6 +2894,7 @@ components:
                 - ISK
                 - NOK
                 - PLN
+                - RON
                 - SEK
                 - USD
               type: string
@@ -4804,6 +4807,7 @@ components:
             - ISK
             - NOK
             - PLN
+            - RON
             - SEK
             - USD
           type: string
@@ -5605,6 +5609,7 @@ components:
             - ISK
             - NOK
             - PLN
+            - RON
             - SEK
             - USD
           type: string
