@@ -32,7 +32,7 @@ RUN mkdir -p /out/exports
 
 # The front end's build: HTML, JavaScript and CSS, the same for every platform. Its types
 # are generated from the API description.
-FROM --platform=$BUILDPLATFORM node:26.13.0-alpine@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216 AS web
+FROM --platform=$BUILDPLATFORM node:26.13.1-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json web/.npmrc web/.nvmrc ./
 RUN npm ci --no-audit
@@ -40,7 +40,7 @@ COPY api/openapi.yaml /src/api/openapi.yaml
 COPY web ./
 RUN npm run build
 
-FROM gcr.io/distroless/static-debian13:nonroot@sha256:25ac8f0c3b2334a9eb05452266bd4697864a8c8ef0ef71e5e6480d7f92868329 AS runtime
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:aafe993665bf6200db38a02c11a9351e782a84b6a45e7f33b6695638c88e3931 AS runtime
 # A release adds its version and commit (scripts/release-images.sh).
 LABEL org.opencontainers.image.source="https://github.com/runsten-app/runsten" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later"
