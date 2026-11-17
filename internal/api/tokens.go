@@ -15,14 +15,16 @@ import (
 )
 
 // A personal access token lets a program (a script, Home Assistant, an assistant's
-// connector) read the API on its user's behalf, without a session: it is sent as
-// "Authorization: Bearer rst_…". It reads only: an operation that changes state, and
-// the routes of the session and of the tokens themselves, require the session cookie.
+// connector, a phone) read the API on its user's behalf, without a session: it is sent
+// as "Authorization: Bearer rst_…". It reads, and makes only the writes of its scopes
+// (auth.Scopes): any other operation that changes state, and the routes of the session
+// and of the tokens themselves, require the session cookie.
 
 // AccessTokens issues, authenticates and revokes the personal access tokens
-// (auth.Service).
+// (auth.Service). The scopes of the token AuthenticateToken returns are the writes it
+// may make: a verifier of other tokens grants them the same way.
 type AccessTokens interface {
-	IssueToken(ctx context.Context, accountID, userID, name string, ttl time.Duration) (string, auth.Token, error)
+	IssueToken(ctx context.Context, accountID, userID, name string, ttl time.Duration, scopes ...auth.Scope) (string, auth.Token, error)
 	AuthenticateToken(ctx context.Context, secret string) (auth.Token, error)
 	Tokens(ctx context.Context, accountID, userID string) ([]auth.Token, error)
 	RevokeToken(ctx context.Context, accountID, userID, tokenID string) error
@@ -47,7 +49,7 @@ type principalKey struct{}
 // ServeAs serves r as the user userID of the account accountID, without a cookie nor a
 // token: an extension's, such as an assistant's connector built on the JSON API, which
 // authenticated the user itself. The request is then treated as one with an access
-// token: it reads only.
+// token without scopes: it reads only.
 func (s *Server) ServeAs(w http.ResponseWriter, r *http.Request, accountID, userID string) {
 	p := auth.Session{AccountID: accountID, UserID: userID}
 	s.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), principalKey{}, p)))
@@ -83,22 +85,36 @@ var (
 	failSessionOnly = authFailure{status: http.StatusForbidden, code: codeInsufficientScope, message: "this operation requires a session, not an access token", bearer: `Bearer error="insufficient_scope"`}
 )
 
+// failNoScope refuses a token without scope, which the operation requires to change
+// state; the challenge names it (RFC 6750, 3).
+func failNoScope(scope auth.Scope) authFailure {
+	return authFailure{
+		status: http.StatusForbidden, code: codeInsufficientScope,
+		message: "this access token lacks the scope " + string(scope) + ": this operation requires it, or a session",
+		bearer:  `Bearer error="insufficient_scope", scope="` + string(scope) + `"`,
+	}
+}
+
 // authenticate returns who r is from: the principal of ServeAs, an access token, or the
 // session cookie, in this order. tokens: an access token (or a principal) may serve r,
-// which then reads only. err is set if the authentication could not be checked.
-func (s *Server) authenticate(w http.ResponseWriter, r *http.Request, tokens bool) (auth.Session, authFailure, error) {
+// which then reads only, unless the token was given scope (empty: none lets it change
+// state). err is set if the authentication could not be checked.
+func (s *Server) authenticate(w http.ResponseWriter, r *http.Request, tokens bool, scope auth.Scope) (auth.Session, authFailure, error) {
 	readOnly := r.Method == http.MethodGet || r.Method == http.MethodHead
-	viaToken := func(sess auth.Session) (auth.Session, authFailure, error) {
+	viaToken := func(sess auth.Session, t auth.Token) (auth.Session, authFailure, error) {
 		switch {
 		case !tokens:
 			return auth.Session{}, failSessionOnly, nil
-		case !readOnly:
+		case readOnly:
+		case scope == "":
 			return auth.Session{}, failReadOnly, nil
+		case !t.Allows(scope):
+			return auth.Session{}, failNoScope(scope), nil
 		}
 		return sess, authFailure{}, nil
 	}
 	if p, ok := r.Context().Value(principalKey{}).(auth.Session); ok {
-		return viaToken(p)
+		return viaToken(p, auth.Token{})
 	}
 	if h := r.Header.Get("Authorization"); h != "" {
 		// A request with credentials of its own is judged on them alone, never on the
@@ -114,7 +130,7 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request, tokens boo
 		case err != nil:
 			return auth.Session{}, authFailure{}, err //nolint:wrapcheck // logged by the caller
 		}
-		sess, f, err := viaToken(auth.Session{AccountID: t.AccountID, UserID: t.UserID, TokenID: t.ID})
+		sess, f, err := viaToken(auth.Session{AccountID: t.AccountID, UserID: t.UserID, TokenID: t.ID}, t)
 		if f.status == 0 && err == nil {
 			if wait := s.tokenLimiter.take(t.ID, s.Clock.Now()); wait > 0 {
 				return auth.Session{}, authFailure{
@@ -180,6 +196,7 @@ type accessTokenJSON struct {
 	CreatedAt  time.Time  `json:"created_at" pattern:"Z$"`
 	LastUsedAt *time.Time `json:"last_used_at" pattern:"Z$" doc:"The latest request made with it, to the hour; null: never used."`
 	ExpiresAt  *time.Time `json:"expires_at" pattern:"Z$" doc:"From then on it no longer authenticates, and stays listed until it is revoked; null: never expires."`
+	Scopes     []string   `json:"scopes" nullable:"false" uniqueItems:"true" enum:"trips:mark" doc:"The writes it may make besides reading; empty: it only reads."`
 }
 
 type accessTokensJSON struct {
@@ -187,8 +204,9 @@ type accessTokensJSON struct {
 }
 
 type newAccessTokenJSON struct {
-	Name   string `json:"name" minLength:"1" maxLength:"64" doc:"To tell the tokens apart, such as the program that uses it." example:"Home Assistant"`
-	Expiry string `json:"expiry" enum:"30d,90d,365d,never" doc:"How long it authenticates, from now."`
+	Name   string   `json:"name" minLength:"1" maxLength:"64" doc:"To tell the tokens apart, such as the program that uses it." example:"Home Assistant"`
+	Expiry string   `json:"expiry" enum:"30d,90d,365d,never" doc:"How long it authenticates, from now."`
+	Scopes []string `json:"scopes" nullable:"false" uniqueItems:"true" enum:"trips:mark" doc:"The writes it may make besides reading (trips:mark: PUT /vehicles/{vehicle}/trip-marks); empty: it only reads."`
 }
 
 type createdAccessTokenJSON struct {
@@ -198,10 +216,14 @@ type createdAccessTokenJSON struct {
 	CreatedAt  time.Time  `json:"created_at" pattern:"Z$"`
 	LastUsedAt *time.Time `json:"last_used_at" pattern:"Z$" doc:"Always null: it was never used."`
 	ExpiresAt  *time.Time `json:"expires_at" pattern:"Z$" doc:"null: never expires."`
+	Scopes     []string   `json:"scopes" nullable:"false" uniqueItems:"true" enum:"trips:mark" doc:"The writes it may make besides reading; empty: it only reads."`
 }
 
 func accessTokenOf(t auth.Token) accessTokenJSON {
-	j := accessTokenJSON{ID: t.ID, Name: t.Name, CreatedAt: t.CreatedAt}
+	j := accessTokenJSON{ID: t.ID, Name: t.Name, CreatedAt: t.CreatedAt, Scopes: make([]string, 0, len(t.Scopes))}
+	for _, sc := range t.Scopes {
+		j.Scopes = append(j.Scopes, string(sc))
+	}
 	if !t.LastUsedAt.IsZero() {
 		j.LastUsedAt = &t.LastUsedAt
 	}
@@ -234,17 +256,24 @@ func (s *Server) listAccessTokens(ctx context.Context, _ *struct{}) (*body[acces
 
 func (s *Server) createAccessToken(ctx context.Context, in *newAccessTokenInput) (*body[createdAccessTokenJSON], error) {
 	sess := sessionFrom(ctx)
-	secret, t, err := s.AccessTokens.IssueToken(ctx, sess.AccountID, sess.UserID, in.Body.Name, tokenExpiries[in.Body.Expiry])
+	scopes := make([]auth.Scope, 0, len(in.Body.Scopes))
+	for _, sc := range in.Body.Scopes {
+		scopes = append(scopes, auth.Scope(sc))
+	}
+	secret, t, err := s.AccessTokens.IssueToken(ctx, sess.AccountID, sess.UserID, in.Body.Name, tokenExpiries[in.Body.Expiry], scopes...)
 	switch {
 	case errors.Is(err, auth.ErrInvalidTokenName):
 		return nil, apiError(http.StatusBadRequest, codeInvalidBody, "body.name: "+err.Error())
+	case errors.Is(err, auth.ErrUnknownScope):
+		return nil, apiError(http.StatusBadRequest, codeInvalidBody, "body.scopes: "+err.Error())
 	case err != nil:
 		return nil, s.internal("access token not issued", err)
 	}
-	s.Log.Info("access token issued", "token", t.ID, "user", t.UserID, "account", t.AccountID)
+	s.Log.Info("access token issued", "token", t.ID, "user", t.UserID, "account", t.AccountID, "scopes", t.Scopes)
 	j := accessTokenOf(t)
 	return respond(createdAccessTokenJSON{
 		Token: secret, ID: j.ID, Name: j.Name, CreatedAt: j.CreatedAt, LastUsedAt: j.LastUsedAt, ExpiresAt: j.ExpiresAt,
+		Scopes: j.Scopes,
 	}), nil
 }
 

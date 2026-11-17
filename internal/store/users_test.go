@@ -283,20 +283,21 @@ func TestAccessTokensOnPostgres(t *testing.T) {
 		t.Fatal(err)
 	}
 	clk.Advance(time.Minute)
-	month, issued, err := svc.IssueToken(ctx, account, u.ID, "Claude Code", 30*24*time.Hour)
+	month, issued, err := svc.IssueToken(ctx, account, u.ID, "Claude Code", 30*24*time.Hour, auth.ScopeMarkTrips)
 	if err != nil {
 		t.Fatal(err)
 	}
 	got, err := svc.AuthenticateToken(ctx, month)
-	if err != nil || got != (auth.Token{
+	if err != nil || !reflect.DeepEqual(got, auth.Token{
 		ID: issued.ID, AccountID: account, UserID: u.ID, Name: "Claude Code",
 		CreatedAt: t0.Add(time.Minute), LastUsedAt: t0.Add(time.Minute), ExpiresAt: t0.Add(time.Minute + 30*24*time.Hour),
+		Scopes: []auth.Scope{auth.ScopeMarkTrips},
 	}) {
 		t.Errorf("token = %+v, %v", got, err)
 	}
 	ts, err := svc.Tokens(ctx, account, u.ID)
 	if err != nil || len(ts) != 2 || ts[0].Name != "Claude Code" || ts[1].Name != "Home Assistant" ||
-		!ts[1].LastUsedAt.IsZero() || !ts[1].ExpiresAt.IsZero() {
+		!ts[1].LastUsedAt.IsZero() || !ts[1].ExpiresAt.IsZero() || !ts[0].Allows(auth.ScopeMarkTrips) || len(ts[1].Scopes) != 0 {
 		t.Errorf("tokens = %+v, %v", ts, err)
 	}
 	if err := svc.RevokeToken(ctx, account, u.ID, "not-a-uuid"); !errors.Is(err, auth.ErrUnknownToken) {

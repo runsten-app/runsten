@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 	"time"
 	"unicode"
@@ -24,7 +25,20 @@ var (
 	ErrNoToken          = errors.New("no valid access token")
 	ErrUnknownToken     = errors.New("unknown access token")
 	ErrInvalidTokenName = fmt.Errorf("the name of an access token must have 1 to %d characters, without control characters", MaxTokenName)
+	ErrUnknownScope     = errors.New("unknown access token scope")
 )
+
+// Scope is a write an access token may make besides reading. A token without any only
+// reads.
+type Scope string
+
+// ScopeMarkTrips lets a token mark trips with their purpose (PUT
+// /vehicles/{vehicle}/trip-marks), and nothing else: the one write a client used in the
+// car needs every day.
+const ScopeMarkTrips Scope = "trips:mark"
+
+// Scopes are the scopes a token may be given, in the order they are listed.
+var Scopes = []Scope{ScopeMarkTrips}
 
 // Token is a personal access token: a program reads the API with it on a user's behalf,
 // without a session. Its secret is shown once, when it is issued; the store keeps its
@@ -37,7 +51,11 @@ type Token struct {
 	CreatedAt  time.Time
 	LastUsedAt time.Time // zero: never used; written at most every TouchEvery
 	ExpiresAt  time.Time // zero: never expires
+	Scopes     []Scope   // the writes it may make besides reading; none: it only reads
 }
+
+// Allows reports whether the token was given scope.
+func (t Token) Allows(scope Scope) bool { return slices.Contains(t.Scopes, scope) }
 
 // Expired reports whether the token no longer authenticates at now.
 func (t Token) Expired(now time.Time) bool {
@@ -45,19 +63,27 @@ func (t Token) Expired(now time.Time) bool {
 }
 
 // IssueToken creates an access token for the user, valid for ttl (zero: without end),
-// and returns its secret, to show to the user only.
-func (s *Service) IssueToken(ctx context.Context, accountID, userID, name string, ttl time.Duration) (string, Token, error) {
+// that may make the writes of scopes besides reading, and returns its secret, to show to
+// the user only. It returns ErrUnknownScope for a scope not in Scopes.
+func (s *Service) IssueToken(ctx context.Context, accountID, userID, name string, ttl time.Duration, scopes ...Scope) (string, Token, error) {
 	name = strings.TrimSpace(name)
 	if !validTokenName(name) || ttl < 0 {
 		return "", Token{}, ErrInvalidTokenName
 	}
+	for _, sc := range scopes {
+		if !slices.Contains(Scopes, sc) {
+			return "", Token{}, ErrUnknownScope
+		}
+	}
+	// Each once, in the order of Scopes, as the store returns them.
+	given := slices.DeleteFunc(slices.Clone(Scopes), func(sc Scope) bool { return !slices.Contains(scopes, sc) })
 	raw := make([]byte, tokenLen)
 	if _, err := io.ReadFull(s.random, raw); err != nil {
 		return "", Token{}, fmt.Errorf("access token: %w", err)
 	}
 	secret := TokenPrefix + base64.RawURLEncoding.EncodeToString(raw)
 	now := s.clk.Now()
-	t := Token{AccountID: accountID, UserID: userID, Name: name, CreatedAt: now}
+	t := Token{AccountID: accountID, UserID: userID, Name: name, CreatedAt: now, Scopes: given}
 	if ttl > 0 {
 		t.ExpiresAt = now.Add(ttl)
 	}

@@ -131,3 +131,31 @@ func TestTokenStoreErrors(t *testing.T) {
 		t.Errorf("revoke: %v", err)
 	}
 }
+
+func TestTokenScopes(t *testing.T) {
+	ctx := context.Background()
+	s, _, _ := newService(ctx, t)
+
+	// Without a scope, a token only reads.
+	_, reader, err := s.IssueToken(ctx, "acc", "1", "reader", 0)
+	if err != nil || len(reader.Scopes) != 0 || reader.Allows(ScopeMarkTrips) {
+		t.Errorf("without scopes: %+v, %v", reader, err)
+	}
+
+	// Given twice, kept once; found again with the token.
+	secret, marker, err := s.IssueToken(ctx, "acc", "1", "phone", 0, ScopeMarkTrips, ScopeMarkTrips)
+	if err != nil || len(marker.Scopes) != 1 || !marker.Allows(ScopeMarkTrips) {
+		t.Errorf("with trips:mark: %+v, %v", marker, err)
+	}
+	if got, err := s.AuthenticateToken(ctx, secret); err != nil || !got.Allows(ScopeMarkTrips) {
+		t.Errorf("authenticated: %+v, %v", got, err)
+	}
+
+	// An unknown scope: nothing issued.
+	if _, _, err := s.IssueToken(ctx, "acc", "1", "admin", 0, ScopeMarkTrips, "admin"); !errors.Is(err, ErrUnknownScope) {
+		t.Errorf("unknown scope: %v", err)
+	}
+	if list, _ := s.Tokens(ctx, "acc", "1"); len(list) != 2 {
+		t.Errorf("tokens %+v", list)
+	}
+}

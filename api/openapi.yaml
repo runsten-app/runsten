@@ -28,12 +28,21 @@ components:
           maxLength: 64
           minLength: 1
           type: string
+        scopes:
+          description: "The writes it may make besides reading; empty: it only reads."
+          items:
+            enum:
+              - trips:mark
+            type: string
+          type: array
+          uniqueItems: true
       required:
         - id
         - name
         - created_at
         - last_used_at
         - expires_at
+        - scopes
       type: object
     AccessTokens:
       additionalProperties: false
@@ -1703,6 +1712,14 @@ components:
           maxLength: 64
           minLength: 1
           type: string
+        scopes:
+          description: "The writes it may make besides reading; empty: it only reads."
+          items:
+            enum:
+              - trips:mark
+            type: string
+          type: array
+          uniqueItems: true
         token:
           description: "The secret, to send as Authorization: Bearer. Shown this once: only its hash is kept."
           pattern: ^rst_[A-Za-z0-9_-]{43}$
@@ -1714,6 +1731,7 @@ components:
         - created_at
         - last_used_at
         - expires_at
+        - scopes
       type: object
     Credentials:
       additionalProperties: false
@@ -2844,9 +2862,18 @@ components:
           maxLength: 64
           minLength: 1
           type: string
+        scopes:
+          description: "The writes it may make besides reading (trips:mark: PUT /vehicles/{vehicle}/trip-marks); empty: it only reads."
+          items:
+            enum:
+              - trips:mark
+            type: string
+          type: array
+          uniqueItems: true
       required:
         - name
         - expiry
+        - scopes
       type: object
     OdometerStats:
       additionalProperties: false
@@ -6272,7 +6299,7 @@ components:
       type: object
   securitySchemes:
     accessToken:
-      description: "A personal access token, `rst_` then 43 characters, issued by `POST /tokens`: it reads only."
+      description: "A personal access token, `rst_` then 43 characters, issued by `POST /tokens`: it reads, and makes the writes of its scopes. An operation that a scope allows lists it in its requirement (`trips:mark`: `PUT /vehicles/{vehicle}/trip-marks`)."
       scheme: bearer
       type: http
     session:
@@ -6311,9 +6338,10 @@ info:
       and `Referrer-Policy: no-referrer`.
 
     Every route but `POST /session` requires the session cookie it sets, or, to read, a
-    personal access token (`Authorization: Bearer rst_…`, issued by `POST /tokens`). A token only
-    reads: it serves the `GET` routes but those of the session and of the tokens (403
-    `insufficient_scope` otherwise), at most 120 requests at once then 2 per second (429
+    personal access token (`Authorization: Bearer rst_…`, issued by `POST /tokens`). A token
+    reads: it serves the `GET` routes but those of the session and of the tokens, and the writes its
+    scopes allow, nothing else (403 `insufficient_scope` otherwise). Its one scope, `trips:mark`,
+    allows `PUT /vehicles/{vehicle}/trip-marks`. A token makes at most 120 requests at once then 2 per second (429
     `rate_limited`, with `Retry-After`). Requests that
     change state (`POST`, `PUT`, `DELETE`) from another origin are refused (403
     `cross_origin`), after the `Sec-Fetch-Site` or `Origin` header. A request body must be
@@ -6617,7 +6645,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `feature_unavailable`: the account's offer does not include this function (`limits.unavailable` of the session). `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `feature_unavailable`: the account's offer does not include this function (`limits.unavailable` of the session). `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "404":
           content:
             application/json:
@@ -6678,7 +6706,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `feature_unavailable`: the account's offer does not include this function (`limits.unavailable` of the session). `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `feature_unavailable`: the account's offer does not include this function (`limits.unavailable` of the session). `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "404":
           content:
             application/json:
@@ -6770,7 +6798,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "500":
           content:
             application/json:
@@ -6816,7 +6844,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -6859,7 +6887,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "500":
           content:
             application/json:
@@ -6906,7 +6934,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`feature_unavailable`: BMW is not offered to the account (the flag `source.bmw`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`feature_unavailable`: BMW is not offered to the account (the flag `source.bmw`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "415":
           content:
             application/json:
@@ -6965,7 +6993,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`feature_unavailable`: BMW is not offered to the account (the flag `source.bmw`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`feature_unavailable`: BMW is not offered to the account (the flag `source.bmw`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -7023,7 +7051,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "500":
           content:
             application/json:
@@ -7078,7 +7106,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`feature_unavailable`: Hyundai, Kia and Genesis are not offered to the account (the flag `source.pleos`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`feature_unavailable`: Hyundai, Kia and Genesis are not offered to the account (the flag `source.pleos`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -7127,7 +7155,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "500":
           content:
             application/json:
@@ -7173,7 +7201,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -7222,7 +7250,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "500":
           content:
             application/json:
@@ -7257,7 +7285,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`feature_unavailable`: the Polestar ID is not offered to the account (the flag `source.polestar-id`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`feature_unavailable`: the Polestar ID is not offered to the account (the flag `source.polestar-id`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "500":
           content:
             application/json:
@@ -7310,7 +7338,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`feature_unavailable`: the Polestar ID is not offered to the account (the flag `source.polestar-id`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`feature_unavailable`: the Polestar ID is not offered to the account (the flag `source.polestar-id`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -7375,7 +7403,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`feature_unavailable`: the Polestar ID is not offered to the account (the flag `source.polestar-id`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`feature_unavailable`: the Polestar ID is not offered to the account (the flag `source.polestar-id`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -7424,7 +7452,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "500":
           content:
             application/json:
@@ -7471,7 +7499,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`feature_unavailable`: Renault is not offered to the account (the flag `source.renault`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`feature_unavailable`: Renault is not offered to the account (the flag `source.renault`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -7536,7 +7564,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`feature_unavailable`: Renault is not offered to the account (the flag `source.renault`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`feature_unavailable`: Renault is not offered to the account (the flag `source.renault`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -7591,7 +7619,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "500":
           content:
             application/json:
@@ -7637,7 +7665,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`feature_unavailable`: Škoda is not offered to the account (the flag `source.skoda`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`feature_unavailable`: Škoda is not offered to the account (the flag `source.skoda`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -7686,7 +7714,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "500":
           content:
             application/json:
@@ -7732,7 +7760,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`feature_unavailable`: Tesla is not offered to the account (the flag `source.tesla`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`feature_unavailable`: Tesla is not offered to the account (the flag `source.tesla`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -7999,7 +8027,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -8050,7 +8078,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "404":
           content:
             application/json:
@@ -8165,7 +8193,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "404":
           content:
             application/json:
@@ -8471,7 +8499,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "409":
           content:
             application/json:
@@ -8695,7 +8723,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "404":
           content:
             application/json:
@@ -9233,7 +9261,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `feature_unavailable`: the account's offer does not include this function (`limits.unavailable` of the session). `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `feature_unavailable`: the account's offer does not include this function (`limits.unavailable` of the session). `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "404":
           content:
             application/json:
@@ -9302,7 +9330,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `feature_unavailable`: the account's offer does not include this function (`limits.unavailable` of the session). `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `feature_unavailable`: the account's offer does not include this function (`limits.unavailable` of the session). `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "404":
           content:
             application/json:
@@ -10041,7 +10069,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "404":
           content:
             application/json:
@@ -10102,7 +10130,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
         "404":
           content:
             application/json:
@@ -10872,7 +10900,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads; this operation requires a session."
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token without the scope `trips:mark`; this operation requires a session or that scope."
         "404":
           content:
             application/json:
@@ -10885,6 +10913,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
           description: "`unsupported_media_type`: the body is not `application/json`."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
         "500":
           content:
             application/json:
@@ -10894,6 +10935,8 @@ paths:
       security:
         - session: []
         - sessionSecure: []
+        - accessToken:
+            - trips:mark
       summary: Mark trips with their purpose
       tags:
         - trips

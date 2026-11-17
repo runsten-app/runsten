@@ -18,6 +18,12 @@ curl -c jar -H 'Content-Type: application/json' \
 curl -b jar http://127.0.0.1:8081/api/v1/vehicles
 ```
 
+A program can send a personal access token instead, created in the settings under **API access**: `Authorization: Bearer rst_…`. A token reads what the session reads, but the session's and the tokens' routes, at most 120 requests at once then 2 per second. It changes nothing, unless it was created with **May mark the trips' purpose** (the scope `trips:mark`), which allows `PUT /api/v1/vehicles/{id}/trip-marks` alone; any other write answers `403 insufficient_scope`.
+
+```sh
+curl -H 'Authorization: Bearer rst_…' http://127.0.0.1:8081/api/v1/vehicles
+```
+
 A request body is sent as `application/json`, but the files of an import, as `multipart/form-data`.
 
 ## Routes
