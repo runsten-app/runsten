@@ -17,7 +17,7 @@ import (
 // A personal access token lets a program (a script, Home Assistant, an assistant's
 // connector, a phone) read the API on its user's behalf, without a session: it is sent
 // as "Authorization: Bearer rst_…". It reads, and makes only the writes of its scopes
-// (auth.Scopes): any other operation that changes state, and the routes of the session
+// (auth.Scopes()): any other operation that changes state, and the routes of the session
 // and of the tokens themselves, require the session cookie.
 
 // AccessTokens issues, authenticates and revokes the personal access tokens

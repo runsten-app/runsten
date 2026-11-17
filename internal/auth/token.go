@@ -37,8 +37,9 @@ type Scope string
 // car needs every day.
 const ScopeMarkTrips Scope = "trips:mark"
 
-// Scopes are the scopes a token may be given, in the order they are listed.
-var Scopes = []Scope{ScopeMarkTrips}
+// Scopes returns the scopes a token may be given, in the order they are listed: a fresh
+// slice, so that no caller changes the policy.
+func Scopes() []Scope { return []Scope{ScopeMarkTrips} }
 
 // Token is a personal access token: a program reads the API with it on a user's behalf,
 // without a session. Its secret is shown once, when it is issued; the store keeps its
@@ -70,13 +71,14 @@ func (s *Service) IssueToken(ctx context.Context, accountID, userID, name string
 	if !validTokenName(name) || ttl < 0 {
 		return "", Token{}, ErrInvalidTokenName
 	}
+	known := Scopes()
 	for _, sc := range scopes {
-		if !slices.Contains(Scopes, sc) {
+		if !slices.Contains(known, sc) {
 			return "", Token{}, ErrUnknownScope
 		}
 	}
 	// Each once, in the order of Scopes, as the store returns them.
-	given := slices.DeleteFunc(slices.Clone(Scopes), func(sc Scope) bool { return !slices.Contains(scopes, sc) })
+	given := slices.DeleteFunc(known, func(sc Scope) bool { return !slices.Contains(scopes, sc) })
 	raw := make([]byte, tokenLen)
 	if _, err := io.ReadFull(s.random, raw); err != nil {
 		return "", Token{}, fmt.Errorf("access token: %w", err)

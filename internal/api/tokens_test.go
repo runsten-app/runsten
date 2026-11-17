@@ -43,7 +43,7 @@ func (f *fakeTokens) IssueToken(_ context.Context, accountID, userID, name strin
 		return "", auth.Token{}, auth.ErrInvalidTokenName
 	}
 	for _, sc := range scopes {
-		if !slices.Contains(auth.Scopes, sc) {
+		if !slices.Contains(auth.Scopes(), sc) {
 			return "", auth.Token{}, auth.ErrUnknownScope
 		}
 	}
@@ -155,7 +155,8 @@ func TestAccessTokensJSON(t *testing.T) {
 		t.Errorf("without expiry, marking trips: %d %s", resp.status, body)
 	}
 	for _, bad := range []string{
-		`{"name":"   ","expiry":"30d"}`, `{"name":"x","expiry":"1d"}`, `{"name":"x"}`, `{"name":"","expiry":"30d"}`,
+		`{"name":"   ","expiry":"30d","scopes":[]}`, `{"name":"x","expiry":"1d","scopes":[]}`, `{"name":"x","scopes":[]}`,
+		`{"name":"","expiry":"30d","scopes":[]}`,
 		`{"name":"x","expiry":"30d"}`, `{"name":"x","expiry":"30d","scopes":null}`, `{"name":"x","expiry":"30d","scopes":["admin"]}`, `{"name":"x","expiry":"30d","scopes":["trips:mark","trips:mark"]}`,
 	} {
 		resp, body := do(t, noFollow(), http.MethodPost, u, jsonType, bad, c)
@@ -275,8 +276,8 @@ func TestAccessTokenOnEveryOperation(t *testing.T) {
 		u := e.api.URL + apiPrefix + path.Replace(p)
 		secret, id := e.token(t)
 		// Every scope but the operation's own: never enough.
-		others := slices.DeleteFunc(slices.Clone(auth.Scopes), func(sc auth.Scope) bool { return sc == scoped[op] })
-		scopedSecret, scopedID := e.token(t, auth.Scopes...)
+		others := slices.DeleteFunc(auth.Scopes(), func(sc auth.Scope) bool { return sc == scoped[op] })
+		scopedSecret, scopedID := e.token(t, auth.Scopes()...)
 		otherSecret, _ := e.token(t, others...)
 		if scope, ok := scoped[op]; ok {
 			for _, s := range []string{secret, otherSecret} {
