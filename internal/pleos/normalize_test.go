@@ -404,13 +404,13 @@ func check(t *testing.T, what string, ok bool) {
 func TestNormalizeBatteriesReserved(t *testing.T) {
 	s, err := Normalize(Batteries, raw(`"charge":{"plugin":"connected","status":"reservedCharging",`+
 		`"charging":true,"remainTime":1070,"stateOfCharge":21.0,"batteryCapacity":302400.0,`+
-		`"targetStateOfCharge":{"quick":80,"standard":80}}`))
+		`"targetStateOfCharge":{"quick":90,"standard":80}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	check(t, "the charge", s.Charging.OK && s.Charging.V == core.ChargingActive)
 	check(t, "the charge's type", s.ChargeType.OK && s.ChargeType.V == core.AC)
-	check(t, "the target (standard)", s.TargetSoC.OK && s.TargetSoC.V == 80)
+	check(t, "the target (an AC charge's, standard)", s.TargetSoC.OK && s.TargetSoC.V == 80)
 	check(t, "the time left", s.TimeLeft.OK && s.TimeLeft.V.Duration == 1070*time.Minute)
 	for _, body := range []string{
 		`"charge":{"plugin":"connected","status":"reservedCharging","charging":false}`,
