@@ -80,6 +80,7 @@ func TestNormalizeBatteriesWords(t *testing.T) {
 		{"charging", core.AC},
 		{"fastCharging", core.DC},
 		{"wirelessCharging", core.NoCharge},
+		{"reservedCharging", core.AC},
 	} {
 		s, err := Normalize(Batteries, raw(`"charge":{"status":"`+test.status+`","charging":true}`))
 		if err != nil {
@@ -391,5 +392,43 @@ func check(t *testing.T, what string, ok bool) {
 	t.Helper()
 	if !ok {
 		t.Errorf("%s: not told", what)
+	}
+}
+
+// TestNormalizeBatteriesReserved: reservedCharging tells a schedule, waiting or
+// charging. A car whose schedule started the charge says it for the whole of it,
+// charge.charging true, the state of charge rising and remainTime counting down: an
+// active AC charge, read at the charging pace. Without charge.charging true, the
+// schedule waits. The invalid status that follows the charge's end, charge.charging
+// false, is idle.
+func TestNormalizeBatteriesReserved(t *testing.T) {
+	s, err := Normalize(Batteries, raw(`"charge":{"plugin":"connected","status":"reservedCharging",`+
+		`"charging":true,"remainTime":1070,"stateOfCharge":21.0,"batteryCapacity":302400.0,`+
+		`"targetStateOfCharge":{"quick":90,"standard":80}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	check(t, "the charge", s.Charging.OK && s.Charging.V == core.ChargingActive)
+	check(t, "the charge's type", s.ChargeType.OK && s.ChargeType.V == core.AC)
+	check(t, "the target (an AC charge's, standard)", s.TargetSoC.OK && s.TargetSoC.V == 80)
+	check(t, "the time left", s.TimeLeft.OK && s.TimeLeft.V.Duration == 1070*time.Minute)
+	for _, body := range []string{
+		`"charge":{"plugin":"connected","status":"reservedCharging","charging":false}`,
+		`"charge":{"plugin":"connected","status":"reservedCharging"}`,
+	} {
+		s, err := Normalize(Batteries, raw(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !s.Charging.OK || s.Charging.V != core.ChargingScheduled || s.ChargeType.OK {
+			t.Errorf("%s: %v %v, want scheduled without a type", body, s.Charging, s.ChargeType)
+		}
+	}
+	s, err = Normalize(Batteries, raw(`"charge":{"plugin":"connected","status":"invalid","charging":false,"stateOfCharge":80.0}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !s.Charging.OK || s.Charging.V != core.ChargingIdle {
+		t.Errorf("invalid after the charge: %v, want idle", s.Charging)
 	}
 }

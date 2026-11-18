@@ -181,23 +181,36 @@ func km(v any, unit any) (float64, bool) {
 
 // charging maps charge.status: every word that charges is a charge, the one a
 // scheduled departure waits for is scheduled, the discharges tell the plug drawn on.
-// wirelessCharging has no type a charge of the domain has: absent.
+// wirelessCharging has no type a charge of the domain has: absent. reservedCharging
+// is read with charge.charging (reserved).
 var charging = map[string]core.ChargingStatus{
 	"charging":         core.ChargingActive, // "slow charging", an AC charge
 	"fastCharging":     core.ChargingActive, // a DC one
 	"wirelessCharging": core.ChargingActive,
-	"reservedCharging": core.ChargingScheduled,
 	"notCharging":      core.ChargingIdle,
 	"v2lStop":          core.ChargingIdle,
 	"v2lOperating":     core.ChargingDischarging,
 	"v2xOperating":     core.ChargingDischarging,
 }
 
-// ac is the current a slow charge draws; fastCharging a fast one draws.
+// ac is the current a slow charge draws; fastCharging a fast one draws; reserved a
+// charge a schedule (departure time, off-peak hours) starts.
 const (
 	statusCharging = "charging"
 	statusFast     = "fastCharging"
+	statusReserved = "reservedCharging"
 )
+
+// reserved reads reservedCharging, which tells a schedule, waiting or charging: the car
+// says it so for the whole of a charge its schedule started, charge.charging true, the
+// state of charge rising and remainTime counting down. Charging, it is an active charge;
+// otherwise, or without charge.charging, a scheduled one.
+func reserved(c map[string]any) core.ChargingStatus {
+	if b, ok := number(c["charging"]); ok && b != 0 {
+		return core.ChargingActive
+	}
+	return core.ChargingScheduled
+}
 
 // NormalizeBatteries reads the charge: the state of charge, the plug, the target, the
 // time left and the battery's stated capacity. The domain has no power, current nor
@@ -219,7 +232,9 @@ func normalizeBatteries(data map[string]any, at time.Time, s *core.Snapshot) {
 		s.Connection = core.Some(core.Disconnected, at)
 	}
 	status := text(c["status"])
-	if v, ok := charging[status]; ok {
+	if status == statusReserved {
+		s.Charging = core.Some(reserved(c), at)
+	} else if v, ok := charging[status]; ok {
 		s.Charging = core.Some(v, at)
 	} else if b, ok := number(c["charging"]); ok {
 		// charge.charging in support when status tells nothing.
@@ -231,8 +246,10 @@ func normalizeBatteries(data map[string]any, at time.Time, s *core.Snapshot) {
 	}
 	if s.Charging.OK && s.Charging.V == core.ChargingActive {
 		// The charge's type, a charge active alone. Wireless has none read.
+		// Assumption (ADR 0049 §5): a schedule starts AC charges alone, a fast charge
+		// starting when the car is plugged in.
 		switch status {
-		case statusCharging:
+		case statusCharging, statusReserved:
 			s.ChargeType = core.Some(core.AC, at)
 		case statusFast:
 			s.ChargeType = core.Some(core.DC, at)

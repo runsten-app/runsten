@@ -2,6 +2,7 @@ package derive
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -130,6 +131,67 @@ func TestPleosDay(t *testing.T) {
 	}
 	if charge.EnergyPowerKWh.OK {
 		t.Errorf("the charge's power energy: %+v", charge.EnergyPowerKWh)
+	}
+	checkRebuildOf(t, st, d, "k")
+}
+
+// TestPleosReservedCharging: a charge a schedule started, which the car tells as
+// reservedCharging for the whole of it, charge.charging true, then invalid once it is
+// over. Read every ten minutes, some responses read again unchanged before the car sent
+// anew: one observed AC charge from the first active reading to the idle one, not
+// pieces rebuilt from the state of charge, and none in progress after it. The
+// incremental derivation matches a rebuild.
+func TestPleosReservedCharging(t *testing.T) {
+	st := newMemStore()
+	v := st.vehicle("k")
+	d := New(st, Sources(volvo.Normalizer{}, pleos.Normalizer{}), core.DefaultParams(), pleosCatalog{}, quiet)
+	k := core.Kind{Source: pleos.Source, Endpoint: string(pleos.Batteries)}
+	t0 := time.Date(2026, 11, 17, 13, 0, 0, 0, time.UTC)
+	reading := func(status string, charging bool, soc float64, at time.Time) []byte {
+		return fmt.Appendf(nil, `{"data":{"charge":{"plugin":"connected","status":%q,"charging":%t,`+
+			`"remainTime":0,"stateOfCharge":%.1f,"targetStateOfCharge":{"quick":80,"standard":80}},`+
+			`"timestamp":%q},"meta":{"code":200,"success":true}}`, status, charging, soc, at.Format(time.RFC3339))
+	}
+	step := 10 * time.Minute
+	add := func(i int, status string, charging bool, soc float64, again bool) {
+		at := t0.Add(time.Duration(i) * step)
+		checked := at
+		if again {
+			checked = at.Add(step) // the same response read again before the car sent anew
+		}
+		v.rows[k] = append(v.rows[k], Snapshot{Kind: k, FetchedAt: at, CheckedAt: checked, Payload: reading(status, charging, soc, at)})
+		if err := d.Update(context.Background(), "a", "k"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	add(0, "reservedCharging", false, 17, false) // plugged in, the schedule waits
+	soc, i := 17.0, 1
+	for ; soc < 40; i++ {
+		soc += 1.5
+		add(i, "reservedCharging", true, soc, i%3 == 0)
+		if i%3 == 0 {
+			i++
+		}
+	}
+	add(i, "invalid", false, soc, false)
+	add(i+1, "invalid", false, soc, false)
+
+	if len(v.charges) != 1 {
+		t.Fatalf("%d charges derived, want one:\n%+v", len(v.charges), v.charges)
+	}
+	c := v.charges[0]
+	if c.Reconstructed || !c.Type.OK || c.Type.V != core.AC {
+		t.Errorf("the charge, observed and AC: %+v", c)
+	}
+	if !near(c.StartSoC, 17, 0) || !near(c.EndSoC, soc, 0) {
+		t.Errorf("the charge's SoC: %v → %v, want 17 → %v", c.StartSoC, c.EndSoC, soc)
+	}
+	open, err := d.InProgress(context.Background(), "a", "k", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if open.OK {
+		t.Errorf("a charge in progress after the idle reading: %+v", open.V)
 	}
 	checkRebuildOf(t, st, d, "k")
 }
