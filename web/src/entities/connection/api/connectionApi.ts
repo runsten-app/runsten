@@ -89,6 +89,14 @@ export async function deleteRenault(): Promise<void> {
   await unwrap(api.DELETE('/connection/renault'))
 }
 
+export function connectDemo(): Promise<ConnectionSettings> {
+  return unwrap(api.PUT('/connection/demo'))
+}
+
+export async function deleteDemo(): Promise<void> {
+  await unwrap(api.DELETE('/connection/demo'))
+}
+
 export function startBmwAuthorization(clientId: string): Promise<BmwDevice> {
   return unwrap(api.POST('/connection/bmw/authorization', { body: { client_id: clientId } }))
 }

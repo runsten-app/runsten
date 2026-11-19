@@ -1399,7 +1399,8 @@
       "tesla": "Tesla",
       "bmw": "BMW",
       "skoda": "Škoda",
-      "renault": "Renault"
+      "renault": "Renault",
+      "demo": "Demo"
     },
     "brandAttention": "erfordert Ihre Aufmerksamkeit",
     "outcome": {
@@ -1585,7 +1586,8 @@
       "bmw": "BMW CarData",
       "pleos": "die Pleos Vehicle Data API",
       "skoda": "die MyŠkoda Public API",
-      "renault": "die API der My-Renault-App"
+      "renault": "die API der My-Renault-App",
+      "demo": "das Demo-Fahrzeug"
     },
     "failure": {
       "quota": "Kontingent erreicht",
@@ -1673,6 +1675,10 @@
     "renault": {
       "title": "Ihr My-Renault-Konto",
       "off": "Renault ist auf dieser Instanz abgeschaltet (das Flag source.renault)."
+    },
+    "demo": {
+      "title": "Demo-Fahrzeug",
+      "off": "Das Demo-Fahrzeug ist auf dieser Instanz abgeschaltet (das Flag source.demo)."
     },
     "keyShared": {
       "text": "Eine andere Anwendung liest mit demselben Pleos-Schlüssel — evcc, Home Assistant. Die API erlaubt nur einen Leser zugleich; jeder verdrängt den anderen. Behalten Sie diesen Schlüssel für Runsten allein, oder lassen Sie Runsten Ihr Auto stattdessen für Home Assistant auf Ihren MQTT-Broker veröffentlichen:",
@@ -2561,6 +2567,31 @@
       "sourceUnavailable": "My Renault hat nicht geantwortet: Es wurde nichts gespeichert. Versuchen Sie es gleich noch einmal.",
       "unavailable": "Runsten war nicht erreichbar. Versuchen Sie es gleich noch einmal.",
       "internal": "Die Anmeldung konnte nicht gespeichert werden. Versuchen Sie es gleich noch einmal."
+    }
+  },
+  "demo": {
+    "intro": "Ein Fahrzeug, das weder ein Auto noch ein Herstellerkonto braucht: Diese Instanz simuliert es, mit einer typischen Woche aus Fahrten und Ladevorgängen, die sich wiederholt. Damit können Sie Runsten ausprobieren, vorführen oder gegen eine echte Instanz entwickeln.",
+    "help": "Beim Verbinden werden die letzten vier Wochen geschrieben: Das dauert einige Sekunden.",
+    "connect": "Demo-Fahrzeug verbinden",
+    "status": "Status",
+    "active": "Verbunden",
+    "setAt": "Verbunden am",
+    "connected": "Demo-Fahrzeug verbunden: Seine letzten vier Wochen stehen in Ihren Fahrzeugen, und es wird weiter gelesen.",
+    "disconnected": "Demo-Fahrzeug getrennt.",
+    "disconnect": {
+      "button": "Trennen",
+      "title": "Demo-Fahrzeug trennen?",
+      "text": "Das Demo-Fahrzeug wird mit seinen Fahrten und Ladevorgängen gelöscht. Sie können es erneut verbinden: Es beginnt von vorn.",
+      "cancel": "Abbrechen",
+      "confirm": "Löschen",
+      "error": "Das Demo-Fahrzeug konnte nicht gelöscht werden. Versuchen Sie es gleich noch einmal."
+    },
+    "error": {
+      "featureUnavailable": "Das Demo-Fahrzeug wird auf dieser Instanz nicht angeboten.",
+      "tooManyVehicles": "Mit dem Demo-Fahrzeug hätte Ihr Konto mehr Fahrzeuge, als ihm zusteht: Es wurde nicht verbunden.",
+      "notAdmitted": "Ihr Konto muss erst einen Schritt tun, etwa Bedingungen annehmen: die Seite neu laden. Das Demo-Fahrzeug wurde nicht verbunden.",
+      "unavailable": "Runsten war nicht erreichbar. Versuchen Sie es gleich noch einmal.",
+      "internal": "Das Demo-Fahrzeug konnte nicht verbunden werden. Versuchen Sie es gleich noch einmal."
     }
   },
   "purpose": {

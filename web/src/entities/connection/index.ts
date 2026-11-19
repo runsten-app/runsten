@@ -1,6 +1,8 @@
 export {
+  connectDemo,
   deleteApiKey,
   deleteBmw,
+  deleteDemo,
   deletePleosCredential,
   deletePolestarCredential,
   deletePolestarId,
@@ -26,6 +28,7 @@ export type {
   Bmw,
   BmwDevice,
   ConnectionSettings,
+  Demo,
   PleosBrand,
   PleosCredentialUpdate,
   PleosKey,

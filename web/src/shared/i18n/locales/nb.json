@@ -1399,7 +1399,8 @@
       "tesla": "Tesla",
       "bmw": "BMW",
       "skoda": "Škoda",
-      "renault": "Renault"
+      "renault": "Renault",
+      "demo": "Demo"
     },
     "brandAttention": "trenger oppmerksomheten din",
     "outcome": {
@@ -1585,7 +1586,8 @@
       "bmw": "BMW CarData",
       "pleos": "Pleos Vehicle Data API",
       "skoda": "MyŠkoda Public API",
-      "renault": "API-et til My Renault-appen"
+      "renault": "API-et til My Renault-appen",
+      "demo": "demobilen"
     },
     "failure": {
       "quota": "Kvote nådd",
@@ -1673,6 +1675,10 @@
     "renault": {
       "title": "My Renault-kontoen din",
       "off": "Renault er slått av på denne instansen (flagget source.renault)."
+    },
+    "demo": {
+      "title": "Demobil",
+      "off": "Demobilen er slått av på denne instansen (flagget source.demo)."
     },
     "keyShared": {
       "text": "Et annet program leser med samme Pleos-nøkkel — evcc, Home Assistant. API-en tillater bare én leser om gangen, så hver tar den andres plass. Behold denne nøkkelen for Runsten alene, eller la Runsten publisere bilen din på MQTT-megleren din for Home Assistant i stedet:",
@@ -2561,6 +2567,31 @@
       "sourceUnavailable": "My Renault svarte ikke: ingenting ble lagret. Prøv igjen om litt.",
       "unavailable": "Runsten kunne ikke nås. Prøv igjen om litt.",
       "internal": "Innloggingen kunne ikke lagres. Prøv igjen om litt."
+    }
+  },
+  "demo": {
+    "intro": "Et kjøretøy som verken trenger bil eller produsentkonto: denne instansen simulerer det, med en typisk uke med kjøring og lading som gjentar seg. Bruk det til å prøve Runsten, vise det fram eller utvikle mot en ekte instans.",
+    "help": "Når du kobler til, skrives de siste fire ukene: det tar noen sekunder.",
+    "connect": "Koble til demobilen",
+    "status": "Status",
+    "active": "Tilkoblet",
+    "setAt": "Koblet til",
+    "connected": "Demobilen er koblet til: de siste fire ukene ligger blant kjøretøyene dine, og den leses videre.",
+    "disconnected": "Demobilen er koblet fra.",
+    "disconnect": {
+      "button": "Koble fra",
+      "title": "Koble fra demobilen?",
+      "text": "Demobilen slettes sammen med turene og ladingene sine. Du kan koble den til igjen: den begynner på nytt.",
+      "cancel": "Avbryt",
+      "confirm": "Slett",
+      "error": "Demobilen kunne ikke slettes. Prøv igjen om litt."
+    },
+    "error": {
+      "featureUnavailable": "Demobilen tilbys ikke på denne instansen.",
+      "tooManyVehicles": "Med demobilen ville kontoen din hatt flere kjøretøy enn den kan ha: den ble ikke koblet til.",
+      "notAdmitted": "Kontoen din må først ta et steg, som å godta vilkår: last siden på nytt. Demobilen ble ikke koblet til.",
+      "unavailable": "Runsten kunne ikke nås. Prøv igjen om litt.",
+      "internal": "Demobilen kunne ikke kobles til. Prøv igjen om litt."
     }
   },
   "purpose": {

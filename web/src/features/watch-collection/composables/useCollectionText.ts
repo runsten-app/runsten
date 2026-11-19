@@ -67,6 +67,8 @@ export function useCollectionText() {
         return t('connection.api.skoda')
       case 'renault':
         return t('connection.api.renault')
+      case 'demo':
+        return t('connection.api.demo')
       default:
         return name
     }

@@ -7,6 +7,7 @@ import { limitsPage } from '@/entities/session'
 import { collectionState, needsAttention, vehicleLabels, type Vehicle } from '@/entities/vehicle'
 import { ApiKeyForm, useConnectionSettings } from '@/features/manage-api-key'
 import { BmwForm } from '@/features/manage-bmw'
+import { DemoForm } from '@/features/manage-demo'
 import { PleosForm, renewalDue as pleosRenewalDue } from '@/features/manage-pleos'
 import { PolestarForm, renewalDue } from '@/features/manage-polestar'
 import { PolestarIdForm } from '@/features/manage-polestar-id'
@@ -40,7 +41,7 @@ import VehicleCollection from './VehicleCollection.vue'
 //
 // One tab per brand, each with its connection and its vehicles: a brand added later is a
 // tab more. The tab is the URL's hash (#volvo, #polestar, #tesla, #bmw, #hyundai, #kia,
-// #genesis, #skoda, #renault: the home's choice of a brand opens its tab; #pleos, of an older link, the first
+// #genesis, #skoda, #renault, #demo: the home's choice of a brand opens its tab; #pleos, of an older link, the first
 // of Hyundai, Kia and Genesis the account reads, else Hyundai's); without one, that of the vehicle the page was opened from, else the
 // first brand the account has a vehicle of, else Volvo's. A dot marks a tab whose vehicles need the user,
 // or whose credential is to be renewed (Polestar's, a Pleos key, Škoda's).
@@ -56,7 +57,8 @@ import VehicleCollection from './VehicleCollection.vue'
 // the flag source.pleos is on, unless the brand has a key or vehicles from before. Škoda's
 // is there while the flag source.skoda is on, unless it has a key or Škodas from before.
 // Renault's (with Dacia's and Alpine's) while source.renault is on (off by default: an
-// unofficial API), unless it has a sign-in or Renaults from before.
+// unofficial API), unless it has a sign-in or Renaults from before. The demo vehicle's, the
+// last, while source.demo is on (off by default: no one's car), unless it is connected.
 // A brand's section an extension sets (extensionBrandSections) takes the place of the
 // core's, and shows its tab whatever the above.
 const props = defineProps<{ vehicle?: string }>()
@@ -158,6 +160,7 @@ const brandLabels = computed<Record<Brand, string>>(() => ({
   genesis: t('pleos.brand.genesis'),
   skoda: t('connection.brand.skoda'),
   renault: t('connection.brand.renault'),
+  demo: t('connection.brand.demo'),
 }))
 // A Polestar read with the Polestar ID is a Polestar's: one tab. A Hyundai, a Kia or a
 // Genesis, read through Pleos (pleos_kia), is its make's.
@@ -184,6 +187,7 @@ const pleosOn = useFlag('source.pleos')
 const pleosKey = (b: Brand) => isPleos(b) && settings.value?.pleos?.[b] != null
 const skodaOn = useFlag('source.skoda')
 const renaultOn = useFlag('source.renault')
+const demoOn = useFlag('source.demo')
 // The VINs of the account's Škodas: a new key is given with them.
 const skodaVins = computed(() => ofBrand('skoda').map((v) => v.vin))
 const polestarIdOn = useFlag('source.polestar-id')
@@ -207,7 +211,9 @@ const shown = computed(() =>
               ? skodaOn.value || !!settings.value?.skoda || ofBrand(b).length
               : b === 'renault'
                 ? renaultOn.value || !!settings.value?.renault || ofBrand(b).length
-                : b !== 'bmw' || bmwOn.value || !!settings.value?.bmw || ofBrand(b).length),
+                : b === 'demo'
+                  ? demoOn.value || !!settings.value?.demo || ofBrand(b).length
+                  : b !== 'bmw' || bmwOn.value || !!settings.value?.bmw || ofBrand(b).length),
   ),
 )
 // #pleos, the tab of the three makes before each had its own: the first the account
@@ -527,6 +533,16 @@ const alerted = computed(
               :connection="settings"
               :off="!renaultOn"
             />
+          </section>
+          <section v-else-if="b === 'demo'" class="mb-8" aria-labelledby="connection-demo-title">
+            <h2 id="connection-demo-title" class="text-title-large mb-3">
+              {{ t('connection.demo.title') }}
+            </h2>
+            <p v-if="!demoOn" class="text-body-medium demo-off">
+              {{ t('connection.demo.off') }}
+            </p>
+            <!-- Off, a demo vehicle connected before stays told, and can be removed. -->
+            <DemoForm v-if="demoOn || settings.demo" :connection="settings" :off="!demoOn" />
           </section>
           <section v-else-if="b === 'bmw'" class="mb-8" aria-labelledby="connection-bmw-title">
             <h2 id="connection-bmw-title" class="text-title-large mb-3">
