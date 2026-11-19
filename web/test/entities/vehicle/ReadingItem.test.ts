@@ -61,6 +61,40 @@ describe('ReadingItem', () => {
     expect(item({ reading: null, value: null }).findAll('time')).toHaveLength(0)
   })
 
+  describe('in a tile, says only what differs from it', () => {
+    const texts = (w: ReturnType<typeof item>) =>
+      w.findAll('time').map((t) => t.text().replace(/\s/g, ' '))
+
+    it('nothing when read with the tile', () => {
+      expect(item({ tile: reading }).find('.details').exists()).toBe(false)
+    })
+
+    it('its check, marked stale, when stale while the tile is not', () => {
+      const w = item({ reading: { ...reading, checked_at: '2026-09-28T16:00:00Z' }, tile: reading })
+      expect(texts(w)).toEqual(['checked 3 hr ago'])
+      expect(w.find('.details').text()).toContain('stale')
+    })
+
+    it('no check when fresh, even with the tile stale', () => {
+      const tile = { ...reading, checked_at: '2026-09-28T16:00:00Z' }
+      expect(item({ tile }).find('.details').exists()).toBe(false)
+    })
+
+    it('its time when not the tile’s', () => {
+      const tile = { ...reading, fetched_at: '2026-09-28T18:00:00Z' }
+      expect(texts(item({ tile }))).toEqual(['since 17:26'])
+    })
+
+    it('what differs from the headline, when the tile has no value to say it of', () => {
+      const headline = { stale: false, at: reading.fetched_at }
+      expect(item({ tile: null, headline }).find('.details').exists()).toBe(false)
+      const later = { stale: false, at: '2026-09-28T19:00:00Z' }
+      expect(texts(item({ tile: null, headline: later }))).toEqual(['since 17:26'])
+      // Without a headline, both.
+      expect(texts(item({ tile: null }))).toEqual(['checked 3 min ago', 'since 17:26'])
+    })
+  })
+
   it('puts its slot in the <dd>, a <dl> holding only its items', () => {
     const props = { label: 'State of charge', reading, value: '64%', now, connection: active }
     const Host = { render: () => h(ReadingItem, props, () => h('div', { class: 'gauge' })) }

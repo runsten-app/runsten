@@ -16,10 +16,8 @@ test('Verdandi: the state of charge, the range and how fresh they are', async ({
 
   const soc = reading(page, 'State of charge')
   await expect(soc.locator('.value')).toHaveText(/^\d+(\.\d+)?\s?%$/)
-  // Said once for the battery's tile: its values share it.
-  await expect(page.locator('.battery .under-bar .details')).toHaveText(
-    /^checked (now|.+ ago) · since /,
-  )
+  // The headline says when the values were checked: the battery's tile never repeats it.
+  await expect(page.locator('.battery .under-bar')).not.toContainText('checked')
   await expect(reading(page, 'Range').locator('.value')).toHaveText(/^\d[\d,]*\s?km$/)
   // The charge, one line under the battery's bar, or its own tile while one runs.
   await expect(page.getByRole('heading', { name: 'Charging', exact: true })).toBeVisible()

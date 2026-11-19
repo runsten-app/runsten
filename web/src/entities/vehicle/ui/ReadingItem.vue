@@ -2,15 +2,16 @@
 import { computed } from 'vue'
 import { useFormat } from '@/shared/lib'
 import { TileFigure } from '@/shared/ui'
-import { isStale, staleAfter as defaultStaleAfter } from '../model/freshness'
+import { isStale, staleAfter as defaultStaleAfter, type Headline } from '../model/freshness'
 import type { Connection, Reading } from '../model/Vehicle'
 import ReadingProvenance from './ReadingProvenance.vue'
 
 // ReadingItem is one value of the state, in a <dl>: its label, the value (already
 // formatted; null is unknown), how long ago it was last checked and since when it holds.
 // In a tile that says these once (tile, the reading it shows them of), the value repeats
-// only what differs from it: its check when stale, its time when not the tile's. The slot adds to the value (a gauge): inside the <dd>, a
-// <dl> holding only its items. An icon may lead the label, to find the value at a glance:
+// only what differs from it: its check when stale, its time when not the tile's. A tile
+// with no value to say them of leaves its values to the page's headline, when given. The
+// slot adds to the value (a gauge): inside the <dd>, a <dl> holding only its items. An icon may lead the label, to find the value at a glance:
 // small, in the label's color, never on the value.
 const props = withDefaults(
   defineProps<{
@@ -23,8 +24,15 @@ const props = withDefaults(
     size?: 'hero' | 'large' | 'small'
     tile?: Reading | null
     icon?: string
+    headline?: Headline
   }>(),
-  { staleAfter: defaultStaleAfter, size: 'large', tile: undefined, icon: undefined },
+  {
+    staleAfter: defaultStaleAfter,
+    size: 'large',
+    tile: undefined,
+    icon: undefined,
+    headline: undefined,
+  },
 )
 
 const f = useFormat()
@@ -40,7 +48,7 @@ const own = computed(() => {
   const r = props.reading
   if (!r) return null
   const t = props.tile
-  if (t === undefined) return { checked: true, since: true }
+  if (t === undefined || (t === null && props.headline)) return { checked: true, since: true }
   // Its check only when it is stale and the tile's is not: otherwise the tile says it.
   const checked = !t || (stale.value && !isStale(t.checked_at, props.now, props.connection))
   const since = !t || f.dateTime(r.fetched_at, props.now) !== f.dateTime(t.fetched_at, props.now)
@@ -69,6 +77,7 @@ const own = computed(() => {
         :stale-after="staleAfter"
         :checked="own.checked"
         :since="own.since"
+        :headline="tile === null ? headline : undefined"
         class="mt-1"
       />
     </dd>

@@ -411,6 +411,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="state.soc_pct"
+                :headline="headline"
                 size="hero"
               />
               <ReadingItem
@@ -420,6 +421,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="state.soc_pct"
+                :headline="headline"
               />
               <div v-if="variantCapacity !== null" class="reading variant-capacity">
                 <dt class="label">{{ t('state.capacity') }}</dt>
@@ -459,6 +461,7 @@ const update = computed(() => {
                 :connection="connection"
                 :stale-after="detailsStaleAfter"
                 :tile="state.soc_pct"
+                :headline="headline"
               />
             </dl>
             <div v-if="state.soc_pct">
@@ -510,6 +513,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"
+                :headline="headline"
               >
                 <span v-if="electricity" class="electricity d-block mt-1">{{ electricity }}</span>
               </ReadingItem>
@@ -521,6 +525,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"
+                :headline="headline"
                 class="time-left"
               />
               <ReadingItem
@@ -531,6 +536,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"
+                :headline="headline"
                 :size="chargeSize"
               />
               <ReadingItem
@@ -541,6 +547,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"
+                :headline="headline"
                 :size="chargeSize"
               />
               <ReadingItem
@@ -551,6 +558,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"
+                :headline="headline"
                 :size="chargeSize"
               />
               <!-- A setting the owner made (a Tesla's, some Volvos'), said only when told. -->
@@ -562,6 +570,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="chargingTile"
+                :headline="headline"
                 size="small"
                 class="current-limit"
               />
@@ -623,6 +632,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
+                :headline="headline"
               />
               <!-- A source that tells its temperatures (a Tesla); nothing for the others. -->
               <ReadingItem
@@ -634,6 +644,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
+                :headline="headline"
                 class="outside"
               />
               <ReadingItem
@@ -645,6 +656,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
+                :headline="headline"
                 class="cabin"
               />
               <!-- A source that tells its software (a Tesla); nothing for the others. -->
@@ -657,6 +669,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
+                :headline="headline"
                 class="software"
               />
               <ReadingItem
@@ -667,6 +680,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
+                :headline="headline"
                 size="small"
                 class="update"
               />
@@ -679,6 +693,7 @@ const update = computed(() => {
                 :now="now"
                 :connection="connection"
                 :tile="vehicleTile"
+                :headline="headline"
                 size="small"
                 class="coordinates"
               />
