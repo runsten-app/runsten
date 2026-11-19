@@ -202,6 +202,13 @@ func (d *Deriver) Rebuild(ctx context.Context, accountID, vehicleID string) (cor
 	return d.run(ctx, accountID, vehicleID, core.Cursor{})
 }
 
+// RebuildWith is Rebuild with the vehicle's net capacity given by the caller, as it gives
+// it to InProgress: for a caller that knows it (the API, from the catalog) and has no
+// Capacities of its own.
+func (d *Deriver) RebuildWith(ctx context.Context, accountID, vehicleID string, net core.NetCapacity) (core.Result, error) {
+	return d.derive(ctx, accountID, vehicleID, core.Cursor{}, net)
+}
+
 // Current returns the vehicle's latest known values, from the latest snapshot of each
 // endpoint fetched at or before at.
 func (d *Deriver) Current(ctx context.Context, accountID, vehicleID string, at time.Time) (core.Current, error) {
@@ -291,15 +298,20 @@ func (d *Deriver) HealthReadings(ctx context.Context, accountID, vehicleID strin
 }
 
 func (d *Deriver) run(ctx context.Context, accountID, vehicleID string, c core.Cursor) (core.Result, error) {
-	records, err := d.records(ctx, accountID, vehicleID, c.From)
-	if err != nil {
-		return core.Result{}, err
-	}
 	var net core.NetCapacity
 	if d.caps != nil {
+		var err error
 		if net, err = d.caps.NetCapacity(ctx, accountID, vehicleID); err != nil {
 			return core.Result{}, fmt.Errorf("net capacity: %w", err)
 		}
+	}
+	return d.derive(ctx, accountID, vehicleID, c, net)
+}
+
+func (d *Deriver) derive(ctx context.Context, accountID, vehicleID string, c core.Cursor, net core.NetCapacity) (core.Result, error) {
+	records, err := d.records(ctx, accountID, vehicleID, c.From)
+	if err != nil {
+		return core.Result{}, err
 	}
 	// The sessions first: saved after the events, a failure would leave the cursor
 	// advanced past the responses that hold them, never read again but by a rebuild.

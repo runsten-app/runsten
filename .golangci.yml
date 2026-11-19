@@ -93,12 +93,46 @@ linters:
           deny:
             - pkg: runsten/premium
               desc: premium is referenced only by the premium build files
-        # The simulator is used only by its binary and by tests.
+        # The simulator is used only by its binary and by tests, but for the demo vehicle,
+        # which runs on its pure models (below).
         simulator-only-in-tests:
-          files: ["**/internal/**", "!**/internal/simulator/**", "!$test"]
+          files: ["**/internal/**", "!**/internal/simulator/**", "!**/internal/demo/**", "!$test"]
           deny:
             - pkg: runsten/internal/simulator
               desc: the simulator is only for tests and runsten-simulator
+        # The demo vehicle is the one exception: it drives the simulator's pure vehicle model
+        # with its scenario engine, and never a provider's handler, nor the network.
+        demo-uses-the-models-only:
+          files: ["**/internal/demo/**", "!$test"]
+          deny:
+            - pkg: runsten/internal/simulator/volvoapi
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/polestarapi
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/teslaapi
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/polestaridapi
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/bmwapi
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/pleosapi
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/skodaapi
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/renaultapi
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/aximoteapi
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/control
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/pgledger
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: net/http
+              desc: the demo vehicle makes no call
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: the binaries save its readings
         # The collector orchestrates: it knows neither the transport nor the database.
         collector-without-adapters:
           files: ["**/internal/collector/*.go", "!$test"]
@@ -129,6 +163,8 @@ linters:
               desc: the collector declares its own Source, which collector/skodasource adapts the MyŠkoda client to
             - pkg: runsten/internal/renault
               desc: the collector declares its own Source, which collector/renaultsource adapts the My Renault client to
+            - pkg: runsten/internal/demo
+              desc: the collector declares its own Source, which collector/demosource adapts the demo vehicle to
         # The collector's Polestar source adapts the client: no transport, no storage.
         polestarsource-adapts:
           files: ["**/internal/collector/polestarsource/**", "!$test"]
@@ -189,6 +225,16 @@ linters:
               desc: storage belongs to store
             - pkg: runsten/internal/store
               desc: the binary reads the credential from the store
+        # The collector's demo source adapts the demo vehicle: no transport, no storage.
+        demosource-adapts:
+          files: ["**/internal/collector/demosource/**", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the demo vehicle makes no call
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: the binaries save its readings
         # The addresses' worker orchestrates: it knows neither the transport nor the database.
         geocode-without-adapters:
           files: ["**/internal/geocode/*.go", "!$test"]
