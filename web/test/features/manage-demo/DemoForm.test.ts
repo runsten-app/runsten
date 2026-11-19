@@ -113,11 +113,17 @@ describe('DemoForm', () => {
     form(none)
     await w().find('.connect').trigger('click')
     await flushPromises()
-    expect(w().find('.error').text()).toBe(text)
+    expect(w().find('.error-summary h2').text()).toBe('The demo vehicle was not connected')
+    expect(
+      w()
+        .findAll('.error-summary li')
+        .map((li) => li.text()),
+    ).toEqual([text])
+    expect(document.activeElement).toBe(w().find('.error-summary').element)
     expect(w().find('.connect').exists()).toBe(true)
   })
 
-  it('deletes it once confirmed, and puts the focus on the button that connects it again', async () => {
+  it('deletes it once confirmed, and tells the page, which has the focus from there', async () => {
     api.deleteDemo.mockResolvedValue(undefined)
     form(given)
     await w().find('.disconnect').trigger('click')
@@ -126,10 +132,9 @@ describe('DemoForm', () => {
     document.querySelector<HTMLButtonElement>('.confirm-disconnect')?.click()
     await flushPromises()
     expect(api.deleteDemo).toHaveBeenCalled()
-    props.connection = none
-    await flushPromises()
-    expect(status()).toBe('Demo vehicle disconnected.')
-    expect(document.activeElement).toBe(w().find('.connect').element)
+    expect(w().findComponent(DemoForm).emitted('disconnected')).toHaveLength(1)
+    // The dialog's close does not take the focus back to a button that is going.
+    expect(document.activeElement).not.toBe(w().find('.disconnect').element)
   })
 
   it('keeps it when the confirmation is cancelled, the focus back on its button', async () => {

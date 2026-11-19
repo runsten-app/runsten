@@ -2587,6 +2587,7 @@
       "error": "Das Demo-Fahrzeug konnte nicht gelöscht werden. Versuchen Sie es gleich noch einmal."
     },
     "error": {
+      "summary": "Das Demo-Fahrzeug wurde nicht verbunden",
       "featureUnavailable": "Das Demo-Fahrzeug wird auf dieser Instanz nicht angeboten.",
       "tooManyVehicles": "Mit dem Demo-Fahrzeug hätte Ihr Konto mehr Fahrzeuge, als ihm zusteht: Es wurde nicht verbunden.",
       "notAdmitted": "Ihr Konto muss erst einen Schritt tun, etwa Bedingungen annehmen: die Seite neu laden. Das Demo-Fahrzeug wurde nicht verbunden.",

@@ -2587,6 +2587,7 @@
       "error": "Demobilen kunne ikke slettes. Prøv igjen om litt."
     },
     "error": {
+      "summary": "Demobilen ble ikke koblet til",
       "featureUnavailable": "Demobilen tilbys ikke på denne instansen.",
       "tooManyVehicles": "Med demobilen ville kontoen din hatt flere kjøretøy enn den kan ha: den ble ikke koblet til.",
       "notAdmitted": "Kontoen din må først ta et steg, som å godta vilkår: last siden på nytt. Demobilen ble ikke koblet til.",

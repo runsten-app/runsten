@@ -2587,6 +2587,7 @@
       "error": "Le véhicule de démonstration n’a pas pu être supprimé. Réessayez dans un instant."
     },
     "error": {
+      "summary": "Le véhicule de démonstration n’a pas été connecté",
       "featureUnavailable": "Le véhicule de démonstration n’est pas proposé sur cette instance.",
       "tooManyVehicles": "Avec le véhicule de démonstration, votre compte aurait plus de véhicules qu’il ne peut : il n’a pas été connecté.",
       "notAdmitted": "Votre compte doit d’abord franchir une étape, comme accepter des conditions : rechargez la page. Le véhicule de démonstration n’a pas été connecté.",

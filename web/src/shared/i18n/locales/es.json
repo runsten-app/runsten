@@ -2587,6 +2587,7 @@
       "error": "No se pudo eliminar el vehículo de demostración. Inténtelo de nuevo en un momento."
     },
     "error": {
+      "summary": "El vehículo de demostración no se conectó",
       "featureUnavailable": "El vehículo de demostración no se ofrece en esta instancia.",
       "tooManyVehicles": "Con el vehículo de demostración, su cuenta tendría más vehículos de los que puede: no se conectó.",
       "notAdmitted": "Su cuenta debe dar primero un paso, como aceptar condiciones: recargue la página. El vehículo de demostración no se conectó.",

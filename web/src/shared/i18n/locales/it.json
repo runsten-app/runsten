@@ -2587,6 +2587,7 @@
       "error": "Non è stato possibile eliminare il veicolo dimostrativo. Riprova tra un momento."
     },
     "error": {
+      "summary": "Il veicolo dimostrativo non è stato collegato",
       "featureUnavailable": "Il veicolo dimostrativo non è offerto su questa istanza.",
       "tooManyVehicles": "Con il veicolo dimostrativo il tuo account avrebbe più veicoli di quanti ne può avere: non è stato collegato.",
       "notAdmitted": "Il tuo account deve prima compiere un passo, come accettare dei termini: ricarica la pagina. Il veicolo dimostrativo non è stato collegato.",

@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import type { ConnectionSettings } from '@/entities/connection'
 import { isApiError } from '@/shared/api'
 import { useFormat, useNow } from '@/shared/lib'
-import { FactItem } from '@/shared/ui'
+import { ErrorSummary, FactItem } from '@/shared/ui'
 import { useConnectDemo } from '../composables/useConnectDemo'
 import { useDisconnectDemo } from '../composables/useDisconnectDemo'
 
@@ -15,7 +15,10 @@ import { useDisconnectDemo } from '../composables/useDisconnectDemo'
 // trips and charges, behind a confirmation. off: the source is turned off for the account
 // (the flag): a demo vehicle connected before stays told and can be removed; none is
 // connected.
+// disconnected: the vehicle is deleted. The page tells and moves the focus, not the form:
+// with the flag off, nothing keeps the form on the page once the connection is read again.
 const props = defineProps<{ connection: ConnectionSettings; off?: boolean }>()
+const emit = defineEmits<{ disconnected: [] }>()
 const { t } = useI18n()
 const f = useFormat()
 const now = useNow()
@@ -25,7 +28,7 @@ const {
   isPending: deletePending,
   error: deleteError,
   reset: resetDelete,
-} = useDisconnectDemo()
+} = useDisconnectDemo(() => emit('disconnected'))
 
 const demo = computed(() => props.connection.demo ?? null)
 const status = ref('')
@@ -42,6 +45,8 @@ const errorText = computed(() => {
   return t('demo.error.internal')
 })
 
+const summaryRef = ref<InstanceType<typeof ErrorSummary> | null>(null)
+
 async function submit() {
   status.value = ''
   reset()
@@ -51,12 +56,14 @@ async function submit() {
     await nextTick()
     document.getElementById(disconnectId)?.focus()
   } catch {
-    // Told by the alert.
+    // Told in the summary, which takes the focus.
+    await nextTick()
+    summaryRef.value?.focus()
   }
 }
 
 const confirming = ref(false)
-// deleted: the vehicle is deleted, the connection not yet read again without it.
+// deleted: the dialog closes on a deletion, and the page has the focus from there.
 const deleted = ref(false)
 
 function askDelete() {
@@ -75,20 +82,11 @@ async function confirmDelete() {
   }
 }
 
-// Once the dialog closes, the focus goes back to its button, unless the vehicle is
-// deleted: that button goes with it, and the focus to the one that connects it again,
-// once the connection says so.
+// Once the dialog closes without a deletion, the focus goes back to its button.
 watch(confirming, async (v) => {
   if (v || deleted.value) return
   await nextTick()
   document.getElementById(disconnectId)?.focus()
-})
-watch([demo, deleted], async ([d, done]) => {
-  if (d || !done) return
-  deleted.value = false
-  status.value = t('demo.disconnected')
-  await nextTick()
-  document.getElementById(connectId)?.focus()
 })
 </script>
 
@@ -102,9 +100,13 @@ watch([demo, deleted], async ([d, done]) => {
     </dl>
 
     <template v-if="!demo && !off">
-      <v-alert v-if="errorText" type="error" variant="tonal" class="error mb-4">
-        {{ errorText }}
-      </v-alert>
+      <ErrorSummary
+        v-if="errorText"
+        ref="summaryRef"
+        :title="t('demo.error.summary')"
+        :items="[{ text: errorText }]"
+        class="error"
+      />
       <div class="d-flex flex-wrap align-center ga-3">
         <v-btn
           :id="connectId"

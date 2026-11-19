@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { mdiArrowLeft } from '@mdi/js'
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { limitsPage } from '@/entities/session'
@@ -242,6 +242,28 @@ const tab = computed<Brand>({
     void router.replace({ query: route.query, hash: `#${b}` })
   },
 })
+// The demo vehicle deleted: the page tells it, in a region that stays whatever the tabs
+// become (with the flag off, the Demo tab goes with its vehicle), and puts the focus on the
+// button that connects it again, or on the tab that is left.
+const notice = ref('')
+const demoDeleted = ref(false)
+// Once the connection no longer has the demo vehicle: the refetch may come before the form
+// says the vehicle is deleted, or after.
+async function focusAfterDemo() {
+  if (!demoDeleted.value || settings.value?.demo) return
+  demoDeleted.value = false
+  await nextTick()
+  const target =
+    document.getElementById('demo-connect') ??
+    document.getElementById(`connection-tab-${tab.value}`)
+  target?.focus()
+}
+function demoDisconnected() {
+  notice.value = t('demo.disconnected')
+  demoDeleted.value = true
+  void focusAfterDemo()
+}
+watch(() => settings.value?.demo, focusAfterDemo)
 // The states the user is warned of, the vehicles the account's limits leave unread aside,
 // as the user menu's dot.
 const attention = (v: Vehicle) => {
@@ -277,6 +299,7 @@ const alerted = computed(
     </v-btn>
     <h1 class="text-headline-small mb-2">{{ t('connection.title') }}</h1>
     <p class="text-body-medium mb-6">{{ t('connection.intro') }}</p>
+    <p role="status" class="text-body-medium notice">{{ notice }}</p>
 
     <v-alert
       v-if="outcome"
@@ -542,7 +565,12 @@ const alerted = computed(
               {{ t('connection.demo.off') }}
             </p>
             <!-- Off, a demo vehicle connected before stays told, and can be removed. -->
-            <DemoForm v-if="demoOn || settings.demo" :connection="settings" :off="!demoOn" />
+            <DemoForm
+              v-if="demoOn || settings.demo"
+              :connection="settings"
+              :off="!demoOn"
+              @disconnected="demoDisconnected"
+            />
           </section>
           <section v-else-if="b === 'bmw'" class="mb-8" aria-labelledby="connection-bmw-title">
             <h2 id="connection-bmw-title" class="text-title-large mb-3">

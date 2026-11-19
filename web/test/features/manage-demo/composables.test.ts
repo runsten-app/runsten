@@ -41,6 +41,7 @@ describe('useDisconnectDemo', () => {
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
     await result.disconnect()
     expect(api.deleteDemo).toHaveBeenCalled()
+    // Not awaited, but started at once.
     expect(keys(invalidate)).toEqual(stale)
   })
 })

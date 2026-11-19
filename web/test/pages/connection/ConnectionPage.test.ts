@@ -59,7 +59,11 @@ vi.mock('@/pages/connection/extensions', () => ({
   },
 }))
 
-const mocks = vi.hoisted(() => ({ fetchVehicles: vi.fn(), fetchConnection: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  fetchVehicles: vi.fn(),
+  fetchConnection: vi.fn(),
+  deleteDemo: vi.fn(),
+}))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
   fetchVehicles: mocks.fetchVehicles,
@@ -67,6 +71,7 @@ vi.mock('@/entities/vehicle', async (original) => ({
 vi.mock('@/entities/connection', async (original) => ({
   ...(await original<typeof import('@/entities/connection')>()),
   fetchConnection: mocks.fetchConnection,
+  deleteDemo: mocks.deleteDemo,
 }))
 
 // Self-hosting: the instance's key reads the vehicles.
@@ -117,6 +122,7 @@ beforeEach(() => {
   mocks.fetchVehicles.mockResolvedValue(items)
   mocks.fetchConnection.mockReset()
   mocks.fetchConnection.mockResolvedValue(selfHosted)
+  mocks.deleteDemo.mockReset()
   vi.useFakeTimers({ now: Date.parse('2026-09-28T07:05:00Z'), toFake: ['Date'] })
 })
 afterEach(() => {
@@ -1229,6 +1235,33 @@ describe('ConnectionPage', () => {
       mocks.fetchVehicles.mockResolvedValue([...items, demoCar()])
       const w = await page()
       expect(w.find('#connection-tab-demo').exists()).toBe(true)
+    })
+
+    it('tells the deletion in the page, and focuses the connect button, or the tab that is left', async () => {
+      mocks.deleteDemo.mockResolvedValue(undefined)
+      const connected = { ...selfHosted, demo: { set_at: '2026-09-28T05:00:00Z' } }
+      for (const on of [true, false]) {
+        flag.demo = on
+        mocks.fetchConnection.mockResolvedValue(connected)
+        const w = await page()
+        document.body.append(w.element)
+        await w.find('#connection-tab-demo').trigger('click')
+        await vi.waitFor(() =>
+          expect(w.find('#connection-panel-demo .disconnect').exists()).toBe(true),
+        )
+        mocks.fetchConnection.mockResolvedValue(selfHosted)
+        await w.find('#connection-panel-demo .disconnect').trigger('click')
+        await flushPromises()
+        document.querySelector<HTMLButtonElement>('.confirm-disconnect')?.click()
+        await vi.waitFor(() =>
+          expect(w.find('[role="status"].notice').text()).toBe('Demo vehicle disconnected.'),
+        )
+        await vi.waitFor(() =>
+          expect(document.activeElement?.id).toBe(on ? 'demo-connect' : 'connection-tab-volvo'),
+        )
+        expect(w.find('#connection-tab-demo').exists()).toBe(on)
+        w.unmount()
+      }
     })
 
     it('keeps its tab while its flag is off for an account that has one, to disconnect it', async () => {

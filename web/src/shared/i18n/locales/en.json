@@ -2587,6 +2587,7 @@
       "error": "The demo vehicle could not be deleted. Try again in a moment."
     },
     "error": {
+      "summary": "The demo vehicle was not connected",
       "featureUnavailable": "The demo vehicle is not offered on this instance.",
       "tooManyVehicles": "With the demo vehicle, your account would have more vehicles than it may: it was not connected.",
       "notAdmitted": "Your account must take a step first, such as accepting terms: reload the page. The demo vehicle was not connected.",

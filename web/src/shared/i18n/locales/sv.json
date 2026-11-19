@@ -2587,6 +2587,7 @@
       "error": "Demofordonet kunde inte tas bort. Försök igen om en stund."
     },
     "error": {
+      "summary": "Demofordonet anslöts inte",
       "featureUnavailable": "Demofordonet erbjuds inte på den här instansen.",
       "tooManyVehicles": "Med demofordonet skulle ditt konto ha fler fordon än det får: det anslöts inte.",
       "notAdmitted": "Ditt konto måste först ta ett steg, som att godkänna villkor: ladda om sidan. Demofordonet anslöts inte.",

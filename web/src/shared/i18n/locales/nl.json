@@ -2587,6 +2587,7 @@
       "error": "Het demovoertuig kon niet worden verwijderd. Probeer het zo meteen opnieuw."
     },
     "error": {
+      "summary": "Het demovoertuig werd niet gekoppeld",
       "featureUnavailable": "Het demovoertuig wordt op deze instantie niet aangeboden.",
       "tooManyVehicles": "Met het demovoertuig zou uw account meer voertuigen hebben dan toegestaan: het werd niet gekoppeld.",
       "notAdmitted": "Uw account moet eerst een stap zetten, zoals voorwaarden aanvaarden: laad de pagina opnieuw. Het demovoertuig werd niet gekoppeld.",
