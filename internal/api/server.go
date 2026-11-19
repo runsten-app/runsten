@@ -329,6 +329,9 @@ type Config struct {
 	// check (RUNSTEN_UPDATE_CHECK).
 	Version  string
 	Releases Releases
+	// Map are the instance's map tiles, the web interface's, told to the API's other
+	// clients; nil: the instance has no maps.
+	Map *MapTiles
 
 	// Brokers keeps the account's MQTT broker. PublicBrokersOnly: the instance
 	// publishes to brokers on the Internet only, over TLS (the hosted offer's rule).

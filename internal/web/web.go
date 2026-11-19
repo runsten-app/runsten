@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"runsten/internal/platform/httpserver"
+	"runsten/internal/platform/maptiles"
 )
 
 // Placeholders of web/index.html, filled by the server.
@@ -41,38 +42,8 @@ const csp = "default-src 'none'; script-src 'self'; style-src 'self' 'nonce-%s';
 	"frame-ancestors 'none'"
 
 // MapTiles are where the maps' tiles come from, and the attribution their provider
-// requires, as plain text. The URL is either raster tiles, with {z}, {x} and {y}, as
-// https://tile.openstreetmap.org/{z}/{x}/{y}.png, or a PMTiles file of vector tiles
-// (Protomaps), its path ending in .pmtiles. The browser fetches them itself: the host
-// learns the user's address and the areas they look at.
-type MapTiles struct {
-	URL, Attribution string
-}
-
-// vector tells whether the tiles are a PMTiles file.
-func (t MapTiles) vector() bool {
-	u, err := url.Parse(t.URL)
-	return err == nil && strings.HasSuffix(u.Path, ".pmtiles")
-}
-
-// origin checks the URL of the tiles and gives their origin, for the CSP.
-func (t MapTiles) origin() (string, error) {
-	if !t.vector() {
-		for _, p := range []string{"{z}", "{x}", "{y}"} {
-			if !strings.Contains(t.URL, p) {
-				return "", fmt.Errorf("map tiles %q: no %s, nor a .pmtiles file", t.URL, p)
-			}
-		}
-	}
-	u, err := url.Parse(strings.NewReplacer("{z}", "0", "{x}", "0", "{y}", "0").Replace(t.URL))
-	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || strings.ContainsAny(u.Host, "{}") {
-		return "", fmt.Errorf("map tiles %q: an http(s) URL with {z}, {x} and {y}, or of a .pmtiles file, expected, its host fixed", t.URL)
-	}
-	if t.Attribution == "" {
-		return "", fmt.Errorf("map tiles %q: an attribution is required", t.URL)
-	}
-	return u.Scheme + "://" + u.Host, nil
-}
+// requires: the browser fetches them itself, from their origin, which the CSP allows.
+type MapTiles = maptiles.Tiles
 
 // relayed are the path prefixes that belong to runsten-api: its JSON API, the Volvo ID
 // flow, whose callback is registered on the host users open (this one), and the OAuth
@@ -151,11 +122,11 @@ func New(cfg Config) (http.Handler, error) {
 		s.rand = rand.Reader
 	}
 	if m := cfg.Map; m != nil {
-		origin, err := m.origin()
+		origin, err := m.Origin()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("checking the map tiles: %w", err)
 		}
-		if m.vector() {
+		if m.Vector() {
 			s.conSrc = " " + origin
 		} else {
 			s.imgSrc = " " + origin

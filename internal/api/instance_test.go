@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
@@ -16,17 +17,17 @@ type fakeReleases struct {
 func (f fakeReleases) Latest() (time.Time, Release, bool) { return f.checkedAt, f.update, f.ok }
 
 // TestInstanceJSON: the release running, without a check, with one and nothing newer,
-// and with a newer release out.
+// and with a newer release out; the map tiles, none then raster or vector ones.
 func TestInstanceJSON(t *testing.T) {
 	e, c := readerEnv(t)
 	u := e.api.URL + "/api/v1/instance"
 	e.server.Version = "0.11.0"
 
-	if _, body := get(t, noFollow(), u, c); body != `{"version":"0.11.0","update_check":false,"checked_at":null,"update":null}`+"\n" {
+	if _, body := get(t, noFollow(), u, c); body != `{"version":"0.11.0","update_check":false,"checked_at":null,"update":null,"map_tiles":null}`+"\n" {
 		t.Errorf("no check: %s", body)
 	}
 	e.server.Releases = fakeReleases{}
-	if _, body := get(t, noFollow(), u, c); body != `{"version":"0.11.0","update_check":true,"checked_at":null,"update":null}`+"\n" {
+	if _, body := get(t, noFollow(), u, c); body != `{"version":"0.11.0","update_check":true,"checked_at":null,"update":null,"map_tiles":null}`+"\n" {
 		t.Errorf("not read yet: %s", body)
 	}
 	read := time.Date(2026, 10, 26, 11, 0, 0, 0, time.FixedZone("CET", 3600))
@@ -42,6 +43,14 @@ func TestInstanceJSON(t *testing.T) {
 		t.Fatalf("status %d: %s", resp.status, body)
 	}
 	golden(t, "instance-update.json", body)
+
+	e.server.Map = &MapTiles{URL: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", Attribution: "© OpenStreetMap contributors"}
+	_, body = get(t, noFollow(), u, c)
+	golden(t, "instance-maps.json", body)
+	e.server.Map = &MapTiles{URL: "https://maps.example/europe.pmtiles", Attribution: "© Someone"}
+	if _, body := get(t, noFollow(), u, c); !strings.HasSuffix(body, `"map_tiles":{"url":"https://maps.example/europe.pmtiles","attribution":"© Someone"}}`+"\n") {
+		t.Errorf("vector tiles: %s", body)
+	}
 
 	resp, body = get(t, noFollow(), u)
 	if resp.status != http.StatusUnauthorized {

@@ -55,6 +55,7 @@ A request body is sent as `application/json`, but the files of an import, as `mu
 | `GET`, `POST /api/v1/places` | the places, with their tariffs; create one |
 | `GET`, `PUT`, `DELETE /api/v1/places/{place}` | one place; replace it whole, tariff included; delete it |
 | `GET /api/v1/places/{place}/unpriced` | the place's charges that started before its tariff's first day |
+| `GET /api/v1/instance` | the release the instance runs and a newer one, and its map tiles (`map_tiles`: the tiles' `url` and their `attribution`, `null` when the instance has no maps, see [Maps](../self-hosting/maps.md)) |
 | `GET /api/v1/charge-costs/orphans` | the entered costs that no charge takes any more |
 | `PUT /api/v1/charge-costs/orphans/{cost}/charge`, `DELETE …/orphans/{cost}` | attach one to a charge; delete it |
 

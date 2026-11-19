@@ -131,12 +131,13 @@ var allowed = map[string][]string{
 	},
 	"internal/debugui": {"net/http", "encoding/json", "internal/collector", "internal/platform/clock", "internal/volvo"},
 	// The front end's server knows runsten-api only by URL: it relays requests.
-	"internal/web": {"net/http", "internal/platform/httpserver"},
+	"internal/web": {"net/http", "internal/platform/httpserver", "internal/platform/maptiles"},
 
 	// Technical building blocks: no business code.
 	"internal/platform/clock":      nil,
 	"internal/platform/health":     {"net/http", "encoding/json", "internal/platform/clock"},
 	"internal/platform/httpserver": {"net/http"},
+	"internal/platform/maptiles":   nil,
 	"internal/platform/netguard":   nil,
 	"internal/platform/secretbox":  nil,
 
