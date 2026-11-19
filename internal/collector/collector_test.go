@@ -654,10 +654,12 @@ func TestTwoVehiclesShareTheQuota(t *testing.T) {
 	}
 }
 
-// scriptedAPI returns an error for some endpoints, an empty JSON otherwise.
+// scriptedAPI returns an error for some endpoints, a body for others, an empty JSON
+// otherwise.
 type scriptedAPI struct {
-	errs  map[volvo.Endpoint]error
-	calls map[volvo.Endpoint]int
+	errs   map[volvo.Endpoint]error
+	bodies map[volvo.Endpoint][]byte
+	calls  map[volvo.Endpoint]int
 }
 
 func (s *scriptedAPI) Fetch(_ context.Context, _, _, _ string, ep volvo.Endpoint) ([]byte, error) {
@@ -667,6 +669,9 @@ func (s *scriptedAPI) Fetch(_ context.Context, _, _, _ string, ep volvo.Endpoint
 	s.calls[ep]++
 	if err := s.errs[ep]; err != nil {
 		return nil, err
+	}
+	if b, ok := s.bodies[ep]; ok {
+		return b, nil
 	}
 	return []byte(`{}`), nil
 }
@@ -783,6 +788,56 @@ func TestFailures(t *testing.T) {
 		_ = c.PollOnce(context.Background())
 		if api.calls[volvo.Brakes] != 4 {
 			t.Errorf("brakes called %d times once answered", api.calls[volvo.Brakes])
+		}
+	})
+
+	// A Volvo without the Energy API (a combustion or mild-hybrid car) answers its
+	// energy-state with a plain 404: the endpoint is missing, as an optional one, while
+	// the market's 404 (above) keeps marking the market.
+	t.Run("energy-state missing: no failure, tried again at the details' pace", func(t *testing.T) {
+		clk := clock.NewManual(t0)
+		api := &scriptedAPI{errs: map[volvo.Endpoint]error{
+			volvo.EnergyState: &volvo.APIError{Kind: volvo.KindNotFound, Status: 404, Message: "NOT_FOUND"},
+		}}
+		var logs bytes.Buffer
+		st := &memStore{targets: []Target{target()}}
+		c := New(api, st, fixedToken{}, clk, iv, DefaultQuota(), slog.New(slog.NewTextHandler(&logs, nil)), nil, nil)
+		for range 25 * 6 { // 25 hours
+			_ = c.PollOnce(context.Background())
+			clk.Advance(iv.Parked)
+		}
+		if api.calls[volvo.EnergyState] != 2 || api.calls[volvo.EngineStatus] < 25*6 {
+			t.Errorf("calls: %v, want energy-state twice, at the details' pace", api.calls)
+		}
+		for _, s := range st.statuses {
+			if !s.Failure.At.IsZero() {
+				t.Fatalf("failure told: %+v", s.Failure)
+			}
+		}
+		if len(st.markets) != 0 {
+			t.Errorf("markets refused: %v", st.markets)
+		}
+		if n := strings.Count(logs.String(), "endpoint unavailable"); n != 1 {
+			t.Errorf("logged %d times:\n%s", n, &logs)
+		}
+	})
+
+	t.Run("energy-state missing while charging: the charge is no longer known", func(t *testing.T) {
+		clk := clock.NewManual(t0)
+		api := &scriptedAPI{bodies: map[volvo.Endpoint][]byte{
+			volvo.EnergyState: []byte(`{"chargingStatus":{"status":"OK","value":"CHARGING"}}`),
+		}}
+		rec := &recorder{}
+		c := New(api, &memStore{targets: []Target{target()}}, fixedToken{}, clk, iv, DefaultQuota(), quiet, rec, nil)
+		_ = c.PollOnce(context.Background())
+		if s := rec.states[len(rec.states)-1]; s.Mode != "charging" || s.Charging != "CHARGING" {
+			t.Fatalf("state: %+v, want charging", s)
+		}
+		api.errs = map[volvo.Endpoint]error{volvo.EnergyState: &volvo.APIError{Kind: volvo.KindNotFound, Status: 404}}
+		clk.Advance(iv.Active)
+		_ = c.PollOnce(context.Background())
+		if s := rec.states[len(rec.states)-1]; s.Mode != "parked" || s.Charging != "" {
+			t.Errorf("state: %+v, want parked, its charging state unknown", s)
 		}
 	})
 }

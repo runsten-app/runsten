@@ -1164,7 +1164,8 @@ func (c *Collector) setActivity(t Target, vs *vehicleState, src *source, a Activ
 
 func (c *Collector) fetchFailed(ctx context.Context, t Target, vs *vehicleState, ep volvo.Endpoint, now time.Time, err error) {
 	var apiErr *volvo.APIError
-	if errors.As(err, &apiErr) && ((optional(ep) && missingEndpoint(apiErr)) || c.endpointRefused(t, ep, apiErr)) {
+	if errors.As(err, &apiErr) && ((optional(ep) && missingEndpoint(apiErr)) || energyMissing(ep, apiErr) ||
+		c.endpointRefused(t, ep, apiErr)) {
 		// Not a failure the user can act upon: tried again at the details' pace, logged
 		// once until it answers.
 		if _, logged := vs.missing[Endpoint(ep)]; !logged {
@@ -1172,6 +1173,13 @@ func (c *Collector) fetchFailed(ctx context.Context, t Target, vs *vehicleState,
 				"status", apiErr.Status)
 		}
 		vs.missing[Endpoint(ep)] = now.Add(c.detailsInterval(t, c.volvo))
+		if ep == volvo.EnergyState && (vs.activity.Charges || vs.activity.Charging != "") {
+			// The charging state came from it alone: none is known while it is missing,
+			// rather than a charge that would keep the vehicle in the charging mode.
+			a := vs.activity
+			a.Charging, a.Charges = "", false
+			c.setActivity(t, vs, c.volvo, a, now)
+		}
 		return
 	}
 	vs.failure = Failure{At: now, Endpoint: Endpoint(ep), Kind: FailUnavailable}
@@ -1245,6 +1253,13 @@ func (c *Collector) endpointRefused(t Target, ep volvo.Endpoint, e *volvo.APIErr
 // missing from the token is such a 403 (not observed).
 func missingEndpoint(e *volvo.APIError) bool {
 	return e.Kind == volvo.KindNotFound || (e.Kind == volvo.KindOther && e.Status == http403)
+}
+
+// energyMissing reports whether e tells that the vehicle has no Energy API: a plain 404
+// on energy-state, as a combustion or mild-hybrid car answers it. The market's refusal is
+// a 404 there too, but KindMarket, and keeps its own path.
+func energyMissing(ep volvo.Endpoint, e *volvo.APIError) bool {
+	return ep == volvo.EnergyState && e.Kind == volvo.KindNotFound
 }
 
 func failureKind(e *volvo.APIError) string {
