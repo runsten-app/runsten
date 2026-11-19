@@ -27,21 +27,35 @@ const (
 )
 
 // SetDemoConnection implements api.DemoConnections: the account's demo connection, set
-// at at, created if it has none; it returns its ID.
+// at at, created if it has none; it returns its ID. It is pending, as a refused credential
+// is (credential_refused_at at): the collector leaves a connection so marked alone, so
+// that it reads nothing of the vehicle before its history is written; DemoReady clears
+// the mark.
 func (s *Store) SetDemoConnection(ctx context.Context, accountID string, at time.Time) (string, error) {
 	var id string
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		return tx.QueryRow(ctx, `
-			INSERT INTO connections (account_id, provider, credential, credential_set_at, credential_last4)
-			VALUES ($1, $2, $3, $4, $5)
+			INSERT INTO connections (account_id, provider, credential, credential_set_at, credential_last4, credential_refused_at)
+			VALUES ($1, $2, $3, $4, $5, $4)
 			ON CONFLICT (account_id, provider) DO UPDATE SET
 				credential = EXCLUDED.credential, credential_set_at = EXCLUDED.credential_set_at,
-				credential_last4 = EXCLUDED.credential_last4, credential_refused_at = NULL, updated_at = now()
+				credential_last4 = EXCLUDED.credential_last4, credential_refused_at = EXCLUDED.credential_refused_at,
+				updated_at = now()
 			RETURNING id`,
 			accountID, providerDemo, s.box.Seal([]byte(demoMarker), credentialData(accountID)),
 			at.Truncate(time.Microsecond), demoLast4).Scan(&id)
 	})
 	return id, err
+}
+
+// DemoReady implements api.DemoConnections: the history is written, the connection no
+// longer pending.
+func (s *Store) DemoReady(ctx context.Context, accountID string) error {
+	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, `UPDATE connections SET credential_refused_at = NULL, updated_at = now()
+			WHERE provider = $1`, providerDemo)
+		return err //nolint:wrapcheck // wrapped by inAccount
+	})
 }
 
 // DemoConnection implements api.DemoConnections: the account's demo connection; a zero

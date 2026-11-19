@@ -29,16 +29,28 @@ func TestDemoConnection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Pending until its history is written: the collector leaves it alone, so as to read
+	// nothing of the vehicle before then.
 	targets := targetsOf(t, s, a)
-	if got := targets[vehicle]; got.Provider != "demo" || got.ConnectionID != conn || !got.CredentialSetAt.Equal(t0) || got.CredentialRefused {
-		t.Fatalf("target %+v", got)
+	if got := targets[vehicle]; got.Provider != "demo" || got.ConnectionID != conn || !got.CredentialSetAt.Equal(t0) || !got.CredentialRefused {
+		t.Fatalf("target while pending %+v", got)
 	}
-	c, err := s.DemoConnection(ctx, a)
-	if err != nil || c.ID != conn || c.Last4 != "demo" || !c.SetAt.Equal(t0) {
-		t.Errorf("connection %+v, %v", c, err)
+	if c, err := s.DemoConnection(ctx, a); err != nil || c.ID != conn || c.Last4 != "demo" || !c.SetAt.Equal(t0) || !c.RefusedAt.Equal(t0) {
+		t.Errorf("connection while pending %+v, %v", c, err)
+	}
+	if err := s.DemoReady(ctx, a); err != nil {
+		t.Fatal(err)
+	}
+	if got := targetsOf(t, s, a)[vehicle]; got.CredentialRefused || !got.CredentialSetAt.Equal(t0) {
+		t.Fatalf("target once ready %+v", got)
+	}
+	if c, err := s.DemoConnection(ctx, a); err != nil || !c.RefusedAt.IsZero() {
+		t.Errorf("connection once ready %+v, %v", c, err)
 	}
 	if again, err := s.SetDemoConnection(ctx, a, t0.Add(time.Hour)); err != nil || again != conn {
 		t.Errorf("set again: %s, %v", again, err)
+	} else if c, _ := s.DemoConnection(ctx, a); c.RefusedAt.IsZero() {
+		t.Error("a connection set again is not pending")
 	}
 
 	db, err := pgx.Connect(ctx, dbURL)

@@ -226,32 +226,36 @@ func (s *Server) enroll(ctx context.Context, account string, vins []string, notS
 ) error {
 	var refused error
 	err := s.Locks.WithAccountLock(ctx, account, func(ctx context.Context) error {
-		limit, err := s.vehicleCap(ctx, account)
-		switch {
-		case err != nil:
-			refused = s.internal("vehicles not read", err)
-		case limit.Exceeded(vins):
-			refused = s.tooManyVehicles()
-		}
-		if refused != nil {
-			return refused
-		}
-		id, err := store(ctx)
-		if err != nil {
-			refused = s.internal(notStored, err)
-			return refused
-		}
-		if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
-			refused = s.internal("vehicles not recorded", err)
-			return refused
-		}
-		return nil
+		refused = s.enrollLocked(ctx, account, vins, notStored, store)
+		return refused
 	})
 	if refused != nil {
 		return refused
 	}
 	if err != nil {
 		return s.internal("account not locked", err)
+	}
+	return nil
+}
+
+// enrollLocked is enroll for a caller that holds the account's lock already: the lock is
+// not reentrant, a second one would wait for the first.
+func (s *Server) enrollLocked(ctx context.Context, account string, vins []string, notStored string,
+	store func(context.Context) (string, error),
+) error {
+	limit, err := s.vehicleCap(ctx, account)
+	switch {
+	case err != nil:
+		return s.internal("vehicles not read", err)
+	case limit.Exceeded(vins):
+		return s.tooManyVehicles()
+	}
+	id, err := store(ctx)
+	if err != nil {
+		return s.internal(notStored, err)
+	}
+	if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
+		return s.internal("vehicles not recorded", err)
 	}
 	return nil
 }

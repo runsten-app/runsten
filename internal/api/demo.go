@@ -25,8 +25,11 @@ type DemoConnections interface {
 	// DemoConnection returns the account's demo connection; a zero ID: none.
 	DemoConnection(ctx context.Context, accountID string) (CredentialConnection, error)
 	// SetDemoConnection sets the connection at at, created if it has none, and returns its
-	// ID.
+	// ID. It is set pending (RefusedAt is at): the collector leaves it alone, and the user
+	// is not shown it, until DemoReady.
 	SetDemoConnection(ctx context.Context, accountID string, at time.Time) (string, error)
+	// DemoReady ends the pending state: the vehicle's history is written.
+	DemoReady(ctx context.Context, accountID string) error
 	// DeleteDemoConnection deletes the connection and its vehicles with their history.
 	// Nothing to delete is no error.
 	DeleteDemoConnection(ctx context.Context, accountID string) error
@@ -46,15 +49,18 @@ type demoJSON struct {
 	SetAt time.Time `json:"set_at" pattern:"Z$" doc:"When the demo vehicle was connected."`
 }
 
+// demoOf is the connection the user is shown: none while it is pending.
 func demoOf(c CredentialConnection) null[demoJSON] {
-	if c.SetAt.IsZero() {
+	if c.SetAt.IsZero() || !c.RefusedAt.IsZero() {
 		return null[demoJSON]{}
 	}
 	return known(demoJSON{SetAt: c.SetAt})
 }
 
 // putDemo connects the demo vehicle: it enrolls it, writes its history and derives it. An
-// account that has it already gets its connection as it is, nothing written twice.
+// account that has it already, its history written, gets its connection as it is. The
+// whole is under the account's lock, as every enrollment is: a second request waits for
+// the first, and finds it done, or undone.
 func (s *Server) putDemo(ctx context.Context, _ *struct{}) (*body[connectionSettingsJSON], error) {
 	account := sessionFrom(ctx).AccountID
 	if !s.enabled(ctx, flags.SourceDemo, account) {
@@ -63,15 +69,16 @@ func (s *Server) putDemo(ctx context.Context, _ *struct{}) (*body[connectionSett
 	if err := s.admit(ctx, account); err != nil {
 		return nil, err
 	}
-	vin := s.DemoVehicle.VIN()
-	have, err := s.demoVehicle(ctx, account, vin)
-	if err != nil {
-		return nil, err
+	var failed error
+	err := s.Locks.WithAccountLock(ctx, account, func(ctx context.Context) error {
+		failed = s.connectDemo(ctx, account, s.DemoVehicle.VIN())
+		return failed
+	})
+	if failed != nil {
+		return nil, failed
 	}
-	if have == nil {
-		if err := s.connectDemo(ctx, account, vin); err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, s.internal("account not locked", err)
 	}
 	out, err := s.connectionSettings(ctx, account)
 	if err != nil {
@@ -80,12 +87,30 @@ func (s *Server) putDemo(ctx context.Context, _ *struct{}) (*body[connectionSett
 	return respond(out), nil
 }
 
-// connectDemo enrolls the vehicle, then writes its history. A history that cannot be
-// written leaves nothing behind: a vehicle without one would be taken for connected.
+// connectDemo connects the demo vehicle, the account's lock held. The connection is pending
+// until its history is written, so that one left half done (the cleanup after a failure
+// failed too, or the process died) is never taken for connected: the next request deletes it
+// and starts again.
 func (s *Server) connectDemo(ctx context.Context, account, vin string) error {
+	c, err := s.Demo.DemoConnection(ctx, account)
+	if err != nil {
+		return s.internal("demo connection not read", err)
+	}
+	have, err := s.demoVehicle(ctx, account, vin)
+	if err != nil {
+		return err
+	}
+	if c.ID != "" {
+		if !c.SetAt.IsZero() && c.RefusedAt.IsZero() && have != nil {
+			return nil
+		}
+		if err := s.Demo.DeleteDemoConnection(ctx, account); err != nil {
+			return s.internal("demo connection not deleted", err)
+		}
+	}
 	now := s.Clock.Now()
-	if err := s.enroll(ctx, account, []string{vin}, "demo connection not stored", func(ctx context.Context) (string, error) {
-		return s.Demo.SetDemoConnection(ctx, account, now) //nolint:wrapcheck // wrapped by enroll
+	if err := s.enrollLocked(ctx, account, []string{vin}, "demo connection not stored", func(ctx context.Context) (string, error) {
+		return s.Demo.SetDemoConnection(ctx, account, now) //nolint:wrapcheck // wrapped by enrollLocked
 	}); err != nil {
 		return err
 	}
@@ -96,8 +121,12 @@ func (s *Server) connectDemo(ctx context.Context, account, vin string) error {
 	if err == nil {
 		err = s.DemoVehicle.Backfill(ctx, account, v.ID, now, s.netCapacity(*v))
 	}
+	if err == nil {
+		err = s.Demo.DemoReady(ctx, account)
+	}
 	if err != nil {
 		// What it leaves is deleted with a context of its own: the request may be what failed.
+		// Should that fail too, the connection stays pending, and the next request starts again.
 		if derr := s.Demo.DeleteDemoConnection(context.WithoutCancel(ctx), account); derr != nil {
 			s.Log.Error("demo connection not deleted after its history failed", "account", account, "err", derr)
 		}
@@ -125,7 +154,10 @@ var errNoDemoVehicle = errors.New("the demo vehicle is not among the account's")
 
 func (s *Server) deleteDemo(ctx context.Context, _ *struct{}) (*struct{}, error) {
 	account := sessionFrom(ctx).AccountID
-	if err := s.Demo.DeleteDemoConnection(ctx, account); err != nil {
+	// Under the account's lock: not while a connection is being written.
+	if err := s.Locks.WithAccountLock(ctx, account, func(ctx context.Context) error {
+		return s.Demo.DeleteDemoConnection(ctx, account) //nolint:wrapcheck // reported below
+	}); err != nil {
 		return nil, s.internal("demo connection not deleted", err)
 	}
 	s.Log.Info("demo vehicle deleted", "account", account)
