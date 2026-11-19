@@ -7,6 +7,7 @@ import {
   OpeningsSummary,
   type Connection,
   type Doors,
+  type Headline,
   type Reading,
   type Windows,
 } from '@/entities/vehicle'
@@ -22,6 +23,7 @@ const props = defineProps<{
   now: number
   connection: Pick<Connection, 'status'> & Partial<Pick<Connection, 'credential'>>
   health: Health | null
+  headline: Headline
 }>()
 
 const { t } = useI18n()
@@ -45,7 +47,7 @@ const title = computed(() =>
       </StatusPill>
     </v-card-title>
     <v-card-text>
-      <OpeningsSummary v-if="openings" :doors :windows :now :connection sentry-apart />
+      <OpeningsSummary v-if="openings" :doors :windows :now :connection :headline sentry-apart />
       <TyresPart v-if="tyres" :health="tyres" :class="{ part: openings }" />
     </v-card-text>
   </v-card>

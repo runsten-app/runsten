@@ -2,7 +2,7 @@
 import { mdiCarDoor, mdiLock, mdiLockOpenVariant } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { reportLateAfter } from '../model/freshness'
+import { reportLateAfter, type Headline } from '../model/freshness'
 import { openings, type Doors, type OpeningName, type Windows } from '../model/openings'
 import type { Connection, Reading } from '../model/Vehicle'
 import ReadingProvenance from './ReadingProvenance.vue'
@@ -21,6 +21,8 @@ const props = defineProps<{
   connection: Pick<Connection, 'status'> & Partial<Pick<Connection, 'credential'>>
   // Sentry Mode said elsewhere (in the title of the tile that holds the line), not in it.
   sentryApart?: boolean
+  // What the page says above of all its values: the line says only what differs from it.
+  headline?: Headline
 }>()
 
 const { t } = useI18n()
@@ -81,7 +83,9 @@ const reading = computed(() => {
 const measured = computed(() => {
   const ats = [props.doors?.reported_at, props.windows?.reported_at].filter((a): a is string => !!a)
   const at = ats.sort((a, b) => Date.parse(a) - Date.parse(b))[0]
-  return at && props.now - Date.parse(at) > reportLateAfter ? at : null
+  if (!at || props.now - Date.parse(at) <= reportLateAfter) return null
+  const h = props.headline?.at
+  return h && f.dateTime(h, props.now) === f.dateTime(at, props.now) ? null : at
 })
 </script>
 
@@ -103,8 +107,8 @@ const measured = computed(() => {
         t('state.openings.sentry')
       }}</span>
     </div>
-    <div v-if="reading" class="mt-2">
-      <ReadingProvenance :reading="reading" :now="now" :connection="connection" />
+    <div v-if="reading" class="times mt-2">
+      <ReadingProvenance :reading :now :connection :headline />
       <time v-if="measured" :datetime="measured" class="details measured d-block">{{
         t('state.lastReported', { time: f.dateTime(measured, now) })
       }}</time>
@@ -113,6 +117,10 @@ const measured = computed(() => {
 </template>
 
 <style scoped>
+/* Nothing to say beyond the headline: no gap left for it. */
+.times:empty {
+  display: none;
+}
 .row {
   gap: 8px 16px;
 }

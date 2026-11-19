@@ -31,6 +31,7 @@ import {
   type Cable,
   type ChargingStatus,
   type CurrentChargeType,
+  type Headline,
   type Mode,
   type Reading,
   type Sleep,
@@ -46,9 +47,10 @@ import { LevelBar, MapView, StatusPill, TileFigure } from '@/shared/ui'
 import { extensionSleepActions } from '../extensions'
 import OpeningsTile from './OpeningsTile.vue'
 
-// Verdandi: the current state of a vehicle, each value with how fresh it is. Each tile says
-// once when its values were checked and since when they hold, those of its first value;
-// a value that differs says its own. A vehicle asleep or out of reach says it first, in a
+// Verdandi: the current state of a vehicle, each value with how fresh it is. The headline says
+// once for all when the values were checked and its latest time; a tile says of its first
+// value only what differs from it (stale, or since another time), a value of the tile only
+// what differs from that. A vehicle asleep or out of reach says it first, in a
 // band of its own above the tiles. The battery comes first, across; then the charge beside
 // the doors and windows, the vehicle beside its position on a map; the aside slot ends the
 // grid, across (what the vehicle did over the last days).
@@ -119,6 +121,12 @@ const sleep = computed(() => {
   const s = state.value?.sleep
   return s && s.value !== 'awake' ? (s as Reading<Exclude<Sleep, 'awake'>>) : null
 })
+// What the headline says of every value: whether they are stale, and its latest time (since
+// the car sleeps, else its late measure, else the latest check), which the tiles leave out.
+const headline = computed<Headline>(() => ({
+  stale: checkedStale.value,
+  at: sleep.value?.fetched_at ?? reportedLate.value ?? state.value?.checked_at ?? null,
+}))
 const sleepLabels = computed(() => ({
   asleep: t('state.sleep.asleep'),
   offline: t('state.sleep.offline'),
@@ -461,7 +469,12 @@ const update = computed(() => {
                 class="soc"
               />
               <div class="under-bar d-flex flex-wrap justify-space-between ga-2 mt-2">
-                <ReadingProvenance :reading="state.soc_pct" :now="now" :connection="connection" />
+                <ReadingProvenance
+                  :reading="state.soc_pct"
+                  :now="now"
+                  :connection="connection"
+                  :headline="headline"
+                />
                 <span v-if="state.charging.target_soc_pct" class="target">
                   {{ t('state.charging.target') }}
                   <strong>{{ quantity(state.charging.target_soc_pct, 'percent') }}</strong>
@@ -565,6 +578,7 @@ const update = computed(() => {
               :reading="chargingTile"
               :now="now"
               :connection="connection"
+              :headline="headline"
               class="footer"
             />
           </v-card-text>
@@ -578,6 +592,7 @@ const update = computed(() => {
           :now="now"
           :connection="connection"
           :health="health ?? null"
+          :headline="headline"
           class="h-100"
         />
       </v-col>
@@ -673,6 +688,7 @@ const update = computed(() => {
               :reading="vehicleTile"
               :now="now"
               :connection="connection"
+              :headline="headline"
             />
             <div v-if="state.position && !mapsOn" class="footer">
               <v-btn
@@ -708,6 +724,7 @@ const update = computed(() => {
                     :reading="state.position"
                     :now="now"
                     :connection="connection"
+                    :headline="headline"
                   />
                 </dd>
               </div>

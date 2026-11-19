@@ -9,7 +9,7 @@ import ReadingProvenance from './ReadingProvenance.vue'
 // ReadingItem is one value of the state, in a <dl>: its label, the value (already
 // formatted; null is unknown), how long ago it was last checked and since when it holds.
 // In a tile that says these once (tile, the reading it shows them of), the value repeats
-// only what differs from it. The slot adds to the value (a gauge): inside the <dd>, a
+// only what differs from it: its check when stale, its time when not the tile's. The slot adds to the value (a gauge): inside the <dd>, a
 // <dl> holding only its items. An icon may lead the label, to find the value at a glance:
 // small, in the label's color, never on the value.
 const props = withDefaults(
@@ -41,7 +41,8 @@ const own = computed(() => {
   if (!r) return null
   const t = props.tile
   if (t === undefined) return { checked: true, since: true }
-  const checked = !t || f.age(r.checked_at, props.now) !== f.age(t.checked_at, props.now)
+  // Its check only when it is stale and the tile's is not: otherwise the tile says it.
+  const checked = !t || (stale.value && !isStale(t.checked_at, props.now, props.connection))
   const since = !t || f.dateTime(r.fetched_at, props.now) !== f.dateTime(t.fetched_at, props.now)
   return checked || since ? { checked, since } : null
 })
