@@ -2,6 +2,7 @@ package main
 
 import (
 	"runsten/internal/bmw"
+	"runsten/internal/demo"
 	"runsten/internal/pleos"
 	"runsten/internal/polestar"
 	"runsten/internal/renault"
@@ -21,5 +22,6 @@ func privateFields() map[string][]string {
 		pleos.Source:    pleos.PrivateFields(),
 		skoda.Source:    skoda.PrivateFields(),
 		renault.Source:  renault.PrivateFields(),
+		demo.Source:     nil, // simulated: nothing of anyone's in it
 	}
 }

@@ -157,6 +157,7 @@ import (
 	"runsten/internal/bmw"
 	"runsten/internal/catalog"
 	"runsten/internal/core"
+	"runsten/internal/demo"
 	"runsten/internal/derive"
 	"runsten/internal/exporter"
 	"runsten/internal/flags"
@@ -332,6 +333,10 @@ func run(args []string) error {
 		addresses = st
 	}
 	deriver := derive.New(st, normalizers(), core.DefaultParams(), nil, log)
+	demoWeek, err := demo.New()
+	if err != nil {
+		return fmt.Errorf("demo vehicle: %w", err)
+	}
 	ax := aximote.NewClient(cfg.aximoteURL, hc)
 	// Only when asked is GitHub read: nothing leaves for it otherwise.
 	var releases api.Releases
@@ -403,6 +408,8 @@ func run(args []string) error {
 		SkodaVehicles:      skodaVehicles{skoda.NewClient(cfg.skodaURL, hc)},
 		Renault:            st,
 		RenaultAccounts:    renaultAccounts{renault.NewClient(cfg.renault, hc)},
+		Demo:               st,
+		DemoVehicle:        demoVehicle{week: demoWeek, store: st, deriver: deriver},
 		InstanceKey:        cfg.apiKey != "",
 		InstanceKeyLast4:   cfg.apiKey[max(0, len(cfg.apiKey)-4):],
 		ClientID:           cfg.app.ClientID,
@@ -1022,6 +1029,7 @@ func normalizers() derive.Normalizer {
 		pleos.Normalizer{},
 		skoda.Normalizer{},
 		renault.Normalizer{},
+		demo.Normalizer{},
 	}, extensionNormalizers()...)...)
 }
 

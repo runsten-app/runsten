@@ -116,7 +116,8 @@ type Vehicle struct {
 	// KeyRefused), polestar (a credential of the Data Portal), tesla (a refresh
 	// token of the Owner API), pleos_hyundai, pleos_kia or pleos_genesis (the owner's
 	// key of the Pleos Vehicle Data API, per brand), skoda (the owner's key of the
-	// MyŠkoda Public API), or renault (the owner's sign-in to My Renault).
+	// MyŠkoda Public API), renault (the owner's sign-in to My Renault), or demo (the vehicle
+	// the instance simulates).
 	Provider     string
 	AuthorizedAt time.Time // zero: unknown (a token pasted by hand)
 	RefreshedAt  time.Time // issue of the current refresh token; zero: none
@@ -305,6 +306,10 @@ type Config struct {
 	// owner in.
 	Renault         RenaultCredentials
 	RenaultAccounts RenaultAccounts
+	// Demo keeps the account's demo connection, and DemoVehicle is the vehicle it
+	// simulates, which writes its history.
+	Demo        DemoConnections
+	DemoVehicle DemoVehicle
 	// TeslaMateImports is how many TeslaMate backups the instance reads at once; 0:
 	// DefaultTeslaMateImports. One where the API has little memory.
 	TeslaMateImports int
@@ -409,6 +414,7 @@ func New(cfg Config) *Server {
 	s.registerPleos(s.api)
 	s.registerSkoda(s.api)
 	s.registerRenault(s.api)
+	s.registerDemo(s.api)
 	s.registerAccount(s.api)
 	s.registerAccountExport(s.api)
 	s.registerTokens(s.api)
