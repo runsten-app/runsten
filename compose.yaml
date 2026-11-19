@@ -124,6 +124,9 @@ services:
       RUNSTEN_GEOCODER_INTERVAL: ${RUNSTEN_GEOCODER_INTERVAL:-}
       RUNSTEN_HEALTH_TOKEN: ${RUNSTEN_HEALTH_TOKEN:-}
       RUNSTEN_UPDATE_CHECK: ${RUNSTEN_UPDATE_CHECK:-}
+      # The maps' tiles, the web's below: the API tells them to its clients (an app).
+      RUNSTEN_WEB_MAP_TILES: ${RUNSTEN_WEB_MAP_TILES:-}
+      RUNSTEN_WEB_MAP_ATTRIBUTION: ${RUNSTEN_WEB_MAP_ATTRIBUTION:-}
       RUNSTEN_TESLAMATE_IMPORTS: ${RUNSTEN_TESLAMATE_IMPORTS:-}
       # Empty means the binary's default (Aximote's API, for the imports).
       RUNSTEN_AXIMOTE_BASE_URL: ${RUNSTEN_AXIMOTE_BASE_URL:-}

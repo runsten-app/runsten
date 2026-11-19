@@ -122,6 +122,10 @@
 //	RUNSTEN_UPDATE_CHECK         true to read the latest release of Runsten on GitHub
 //	                             once a day, and tell a newer one in the settings
 //	                             (default false: nothing is asked of GitHub)
+//	RUNSTEN_WEB_MAP_TILES        the maps' tiles, and
+//	RUNSTEN_WEB_MAP_ATTRIBUTION  their attribution, as runsten-web reads them: told to the
+//	                             API's clients (GET /api/v1/instance), so that an app
+//	                             draws the maps the web interface does (default none)
 //	RUNSTEN_LOG_LEVEL            debug, info, warn, error (default info)
 //	RUNSTEN_FLAGS                feature flags, name=true|false separated by commas,
 //	                             e.g. source.tesla=false (default: each its own; the
@@ -170,6 +174,7 @@ import (
 	"runsten/internal/platform/clock"
 	"runsten/internal/platform/health"
 	"runsten/internal/platform/httpserver"
+	"runsten/internal/platform/maptiles"
 	"runsten/internal/platform/secretbox"
 	"runsten/internal/pleos"
 	"runsten/internal/polestar"
@@ -237,6 +242,8 @@ type config struct {
 	healthToken string
 	// updateCheck: read the latest release on GitHub, to tell a newer one.
 	updateCheck bool
+	// mapTiles: the web interface's, told to the API's clients; nil without maps.
+	mapTiles *maptiles.Tiles
 	// teslaMateImports is how many TeslaMate backups are read at once; 0: the API's
 	// default.
 	teslaMateImports int
@@ -421,6 +428,7 @@ func run(args []string) error {
 		AppURL:            cfg.appURL,
 		Version:           version,
 		Releases:          releases,
+		Map:               mapTilesOf(cfg.mapTiles),
 		Log:               log,
 	})
 	if cfg.geocoder != nil {
@@ -694,6 +702,11 @@ func loadConfig(getenv func(string) string) (config, error) {
 		}
 		cfg.updateCheck = b
 	}
+	tiles, tilesErr := maptiles.FromEnv(getenv)
+	if tilesErr != nil {
+		errs = append(errs, tilesErr)
+	}
+	cfg.mapTiles = tiles
 	if v := getenv("RUNSTEN_TESLAMATE_IMPORTS"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 1 || n > maxTeslaMateImports {
@@ -1046,4 +1059,12 @@ func exportArchives(cfg config) (archives, error) {
 		return archive.NewS3(cfg.exportS3) //nolint:wrapcheck // already has context
 	}
 	return archive.NewDir(cfg.exportDir) //nolint:wrapcheck // already has context
+}
+
+// mapTilesOf gives the API the tiles runsten-web draws with; nil without maps.
+func mapTilesOf(t *maptiles.Tiles) *api.MapTiles {
+	if t == nil {
+		return nil
+	}
+	return &api.MapTiles{URL: t.URL, Attribution: t.Attribution}
 }

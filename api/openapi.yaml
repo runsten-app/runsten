@@ -2461,6 +2461,11 @@ components:
           type:
             - string
             - "null"
+        map_tiles:
+          description: "The map tiles the instance's web interface draws with (RUNSTEN_WEB_MAP_TILES), for a client that draws maps too; null: the instance has no maps, and a client draws none either. The reader's device fetches the tiles from their provider, which sees its address and the areas shown."
+          oneOf:
+            - $ref: "#/components/schemas/MapTiles"
+            - type: "null"
         update:
           description: "A newer release than the one running, as last read; null: none, or not known."
           oneOf:
@@ -2477,6 +2482,7 @@ components:
         - update_check
         - checked_at
         - update
+        - map_tiles
       type: object
     InstanceKey:
       additionalProperties: false
@@ -2636,6 +2642,20 @@ components:
         - address
         - departures
         - arrivals
+      type: object
+    MapTiles:
+      additionalProperties: false
+      properties:
+        attribution:
+          description: The attribution the tiles' provider requires, as plain text, shown with each map.
+          type: string
+        url:
+          description: Raster tiles, a URL with {z}, {x} and {y}, as https://tile.openstreetmap.org/{z}/{x}/{y}.png; or a PMTiles file of vector tiles (Protomaps), its path ending in .pmtiles, read by range requests.
+          format: uri-template
+          type: string
+      required:
+        - url
+        - attribution
       type: object
     Model:
       additionalProperties: false
@@ -7886,7 +7906,7 @@ paths:
         - connection
   /instance:
     get:
-      description: The release running, and a newer one when the instance checks for it. The same for every account.
+      description: The release running, a newer one when the instance checks for it, and the map tiles it draws with. The same for every account.
       operationId: getInstance
       responses:
         "200":
@@ -7894,7 +7914,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Instance"
-          description: The instance's release.
+          description: The instance's release and maps.
         "401":
           content:
             application/json:
@@ -7924,7 +7944,7 @@ paths:
         - session: []
         - sessionSecure: []
         - accessToken: []
-      summary: The release the instance runs
+      summary: The instance's release and maps
       tags:
         - instance
   /mqtt:

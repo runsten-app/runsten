@@ -31,7 +31,8 @@
 //	                           .pmtiles, its host answering range requests with CORS
 //	                           (default none: no map, nothing fetched from a third
 //	                           party). The browser fetches them: their host sees its
-//	                           address and the areas shown
+//	                           address and the areas shown. runsten-api reads the same
+//	                           two variables, to tell them to the API's other clients
 //	RUNSTEN_WEB_MAP_ATTRIBUTION  the attribution the tiles' provider requires, as plain
 //	                           text (default © OpenStreetMap contributors)
 //	RUNSTEN_WEB_NOINDEX        true: every response asks search engines not to index
@@ -58,6 +59,7 @@ import (
 
 	"runsten/internal/platform/health"
 	"runsten/internal/platform/httpserver"
+	"runsten/internal/platform/maptiles"
 	"runsten/internal/web"
 )
 
@@ -69,8 +71,6 @@ const (
 	defaultAddr = "127.0.0.1:8082"
 	defaultAPI  = "http://127.0.0.1:8081"
 	defaultDir  = "/web"
-	// defaultMapAttribution is what every provider of OpenStreetMap's data requires.
-	defaultMapAttribution = "© OpenStreetMap contributors"
 	// probeTimeout bounds the healthcheck subcommand, below the container healthcheck
 	// timeout.
 	probeTimeout = 5 * time.Second
@@ -183,12 +183,11 @@ func loadConfig(getenv func(string) string) (config, error) {
 		}
 		cfg.noIndex = b
 	}
-	if v := getenv("RUNSTEN_WEB_MAP_TILES"); v != "" {
-		cfg.mapTiles = &web.MapTiles{URL: v, Attribution: getenv("RUNSTEN_WEB_MAP_ATTRIBUTION")}
-		if cfg.mapTiles.Attribution == "" {
-			cfg.mapTiles.Attribution = defaultMapAttribution
-		}
+	tiles, err := maptiles.FromEnv(getenv)
+	if err != nil {
+		errs = append(errs, err)
 	}
+	cfg.mapTiles = tiles
 	if v := getenv("RUNSTEN_LOG_LEVEL"); v != "" {
 		if err := cfg.logLevel.UnmarshalText([]byte(v)); err != nil {
 			errs = append(errs, fmt.Errorf("RUNSTEN_LOG_LEVEL %q: %w", v, err))

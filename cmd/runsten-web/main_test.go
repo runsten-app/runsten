@@ -46,6 +46,7 @@ func TestLoadConfig(t *testing.T) {
 		"restricted":  {"RUNSTEN_ACCESS_RESTRICTED": "yes please"},
 		"log level":   {"RUNSTEN_LOG_LEVEL": "loud"},
 		"noindex":     {"RUNSTEN_WEB_NOINDEX": "maybe"},
+		"map tiles":   {"RUNSTEN_WEB_MAP_TILES": "https://tiles.example/{x}/{y}.png"},
 	} {
 		if _, err := loadConfig(env(v)); err == nil {
 			t.Errorf("%s: no error", name)

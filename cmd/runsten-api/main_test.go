@@ -15,10 +15,12 @@ import (
 	"testing"
 	"time"
 
+	"runsten/internal/api"
 	"runsten/internal/archive"
 	"runsten/internal/bmw"
 	"runsten/internal/flags"
 	"runsten/internal/platform/health"
+	"runsten/internal/platform/maptiles"
 	"runsten/internal/polestar"
 	"runsten/internal/polestarid"
 	"runsten/internal/volvo"
@@ -63,7 +65,8 @@ func TestLoadConfigDefaults(t *testing.T) {
 		cfg.polestarID != (polestarid.Hosts{Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL}) ||
 		!slices.Equal(cfg.app.Scopes, volvo.DefaultScopes()) || cfg.app.ClientID != "id" || cfg.app.ClientSecret != "secret" ||
 		cfg.logLevel != slog.LevelInfo || cfg.geocoder != nil || cfg.geocode.Interval != time.Second || !cfg.privateBrokers ||
-		cfg.appURL != "" || !cfg.secureCookies || cfg.updateCheck || len(cfg.flags) != 0 || cfg.unknownFlags != nil {
+		cfg.appURL != "" || !cfg.secureCookies || cfg.updateCheck || len(cfg.flags) != 0 || cfg.unknownFlags != nil ||
+		cfg.mapTiles != nil || mapTilesOf(cfg.mapTiles) != nil {
 		t.Errorf("config = %+v", cfg)
 	}
 }
@@ -110,7 +113,7 @@ func TestLoadConfigOverrides(t *testing.T) {
 		"RUNSTEN_FLAGS": "source.tesla=false, removed.flag=true", "RUNSTEN_POLESTAR_ID_AUTH_URL": "http://localhost:8080/polestar-id",
 		"RUNSTEN_POLESTAR_ID_API_URL": "http://localhost:8080/polestar-id/eu-north-1/mystar-v2",
 		"RUNSTEN_BMW_AUTH_URL":        "http://localhost:8080/gcdm/oauth", "RUNSTEN_BMW_API_URL": "http://localhost:8080",
-		"RUNSTEN_TESLAMATE_IMPORTS": "1",
+		"RUNSTEN_TESLAMATE_IMPORTS": "1", "RUNSTEN_WEB_MAP_TILES": "https://maps.example/europe.pmtiles",
 	} {
 		m[k] = v
 	}
@@ -126,8 +129,12 @@ func TestLoadConfigOverrides(t *testing.T) {
 		cfg.app.RedirectURI != "http://127.0.0.1:8081/auth/volvo/callback" || !cfg.updateCheck || cfg.teslaMateImports != 1 ||
 		!maps.Equal(cfg.flags, map[flags.Name]bool{flags.SourceTesla: false}) || !slices.Equal(cfg.unknownFlags, []string{"removed.flag"}) ||
 		cfg.polestarID != (polestarid.Hosts{Auth: "http://localhost:8080/polestar-id", API: "http://localhost:8080/polestar-id/eu-north-1/mystar-v2"}) ||
-		cfg.bmw != (bmw.Hosts{Auth: "http://localhost:8080/gcdm/oauth", API: "http://localhost:8080"}) {
+		cfg.bmw != (bmw.Hosts{Auth: "http://localhost:8080/gcdm/oauth", API: "http://localhost:8080"}) ||
+		cfg.mapTiles == nil || *cfg.mapTiles != (maptiles.Tiles{URL: "https://maps.example/europe.pmtiles", Attribution: maptiles.DefaultAttribution}) {
 		t.Errorf("config = %+v", cfg)
+	}
+	if m := mapTilesOf(cfg.mapTiles); m == nil || *m != (api.MapTiles{URL: "https://maps.example/europe.pmtiles", Attribution: maptiles.DefaultAttribution}) {
+		t.Errorf("the API's tiles: %+v", m)
 	}
 }
 
@@ -215,6 +222,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_GEOCODER_URL": "nominatim", "RUNSTEN_GEOCODER_INTERVAL": "10ms", "RUNSTEN_HEALTH_TOKEN": "short",
 		"RUNSTEN_MQTT_PRIVATE_BROKERS": "sometimes", "RUNSTEN_AXIMOTE_BASE_URL": "aximote", "RUNSTEN_POLESTAR_BASE_URL": "polestar",
 		"RUNSTEN_UPDATE_CHECK": "daily", "RUNSTEN_FLAGS": "source.tesla", "RUNSTEN_TESLAMATE_IMPORTS": "0",
+		"RUNSTEN_WEB_MAP_TILES": "https://tiles.example/{x}/{y}.png",
 	}))
 	if err == nil {
 		t.Fatal("error expected")
@@ -223,7 +231,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"RUNSTEN_DATABASE_URL", "RUNSTEN_TOKEN_KEY", "RUNSTEN_VOLVO_AUTH_URL", "conve:unlock", "RUNSTEN_LOG_LEVEL",
 		"RUNSTEN_ACCESS_RESTRICTED", "RUNSTEN_APP_URL", "RUNSTEN_GEOCODER_URL", "RUNSTEN_GEOCODER_INTERVAL",
 		"RUNSTEN_HEALTH_TOKEN", "RUNSTEN_MQTT_PRIVATE_BROKERS", "RUNSTEN_AXIMOTE_BASE_URL", "RUNSTEN_POLESTAR_BASE_URL",
-		"RUNSTEN_UPDATE_CHECK", "RUNSTEN_FLAGS", "RUNSTEN_TESLAMATE_IMPORTS",
+		"RUNSTEN_UPDATE_CHECK", "RUNSTEN_FLAGS", "RUNSTEN_TESLAMATE_IMPORTS", "RUNSTEN_WEB_MAP_TILES",
 	} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("the error should mention %s: %v", want, err)
