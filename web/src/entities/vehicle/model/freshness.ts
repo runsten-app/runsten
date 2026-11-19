@@ -44,3 +44,8 @@ export function lastReport(readings: readonly Reported[]): string | null {
   }
   return last
 }
+
+// Headline is what a page says once, above its tiles, of all the values: whether they are
+// stale, and the latest time it gives (since the car sleeps, its late measure, else the
+// latest check). A tile then says only what differs from it.
+export type Headline = { stale: boolean; at: string | null }

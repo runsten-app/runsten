@@ -27,6 +27,7 @@ export {
   reportLateAfter,
   silentAfter,
   staleAfter,
+  type Headline,
 } from './model/freshness'
 export { vehicleLabel, vehicleLabels } from './model/label'
 export { vehicleMode, type Mode } from './model/mode'

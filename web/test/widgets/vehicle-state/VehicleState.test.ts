@@ -107,8 +107,8 @@ describe('VehicleState', () => {
   it('shows each value with its freshness', async () => {
     const w = await mounted(state)
     expect(plain(w.text())).toContain('Last checked 3 min ago')
-    // Said once for the tile, repeated by a value only where it differs.
-    expect(provenance(w, 'Battery')).toBe('checked 3 min ago · since 19:03')
+    // The headline says the check and its time once: a tile read with it says nothing more.
+    expect(provenance(w, 'Battery')).toBe('')
     expect(reading(w, 'State of charge')).toEqual({ value: '64%', details: '', stale: false })
     expect(reading(w, 'Range').value).toBe('256 km')
     expect(reading(w, 'Odometer')).toMatchObject({ value: '12,473 km', stale: false })
@@ -116,11 +116,15 @@ describe('VehicleState', () => {
     expect(() => reading(w, 'Engine')).toThrow()
     // Read once a day: not stale after 14 hours.
     expect(reading(w, 'Battery capacity')).toMatchObject({ value: '78 kWh', stale: false })
-    expect(reading(w, 'Battery capacity').details).toMatch(/^checked .+ · since /)
-    // Without a map, the coordinates are a value of the vehicle's tile, with their own times.
-    expect(reading(w, 'Last position').value).toBe('45.76400, 4.83570')
-    expect(reading(w, 'Last position').details).toBe('checked 36 min ago')
-    expect(provenance(w, 'Vehicle')).toMatch(/^checked .+ · since /)
+    expect(reading(w, 'Battery capacity').details).toBe('since 05:00')
+    // Without a map, the coordinates are a value of the vehicle's tile: read with it, nothing of
+    // their own. The tile holds since before the headline's time: said.
+    expect(reading(w, 'Last position')).toEqual({
+      value: '45.76400, 4.83570',
+      details: '',
+      stale: false,
+    })
+    expect(provenance(w, 'Vehicle')).toBe('since 17:30')
   })
 
   it('puts a charge in progress forward, in a tile of its own', async () => {
@@ -228,7 +232,7 @@ describe('VehicleState', () => {
     }
     const w = await mounted(parked)
     expect(reading(w, 'Target').value).toBe('80%')
-    expect(provenance(w, 'Charging')).toMatch(/^checked .+ · since /)
+    expect(provenance(w, 'Charging')).toBe('')
   })
 
   it('takes a power above zero without a status for a charge, not a zero one', async () => {
@@ -263,7 +267,7 @@ describe('VehicleState', () => {
       .findAll('.details time')
       .filter((t) => !t.element.closest('.reading'))
       .map((t) => t.attributes('datetime'))
-    expect(times).toEqual(['2026-09-28T18:00:00Z', '2026-09-28T18:00:00Z'])
+    expect(times).toEqual(['2026-09-28T18:00:00Z'])
   })
 
   it.each(['discharging', 'error'])('shows the power of a charge %s', async (value) => {
@@ -306,10 +310,32 @@ describe('VehicleState', () => {
     vi.setSystemTime(Date.parse('2026-09-28T21:10:00Z'))
     const w = await mounted(state)
     expect(reading(w, 'State of charge')).toMatchObject({ stale: true })
-    expect(provenance(w, 'Battery')).toContain('stale')
+    // The headline says it once: no tile repeats it.
+    expect(provenance(w, 'Battery')).toBe('')
     expect(reading(w, 'Battery capacity').stale).toBe(false)
     expect(w.find('time').text()).toBe('Last checked 2 hr ago')
     expect(w.findAll('.v-chip').map((c) => c.text())).toContain('stale')
+  })
+
+  it('says the check of a tile stale while the headline is not', async () => {
+    // The odometer was checked at 19:00, the state at 19:03: two hours after the first only.
+    vi.setSystemTime(Date.parse('2026-09-28T21:01:30Z'))
+    const w = await mounted(state)
+    expect(w.find('[data-test="headline"] .v-chip').exists()).toBe(false)
+    expect(provenance(w, 'Vehicle')).toMatch(/^checked 2 hr ago · since 17:30 ?stale$/)
+    expect(provenance(w, 'Battery')).toBe('')
+  })
+
+  it('leaves out of the tiles the time the car fell asleep', async () => {
+    const sleep = {
+      value: 'asleep',
+      reported_at: null,
+      fetched_at: '2026-09-28T17:30:00Z',
+      checked_at: '2026-09-28T19:03:00Z',
+    }
+    const w = await mounted({ ...state, sleep })
+    expect(provenance(w, 'Vehicle')).toBe('')
+    expect(provenance(w, 'Battery')).toBe('since 19:03')
   })
 
   it.each<[Locale, string, string]>([
@@ -568,9 +594,7 @@ describe('VehicleState', () => {
     })
     expect(line(w)).toBe('Locked | All closed')
     expect(w.find('[data-test="openings"] h2').text()).toBe('Doors and windows')
-    expect(plain(w.find('[data-test="openings"] .details').text())).toBe(
-      'checked 1 min ago · since 19:00',
-    )
+    expect(plain(w.find('[data-test="openings"] .details').text())).toBe('since 19:00')
     expect(w.find('[data-test="openings"] .measured').exists()).toBe(false)
     w.unmount()
     // Unlocked, watching, a window open and a door ajar; measured hours before: said.
@@ -610,9 +634,7 @@ describe('VehicleState', () => {
         value: windows,
       },
     })
-    expect(plain(w.find('[data-test="openings"] .details').text())).toBe(
-      'checked 1 hr ago · since 16:00',
-    )
+    expect(plain(w.find('[data-test="openings"] .details').text())).toBe('since 16:00')
     expect(w.find('[data-test="openings"] .measured').text()).toBe('The car last measured 14:00')
     w.unmount()
     w = await mounted(state)
