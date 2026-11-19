@@ -11,11 +11,17 @@ import unknown from '@fixtures/state-unknown.json'
 import vehicle from '@fixtures/vehicle-model.json'
 import { mountWith } from '@test/utils'
 
-const { fetchVehicle, fetchVehicleState, fetchChargeInProgress, fetchHealth } = vi.hoisted(() => ({
-  fetchVehicle: vi.fn(),
-  fetchVehicleState: vi.fn(),
-  fetchChargeInProgress: vi.fn(),
-  fetchHealth: vi.fn(),
+const { fetchVehicle, fetchVehicleState, fetchChargeInProgress, fetchHealth, fetchTrips } =
+  vi.hoisted(() => ({
+    fetchVehicle: vi.fn(),
+    fetchVehicleState: vi.fn(),
+    fetchChargeInProgress: vi.fn(),
+    fetchHealth: vi.fn(),
+    fetchTrips: vi.fn(),
+  }))
+vi.mock('@/entities/trip', async (original) => ({
+  ...(await original<typeof import('@/entities/trip')>()),
+  fetchTrips,
 }))
 vi.mock('@/entities/health', async (original) => ({
   ...(await original<typeof import('@/entities/health')>()),
@@ -44,6 +50,8 @@ beforeEach(() => {
   fetchChargeInProgress.mockResolvedValue(null)
   fetchHealth.mockReset()
   fetchHealth.mockResolvedValue({ ...health, tyres: null })
+  fetchTrips.mockReset()
+  fetchTrips.mockResolvedValue({ items: [], next_cursor: null })
   vi.useFakeTimers({ now, toFake: ['Date'] })
 })
 afterEach(() => {
@@ -406,6 +414,35 @@ describe('VehicleState', () => {
       }
     }
     expect(w.find('[role="meter"]').attributes('aria-valuenow')).toBe('64')
+  })
+
+  it('says a car parked since its latest trip ended, not since its engine reading', async () => {
+    const parked = {
+      ...state,
+      engine: { ...state.engine, value: 'stopped' },
+      charging: { ...state.charging, status: { ...state.charging.status, value: 'done' } },
+    }
+    // No trip known: parked, without a time.
+    let w = await mounted(parked)
+    expect(plain(w.find('.headline-title .mode').text())).toBe('Parked')
+    w.unmount()
+    fetchTrips.mockResolvedValue({
+      items: [
+        {
+          id: 't',
+          start: { after: '2026-09-27T17:40:00Z', before: '2026-09-27T17:41:00Z' },
+          end: { after: '2026-09-27T18:12:00Z', before: '2026-09-27T18:13:00Z' },
+        },
+      ],
+      next_cursor: null,
+    })
+    w = await mounted(parked)
+    expect(plain(w.find('.headline-title .mode').text())).toBe('Parked since 27 Sept 2026, 18:13')
+    expect(w.find('[data-test="parked-since"]').attributes('datetime')).toBe('2026-09-27T18:13:00Z')
+    w.unmount()
+    // Charging, the latest trip says nothing of the mode.
+    w = await mounted(state)
+    expect(w.find('[data-test="parked-since"]').exists()).toBe(false)
   })
 
   it('says a car asleep or out of reach is left alone, since when, nothing when awake', async () => {
