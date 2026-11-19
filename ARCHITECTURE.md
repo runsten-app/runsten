@@ -90,6 +90,8 @@ inward.
 - `internal/platform`: generic building blocks with no business code: clock, health, HTTP
   server, `netguard`, `secretbox` (AES-256-GCM for the tokens and keys stored).
 - `internal/simulator/...`: the simulator's vehicle model, scenario engine and fake API.
+- `internal/demo`: the demo vehicle an instance may simulate for an account, one typical week repeated,
+  which runs on the simulator's vehicle model and scenario engine alone.
 - `internal/debugui`: a developer's debug page of the collector (loopback only).
 
 The binaries in `cmd/` wire them: they read the environment, build the adapters, and inject

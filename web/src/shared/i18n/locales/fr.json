@@ -1399,7 +1399,8 @@
       "tesla": "Tesla",
       "bmw": "BMW",
       "skoda": "Škoda",
-      "renault": "Renault"
+      "renault": "Renault",
+      "demo": "Démo"
     },
     "brandAttention": "demande votre attention",
     "outcome": {
@@ -1585,7 +1586,8 @@
       "bmw": "BMW CarData",
       "pleos": "l’API Pleos Vehicle Data",
       "skoda": "l’API publique MyŠkoda",
-      "renault": "l’API de l’app My Renault"
+      "renault": "l’API de l’app My Renault",
+      "demo": "le véhicule de démonstration"
     },
     "failure": {
       "quota": "Quota atteint",
@@ -1673,6 +1675,10 @@
     "renault": {
       "title": "Votre compte My Renault",
       "off": "Renault est désactivé sur cette instance (le flag source.renault)."
+    },
+    "demo": {
+      "title": "Véhicule de démonstration",
+      "off": "Le véhicule de démonstration n’est pas proposé sur cette instance (le drapeau source.demo)."
     },
     "keyShared": {
       "text": "Une autre application lit avec la même clé Pleos — evcc, Home Assistant. L’API n’autorise qu’un lecteur à la fois, et chacun prend la place de l’autre. Gardez cette clé pour Runsten seul, ou laissez plutôt Runsten republier votre voiture sur votre broker MQTT pour Home Assistant :",
@@ -2561,6 +2567,32 @@
       "sourceUnavailable": "My Renault n’a pas répondu : rien n’a été enregistré. Réessayez dans un instant.",
       "unavailable": "Runsten n’a pas pu être joint. Réessayez dans un instant.",
       "internal": "La connexion n’a pas pu être enregistrée. Réessayez dans un instant."
+    }
+  },
+  "demo": {
+    "intro": "Un véhicule qui n’exige ni voiture ni compte de constructeur : cette instance le simule, avec une semaine type de trajets et de recharges qui se répète. Utilisez-le pour essayer Runsten, le montrer, ou développer face à une vraie instance.",
+    "help": "La connexion écrit ses quatre dernières semaines : cela prend quelques secondes.",
+    "connect": "Connecter le véhicule de démonstration",
+    "status": "État",
+    "active": "Connecté",
+    "setAt": "Connecté le",
+    "connected": "Véhicule de démonstration connecté : ses quatre dernières semaines sont dans vos véhicules, et il continue d’être lu.",
+    "disconnected": "Véhicule de démonstration déconnecté.",
+    "disconnect": {
+      "button": "Déconnecter",
+      "title": "Déconnecter le véhicule de démonstration ?",
+      "text": "Le véhicule de démonstration est supprimé avec ses trajets et ses recharges. Vous pouvez le reconnecter : il repart de zéro.",
+      "cancel": "Annuler",
+      "confirm": "Supprimer",
+      "error": "Le véhicule de démonstration n’a pas pu être supprimé. Réessayez dans un instant."
+    },
+    "error": {
+      "summary": "Le véhicule de démonstration n’a pas été connecté",
+      "featureUnavailable": "Le véhicule de démonstration n’est pas proposé sur cette instance.",
+      "tooManyVehicles": "Avec le véhicule de démonstration, votre compte aurait plus de véhicules qu’il ne peut : il n’a pas été connecté.",
+      "notAdmitted": "Votre compte doit d’abord franchir une étape, comme accepter des conditions : rechargez la page. Le véhicule de démonstration n’a pas été connecté.",
+      "unavailable": "Runsten n’a pas pu être joint. Réessayez dans un instant.",
+      "internal": "Le véhicule de démonstration n’a pas pu être connecté. Réessayez dans un instant."
     }
   },
   "purpose": {

@@ -1399,7 +1399,8 @@
       "tesla": "Tesla",
       "bmw": "BMW",
       "skoda": "Škoda",
-      "renault": "Renault"
+      "renault": "Renault",
+      "demo": "Demo"
     },
     "brandAttention": "needs your attention",
     "outcome": {
@@ -1585,7 +1586,8 @@
       "bmw": "BMW CarData",
       "pleos": "the Pleos Vehicle Data API",
       "skoda": "the MyŠkoda Public API",
-      "renault": "the My Renault app's API"
+      "renault": "the My Renault app's API",
+      "demo": "the demo vehicle"
     },
     "failure": {
       "quota": "Quota reached",
@@ -1673,6 +1675,10 @@
     "renault": {
       "title": "Your My Renault account",
       "off": "Renault is turned off on this instance (the flag source.renault)."
+    },
+    "demo": {
+      "title": "Demo vehicle",
+      "off": "The demo vehicle is turned off on this instance (the flag source.demo)."
     },
     "keyShared": {
       "text": "Another application reads with the same Pleos key — evcc, Home Assistant. The API allows only one reader at a time, so each takes the other’s place. Keep this key for Runsten alone, or let Runsten republish your car to your MQTT broker for Home Assistant instead:",
@@ -2561,6 +2567,32 @@
       "sourceUnavailable": "My Renault did not answer: nothing was saved. Try again in a moment.",
       "unavailable": "Runsten could not be reached. Try again in a moment.",
       "internal": "The sign-in could not be saved. Try again in a moment."
+    }
+  },
+  "demo": {
+    "intro": "A vehicle that needs no car and no maker’s account: this instance simulates it, with a typical week of driving and charging that repeats. Use it to try Runsten, to show it, or to build against a real instance.",
+    "help": "Connecting writes its last four weeks: it takes a few seconds.",
+    "connect": "Connect the demo vehicle",
+    "status": "Status",
+    "active": "Connected",
+    "setAt": "Connected on",
+    "connected": "Demo vehicle connected: its last four weeks are in your vehicles, and it goes on being read.",
+    "disconnected": "Demo vehicle disconnected.",
+    "disconnect": {
+      "button": "Disconnect",
+      "title": "Disconnect the demo vehicle?",
+      "text": "The demo vehicle is deleted with its trips and charges. You can connect it again: it starts over.",
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "error": "The demo vehicle could not be deleted. Try again in a moment."
+    },
+    "error": {
+      "summary": "The demo vehicle was not connected",
+      "featureUnavailable": "The demo vehicle is not offered on this instance.",
+      "tooManyVehicles": "With the demo vehicle, your account would have more vehicles than it may: it was not connected.",
+      "notAdmitted": "Your account must take a step first, such as accepting terms: reload the page. The demo vehicle was not connected.",
+      "unavailable": "Runsten could not be reached. Try again in a moment.",
+      "internal": "The demo vehicle could not be connected. Try again in a moment."
     }
   },
   "purpose": {

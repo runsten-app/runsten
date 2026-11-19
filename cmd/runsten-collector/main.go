@@ -135,6 +135,7 @@ import (
 	"runsten/internal/catalog"
 	"runsten/internal/collector"
 	"runsten/internal/collector/bmwsource"
+	"runsten/internal/collector/demosource"
 	"runsten/internal/collector/pleossource"
 	"runsten/internal/collector/polestaridsource"
 	"runsten/internal/collector/polestarsource"
@@ -143,6 +144,7 @@ import (
 	"runsten/internal/collector/teslasource"
 	"runsten/internal/core"
 	"runsten/internal/debugui"
+	"runsten/internal/demo"
 	"runsten/internal/derive"
 	"runsten/internal/flags"
 	"runsten/internal/flags/eval"
@@ -428,6 +430,15 @@ func run(args []string) error {
 	// Renault's, off by default: the My Renault app's API is unofficial (ADR 0050 §8).
 	c.SetGate(renault.Source, func(ctx context.Context, account string) bool {
 		return features.Enabled(ctx, flags.SourceRenault, account)
+	})
+	// The demo vehicle, simulated here, off by default: it is no one's car.
+	demoWeek, err := demo.New()
+	if err != nil {
+		return fmt.Errorf("demo vehicle: %w", err)
+	}
+	c.AddSource(demosource.New(demoWeek, clk), st)
+	c.SetGate(demo.Source, func(ctx context.Context, account string) bool {
+		return features.Enabled(ctx, flags.SourceDemo, account)
 	})
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
@@ -757,5 +768,6 @@ func normalizers() derive.Normalizer {
 		pleos.Normalizer{},
 		skoda.Normalizer{},
 		renault.Normalizer{},
+		demo.Normalizer{},
 	}, extensionNormalizers()...)...)
 }

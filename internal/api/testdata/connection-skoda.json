@@ -21,5 +21,6 @@
     "expires_at": "2027-09-28T05:00:00Z",
     "refused_at": null
   },
-  "renault": null
+  "renault": null,
+  "demo": null
 }

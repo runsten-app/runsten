@@ -31,6 +31,9 @@ const (
 	// SourceRenault: a Renault, a Dacia or an Alpine is read through the My Renault
 	// app's API, with its owner's sign-in (ADR 0050).
 	SourceRenault Name = "source.renault"
+	// SourceDemo: a vehicle simulated by the instance, with weeks of history and readings
+	// that keep coming: no car, no maker's account.
+	SourceDemo Name = "source.demo"
 	// PictureTesla: a Tesla's picture, as Tesla's configurator draws it, relayed.
 	PictureTesla Name = "picture.tesla"
 )
@@ -89,6 +92,13 @@ func All() []Flag {
 				"and its reads. Off by default: the API is unofficial, against the app's terms, and many accounts read " +
 				"from one instance's addresses could have them blocked; a self-hosted instance turns it on.",
 			Remove: "when Renault opens an official API to its owners, or the source is offered everywhere",
+		},
+		{
+			Name: SourceDemo, Default: false, Web: true,
+			Purpose: "A demo vehicle as a source: its connection and its reads. Off by default, the vehicle being no " +
+				"one's: an instance or an account turns it on to try Runsten before connecting a car, to show it, or " +
+				"to develop a client against a real instance.",
+			Remove: "never while the instance may be shown or developed against without a car",
 		},
 		{
 			Name: PictureTesla, Default: true,

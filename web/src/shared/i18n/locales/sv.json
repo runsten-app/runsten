@@ -1399,7 +1399,8 @@
       "tesla": "Tesla",
       "bmw": "BMW",
       "skoda": "Škoda",
-      "renault": "Renault"
+      "renault": "Renault",
+      "demo": "Demo"
     },
     "brandAttention": "behöver din uppmärksamhet",
     "outcome": {
@@ -1585,7 +1586,8 @@
       "bmw": "BMW CarData",
       "pleos": "Pleos Vehicle Data API",
       "skoda": "MyŠkoda Public API",
-      "renault": "API:et i My Renault-appen"
+      "renault": "API:et i My Renault-appen",
+      "demo": "demofordonet"
     },
     "failure": {
       "quota": "Kvot nådd",
@@ -1673,6 +1675,10 @@
     "renault": {
       "title": "Ditt My Renault-konto",
       "off": "Renault är avstängt på den här instansen (flaggan source.renault)."
+    },
+    "demo": {
+      "title": "Demofordon",
+      "off": "Demofordonet är avstängt på den här instansen (flaggan source.demo)."
     },
     "keyShared": {
       "text": "Ett annat program läser med samma Pleos-nyckel — evcc, Home Assistant. API:et tillåter bara en läsare åt gången, så var och en tar den andras plats. Behåll denna nyckel för Runsten ensam, eller låt Runsten i stället publicera din bil till din MQTT-mäklare för Home Assistant:",
@@ -2561,6 +2567,32 @@
       "sourceUnavailable": "My Renault svarade inte: inget sparades. Försök igen om en stund.",
       "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
       "internal": "Inloggningen kunde inte sparas. Försök igen om en stund."
+    }
+  },
+  "demo": {
+    "intro": "Ett fordon som varken kräver en bil eller ett tillverkarkonto: den här instansen simulerar det, med en typisk vecka av körning och laddning som upprepas. Använd det för att prova Runsten, visa det eller utveckla mot en riktig instans.",
+    "help": "När du ansluter skrivs de senaste fyra veckorna: det tar några sekunder.",
+    "connect": "Anslut demofordonet",
+    "status": "Status",
+    "active": "Anslutet",
+    "setAt": "Anslöts",
+    "connected": "Demofordonet är anslutet: de senaste fyra veckorna finns bland dina fordon, och det fortsätter att läsas.",
+    "disconnected": "Demofordonet är frånkopplat.",
+    "disconnect": {
+      "button": "Koppla från",
+      "title": "Koppla från demofordonet?",
+      "text": "Demofordonet tas bort tillsammans med sina resor och laddningar. Du kan ansluta det igen: det börjar om från början.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort",
+      "error": "Demofordonet kunde inte tas bort. Försök igen om en stund."
+    },
+    "error": {
+      "summary": "Demofordonet anslöts inte",
+      "featureUnavailable": "Demofordonet erbjuds inte på den här instansen.",
+      "tooManyVehicles": "Med demofordonet skulle ditt konto ha fler fordon än det får: det anslöts inte.",
+      "notAdmitted": "Ditt konto måste först ta ett steg, som att godkänna villkor: ladda om sidan. Demofordonet anslöts inte.",
+      "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
+      "internal": "Demofordonet kunde inte anslutas. Försök igen om en stund."
     }
   },
   "purpose": {

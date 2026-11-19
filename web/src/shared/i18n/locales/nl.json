@@ -1399,7 +1399,8 @@
       "tesla": "Tesla",
       "bmw": "BMW",
       "skoda": "Škoda",
-      "renault": "Renault"
+      "renault": "Renault",
+      "demo": "Demo"
     },
     "brandAttention": "vraagt uw aandacht",
     "outcome": {
@@ -1585,7 +1586,8 @@
       "bmw": "BMW CarData",
       "pleos": "de Pleos Vehicle Data API",
       "skoda": "de MyŠkoda Public API",
-      "renault": "de API van de My Renault-app"
+      "renault": "de API van de My Renault-app",
+      "demo": "het demovoertuig"
     },
     "failure": {
       "quota": "Quotum bereikt",
@@ -1673,6 +1675,10 @@
     "renault": {
       "title": "Uw My Renault-account",
       "off": "Renault staat uit op deze instantie (de vlag source.renault)."
+    },
+    "demo": {
+      "title": "Demovoertuig",
+      "off": "Het demovoertuig staat uit op deze instantie (de vlag source.demo)."
     },
     "keyShared": {
       "text": "Een andere toepassing leest met dezelfde Pleos-sleutel — evcc, Home Assistant. De API laat maar één lezer tegelijk toe, dus elk neemt de plaats van de ander in. Houd deze sleutel voor Runsten alleen, of laat Runsten uw auto voor Home Assistant op uw MQTT-broker publiceren:",
@@ -2561,6 +2567,32 @@
       "sourceUnavailable": "My Renault antwoordde niet: er werd niets opgeslagen. Probeer het zo meteen opnieuw.",
       "unavailable": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
       "internal": "De aanmelding kon niet worden opgeslagen. Probeer het zo meteen opnieuw."
+    }
+  },
+  "demo": {
+    "intro": "Een voertuig waarvoor u geen auto en geen account van een fabrikant nodig hebt: deze instantie simuleert het, met een typische week van ritten en laadbeurten die zich herhaalt. Gebruik het om Runsten uit te proberen, te tonen of te ontwikkelen tegen een echte instantie.",
+    "help": "Bij het koppelen worden de laatste vier weken geschreven: dat duurt enkele seconden.",
+    "connect": "Demovoertuig koppelen",
+    "status": "Status",
+    "active": "Gekoppeld",
+    "setAt": "Gekoppeld op",
+    "connected": "Demovoertuig gekoppeld: de laatste vier weken staan bij uw voertuigen en het wordt verder gelezen.",
+    "disconnected": "Demovoertuig losgekoppeld.",
+    "disconnect": {
+      "button": "Loskoppelen",
+      "title": "Het demovoertuig loskoppelen?",
+      "text": "Het demovoertuig wordt verwijderd met zijn ritten en laadbeurten. U kunt het opnieuw koppelen: het begint van voren af aan.",
+      "cancel": "Annuleren",
+      "confirm": "Verwijderen",
+      "error": "Het demovoertuig kon niet worden verwijderd. Probeer het zo meteen opnieuw."
+    },
+    "error": {
+      "summary": "Het demovoertuig werd niet gekoppeld",
+      "featureUnavailable": "Het demovoertuig wordt op deze instantie niet aangeboden.",
+      "tooManyVehicles": "Met het demovoertuig zou uw account meer voertuigen hebben dan toegestaan: het werd niet gekoppeld.",
+      "notAdmitted": "Uw account moet eerst een stap zetten, zoals voorwaarden aanvaarden: laad de pagina opnieuw. Het demovoertuig werd niet gekoppeld.",
+      "unavailable": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
+      "internal": "Het demovoertuig kon niet worden gekoppeld. Probeer het zo meteen opnieuw."
     }
   },
   "purpose": {

@@ -27,12 +27,12 @@ var allowed = map[string][]string{
 	// The binaries wire the adapters together. Only runsten-simulator knows the simulator.
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/bmw", "internal/catalog", "internal/core",
-		"internal/archive", "internal/derive", "internal/exporter", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
+		"internal/archive", "internal/demo", "internal/derive", "internal/exporter", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
 		"internal/platform", "internal/pleos", "internal/polestar", "internal/polestarid", "internal/release", "internal/renault", "internal/skoda", "internal/store",
 		"internal/tesla", "internal/teslamate", "internal/volvo", "internal/volvoportal", "internal/aaoslogging",
 	},
 	"cmd/runsten-collector": {
-		"net/http", "internal/bmw", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/derive",
+		"net/http", "internal/bmw", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/demo", "internal/derive",
 		"internal/flags", "internal/oauth", "internal/platform", "internal/pleos", "internal/polestar", "internal/polestarid",
 		"internal/publish", "internal/renault", "internal/skoda",
 		"internal/store", "internal/tesla", "internal/volvo",
@@ -65,8 +65,10 @@ var allowed = map[string][]string{
 	"internal/collector/skodasource": {"internal/collector", "internal/core", "internal/platform/clock", "internal/skoda"},
 	// The My Renault app's: the client, adapted, which lists each account's vehicles.
 	"internal/collector/renaultsource": {"internal/collector", "internal/core", "internal/platform/clock", "internal/renault"},
-	"internal/derive":                  {"internal/core"},
-	"internal/oauth":                   {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
+	// The demo vehicle's: the simulation, read at the collector's time.
+	"internal/collector/demosource": {"internal/collector", "internal/demo", "internal/platform/clock"},
+	"internal/derive":               {"internal/core"},
+	"internal/oauth":                {"golang.org/x/oauth2", "internal/platform/clock"}, // PKCE helpers only
 	// It reads the catalog, pure data like core, to recognize the vehicles' variants, and
 	// the flags' declarations (never flags/eval: depguard).
 	"internal/api": {
@@ -137,6 +139,11 @@ var allowed = map[string][]string{
 	"internal/platform/httpserver": {"net/http"},
 	"internal/platform/netguard":   nil,
 	"internal/platform/secretbox":  nil,
+
+	// The demo vehicle runs the simulator's pure models, the one use of them outside the simulator
+	// and the tests: never a provider's handler (depguard). The collector reads it through
+	// collector/demosource.
+	"internal/demo": {"encoding/json", "internal/core", "internal/simulator/vehicle", "internal/simulator/scenario"},
 
 	// Simulator: the vehicle model is pure, the scenario engine drives it, volvoapi exposes it.
 	"internal/simulator/vehicle":  nil,

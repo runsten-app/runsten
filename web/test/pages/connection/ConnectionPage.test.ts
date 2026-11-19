@@ -18,7 +18,7 @@ vi.mock('@/entities/session/extensions', () => ({
 }))
 
 // The flags, as the session gives them: source.tesla on, source.polestar-id, source.bmw,
-// source.pleos, source.skoda and source.renault off (BMW's, Pleos's and Škoda's are on in
+// source.pleos, source.skoda, source.renault and source.demo off (BMW's, Pleos's and Škoda's are on in
 // the app, but the other tests have three tabs), unless a test turns them over.
 const flag = vi.hoisted(() => ({
   tesla: true,
@@ -27,6 +27,7 @@ const flag = vi.hoisted(() => ({
   pleos: false,
   skoda: false,
   renault: false,
+  demo: false,
 }))
 vi.mock('@/features/view-flags', async () => {
   const { computed } = await import('vue')
@@ -43,7 +44,9 @@ vi.mock('@/features/view-flags', async () => {
                 ? flag.skoda
                 : name === 'source.renault'
                   ? flag.renault
-                  : flag.tesla,
+                  : name === 'source.demo'
+                    ? flag.demo
+                    : flag.tesla,
       ),
   }
 })
@@ -56,7 +59,11 @@ vi.mock('@/pages/connection/extensions', () => ({
   },
 }))
 
-const mocks = vi.hoisted(() => ({ fetchVehicles: vi.fn(), fetchConnection: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  fetchVehicles: vi.fn(),
+  fetchConnection: vi.fn(),
+  deleteDemo: vi.fn(),
+}))
 vi.mock('@/entities/vehicle', async (original) => ({
   ...(await original<typeof import('@/entities/vehicle')>()),
   fetchVehicles: mocks.fetchVehicles,
@@ -64,6 +71,7 @@ vi.mock('@/entities/vehicle', async (original) => ({
 vi.mock('@/entities/connection', async (original) => ({
   ...(await original<typeof import('@/entities/connection')>()),
   fetchConnection: mocks.fetchConnection,
+  deleteDemo: mocks.deleteDemo,
 }))
 
 // Self-hosting: the instance's key reads the vehicles.
@@ -80,6 +88,7 @@ const selfHosted: ConnectionSettings = {
   pleos: null,
   skoda: null,
   renault: null,
+  demo: null,
 }
 // The hosted offer: no instance key, the account gives its own.
 const hosted: ConnectionSettings = {
@@ -95,6 +104,7 @@ const hosted: ConnectionSettings = {
   pleos: null,
   skoda: null,
   renault: null,
+  demo: null,
 }
 
 const items = vehicles.items as Vehicle[]
@@ -107,10 +117,12 @@ beforeEach(() => {
   flag.pleos = false
   flag.skoda = false
   flag.renault = false
+  flag.demo = false
   mocks.fetchVehicles.mockReset()
   mocks.fetchVehicles.mockResolvedValue(items)
   mocks.fetchConnection.mockReset()
   mocks.fetchConnection.mockResolvedValue(selfHosted)
+  mocks.deleteDemo.mockReset()
   vi.useFakeTimers({ now: Date.parse('2026-09-28T07:05:00Z'), toFake: ['Date'] })
 })
 afterEach(() => {
@@ -1180,6 +1192,122 @@ describe('ConnectionPage', () => {
       const panel = w.find('#connection-panel-renault')
       expect(panel.find('.delete-connection').exists()).toBe(true)
       expect(panel.find('.toggle').exists()).toBe(false)
+    })
+  })
+  describe('Demo vehicle', () => {
+    const demoCar = (): Vehicle => {
+      const [car] = items
+      if (!car?.collection) throw new Error('fixture')
+      return {
+        ...car,
+        id: 'demo-1',
+        vin: 'YV12ZEL000DEM0001',
+        connection: { ...car.connection, provider: 'demo', credential: 'set', api_key: null },
+        collection: { ...car.collection, quota: [], last_failure: null },
+      }
+    }
+
+    it('has a tab while its flag is on, with its form and no dot', async () => {
+      flag.demo = true
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
+        'Volvo needs your attention',
+        'Polestar needs your attention',
+        'Tesla',
+        'Demo',
+      ])
+      await w.find('#connection-tab-demo').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('#connection-panel-demo .demo-form').exists()).toBe(true),
+      )
+      const panel = w.find('#connection-panel-demo')
+      expect(panel.findAll('h2').map((h) => plain(h.text()))).toEqual(['Demo vehicle'])
+      expect(panel.find('.connect').exists()).toBe(true)
+      expect(panel.find('.demo-off').exists()).toBe(false)
+    })
+
+    it('has no tab while its flag is off, without a demo vehicle', async () => {
+      const w = await page()
+      expect(w.find('#connection-tab-demo').exists()).toBe(false)
+    })
+
+    it('is the tab of the demo vehicle, whatever the flag', async () => {
+      mocks.fetchVehicles.mockResolvedValue([...items, demoCar()])
+      const w = await page()
+      expect(w.find('#connection-tab-demo').exists()).toBe(true)
+    })
+
+    it('tells the deletion in the page, and focuses the connect button, or the tab that is left', async () => {
+      mocks.deleteDemo.mockResolvedValue(undefined)
+      const connected = { ...selfHosted, demo: { set_at: '2026-09-28T05:00:00Z' } }
+      for (const on of [true, false]) {
+        flag.demo = on
+        mocks.fetchConnection.mockResolvedValue(connected)
+        const w = await page()
+        document.body.append(w.element)
+        await w.find('#connection-tab-demo').trigger('click')
+        await vi.waitFor(() =>
+          expect(w.find('#connection-panel-demo .disconnect').exists()).toBe(true),
+        )
+        mocks.fetchConnection.mockResolvedValue(selfHosted)
+        await w.find('#connection-panel-demo .disconnect').trigger('click')
+        await flushPromises()
+        document.querySelector<HTMLButtonElement>('.confirm-disconnect')?.click()
+        await vi.waitFor(() =>
+          expect(w.find('[role="status"].notice').text()).toBe('Demo vehicle disconnected.'),
+        )
+        await vi.waitFor(() =>
+          expect(document.activeElement?.id).toBe(on ? 'demo-connect' : 'connection-tab-volvo'),
+        )
+        expect(w.find('#connection-tab-demo').exists()).toBe(on)
+        w.unmount()
+      }
+    })
+
+    it('with its flag off, waits for the vehicles to be read again before it focuses a tab', async () => {
+      mocks.deleteDemo.mockResolvedValue(undefined)
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        demo: { set_at: '2026-09-28T05:00:00Z' },
+      })
+      mocks.fetchVehicles.mockResolvedValue([...items, demoCar()])
+      const w = await page()
+      document.body.append(w.element)
+      await w.find('#connection-tab-demo').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('#connection-panel-demo .disconnect').exists()).toBe(true),
+      )
+      // The connection is read again at once, the vehicles later: the Demo tab stays while the
+      // vehicle is listed, and the focus must not go to it.
+      mocks.fetchConnection.mockResolvedValue(selfHosted)
+      let listed: (v: Vehicle[]) => void = () => undefined
+      mocks.fetchVehicles.mockReturnValue(new Promise<Vehicle[]>((resolve) => (listed = resolve)))
+      await w.find('#connection-panel-demo .disconnect').trigger('click')
+      await flushPromises()
+      document.querySelector<HTMLButtonElement>('.confirm-disconnect')?.click()
+      await vi.waitFor(() =>
+        expect(w.find('[role="status"].notice').text()).toBe('Demo vehicle disconnected.'),
+      )
+      await flushPromises()
+      expect(w.find('#connection-tab-demo').exists()).toBe(true)
+      expect(document.activeElement?.id).not.toBe('connection-tab-demo')
+      listed(items)
+      await vi.waitFor(() => expect(w.find('#connection-tab-demo').exists()).toBe(false))
+      await vi.waitFor(() => expect(document.activeElement?.id).toBe('connection-tab-volvo'))
+      w.unmount()
+    })
+
+    it('keeps its tab while its flag is off for an account that has one, to disconnect it', async () => {
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        demo: { set_at: '2026-09-28T05:00:00Z' },
+      })
+      const w = await page()
+      await w.find('#connection-tab-demo').trigger('click')
+      await vi.waitFor(() => expect(w.find('#connection-panel-demo .demo-off').exists()).toBe(true))
+      const panel = w.find('#connection-panel-demo')
+      expect(panel.find('.disconnect').exists()).toBe(true)
+      expect(panel.find('.connect').exists()).toBe(false)
     })
   })
 })

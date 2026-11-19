@@ -16,6 +16,8 @@ Runsten reads your car from its manufacturer:
 - **Škoda** (beta), through the MyŠkoda Public API: a key of your own, created in the MyŠkoda app, and the VIN of each car ([Your Škoda](./skoda.md)).
 - **Renault, Dacia and Alpine** (beta, unofficial), through the My Renault app's API: the email and password of your account, with a one-time code for some ([Your Renault, Dacia or Alpine](./renault.md)).
 
+No car at hand? An instance may offer **a demo vehicle** it simulates itself ([The demo vehicle](./demo.md)).
+
 <Screen view="state" alt="The State tab: charge level, range, odometer and last position." />
 
 ## Installing it on a phone

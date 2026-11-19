@@ -44,3 +44,6 @@ export type SkodaCredentialUpdate = components['schemas']['SkodaCredentialUpdate
 export type Renault = components['schemas']['Renault']
 export type RenaultSignIn = components['schemas']['RenaultSignIn']
 export type RenaultSignInBody = components['schemas']['RenaultSignInBody']
+// Demo is what the user is shown again of the account's demo vehicle, the one the instance
+// simulates: when it was connected. It has no secret.
+export type Demo = components['schemas']['Demo']

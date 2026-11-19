@@ -78,6 +78,7 @@ type connectionSettingsJSON struct {
 	Pleos       null[pleosKeysJSON]          `json:"pleos" doc:"The account's keys of the Pleos Vehicle Data API, one per brand — Hyundai, Kia, Genesis —, which read its cars of each (the flag source.pleos); null: none."`
 	Skoda       null[skodaKeyJSON]           `json:"skoda" doc:"The account's key of the MyŠkoda Public API, which reads its Škodas (the flag source.skoda); null: none."`
 	Renault     null[renaultJSON]            `json:"renault" doc:"The account's sign-in to My Renault, which reads its Renaults, Dacias and Alpines through the My Renault app's API (the flag source.renault); null: none."`
+	Demo        null[demoJSON]               `json:"demo" doc:"The account's demo vehicle, simulated by the instance (the flag source.demo); null: none."`
 }
 
 type apiKeyUpdateJSON struct {
@@ -145,6 +146,11 @@ func (s *Server) connectionSettings(ctx context.Context, account string) (connec
 		return connectionSettingsJSON{}, s.internal("Renault connection not read", err)
 	}
 	out.Renault = renaultOf(rc)
+	dc, err := s.Demo.DemoConnection(ctx, account)
+	if err != nil {
+		return connectionSettingsJSON{}, s.internal("demo connection not read", err)
+	}
+	out.Demo = demoOf(dc)
 	return out, nil
 }
 
@@ -220,32 +226,36 @@ func (s *Server) enroll(ctx context.Context, account string, vins []string, notS
 ) error {
 	var refused error
 	err := s.Locks.WithAccountLock(ctx, account, func(ctx context.Context) error {
-		limit, err := s.vehicleCap(ctx, account)
-		switch {
-		case err != nil:
-			refused = s.internal("vehicles not read", err)
-		case limit.Exceeded(vins):
-			refused = s.tooManyVehicles()
-		}
-		if refused != nil {
-			return refused
-		}
-		id, err := store(ctx)
-		if err != nil {
-			refused = s.internal(notStored, err)
-			return refused
-		}
-		if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
-			refused = s.internal("vehicles not recorded", err)
-			return refused
-		}
-		return nil
+		refused = s.enrollLocked(ctx, account, vins, notStored, store)
+		return refused
 	})
 	if refused != nil {
 		return refused
 	}
 	if err != nil {
 		return s.internal("account not locked", err)
+	}
+	return nil
+}
+
+// enrollLocked is enroll for a caller that holds the account's lock already: the lock is
+// not reentrant, a second one would wait for the first.
+func (s *Server) enrollLocked(ctx context.Context, account string, vins []string, notStored string,
+	store func(context.Context) (string, error),
+) error {
+	limit, err := s.vehicleCap(ctx, account)
+	switch {
+	case err != nil:
+		return s.internal("vehicles not read", err)
+	case limit.Exceeded(vins):
+		return s.tooManyVehicles()
+	}
+	id, err := store(ctx)
+	if err != nil {
+		return s.internal(notStored, err)
+	}
+	if err := oauth.AddVehicles(ctx, s.Enrollment, account, id, vins); err != nil {
+		return s.internal("vehicles not recorded", err)
 	}
 	return nil
 }

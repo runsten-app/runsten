@@ -1399,7 +1399,8 @@
       "tesla": "Tesla",
       "bmw": "BMW",
       "skoda": "Škoda",
-      "renault": "Renault"
+      "renault": "Renault",
+      "demo": "Demo"
     },
     "brandAttention": "richiede la Sua attenzione",
     "outcome": {
@@ -1585,7 +1586,8 @@
       "bmw": "BMW CarData",
       "pleos": "la Pleos Vehicle Data API",
       "skoda": "l’API pubblica MyŠkoda",
-      "renault": "l’API dell’app My Renault"
+      "renault": "l’API dell’app My Renault",
+      "demo": "il veicolo dimostrativo"
     },
     "failure": {
       "quota": "Quota raggiunta",
@@ -1673,6 +1675,10 @@
     "renault": {
       "title": "Il tuo account My Renault",
       "off": "Renault è disattivata su questa istanza (il flag source.renault)."
+    },
+    "demo": {
+      "title": "Veicolo dimostrativo",
+      "off": "Il veicolo dimostrativo è disattivato su questa istanza (il flag source.demo)."
     },
     "keyShared": {
       "text": "Un’altra applicazione legge con la stessa chiave Pleos — evcc, Home Assistant. L’API ammette un solo lettore alla volta, e ciascuno prende il posto dell’altro. Tieni questa chiave solo per Runsten, oppure lascia che Runsten ripubblichi la tua auto sul tuo broker MQTT per Home Assistant:",
@@ -2561,6 +2567,32 @@
       "sourceUnavailable": "My Renault non ha risposto: non è stato salvato nulla. Riprova tra un momento.",
       "unavailable": "Runsten non è raggiungibile. Riprova tra un momento.",
       "internal": "Non è stato possibile salvare l’accesso. Riprova tra un momento."
+    }
+  },
+  "demo": {
+    "intro": "Un veicolo che non richiede né un’auto né un account del costruttore: questa istanza lo simula, con una settimana tipo di viaggi e di ricariche che si ripete. Usalo per provare Runsten, per mostrarlo o per sviluppare su un’istanza reale.",
+    "help": "Il collegamento scrive le sue ultime quattro settimane: richiede qualche secondo.",
+    "connect": "Collega il veicolo dimostrativo",
+    "status": "Stato",
+    "active": "Collegato",
+    "setAt": "Collegato il",
+    "connected": "Veicolo dimostrativo collegato: le sue ultime quattro settimane sono tra i tuoi veicoli e continua a essere letto.",
+    "disconnected": "Veicolo dimostrativo scollegato.",
+    "disconnect": {
+      "button": "Scollega",
+      "title": "Scollegare il veicolo dimostrativo?",
+      "text": "Il veicolo dimostrativo viene eliminato con i suoi viaggi e le sue ricariche. Puoi collegarlo di nuovo: riparte da zero.",
+      "cancel": "Annulla",
+      "confirm": "Elimina",
+      "error": "Non è stato possibile eliminare il veicolo dimostrativo. Riprova tra un momento."
+    },
+    "error": {
+      "summary": "Il veicolo dimostrativo non è stato collegato",
+      "featureUnavailable": "Il veicolo dimostrativo non è offerto su questa istanza.",
+      "tooManyVehicles": "Con il veicolo dimostrativo il tuo account avrebbe più veicoli di quanti ne può avere: non è stato collegato.",
+      "notAdmitted": "Il tuo account deve prima compiere un passo, come accettare dei termini: ricarica la pagina. Il veicolo dimostrativo non è stato collegato.",
+      "unavailable": "Runsten non è raggiungibile. Riprova tra un momento.",
+      "internal": "Non è stato possibile collegare il veicolo dimostrativo. Riprova tra un momento."
     }
   },
   "purpose": {

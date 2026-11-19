@@ -28,6 +28,7 @@ describe('useFlag', () => {
         'source.pleos': false,
         'source.skoda': false,
         'source.renault': false,
+        'source.demo': false,
       },
     })
     await flushPromises()

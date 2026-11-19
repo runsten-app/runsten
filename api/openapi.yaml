@@ -1478,7 +1478,7 @@ components:
             - string
             - "null"
         credential:
-          description: "The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account; a Polestar ID's session ended, or its password refused); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla, /connection/polestar-id/code or /password, PUT /connection/pleos/{brand}, POST /connection/bmw/token). null for a Volvo connection."
+          description: "The Polestar or Tesla connection's credential: set; refused by the provider (a Polestar credential expired after its 90 days, or deleted on the Data Portal; a Tesla refresh token signed out, or Tesla's Owner API closed to the account; a Polestar ID's session ended, or its password refused); missing, removed by the user. Neither refused nor missing is read, until the user gives another (PUT /connection/polestar, /connection/tesla, /connection/polestar-id/code or /password, PUT /connection/pleos/{brand}, POST /connection/bmw/token). null for a Volvo connection, and for the demo vehicle, which has none."
           oneOf:
             - enum:
                 - set
@@ -1487,7 +1487,7 @@ components:
               type: string
             - type: "null"
         provider:
-          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis; skoda: the owner's key of the MyŠkoda Public API; renault: the owner's sign-in to My Renault, for a Renault, a Dacia or an Alpine."
+          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis; skoda: the owner's key of the MyŠkoda Public API; renault: the owner's sign-in to My Renault, for a Renault, a Dacia or an Alpine; demo: the vehicle the instance simulates (the flag source.demo)."
           enum:
             - volvo
             - polestar
@@ -1500,6 +1500,7 @@ components:
             - pleos_genesis
             - skoda
             - renault
+            - demo
           type: string
         reauth_at:
           description: When the grant was found lost; null while active.
@@ -1556,6 +1557,11 @@ components:
         connected:
           description: A Volvo ID is connected to the account.
           type: boolean
+        demo:
+          description: "The account's demo vehicle, simulated by the instance (the flag source.demo); null: none."
+          oneOf:
+            - $ref: "#/components/schemas/Demo"
+            - type: "null"
         instance_key:
           description: "The instance's own application key, which reads every vehicle: an account may not give one. null: none, the account's key is required, before connecting a Volvo ID."
           oneOf:
@@ -1607,6 +1613,7 @@ components:
         - pleos
         - skoda
         - renault
+        - demo
       type: object
     Cost:
       additionalProperties: false
@@ -1785,6 +1792,17 @@ components:
       required:
         - ac
         - dc
+      type: object
+    Demo:
+      additionalProperties: false
+      properties:
+        set_at:
+          description: When the demo vehicle was connected.
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - set_at
       type: object
     DistanceBand:
       additionalProperties: false
@@ -4759,6 +4777,9 @@ components:
             source.bmw:
               description: "BMW CarData as a source, for the BMWs and the Minis: its connection and its reads. On by default, the API being BMW's own; an instance may turn it off should the source misbehave there."
               type: boolean
+            source.demo:
+              description: "A demo vehicle as a source: its connection and its reads. Off by default, the vehicle being no one's: an instance or an account turns it on to try Runsten before connecting a car, to show it, or to develop a client against a real instance."
+              type: boolean
             source.pleos:
               description: "The Pleos Vehicle Data API as a source, for the Hyundais, the Kias and the Genesises: its connection and its reads. On by default, the API being the EU Data Act's own; an instance may turn it off while the source is in beta, not seen yet on a real car."
               type: boolean
@@ -4781,6 +4802,7 @@ components:
             - source.pleos
             - source.skoda
             - source.renault
+            - source.demo
           type: object
         limits:
           description: "What the account's offer hides, as of now; null: nothing, the whole history is shown. Only an instance that limits its accounts sets it."
@@ -7022,6 +7044,77 @@ paths:
         - session: []
         - sessionSecure: []
       summary: Connect the account's BMW once the owner approved the code
+      tags:
+        - connection
+  /connection/demo:
+    delete:
+      description: The demo vehicle is deleted with its whole history, which no source could bring back. Nothing to delete is no error.
+      operationId: deleteDemoConnection
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Disconnect the demo vehicle
+      tags:
+        - connection
+    put:
+      description: "A vehicle that needs no car and no maker's account: the instance simulates it, one typical week of driving and charging repeated, and writes its last four weeks at once, with the trips and charges derived from them; the collector then reads it as any source's. Without a body. An account that has it already gets its connection as it is. Off unless the flag `source.demo` is on for the account."
+      operationId: putDemoConnection
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionSettings"
+          description: The connection.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: the demo vehicle is not offered to the account (the flag `source.demo`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`too_many_vehicles`: the account would have more vehicles than the instance lets it have."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Connect the demo vehicle
       tags:
         - connection
   /connection/pleos/{brand}:
