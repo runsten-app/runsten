@@ -1264,6 +1264,39 @@ describe('ConnectionPage', () => {
       }
     })
 
+    it('with its flag off, waits for the vehicles to be read again before it focuses a tab', async () => {
+      mocks.deleteDemo.mockResolvedValue(undefined)
+      mocks.fetchConnection.mockResolvedValue({
+        ...selfHosted,
+        demo: { set_at: '2026-09-28T05:00:00Z' },
+      })
+      mocks.fetchVehicles.mockResolvedValue([...items, demoCar()])
+      const w = await page()
+      document.body.append(w.element)
+      await w.find('#connection-tab-demo').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('#connection-panel-demo .disconnect').exists()).toBe(true),
+      )
+      // The connection is read again at once, the vehicles later: the Demo tab stays while the
+      // vehicle is listed, and the focus must not go to it.
+      mocks.fetchConnection.mockResolvedValue(selfHosted)
+      let listed: (v: Vehicle[]) => void = () => undefined
+      mocks.fetchVehicles.mockReturnValue(new Promise<Vehicle[]>((resolve) => (listed = resolve)))
+      await w.find('#connection-panel-demo .disconnect').trigger('click')
+      await flushPromises()
+      document.querySelector<HTMLButtonElement>('.confirm-disconnect')?.click()
+      await vi.waitFor(() =>
+        expect(w.find('[role="status"].notice').text()).toBe('Demo vehicle disconnected.'),
+      )
+      await flushPromises()
+      expect(w.find('#connection-tab-demo').exists()).toBe(true)
+      expect(document.activeElement?.id).not.toBe('connection-tab-demo')
+      listed(items)
+      await vi.waitFor(() => expect(w.find('#connection-tab-demo').exists()).toBe(false))
+      await vi.waitFor(() => expect(document.activeElement?.id).toBe('connection-tab-volvo'))
+      w.unmount()
+    })
+
     it('keeps its tab while its flag is off for an account that has one, to disconnect it', async () => {
       mocks.fetchConnection.mockResolvedValue({
         ...selfHosted,

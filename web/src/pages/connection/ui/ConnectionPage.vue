@@ -247,10 +247,13 @@ const tab = computed<Brand>({
 // button that connects it again, or on the tab that is left.
 const notice = ref('')
 const demoDeleted = ref(false)
-// Once the connection no longer has the demo vehicle: the refetch may come before the form
-// says the vehicle is deleted, or after.
+// Once the connection and the vehicles no longer have the demo vehicle: the refetches may come
+// before the form says the vehicle is deleted, or after, in either order.
 async function focusAfterDemo() {
   if (!demoDeleted.value || settings.value?.demo) return
+  // With the flag off, the tab stays while the vehicle is listed: wait for the list too, or
+  // the focus would go to a tab that is about to go.
+  if (!demoOn.value && ofBrand('demo').length) return
   demoDeleted.value = false
   await nextTick()
   const target =
@@ -263,7 +266,7 @@ function demoDisconnected() {
   demoDeleted.value = true
   void focusAfterDemo()
 }
-watch(() => settings.value?.demo, focusAfterDemo)
+watch(() => [settings.value?.demo, vehicles.value] as const, focusAfterDemo)
 // The states the user is warned of, the vehicles the account's limits leave unread aside,
 // as the user menu's dot.
 const attention = (v: Vehicle) => {
