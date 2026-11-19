@@ -37,6 +37,7 @@ import {
   VehiclePicture,
 } from '@/entities/vehicle'
 import { useChargeInProgress } from '@/features/browse-charges'
+import { useTrips } from '@/features/browse-trips'
 import { useVehicle } from '@/features/select-vehicle'
 import { useHealth } from '@/features/view-health'
 import { useUpdateText, useVehicleState } from '@/features/watch-vehicle-state'
@@ -72,6 +73,14 @@ const variantCapacity = computed(() =>
 
 const connection = computed(() => state.value?.connection ?? { status: 'active' as const })
 const mode = computed(() => (state.value ? vehicleMode(state.value) : null))
+// Parked since its latest trip ended, which holds for every make and needs nothing
+// guessed: where the source tells no sleep, it is what says how long the vehicle was left.
+// Not since the engine's reading: a source that reconnects reads it again as new, though
+// the vehicle never moved. The newest trips' first page, from the trips list's cache.
+const { trips } = useTrips(() => props.vehicle, undefined, undefined)
+const parkedSince = computed(() =>
+  mode.value === 'parked' ? (trips.value[0]?.end.before ?? null) : null,
+)
 // The car's own latest measure, when it is older than a car that uploads as it goes would
 // give: a Polestar parked may send values hours old, however recently they were read.
 const reportedLate = computed(() => {
@@ -341,9 +350,15 @@ const update = computed(() => {
     <header class="headline" :class="sleep?.value" data-test="headline">
       <p class="headline-title">
         <!-- Asleep, a mode unknown is not worth saying: the sleep says it all. -->
-        <span v-if="mode || !sleep" class="mode">{{
-          mode ? modeLabels[mode] : t('state.mode.unknown')
-        }}</span>
+        <span v-if="mode || !sleep" class="mode"
+          >{{ mode ? modeLabels[mode] : t('state.mode.unknown')
+          }}<template v-if="parkedSince">
+            {{ ' '
+            }}<time :datetime="parkedSince" data-test="parked-since">{{
+              t('reading.since', { time: f.dateTime(parkedSince, now) })
+            }}</time></template
+          ></span
+        >
         <span v-if="sleep" class="sleep" role="status">
           <span v-if="mode" aria-hidden="true" class="sep"> · </span>
           <strong>{{ sleepLabels[sleep.value] }}</strong
