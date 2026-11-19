@@ -27,9 +27,9 @@ const (
 	firstOdometerKm = 12000.0 // the odometer at the origin
 )
 
-// Origin is the start of the first week of the scenario: a Monday, 00:00 UTC. Every later
+// Origin returns the start of the first week of the scenario: a Monday, 00:00 UTC. Every later
 // week starts a whole number of weeks after it and runs the same week again.
-var Origin = time.Date(2026, time.January, 5, 0, 0, 0, 0, time.UTC)
+func Origin() time.Time { return time.Date(2026, time.January, 5, 0, 0, 0, 0, time.UTC) }
 
 // Week is how long the scenario lasts before it starts again.
 const Week = 7 * 24 * time.Hour
@@ -49,13 +49,17 @@ const (
 // Ardennes for the weekend. Real-looking, generic coordinates.
 type place struct{ lat, lon float64 }
 
-var places = map[string]place{
-	"home":   {51.0522, 3.7250},
-	"work":   {51.1005, 3.6860},
-	"shop":   {51.0631, 3.7403},
-	"gym":    {51.0498, 3.7098},
-	"family": {51.1860, 3.5600},
-	"dinant": {50.2611, 4.9124},
+// places returns the named locations: a map of its own each time, nothing to change under a
+// compiled week.
+func places() map[string]place {
+	return map[string]place{
+		"home":   {51.0522, 3.7250},
+		"work":   {51.1005, 3.6860},
+		"shop":   {51.0631, 3.7403},
+		"gym":    {51.0498, 3.7098},
+		"family": {51.1860, 3.5600},
+		"dinant": {50.2611, 4.9124},
+	}
 }
 
 // step is one thing of the week, in order: a drive or a charge. A drive starts at its own time
@@ -158,6 +162,7 @@ func compile(w []step) (plan, error) {
 		here    = "home"
 		since   time.Duration // since when the vehicle stands at here
 		chained bool
+		pl      = places()
 	)
 	for _, s := range w {
 		if s.to == "" { // a charge
@@ -182,8 +187,8 @@ func compile(w []step) (plan, error) {
 			p.steps = append(p.steps, scenario.Step{Park: &scenario.Park{Duration: s.at - cursor}})
 		}
 		p.legs = append(p.legs,
-			leg{from: since, until: s.at, origin: places[here], dest: places[here]},
-			leg{from: s.at, until: s.at + s.duration, origin: places[here], dest: places[s.to], driving: true})
+			leg{from: since, until: s.at, origin: pl[here], dest: pl[here]},
+			leg{from: s.at, until: s.at + s.duration, origin: pl[here], dest: pl[s.to], driving: true})
 		p.steps = append(p.steps, scenario.Step{Drive: &scenario.Drive{To: s.to, DistanceKm: s.km, Duration: s.duration}})
 		soc = driveTicks(soc, s)
 		chained = true
@@ -200,7 +205,7 @@ func compile(w []step) (plan, error) {
 		return plan{}, fmt.Errorf("the week's steps last %v, over a week", cursor)
 	}
 	p.steps = append(p.steps, scenario.Step{Park: &scenario.Park{Duration: Week - cursor}})
-	p.legs = append(p.legs, leg{from: since, until: Week, origin: places[here], dest: places[here]})
+	p.legs = append(p.legs, leg{from: since, until: Week, origin: pl[here], dest: pl[here]})
 	return p, nil
 }
 

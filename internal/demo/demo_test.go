@@ -31,20 +31,20 @@ func read(t *testing.T, c *Cursor, at time.Time) Reading {
 // the simulation that reads it, nor on what it read before.
 func TestSameInstantSameReading(t *testing.T) {
 	d := mustNew(t)
-	at := Origin.Add(31*Week + sat + 9*time.Hour + 17*time.Minute + 23*time.Second + 700*time.Millisecond)
+	at := Origin().Add(31*Week + sat + 9*time.Hour + 17*time.Minute + 23*time.Second + 700*time.Millisecond)
 	a := read(t, d.Cursor(), at)
 
 	warm := d.Cursor() // one that has read other weeks and instants, back and forth
 	for _, off := range []time.Duration{3 * Week, 40 * Week, 31*Week + 5*time.Hour, 31*Week + sun} {
-		read(t, warm, Origin.Add(off))
+		read(t, warm, Origin().Add(off))
 	}
 	if b := read(t, warm, at); a != b {
 		t.Errorf("a cursor that read other instants first: %+v, want %+v", b, a)
 	}
 	// Forward in small steps to the same instant.
 	step := d.Cursor()
-	for off := 31*Week + sat; off < at.Sub(Origin); off += 53 * time.Second {
-		read(t, step, Origin.Add(off))
+	for off := 31*Week + sat; off < at.Sub(Origin()); off += 53 * time.Second {
+		read(t, step, Origin().Add(off))
 	}
 	if got := read(t, step, at); got != a {
 		t.Errorf("walked to it: %+v, want %+v", got, a)
@@ -56,7 +56,7 @@ func TestSameInstantSameReading(t *testing.T) {
 func TestPluggedOnArriving(t *testing.T) {
 	c := mustNew(t).Cursor()
 	for _, off := range []time.Duration{mon + hm(16, 17), tue + hm(16, 17) + 400*time.Millisecond, sat + hm(8, 35), sun + hm(15, 30)} {
-		if r := read(t, c, Origin.Add(3*Week+off)); r.Driving || !r.Plugged || r.Charging != "charging" {
+		if r := read(t, c, Origin().Add(3*Week+off)); r.Driving || !r.Plugged || r.Charging != "charging" {
 			t.Errorf("at %v: %+v", off, r)
 		}
 	}
@@ -68,8 +68,8 @@ func TestWeeksRepeat(t *testing.T) {
 	d := mustNew(t)
 	c := d.Cursor()
 	for off := time.Duration(0); off < Week; off += 7*time.Minute + 11*time.Second {
-		a := read(t, c, Origin.Add(10*Week+off))
-		b := read(t, c, Origin.Add(11*Week+off))
+		a := read(t, c, Origin().Add(10*Week+off))
+		b := read(t, c, Origin().Add(11*Week+off))
 		if math.Abs(a.OdometerKm+d.WeekKm()-b.OdometerKm) > 0.11 {
 			t.Fatalf("offset %v: odometer %v then %v, a week of %v km", off, a.OdometerKm, b.OdometerKm, d.WeekKm())
 		}
@@ -87,7 +87,7 @@ func TestWeeksRepeat(t *testing.T) {
 func TestWeekIsSane(t *testing.T) {
 	d := mustNew(t)
 	c := d.Cursor()
-	start := Origin.Add(20 * Week)
+	start := Origin().Add(20 * Week)
 	const every = 30 * time.Second
 	var prev, first, last Reading
 	var driving, ac, dc time.Duration
@@ -159,7 +159,7 @@ func TestWeekIsSane(t *testing.T) {
 func TestTimetableOnTime(t *testing.T) {
 	d := mustNew(t)
 	c := d.Cursor()
-	w := Origin.Add(5 * Week)
+	w := Origin().Add(5 * Week)
 	for _, tc := range []struct {
 		at      time.Duration
 		driving bool
@@ -189,8 +189,9 @@ func TestTimetableOnTime(t *testing.T) {
 func TestPositions(t *testing.T) {
 	d := mustNew(t)
 	c := d.Cursor()
-	w := Origin.Add(2 * Week)
-	home, work := places["home"], places["work"]
+	w := Origin().Add(2 * Week)
+	pl := places()
+	home, work := pl["home"], pl["work"]
 	at := func(off time.Duration) Reading { return read(t, c, w.Add(off)) }
 	if r := at(mon + hm(3, 0)); r.Latitude != round(home.lat, 5) || r.Longitude != round(home.lon, 5) {
 		t.Errorf("at home: %+v", r)
@@ -202,7 +203,7 @@ func TestPositions(t *testing.T) {
 	if r := at(mon + hm(8, 0)); r.Latitude != round(work.lat, 5) || r.Longitude != round(work.lon, 5) {
 		t.Errorf("at work: %+v", r)
 	}
-	if r := at(sat + hm(8, 50)); r.Latitude != round(places["dinant"].lat, 5) || r.Charging != "charging" {
+	if r := at(sat + hm(8, 50)); r.Latitude != round(pl["dinant"].lat, 5) || r.Charging != "charging" {
 		t.Errorf("at the weekend's destination: %+v", r)
 	}
 }
@@ -210,7 +211,7 @@ func TestPositions(t *testing.T) {
 // TestBeforeOrigin: an instant before the origin reads as the origin.
 func TestBeforeOrigin(t *testing.T) {
 	c := mustNew(t).Cursor()
-	if a, b := read(t, c, Origin.Add(-30*24*time.Hour)), read(t, c, Origin); a.OdometerKm != b.OdometerKm || a.SoC != b.SoC {
+	if a, b := read(t, c, Origin().Add(-30*24*time.Hour)), read(t, c, Origin()); a.OdometerKm != b.OdometerKm || a.SoC != b.SoC {
 		t.Errorf("%+v, want %+v", a, b)
 	}
 }
@@ -219,7 +220,7 @@ func TestBeforeOrigin(t *testing.T) {
 // fingerprints repeat, and the fingerprint ignores the instant alone.
 func TestHistory(t *testing.T) {
 	d := mustNew(t)
-	to := Origin.Add(40*Week + 2*sat)
+	to := Origin().Add(40*Week + 2*sat)
 	got, err := d.History(to.Add(-HistoryDays*24*time.Hour), to)
 	if err != nil {
 		t.Fatal(err)
@@ -289,7 +290,7 @@ func TestNormalize(t *testing.T) {
 			return s.Charging.V == core.ChargingActive && s.ChargeType.V == core.AC && s.PowerW.V == 11000 && s.Connection.V == core.Connected
 		}},
 	} {
-		r := read(t, c, Origin.Add(7*Week+tc.at))
+		r := read(t, c, Origin().Add(7*Week+tc.at))
 		raw, _ := Marshal(r)
 		s, err := norm.Normalize(kind, raw)
 		if err != nil {

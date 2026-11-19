@@ -41,7 +41,7 @@ func fetch(t *testing.T, s *Source) demo.Reading {
 // TestSpec: one endpoint, read as the history written at connection is: every minute
 // while it drives or charges, every ten while parked.
 func TestSpec(t *testing.T) {
-	s, _ := newSource(t, demo.Origin)
+	s, _ := newSource(t, demo.Origin())
 	spec := s.Spec()
 	if spec.Name != demo.Source || len(spec.Endpoints) != 1 || spec.Intervals.Active != demo.ActiveEvery || spec.Intervals.Parked != demo.ParkedEvery {
 		t.Fatalf("spec %+v", spec)
@@ -57,7 +57,7 @@ func TestSpec(t *testing.T) {
 
 // TestFetchFollowsTheClock: a read is the vehicle's state at the collector's now.
 func TestFetchFollowsTheClock(t *testing.T) {
-	s, clk := newSource(t, demo.Origin.Add(9*demo.Week+3*time.Hour))
+	s, clk := newSource(t, demo.Origin().Add(9*demo.Week+3*time.Hour))
 	if r := fetch(t, s); r.Driving || r.Charging != "done" || r.SoC != 80 || !r.At.Equal(clk.Now()) {
 		t.Errorf("parked at night: %+v", r)
 	}
@@ -73,7 +73,7 @@ func TestFetchFollowsTheClock(t *testing.T) {
 
 // TestFetchRefuses: another vehicle or endpoint, and a cancelled context.
 func TestFetchRefuses(t *testing.T) {
-	s, _ := newSource(t, demo.Origin)
+	s, _ := newSource(t, demo.Origin())
 	sess, _, _ := s.Login(context.Background(), "a", "c")
 	_, err := sess.Fetch(context.Background(), "YV1AAAAAAAAAAAAA1", collector.Endpoint(demo.Vehicle))
 	var se *collector.SourceError
@@ -92,7 +92,7 @@ func TestFetchRefuses(t *testing.T) {
 
 // TestObserve: the mode is what the reading says.
 func TestObserve(t *testing.T) {
-	s, clk := newSource(t, demo.Origin.Add(9*demo.Week+6*time.Hour+55*time.Minute))
+	s, clk := newSource(t, demo.Origin().Add(9*demo.Week+6*time.Hour+55*time.Minute))
 	read := func() collector.Activity {
 		sess, _, _ := s.Login(context.Background(), "a", "c")
 		raw, err := sess.Fetch(context.Background(), demo.VIN, collector.Endpoint(demo.Vehicle))
@@ -131,7 +131,7 @@ func TestObserve(t *testing.T) {
 
 // TestFingerprint: two reads of a parked vehicle bring nothing new, whatever the time.
 func TestFingerprint(t *testing.T) {
-	s, clk := newSource(t, demo.Origin.Add(9*demo.Week+time.Hour))
+	s, clk := newSource(t, demo.Origin().Add(9*demo.Week+time.Hour))
 	sess, _, _ := s.Login(context.Background(), "a", "c")
 	a, _ := sess.Fetch(context.Background(), demo.VIN, collector.Endpoint(demo.Vehicle))
 	clk.Advance(10 * time.Minute)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"testing"
@@ -43,7 +44,7 @@ func TestDemoBackfill(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	to := demo.Origin.Add(20*demo.Week + 36*time.Hour)
+	to := demo.Origin().Add(20*demo.Week + 36*time.Hour)
 	hist, rebuild := &fakeHistory{}, &fakeRebuild{}
 	d := demoVehicle{week: week, store: hist, deriver: rebuild}
 	if d.VIN() != demo.VIN {
@@ -71,14 +72,32 @@ func TestDemoBackfill(t *testing.T) {
 			t.Fatalf("snapshot %d: %+v", i+1, s.FetchedAt)
 		}
 	}
+}
 
-	hist.err = errors.New("disk full")
-	rebuild.calls = 0
-	if err := d.Backfill(context.Background(), "acc", "veh", to, net); !errors.Is(err, hist.err) || rebuild.calls != 0 {
-		t.Errorf("a history that fails: %v, rebuilt %d times", err, rebuild.calls)
+// TestDemoBackfillFailures: a history that cannot be saved is returned and nothing is derived;
+// one that is saved and cannot be derived is returned too.
+func TestDemoBackfillFailures(t *testing.T) {
+	week, err := demo.New()
+	if err != nil {
+		t.Fatal(err)
 	}
-	hist.err, rebuild.err = nil, errors.New("no events")
-	if err := d.Backfill(context.Background(), "acc", "veh", to, net); !errors.Is(err, rebuild.err) {
-		t.Errorf("a derivation that fails: %v", err)
+	disk, events := errors.New("disk full"), errors.New("no events")
+	net := func(core.Snapshot) (float64, bool) { return 64, true }
+	for _, tt := range []struct {
+		name         string
+		history, der error
+		wantRebuilds int
+	}{
+		{"history fails", disk, nil, 0},
+		{"derivation fails", nil, events, 1},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			hist, rebuild := &fakeHistory{err: tt.history}, &fakeRebuild{err: tt.der}
+			d := demoVehicle{week: week, store: hist, deriver: rebuild}
+			err := d.Backfill(context.Background(), "acc", "veh", demo.Origin().Add(20*demo.Week), net)
+			if want := cmp.Or(tt.history, tt.der); !errors.Is(err, want) || rebuild.calls != tt.wantRebuilds {
+				t.Errorf("%v, rebuilt %d times, want %v and %d", err, rebuild.calls, want, tt.wantRebuilds)
+			}
+		})
 	}
 }

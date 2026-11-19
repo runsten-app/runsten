@@ -100,12 +100,12 @@ func (d *Demo) WeekKm() float64 { return d.plan.km }
 // scenario is the week with index week (from Origin) as a scenario of its own: it starts
 // at the week's Monday, with the odometer of the weeks before it.
 func (d *Demo) scenario(week int64) *scenario.Scenario {
-	pl := make(map[string]scenario.Place, len(places))
-	for name, p := range places {
+	pl := make(map[string]scenario.Place, len(places()))
+	for name, p := range places() {
 		pl[name] = scenario.Place{Lat: p.lat, Lon: p.lon}
 	}
 	return &scenario.Scenario{
-		VIN: VIN, Start: Origin.Add(time.Duration(week)*Week - tick),
+		VIN: VIN, Start: Origin().Add(time.Duration(week)*Week - tick),
 		Vehicle: scenario.VehicleConfig{
 			Profile: "ex30-like", Model: family, ModelYear: modelYear, BatteryKWh: capacityKWh, UsableKWh: usableKWh,
 			ConsumptionKWhPer100km: consumption, SoC: chargeSoC, TargetSoC: chargeSoC,
@@ -132,8 +132,8 @@ func (d *Demo) Cursor() *Cursor { return &Cursor{d: d} }
 // ReadingAt returns the vehicle's state at t. An instant before Origin reads as Origin.
 func (c *Cursor) ReadingAt(t time.Time) (Reading, error) {
 	t = t.UTC()
-	if t.Before(Origin) {
-		t = Origin
+	if t.Before(Origin()) {
+		t = Origin()
 	}
 	// The simulation is read at whole seconds: its ticks then always fall on the same
 	// instants, whatever instants were read before (a read in between would shift the end of a
@@ -142,7 +142,7 @@ func (c *Cursor) ReadingAt(t time.Time) (Reading, error) {
 	// the collector, which reads a parked vehicle every ten minutes and a charging one every
 	// minute, would not see the charge for ten: it is read a tick on, plugged in.
 	at := t.Truncate(time.Second)
-	week := int64(t.Sub(Origin) / Week)
+	week := int64(t.Sub(Origin()) / Week)
 	if c.sim == nil || week != c.week || at.Before(c.last) {
 		sim, err := scenario.NewSimulation(c.d.scenario(week), vehicle.DefaultUploadPolicy())
 		if err != nil {
@@ -150,7 +150,7 @@ func (c *Cursor) ReadingAt(t time.Time) (Reading, error) {
 		}
 		c.sim, c.week = sim, week
 	}
-	off := t.Sub(Origin.Add(time.Duration(week) * Week))
+	off := t.Sub(Origin().Add(time.Duration(week) * Week))
 	simAt := at
 	if slices.Contains(c.d.plan.plugAt, off.Truncate(time.Second)) {
 		simAt = at.Add(tick)

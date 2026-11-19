@@ -81,7 +81,7 @@ func TestDemoHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	to := demo.Origin.Add(30*demo.Week + 3*24*time.Hour + 14*time.Hour)
+	to := demo.Origin().Add(30*demo.Week + 3*24*time.Hour + 14*time.Hour)
 	st := newMemStore(demoTarget(to))
 	writeDemoHistory(t, st, week, to.Add(-demo.HistoryDays*24*time.Hour), to)
 	// The API derives it with the net capacity it gives (RebuildWith), the collector with its
@@ -94,7 +94,7 @@ func TestDemoHistory(t *testing.T) {
 	// A full week of the four, the second: 17 drives (ten commutes, one more on Wednesday,
 	// two on Thursday, the weekend's four) and 8 charges: the home ones on Monday, Tuesday,
 	// Wednesday, Thursday (twice), Saturday and Sunday, and the fast one on Saturday.
-	monday := demo.Origin.Add(28 * demo.Week)
+	monday := demo.Origin().Add(28 * demo.Week)
 	trips, charges := inWeek(v.trips, v.charges, monday)
 	if len(trips) != 17 {
 		t.Errorf("%d trips in the week, want 17", len(trips))
@@ -154,12 +154,27 @@ func TestDemoHistory(t *testing.T) {
 // time, derives the same trips and charges as the history written after the fact for the
 // same days: the simulation depends on the instant alone.
 func TestDemoLiveAgreesWithHistory(t *testing.T) {
+	// Each window ends with the vehicle parked, charged or not charging: no event is open.
+	for _, tt := range []struct {
+		name  string
+		week  time.Duration // from the origin
+		until time.Duration // from the week's Monday
+	}{
+		{"to Saturday's dawn", 12 * demo.Week, 5*24*time.Hour + 6*time.Hour},
+		{"to Friday evening, another week", 40 * demo.Week, 4*24*time.Hour + 20*time.Hour},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			liveAgreesWithHistory(t, demo.Origin().Add(tt.week), demo.Origin().Add(tt.week+tt.until))
+		})
+	}
+}
+
+func liveAgreesWithHistory(t *testing.T, from, to time.Time) {
+	t.Helper()
 	week, err := demo.New()
 	if err != nil {
 		t.Fatal(err)
 	}
-	from := demo.Origin.Add(12 * demo.Week)
-	to := from.Add(5*24*time.Hour + 6*time.Hour) // Monday to Saturday midday: the long drive and its charge
 
 	past := newMemStore(demoTarget(from))
 	writeDemoHistory(t, past, week, from, to)
@@ -187,17 +202,20 @@ func TestDemoLiveAgreesWithHistory(t *testing.T) {
 	if len(lv.trips) < 8 || len(lv.charges) < 4 {
 		t.Fatalf("%d trips and %d charges derived live", len(lv.trips), len(lv.charges))
 	}
-	// The last event of each may still be open at the end: the settled ones agree.
-	n := min(len(hv.trips), len(lv.trips)) - 1
-	for i := range n {
+	// The window ends at the Saturday's dawn, the vehicle parked, charged on Friday evening
+	// or not at all: no event is open at its end, and each one the history has the live
+	// reads have too.
+	if len(hv.trips) != len(lv.trips) || len(hv.charges) != len(lv.charges) {
+		t.Fatalf("history: %d trips and %d charges, live: %d and %d", len(hv.trips), len(hv.charges), len(lv.trips), len(lv.charges))
+	}
+	for i := range lv.trips {
 		h, l := hv.trips[i], lv.trips[i]
 		// The two read at their own instants, each at most a parked pace from the other's.
 		if !near(l.DistanceKm, h.DistanceKm.V, 0.2) || l.Start.After.Sub(h.Start.After).Abs() > demo.ParkedEvery {
 			t.Errorf("trip %d: live %.1f km after %v, history %.1f km after %v", i, l.DistanceKm.V, l.Start.After, h.DistanceKm.V, h.Start.After)
 		}
 	}
-	m := min(len(hv.charges), len(lv.charges)) - 1
-	for i := range m {
+	for i := range lv.charges {
 		h, l := hv.charges[i], lv.charges[i]
 		if l.Type != h.Type || !near(l.EndSoC, h.EndSoC.V, 0.5) || !near(l.StartSoC, h.StartSoC.V, 1) {
 			t.Errorf("charge %d: live %v %.1f to %.1f, history %v %.1f to %.1f", i, l.Type.V, l.StartSoC.V, l.EndSoC.V, h.Type.V, h.StartSoC.V, h.EndSoC.V)
