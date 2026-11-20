@@ -41,28 +41,31 @@ func (n notifying) Update(ctx context.Context, accountID, vehicleID string) erro
 	return nil
 }
 
+// tell notifies what res found. A read that fails keeps nothing else from being told:
+// without the cable, no charge is told interrupted; without the trips' purposes, none is
+// told to classify. Its error is returned after.
 func (n notifying) tell(ctx context.Context, accountID, vehicleID string, res core.Result) error {
 	now := n.clk.Now()
+	var errs []error
 	var plugged core.Value[core.Connection]
 	if len(res.Charges) > 0 {
 		cur, err := n.current(ctx, accountID, vehicleID, now)
 		if err != nil {
-			return fmt.Errorf("current state: %w", err)
+			errs = append(errs, fmt.Errorf("current state: %w", err))
+		} else {
+			plugged = cur.Snapshot.Connection
 		}
-		plugged = cur.Snapshot.Connection
 	}
 	events := notify.VehicleEvents(accountID, vehicleID, res, plugged, now)
 	if trips := notify.FreshTrips(res, now); len(trips) > 0 {
 		toClassify, err := n.toClassify(ctx, accountID, vehicleID, trips)
-		if err != nil {
-			return err
-		}
+		errs = append(errs, err)
 		events = append(events, toClassify...)
 	}
 	if err := n.notifier.NotifyAll(ctx, events); err != nil {
-		return fmt.Errorf("notify: %w", err)
+		errs = append(errs, fmt.Errorf("notify: %w", err))
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 // toClassify are the trips without a purpose, neither marked nor given by a place's rule,

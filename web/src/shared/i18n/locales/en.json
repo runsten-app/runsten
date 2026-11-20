@@ -1745,7 +1745,7 @@
   },
   "accessTokens": {
     "title": "API access",
-    "help": "A personal access token lets a program read your data through the API without your password: a script, Home Assistant, an AI assistant, the mobile app. It reads only what you see here, and changes nothing unless you let it mark your trips' purpose. Revoke it when the program no longer needs it.",
+    "help": "A personal access token lets a program read your data through the API without your password: a script, Home Assistant, an AI assistant, the mobile app. It reads only what you see here, and changes nothing unless you let it mark your trips' purpose or receive notifications. Revoke it when the program no longer needs it.",
     "loading": "Loading the access tokens",
     "none": "No access token yet.",
     "createdAt": "Created {at}",
@@ -1766,6 +1766,7 @@
       "365d": "In a year",
       "never": "Never"
     },
+    "scopes": "What it may change",
     "markTrips": "May mark the trips' purpose",
     "markTripsHelp": "Business, commute or personal, as on the list of trips.",
     "notify": "May receive notifications",

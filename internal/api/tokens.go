@@ -273,7 +273,7 @@ func (s *Server) createAccessToken(ctx context.Context, in *newAccessTokenInput)
 	s.Log.Info("access token issued", "token", t.ID, "user", t.UserID, "account", t.AccountID, "scopes", t.Scopes)
 	s.notify(ctx, notify.Event{
 		Kind: notify.AccessGranted, AccountID: t.AccountID, At: t.CreatedAt, Key: "token:" + t.ID,
-		Args: map[string]string{"access": "token", "name": t.Name},
+		Args: map[string]string{"access": "token"}, // never its name, which the user wrote
 	})
 	j := accessTokenOf(t)
 	return respond(createdAccessTokenJSON{

@@ -405,7 +405,7 @@ func TestNotified(t *testing.T) {
 		t.Fatalf("told %v", got)
 	}
 	d := p.sent[0]
-	if d.Event.AccountID != account || d.Event.Args["access"] != "token" || d.Event.Args["name"] != "phone" ||
+	if d.Event.AccountID != account || d.Event.Args["access"] != "token" || len(d.Event.Args) != 1 ||
 		!strings.HasPrefix(d.Event.Key, "token:") || len(d.Devices) != 1 {
 		t.Errorf("delivery %+v", d)
 	}

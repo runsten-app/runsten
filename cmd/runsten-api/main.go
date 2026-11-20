@@ -440,13 +440,6 @@ func run(args []string) error {
 	if cfg.geocoder != nil {
 		go geocode.New(st, cfg.geocoder, clock.Real{}, cfg.geocode, log).Run(ctx)
 	}
-	go importer.New(importsTold{st, notifier, log}, ax, clock.Real{}, importer.DefaultParams(), log).Run(ctx)
-	// The export worker builds the accounts' ZIP archives out of the request, of the
-	// same document the API streams, with the tables an extension may add meanwhile.
-	exportAccount := func(ctx context.Context, accountID string, at time.Time, w io.Writer) error {
-		return st.ExportAccount(ctx, accountID, at, handler.ExportTables, w) //nolint:wrapcheck // the store's, already has context
-	}
-	go exporter.New(exportsTold{st, notifier, log}, archives, exportAccount, clock.Real{}, exporter.DefaultParams(), log).Run(ctx)
 	httpserver.WarnIfExposed(log, cfg.addr, cfg.restricted,
 		"listening beyond this machine over plain http: put an https reverse proxy in front of runsten-api, passwords and session cookies travel in clear text otherwise")
 	if ok, err := st.HasUsers(ctx); err != nil {
@@ -476,6 +469,15 @@ func run(args []string) error {
 	}); err != nil {
 		return fmt.Errorf("extensions: %w", err)
 	}
+	// The workers start once the extensions are registered: a job that ends tells the
+	// account through the PushSender an extension gives.
+	go importer.New(importsTold{st, notifier, log}, ax, clock.Real{}, importer.DefaultParams(), log).Run(ctx)
+	// The export worker builds the accounts' ZIP archives out of the request, of the
+	// same document the API streams, with the tables an extension adds.
+	exportAccount := func(ctx context.Context, accountID string, at time.Time, w io.Writer) error {
+		return st.ExportAccount(ctx, accountID, at, handler.ExportTables, w) //nolint:wrapcheck // the store's, already has context
+	}
+	go exporter.New(exportsTold{st, notifier, log}, archives, exportAccount, clock.Real{}, exporter.DefaultParams(), log).Run(ctx)
 	if err := httpserver.Run(ctx, httpserver.New(cfg.addr, mux, log), log); err != nil {
 		return fmt.Errorf("server: %w", err)
 	}

@@ -97,7 +97,8 @@ type Delivery struct {
 // PushSender sends a delivery to its devices, through their push services: an
 // extension's. It removes a device whose token its push service no longer knows. Its
 // errors are logged; a delivery is never sent again, a lost push being better than a
-// duplicate.
+// duplicate. It is given SendTimeout at most: an API request or a collector's pass
+// waits on it.
 type PushSender interface {
 	Send(ctx context.Context, d Delivery) error
 }
@@ -116,6 +117,9 @@ type Store interface {
 // PerVehicleHour is how many notifications a vehicle sends at most in an hour: a car
 // charging on and off under the sun would otherwise ring all afternoon.
 const PerVehicleHour = 4
+
+// SendTimeout bounds a PushSender's Send, whatever the caller's context allows.
+const SendTimeout = 10 * time.Second
 
 // Fresh is how old a vehicle's event may be to be told: a vehicle read again after a
 // long time, or derived again from its history, would otherwise tell its past.
@@ -180,7 +184,14 @@ func (n *Notifier) Wants(ctx context.Context, accountID, vehicleID string, k Kin
 	if err != nil {
 		return false, fmt.Errorf("notification preferences: %w", err)
 	}
-	return p.Enabled(s, vehicleID), nil
+	if !p.Enabled(s, vehicleID) {
+		return false, nil
+	}
+	devices, err := n.st.Devices(ctx, accountID)
+	if err != nil {
+		return false, fmt.Errorf("devices: %w", err)
+	}
+	return len(devices) > 0, nil
 }
 
 // Notify tells e to the devices of its account, if the user wants to know of it: the
@@ -223,7 +234,9 @@ func (n *Notifier) Notify(ctx context.Context, e Event) error {
 	if !send {
 		return nil
 	}
-	if err := sender.Send(ctx, Delivery{ID: id, Event: e, Devices: devices}); err != nil {
+	sendCtx, cancel := context.WithTimeout(ctx, SendTimeout)
+	defer cancel()
+	if err := sender.Send(sendCtx, Delivery{ID: id, Event: e, Devices: devices}); err != nil {
 		if ctx.Err() == nil {
 			n.log.Warn("notification not sent", "kind", string(e.Kind), "account", e.AccountID, "delivery", id, "err", err)
 		}

@@ -1745,7 +1745,7 @@
   },
   "accessTokens": {
     "title": "Accesso all’API",
-    "help": "Un token di accesso personale permette a un programma di leggere i Suoi dati tramite l’API senza la Sua password: uno script, Home Assistant, un assistente IA, l’app mobile. Legge solo ciò che Lei vede qui, e non cambia nulla, a meno che Lei non gli permetta di segnare il motivo dei Suoi viaggi. Lo revochi quando il programma non ne ha più bisogno.",
+    "help": "Un token di accesso personale permette a un programma di leggere i Suoi dati tramite l’API senza la Sua password: uno script, Home Assistant, un assistente IA, l’app mobile. Legge solo ciò che Lei vede qui, e non cambia nulla, a meno che Lei non gli permetta di segnare il motivo dei Suoi viaggi o di ricevere le notifiche. Lo revochi quando il programma non ne ha più bisogno.",
     "loading": "Caricamento dei token di accesso",
     "none": "Ancora nessun token di accesso.",
     "createdAt": "Creato: {at}",
@@ -1766,6 +1766,7 @@
       "365d": "Tra un anno",
       "never": "Mai"
     },
+    "scopes": "Che cosa può cambiare",
     "markTrips": "Può segnare il motivo dei viaggi",
     "markTripsHelp": "Lavoro, casa-lavoro o personale, come nell’elenco dei viaggi.",
     "notify": "Può ricevere le notifiche",

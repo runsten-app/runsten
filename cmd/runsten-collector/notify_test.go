@@ -144,16 +144,27 @@ func TestNotifying(t *testing.T) {
 		if err := failing.Update(t.Context(), "a", "v"); err != nil {
 			t.Errorf("current state failed: %v", err)
 		}
+		// Without the cable, no charge is told interrupted; the rest is told.
+		s := &sent{}
+		failing.notifier = notifierOf(notify.Preferences{VehiclesDefault: map[notify.Kind]bool{notify.TripToClassify: true}}, s)
 		if err := failing.tell(t.Context(), "a", "v", res); !errors.Is(err, down) {
 			t.Errorf("tell: %v", err)
 		}
+		if got, want := s.sorted(), []string{"charge_finished v", "trip_to_classify v"}; !slices.Equal(got, want) {
+			t.Errorf("without the cable, sent %v, want %v", got, want)
+		}
+		// Without the trips' purposes, the charges are told.
 		failing = n
-		failing.notifier = notifierOf(notify.Preferences{VehiclesDefault: map[notify.Kind]bool{notify.TripToClassify: true}}, &sent{})
+		s = &sent{}
+		failing.notifier = notifierOf(notify.Preferences{VehiclesDefault: map[notify.Kind]bool{notify.TripToClassify: true}}, s)
 		failing.purposes = func(context.Context, string, string, []core.Trip) ([]core.Value[core.TripPurpose], error) {
 			return nil, down
 		}
 		if err := failing.tell(t.Context(), "a", "v", res); !errors.Is(err, down) {
 			t.Errorf("purposes failed: %v", err)
+		}
+		if got, want := s.sorted(), []string{"charge_finished v", "charge_interrupted v"}; !slices.Equal(got, want) {
+			t.Errorf("without the purposes, sent %v, want %v", got, want)
 		}
 	})
 }

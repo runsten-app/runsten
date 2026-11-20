@@ -303,22 +303,25 @@ async function confirmRevoke() {
         :label="t('accessTokens.expiry.label')"
         class="expiry mb-2"
       />
-      <v-checkbox
-        id="access-token-mark-trips"
-        v-model="markTrips"
-        :label="t('accessTokens.markTrips')"
-        :hint="t('accessTokens.markTripsHelp')"
-        persistent-hint
-        class="mark-trips mb-2"
-      />
-      <v-checkbox
-        id="access-token-notifications"
-        v-model="notifications"
-        :label="t('accessTokens.notify')"
-        :hint="t('accessTokens.notifyHelp')"
-        persistent-hint
-        class="notifications mb-4"
-      />
+      <fieldset class="scopes-field mb-4">
+        <legend class="text-title-small mb-2">{{ t('accessTokens.scopes') }}</legend>
+        <v-checkbox
+          id="access-token-mark-trips"
+          v-model="markTrips"
+          :label="t('accessTokens.markTrips')"
+          :hint="t('accessTokens.markTripsHelp')"
+          persistent-hint
+          class="mark-trips mb-2"
+        />
+        <v-checkbox
+          id="access-token-notifications"
+          v-model="notifications"
+          :label="t('accessTokens.notify')"
+          :hint="t('accessTokens.notifyHelp')"
+          persistent-hint
+          class="notifications"
+        />
+      </fieldset>
       <div class="d-flex flex-wrap ga-3">
         <v-btn type="submit" color="primary" :loading="creating" class="create">
           {{ t('accessTokens.create') }}
@@ -362,6 +365,11 @@ async function confirmRevoke() {
 </template>
 
 <style scoped>
+.scopes-field {
+  border: 0;
+  padding: 0;
+  margin-inline: 0;
+}
 .name-field,
 .expiry,
 .secret {

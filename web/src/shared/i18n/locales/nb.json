@@ -1745,7 +1745,7 @@
   },
   "accessTokens": {
     "title": "API-tilgang",
-    "help": "Et personlig tilgangstoken lar et program lese dataene dine via API-et uten passordet ditt: et skript, Home Assistant, en KI-assistent, mobilappen. Det leser bare det du ser her, og endrer ingenting, med mindre du lar det merke formålet med turene dine. Tilbakekall det når programmet ikke lenger trenger det.",
+    "help": "Et personlig tilgangstoken lar et program lese dataene dine via API-et uten passordet ditt: et skript, Home Assistant, en KI-assistent, mobilappen. Det leser bare det du ser her, og endrer ingenting, med mindre du lar det merke formålet med turene dine eller motta varsler. Tilbakekall det når programmet ikke lenger trenger det.",
     "loading": "Laster inn tilgangstokenene",
     "none": "Ingen tilgangstokener ennå.",
     "createdAt": "Opprettet {at}",
@@ -1766,6 +1766,7 @@
       "365d": "Om ett år",
       "never": "Aldri"
     },
+    "scopes": "Hva det kan endre",
     "markTrips": "Kan merke formålet med turene",
     "markTripsHelp": "Jobb, til og fra jobb eller privat, som i listen over turer.",
     "notify": "Kan motta varsler",

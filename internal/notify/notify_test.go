@@ -183,6 +183,9 @@ func TestNothingToSend(t *testing.T) {
 	if err := n.Notify(t.Context(), e); err != nil || len(s.sent) != 0 || len(st.delivered) != 0 {
 		t.Errorf("without a device: %v, %+v", err, st.delivered)
 	}
+	if wants, err := n.Wants(t.Context(), "a", "", CredentialRefused); err != nil || wants {
+		t.Errorf("wants without a device: %v, %v", wants, err)
+	}
 }
 
 // TestPerVehicleHour: a vehicle sends PerVehicleHour notifications at most in an hour;
@@ -406,5 +409,40 @@ func TestVehicleEvents(t *testing.T) {
 	}
 	if e := TripToClassifyEvent("a", "v", trips[0]); e.Kind != TripToClassify || e.Key != "2026-11-20T17:30:00.000000Z" || e.VehicleID != "v" {
 		t.Errorf("to classify %+v", e)
+	}
+}
+
+// deadlineSender records the deadline its Send was given.
+type deadlineSender struct {
+	deadline time.Time
+	ok       bool
+}
+
+func (d *deadlineSender) Send(ctx context.Context, _ Delivery) error {
+	d.deadline, d.ok = ctx.Deadline()
+	return nil
+}
+
+// TestSendBounded: a send is bounded by SendTimeout, even when its caller's context has
+// no deadline (an API request's, carried on without its cancellation).
+func TestSendBounded(t *testing.T) {
+	n := New(NewRegistry(), &memStore{devices: []Device{phone}}, clock.NewManual(t0), quiet)
+	s := &deadlineSender{}
+	n.SetSender(s)
+	if err := n.Notify(context.WithoutCancel(t.Context()), Event{Kind: CredentialRefused, AccountID: "a", Key: "k"}); err != nil {
+		t.Fatal(err)
+	}
+	if !s.ok {
+		t.Error("a send without a deadline")
+	}
+	// A context with a nearer deadline keeps it.
+	near, cancel := context.WithTimeout(t.Context(), time.Millisecond)
+	defer cancel()
+	want, _ := near.Deadline()
+	if err := n.Notify(near, Event{Kind: CredentialRefused, AccountID: "a", Key: "k2"}); err != nil {
+		t.Fatal(err)
+	}
+	if !s.deadline.Equal(want) {
+		t.Errorf("deadline %v, want the caller's %v", s.deadline, want)
 	}
 }
