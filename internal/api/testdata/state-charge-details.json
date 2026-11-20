@@ -16,6 +16,8 @@
   "range_km": null,
   "odometer_km": null,
   "position": null,
+  "place": null,
+  "address": null,
   "battery_capacity_kwh": null,
   "charging": {
     "status": null,

@@ -44,6 +44,11 @@
     "fetched_at": "2026-09-28T17:30:00Z",
     "checked_at": "2026-09-28T18:30:00Z"
   },
+  "place": {
+    "id": "5e1f0000-0000-4000-8000-000000000001",
+    "name": "Maison de Tante Agathe"
+  },
+  "address": null,
   "battery_capacity_kwh": {
     "value": 78.012,
     "reported_at": null,
