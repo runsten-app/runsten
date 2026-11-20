@@ -412,30 +412,54 @@ func TestVehicleEvents(t *testing.T) {
 	}
 }
 
-// deadlineSender records the deadline its Send was given.
-type deadlineSender struct {
+// stalledSender waits for its context to end, and records the deadline it was given.
+type stalledSender struct {
 	deadline time.Time
 	ok       bool
 }
 
-func (d *deadlineSender) Send(ctx context.Context, _ Delivery) error {
+func (d *stalledSender) Send(ctx context.Context, _ Delivery) error {
 	d.deadline, d.ok = ctx.Deadline()
-	return nil
+	<-ctx.Done()
+	return ctx.Err() //nolint:wrapcheck // the test's
 }
 
-// TestSendBounded: a send is bounded by SendTimeout, even when its caller's context has
-// no deadline (an API request's, carried on without its cancellation).
-func TestSendBounded(t *testing.T) {
-	n := New(NewRegistry(), &memStore{devices: []Device{phone}}, clock.NewManual(t0), quiet)
-	s := &deadlineSender{}
+// stalledStore answers nothing until its context ends.
+type stalledStore struct{ memStore }
+
+func (s *stalledStore) NotificationPreferences(ctx context.Context, _ string) (Preferences, error) {
+	<-ctx.Done()
+	return Preferences{}, ctx.Err() //nolint:wrapcheck // the test's
+}
+
+// TestBounded: a notification is bounded by its timeout, its reads as its send, even when
+// its caller's context has no deadline (an API request's, carried on without its
+// cancellation); a nearer deadline of the caller's is kept.
+func TestBounded(t *testing.T) {
+	e := Event{Kind: CredentialRefused, AccountID: "a", Key: "k"}
+	unbounded := context.WithoutCancel(t.Context())
+
+	stalled := New(NewRegistry(), &stalledStore{}, clock.NewManual(t0), quiet)
+	stalled.timeout = 20 * time.Millisecond
+	stalled.SetSender(&fakeSender{})
+	if err := stalled.Notify(unbounded, e); !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("a store that stalls: %v", err)
+	}
+
+	st := &memStore{devices: []Device{phone}}
+	n := New(NewRegistry(), st, clock.NewManual(t0), quiet)
+	n.timeout = 20 * time.Millisecond
+	s := &stalledSender{}
 	n.SetSender(s)
-	if err := n.Notify(context.WithoutCancel(t.Context()), Event{Kind: CredentialRefused, AccountID: "a", Key: "k"}); err != nil {
-		t.Fatal(err)
+	if err := n.Notify(unbounded, e); err != nil || !s.ok || len(st.delivered) != 1 {
+		t.Errorf("a sender that stalls: %v, deadline %v, %+v", err, s.ok, st.delivered)
 	}
-	if !s.ok {
-		t.Error("a send without a deadline")
+	// Recorded before it was sent: not sent again.
+	if err := n.Notify(unbounded, e); err != nil || len(st.delivered) != 1 {
+		t.Errorf("sent again: %v, %+v", err, st.delivered)
 	}
-	// A context with a nearer deadline keeps it.
+
+	n.timeout = Timeout
 	near, cancel := context.WithTimeout(t.Context(), time.Millisecond)
 	defer cancel()
 	want, _ := near.Deadline()

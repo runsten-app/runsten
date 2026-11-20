@@ -97,8 +97,8 @@ type Delivery struct {
 // PushSender sends a delivery to its devices, through their push services: an
 // extension's. It removes a device whose token its push service no longer knows. Its
 // errors are logged; a delivery is never sent again, a lost push being better than a
-// duplicate. It is given SendTimeout at most: an API request or a collector's pass
-// waits on it.
+// duplicate. It returns when its context ends: a notification takes Timeout at most,
+// which an API request or a collector's pass waits on.
 type PushSender interface {
 	Send(ctx context.Context, d Delivery) error
 }
@@ -118,8 +118,9 @@ type Store interface {
 // charging on and off under the sun would otherwise ring all afternoon.
 const PerVehicleHour = 4
 
-// SendTimeout bounds a PushSender's Send, whatever the caller's context allows.
-const SendTimeout = 10 * time.Second
+// Timeout bounds a notification, its reads, its record and its send, whatever the
+// caller's context allows: an API request carries on without its own cancellation.
+const Timeout = 10 * time.Second
 
 // Fresh is how old a vehicle's event may be to be told: a vehicle read again after a
 // long time, or derived again from its history, would otherwise tell its past.
@@ -139,12 +140,14 @@ type Notifier struct {
 
 	mu     sync.RWMutex
 	sender PushSender
+	// timeout is Timeout, shorter in the tests.
+	timeout time.Duration
 }
 
 // New returns a Notifier of the kinds of reg, which sends nothing until it is given a
 // PushSender.
 func New(reg *Registry, st Store, clk clock.Clock, log *slog.Logger) *Notifier {
-	return &Notifier{reg: reg, st: st, clk: clk, log: log}
+	return &Notifier{reg: reg, st: st, clk: clk, log: log, timeout: Timeout}
 }
 
 // Registry is the kinds the Notifier knows, to which an extension adds its own.
@@ -213,6 +216,9 @@ func (n *Notifier) Notify(ctx context.Context, e Event) error {
 	if sender == nil {
 		return nil
 	}
+	caller := ctx
+	ctx, cancel := context.WithTimeout(ctx, n.timeout)
+	defer cancel()
 	p, err := n.st.NotificationPreferences(ctx, e.AccountID)
 	if err != nil {
 		return fmt.Errorf("notification preferences: %w", err)
@@ -234,10 +240,8 @@ func (n *Notifier) Notify(ctx context.Context, e Event) error {
 	if !send {
 		return nil
 	}
-	sendCtx, cancel := context.WithTimeout(ctx, SendTimeout)
-	defer cancel()
-	if err := sender.Send(sendCtx, Delivery{ID: id, Event: e, Devices: devices}); err != nil {
-		if ctx.Err() == nil {
+	if err := sender.Send(ctx, Delivery{ID: id, Event: e, Devices: devices}); err != nil {
+		if caller.Err() == nil { // its own Timeout is told
 			n.log.Warn("notification not sent", "kind", string(e.Kind), "account", e.AccountID, "delivery", id, "err", err)
 		}
 		return nil
