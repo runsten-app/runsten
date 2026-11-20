@@ -260,7 +260,9 @@ type env struct {
 	pictures    *fakePictures
 	stored      *fakeStoredPictures
 	flows       *oauth.Flows
-	server      *Server
+	// notifications keeps the devices, the preferences and the deliveries.
+	notifications *memNotifications
+	server        *Server
 }
 
 // newEnv starts runsten-api against the simulator, with the redirect URI registered
@@ -274,7 +276,7 @@ func newEnv(t *testing.T, maxFlows int) *env {
 // the simulator accepts (nil: any).
 func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []string) *env {
 	t.Helper()
-	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, bmw: &memBMW{}, bmws: &fakeBMW{}, pleos: &memPleos{}, pleosVehicles: pleosVehicles{}, skoda: &memSkoda{}, renault: &memRenault{}, renaults: &fakeRenault{}, demo: &memDemo{}, demoVehicle: &fakeDemoVehicle{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, exports: &memAccountExports{}, archives: &memArchives{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}, stored: &fakeStoredPictures{}}
+	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, bmw: &memBMW{}, bmws: &fakeBMW{}, pleos: &memPleos{}, pleosVehicles: pleosVehicles{}, skoda: &memSkoda{}, renault: &memRenault{}, renaults: &fakeRenault{}, demo: &memDemo{}, demoVehicle: &fakeDemoVehicle{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, exports: &memAccountExports{}, archives: &memArchives{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}, stored: &fakeStoredPictures{}, notifications: newMemNotifications()}
 	e.reader = newMemReader(e.settings)
 	e.demo.reader = e.reader
 	t.Cleanup(func() {
@@ -318,7 +320,7 @@ func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []strin
 	e.sessions = newFakeSessions(e.clk)
 	e.tokens = newFakeTokens(e.clk)
 	e.server = New(Config{
-		Sessions: e.sessions, AccessTokens: e.tokens, Reader: e.reader, States: e.reader, Readings: e.reader, Health: e.reader, Charging: e.reader, Settings: e.settings, Costs: e.reader, Marks: e.reader, Imports: e.reader, Models: e.reader, Deletion: e.reader,
+		Sessions: e.sessions, AccessTokens: e.tokens, Reader: e.reader, States: e.reader, Readings: e.reader, Health: e.reader, Charging: e.reader, Settings: e.settings, Costs: e.reader, Marks: e.reader, Notifications: e.notifications, Imports: e.reader, Models: e.reader, Deletion: e.reader,
 		Authorizer: authz, Flows: e.flows, Enrollment: e.store, Locks: e.store, Vehicles: volvo.NewClient(e.sim.URL, instanceKey, e.sim.Client()),
 		Keys: e.store, Tokens: e.store, InstanceKey: instanceKey != "", ClientID: cfg.ClientID,
 		Polestar: e.polestar, PolestarVehicles: polestarSim(t, e.clk, polestarVIN),

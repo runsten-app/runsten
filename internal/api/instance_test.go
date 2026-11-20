@@ -23,11 +23,11 @@ func TestInstanceJSON(t *testing.T) {
 	u := e.api.URL + "/api/v1/instance"
 	e.server.Version = "0.11.0"
 
-	if _, body := get(t, noFollow(), u, c); body != `{"version":"0.11.0","update_check":false,"checked_at":null,"update":null,"map_tiles":null}`+"\n" {
+	if _, body := get(t, noFollow(), u, c); body != `{"version":"0.11.0","update_check":false,"checked_at":null,"update":null,"notifications":false,"map_tiles":null}`+"\n" {
 		t.Errorf("no check: %s", body)
 	}
 	e.server.Releases = fakeReleases{}
-	if _, body := get(t, noFollow(), u, c); body != `{"version":"0.11.0","update_check":true,"checked_at":null,"update":null,"map_tiles":null}`+"\n" {
+	if _, body := get(t, noFollow(), u, c); body != `{"version":"0.11.0","update_check":true,"checked_at":null,"update":null,"notifications":false,"map_tiles":null}`+"\n" {
 		t.Errorf("not read yet: %s", body)
 	}
 	read := time.Date(2026, 10, 26, 11, 0, 0, 0, time.FixedZone("CET", 3600))

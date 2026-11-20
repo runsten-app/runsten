@@ -1745,7 +1745,7 @@
   },
   "accessTokens": {
     "title": "API-toegang",
-    "help": "Met een persoonlijk toegangstoken kan een programma uw gegevens via de API lezen zonder uw wachtwoord: een script, Home Assistant, een AI-assistent, de mobiele app. Het leest alleen wat u hier ziet, en verandert niets, tenzij u het toestaat het doel van uw ritten te markeren. Trek het in zodra het programma het niet meer nodig heeft.",
+    "help": "Met een persoonlijk toegangstoken kan een programma uw gegevens via de API lezen zonder uw wachtwoord: een script, Home Assistant, een AI-assistent, de mobiele app. Het leest alleen wat u hier ziet, en verandert niets, tenzij u het toestaat het doel van uw ritten te markeren of meldingen te ontvangen. Trek het in zodra het programma het niet meer nodig heeft.",
     "loading": "Toegangstokens laden",
     "none": "Nog geen toegangstoken.",
     "createdAt": "Aangemaakt {at}",
@@ -1755,6 +1755,7 @@
     "expiresAt": "verloopt {at}",
     "expiredAt": "verlopen {at}",
     "marksTrips": "markeert het doel van de ritten",
+    "notifies": "ontvangt meldingen",
     "new": "Nieuw toegangstoken",
     "name": "Naam",
     "nameHelp": "Om uw tokens uit elkaar te houden, bijvoorbeeld het programma dat het gebruikt.",
@@ -1765,8 +1766,11 @@
       "365d": "Over een jaar",
       "never": "Nooit"
     },
+    "scopes": "Wat het mag wijzigen",
     "markTrips": "Mag het doel van de ritten markeren",
-    "markTripsHelp": "Zakelijk, woon-werk of privé, zoals in de lijst van ritten: de enige wijziging die het kan doen.",
+    "markTripsHelp": "Zakelijk, woon-werk of privé, zoals in de lijst van ritten.",
+    "notify": "Mag meldingen ontvangen",
+    "notifyHelp": "Registreert een telefoon voor pushmeldingen en wijzigt welke het ontvangt: zoals de mobiele app doet.",
     "create": "Token aanmaken",
     "cancel": "Annuleren",
     "created": {

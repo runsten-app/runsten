@@ -33,6 +33,7 @@ import (
 	"runsten/internal/catalog"
 	"runsten/internal/core"
 	"runsten/internal/flags"
+	"runsten/internal/notify"
 	"runsten/internal/oauth"
 	"runsten/internal/platform/clock"
 )
@@ -224,6 +225,11 @@ type Config struct {
 	Costs    ChargeCosts
 	// Marks are the purposes the user marked the trips with.
 	Marks TripMarks
+	// Notifications are the account's devices and notification preferences; Notifier
+	// tells the devices of the events, with an extension's PushSender (nil, or without
+	// one: the instance sends none).
+	Notifications Notifications
+	Notifier      *notify.Notifier
 	// Imports are the vehicles' events imported from other applications; ImportJobs
 	// the imports asked for, run by the import worker; Aximote lists the vehicles of an
 	// Aximote account.
@@ -409,6 +415,7 @@ func New(cfg Config) *Server {
 	s.registerSettings(s.api)
 	s.registerCosts(s.api)
 	s.registerMarks(s.api)
+	s.registerNotifications(s.api)
 	s.registerConnection(s.api)
 	s.registerPolestar(s.api)
 	s.registerTesla(s.api)

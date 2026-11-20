@@ -60,6 +60,11 @@ var exportTables = []exportTable{
 	{name: "import_jobs", orderBy: "created_at, id", omit: []string{"token"}},
 	{name: "mqtt_brokers", orderBy: "account_id", omit: []string{"password"}},
 	{name: "mqtt_status", orderBy: "account_id"},
+	// A device's token is the address its push service reaches it at, not a credential of
+	// the account: the user's data, as the rest of the row.
+	{name: "devices", orderBy: "created_at, id"},
+	{name: "notification_preferences", orderBy: "vehicle_id NULLS FIRST, kind"},
+	{name: "notification_deliveries", orderBy: "created_at, id"},
 	// value_hash: the deduplication's, a hash of the payload.
 	{name: "snapshots", orderBy: "vehicle_id, source, endpoint, fetched_at", omit: []string{"value_hash"}},
 }

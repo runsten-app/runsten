@@ -37,9 +37,14 @@ type Scope string
 // car needs every day.
 const ScopeMarkTrips Scope = "trips:mark"
 
+// ScopeNotifications lets a token register its device and set the account's notification
+// preferences (PUT and DELETE /devices/{device}, PUT /notification-preferences), and
+// nothing else: what an app that receives notifications writes.
+const ScopeNotifications Scope = "notifications"
+
 // Scopes returns the scopes a token may be given, in the order they are listed: a fresh
 // slice, so that no caller changes the policy.
-func Scopes() []Scope { return []Scope{ScopeMarkTrips} }
+func Scopes() []Scope { return []Scope{ScopeMarkTrips, ScopeNotifications} }
 
 // Token is a personal access token: a program reads the API with it on a user's behalf,
 // without a session. Its secret is shown once, when it is issued; the store keeps its

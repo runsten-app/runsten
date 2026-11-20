@@ -1745,7 +1745,7 @@
   },
   "accessTokens": {
     "title": "API-Zugriff",
-    "help": "Mit einem persönlichen Zugriffstoken kann ein Programm Ihre Daten ohne Ihr Passwort über die API lesen: ein Skript, Home Assistant, ein KI-Assistent, die mobile App. Es liest nur das, was Sie hier sehen, und ändert nichts, es sei denn, Sie erlauben ihm, den Zweck Ihrer Fahrten zu markieren. Widerrufen Sie es, wenn das Programm es nicht mehr braucht.",
+    "help": "Mit einem persönlichen Zugriffstoken kann ein Programm Ihre Daten ohne Ihr Passwort über die API lesen: ein Skript, Home Assistant, ein KI-Assistent, die mobile App. Es liest nur das, was Sie hier sehen, und ändert nichts, es sei denn, Sie erlauben ihm, den Zweck Ihrer Fahrten zu markieren oder Benachrichtigungen zu empfangen. Widerrufen Sie es, wenn das Programm es nicht mehr braucht.",
     "loading": "Zugriffstokens werden geladen",
     "none": "Noch kein Zugriffstoken.",
     "createdAt": "Erstellt: {at}",
@@ -1755,6 +1755,7 @@
     "expiresAt": "läuft ab: {at}",
     "expiredAt": "abgelaufen: {at}",
     "marksTrips": "markiert den Zweck der Fahrten",
+    "notifies": "empfängt Benachrichtigungen",
     "new": "Neues Zugriffstoken",
     "name": "Name",
     "nameHelp": "Um Ihre Tokens auseinanderzuhalten, etwa das Programm, das es verwendet.",
@@ -1765,8 +1766,11 @@
       "365d": "In einem Jahr",
       "never": "Nie"
     },
+    "scopes": "Was es ändern darf",
     "markTrips": "Darf den Zweck der Fahrten markieren",
-    "markTripsHelp": "Geschäftlich, Arbeitsweg oder privat, wie in der Liste der Fahrten: die einzige Änderung, die es vornehmen kann.",
+    "markTripsHelp": "Geschäftlich, Arbeitsweg oder privat, wie in der Liste der Fahrten.",
+    "notify": "Darf Benachrichtigungen empfangen",
+    "notifyHelp": "Registriert ein Telefon für Push-Benachrichtigungen und ändert, welche es erhält: wie die mobile App.",
     "create": "Token erstellen",
     "cancel": "Abbrechen",
     "created": {

@@ -646,6 +646,21 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/collector
               desc: outward dependency forbidden
+        # The notifications know neither the network nor the database: the store keeps
+        # their devices and preferences, an extension's PushSender reaches the devices.
+        notify-is-pure:
+          files: ["**/internal/notify/*.go"]
+          deny:
+            - pkg: net/http
+              desc: the push services belong to an extension's PushSender
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/api
+              desc: outward dependency forbidden
         # paho is the MQTT adapter's and CarData's stream's: neither the domain nor the
         # collector know it. The tests of the simulated CarData stream connect to it as a
         # client would.

@@ -48,8 +48,9 @@ Conventions:
 Every route but ` + "`POST /session`" + ` requires the session cookie it sets, or, to read, a
 personal access token (` + "`Authorization: Bearer rst_…`" + `, issued by ` + "`POST /tokens`" + `). A token
 reads: it serves the ` + "`GET`" + ` routes but those of the session and of the tokens, and the writes its
-scopes allow, nothing else (403 ` + "`insufficient_scope`" + ` otherwise). Its one scope, ` + "`trips:mark`" + `,
-allows ` + "`PUT /vehicles/{vehicle}/trip-marks`" + `. A token makes at most 120 requests at once then 2 per second (429
+scopes allow, nothing else (403 ` + "`insufficient_scope`" + ` otherwise). Its scope ` + "`trips:mark`" + `
+allows ` + "`PUT /vehicles/{vehicle}/trip-marks`" + `; ` + "`notifications`" + ` allows ` + "`PUT`" + ` and ` + "`DELETE /devices/{device}`" + `
+and ` + "`PUT /notification-preferences`" + `. A token makes at most 120 requests at once then 2 per second (429
 ` + "`rate_limited`" + `, with ` + "`Retry-After`" + `). Requests that
 change state (` + "`POST`, `PUT`, `DELETE`" + `) from another origin are refused (403
 ` + "`cross_origin`" + `), after the ` + "`Sec-Fetch-Site`" + ` or ` + "`Origin`" + ` header. A request body must be
@@ -102,7 +103,8 @@ func humaConfig() huma.Config {
 			Type: "http", Scheme: "bearer",
 			Description: "A personal access token, `rst_` then 43 characters, issued by `POST /tokens`: it reads, " +
 				"and makes the writes of its scopes. An operation that a scope allows lists it in its requirement " +
-				"(`trips:mark`: `PUT /vehicles/{vehicle}/trip-marks`).",
+				"(`trips:mark`: `PUT /vehicles/{vehicle}/trip-marks`; `notifications`: `PUT` and `DELETE /devices/{device}`, " +
+				"`PUT /notification-preferences`).",
 		},
 	}
 	return cfg
@@ -162,6 +164,7 @@ const (
 	codeKeyExpired           errorCode = "key_expired"
 	codeVINNotCovered        errorCode = "vin_not_covered"
 	codeWrongCode            errorCode = "wrong_code"
+	codeTooManyDevices       errorCode = "too_many_devices"
 	codeInternal             errorCode = "internal"
 )
 
@@ -172,7 +175,7 @@ func (errorCode) Schema(huma.Registry) *huma.Schema {
 		codeCurrencyInUse, codeWithoutPositionTaken, codeTooManyPlaces, codeChargeHasCost, codeImportedCharge, codeAPIKeyRefused, codeCredentialRefused, codeAPIClosed, codeNoVehicle, codeNotVolvo, codeInstanceKey, codeVolvoNotConfigured, codeTooManyVehicles, codeNotAdmitted, codeFeatureUnavailable,
 		codeBrokerRefused, codeTokenRefused, codeSourceUnavailable, codeAuthorizationExpired, codeImportActive, codeExportActive, codeInvalidFile, codeInsufficientScope, codeRateLimited,
 		codeNotTesla, codeNoMatchingCar, codeAuthorizationPending, codeScopeMissing, codeKeyExpired, codeVINNotCovered, codeWrongCode,
-		codeInternal)
+		codeTooManyDevices, codeInternal)
 }
 
 // errorJSON is the body of every JSON error, and the error the operations return.

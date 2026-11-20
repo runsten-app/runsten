@@ -12,6 +12,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 
 	"runsten/internal/auth"
+	"runsten/internal/notify"
 )
 
 // A personal access token lets a program (a script, Home Assistant, an assistant's
@@ -196,7 +197,7 @@ type accessTokenJSON struct {
 	CreatedAt  time.Time  `json:"created_at" pattern:"Z$"`
 	LastUsedAt *time.Time `json:"last_used_at" pattern:"Z$" doc:"The latest request made with it, to the hour; null: never used."`
 	ExpiresAt  *time.Time `json:"expires_at" pattern:"Z$" doc:"From then on it no longer authenticates, and stays listed until it is revoked; null: never expires."`
-	Scopes     []string   `json:"scopes" nullable:"false" uniqueItems:"true" enum:"trips:mark" doc:"The writes it may make besides reading; empty: it only reads."`
+	Scopes     []string   `json:"scopes" nullable:"false" uniqueItems:"true" enum:"trips:mark,notifications" doc:"The writes it may make besides reading; empty: it only reads."`
 }
 
 type accessTokensJSON struct {
@@ -206,7 +207,7 @@ type accessTokensJSON struct {
 type newAccessTokenJSON struct {
 	Name   string   `json:"name" minLength:"1" maxLength:"64" doc:"To tell the tokens apart, such as the program that uses it." example:"Home Assistant"`
 	Expiry string   `json:"expiry" enum:"30d,90d,365d,never" doc:"How long it authenticates, from now."`
-	Scopes []string `json:"scopes" nullable:"false" uniqueItems:"true" enum:"trips:mark" doc:"The writes it may make besides reading (trips:mark: PUT /vehicles/{vehicle}/trip-marks); empty: it only reads."`
+	Scopes []string `json:"scopes" nullable:"false" uniqueItems:"true" enum:"trips:mark,notifications" doc:"The writes it may make besides reading (trips:mark: PUT /vehicles/{vehicle}/trip-marks; notifications: PUT and DELETE /devices/{device}, PUT /notification-preferences); empty: it only reads."`
 }
 
 type createdAccessTokenJSON struct {
@@ -216,7 +217,7 @@ type createdAccessTokenJSON struct {
 	CreatedAt  time.Time  `json:"created_at" pattern:"Z$"`
 	LastUsedAt *time.Time `json:"last_used_at" pattern:"Z$" doc:"Always null: it was never used."`
 	ExpiresAt  *time.Time `json:"expires_at" pattern:"Z$" doc:"null: never expires."`
-	Scopes     []string   `json:"scopes" nullable:"false" uniqueItems:"true" enum:"trips:mark" doc:"The writes it may make besides reading; empty: it only reads."`
+	Scopes     []string   `json:"scopes" nullable:"false" uniqueItems:"true" enum:"trips:mark,notifications" doc:"The writes it may make besides reading; empty: it only reads."`
 }
 
 func accessTokenOf(t auth.Token) accessTokenJSON {
@@ -270,6 +271,10 @@ func (s *Server) createAccessToken(ctx context.Context, in *newAccessTokenInput)
 		return nil, s.internal("access token not issued", err)
 	}
 	s.Log.Info("access token issued", "token", t.ID, "user", t.UserID, "account", t.AccountID, "scopes", t.Scopes)
+	s.notify(ctx, notify.Event{
+		Kind: notify.AccessGranted, AccountID: t.AccountID, At: t.CreatedAt, Key: "token:" + t.ID,
+		Args: map[string]string{"access": "token"}, // never its name, which the user wrote
+	})
 	j := accessTokenOf(t)
 	return respond(createdAccessTokenJSON{
 		Token: secret, ID: j.ID, Name: j.Name, CreatedAt: j.CreatedAt, LastUsedAt: j.LastUsedAt, ExpiresAt: j.ExpiresAt,

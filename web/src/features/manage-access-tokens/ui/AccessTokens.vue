@@ -14,8 +14,9 @@ import {
 
 // AccessTokens lists the user's personal access tokens, issues one, and revokes them. A
 // token lets a program (a script, Home Assistant, an assistant, a phone) read the API
-// without the user's password; it reads, and marks the trips' purpose only if the user
-// lets it (the scope trips:mark). Its secret is shown once, right after it is issued,
+// without the user's password; it reads, marks the trips' purpose only if the user lets
+// it (the scope trips:mark), and registers a phone for notifications only if the user lets
+// it (the scope notifications). Its secret is shown once, right after it is issued,
 // with a button to copy it: only its hash is kept.
 const { t } = useI18n()
 const f = useFormat()
@@ -30,6 +31,7 @@ const opened = ref(false)
 const name = ref('')
 const expiry = ref<Expiry>('90d')
 const markTrips = ref(false)
+const notifications = ref(false)
 const sent = ref(false)
 const status = ref('')
 const created = ref<CreatedAccessToken | null>(null)
@@ -75,6 +77,7 @@ async function openForm() {
   name.value = ''
   expiry.value = '90d'
   markTrips.value = false
+  notifications.value = false
   sent.value = false
   created.value = null
   status.value = ''
@@ -100,7 +103,10 @@ async function submit() {
     created.value = await createAccessToken({
       name: name.value.trim(),
       expiry: expiry.value,
-      scopes: markTrips.value ? ['trips:mark'] : [],
+      scopes: [
+        ...(markTrips.value ? (['trips:mark'] as const) : []),
+        ...(notifications.value ? (['notifications'] as const) : []),
+      ],
     })
     opened.value = false
     copied.value = false
@@ -207,6 +213,9 @@ async function confirmRevoke() {
               <span v-if="tok.scopes.includes('trips:mark')" class="scopes">
                 · {{ t('accessTokens.marksTrips') }}</span
               >
+              <span v-if="tok.scopes.includes('notifications')" class="scopes notifies">
+                · {{ t('accessTokens.notifies') }}</span
+              >
             </p>
           </div>
           <v-btn
@@ -294,14 +303,25 @@ async function confirmRevoke() {
         :label="t('accessTokens.expiry.label')"
         class="expiry mb-2"
       />
-      <v-checkbox
-        id="access-token-mark-trips"
-        v-model="markTrips"
-        :label="t('accessTokens.markTrips')"
-        :hint="t('accessTokens.markTripsHelp')"
-        persistent-hint
-        class="mark-trips mb-4"
-      />
+      <fieldset class="scopes-field mb-4">
+        <legend class="text-title-small mb-2">{{ t('accessTokens.scopes') }}</legend>
+        <v-checkbox
+          id="access-token-mark-trips"
+          v-model="markTrips"
+          :label="t('accessTokens.markTrips')"
+          :hint="t('accessTokens.markTripsHelp')"
+          persistent-hint
+          class="mark-trips mb-2"
+        />
+        <v-checkbox
+          id="access-token-notifications"
+          v-model="notifications"
+          :label="t('accessTokens.notify')"
+          :hint="t('accessTokens.notifyHelp')"
+          persistent-hint
+          class="notifications"
+        />
+      </fieldset>
       <div class="d-flex flex-wrap ga-3">
         <v-btn type="submit" color="primary" :loading="creating" class="create">
           {{ t('accessTokens.create') }}
@@ -345,6 +365,11 @@ async function confirmRevoke() {
 </template>
 
 <style scoped>
+.scopes-field {
+  border: 0;
+  padding: 0;
+  margin-inline: 0;
+}
 .name-field,
 .expiry,
 .secret {

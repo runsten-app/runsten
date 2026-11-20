@@ -1745,7 +1745,7 @@
   },
   "accessTokens": {
     "title": "API-åtkomst",
-    "help": "En personlig åtkomsttoken låter ett program läsa dina data via API:et utan ditt lösenord: ett skript, Home Assistant, en AI-assistent, mobilappen. Den läser bara det du ser här, och ändrar ingenting, om du inte låter den markera dina resors syfte. Återkalla den när programmet inte längre behöver den.",
+    "help": "En personlig åtkomsttoken låter ett program läsa dina data via API:et utan ditt lösenord: ett skript, Home Assistant, en AI-assistent, mobilappen. Den läser bara det du ser här, och ändrar ingenting, om du inte låter den markera dina resors syfte eller ta emot aviseringar. Återkalla den när programmet inte längre behöver den.",
     "loading": "Läser in åtkomsttokens",
     "none": "Inga åtkomsttokens ännu.",
     "createdAt": "Skapad {at}",
@@ -1755,6 +1755,7 @@
     "expiresAt": "upphör {at}",
     "expiredAt": "upphörde {at}",
     "marksTrips": "markerar resornas syfte",
+    "notifies": "tar emot aviseringar",
     "new": "Ny åtkomsttoken",
     "name": "Namn",
     "nameHelp": "För att skilja dina tokens åt, till exempel programmet som använder den.",
@@ -1765,8 +1766,11 @@
       "365d": "Om ett år",
       "never": "Aldrig"
     },
+    "scopes": "Vad den får ändra",
     "markTrips": "Får markera resornas syfte",
-    "markTripsHelp": "Tjänst, till och från jobbet eller privat, som i listan över resor: den enda ändring den kan göra.",
+    "markTripsHelp": "Tjänst, till och från jobbet eller privat, som i listan över resor.",
+    "notify": "Får ta emot aviseringar",
+    "notifyHelp": "Registrerar en telefon för push-aviseringar och ändrar vilka den får: som mobilappen gör.",
     "create": "Skapa token",
     "cancel": "Avbryt",
     "created": {

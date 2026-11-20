@@ -33,6 +33,7 @@ components:
           items:
             enum:
               - trips:mark
+              - notifications
             type: string
           type: array
           uniqueItems: true
@@ -1724,6 +1725,7 @@ components:
           items:
             enum:
               - trips:mark
+              - notifications
             type: string
           type: array
           uniqueItems: true
@@ -1803,6 +1805,43 @@ components:
           type: string
       required:
         - set_at
+      type: object
+    DeviceBody:
+      additionalProperties: false
+      properties:
+        app_version:
+          description: The app's version, as 1.0.0.
+          examples:
+            - 1.0.0
+          maxLength: 32
+          minLength: 1
+          pattern: ^[0-9A-Za-z.+-]+$
+          type: string
+        locale:
+          description: The language the device writes the notifications in, BCP 47.
+          examples:
+            - fr-FR
+          maxLength: 35
+          minLength: 2
+          pattern: ^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$
+          type: string
+        platform:
+          description: "The push service that reaches the device: apns (Apple's, iOS) or fcm (Firebase Cloud Messaging, Android)."
+          enum:
+            - apns
+            - fcm
+          type: string
+        token:
+          description: "The token the push service gave the app: the device's address there."
+          maxLength: 4096
+          minLength: 1
+          pattern: ^[\x21-\x7e]+$
+          type: string
+      required:
+        - platform
+        - token
+        - locale
+        - app_version
       type: object
     DistanceBand:
       additionalProperties: false
@@ -2025,6 +2064,7 @@ components:
             - key_expired
             - vin_not_covered
             - wrong_code
+            - too_many_devices
             - internal
           type: string
         message:
@@ -2466,6 +2506,9 @@ components:
           oneOf:
             - $ref: "#/components/schemas/MapTiles"
             - type: "null"
+        notifications:
+          description: "Whether the instance sends push notifications to the devices an app registers (PUT /devices/{device}); false: it sends none, and an app hides their settings."
+          type: boolean
         update:
           description: "A newer release than the one running, as last read; null: none, or not known."
           oneOf:
@@ -2482,6 +2525,7 @@ components:
         - update_check
         - checked_at
         - update
+        - notifications
         - map_tiles
       type: object
     InstanceKey:
@@ -2492,6 +2536,42 @@ components:
           type: string
       required:
         - last4
+      type: object
+    KindChoice:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: On or off; a kind always on cannot be turned off.
+          type: boolean
+        kind:
+          description: A kind of the level.
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+          type: string
+      required:
+        - kind
+        - enabled
+      type: object
+    KindPreference:
+      additionalProperties: false
+      properties:
+        always:
+          description: "The user cannot turn it off: enabled is always true."
+          type: boolean
+        default:
+          description: Whether it is on when the user chose nothing.
+          type: boolean
+        enabled:
+          description: Whether the user is told of it.
+          type: boolean
+        kind:
+          description: The kind of notification, as charge_finished. The instance may have kinds of its own beyond those the document names.
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+          type: string
+      required:
+        - kind
+        - enabled
+        - default
+        - always
       type: object
     KwhPrice:
       additionalProperties: false
@@ -2901,10 +2981,11 @@ components:
           minLength: 1
           type: string
         scopes:
-          description: "The writes it may make besides reading (trips:mark: PUT /vehicles/{vehicle}/trip-marks); empty: it only reads."
+          description: "The writes it may make besides reading (trips:mark: PUT /vehicles/{vehicle}/trip-marks; notifications: PUT and DELETE /devices/{device}, PUT /notification-preferences); empty: it only reads."
           items:
             enum:
               - trips:mark
+              - notifications
             type: string
           type: array
           uniqueItems: true
@@ -2912,6 +2993,55 @@ components:
         - name
         - expiry
         - scopes
+      type: object
+    NotificationChoices:
+      additionalProperties: false
+      properties:
+        account:
+          description: "The account's kinds to set; empty: none."
+          items:
+            $ref: "#/components/schemas/KindChoice"
+          maxItems: 64
+          type: array
+        vehicles:
+          description: "The vehicles' own choices to set; empty: none."
+          items:
+            $ref: "#/components/schemas/VehicleChoices"
+          maxItems: 200
+          type: array
+        vehicles_default:
+          description: The vehicles' kinds to set for every vehicle without a choice of its own.
+          items:
+            $ref: "#/components/schemas/KindChoice"
+          maxItems: 64
+          type: array
+      required:
+        - account
+        - vehicles_default
+        - vehicles
+      type: object
+    NotificationPreferences:
+      additionalProperties: false
+      properties:
+        account:
+          description: "The account's kinds: credential_expiring, credential_refused (a connection to a maker that expires soon, or was refused), access_granted (a new access token), import_finished (an import of a vehicle's history done or failed)."
+          items:
+            $ref: "#/components/schemas/KindPreference"
+          type: array
+        vehicles:
+          description: Each vehicle of the account, with its own choices.
+          items:
+            $ref: "#/components/schemas/VehiclePreferences"
+          type: array
+        vehicles_default:
+          description: "The vehicles' kinds, for every vehicle without a choice of its own: charge_interrupted (a charge stopped below its limit, the cable connected), charge_finished (it reached its limit), trip_to_classify (a trip ended without a purpose), charge_started, trip_ended."
+          items:
+            $ref: "#/components/schemas/KindPreference"
+          type: array
+      required:
+        - account
+        - vehicles_default
+        - vehicles
       type: object
     OdometerStats:
       additionalProperties: false
@@ -6237,6 +6367,61 @@ components:
         - unshared_at
         - collection
       type: object
+    VehicleChoice:
+      additionalProperties: false
+      properties:
+        choice:
+          description: "On or off for this vehicle; default: it follows vehicles_default again."
+          enum:
+            - "on"
+            - "off"
+            - default
+          type: string
+        kind:
+          description: A vehicle's kind.
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+          type: string
+      required:
+        - kind
+        - choice
+      type: object
+    VehicleChoices:
+      additionalProperties: false
+      properties:
+        kinds:
+          items:
+            $ref: "#/components/schemas/VehicleChoice"
+          maxItems: 64
+          type: array
+        vehicle:
+          description: The vehicle ID.
+          type: string
+      required:
+        - vehicle
+        - kinds
+      type: object
+    VehicleKind:
+      additionalProperties: false
+      properties:
+        choice:
+          description: "The vehicle's own choice: on, off, or default, as vehicles_default."
+          enum:
+            - "on"
+            - "off"
+            - default
+          type: string
+        enabled:
+          description: Whether the user is told of it for this vehicle.
+          type: boolean
+        kind:
+          description: A vehicle's kind of notification.
+          pattern: ^[a-z][a-z0-9_]{0,63}$
+          type: string
+      required:
+        - kind
+        - enabled
+        - choice
+      type: object
     VehicleList:
       additionalProperties: false
       properties:
@@ -6266,6 +6451,21 @@ components:
       required:
         - variant_id
         - ac_max_kw
+      type: object
+    VehiclePreferences:
+      additionalProperties: false
+      properties:
+        kinds:
+          description: Every vehicle's kind, in the order of vehicles_default.
+          items:
+            $ref: "#/components/schemas/VehicleKind"
+          type: array
+        vehicle:
+          description: The vehicle ID.
+          type: string
+      required:
+        - vehicle
+        - kinds
       type: object
     VehicleTrip:
       additionalProperties: false
@@ -6341,7 +6541,7 @@ components:
       type: object
   securitySchemes:
     accessToken:
-      description: "A personal access token, `rst_` then 43 characters, issued by `POST /tokens`: it reads, and makes the writes of its scopes. An operation that a scope allows lists it in its requirement (`trips:mark`: `PUT /vehicles/{vehicle}/trip-marks`)."
+      description: "A personal access token, `rst_` then 43 characters, issued by `POST /tokens`: it reads, and makes the writes of its scopes. An operation that a scope allows lists it in its requirement (`trips:mark`: `PUT /vehicles/{vehicle}/trip-marks`; `notifications`: `PUT` and `DELETE /devices/{device}`, `PUT /notification-preferences`)."
       scheme: bearer
       type: http
     session:
@@ -6382,8 +6582,9 @@ info:
     Every route but `POST /session` requires the session cookie it sets, or, to read, a
     personal access token (`Authorization: Bearer rst_…`, issued by `POST /tokens`). A token
     reads: it serves the `GET` routes but those of the session and of the tokens, and the writes its
-    scopes allow, nothing else (403 `insufficient_scope` otherwise). Its one scope, `trips:mark`,
-    allows `PUT /vehicles/{vehicle}/trip-marks`. A token makes at most 120 requests at once then 2 per second (429
+    scopes allow, nothing else (403 `insufficient_scope` otherwise). Its scope `trips:mark`
+    allows `PUT /vehicles/{vehicle}/trip-marks`; `notifications` allows `PUT` and `DELETE /devices/{device}`
+    and `PUT /notification-preferences`. A token makes at most 120 requests at once then 2 per second (429
     `rate_limited`, with `Retry-After`). Requests that
     change state (`POST`, `PUT`, `DELETE`) from another origin are refused (403
     `cross_origin`), after the `Sec-Fetch-Site` or `Origin` header. A request body must be
@@ -7904,9 +8105,148 @@ paths:
       summary: Give the account's Tesla refresh token
       tags:
         - connection
+  /devices/{device}:
+    delete:
+      description: The device is told nothing more, such as after the app signed out. Removing a device the account does not have does nothing.
+      operationId: deleteDevice
+      parameters:
+        - description: The device's ID, drawn by the app once per installation.
+          in: path
+          name: device
+          required: true
+          schema:
+            description: The device's ID, drawn by the app once per installation.
+            format: uuid
+            type: string
+      responses:
+        "204":
+          description: Removed.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_parameter`: the device's ID is not a UUID."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token without the scope `notifications`; this operation requires a session or that scope."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken:
+            - notifications
+      summary: Remove a device
+      tags:
+        - notifications
+    put:
+      description: Registers the device an app runs on, with the token its push service reaches it with, or updates it (a new token, another language, a new version of the app). The instance sends it the notifications its user wants (/notification-preferences) when it sends any (`notifications` of /instance). The device is removed with the account, and is in its export.
+      operationId: putDevice
+      parameters:
+        - description: The device's ID, drawn by the app once per installation.
+          in: path
+          name: device
+          required: true
+          schema:
+            description: The device's ID, drawn by the app once per installation.
+            format: uuid
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceBody"
+        required: true
+      responses:
+        "204":
+          description: Registered.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `invalid_parameter`: the device's ID is not a UUID."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token without the scope `notifications`; this operation requires a session or that scope."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`too_many_devices`: the account has 20 devices already."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken:
+            - notifications
+      summary: Register a device
+      tags:
+        - notifications
   /instance:
     get:
-      description: The release running, a newer one when the instance checks for it, and the map tiles it draws with. The same for every account.
+      description: The release running, a newer one when the instance checks for it, the map tiles it draws with, and whether it sends notifications. The same for every account.
       operationId: getInstance
       responses:
         "200":
@@ -7914,7 +8254,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Instance"
-          description: The instance's release and maps.
+          description: The instance's release, maps and notifications.
         "401":
           content:
             application/json:
@@ -7944,7 +8284,7 @@ paths:
         - session: []
         - sessionSecure: []
         - accessToken: []
-      summary: The instance's release and maps
+      summary: The instance's release, maps and notifications
       tags:
         - instance
   /mqtt:
@@ -8064,6 +8404,122 @@ paths:
       summary: Set the account's MQTT broker
       tags:
         - mqtt
+  /notification-preferences:
+    get:
+      description: "Each kind of notification and whether the user is told of it: the account's, the vehicles' default, and each vehicle's own choices. A value the vehicle does not tell triggers nothing: without a charge limit, no charge is told interrupted."
+      operationId: getNotificationPreferences
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+          description: The preferences.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken: []
+      summary: What the user is told of
+      tags:
+        - notifications
+    put:
+      description: "Sets the kinds it lists, and leaves the others as they are: an app that does not know a kind of the instance never changes it. All or none."
+      operationId: putNotificationPreferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationChoices"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+          description: The preferences, as they now stand.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. Also a kind the instance does not know, of another level, or that cannot be turned off."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token without the scope `notifications`; this operation requires a session or that scope."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken:
+            - notifications
+      summary: Choose what the user is told of
+      tags:
+        - notifications
   /places:
     get:
       description: In the order they were created, which decides between two places at the same distance of a charge.
