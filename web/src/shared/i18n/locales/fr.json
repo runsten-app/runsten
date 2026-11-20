@@ -1755,6 +1755,7 @@
     "expiresAt": "expire {at}",
     "expiredAt": "a expiré {at}",
     "marksTrips": "marque le motif des trajets",
+    "notifies": "reçoit les notifications",
     "new": "Nouveau jeton d'accès",
     "name": "Nom",
     "nameHelp": "Pour distinguer vos jetons, par exemple le programme qui l'utilise.",
@@ -1766,7 +1767,9 @@
       "never": "Jamais"
     },
     "markTrips": "Peut marquer le motif des trajets",
-    "markTripsHelp": "Professionnel, domicile-travail ou personnel, comme dans la liste des trajets : le seul changement qu'il peut faire.",
+    "markTripsHelp": "Professionnel, domicile-travail ou personnel, comme dans la liste des trajets.",
+    "notify": "Peut recevoir les notifications",
+    "notifyHelp": "Enregistre un téléphone pour les notifications push, et change celles qu'il reçoit : comme le fait l'app mobile.",
     "create": "Créer le jeton",
     "cancel": "Annuler",
     "created": {

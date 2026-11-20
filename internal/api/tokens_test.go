@@ -265,9 +265,13 @@ func TestAccessTokensJSON(t *testing.T) {
 // limited.
 func TestAccessTokenOnEveryOperation(t *testing.T) {
 	e := newEnv(t, 10)
-	path := strings.NewReplacer("{vehicle}", car, "{id}", "2026-09-28T07:01:00Z", "{place}", placeID(1), "{token}", tokenID(1))
+	path := strings.NewReplacer("{vehicle}", car, "{id}", "2026-09-28T07:01:00Z", "{place}", placeID(1), "{token}", tokenID(1), "{device}", phoneID)
 	sessionOnly := []string{"GET /session", "DELETE /session", "GET /tokens", "POST /tokens", "DELETE /tokens/{token}", "GET /mqtt"}
-	scoped := map[string]auth.Scope{"PUT /vehicles/{vehicle}/trip-marks": auth.ScopeMarkTrips}
+	scoped := map[string]auth.Scope{
+		"PUT /vehicles/{vehicle}/trip-marks": auth.ScopeMarkTrips,
+		"PUT /devices/{device}":              auth.ScopeNotifications, "DELETE /devices/{device}": auth.ScopeNotifications,
+		"PUT /notification-preferences": auth.ScopeNotifications,
+	}
 	for _, op := range specOperations(t) {
 		if op == "POST /session" {
 			continue
@@ -288,8 +292,13 @@ func TestAccessTokenOnEveryOperation(t *testing.T) {
 				}
 				wantError(t, body, "insufficient_scope")
 			}
-			// With it, the operation runs: here, refusing the empty body.
-			if resp, body := withBearer(t, method, u, "Bearer "+scopedSecret, jsonType, "{}"); resp.status != http.StatusBadRequest {
+			// With it, the operation runs: here, refusing the empty body, or removing the
+			// device, which takes none.
+			ran := http.StatusBadRequest
+			if method == http.MethodDelete {
+				ran = http.StatusNoContent
+			}
+			if resp, body := withBearer(t, method, u, "Bearer "+scopedSecret, jsonType, "{}"); resp.status != ran {
 				t.Errorf("%s with its scope: %d %s", op, resp.status, body)
 			}
 			id = scopedID

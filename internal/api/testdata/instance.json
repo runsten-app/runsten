@@ -3,5 +3,6 @@
   "update_check": true,
   "checked_at": "2026-10-26T10:00:00Z",
   "update": null,
+  "notifications": false,
   "map_tiles": null
 }

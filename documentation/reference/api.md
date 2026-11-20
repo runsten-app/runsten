@@ -18,7 +18,7 @@ curl -c jar -H 'Content-Type: application/json' \
 curl -b jar http://127.0.0.1:8081/api/v1/vehicles
 ```
 
-A program can send a personal access token instead, created in the settings under **API access**: `Authorization: Bearer rst_…`. A token reads what the session reads, but the session's and the tokens' routes, at most 120 requests at once then 2 per second. It changes nothing, unless it was created with **May mark the trips' purpose** (the scope `trips:mark`), which allows `PUT /api/v1/vehicles/{id}/trip-marks` alone; any other write answers `403 insufficient_scope`.
+A program can send a personal access token instead, created in the settings under **API access**: `Authorization: Bearer rst_…`. A token reads what the session reads, but the session's and the tokens' routes, at most 120 requests at once then 2 per second. It changes nothing, unless it was created with **May mark the trips' purpose** (the scope `trips:mark`), which allows `PUT /api/v1/vehicles/{id}/trip-marks` alone; a token created with **May receive notifications** (the scope `notifications`) registers its device and sets the notification preferences (`PUT`, `DELETE /api/v1/devices/{id}`, `PUT /api/v1/notification-preferences`); any other write answers `403 insufficient_scope`.
 
 ```sh
 curl -H 'Authorization: Bearer rst_…' http://127.0.0.1:8081/api/v1/vehicles
@@ -55,7 +55,9 @@ A request body is sent as `application/json`, but the files of an import, as `mu
 | `GET`, `POST /api/v1/places` | the places, with their tariffs; create one |
 | `GET`, `PUT`, `DELETE /api/v1/places/{place}` | one place; replace it whole, tariff included; delete it |
 | `GET /api/v1/places/{place}/unpriced` | the place's charges that started before its tariff's first day |
-| `GET /api/v1/instance` | the release the instance runs and a newer one, and its map tiles (`map_tiles`: the tiles' `url` and their `attribution`, `null` when the instance has no maps, see [Maps](../self-hosting/maps.md)) |
+| `GET /api/v1/instance` | the release the instance runs and a newer one, its map tiles (`map_tiles`: the tiles' `url` and their `attribution`, `null` when the instance has no maps, see [Maps](../self-hosting/maps.md)), and whether it sends push notifications (`notifications`) |
+| `PUT`, `DELETE /api/v1/devices/{id}` | register the device an app runs on, its ID drawn by the app (`platform` `apns` or `fcm`, its push `token`, `locale`, `app_version`); remove it |
+| `GET`, `PUT /api/v1/notification-preferences` | what the user is told of: the account's kinds, a default for every vehicle, each vehicle's own choice (`on`, `off`, `default`); a `PUT` sets the kinds it lists, and leaves the others |
 | `GET /api/v1/charge-costs/orphans` | the entered costs that no charge takes any more |
 | `PUT /api/v1/charge-costs/orphans/{cost}/charge`, `DELETE …/orphans/{cost}` | attach one to a charge; delete it |
 

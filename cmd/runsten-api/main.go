@@ -169,6 +169,7 @@ import (
 	"runsten/internal/geocode"
 	"runsten/internal/geocode/nominatim"
 	"runsten/internal/importer"
+	"runsten/internal/notify"
 	"runsten/internal/oauth"
 	"runsten/internal/picture"
 	"runsten/internal/platform/clock"
@@ -358,6 +359,9 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
+	// The notifications' kinds and their Notifier, which sends nothing until an extension
+	// gives it a PushSender.
+	notifier := notify.New(notify.NewRegistry(), st, clock.Real{}, log)
 	handler := api.New(api.Config{
 		Sessions: sessions, AccessTokens: sessions,
 		Addresses:        addresses,
@@ -369,6 +373,8 @@ func run(args []string) error {
 		Deletion:         st,
 		Costs:            st,
 		Marks:            st,
+		Notifications:    st,
+		Notifier:         notifier,
 		Imports:          st,
 		ImportJobs:       st,
 		Aximote:          aximoteVehicles{ax},
@@ -434,13 +440,13 @@ func run(args []string) error {
 	if cfg.geocoder != nil {
 		go geocode.New(st, cfg.geocoder, clock.Real{}, cfg.geocode, log).Run(ctx)
 	}
-	go importer.New(st, ax, clock.Real{}, importer.DefaultParams(), log).Run(ctx)
+	go importer.New(importsTold{st, notifier, log}, ax, clock.Real{}, importer.DefaultParams(), log).Run(ctx)
 	// The export worker builds the accounts' ZIP archives out of the request, of the
 	// same document the API streams, with the tables an extension may add meanwhile.
 	exportAccount := func(ctx context.Context, accountID string, at time.Time, w io.Writer) error {
 		return st.ExportAccount(ctx, accountID, at, handler.ExportTables, w) //nolint:wrapcheck // the store's, already has context
 	}
-	go exporter.New(st, archives, exportAccount, clock.Real{}, exporter.DefaultParams(), log).Run(ctx)
+	go exporter.New(exportsTold{st, notifier, log}, archives, exportAccount, clock.Real{}, exporter.DefaultParams(), log).Run(ctx)
 	httpserver.WarnIfExposed(log, cfg.addr, cfg.restricted,
 		"listening beyond this machine over plain http: put an https reverse proxy in front of runsten-api, passwords and session cookies travel in clear text otherwise")
 	if ok, err := st.HasUsers(ctx); err != nil {
@@ -466,7 +472,7 @@ func run(args []string) error {
 	mux.Handle("/", httpserver.LogRequests(log, handler))
 	if err := registerExtensions(ctx, extensions{
 		mux: mux, getenv: os.Getenv, databaseURL: cfg.databaseURL, box: box,
-		sessions: sessions, api: handler, flags: features, client: hc, log: log,
+		sessions: sessions, api: handler, flags: features, notifier: notifier, client: hc, log: log,
 	}); err != nil {
 		return fmt.Errorf("extensions: %w", err)
 	}
@@ -479,7 +485,9 @@ func run(args []string) error {
 // extensions is what registerExtensions gets: the premium build's modules add their
 // routes to mux, beside the API's, and read their own configuration with getenv. They
 // may give flags a provider of their own (eval.Evaluator.Use), in place of
-// RUNSTEN_FLAGS's.
+// RUNSTEN_FLAGS's. They give notifier its PushSender (notify.Notifier.SetSender), and
+// register their own kinds of notification (Registry().Register), which the API then
+// lists and tells.
 type extensions struct {
 	mux         *http.ServeMux
 	getenv      func(string) string
@@ -488,6 +496,7 @@ type extensions struct {
 	sessions    *auth.Service
 	api         *api.Server
 	flags       *eval.Evaluator
+	notifier    *notify.Notifier
 	client      *http.Client
 	log         *slog.Logger
 }

@@ -1755,6 +1755,7 @@
     "expiresAt": "verloopt {at}",
     "expiredAt": "verlopen {at}",
     "marksTrips": "markeert het doel van de ritten",
+    "notifies": "ontvangt meldingen",
     "new": "Nieuw toegangstoken",
     "name": "Naam",
     "nameHelp": "Om uw tokens uit elkaar te houden, bijvoorbeeld het programma dat het gebruikt.",
@@ -1766,7 +1767,9 @@
       "never": "Nooit"
     },
     "markTrips": "Mag het doel van de ritten markeren",
-    "markTripsHelp": "Zakelijk, woon-werk of privé, zoals in de lijst van ritten: de enige wijziging die het kan doen.",
+    "markTripsHelp": "Zakelijk, woon-werk of privé, zoals in de lijst van ritten.",
+    "notify": "Mag meldingen ontvangen",
+    "notifyHelp": "Registreert een telefoon voor pushmeldingen en wijzigt welke het ontvangt: zoals de mobiele app doet.",
     "create": "Token aanmaken",
     "cancel": "Annuleren",
     "created": {

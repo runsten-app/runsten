@@ -148,6 +148,7 @@ import (
 	"runsten/internal/derive"
 	"runsten/internal/flags"
 	"runsten/internal/flags/eval"
+	"runsten/internal/notify"
 	"runsten/internal/oauth"
 	"runsten/internal/platform/clock"
 	"runsten/internal/platform/health"
@@ -377,9 +378,17 @@ func run(args []string) error {
 		"bmw_auth_url", cfg.bmw.Auth, "bmw_api_url", cfg.bmw.API, "bmw_stream_url", cfg.bmwStream,
 		"daily_quota", cfg.quota.Daily, "quota_per_user", cfg.quota.PerUser, "instance_key", cfg.apiKey != "",
 		"mqtt_private_brokers", cfg.privateBrokers)
+	// The notifications' kinds and their Notifier, which sends nothing until an extension
+	// gives it a PushSender: each derivation tells of its charges and trips, a check of
+	// the connections of their credentials.
+	notifier := notify.New(notify.NewRegistry(), st, clk, log)
 	der := variants{
-		Deriver: deriver, capacities: capacities{catalog: cat, vehicle: vehicleOf(st)},
-		current: deriver.Current, set: st.SetVariantInEffect, clk: clk,
+		Deriver: notifying{
+			update: deriver.UpdateResult, current: deriver.Current, purposes: tripPurposes(st),
+			notifier: notifier, clk: clk, log: log,
+		},
+		capacities: capacities{catalog: cat, vehicle: vehicleOf(st)},
+		current:    deriver.Current, set: st.SetVariantInEffect, clk: clk,
 	}
 	c := collector.New(api, st, tokens, clk, cfg.intervals, cfg.quota, log, obs, der)
 	if cfg.clientID == "" {
@@ -444,10 +453,21 @@ func run(args []string) error {
 	defer pub.Close()
 	c.SetPublisher(pub)
 	if err := registerExtensions(ctx, extensions{
-		getenv: os.Getenv, databaseURL: cfg.databaseURL, collector: c, flags: features, log: log,
+		getenv: os.Getenv, databaseURL: cfg.databaseURL, collector: c, flags: features, notifier: notifier, log: log,
 	}); err != nil {
 		return fmt.Errorf("extensions: %w", err)
 	}
+	creds := credentials{
+		accounts: func(ctx context.Context) ([]string, error) {
+			targets, err := st.Targets(ctx)
+			return accountsOf(targets, func(t collector.Target) string { return t.AccountID }), err
+		},
+		connections: st.NotifyConnections, purge: st.PurgeDeliveries, notifier: notifier, clk: clk, log: log,
+	}
+	credsCtx, stopCreds := context.WithCancel(ctx)
+	credsDone := make(chan struct{})
+	go func() { defer close(credsDone); creds.run(credsCtx) }()
+	defer func() { stopCreds(); <-credsDone }()
 	if err := c.Run(ctx, cfg.tick, beat.Beat); err != nil {
 		return fmt.Errorf("collect: %w", err)
 	}
@@ -511,12 +531,15 @@ func (b bmwStore) SetBMWContainer(ctx context.Context, accountID, connectionID s
 
 // extensions is what registerExtensions gets: the premium build's modules set the
 // collector's read policy, and read their own configuration with getenv. They may give
-// flags a provider of their own (eval.Evaluator.Use), in place of RUNSTEN_FLAGS's.
+// flags a provider of their own (eval.Evaluator.Use), in place of RUNSTEN_FLAGS's. They
+// give notifier its PushSender (notify.Notifier.SetSender), and register their own kinds
+// of notification.
 type extensions struct {
 	getenv      func(string) string
 	databaseURL string
 	collector   *collector.Collector
 	flags       *eval.Evaluator
+	notifier    *notify.Notifier
 	log         *slog.Logger
 }
 

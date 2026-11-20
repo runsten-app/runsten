@@ -1755,6 +1755,7 @@
     "expiresAt": "upphör {at}",
     "expiredAt": "upphörde {at}",
     "marksTrips": "markerar resornas syfte",
+    "notifies": "tar emot aviseringar",
     "new": "Ny åtkomsttoken",
     "name": "Namn",
     "nameHelp": "För att skilja dina tokens åt, till exempel programmet som använder den.",
@@ -1766,7 +1767,9 @@
       "never": "Aldrig"
     },
     "markTrips": "Får markera resornas syfte",
-    "markTripsHelp": "Tjänst, till och från jobbet eller privat, som i listan över resor: den enda ändring den kan göra.",
+    "markTripsHelp": "Tjänst, till och från jobbet eller privat, som i listan över resor.",
+    "notify": "Får ta emot aviseringar",
+    "notifyHelp": "Registrerar en telefon för push-aviseringar och ändrar vilka den får: som mobilappen gör.",
     "create": "Skapa token",
     "cancel": "Avbryt",
     "created": {

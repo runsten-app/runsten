@@ -1,0 +1,212 @@
+{
+  "account": [
+    {
+      "kind": "credential_expiring",
+      "enabled": true,
+      "default": true,
+      "always": false
+    },
+    {
+      "kind": "credential_refused",
+      "enabled": true,
+      "default": true,
+      "always": false
+    },
+    {
+      "kind": "access_granted",
+      "enabled": false,
+      "default": true,
+      "always": false
+    },
+    {
+      "kind": "import_finished",
+      "enabled": true,
+      "default": true,
+      "always": false
+    }
+  ],
+  "vehicles_default": [
+    {
+      "kind": "charge_interrupted",
+      "enabled": true,
+      "default": true,
+      "always": false
+    },
+    {
+      "kind": "charge_finished",
+      "enabled": true,
+      "default": true,
+      "always": false
+    },
+    {
+      "kind": "trip_to_classify",
+      "enabled": false,
+      "default": false,
+      "always": false
+    },
+    {
+      "kind": "charge_started",
+      "enabled": false,
+      "default": false,
+      "always": false
+    },
+    {
+      "kind": "trip_ended",
+      "enabled": true,
+      "default": false,
+      "always": false
+    }
+  ],
+  "vehicles": [
+    {
+      "vehicle": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a01",
+      "kinds": [
+        {
+          "kind": "charge_interrupted",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_finished",
+          "enabled": false,
+          "choice": "off"
+        },
+        {
+          "kind": "trip_to_classify",
+          "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_started",
+          "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "trip_ended",
+          "enabled": false,
+          "choice": "off"
+        }
+      ]
+    },
+    {
+      "vehicle": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a02",
+      "kinds": [
+        {
+          "kind": "charge_interrupted",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_finished",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "trip_to_classify",
+          "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_started",
+          "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "trip_ended",
+          "enabled": true,
+          "choice": "default"
+        }
+      ]
+    },
+    {
+      "vehicle": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a04",
+      "kinds": [
+        {
+          "kind": "charge_interrupted",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_finished",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "trip_to_classify",
+          "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_started",
+          "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "trip_ended",
+          "enabled": true,
+          "choice": "default"
+        }
+      ]
+    },
+    {
+      "vehicle": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a05",
+      "kinds": [
+        {
+          "kind": "charge_interrupted",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_finished",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "trip_to_classify",
+          "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_started",
+          "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "trip_ended",
+          "enabled": true,
+          "choice": "default"
+        }
+      ]
+    },
+    {
+      "vehicle": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a06",
+      "kinds": [
+        {
+          "kind": "charge_interrupted",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_finished",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "trip_to_classify",
+          "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_started",
+          "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "trip_ended",
+          "enabled": true,
+          "choice": "default"
+        }
+      ]
+    }
+  ]
+}

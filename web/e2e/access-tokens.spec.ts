@@ -43,6 +43,12 @@ test('Settings: an access token reads the API, never writes, until revoked', asy
     })
     expect(mark.status()).toBe(403)
     expect((await mark.json()).error.code).toBe('insufficient_scope')
+    // Nor the scope notifications: it cannot register a phone.
+    const device = await program.put('/api/v1/devices/0b5f4c1e-8a3d-4f0e-9c2b-7d6e5a4b3c21', {
+      data: { platform: 'apns', token: 'abc', locale: 'en', app_version: '1.0.0' },
+    })
+    expect(device.status()).toBe(403)
+    expect((await device.json()).error.code).toBe('insufficient_scope')
     expect((await program.get('/api/v1/tokens')).status()).toBe(403)
 
     await section

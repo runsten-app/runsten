@@ -1755,6 +1755,7 @@
     "expiresAt": "läuft ab: {at}",
     "expiredAt": "abgelaufen: {at}",
     "marksTrips": "markiert den Zweck der Fahrten",
+    "notifies": "empfängt Benachrichtigungen",
     "new": "Neues Zugriffstoken",
     "name": "Name",
     "nameHelp": "Um Ihre Tokens auseinanderzuhalten, etwa das Programm, das es verwendet.",
@@ -1766,7 +1767,9 @@
       "never": "Nie"
     },
     "markTrips": "Darf den Zweck der Fahrten markieren",
-    "markTripsHelp": "Geschäftlich, Arbeitsweg oder privat, wie in der Liste der Fahrten: die einzige Änderung, die es vornehmen kann.",
+    "markTripsHelp": "Geschäftlich, Arbeitsweg oder privat, wie in der Liste der Fahrten.",
+    "notify": "Darf Benachrichtigungen empfangen",
+    "notifyHelp": "Registriert ein Telefon für Push-Benachrichtigungen und ändert, welche es erhält: wie die mobile App.",
     "create": "Token erstellen",
     "cancel": "Abbrechen",
     "created": {

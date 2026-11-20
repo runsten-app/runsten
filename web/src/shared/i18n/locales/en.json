@@ -1755,6 +1755,7 @@
     "expiresAt": "expires {at}",
     "expiredAt": "expired {at}",
     "marksTrips": "marks the trips' purpose",
+    "notifies": "receives notifications",
     "new": "New access token",
     "name": "Name",
     "nameHelp": "To tell your tokens apart, such as the program that uses it.",
@@ -1766,7 +1767,9 @@
       "never": "Never"
     },
     "markTrips": "May mark the trips' purpose",
-    "markTripsHelp": "Business, commute or personal, as on the list of trips: the only change it can make.",
+    "markTripsHelp": "Business, commute or personal, as on the list of trips.",
+    "notify": "May receive notifications",
+    "notifyHelp": "Registers a phone for push notifications, and changes which ones it receives: as the mobile app does.",
     "create": "Create the token",
     "cancel": "Cancel",
     "created": {

@@ -1755,6 +1755,7 @@
     "expiresAt": "utløper {at}",
     "expiredAt": "utløp {at}",
     "marksTrips": "merker formålet med turene",
+    "notifies": "mottar varsler",
     "new": "Nytt tilgangstoken",
     "name": "Navn",
     "nameHelp": "For å skille tokenene dine fra hverandre, for eksempel programmet som bruker det.",
@@ -1766,7 +1767,9 @@
       "never": "Aldri"
     },
     "markTrips": "Kan merke formålet med turene",
-    "markTripsHelp": "Jobb, til og fra jobb eller privat, som i listen over turer: den eneste endringen det kan gjøre.",
+    "markTripsHelp": "Jobb, til og fra jobb eller privat, som i listen over turer.",
+    "notify": "Kan motta varsler",
+    "notifyHelp": "Registrerer en telefon for push-varsler og endrer hvilke den mottar: slik mobilappen gjør.",
     "create": "Opprett tokenet",
     "cancel": "Avbryt",
     "created": {

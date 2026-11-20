@@ -1755,6 +1755,7 @@
     "expiresAt": "scadenza: {at}",
     "expiredAt": "scaduto: {at}",
     "marksTrips": "segna il motivo dei viaggi",
+    "notifies": "riceve le notifiche",
     "new": "Nuovo token di accesso",
     "name": "Nome",
     "nameHelp": "Per distinguere i Suoi token, ad esempio il programma che lo usa.",
@@ -1766,7 +1767,9 @@
       "never": "Mai"
     },
     "markTrips": "Può segnare il motivo dei viaggi",
-    "markTripsHelp": "Lavoro, casa-lavoro o personale, come nell’elenco dei viaggi: l’unica modifica che può fare.",
+    "markTripsHelp": "Lavoro, casa-lavoro o personale, come nell’elenco dei viaggi.",
+    "notify": "Può ricevere le notifiche",
+    "notifyHelp": "Registra un telefono per le notifiche push e cambia quali riceve: come fa l’app mobile.",
     "create": "Crea il token",
     "cancel": "Annulla",
     "created": {

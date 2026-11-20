@@ -27,13 +27,13 @@ var allowed = map[string][]string{
 	// The binaries wire the adapters together. Only runsten-simulator knows the simulator.
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/bmw", "internal/catalog", "internal/core",
-		"internal/archive", "internal/demo", "internal/derive", "internal/exporter", "internal/flags", "internal/geocode", "internal/importer", "internal/oauth", "internal/picture",
+		"internal/archive", "internal/demo", "internal/derive", "internal/exporter", "internal/flags", "internal/geocode", "internal/importer", "internal/notify", "internal/oauth", "internal/picture",
 		"internal/platform", "internal/pleos", "internal/polestar", "internal/polestarid", "internal/release", "internal/renault", "internal/skoda", "internal/store",
 		"internal/tesla", "internal/teslamate", "internal/volvo", "internal/volvoportal", "internal/aaoslogging",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/bmw", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/demo", "internal/derive",
-		"internal/flags", "internal/oauth", "internal/platform", "internal/pleos", "internal/polestar", "internal/polestarid",
+		"internal/flags", "internal/notify", "internal/oauth", "internal/platform", "internal/pleos", "internal/polestar", "internal/polestarid",
 		"internal/publish", "internal/renault", "internal/skoda",
 		"internal/store", "internal/tesla", "internal/volvo",
 	},
@@ -73,7 +73,7 @@ var allowed = map[string][]string{
 	// the flags' declarations (never flags/eval: depguard).
 	"internal/api": {
 		"net/http", "encoding/json", "github.com/danielgtaylor/huma/v2", "internal/auth", "internal/catalog", "internal/core",
-		"internal/flags", "internal/oauth", "internal/platform/clock", "internal/platform/httpserver",
+		"internal/flags", "internal/notify", "internal/oauth", "internal/platform/clock", "internal/platform/httpserver",
 		"internal/platform/netguard",
 	},
 	"internal/auth": {"golang.org/x/crypto", "internal/platform/clock"}, // argon2id
@@ -92,6 +92,9 @@ var allowed = map[string][]string{
 	// What is published to an MQTT broker, built from the domain: neither network nor
 	// database; Home Assistant's discovery configurations are JSON.
 	"internal/publish": {"encoding/json", "internal/core"},
+	// The notifications: events, preferences and their delivery, without the network or
+	// the database; an extension's PushSender reaches the devices.
+	"internal/notify": {"internal/core", "internal/platform/clock", "internal/publish"},
 
 	// Adapters.
 	"internal/volvo":      {"net/http", "encoding/json", "golang.org/x/oauth2", "internal/core", "internal/oauth"},
@@ -126,8 +129,8 @@ var allowed = map[string][]string{
 	// The Polestar credential is sealed as one JSON value.
 	"internal/store": {
 		"encoding/json", "github.com/jackc/pgx/v5", "internal/api", "internal/auth", "internal/collector", "internal/core", "internal/derive",
-		"internal/exporter", "internal/geocode", "internal/importer", "internal/oauth", "internal/platform/secretbox", "internal/publish",
-		"internal/volvo",
+		"internal/exporter", "internal/geocode", "internal/importer", "internal/notify", "internal/oauth", "internal/platform/secretbox",
+		"internal/publish", "internal/volvo",
 	},
 	"internal/debugui": {"net/http", "encoding/json", "internal/collector", "internal/platform/clock", "internal/volvo"},
 	// The front end's server knows runsten-api only by URL: it relays requests.

@@ -189,12 +189,18 @@ func New(st Store, norm Normalizer, p core.Params, caps Capacities, log *slog.Lo
 
 // Update derives the events detected since the vehicle's cursor.
 func (d *Deriver) Update(ctx context.Context, accountID, vehicleID string) error {
+	_, err := d.UpdateResult(ctx, accountID, vehicleID)
+	return err
+}
+
+// UpdateResult is Update, which returns what it derived: the events detected since the
+// cursor, ended or still open, for a caller that tells of them (the notifications).
+func (d *Deriver) UpdateResult(ctx context.Context, accountID, vehicleID string) (core.Result, error) {
 	c, err := d.st.DerivationCursor(ctx, accountID, vehicleID)
 	if err != nil {
-		return fmt.Errorf("derivation cursor: %w", err)
+		return core.Result{}, fmt.Errorf("derivation cursor: %w", err)
 	}
-	_, err = d.run(ctx, accountID, vehicleID, c)
-	return err
+	return d.run(ctx, accountID, vehicleID, c)
 }
 
 // Rebuild derives the vehicle's events from its whole history, replacing all of them.
