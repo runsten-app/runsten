@@ -460,6 +460,8 @@ type stateJSON struct {
 	RangeKm            null[reading[float64]]            `json:"range_km" doc:"Remaining electric range."`
 	OdometerKm         null[reading[float64]]            `json:"odometer_km"`
 	Position           null[reading[positionJSON]]       `json:"position"`
+	Place              null[placeRefJSON]                `json:"place" doc:"The place of position: the account's nearest place whose circle holds it, as a trip's start_place. null without a position, and outside every place."`
+	Address            *string                           `json:"address" doc:"The street and town of position, from the instance's reverse geocoder, outside every place, as a trip's start_address. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one. The reading of position tells how fresh both are."`
 	BatteryCapacityKWh null[reading[float64]]            `json:"battery_capacity_kwh" doc:"The battery capacity the vendor reports. The energy estimates rest on it when Runsten's catalog does not know the vehicle's variant or its net capacity (capacity_source api), and on the variant's net capacity otherwise."`
 	Charging           chargingJSON                      `json:"charging"`
 	Climate            climateJSON                       `json:"climate" doc:"The temperatures and what heats or cools the vehicle, for a source that tells them (Tesla); every value null for the others."`
@@ -481,6 +483,18 @@ func (s *Server) getState(ctx context.Context, in *vehicleInput) (*body[stateJSO
 		return nil, s.internal("state not read", err)
 	}
 	n := c.Snapshot
+	// The position named as a trip's ends are: by a place, else by the address of its
+	// cell, which the geocoder is asked for once whatever the reads.
+	var place null[placeRefJSON]
+	var address *string
+	if n.Position.OK {
+		places, err := s.Settings.Places(ctx, sessionFrom(ctx).AccountID)
+		if err != nil {
+			return nil, s.internal("places not read", err)
+		}
+		place = placeAt(n.Position, places)
+		address = s.addresses(ctx, places, n.Position).of(n.Position)
+	}
 	return respond(stateJSON{
 		VehicleID:          v.ID,
 		Connection:         s.connectionOf(v),
@@ -490,6 +504,8 @@ func (s *Server) getState(ctx context.Context, in *vehicleInput) (*body[stateJSO
 		RangeKm:            readingOf(c, core.FieldRange, n.RangeKm, same),
 		OdometerKm:         readingOf(c, core.FieldOdometer, n.OdometerKm, same),
 		Position:           readingOf(c, core.FieldPosition, n.Position, positionOf),
+		Place:              place,
+		Address:            address,
 		BatteryCapacityKWh: readingOf(c, core.FieldCapacity, n.CapacityKWh, same),
 		Charging: chargingJSON{
 			Status:        readingOf(c, core.FieldCharging, n.Charging, text[core.ChargingStatus, chargingStatusJSON]),

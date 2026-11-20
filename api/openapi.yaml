@@ -5302,6 +5302,11 @@ components:
     State:
       additionalProperties: false
       properties:
+        address:
+          description: "The street and town of position, from the instance's reverse geocoder, outside every place, as a trip's start_address. null at a place, without a geocoder, when it knows none, and until it answered: a request made by this read is resolved for a later one. The reading of position tells how fresh both are."
+          type:
+            - string
+            - "null"
         battery_capacity_kwh:
           description: The battery capacity the vendor reports. The energy estimates rest on it when Runsten's catalog does not know the vehicle's variant or its net capacity (capacity_source api), and on the variant's net capacity otherwise.
           oneOf:
@@ -5333,6 +5338,11 @@ components:
         odometer_km:
           oneOf:
             - $ref: "#/components/schemas/ReadingFloat64"
+            - type: "null"
+        place:
+          description: "The place of position: the account's nearest place whose circle holds it, as a trip's start_place. null without a position, and outside every place."
+          oneOf:
+            - $ref: "#/components/schemas/PlaceRef"
             - type: "null"
         position:
           oneOf:
@@ -5380,6 +5390,8 @@ components:
         - range_km
         - odometer_km
         - position
+        - place
+        - address
         - battery_capacity_kwh
         - charging
         - climate
