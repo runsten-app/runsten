@@ -117,15 +117,16 @@ func (s *Store) StartLiveActivities(ctx context.Context, accountID, vehicleID, c
 }
 
 // MarkLiveActivities implements notify.LiveStore.
-func (s *Store) MarkLiveActivities(ctx context.Context, accountID, vehicleID, chargeID string, st notify.ChargeState, now time.Time) error {
+func (s *Store) MarkLiveActivities(ctx context.Context, accountID, vehicleID, chargeID string, deviceIDs []string, st notify.ChargeState, now time.Time) error {
 	state, err := json.Marshal(st)
 	if err != nil {
 		return fmt.Errorf("live activity's state: %w", err)
 	}
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		_, err := tx.Exec(ctx, `
-			UPDATE live_activities SET state = $3, pushed_at = $4 WHERE vehicle_id = $1 AND charge_id = $2`,
-			vehicleID, chargeID, state, now)
+			UPDATE live_activities SET state = $3, pushed_at = $4
+			WHERE vehicle_id = $1 AND charge_id = $2 AND device_id = ANY($5::uuid[])`,
+			vehicleID, chargeID, state, now, deviceIDs)
 		return err //nolint:wrapcheck // wrapped by inAccount
 	})
 }

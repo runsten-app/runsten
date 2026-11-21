@@ -37,9 +37,9 @@ func (m *memLive) StartLiveActivities(_ context.Context, _, vehicleID, chargeID 
 	return out, m.fail
 }
 
-func (m *memLive) MarkLiveActivities(_ context.Context, _, vehicleID, chargeID string, s ChargeState, now time.Time) error {
+func (m *memLive) MarkLiveActivities(_ context.Context, _, vehicleID, chargeID string, deviceIDs []string, s ChargeState, now time.Time) error {
 	for i, a := range m.acts {
-		if a.VehicleID == vehicleID && a.ChargeID == chargeID {
+		if a.VehicleID == vehicleID && a.ChargeID == chargeID && slices.Contains(deviceIDs, a.DeviceID) {
 			m.acts[i].State, m.acts[i].PushedAt = s, now
 		}
 	}
@@ -234,6 +234,65 @@ func TestLiveTurnedOff(t *testing.T) {
 	}
 	if p := s.take(); len(p) != 1 || p[0].Event != LiveEnd || slices.ContainsFunc(st.acts, func(a LiveActivity) bool { return a.VehicleID == "v" }) {
 		t.Errorf("turned off while shown: %+v %+v", p, st.acts)
+	}
+}
+
+// TestLiveStale: a charge still open whose readings paused keeps its activities, told
+// nothing until a fresh reading; never ended, nor started again on a device that
+// dismissed it.
+func TestLiveStale(t *testing.T) {
+	st := &memLive{memStore: memStore{devices: []Device{{ID: "d1", Platform: APNs, Token: "tok", LiveActivityToken: "start1"}}}}
+	n, _, clk := newNotifier(&st.memStore)
+	n.st = st
+	s := &liveSender{}
+	n.SetSender(s)
+	charge := EventID(t0)
+	st.acts = []LiveActivity{{DeviceID: "d1", VehicleID: "v", ChargeID: charge}} // dismissed
+	clk.Advance(2 * Fresh)
+	if err := n.Live(t.Context(), "a", "v", inProgress(charging(t0, 50))); err != nil {
+		t.Fatal(err)
+	}
+	if p := s.take(); len(p) != 0 || len(st.acts) != 1 {
+		t.Errorf("stale: %+v %+v", p, st.acts)
+	}
+	if err := n.Live(t.Context(), "a", "v", inProgress(charging(clk.Now(), 55))); err != nil {
+		t.Fatal(err)
+	}
+	if p := s.take(); len(p) != 0 {
+		t.Errorf("started again after a dismissal: %+v", p)
+	}
+}
+
+// TestLiveStaggered: an update marks only the activities it was pushed to; one told too
+// recently gets the reading at the next pass.
+func TestLiveStaggered(t *testing.T) {
+	st := &memLive{memStore: memStore{}}
+	n, _, clk := newNotifier(&st.memStore)
+	n.st = st
+	s := &liveSender{}
+	n.SetSender(s)
+	charge := EventID(t0)
+	clk.Advance(2 * time.Minute)
+	st.acts = []LiveActivity{
+		{DeviceID: "a", VehicleID: "v", ChargeID: charge, Token: "ta", PushedAt: clk.Now().Add(-20 * time.Second)},
+		{DeviceID: "b", VehicleID: "v", ChargeID: charge, Token: "tb", PushedAt: clk.Now().Add(-70 * time.Second)},
+	}
+	reading := inProgress(charging(clk.Now(), 60))
+	if err := n.Live(t.Context(), "a", "v", reading); err != nil {
+		t.Fatal(err)
+	}
+	if p := s.take(); len(p) != 1 || len(p[0].Activities) != 1 || p[0].Activities[0].DeviceID != "b" {
+		t.Fatalf("first pass: %+v", p)
+	}
+	if st.acts[0].State.ReadAt != 0 {
+		t.Errorf("a marked with a reading it never got: %+v", st.acts[0])
+	}
+	clk.Advance(time.Minute)
+	if err := n.Live(t.Context(), "a", "v", reading); err != nil {
+		t.Fatal(err)
+	}
+	if p := s.take(); len(p) != 1 || len(p[0].Activities) != 1 || p[0].Activities[0].DeviceID != "a" {
+		t.Errorf("second pass: %+v", p)
 	}
 }
 

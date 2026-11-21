@@ -75,11 +75,12 @@ func TestLiveActivities(t *testing.T) {
 	}
 	soc2 := 60.0
 	state.SoCPct, state.ReadAt = &soc2, t0.Add(time.Minute).Unix()
-	if err := s.MarkLiveActivities(ctx, a, car, charge, state, t0.Add(time.Minute)); err != nil {
+	// Only the tablet was pushed to: the phone keeps what it was told.
+	if err := s.MarkLiveActivities(ctx, a, car, charge, []string{tablet}, state, t0.Add(time.Minute)); err != nil {
 		t.Fatal(err)
 	}
 	acts, _ = s.LiveActivities(ctx, a, car)
-	if *acts[0].State.SoCPct != 60 || *acts[1].State.SoCPct != 60 || !acts[1].PushedAt.Equal(t0.Add(time.Minute)) {
+	if *acts[0].State.SoCPct != 50 || !acts[0].PushedAt.Equal(t0) || *acts[1].State.SoCPct != 60 || !acts[1].PushedAt.Equal(t0.Add(time.Minute)) {
 		t.Errorf("marked %+v", acts)
 	}
 	if acts, err := s.LiveActivities(ctx, b, car); err != nil || len(acts) != 0 {

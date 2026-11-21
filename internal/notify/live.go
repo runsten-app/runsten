@@ -103,8 +103,8 @@ type LiveStore interface {
 	// recorded, a device is never asked again to start it.
 	StartLiveActivities(ctx context.Context, accountID, vehicleID, chargeID string, deviceIDs []string, s ChargeState, now time.Time) ([]string, error)
 	// MarkLiveActivities records s as told at now to the vehicle's activities of the
-	// charge.
-	MarkLiveActivities(ctx context.Context, accountID, vehicleID, chargeID string, s ChargeState, now time.Time) error
+	// charge on those devices, the ones it was pushed to.
+	MarkLiveActivities(ctx context.Context, accountID, vehicleID, chargeID string, deviceIDs []string, s ChargeState, now time.Time) error
 	// EndLiveActivities forgets the vehicle's activities of those charges.
 	EndLiveActivities(ctx context.Context, accountID, vehicleID string, chargeIDs []string) error
 }
@@ -131,10 +131,14 @@ func (n *Notifier) Live(ctx context.Context, accountID, vehicleID string, res co
 		return fmt.Errorf("live activities: %w", err)
 	}
 	now := n.clk.Now()
-	current := ""
+	// The charge open at the latest reading stays current however old the reading: its
+	// activities end once it is over, never because its readings paused. Only a fresh
+	// one starts or updates them.
+	current, fresh := "", false
 	var state ChargeState
-	if c := res.InProgress; c.OK && !c.V.Reconstructed && !c.V.End.Before.Before(now.Add(-Fresh)) {
+	if c := res.InProgress; c.OK && !c.V.Reconstructed {
 		current, state = EventID(c.V.DetectedAt), InProgressState(c.V)
+		fresh = !c.V.End.Before.Before(now.Add(-Fresh))
 	}
 	// Turned off for the vehicle: those shown end, as if the charge were over.
 	if current != "" {
@@ -159,21 +163,23 @@ func (n *Notifier) Live(ctx context.Context, accountID, vehicleID string, res co
 	}
 	// Those ended are forgotten: their devices may start the charge in progress.
 	acts = slices.DeleteFunc(acts, func(a LiveActivity) bool { return a.ChargeID != current })
-	if current == "" {
+	if current == "" || !fresh {
 		return errors.Join(errs...)
 	}
 	if err := n.startLive(ctx, store, accountID, vehicleID, current, state, acts, now, push); err != nil {
 		errs = append(errs, err)
 	}
 	var due []LiveActivity
+	var devices []string
 	for _, a := range acts {
 		if a.Token != "" && a.State.ReadAt != state.ReadAt && now.Sub(a.PushedAt) >= LiveEvery {
 			due = append(due, a)
+			devices = append(devices, a.DeviceID)
 		}
 	}
 	if len(due) > 0 {
 		push(LivePush{Event: LiveUpdate, AccountID: accountID, VehicleID: vehicleID, ChargeID: current, State: state, Activities: due})
-		if err := store.MarkLiveActivities(ctx, accountID, vehicleID, current, state, now); err != nil {
+		if err := store.MarkLiveActivities(ctx, accountID, vehicleID, current, devices, state, now); err != nil {
 			errs = append(errs, fmt.Errorf("mark live activities: %w", err))
 		}
 	}
