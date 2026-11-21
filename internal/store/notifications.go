@@ -14,7 +14,7 @@ import (
 )
 
 // PutDevice implements api.Notifications: the device is registered, or updated with its
-// new token, language and version, its creation kept. Counted under the account's lock,
+// new token, language and version, its creation and its Live Activities' token kept. Counted under the account's lock,
 // so that two registrations at once cannot both pass api.MaxDevices.
 func (s *Store) PutDevice(ctx context.Context, accountID string, d notify.Device) error {
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
@@ -55,14 +55,14 @@ func (s *Store) Devices(ctx context.Context, accountID string) ([]notify.Device,
 	var out []notify.Device
 	err := s.readInAccount(ctx, accountID, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `
-			SELECT id, user_id, platform, token, locale, app_version, created_at, updated_at FROM devices
+			SELECT id, user_id, platform, token, coalesce(live_activity_token, ''), locale, app_version, created_at, updated_at FROM devices
 			ORDER BY created_at, id`)
 		if err != nil {
 			return err //nolint:wrapcheck // wrapped by inAccount
 		}
 		var d notify.Device
 		var platform string
-		_, err = pgx.ForEachRow(rows, []any{&d.ID, &d.UserID, &platform, &d.Token, &d.Locale, &d.AppVersion, &d.CreatedAt, &d.UpdatedAt}, func() error {
+		_, err = pgx.ForEachRow(rows, []any{&d.ID, &d.UserID, &platform, &d.Token, &d.LiveActivityToken, &d.Locale, &d.AppVersion, &d.CreatedAt, &d.UpdatedAt}, func() error {
 			d.Platform = notify.Platform(platform)
 			d.CreatedAt, d.UpdatedAt = d.CreatedAt.UTC(), d.UpdatedAt.UTC()
 			out = append(out, d)

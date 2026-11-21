@@ -65,6 +65,8 @@ var exportTables = []exportTable{
 	{name: "devices", orderBy: "created_at, id"},
 	{name: "notification_preferences", orderBy: "vehicle_id NULLS FIRST, kind"},
 	{name: "notification_deliveries", orderBy: "created_at, id"},
+	// An activity's token is its address at the push service, as a device's.
+	{name: "live_activities", orderBy: "updated_at, device_id, vehicle_id"},
 	// value_hash: the deduplication's, a hash of the payload.
 	{name: "snapshots", orderBy: "vehicle_id, source, endpoint, fetched_at", omit: []string{"value_hash"}},
 }

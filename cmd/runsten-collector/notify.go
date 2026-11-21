@@ -14,7 +14,8 @@ import (
 )
 
 // notifying derives each vehicle the collector read, then tells the account's devices of
-// what the derivation found: a charge started, finished or interrupted, a trip ended.
+// what the derivation found: a charge started, finished or interrupted, a trip ended; and
+// the Live Activities of its charge in progress.
 // Without a PushSender, the derivation alone runs: nothing more is read.
 type notifying struct {
 	// update derives the vehicle and returns what it found (derive.Deriver.UpdateResult).
@@ -37,6 +38,9 @@ func (n notifying) Update(ctx context.Context, accountID, vehicleID string) erro
 	}
 	if err := n.tell(ctx, accountID, vehicleID, res); err != nil && ctx.Err() == nil {
 		n.log.Warn("vehicle's notifications", "account", accountID, "vehicle", vehicleID, "err", err)
+	}
+	if err := n.notifier.Live(ctx, accountID, vehicleID, res); err != nil && ctx.Err() == nil {
+		n.log.Warn("vehicle's live activities", "account", accountID, "vehicle", vehicleID, "err", err)
 	}
 	return nil
 }

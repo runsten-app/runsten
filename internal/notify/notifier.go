@@ -44,14 +44,17 @@ var Platforms = []Platform{APNs, FCM}
 // push service reaches it with.
 type Device struct {
 	// ID is chosen by the app, once per installation.
-	ID         string
-	UserID     string
-	Platform   Platform
-	Token      string
-	Locale     string // BCP 47, as fr-FR: the language the device writes the texts in
-	AppVersion string
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID       string
+	UserID   string
+	Platform Platform
+	Token    string
+	// LiveActivityToken is the token the push service starts a charge's activity on the
+	// device with (an iOS push-to-start token); empty: none is started.
+	LiveActivityToken string
+	Locale            string // BCP 47, as fr-FR: the language the device writes the texts in
+	AppVersion        string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 // Preferences are the choices the account's user made; a kind not in them takes its

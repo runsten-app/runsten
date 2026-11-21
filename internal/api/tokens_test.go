@@ -270,7 +270,9 @@ func TestAccessTokenOnEveryOperation(t *testing.T) {
 	scoped := map[string]auth.Scope{
 		"PUT /vehicles/{vehicle}/trip-marks": auth.ScopeMarkTrips,
 		"PUT /devices/{device}":              auth.ScopeNotifications, "DELETE /devices/{device}": auth.ScopeNotifications,
-		"PUT /notification-preferences": auth.ScopeNotifications,
+		"PUT /notification-preferences":                   auth.ScopeNotifications,
+		"PUT /devices/{device}/live-activity-token":       auth.ScopeNotifications,
+		"PUT /devices/{device}/live-activities/{vehicle}": auth.ScopeNotifications,
 	}
 	for _, op := range specOperations(t) {
 		if op == "POST /session" {
