@@ -173,12 +173,24 @@ func (s *Store) ListTokens(ctx context.Context, accountID, userID string) ([]aut
 	return ts, err
 }
 
-// DeleteToken implements auth.Store. An ID that is not a UUID is no token's.
+// DeleteToken implements auth.Store, with the devices the token registered: the app it
+// was given to is told nothing more. An ID that is not a UUID is no token's.
 func (s *Store) DeleteToken(ctx context.Context, accountID, userID, tokenID string) (bool, error) {
 	var deleted bool
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		// The devices' lock (PutDevice): a registration with the token comes before, and
+		// its device goes with it, or after, and is refused.
+		if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtext('runsten_devices:' || $1))", accountID); err != nil {
+			return fmt.Errorf("devices lock: %w", err)
+		}
 		tag, err := tx.Exec(ctx, "DELETE FROM api_tokens WHERE id::text = $1 AND user_id = $2", tokenID, userID)
+		if err != nil {
+			return err //nolint:wrapcheck // wrapped by inAccount
+		}
 		deleted = tag.RowsAffected() == 1
+		if deleted {
+			_, err = tx.Exec(ctx, "DELETE FROM devices WHERE access_id = $1", tokenID)
+		}
 		return err //nolint:wrapcheck // wrapped by inAccount
 	})
 	return deleted, err

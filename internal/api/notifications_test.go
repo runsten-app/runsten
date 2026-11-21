@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"maps"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -22,11 +23,53 @@ type memNotifications struct {
 	devices   map[string][]notify.Device
 	prefs     map[string]notify.Preferences
 	delivered map[string]bool
-	fail      error
+	// live holds the activities by account, then device and vehicle.
+	live map[string]map[[2]string]notify.LiveActivity
+	fail error
 }
 
 func newMemNotifications() *memNotifications {
-	return &memNotifications{devices: map[string][]notify.Device{}, prefs: map[string]notify.Preferences{}, delivered: map[string]bool{}}
+	return &memNotifications{
+		devices: map[string][]notify.Device{}, prefs: map[string]notify.Preferences{}, delivered: map[string]bool{},
+		live: map[string]map[[2]string]notify.LiveActivity{},
+	}
+}
+
+func (m *memNotifications) SetLiveActivityToken(_ context.Context, accountID, deviceID, token string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.fail != nil {
+		return m.fail
+	}
+	for i, d := range m.devices[accountID] {
+		if d.ID == deviceID {
+			m.devices[accountID][i].LiveActivityToken = token
+			return nil
+		}
+	}
+	return ErrNoDevice
+}
+
+func (m *memNotifications) PutLiveActivity(_ context.Context, accountID string, a notify.LiveActivity, _ time.Time) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.fail != nil {
+		return m.fail
+	}
+	if !slices.ContainsFunc(m.devices[accountID], func(d notify.Device) bool { return d.ID == a.DeviceID }) {
+		return ErrNoDevice
+	}
+	if m.live[accountID] == nil {
+		m.live[accountID] = map[[2]string]notify.LiveActivity{}
+	}
+	key := [2]string{a.DeviceID, a.VehicleID}
+	if o, ok := m.live[accountID][key]; ok && o.ChargeID > a.ChargeID {
+		return nil
+	} else if ok && o.ChargeID == a.ChargeID {
+		a.State, a.PushedAt = o.State, o.PushedAt
+	}
+	m.live[accountID][key] = a
+	return nil
 }
 
 func (m *memNotifications) PutDevice(_ context.Context, accountID string, d notify.Device) error {
@@ -37,7 +80,7 @@ func (m *memNotifications) PutDevice(_ context.Context, accountID string, d noti
 	}
 	for i, o := range m.devices[accountID] {
 		if o.ID == d.ID {
-			d.CreatedAt = o.CreatedAt
+			d.CreatedAt, d.LiveActivityToken = o.CreatedAt, o.LiveActivityToken
 			m.devices[accountID][i] = d
 			return nil
 		}
@@ -62,6 +105,11 @@ func (m *memNotifications) DeleteDevice(_ context.Context, accountID, deviceID s
 		}
 	}
 	m.devices[accountID] = kept
+	for key := range m.live[accountID] {
+		if key[0] == deviceID {
+			delete(m.live[accountID], key)
+		}
+	}
 	return nil
 }
 
@@ -302,6 +350,126 @@ func TestDevices(t *testing.T) {
 	})
 }
 
+// TestLiveActivities: a device registers its token to start an activity with, then an
+// activity's own token, which a later charge replaces and an earlier one does not.
+func TestLiveActivities(t *testing.T) {
+	e, c := readerEnv(t)
+	dev := e.api.URL + "/api/v1/devices/" + phoneID
+	u := dev + "/live-activities/" + car
+	const charge, later = "2026-09-28T18:30:00.000000Z", "2026-09-29T07:00:00.000000Z"
+	activity := func() (notify.LiveActivity, bool) {
+		e.notifications.mu.Lock()
+		defer e.notifications.mu.Unlock()
+		a, ok := e.notifications.live[account][[2]string{phoneID, car}]
+		return a, ok
+	}
+
+	resp, body := do(t, noFollow(), http.MethodPut, u, jsonType, `{"charge":"`+charge+`","token":"t1"}`, c)
+	if resp.status != http.StatusNotFound {
+		t.Errorf("before the device: %d %s", resp.status, body)
+	}
+	wantError(t, body, "not_found")
+
+	startToken := dev + "/live-activity-token"
+	if resp, body := do(t, noFollow(), http.MethodPut, startToken, jsonType, `{"token":"s1"}`, c); resp.status != http.StatusNotFound {
+		t.Errorf("start token before the device: %d %s", resp.status, body)
+	}
+	if resp, body := do(t, noFollow(), http.MethodPut, dev, jsonType, phoneBody, c); resp.status != http.StatusNoContent {
+		t.Fatalf("device: %d %s", resp.status, body)
+	}
+	startWith := func(body, want string) {
+		t.Helper()
+		if resp, body := do(t, noFollow(), http.MethodPut, startToken, jsonType, body, c); resp.status != http.StatusNoContent {
+			t.Fatalf("start token: %d %s", resp.status, body)
+		}
+		if devices, _ := e.notifications.Devices(t.Context(), account); len(devices) != 1 || devices[0].LiveActivityToken != want {
+			t.Errorf("start token: %+v, want %q", devices, want)
+		}
+	}
+	startWith(`{"token":"s1"}`, "s1")
+	// Registering the device again keeps it.
+	if resp, body := do(t, noFollow(), http.MethodPut, dev, jsonType, phoneBody, c); resp.status != http.StatusNoContent {
+		t.Fatalf("device again: %d %s", resp.status, body)
+	}
+	if devices, _ := e.notifications.Devices(t.Context(), account); devices[0].LiveActivityToken != "s1" {
+		t.Errorf("start token lost: %+v", devices)
+	}
+	startWith(`{"token":null}`, "")
+	startWith(`{"token":"s2"}`, "s2")
+	for _, step := range []struct {
+		body, charge, token string
+	}{
+		{`{"charge":"` + charge + `","token":"t1"}`, charge, "t1"},
+		{`{"charge":"` + later + `","token":"t2"}`, later, "t2"},
+		{`{"charge":"` + charge + `","token":"t3"}`, later, "t2"}, // an earlier charge changes nothing
+		{`{"charge":"` + later + `","token":null}`, later, ""},    // dismissed
+	} {
+		if resp, body := do(t, noFollow(), http.MethodPut, u, jsonType, step.body, c); resp.status != http.StatusNoContent {
+			t.Fatalf("%s: %d %s", step.body, resp.status, body)
+		}
+		if a, ok := activity(); !ok || a.ChargeID != step.charge || a.Token != step.token || a.VehicleID != car {
+			t.Errorf("%s: %+v", step.body, a)
+		}
+	}
+
+	t.Run("refused", func(t *testing.T) {
+		for _, bad := range []string{
+			`{"charge":"yesterday","token":"t"}`,
+			`{"charge":"` + charge + `","token":""}`,
+			`{"charge":"` + charge + `","token":"a b"}`,
+			`{"charge":"` + charge + `"}`,
+		} {
+			resp, body := do(t, noFollow(), http.MethodPut, u, jsonType, bad, c)
+			if resp.status != http.StatusBadRequest {
+				t.Errorf("%s: %d", bad, resp.status)
+			}
+			wantError(t, body, "invalid_body")
+		}
+		for _, bad := range []string{`{"token":""}`, `{"token":"a b"}`, `{}`} {
+			resp, body := do(t, noFollow(), http.MethodPut, startToken, jsonType, bad, c)
+			if resp.status != http.StatusBadRequest {
+				t.Errorf("start token %s: %d", bad, resp.status)
+			}
+			wantError(t, body, "invalid_body")
+		}
+		resp, body := do(t, noFollow(), http.MethodPut, dev+"/live-activities/"+foreign, jsonType, `{"charge":"`+charge+`","token":"t"}`, c)
+		if resp.status != http.StatusNotFound {
+			t.Errorf("another account's vehicle: %d %s", resp.status, body)
+		}
+		bearer := tokenWith(t, e, c, "trips:mark")
+		if resp, _ := withBearer(t, http.MethodPut, u, bearer, jsonType, `{"charge":"`+charge+`","token":"t"}`); resp.status != http.StatusForbidden {
+			t.Errorf("without the scope: %d", resp.status)
+		}
+	})
+
+	t.Run("not JSON, or a store down", func(t *testing.T) {
+		for _, target := range []string{u, startToken} {
+			resp, body := do(t, noFollow(), http.MethodPut, target, "text/plain", `{"charge":"`+charge+`","token":"t"}`, c)
+			if resp.status != http.StatusUnsupportedMediaType {
+				t.Errorf("%s not JSON: %d", target, resp.status)
+			}
+			wantError(t, body, "unsupported_media_type")
+		}
+		e.notifications.fail = errors.New("down")
+		defer func() { e.notifications.fail = nil }()
+		bodies := map[string]string{u: `{"charge":"` + charge + `","token":"t"}`, startToken: `{"token":"t"}`} //nolint:gosec // a test's tokens
+		for target, b := range bodies {
+			resp, body := do(t, noFollow(), http.MethodPut, target, jsonType, b, c)
+			if resp.status != http.StatusInternalServerError {
+				t.Errorf("%s: %d", target, resp.status)
+			}
+			wantError(t, body, "internal")
+		}
+	})
+
+	if resp, body := do(t, noFollow(), http.MethodDelete, dev, "", "", c); resp.status != http.StatusNoContent {
+		t.Fatalf("delete: %d %s", resp.status, body)
+	}
+	if a, ok := activity(); ok {
+		t.Errorf("kept with its device: %+v", a)
+	}
+}
+
 // TestNotificationPreferences: the kinds and their defaults, then the choices a PUT
 // sets, the others left as they are.
 func TestNotificationPreferences(t *testing.T) {
@@ -327,7 +495,7 @@ func TestNotificationPreferences(t *testing.T) {
 	// The vehicle's trips follow the default again; nothing else changes.
 	resp, body = put(t, `{"account":[],"vehicles_default":[],"vehicles":[{"vehicle":"`+car+`","kinds":[{"kind":"trip_ended","choice":"default"}]}]}`)
 	if resp.status != http.StatusOK || !strings.Contains(body, `{"kind":"access_granted","enabled":false,"default":true,"always":false}`) ||
-		!strings.Contains(body, `"vehicle":"`+car+`","kinds":[{"kind":"charge_interrupted","enabled":true,"choice":"default"},{"kind":"charge_finished","enabled":false,"choice":"off"},{"kind":"trip_to_classify","enabled":false,"choice":"default"},{"kind":"charge_started","enabled":false,"choice":"default"},{"kind":"trip_ended","enabled":true,"choice":"default"}]`) {
+		!strings.Contains(body, `"vehicle":"`+car+`","kinds":[{"kind":"charge_interrupted","enabled":true,"choice":"default"},{"kind":"charge_finished","enabled":false,"choice":"off"},{"kind":"trip_to_classify","enabled":false,"choice":"default"},{"kind":"charge_started","enabled":false,"choice":"default"},{"kind":"trip_ended","enabled":true,"choice":"default"},{"kind":"charge_live_activity","enabled":true,"choice":"default"}]`) {
 		t.Errorf("back to the default: %d %s", resp.status, body)
 	}
 

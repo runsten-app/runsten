@@ -55,6 +55,12 @@
       "enabled": false,
       "default": false,
       "always": false
+    },
+    {
+      "kind": "charge_live_activity",
+      "enabled": true,
+      "default": true,
+      "always": false
     }
   ],
   "vehicles": [
@@ -84,6 +90,11 @@
         {
           "kind": "trip_ended",
           "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_live_activity",
+          "enabled": true,
           "choice": "default"
         }
       ]
@@ -115,6 +126,11 @@
           "kind": "trip_ended",
           "enabled": false,
           "choice": "default"
+        },
+        {
+          "kind": "charge_live_activity",
+          "enabled": true,
+          "choice": "default"
         }
       ]
     },
@@ -144,6 +160,11 @@
         {
           "kind": "trip_ended",
           "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_live_activity",
+          "enabled": true,
           "choice": "default"
         }
       ]
@@ -175,6 +196,11 @@
           "kind": "trip_ended",
           "enabled": false,
           "choice": "default"
+        },
+        {
+          "kind": "charge_live_activity",
+          "enabled": true,
+          "choice": "default"
         }
       ]
     },
@@ -204,6 +230,11 @@
         {
           "kind": "trip_ended",
           "enabled": false,
+          "choice": "default"
+        },
+        {
+          "kind": "charge_live_activity",
+          "enabled": true,
           "choice": "default"
         }
       ]

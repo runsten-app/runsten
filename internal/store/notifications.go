@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -14,12 +15,24 @@ import (
 )
 
 // PutDevice implements api.Notifications: the device is registered, or updated with its
-// new token, language and version, its creation kept. Counted under the account's lock,
+// new token, language and version, its creation and its Live Activities' token kept. Counted under the account's lock,
 // so that two registrations at once cannot both pass api.MaxDevices.
 func (s *Store) PutDevice(ctx context.Context, accountID string, d notify.Device) error {
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtext('runsten_devices:' || $1))", accountID); err != nil {
 			return fmt.Errorf("devices lock: %w", err)
+		}
+		// An API token revoked meanwhile (DeleteToken, under the same lock) registers no
+		// device: none would be removed with it. An extension's access (grant:<id>) is the
+		// extension's to check.
+		if d.AccessID != "" && !strings.HasPrefix(d.AccessID, "grant:") {
+			var live bool
+			if err := tx.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM api_tokens WHERE id::text = $1)", d.AccessID).Scan(&live); err != nil {
+				return fmt.Errorf("access token: %w", err)
+			}
+			if !live {
+				return api.ErrAccessRevoked
+			}
 		}
 		var others int
 		if err := tx.QueryRow(ctx, "SELECT count(*) FROM devices WHERE id <> $1", d.ID).Scan(&others); err != nil {
@@ -29,17 +42,30 @@ func (s *Store) PutDevice(ctx context.Context, accountID string, d notify.Device
 			return api.ErrTooManyDevices
 		}
 		_, err := tx.Exec(ctx, `
-			INSERT INTO devices (id, account_id, user_id, platform, token, locale, app_version, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			INSERT INTO devices (id, account_id, user_id, platform, token, access_id, locale, app_version, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			ON CONFLICT (account_id, id) DO UPDATE SET user_id = excluded.user_id, platform = excluded.platform,
-				token = excluded.token, locale = excluded.locale, app_version = excluded.app_version,
-				updated_at = excluded.updated_at`,
-			d.ID, accountID, d.UserID, string(d.Platform), d.Token, d.Locale, d.AppVersion, d.CreatedAt, d.UpdatedAt)
+				token = excluded.token, access_id = excluded.access_id, locale = excluded.locale,
+				app_version = excluded.app_version, updated_at = excluded.updated_at`,
+			d.ID, accountID, d.UserID, string(d.Platform), d.Token, nullString(d.AccessID), d.Locale, d.AppVersion, d.CreatedAt, d.UpdatedAt)
 		if err != nil {
 			return fmt.Errorf("put device: %w", err)
 		}
 		return nil
 	})
+}
+
+// DeleteDevicesOfAccess removes the devices the access registered (notify.Device.AccessID),
+// their Live Activities with them: for an extension whose access is revoked, as
+// DeleteToken does for an API token. Their number.
+func (s *Store) DeleteDevicesOfAccess(ctx context.Context, accountID, accessID string) (int, error) {
+	var n int
+	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		tag, err := tx.Exec(ctx, "DELETE FROM devices WHERE access_id = $1", accessID)
+		n = int(tag.RowsAffected())
+		return err //nolint:wrapcheck // wrapped by inAccount
+	})
+	return n, err
 }
 
 // DeleteDevice implements api.Notifications.
@@ -55,14 +81,15 @@ func (s *Store) Devices(ctx context.Context, accountID string) ([]notify.Device,
 	var out []notify.Device
 	err := s.readInAccount(ctx, accountID, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `
-			SELECT id, user_id, platform, token, locale, app_version, created_at, updated_at FROM devices
+			SELECT id, user_id, platform, token, coalesce(live_activity_token, ''), coalesce(access_id, ''), locale, app_version,
+				created_at, updated_at FROM devices
 			ORDER BY created_at, id`)
 		if err != nil {
 			return err //nolint:wrapcheck // wrapped by inAccount
 		}
 		var d notify.Device
 		var platform string
-		_, err = pgx.ForEachRow(rows, []any{&d.ID, &d.UserID, &platform, &d.Token, &d.Locale, &d.AppVersion, &d.CreatedAt, &d.UpdatedAt}, func() error {
+		_, err = pgx.ForEachRow(rows, []any{&d.ID, &d.UserID, &platform, &d.Token, &d.LiveActivityToken, &d.AccessID, &d.Locale, &d.AppVersion, &d.CreatedAt, &d.UpdatedAt}, func() error {
 			d.Platform = notify.Platform(platform)
 			d.CreatedAt, d.UpdatedAt = d.CreatedAt.UTC(), d.UpdatedAt.UTC()
 			out = append(out, d)
