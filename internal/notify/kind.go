@@ -62,6 +62,9 @@ const (
 	ChargeStarted Kind = "charge_started"
 	// TripEnded: a trip ended, with its distance and energy.
 	TripEnded Kind = "trip_ended"
+	// ChargeLiveActivity: the charge in progress shown on the lock screen as it goes on
+	// (a Live Activity), started, updated and ended by the instance (Notifier.Live).
+	ChargeLiveActivity Kind = "charge_live_activity"
 )
 
 // Spec declares a kind: its level, whether it is on when the user chose nothing, and
@@ -87,6 +90,7 @@ func CoreKinds() []Spec {
 		{Kind: TripToClassify, Level: VehicleLevel},
 		{Kind: ChargeStarted, Level: VehicleLevel},
 		{Kind: TripEnded, Level: VehicleLevel},
+		{Kind: ChargeLiveActivity, Level: VehicleLevel, Default: true},
 	}
 }
 

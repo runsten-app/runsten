@@ -2659,6 +2659,41 @@ components:
         - price_per_kwh
         - entered_cost
       type: object
+    LiveActivityBody:
+      additionalProperties: false
+      properties:
+        charge:
+          description: The ID of the charge the activity shows, as GET /vehicles/{vehicle}/charging gives it.
+          examples:
+            - "2026-09-28T18:30:00.000000Z"
+          pattern: ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z$
+          type: string
+        token:
+          description: "The activity's own push token, which the instance updates and ends it with; null: the person dismissed it, and the instance tells it nothing more of this charge."
+          maxLength: 4096
+          minLength: 1
+          pattern: ^[\x21-\x7e]+$
+          type:
+            - string
+            - "null"
+      required:
+        - charge
+        - token
+      type: object
+    LiveActivityTokenBody:
+      additionalProperties: false
+      properties:
+        token:
+          description: "The token the push service starts a charge's Live Activity on the device with (APNs: the push-to-start token of iOS 17.2 and later); null: the instance starts none."
+          maxLength: 4096
+          minLength: 1
+          pattern: ^[\x21-\x7e]+$
+          type:
+            - string
+            - "null"
+      required:
+        - token
+      type: object
     MapLink:
       additionalProperties: false
       properties:
@@ -3034,7 +3069,7 @@ components:
             $ref: "#/components/schemas/VehiclePreferences"
           type: array
         vehicles_default:
-          description: "The vehicles' kinds, for every vehicle without a choice of its own: charge_interrupted (a charge stopped below its limit, the cable connected), charge_finished (it reached its limit), trip_to_classify (a trip ended without a purpose), charge_started, trip_ended."
+          description: "The vehicles' kinds, for every vehicle without a choice of its own: charge_interrupted (a charge stopped below its limit, the cable connected), charge_finished (it reached its limit), trip_to_classify (a trip ended without a purpose), charge_started, trip_ended, charge_live_activity (the charge in progress shown on the lock screen as it goes on, PUT /devices/{device}/live-activity-token)."
           items:
             $ref: "#/components/schemas/KindPreference"
           type: array
@@ -8119,7 +8154,7 @@ paths:
         - connection
   /devices/{device}:
     delete:
-      description: The device is told nothing more, such as after the app signed out. Removing a device the account does not have does nothing.
+      description: The device is told nothing more, such as after the app signed out, and its Live Activities are forgotten. Removing a device the account does not have does nothing.
       operationId: deleteDevice
       parameters:
         - description: The device's ID, drawn by the app once per installation.
@@ -8254,6 +8289,171 @@ paths:
         - accessToken:
             - notifications
       summary: Register a device
+      tags:
+        - notifications
+  /devices/{device}/live-activities/{vehicle}:
+    put:
+      description: "Registers the Live Activity the device shows of the vehicle's charge in progress, with the token its push service updates it with: the instance updates it at each reading of the vehicle, a minute apart at best, and ends it once the charge is over, with its final figures. Only figures go out: the state of charge, its limit, the power, the energy added, an estimated end. A device shows one activity per vehicle: a later charge takes the place of the former, an earlier one changes nothing. When the instance started the activity itself (PUT /devices/{device}/live-activity-token), the app registers its token the same way. The activity is forgotten once the charge is over, and with the device. Nothing is sent when the instance sends no notifications (`notifications` of /instance)."
+      operationId: putLiveActivity
+      parameters:
+        - description: The device's ID, registered first (PUT /devices/{device}).
+          in: path
+          name: device
+          required: true
+          schema:
+            description: The device's ID, registered first (PUT /devices/{device}).
+            format: uuid
+            type: string
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LiveActivityBody"
+        required: true
+      responses:
+        "204":
+          description: Registered.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `invalid_parameter`: the device's ID is not a UUID."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token without the scope `notifications`; this operation requires a session or that scope."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account, or the device is not registered."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken:
+            - notifications
+      summary: Register a charge's Live Activity
+      tags:
+        - notifications
+  /devices/{device}/live-activity-token:
+    put:
+      description: "Sets the token the device's push service starts a Live Activity with: when a charge starts, the instance starts one on the device for the vehicle, which shows the charge as it goes on; the app then registers the activity's own token (PUT /devices/{device}/live-activities/{vehicle}). Once per charge and vehicle: an activity the person dismissed is not started again. Kept until the device is removed; null: none is started."
+      operationId: putLiveActivityToken
+      parameters:
+        - description: The device's ID, registered first (PUT /devices/{device}).
+          in: path
+          name: device
+          required: true
+          schema:
+            description: The device's ID, registered first (PUT /devices/{device}).
+            format: uuid
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LiveActivityTokenBody"
+        required: true
+      responses:
+        "204":
+          description: Set.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `invalid_parameter`: the device's ID is not a UUID."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token without the scope `notifications`; this operation requires a session or that scope."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: the device is not registered."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`rate_limited`: too many requests with this access token."
+          headers:
+            Retry-After:
+              description: Seconds to wait before the next request.
+              required: true
+              schema:
+                minimum: 1
+                type: integer
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+        - accessToken:
+            - notifications
+      summary: Let the instance start Live Activities on a device
       tags:
         - notifications
   /instance:
