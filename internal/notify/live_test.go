@@ -46,6 +46,15 @@ func (m *memLive) MarkLiveActivities(_ context.Context, _, vehicleID, chargeID s
 	return m.fail
 }
 
+func (m *memLive) DismissLiveActivities(_ context.Context, _, vehicleID, chargeID string, deviceIDs []string) error {
+	for i, a := range m.acts {
+		if a.VehicleID == vehicleID && a.ChargeID == chargeID && slices.Contains(deviceIDs, a.DeviceID) {
+			m.acts[i].Token = ""
+		}
+	}
+	return m.fail
+}
+
 func (m *memLive) EndLiveActivities(_ context.Context, _, vehicleID string, chargeIDs []string) error {
 	m.acts = slices.DeleteFunc(m.acts, func(a LiveActivity) bool {
 		return a.VehicleID == vehicleID && slices.Contains(chargeIDs, a.ChargeID)
@@ -232,8 +241,17 @@ func TestLiveTurnedOff(t *testing.T) {
 	if err := n.Live(t.Context(), "a", "v", inProgress(charging(t0.Add(time.Minute), 52))); err != nil {
 		t.Fatal(err)
 	}
-	if p := s.take(); len(p) != 1 || p[0].Event != LiveEnd || slices.ContainsFunc(st.acts, func(a LiveActivity) bool { return a.VehicleID == "v" }) {
+	if p := s.take(); len(p) != 1 || p[0].Event != LiveEnd || len(st.acts) != 1 || st.acts[0].Token != "" {
 		t.Errorf("turned off while shown: %+v %+v", p, st.acts)
+	}
+	// Turned on again during the charge: the activity ended stays dismissed.
+	st.prefs = Preferences{}
+	clk.Advance(time.Minute)
+	if err := n.Live(t.Context(), "a", "v", inProgress(charging(t0.Add(2*time.Minute), 54))); err != nil {
+		t.Fatal(err)
+	}
+	if p := s.take(); len(p) != 0 {
+		t.Errorf("started again: %+v", p)
 	}
 }
 

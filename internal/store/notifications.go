@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -20,6 +21,18 @@ func (s *Store) PutDevice(ctx context.Context, accountID string, d notify.Device
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtext('runsten_devices:' || $1))", accountID); err != nil {
 			return fmt.Errorf("devices lock: %w", err)
+		}
+		// An API token revoked meanwhile (DeleteToken, under the same lock) registers no
+		// device: none would be removed with it. An extension's access (grant:<id>) is the
+		// extension's to check.
+		if d.AccessID != "" && !strings.HasPrefix(d.AccessID, "grant:") {
+			var live bool
+			if err := tx.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM api_tokens WHERE id::text = $1)", d.AccessID).Scan(&live); err != nil {
+				return fmt.Errorf("access token: %w", err)
+			}
+			if !live {
+				return api.ErrAccessRevoked
+			}
 		}
 		var others int
 		if err := tx.QueryRow(ctx, "SELECT count(*) FROM devices WHERE id <> $1", d.ID).Scan(&others); err != nil {

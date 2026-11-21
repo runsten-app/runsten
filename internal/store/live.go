@@ -131,6 +131,16 @@ func (s *Store) MarkLiveActivities(ctx context.Context, accountID, vehicleID, ch
 	})
 }
 
+// DismissLiveActivities implements notify.LiveStore.
+func (s *Store) DismissLiveActivities(ctx context.Context, accountID, vehicleID, chargeID string, deviceIDs []string) error {
+	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, `
+			UPDATE live_activities SET token = NULL
+			WHERE vehicle_id = $1 AND charge_id = $2 AND device_id = ANY($3::uuid[])`, vehicleID, chargeID, deviceIDs)
+		return err //nolint:wrapcheck // wrapped by inAccount
+	})
+}
+
 // EndLiveActivities implements notify.LiveStore.
 func (s *Store) EndLiveActivities(ctx context.Context, accountID, vehicleID string, chargeIDs []string) error {
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {

@@ -105,6 +105,9 @@ type LiveStore interface {
 	// MarkLiveActivities records s as told at now to the vehicle's activities of the
 	// charge on those devices, the ones it was pushed to.
 	MarkLiveActivities(ctx context.Context, accountID, vehicleID, chargeID string, deviceIDs []string, s ChargeState, now time.Time) error
+	// DismissLiveActivities records the vehicle's activities of the charge on those
+	// devices as dismissed (no token): none is started again for the charge.
+	DismissLiveActivities(ctx context.Context, accountID, vehicleID, chargeID string, deviceIDs []string) error
 	// EndLiveActivities forgets the vehicle's activities of those charges.
 	EndLiveActivities(ctx context.Context, accountID, vehicleID string, chargeIDs []string) error
 }
@@ -140,15 +143,15 @@ func (n *Notifier) Live(ctx context.Context, accountID, vehicleID string, res co
 		current, state = EventID(c.V.DetectedAt), InProgressState(c.V)
 		fresh = !c.V.End.Before.Before(now.Add(-Fresh))
 	}
-	// Turned off for the vehicle: those shown end, as if the charge were over.
+	// Turned off for the vehicle: those shown end, and stay recorded as dismissed while
+	// the charge runs, so that turning it on again starts none a person dismissed.
+	off := false
 	if current != "" {
 		on, err := n.liveWanted(ctx, accountID, vehicleID)
 		if err != nil {
 			return err
 		}
-		if !on {
-			current = ""
-		}
+		off = !on
 	}
 	push := func(p LivePush) {
 		if err := sender.SendLiveActivity(ctx, p); err != nil && caller.Err() == nil {
@@ -163,6 +166,22 @@ func (n *Notifier) Live(ctx context.Context, accountID, vehicleID string, res co
 	}
 	// Those ended are forgotten: their devices may start the charge in progress.
 	acts = slices.DeleteFunc(acts, func(a LiveActivity) bool { return a.ChargeID != current })
+	if current != "" && off {
+		var shown []LiveActivity
+		var devices []string
+		for _, a := range acts {
+			if a.Token != "" {
+				shown, devices = append(shown, a), append(devices, a.DeviceID)
+			}
+		}
+		if len(shown) > 0 {
+			push(LivePush{Event: LiveEnd, AccountID: accountID, VehicleID: vehicleID, ChargeID: current, State: state, Activities: shown})
+			if err := store.DismissLiveActivities(ctx, accountID, vehicleID, current, devices); err != nil {
+				errs = append(errs, fmt.Errorf("dismiss live activities: %w", err))
+			}
+		}
+		return errors.Join(errs...)
+	}
 	if current == "" || !fresh {
 		return errors.Join(errs...)
 	}

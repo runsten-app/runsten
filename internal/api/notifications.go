@@ -52,6 +52,10 @@ const MaxDevices = 20
 // ErrTooManyDevices is returned when the account has MaxDevices devices already.
 var ErrTooManyDevices = errors.New("too many devices")
 
+// ErrAccessRevoked is returned when the access token a device registers with was revoked
+// since it authenticated the request.
+var ErrAccessRevoked = errors.New("access revoked")
+
 // ErrNoDevice is returned when the account does not have the device.
 var ErrNoDevice = errors.New("no such device")
 
@@ -85,6 +89,8 @@ func (s *Server) putDevice(ctx context.Context, in *deviceInput) (*struct{}, err
 		Locale:   in.Body.Locale, AppVersion: in.Body.AppVersion, CreatedAt: now, UpdatedAt: now,
 	}
 	switch err := s.Notifications.PutDevice(ctx, sess.AccountID, d); {
+	case errors.Is(err, ErrAccessRevoked):
+		return nil, apiError(http.StatusUnauthorized, codeUnauthorized, "the access token was revoked")
 	case errors.Is(err, ErrTooManyDevices):
 		return nil, apiError(http.StatusConflict, codeTooManyDevices, "the account has "+strconv.Itoa(MaxDevices)+" devices already: remove one first")
 	case err != nil:
@@ -388,8 +394,8 @@ func (s *Server) registerNotifications(api huma.API) {
 		OperationID: "putLiveActivity", Method: http.MethodPut, Path: "/devices/{device}/live-activities/{vehicle}", Tags: []string{"notifications"},
 		Summary: "Register a charge's Live Activity",
 		Description: "Registers the Live Activity the device shows of the vehicle's charge in progress, with the token its " +
-			"push service updates it with: the instance updates it at each reading of the vehicle, a minute apart at " +
-			"best, and ends it once the charge is over, with its final figures. Only figures go out: the state of " +
+			"push service updates it with: the instance updates it at each new reading of the vehicle, at least 50 " +
+			"seconds apart, and ends it once the charge is over, with its final figures. Only figures go out: the state of " +
 			"charge, its limit, the power, the energy added, an estimated end. A device shows one activity per vehicle: " +
 			"a later charge takes the place of the former, an earlier one changes nothing. When the instance started the " +
 			"activity itself (PUT /devices/{device}/live-activity-token), the app registers its token the same way. " +

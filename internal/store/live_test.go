@@ -161,6 +161,12 @@ func TestDevicesOfAccess(t *testing.T) {
 	if ok, err := s.DeleteToken(ctx, a, ua, tokenID); err != nil || !ok {
 		t.Fatalf("delete token: %v %v", ok, err)
 	}
+	// A registration with the token revoked meanwhile is refused: no device would go with it.
+	late := device(ua, "6f1c2a8e-0d5b-4c3a-9e7f-1a2b3c4d5e04")
+	late.AccessID = tokenID
+	if err := s.PutDevice(ctx, a, late); !errors.Is(err, api.ErrAccessRevoked) {
+		t.Errorf("registered with a revoked token: %v", err)
+	}
 	if n, err := s.DeleteDevicesOfAccess(ctx, a, "grant:g1"); err != nil || n != 1 {
 		t.Fatalf("delete grant's: %d %v", n, err)
 	}

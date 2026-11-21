@@ -178,6 +178,11 @@ func (s *Store) ListTokens(ctx context.Context, accountID, userID string) ([]aut
 func (s *Store) DeleteToken(ctx context.Context, accountID, userID, tokenID string) (bool, error) {
 	var deleted bool
 	err := s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		// The devices' lock (PutDevice): a registration with the token comes before, and
+		// its device goes with it, or after, and is refused.
+		if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock(hashtext('runsten_devices:' || $1))", accountID); err != nil {
+			return fmt.Errorf("devices lock: %w", err)
+		}
 		tag, err := tx.Exec(ctx, "DELETE FROM api_tokens WHERE id::text = $1 AND user_id = $2", tokenID, userID)
 		if err != nil {
 			return err //nolint:wrapcheck // wrapped by inAccount
