@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"runsten/internal/api"
+	"runsten/internal/auth"
 	"runsten/internal/notify"
 )
 
@@ -122,5 +123,51 @@ func TestLiveActivities(t *testing.T) {
 	}
 	if devices, _ := s.Devices(ctx, a); devices[0].LiveActivityToken != "" {
 		t.Errorf("start token kept %+v", devices[0])
+	}
+}
+
+// TestDevicesOfAccess: a device remembers the access that registered it; revoking an API
+// token removes its devices and their activities, and an extension removes those of its
+// own access; a session's device stays.
+func TestDevicesOfAccess(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, car := newVehicle(t, s, "token-a", "YV1AAAAAAAAAAAAA1")
+	ua, err := s.CreateUser(ctx, a, "alice", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tokenID, err := s.CreateToken(ctx, auth.Token{AccountID: a, UserID: ua, Name: "phone", CreatedAt: t0}, make([]byte, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const byToken, byGrant, bySession = //nolint:gosec // devices' IDs
+	"6f1c2a8e-0d5b-4c3a-9e7f-1a2b3c4d5e01", "6f1c2a8e-0d5b-4c3a-9e7f-1a2b3c4d5e02", "6f1c2a8e-0d5b-4c3a-9e7f-1a2b3c4d5e03"
+	for id, access := range map[string]string{byToken: tokenID, byGrant: "grant:g1", bySession: ""} {
+		d := device(ua, id)
+		d.AccessID = access
+		if err := s.PutDevice(ctx, a, d); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := s.StartLiveActivities(ctx, a, car, "c1", []string{byToken}, notify.ChargeState{Status: notify.LiveCharging}, t0); err != nil {
+		t.Fatal(err)
+	}
+	devices, _ := s.Devices(ctx, a)
+	if len(devices) != 3 || devices[0].AccessID == "" && devices[1].AccessID == "" {
+		t.Fatalf("devices %+v", devices)
+	}
+	if ok, err := s.DeleteToken(ctx, a, ua, tokenID); err != nil || !ok {
+		t.Fatalf("delete token: %v %v", ok, err)
+	}
+	if n, err := s.DeleteDevicesOfAccess(ctx, a, "grant:g1"); err != nil || n != 1 {
+		t.Fatalf("delete grant's: %d %v", n, err)
+	}
+	devices, _ = s.Devices(ctx, a)
+	if len(devices) != 1 || devices[0].ID != bySession {
+		t.Errorf("left %+v", devices)
+	}
+	if acts, _ := s.LiveActivities(ctx, a, car); len(acts) != 0 {
+		t.Errorf("activities left %+v", acts)
 	}
 }

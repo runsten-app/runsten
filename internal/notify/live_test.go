@@ -209,6 +209,34 @@ func TestLiveNextCharge(t *testing.T) {
 	}
 }
 
+// TestLiveTurnedOff: the vehicle's charges turned off (ChargeLiveActivity): none starts,
+// and those shown end as if the charge were over.
+func TestLiveTurnedOff(t *testing.T) {
+	st := &memLive{memStore: memStore{devices: []Device{{ID: "d1", Platform: APNs, Token: "tok", LiveActivityToken: "start1"}}}}
+	n, _, clk := newNotifier(&st.memStore)
+	n.st = st
+	s := &liveSender{}
+	n.SetSender(s)
+	off := false
+	st.prefs = Preferences{Vehicles: map[string]map[Kind]bool{"v": {ChargeLiveActivity: off}}}
+	if err := n.Live(t.Context(), "a", "v", inProgress(charging(t0, 50))); err != nil || len(s.take()) != 0 || len(st.acts) != 0 {
+		t.Fatalf("started: %v %+v", err, st.acts)
+	}
+	// Another vehicle follows the default: on.
+	if err := n.Live(t.Context(), "a", "w", inProgress(charging(t0, 50))); err != nil || len(s.take()) != 1 {
+		t.Errorf("another vehicle: %v", err)
+	}
+	st.acts = []LiveActivity{{DeviceID: "d1", VehicleID: "v", ChargeID: EventID(t0), Token: "act1"}}
+	clk.Advance(time.Minute)
+	s.take()
+	if err := n.Live(t.Context(), "a", "v", inProgress(charging(t0.Add(time.Minute), 52))); err != nil {
+		t.Fatal(err)
+	}
+	if p := s.take(); len(p) != 1 || p[0].Event != LiveEnd || slices.ContainsFunc(st.acts, func(a LiveActivity) bool { return a.VehicleID == "v" }) {
+		t.Errorf("turned off while shown: %+v %+v", p, st.acts)
+	}
+}
+
 // TestLiveNothing: no sender of activities, a reconstructed charge or readings long
 // stopped: nothing read, nothing sent.
 func TestLiveNothing(t *testing.T) {

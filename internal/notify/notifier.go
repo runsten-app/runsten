@@ -51,10 +51,14 @@ type Device struct {
 	// LiveActivityToken is the token the push service starts a charge's activity on the
 	// device with (an iOS push-to-start token); empty: none is started.
 	LiveActivityToken string
-	Locale            string // BCP 47, as fr-FR: the language the device writes the texts in
-	AppVersion        string
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	// AccessID is the access token that registered the device (auth.Session.TokenID);
+	// empty for a session. Revoking that access removes the device: the app it was given
+	// to is no longer allowed to read the account, so no longer told of it.
+	AccessID   string
+	Locale     string // BCP 47, as fr-FR: the language the device writes the texts in
+	AppVersion string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 // Preferences are the choices the account's user made; a kind not in them takes its

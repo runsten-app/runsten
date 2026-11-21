@@ -116,7 +116,8 @@ const LiveEvery = 50 * time.Second
 // Live tells the vehicle's activities what its derivation res found, when the instance
 // shows them (a LiveActivitySender and a LiveStore): a charge in progress starts the
 // activity on the devices that have none of it and updates the others, a charge over
-// ends them. Without them, nothing is read.
+// ends them, and so does the user turning ChargeLiveActivity off for the vehicle.
+// Without them, nothing is read.
 func (n *Notifier) Live(ctx context.Context, accountID, vehicleID string, res core.Result) error {
 	sender, store := n.liveSender()
 	if sender == nil || store == nil {
@@ -134,6 +135,16 @@ func (n *Notifier) Live(ctx context.Context, accountID, vehicleID string, res co
 	var state ChargeState
 	if c := res.InProgress; c.OK && !c.V.Reconstructed && !c.V.End.Before.Before(now.Add(-Fresh)) {
 		current, state = EventID(c.V.DetectedAt), InProgressState(c.V)
+	}
+	// Turned off for the vehicle: those shown end, as if the charge were over.
+	if current != "" {
+		on, err := n.liveWanted(ctx, accountID, vehicleID)
+		if err != nil {
+			return err
+		}
+		if !on {
+			current = ""
+		}
 	}
 	push := func(p LivePush) {
 		if err := sender.SendLiveActivity(ctx, p); err != nil && caller.Err() == nil {
@@ -230,6 +241,20 @@ func (n *Notifier) startLive(ctx context.Context, store LiveStore, accountID, ve
 		push(LivePush{Event: LiveStart, AccountID: accountID, VehicleID: vehicleID, ChargeID: charge, State: state, Devices: devices})
 	}
 	return nil
+}
+
+// liveWanted tells whether the user wants the vehicle's charges shown as they go on
+// (ChargeLiveActivity), the kind's default when the registry does not have it.
+func (n *Notifier) liveWanted(ctx context.Context, accountID, vehicleID string) (bool, error) {
+	s, ok := n.reg.Spec(ChargeLiveActivity)
+	if !ok {
+		return true, nil
+	}
+	p, err := n.st.NotificationPreferences(ctx, accountID)
+	if err != nil {
+		return false, fmt.Errorf("notification preferences: %w", err)
+	}
+	return p.Enabled(s, vehicleID), nil
 }
 
 func (n *Notifier) liveSender() (LiveActivitySender, LiveStore) {

@@ -6,6 +6,14 @@
 ALTER TABLE devices
   ADD COLUMN live_activity_token text CHECK (char_length(live_activity_token) BETWEEN 1 AND 4096);
 
+-- The access token that registered the device (an API token's ID, or an extension's, as
+-- grant:<id>); NULL for a session. Revoking the access removes its devices: the app is no
+-- longer allowed to read the account, so it is told nothing more, and no activity starts
+-- on a phone that signed out without reaching the instance.
+ALTER TABLE devices
+  ADD COLUMN access_id text CHECK (char_length(access_id) BETWEEN 1 AND 128);
+CREATE INDEX devices_by_access ON devices (account_id, access_id) WHERE access_id IS NOT NULL;
+
 -- An activity a device shows of a vehicle's charge, or was asked to: token NULL until the
 -- device registers the activity's own, and once it dismissed it. One per device and
 -- vehicle; forgotten once the charge is over, and with its device or its vehicle.

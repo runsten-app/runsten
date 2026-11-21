@@ -3069,7 +3069,7 @@ components:
             $ref: "#/components/schemas/VehiclePreferences"
           type: array
         vehicles_default:
-          description: "The vehicles' kinds, for every vehicle without a choice of its own: charge_interrupted (a charge stopped below its limit, the cable connected), charge_finished (it reached its limit), trip_to_classify (a trip ended without a purpose), charge_started, trip_ended."
+          description: "The vehicles' kinds, for every vehicle without a choice of its own: charge_interrupted (a charge stopped below its limit, the cable connected), charge_finished (it reached its limit), trip_to_classify (a trip ended without a purpose), charge_started, trip_ended, charge_live_activity (the charge in progress shown on the lock screen as it goes on, PUT /devices/{device}/live-activity-token)."
           items:
             $ref: "#/components/schemas/KindPreference"
           type: array

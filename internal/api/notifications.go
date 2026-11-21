@@ -81,7 +81,8 @@ func (s *Server) putDevice(ctx context.Context, in *deviceInput) (*struct{}, err
 	now := s.Clock.Now().UTC()
 	d := notify.Device{
 		ID: in.Device, UserID: sess.UserID, Platform: notify.Platform(in.Body.Platform), Token: in.Body.Token,
-		Locale: in.Body.Locale, AppVersion: in.Body.AppVersion, CreatedAt: now, UpdatedAt: now,
+		AccessID: sess.TokenID,
+		Locale:   in.Body.Locale, AppVersion: in.Body.AppVersion, CreatedAt: now, UpdatedAt: now,
 	}
 	switch err := s.Notifications.PutDevice(ctx, sess.AccountID, d); {
 	case errors.Is(err, ErrTooManyDevices):
@@ -186,7 +187,7 @@ type vehiclePreferencesJSON struct {
 
 type notificationPreferencesJSON struct {
 	Account         []kindPreferenceJSON     `json:"account" nullable:"false" doc:"The account's kinds: credential_expiring, credential_refused (a connection to a maker that expires soon, or was refused), access_granted (a new access token), import_finished (an import of a vehicle's history done or failed)."`
-	VehiclesDefault []kindPreferenceJSON     `json:"vehicles_default" nullable:"false" doc:"The vehicles' kinds, for every vehicle without a choice of its own: charge_interrupted (a charge stopped below its limit, the cable connected), charge_finished (it reached its limit), trip_to_classify (a trip ended without a purpose), charge_started, trip_ended."`
+	VehiclesDefault []kindPreferenceJSON     `json:"vehicles_default" nullable:"false" doc:"The vehicles' kinds, for every vehicle without a choice of its own: charge_interrupted (a charge stopped below its limit, the cable connected), charge_finished (it reached its limit), trip_to_classify (a trip ended without a purpose), charge_started, trip_ended, charge_live_activity (the charge in progress shown on the lock screen as it goes on, PUT /devices/{device}/live-activity-token)."`
 	Vehicles        []vehiclePreferencesJSON `json:"vehicles" nullable:"false" doc:"Each vehicle of the account, with its own choices."`
 }
 

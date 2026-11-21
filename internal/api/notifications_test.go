@@ -495,7 +495,7 @@ func TestNotificationPreferences(t *testing.T) {
 	// The vehicle's trips follow the default again; nothing else changes.
 	resp, body = put(t, `{"account":[],"vehicles_default":[],"vehicles":[{"vehicle":"`+car+`","kinds":[{"kind":"trip_ended","choice":"default"}]}]}`)
 	if resp.status != http.StatusOK || !strings.Contains(body, `{"kind":"access_granted","enabled":false,"default":true,"always":false}`) ||
-		!strings.Contains(body, `"vehicle":"`+car+`","kinds":[{"kind":"charge_interrupted","enabled":true,"choice":"default"},{"kind":"charge_finished","enabled":false,"choice":"off"},{"kind":"trip_to_classify","enabled":false,"choice":"default"},{"kind":"charge_started","enabled":false,"choice":"default"},{"kind":"trip_ended","enabled":true,"choice":"default"}]`) {
+		!strings.Contains(body, `"vehicle":"`+car+`","kinds":[{"kind":"charge_interrupted","enabled":true,"choice":"default"},{"kind":"charge_finished","enabled":false,"choice":"off"},{"kind":"trip_to_classify","enabled":false,"choice":"default"},{"kind":"charge_started","enabled":false,"choice":"default"},{"kind":"trip_ended","enabled":true,"choice":"default"},{"kind":"charge_live_activity","enabled":true,"choice":"default"}]`) {
 		t.Errorf("back to the default: %d %s", resp.status, body)
 	}
 
