@@ -1,17 +1,22 @@
 <script setup lang="ts">
 // StatusPill is a state in a word, in a pill: a status's own color over its container,
 // with a dot (or an icon, for a neutral state such as parked). The word tells it; the
-// color only repeats it.
-withDefaults(defineProps<{ tone?: 'success' | 'warning' | 'error' | 'neutral'; icon?: string }>(), {
-  tone: 'neutral',
-  icon: undefined,
-})
+// color only repeats it. A live state (a charge running) has its dot breathe, twice
+// as it shows: a few seconds, so that nothing moves on without end (WCAG 2.2.2).
+withDefaults(
+  defineProps<{
+    tone?: 'success' | 'warning' | 'error' | 'neutral'
+    icon?: string
+    live?: boolean
+  }>(),
+  { tone: 'neutral', icon: undefined, live: false },
+)
 </script>
 
 <template>
   <span class="status-pill" :class="`status-pill--${tone}`">
     <v-icon v-if="icon" :icon size="16" aria-hidden="true" />
-    <span v-else class="dot" aria-hidden="true" />
+    <span v-else class="dot" :class="{ live }" aria-hidden="true" />
     <slot />
   </span>
 </template>
@@ -33,6 +38,29 @@ withDefaults(defineProps<{ tone?: 'success' | 'warning' | 'error' | 'neutral'; i
   block-size: 7px;
   border-radius: 50%;
   background: currentColor;
+}
+@keyframes breathe {
+  from {
+    scale: 1;
+    opacity: 0.6;
+  }
+  to {
+    scale: 2.6;
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dot.live {
+    position: relative;
+  }
+  .dot.live::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: currentColor;
+    animation: breathe 1.8s ease-out 2 both;
+  }
 }
 .status-pill--neutral {
   background: rgb(var(--v-theme-surface));

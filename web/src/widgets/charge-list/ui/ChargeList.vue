@@ -8,7 +8,8 @@ import { useChargeInProgress, useCharges } from '@/features/browse-charges'
 import { periodQuery } from '@/features/filter-period'
 import { placeQuery } from '@/features/filter-place'
 import { isApiError } from '@/shared/api'
-import { groupByDay, useFormat, useNow } from '@/shared/lib'
+import { groupByDay, openedEvent, openEvent, useFormat, useNow } from '@/shared/lib'
+import { TileSkeleton } from '@/shared/ui'
 
 // ChargeList is Urd's list of charges: newest first, by day, a page at a time. The charge
 // in progress, no event of the list, comes first, while the period reaches the present,
@@ -52,7 +53,11 @@ const errorMessage = computed(() => {
   <section v-if="live" class="in-progress mb-4">
     <h2 class="text-title-small text-medium-emphasis mb-1">{{ t('chargeInProgress.heading') }}</h2>
     <v-list class="tile-list py-0">
-      <div role="listitem">
+      <div
+        role="listitem"
+        :class="{ 'vt-event': openedEvent === live.id }"
+        @click="openEvent(live.id)"
+      >
         <ChargeInProgressSummary
           :charge="live"
           :stale
@@ -63,7 +68,7 @@ const errorMessage = computed(() => {
     </v-list>
   </section>
   <v-alert v-if="error && !charges.length" type="error" variant="tonal">{{ errorMessage }}</v-alert>
-  <v-progress-linear v-else-if="isPending" indeterminate :aria-label="t('charges.loading')" />
+  <TileSkeleton v-else-if="isPending" layout="rows" :label="t('charges.loading')" />
   <p v-else-if="!groups.length && !live" class="empty text-body-large text-medium-emphasis py-6">
     {{ place ? t('charges.emptyPlace') : filtered ? t('charges.emptyPeriod') : t('charges.empty') }}
   </p>
@@ -76,9 +81,11 @@ const errorMessage = computed(() => {
         <div v-for="(charge, i) in g.items" :key="charge.id" role="listitem">
           <v-divider v-if="i > 0" />
           <ChargeSummary
+            :class="{ 'vt-event': openedEvent === charge.id }"
             :charge
             :day="g.day"
             :to="{ name: 'charge', params: { vehicle, id: charge.id }, query }"
+            @click="openEvent(charge.id)"
           />
         </div>
       </v-list>

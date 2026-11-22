@@ -12,6 +12,7 @@ import { VehiclePage } from '@/pages/vehicle'
 import { isApiError } from '@/shared/api'
 import { parseDecimal } from '@/shared/lib'
 import { extensionGuards, extensionRoutes } from './extensions'
+import { withViewTransitions } from './viewTransition'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -185,5 +186,6 @@ export function createAppRouter(history: RouterHistory, queryClient: QueryClient
     }
     return true
   })
+  withViewTransitions(router)
   return router
 }

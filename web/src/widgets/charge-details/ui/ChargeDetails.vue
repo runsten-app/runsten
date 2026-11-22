@@ -7,7 +7,7 @@ import { useSettings } from '@/features/edit-settings'
 import { ChargeCostEditor } from '@/features/enter-charge-cost'
 import { FeatureUnavailable, useLimits } from '@/features/view-limits'
 import { isApiError } from '@/shared/api'
-import { formatCoordinate, openStreetMapUrl, useFormat, useMapsOn } from '@/shared/lib'
+import { formatCoordinate, openedEvent, openStreetMapUrl, useFormat, useMapsOn } from '@/shared/lib'
 import { EventWhen, FactItem, ImportedBadge, MapView, ReconstructedBadge } from '@/shared/ui'
 
 // ChargeDetails is everything Runsten knows of a charge, and says what it does not. Its
@@ -134,7 +134,7 @@ const costNotes = computed(() => {
   <v-alert v-else-if="error" type="error" variant="tonal">{{ t('charge.error') }}</v-alert>
   <v-progress-linear v-else-if="isPending" indeterminate :aria-label="t('charge.loading')" />
   <article v-else-if="charge" class="charge-details">
-    <header class="mb-4">
+    <header class="mb-4" :class="{ 'vt-event': openedEvent === id }">
       <h1 class="text-headline-small">{{ t('charge.title') }}</h1>
       <p class="text-body-large text-medium-emphasis">{{ f.day(charge.start.after) }}</p>
     </header>

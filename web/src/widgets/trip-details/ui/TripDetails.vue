@@ -8,6 +8,7 @@ import { isApiError } from '@/shared/api'
 import {
   formatCoordinate,
   formatCoordinates,
+  openedEvent,
   openStreetMapUrl,
   useFormat,
   useMapsOn,
@@ -86,7 +87,7 @@ const newPlace = (p: Position) => ({
   <v-alert v-else-if="error" type="error" variant="tonal">{{ t('trip.error') }}</v-alert>
   <v-progress-linear v-else-if="isPending" indeterminate :aria-label="t('trip.loading')" />
   <article v-else-if="trip" class="trip-details">
-    <header class="mb-4">
+    <header class="mb-4" :class="{ 'vt-event': openedEvent === id }">
       <h1 class="text-headline-small">{{ t('trip.title') }}</h1>
       <p class="text-body-large text-medium-emphasis">{{ f.day(trip.start.after) }}</p>
     </header>

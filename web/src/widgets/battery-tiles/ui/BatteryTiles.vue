@@ -157,7 +157,7 @@ const errorMessage = computed(() => {
   <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ errorMessage }}</v-alert>
   <v-progress-linear v-else-if="isPending" indeterminate :aria-label="t('battery.loading')" />
   <!-- A <dl> holds div groups of dt and dd only: the dialog opens from the dd. -->
-  <dl v-else-if="tiles.length" class="battery-tiles mb-3">
+  <dl v-else-if="tiles.length" class="battery-tiles tiles-rise mb-3">
     <div v-for="tile in tiles" :key="tile.key" :class="['tile', tile.key]">
       <dt class="label">{{ tile.label }}</dt>
       <dd>

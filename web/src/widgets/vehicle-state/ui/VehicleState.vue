@@ -44,7 +44,7 @@ import { useHealth } from '@/features/view-health'
 import { useUpdateText, useVehicleState } from '@/features/watch-vehicle-state'
 import { isApiError } from '@/shared/api'
 import { kilowatts, openStreetMapUrl, useFormat, useMapsOn, useNow, type Unit } from '@/shared/lib'
-import { LevelBar, MapView, StatusPill, TileFigure } from '@/shared/ui'
+import { LevelBar, MapView, StatusPill, TileFigure, TileSkeleton } from '@/shared/ui'
 import { extensionSleepActions } from '../extensions'
 import OpeningsTile from './OpeningsTile.vue'
 
@@ -346,7 +346,7 @@ const update = computed(() => {
     <v-alert type="error" variant="tonal">{{ errorMessage }}</v-alert>
     <div v-if="$slots.aside" class="mt-4"><slot name="aside" /></div>
   </div>
-  <v-progress-linear v-else-if="isPending" indeterminate :aria-label="t('state.loading')" />
+  <TileSkeleton v-else-if="isPending" :label="t('state.loading')" />
   <div v-else-if="state" class="verdandi">
     <v-alert v-if="error" type="warning" variant="tonal" density="compact" class="mb-4">
       {{ t('state.refreshFailed') }}
@@ -408,7 +408,7 @@ const update = computed(() => {
       </span>
     </header>
 
-    <v-row density="compact" class="tiles">
+    <v-row density="compact" class="tiles tiles-rise">
       <v-col cols="12">
         <v-card class="tile battery h-100">
           <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">
@@ -484,6 +484,7 @@ const update = computed(() => {
                 :value="state.soc_pct.value"
                 :target="state.charging.target_soc_pct?.value"
                 :label="t('state.soc')"
+                :flowing="charging"
                 class="soc"
               />
               <div class="under-bar d-flex flex-wrap justify-space-between ga-2 mt-2">
@@ -512,6 +513,7 @@ const update = computed(() => {
             <StatusPill
               v-if="state.charging.status && state.charging.status.value !== 'idle'"
               :tone="statusTones[state.charging.status.value]"
+              :live="state.charging.status.value === 'charging'"
               class="charging-status"
             >
               <span class="d-sr-only">{{ t('state.charging.status') }}:</span>
