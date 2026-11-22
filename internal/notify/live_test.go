@@ -30,7 +30,16 @@ func (m *memLive) StartLiveActivities(_ context.Context, _, vehicleID, chargeID 
 	var out []string
 	for _, id := range deviceIDs {
 		if !slices.ContainsFunc(m.acts, func(a LiveActivity) bool { return a.DeviceID == id && a.VehicleID == vehicleID }) {
-			m.acts = append(m.acts, LiveActivity{DeviceID: id, VehicleID: vehicleID, ChargeID: chargeID, State: s, PushedAt: now})
+			a := LiveActivity{DeviceID: id, VehicleID: vehicleID, ChargeID: chargeID, State: s, PushedAt: now}
+			for _, d := range m.devices {
+				if d.ID == id {
+					a.Platform = d.Platform
+					if d.Platform == FCM {
+						a.Token = d.LiveActivityToken
+					}
+				}
+			}
+			m.acts = append(m.acts, a)
 			out = append(out, id)
 		}
 	}
@@ -190,6 +199,40 @@ func TestLive(t *testing.T) {
 	}
 	if p := live(core.Result{}); len(p) != 0 {
 		t.Errorf("after the end: %+v", p)
+	}
+}
+
+// TestLiveFCM: an FCM device's activity takes its start token as it starts, and is
+// updated and ended without registering one; an APNs device's waits for its own.
+func TestLiveFCM(t *testing.T) {
+	st := &memLive{memStore: memStore{devices: []Device{
+		{ID: "d1", Platform: APNs, Token: "tok", LiveActivityToken: "start1"},
+		{ID: "d2", Platform: FCM, Token: "fcm2", LiveActivityToken: "fcm2"},
+	}}}
+	n, _, clk := newNotifier(&st.memStore)
+	n.st = st
+	s := &liveSender{}
+	n.SetSender(s)
+	live := func(res core.Result) []LivePush {
+		t.Helper()
+		if err := n.Live(t.Context(), "a", "v", res); err != nil {
+			t.Fatal(err)
+		}
+		return s.take()
+	}
+	if p := live(inProgress(charging(t0, 50))); len(p) != 1 || p[0].Event != LiveStart || len(p[0].Devices) != 2 {
+		t.Fatalf("start: %+v", p)
+	}
+	clk.Advance(time.Minute)
+	p := live(inProgress(charging(t0.Add(time.Minute), 52)))
+	if len(p) != 1 || p[0].Event != LiveUpdate || len(p[0].Activities) != 1 || p[0].Activities[0].DeviceID != "d2" ||
+		p[0].Activities[0].Token != "fcm2" || p[0].Activities[0].Platform != FCM {
+		t.Fatalf("update: %+v", p)
+	}
+	clk.Advance(90 * time.Minute)
+	p = live(core.Result{Charges: []core.Charge{charging(t0.Add(90*time.Minute), 80).Charge}})
+	if len(p) != 1 || p[0].Event != LiveEnd || len(p[0].Activities) != 1 || p[0].Activities[0].Token != "fcm2" {
+		t.Fatalf("end: %+v", p)
 	}
 }
 

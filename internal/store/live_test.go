@@ -178,3 +178,37 @@ func TestDevicesOfAccess(t *testing.T) {
 		t.Errorf("activities left %+v", acts)
 	}
 }
+
+// TestLiveActivitiesFCM: an FCM device's activity takes its start token as it starts, its
+// push service having no token of an activity's own; an APNs device's has none until it
+// registers it.
+func TestLiveActivitiesFCM(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, car := newVehicle(t, s, "token-a", "YV1AAAAAAAAAAAAA1")
+	ua, err := s.CreateUser(ctx, a, "alice", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+	const iphone, android = "6f1c2a8e-0d5b-4c3a-9e7f-1a2b3c4d5e11", "6f1c2a8e-0d5b-4c3a-9e7f-1a2b3c4d5e12"
+	const charge = "2026-09-28T18:30:00.000000Z"
+	d := device(ua, android)
+	d.Platform, d.Token = notify.FCM, "fcm-token"
+	for _, d := range []notify.Device{device(ua, iphone), d} {
+		if err := s.PutDevice(ctx, a, d); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.SetLiveActivityToken(ctx, a, d.ID, "start-"+string(d.Platform)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	started, err := s.StartLiveActivities(ctx, a, car, charge, []string{iphone, android}, notify.ChargeState{Status: notify.LiveCharging, ReadAt: t0.Unix()}, t0)
+	if err != nil || len(started) != 2 {
+		t.Fatalf("started %v %v", started, err)
+	}
+	acts, err := s.LiveActivities(ctx, a, car)
+	if err != nil || len(acts) != 2 || acts[0].DeviceID != iphone || acts[0].Token != "" ||
+		acts[1].Platform != notify.FCM || acts[1].Token != "start-fcm" {
+		t.Fatalf("activities %+v %v", acts, err)
+	}
+}

@@ -94,7 +94,8 @@ func (s *Store) LiveActivities(ctx context.Context, accountID, vehicleID string)
 	return out, err
 }
 
-// StartLiveActivities implements notify.LiveStore.
+// StartLiveActivities implements notify.LiveStore: an FCM device's activity takes its
+// start token, its push service having no token of an activity's own.
 func (s *Store) StartLiveActivities(ctx context.Context, accountID, vehicleID, chargeID string, deviceIDs []string, st notify.ChargeState, now time.Time) ([]string, error) {
 	state, err := json.Marshal(st)
 	if err != nil {
@@ -103,8 +104,9 @@ func (s *Store) StartLiveActivities(ctx context.Context, accountID, vehicleID, c
 	var out []string
 	err = s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `
-			INSERT INTO live_activities (account_id, device_id, vehicle_id, charge_id, state, pushed_at, updated_at)
-			SELECT $1, d.id, $2, $3, $4, $5, $5 FROM devices d WHERE d.id = ANY($6::uuid[])
+			INSERT INTO live_activities (account_id, device_id, vehicle_id, charge_id, token, state, pushed_at, updated_at)
+			SELECT $1, d.id, $2, $3, CASE WHEN d.platform = 'fcm' THEN d.live_activity_token END, $4, $5, $5
+			FROM devices d WHERE d.id = ANY($6::uuid[])
 			ON CONFLICT (account_id, device_id, vehicle_id) DO NOTHING
 			RETURNING device_id`, accountID, vehicleID, chargeID, state, now, deviceIDs)
 		if err != nil {

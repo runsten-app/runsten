@@ -11,11 +11,13 @@ import (
 )
 
 // A charge in progress may be shown on a phone's lock screen, as long as it runs: an iOS
-// Live Activity, which the phone cannot update while its app sleeps. The instance tells
-// it, through the PushSender when it is also a LiveActivitySender: it starts the activity
-// on the devices that gave a token to start one with (Device.LiveActivityToken), updates
-// each activity whose own token a device registered, at most once a reading, and ends
-// them once the charge is over.
+// Live Activity, or an Android Live Update, which the phone cannot update while its app
+// sleeps. The instance tells it, through the PushSender when it is also a
+// LiveActivitySender: it starts the activity on the devices that gave a token to start one
+// with (Device.LiveActivityToken), updates each activity whose own token a device
+// registered, at most once a reading, and ends them once the charge is over. FCM has no
+// token of an activity's own: an activity started on an FCM device takes the device's
+// LiveActivityToken (its registration token) at once.
 
 // LiveEvent is what a push does to an activity.
 type LiveEvent string
@@ -58,8 +60,8 @@ type ChargeState struct {
 }
 
 // LiveActivity is an activity a device shows of a vehicle's charge, or was asked to:
-// Token is empty until the device registers the activity's own token, and once it
-// dismissed it. A device has one activity per vehicle at most.
+// Token is empty until the device registers the activity's own token (on FCM, the
+// device's LiveActivityToken from the start), and once it dismissed it. A device has one activity per vehicle at most.
 type LiveActivity struct {
 	DeviceID string
 	// Platform is the device's push service.
@@ -98,9 +100,10 @@ type LiveActivitySender interface {
 type LiveStore interface {
 	// LiveActivities returns the vehicle's activities, on every device of the account.
 	LiveActivities(ctx context.Context, accountID, vehicleID string) ([]LiveActivity, error)
-	// StartLiveActivities records an activity of the charge, without a token, on each of
-	// the devices that has none of the vehicle; it returns those it recorded: once
-	// recorded, a device is never asked again to start it.
+	// StartLiveActivities records an activity of the charge on each of the devices that
+	// has none of the vehicle, without a token, but on an FCM device its LiveActivityToken;
+	// it returns those it recorded: once recorded, a device is never asked again to start
+	// it.
 	StartLiveActivities(ctx context.Context, accountID, vehicleID, chargeID string, deviceIDs []string, s ChargeState, now time.Time) ([]string, error)
 	// MarkLiveActivities records s as told at now to the vehicle's activities of the
 	// charge on those devices, the ones it was pushed to.

@@ -107,7 +107,7 @@ func (s *Server) deleteDevice(ctx context.Context, in *deviceIDInput) (*struct{}
 }
 
 type liveActivityTokenBody struct {
-	Token *string `json:"token" nullable:"true" minLength:"1" maxLength:"4096" pattern:"^[\\x21-\\x7e]+$" doc:"The token the push service starts a charge's Live Activity on the device with (APNs: the push-to-start token of iOS 17.2 and later); null: the instance starts none."`
+	Token *string `json:"token" nullable:"true" minLength:"1" maxLength:"4096" pattern:"^[\\x21-\\x7e]+$" doc:"The token the push service starts a charge's Live Activity on the device with (APNs: the push-to-start token of iOS 17.2 and later; FCM: the device's registration token, which the activities then take as theirs); null: the instance starts none."`
 }
 
 type liveActivityTokenInput struct {
@@ -131,7 +131,7 @@ func (s *Server) putLiveActivityToken(ctx context.Context, in *liveActivityToken
 
 type liveActivityBody struct {
 	Charge string  `json:"charge" pattern:"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$" doc:"The ID of the charge the activity shows, as GET /vehicles/{vehicle}/charging gives it." example:"2026-09-28T18:30:00.000000Z"`
-	Token  *string `json:"token" nullable:"true" minLength:"1" maxLength:"4096" pattern:"^[\\x21-\\x7e]+$" doc:"The activity's own push token, which the instance updates and ends it with; null: the person dismissed it, and the instance tells it nothing more of this charge."`
+	Token  *string `json:"token" nullable:"true" minLength:"1" maxLength:"4096" pattern:"^[\\x21-\\x7e]+$" doc:"The activity's own push token, which the instance updates and ends it with (FCM: the device's registration token); null: the person dismissed it, and the instance tells it nothing more of this charge."`
 }
 
 type liveActivityInput struct {
@@ -383,7 +383,9 @@ func (s *Server) registerNotifications(api huma.API) {
 		Summary: "Let the instance start Live Activities on a device",
 		Description: "Sets the token the device's push service starts a Live Activity with: when a charge starts, the " +
 			"instance starts one on the device for the vehicle, which shows the charge as it goes on; the app then registers " +
-			"the activity's own token (PUT /devices/{device}/live-activities/{vehicle}). Once per charge and vehicle: an " +
+			"the activity's own token (PUT /devices/{device}/live-activities/{vehicle}). On FCM, which has no token of an " +
+			"activity's own, the activity takes this one as it starts: the app registers it again only when it changes. " +
+			"Once per charge and vehicle: an " +
 			"activity the person dismissed is not started again. Kept until the device is removed; null: none is started.",
 		DefaultStatus: http.StatusNoContent, Middlewares: huma.Middlewares{s.requireJSON},
 	}, scope, "Set.", writeErrors(map[int]string{
