@@ -47,6 +47,8 @@ const chars = computed(() => {
 }
 .roll::before {
   content: '0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9';
+  /* Unspoken: the digit itself (.ghost) is what is read. */
+  content: '0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9' / '';
   position: absolute;
   inset-block-start: 0;
   inset-inline: 0;
