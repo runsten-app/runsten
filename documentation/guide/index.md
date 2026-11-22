@@ -14,7 +14,7 @@ Runsten reads your car from its manufacturer:
 - **BMW and Mini**, through BMW CarData: a client ID of your own, approved with a code on BMW's page ([Your BMW or Mini](./bmw.md)).
 - **Hyundai, Kia and Genesis** (beta), through the Pleos Vehicle Data API: a key of your own per brand, created in the Pleos Playground ([Your Hyundai, Kia or Genesis](./hyundai-kia.md)).
 - **Škoda** (beta), through the MyŠkoda Public API: a key of your own, created in the MyŠkoda app, and the VIN of each car ([Your Škoda](./skoda.md)).
-- **Renault, Dacia and Alpine** (beta, unofficial), through the My Renault app's API: the email and password of your account, with a one-time code for some ([Your Renault, Dacia or Alpine](./renault.md)).
+- **Renault, Dacia and Alpine**, on a self-hosted instance, through the My Renault app's unofficial API (beta): the email and password of your account, with a one-time code for some ([Your Renault, Dacia or Alpine](./renault.md)).
 
 No car at hand? An instance may offer **a demo vehicle** it simulates itself ([The demo vehicle](./demo.md)).
 
