@@ -1,5 +1,5 @@
 ---
-description: "Read a Renault, a Dacia or an Alpine with Runsten: the My Renault app's unofficial API, your account's email and password, the one-time code, Renault's quota, and what the cars tell."
+description: "Read a Renault, a Dacia or an Alpine with a self-hosted Runsten: the My Renault app's unofficial API, your account's email and password, the one-time code, Renault's quota, and what the cars tell."
 ---
 
 # Your Renault, Dacia or Alpine
@@ -11,7 +11,7 @@ Renault, Dacia and Alpine support is in beta. It was built from the open source 
 
 This API is **not documented nor offered by Renault**, and its use goes against the app's terms. Renault may change it, or block an account, without notice. Runsten only reads: it never sends a command to the car, and never asks it to wake up.
 
-The source is **off by default**. A self-hosted instance turns it on with the flag `source.renault` ([Feature flags](../self-hosting/flags.md)). Turn it on for your own instance, read by you: many accounts read from one address could get it blocked. Until it is on, the Renault tab of the Connection page shows only for an account that already has a Renault connection or car.
+The source is **for a self-hosted instance**, and **off by default**: turn it on with the flag `source.renault` ([Feature flags](../self-hosting/flags.md)) for your own instance, read by you. An instance that serves other people leaves it off: many accounts read from one address could get it blocked. Until it is on, the Renault tab of the Connection page shows only for an account that already has a Renault connection or car.
 :::
 
 Runsten is not affiliated with Renault, Dacia or Alpine.
