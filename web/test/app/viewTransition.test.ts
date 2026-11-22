@@ -2,15 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { withViewTransitions } from '@/app/routes/viewTransition'
 
-const page = { template: '<div />' }
+const home = { template: '<div />' }
+const trips = { template: '<div />' }
+const trip = { template: '<div />' }
 
 function router() {
   const r = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: '/', component: page },
-      { path: '/trips', component: page },
-      { path: '/trips/:id', component: page },
+      { path: '/', component: home },
+      { path: '/trips', component: trips },
+      { path: '/trips/:id', component: trip },
     ],
   })
   withViewTransitions(r)
@@ -47,11 +49,16 @@ describe('withViewTransitions', () => {
     await expect(start.mock.results[0]?.value.finished).resolves.toBeUndefined()
   })
 
-  it('leaves a change of the query in place', async () => {
+  it('leaves in place a navigation that keeps the page: the query, another trip', async () => {
     const r = router()
     await r.push('/trips')
     await r.push('/trips?from=2026-11-01')
     expect(start).not.toHaveBeenCalled()
+    await r.push('/trips/1')
+    start.mockClear()
+    await r.push('/trips/2')
+    expect(start).not.toHaveBeenCalled()
+    expect(r.currentRoute.value.path).toBe('/trips/2')
   })
 
   it('changes the page at once with reduced motion, or without the API', async () => {

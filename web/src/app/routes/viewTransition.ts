@@ -1,11 +1,17 @@
 import { nextTick } from 'vue'
-import type { Router } from 'vue-router'
+import type { RouteLocationNormalized, Router } from 'vue-router'
 
 // withViewTransitions runs each navigation from one page to another in a view
 // transition: the browser takes a picture of the page, the router changes it, and the
-// two are animated into one another by the rules of app/styles/base.css. A change of the
-// query alone (a period, a filter) stays in place, as does the first page. Without the
-// API, or with reduced motion, the page changes at once.
+// two are animated into one another by the rules of app/styles/base.css. A navigation
+// that keeps the page (a period or a filter in the query, a new place taking its ID, the
+// next trip) stays in place, as does the first page. Without the API, or with reduced
+// motion, the page changes at once.
+// samePage: the page shown stays the same component, its data alone changing.
+function samePage(to: RouteLocationNormalized, from: RouteLocationNormalized) {
+  return to.matched.at(-1)?.components?.default === from.matched.at(-1)?.components?.default
+}
+
 export function withViewTransitions(router: Router) {
   let finish: (() => void) | undefined
 
@@ -19,7 +25,7 @@ export function withViewTransitions(router: Router) {
       typeof document.startViewTransition !== 'function' ||
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ||
       !from.matched.length ||
-      to.path === from.path
+      samePage(to, from)
     ) {
       return
     }
@@ -27,7 +33,7 @@ export function withViewTransitions(router: Router) {
     // The guard returns once the old page is pictured; the transition then waits for the
     // new one, rendered after the navigation (afterEach), or gives up after a second.
     return new Promise<void>((pictured) => {
-      document.startViewTransition(
+      const transition = document.startViewTransition(
         () =>
           new Promise<void>((rendered) => {
             finish = rendered
@@ -37,6 +43,9 @@ export function withViewTransitions(router: Router) {
             pictured()
           }),
       )
+      // A transition skipped (the tab hidden, another one started) rejects ready; the
+      // navigation does not wait for it.
+      transition.ready.catch(() => {})
     })
   })
   router.afterEach(async () => {

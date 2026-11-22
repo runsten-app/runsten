@@ -73,6 +73,8 @@ test('Costs: a place from the charge, its cost in the details, the list and the 
       await page.locator('#place-v0-price').fill('0,50')
       await page.getByRole('button', { name: 'Save', exact: true }).click()
       await expect(page.locator('.place-form [role="status"]')).toHaveText('Place saved.')
+      // The URL takes the place's ID once the navigation is over, after the message.
+      await expect(page).toHaveURL(/\/places\/[0-9a-f-]{36}$/)
       created = /\/places\/([0-9a-f-]{36})/.exec(page.url())?.[1]
       charge = await theCharge(page, vehicle)
       await page.goto(details)
