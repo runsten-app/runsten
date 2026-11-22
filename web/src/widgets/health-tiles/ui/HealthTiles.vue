@@ -54,7 +54,7 @@ const checksAt = computed(() => props.health.checks.find((c) => c.reported_at)?.
 </script>
 
 <template>
-  <v-row density="compact" class="health-tiles">
+  <v-row density="compact" class="health-tiles tiles-rise">
     <v-col cols="12" md="6">
       <v-card class="tile h-100" data-test="tyres">
         <v-card-title tag="h2" class="d-flex align-center justify-space-between ga-2">

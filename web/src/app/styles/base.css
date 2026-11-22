@@ -209,3 +209,167 @@ a.text-primary:focus-visible {
 .v-btn--variant-tonal > .v-btn__underlay {
   opacity: 0;
 }
+
+/* Motion. Every movement is opted in under no-preference: with reduced motion the views
+   show their final state at once. Colors still change as before. The springs are
+   linear() curves, the one easing Vuetify does not give. */
+:root {
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* A gentle spring that overshoots a little and settles. */
+  --motion-spring: linear(
+    0,
+    0.009,
+    0.035 2.1%,
+    0.141 4.4%,
+    0.723 12.9%,
+    0.938 16.7%,
+    1.017 19.4%,
+    1.067,
+    1.099 24.3%,
+    1.108 26%,
+    1.1 28.4%,
+    1.042 34.1%,
+    1.006 39.1%,
+    0.992 44.3%,
+    0.995 53.5%,
+    1.001 66.6%,
+    1
+  );
+}
+
+/* A button gives under the press and springs back. */
+@media (prefers-reduced-motion: no-preference) {
+  .v-btn {
+    transition-property: box-shadow, transform, opacity, background, scale;
+    transition-duration: 0.28s, 0.28s, 0.28s, 0.28s, 0.5s;
+    transition-timing-function:
+      cubic-bezier(0.4, 0, 0.2, 1), cubic-bezier(0.4, 0, 0.2, 1), cubic-bezier(0.4, 0, 0.2, 1),
+      cubic-bezier(0.4, 0, 0.2, 1), var(--motion-spring);
+  }
+  .v-btn:active:not(.v-btn--disabled, .v-btn--loading) {
+    scale: 0.95;
+    transition-duration: 0.28s, 0.28s, 0.28s, 0.28s, 0.08s;
+  }
+  /* A tile that leads somewhere gives less: it is wide. */
+  .v-card--link {
+    transition: scale 0.5s var(--motion-spring);
+  }
+  .v-card--link:active {
+    scale: 0.985;
+    transition-duration: 0.08s;
+  }
+}
+
+/* Tiles arrive one after the other when a view shows, once: a refresh changes their
+   figures, never mounts them again. A row of tiles takes the class tiles-rise. */
+@keyframes tile-rise {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tiles-rise > * {
+    animation: tile-rise 0.5s var(--motion-ease-out) both;
+    animation-delay: calc(var(--rise-index, 0) * 50ms);
+  }
+  @supports (animation-delay: calc(sibling-index() * 1ms)) {
+    .tiles-rise > * {
+      animation-delay: calc((sibling-index() - 1) * 50ms);
+    }
+  }
+  @supports not (animation-delay: calc(sibling-index() * 1ms)) {
+    .tiles-rise > :nth-child(2) {
+      --rise-index: 1;
+    }
+    .tiles-rise > :nth-child(3) {
+      --rise-index: 2;
+    }
+    .tiles-rise > :nth-child(4) {
+      --rise-index: 3;
+    }
+    .tiles-rise > :nth-child(5) {
+      --rise-index: 4;
+    }
+    .tiles-rise > :nth-child(n + 6) {
+      --rise-index: 5;
+    }
+  }
+}
+
+/* A skeleton stands for tiles still loading: their shapes, a light sweeping over them. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--v-tile-radius);
+  background: rgb(var(--v-theme-surface));
+}
+@keyframes skeleton-sweep {
+  from {
+    translate: -100% 0;
+  }
+  to {
+    translate: 100% 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--v-theme-on-surface) / 0.06),
+      transparent
+    );
+    animation: skeleton-sweep 1.4s ease-in-out infinite;
+  }
+}
+
+/* Between two pages (app/routes/viewTransition.ts): the old one fades, the new one rises
+   into place; the bar and the tabs stay put. An event's row grows into the header of
+   its page, and back (vt-event, on both). */
+.app-bar {
+  view-transition-name: app-bar;
+}
+.section-bar {
+  view-transition-name: section-bar;
+}
+.vt-event {
+  view-transition-name: event;
+}
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-rise-in {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+::view-transition-old(root) {
+  animation: vt-fade-out 0.15s ease-in both;
+}
+::view-transition-new(root) {
+  animation: vt-rise-in 0.3s var(--motion-ease-out) both;
+}
+::view-transition-group(event) {
+  animation-duration: 0.45s;
+  animation-timing-function: var(--motion-ease-out);
+}
+::view-transition-old(event),
+::view-transition-new(event) {
+  block-size: 100%;
+  object-fit: none;
+  object-position: left top;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

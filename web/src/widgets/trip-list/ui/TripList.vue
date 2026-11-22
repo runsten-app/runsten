@@ -9,7 +9,8 @@ import { useSettings } from '@/features/edit-settings'
 import { periodQuery } from '@/features/filter-period'
 import { useLimits } from '@/features/view-limits'
 import { isApiError } from '@/shared/api'
-import { groupByDay, useFormat } from '@/shared/lib'
+import { groupByDay, openedEvent, openEvent, useFormat } from '@/shared/lib'
+import { TileSkeleton } from '@/shared/ui'
 
 // TripList is Urd's list of trips: newest first, by day, a page at a time, of one purpose
 // or all. Each trip's purpose sits beside its link; selecting, a box before each trip
@@ -56,7 +57,7 @@ const errorMessage = computed(() => {
 
 <template>
   <v-alert v-if="error && !trips.length" type="error" variant="tonal">{{ errorMessage }}</v-alert>
-  <v-progress-linear v-else-if="isPending" indeterminate :aria-label="t('trips.loading')" />
+  <TileSkeleton v-else-if="isPending" layout="rows" :label="t('trips.loading')" />
   <p v-else-if="!trips.length" class="empty text-body-large text-medium-emphasis py-6">
     {{ filtered ? t('trips.emptyPeriod') : t('trips.empty') }}
   </p>
@@ -68,7 +69,11 @@ const errorMessage = computed(() => {
       <v-list class="tile-list py-0">
         <div v-for="(trip, i) in g.items" :key="trip.id" role="listitem">
           <v-divider v-if="i > 0" />
-          <div class="trip-row d-flex align-center">
+          <div
+            class="trip-row d-flex align-center"
+            :class="{ 'vt-event': openedEvent === trip.id }"
+            @click="openEvent(trip.id)"
+          >
             <v-checkbox-btn
               v-if="selecting"
               :model-value="selected.includes(trip.id)"

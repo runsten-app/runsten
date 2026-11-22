@@ -6,7 +6,14 @@ import type { ChargeInProgress } from '@/entities/charge'
 import { collectorStoppedAfter } from '@/entities/vehicle'
 import { useSettings } from '@/features/edit-settings'
 import { FeatureUnavailable, useLimits } from '@/features/view-limits'
-import { kilowatts, openStreetMapUrl, useFormat, useMapsOn, useNow } from '@/shared/lib'
+import {
+  kilowatts,
+  openedEvent,
+  openStreetMapUrl,
+  useFormat,
+  useMapsOn,
+  useNow,
+} from '@/shared/lib'
 import { FactItem, MapView, StatusPill } from '@/shared/ui'
 
 // ChargeInProgressDetails is the charge in progress as it stands at its latest reading,
@@ -42,7 +49,7 @@ const costNote = computed(() => {
 
 <template>
   <article class="charge-in-progress">
-    <header class="mb-4">
+    <header class="mb-4" :class="{ 'vt-event': openedEvent === charge.id }">
       <h1 class="text-headline-small">{{ t('chargeInProgress.title') }}</h1>
       <p class="text-body-large text-medium-emphasis">{{ f.day(charge.start.after) }}</p>
     </header>
@@ -59,7 +66,11 @@ const costNote = computed(() => {
         <v-card class="h-100 when">
           <v-card-title tag="h2" class="text-title-medium">{{ t('event.when') }}</v-card-title>
           <v-card-text>
-            <StatusPill :tone="stale ? 'warning' : 'success'" class="state mb-3">
+            <StatusPill
+              :tone="stale ? 'warning' : 'success'"
+              :live="!stale && !paused"
+              class="state mb-3"
+            >
               {{
                 stale
                   ? t('chargeInProgress.stopped')

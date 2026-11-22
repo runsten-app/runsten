@@ -83,6 +83,15 @@ describe('TripList', () => {
     expect(w.find('.load-more').exists()).toBe(false)
   })
 
+  it('names the row opened for the transition into its page, and only that one', async () => {
+    fetchTrips.mockResolvedValue(page2)
+    const w = await mounted({}, `/vehicles/${vehicle}/trips?from=2026-09-28`)
+    expect(w.find('.vt-event').exists()).toBe(false)
+    await w.find('.trip-row').trigger('click')
+    expect(w.findAll('.vt-event')).toHaveLength(1)
+    expect(w.find('.trip-row').classes()).toContain('vt-event')
+  })
+
   it('names an end outside the places by its address', async () => {
     fetchTrips.mockResolvedValue({
       ...page2,

@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { figureParts } from '@/shared/lib'
+import RollingText from './RollingText.vue'
 import SpokenText from './SpokenText.vue'
 
 // TileFigure is a value as a tile shows it: light and large, its unit smaller and secondary
 // on the same baseline. The text is already formatted, unknown included (then secondary
 // as a whole); the two parts together read as the text did. Words used as values
-// ("Stopped", "Connected") take the same size.
+// ("Stopped", "Connected") take the same size. Its digits roll to a new value
+// (RollingText).
 const props = withDefaults(
   defineProps<{
     text: string
@@ -24,8 +26,9 @@ const parts = computed(() =>
 <template>
   <span class="figure" :class="[`figure--${size}`, { 'figure--unknown': unknown }]"
     ><template v-if="parts"
-      ><span class="figure-value">{{ parts.value }}</span
-      ><span class="figure-unit">{{ parts.unit }}</span></template
+      ><RollingText class="figure-value" :text="parts.value" /><span class="figure-unit">{{
+        parts.unit
+      }}</span></template
     ><SpokenText v-else class="figure-value" :text :spoken
   /></span>
 </template>

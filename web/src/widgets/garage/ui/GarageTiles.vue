@@ -37,7 +37,7 @@ const data = (id: string): GarageVehicle => props.garage.find((v) => v.id === id
 </script>
 
 <template>
-  <div class="garage-tiles">
+  <div class="garage-tiles tiles-rise">
     <VehicleTile
       v-for="v in vehicles"
       :key="v.id"
