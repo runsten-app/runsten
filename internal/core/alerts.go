@@ -109,7 +109,7 @@ func (n NightCheck) Standing(c Current, at time.Time) Value[bool] {
 	if !s.Connection.OK || !s.SoC.OK {
 		return Value[bool]{}
 	}
-	if !at.Before(n.Date.Add(NightFrom)) {
+	if !at.Before(clock(n.Date, NightFrom)) {
 		return known(false)
 	}
 	charging := s.Charging.OK && s.Charging.V == ChargingActive
@@ -194,6 +194,9 @@ func judgeNight(ps []point, places []Place, pl Place, date time.Time) Value[Nigh
 			return
 		}
 		pluggedIn = &plug{at: at, soc: s.SoC.V, target: s.TargetSoC.V}
+		// A charge in progress at the reading that finds the cable plugged in is one
+		// delivering.
+		delivered = s.Charging.OK && s.Charging.V == ChargingActive
 	}
 	// The state at the start of the evening, before the first reading after it: a cable
 	// plugged in earlier and left stands in it.

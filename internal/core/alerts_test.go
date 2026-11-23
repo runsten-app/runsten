@@ -251,3 +251,32 @@ func TestNightStanding(t *testing.T) {
 		})
 	}
 }
+
+// TestNightStandingDST: the evening ends at 18:00 on the wall clock the day the clocks change.
+func TestNightStandingDST(t *testing.T) {
+	// 2026-10-25: 25 hours, the clocks go back; midnight plus 18 elapsed hours is 17:00.
+	n := NightCheck{Date: time.Date(2026, 10, 25, 0, 0, 0, 0, paris), NotCharged: true, EveningSoC: 40}
+	cur := func(when time.Time) Current { return Latest([]Record{night(when, plugged(40, ChargingScheduled))}) }
+	for _, c := range []struct {
+		h, m int
+		want bool
+	}{{17, 30, true}, {17, 59, true}, {18, 0, false}} {
+		at := time.Date(2026, 10, 25, c.h, c.m, 0, 0, paris)
+		if got := n.Standing(cur(at), at); !got.OK || got.V != c.want {
+			t.Errorf("at %02d:%02d: %+v, want %v", c.h, c.m, got, c.want)
+		}
+	}
+}
+
+// TestNotChargedFirstReadingCharging: a charge in progress at the reading that finds the
+// cable plugged in is one delivering, even if the state of charge never rises after.
+func TestNotChargedFirstReadingCharging(t *testing.T) {
+	places := []Place{nightHome}
+	records := []Record{
+		parkedAt(home, at(22, 17, 30)), night(at(22, 19, 0), plugged(40, ChargingActive)),
+		night(at(23, 1, 0), plugged(40, ChargingScheduled)), night(at(23, 6, 30), plugged(40, ChargingScheduled)),
+	}
+	if got := NotCharged(records, places, at(23, 7, 5)); !got.OK || got.V.NotCharged {
+		t.Errorf("NotCharged = %+v, want charged", got)
+	}
+}
