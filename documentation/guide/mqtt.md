@@ -68,7 +68,9 @@ Under `<prefix>/vehicles/<vehicle id>/`, where the prefix is `runsten` by defaul
 | `window_front_left`, `window_front_right`, `window_rear_left`, `window_rear_right`, `sunroof` | `closed`, `ajar` (open a crack) or `open` |
 | `sentry` | a Tesla's only: `on` or `off`, whether Sentry Mode watches the car |
 | `openings_read_at` | when the car last told its doors and windows, in RFC 3339, UTC: a Volvo and a Polestar tell them once an hour |
-| `left_open` | `on` once the car has stood parked and open (unlocked, or a door, the hood, the tailgate, a window or the sunroof open or ajar) for 10 minutes, by its readings; `off` otherwise |
+| `left_open` | `on` once the car has stood parked and open (unlocked, or a door, the hood, the tailgate, a window or the sunroof open or ajar) for 15 minutes, by its readings; `off` otherwise |
+| `battery_low` | `on` while the car is parked (its engine read stopped, no charge in progress) with its state of charge strictly under its threshold: 20 % unless set for the car in its notification preferences (from 5 to 50); `off` otherwise, the car driving or charging included; empty while the state of charge, the engine or the charge is not read |
+| `not_charged` | `on` from 07:00 on, when the night before the car was plugged in at one of your [places](./costs.md) in the evening and its state of charge did not rise by the morning, and while it still stands so; `off` otherwise; empty while the readings do not tell. The evening is 18:00 to 02:00, the morning 07:00, on the clock of the place's time zone. See [the night rule](#alerts-on-the-state-of-a-car) |
 
 - Numbers are written with a point, as short as they read: `80`, `312.5`, `11.04`.
 - **An unknown value is an empty message**, which removes the previous one: unknown is never zero.
@@ -118,6 +120,8 @@ With discovery on, each vehicle is a device named after the name you gave a Tesl
 | Window front left, front right, rear left, rear right, Sunroof | binary sensor, window | `window_…`, `sunroof` |
 | Sentry Mode | binary sensor (a Tesla's only) | `sentry` |
 | Left open | binary sensor, problem | `left_open` |
+| Battery low | binary sensor, battery: on is low | `battery_low` |
+| Not charged | binary sensor, problem | `not_charged` |
 | Doors last read | sensor, timestamp, diagnostic | `openings_read_at` |
 
 The doors, windows and lock are entities only for what the car tells: a Tesla tells neither its tank lid nor its sunroof, a Polestar no sunroof, and the right and left doors of a Tesla only once Runsten knows its driver's side. The lock is a sensor: Runsten does not lock the car.
@@ -141,7 +145,7 @@ automation:
             ' before ' ~ (expiry | as_local).strftime('%d %B') if expiry else '' }}.
 ```
 
-The **Left open** entity turns on once the car has stood parked and open for 10 minutes: unlocked, or a door, the hood, the tailgate, a window or the sunroof open or ajar (not the tank lid, which may be an electric car's charge port). A Volvo and a Polestar tell their doors once an hour: it may turn on up to an hour late, and the message can say how old the reading is. For instance:
+The **Left open** entity turns on once the car has stood parked and open for 15 minutes: unlocked, or a door, the hood, the tailgate, a window or the sunroof open or ajar (not the tank lid, which may be an electric car's charge port). A Volvo and a Polestar tell their doors once an hour: it may turn on up to an hour late, and the message can say how old the reading is. For instance:
 
 ```yaml
 automation:
@@ -158,6 +162,13 @@ automation:
             {% set read = states('sensor.ex30_2025_doors_last_read') | as_datetime(none) %}
             The EX30 is parked and open{{ ', as read at ' ~ (read | as_local).strftime('%H:%M') if read else '' }}.
 ```
+
+### Alerts on the state of a car
+
+**Battery low** and **Not charged** state what the notifications of the same names tell, so that an instance without push can act on them, with an automation as above. They follow the same rules, which an unknown value never satisfies: no state of charge read, no low battery; no cable read, no night not charged.
+
+- **Battery low** is on while the car is parked with its state of charge under the threshold. The threshold is the one set for the car in its notification preferences (`battery_low` of `/api/v1/notification-preferences`), 20 % by default, from 5 to 50. A car that charges, or drives, is not low in this sense; a car whose engine the maker does not report is never.
+- **Not charged** judges a night. The car was plugged in at one of your places at some reading between 18:00 and 02:00, with a charge limit known and its state of charge more than a point under it; from then to 07:00 no reading shows the state of charge above that of the evening, nor a charge in progress; and at 07:00 the cable is still read connected. All of it on the clock of the place's time zone, daylight saving time included. It is judged only if the car was read in the two hours before 07:00 (a stopped collector says nothing), and it turns off when the car is unplugged, charges, or at 18:00. A car already at its limit has nothing to charge, and an account without a place never has a night not charged.
 
 The entity IDs follow the device's name: check them in Home Assistant.
 
