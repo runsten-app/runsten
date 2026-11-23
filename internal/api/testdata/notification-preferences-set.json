@@ -61,6 +61,25 @@
       "enabled": true,
       "default": true,
       "always": false
+    },
+    {
+      "kind": "not_charged",
+      "enabled": true,
+      "default": true,
+      "always": false
+    },
+    {
+      "kind": "battery_low",
+      "enabled": true,
+      "default": true,
+      "always": false,
+      "threshold": 20
+    },
+    {
+      "kind": "left_open",
+      "enabled": false,
+      "default": false,
+      "always": false
     }
   ],
   "vehicles": [
@@ -96,6 +115,17 @@
           "kind": "charge_live_activity",
           "enabled": true,
           "choice": "default"
+        },
+        {
+          "kind": "not_charged",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "battery_low",
+          "enabled": true,
+          "choice": "default",
+          "threshold": null
         }
       ]
     },
@@ -131,6 +161,17 @@
           "kind": "charge_live_activity",
           "enabled": true,
           "choice": "default"
+        },
+        {
+          "kind": "not_charged",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "battery_low",
+          "enabled": true,
+          "choice": "default",
+          "threshold": null
         }
       ]
     },
@@ -166,6 +207,17 @@
           "kind": "charge_live_activity",
           "enabled": true,
           "choice": "default"
+        },
+        {
+          "kind": "not_charged",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "battery_low",
+          "enabled": true,
+          "choice": "default",
+          "threshold": null
         }
       ]
     },
@@ -201,6 +253,17 @@
           "kind": "charge_live_activity",
           "enabled": true,
           "choice": "default"
+        },
+        {
+          "kind": "not_charged",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "battery_low",
+          "enabled": true,
+          "choice": "default",
+          "threshold": null
         }
       ]
     },
@@ -236,6 +299,17 @@
           "kind": "charge_live_activity",
           "enabled": true,
           "choice": "default"
+        },
+        {
+          "kind": "not_charged",
+          "enabled": true,
+          "choice": "default"
+        },
+        {
+          "kind": "battery_low",
+          "enabled": true,
+          "choice": "default",
+          "threshold": null
         }
       ]
     }

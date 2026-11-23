@@ -65,6 +65,30 @@ const (
 	// ChargeLiveActivity: the charge in progress shown on the lock screen as it goes on
 	// (a Live Activity), started, updated and ended by the instance (Notifier.Live).
 	ChargeLiveActivity Kind = "charge_live_activity"
+	// NotCharged: the vehicle was plugged in at one of the account's places in the
+	// evening, and by the morning its state of charge has not risen (core.NotCharged).
+	// Told once a night.
+	NotCharged Kind = "not_charged"
+	// BatteryLow: the vehicle is parked with its state of charge under a threshold
+	// (core.BatteryLow). Told once an episode: again only once the state of charge went
+	// back to the threshold or above.
+	BatteryLow Kind = "battery_low"
+	// LeftOpen: the vehicle has stood parked, and unlocked or with a window open, for
+	// more than publish.LeftOpenAfter (publish.LeftOpen). Told once an episode.
+	LeftOpen Kind = "left_open"
+)
+
+// Threshold bounds and defaults a kind's setting, a whole number: a percentage of the
+// state of charge for BatteryLow.
+type Threshold struct {
+	Min, Max, Default int
+}
+
+// The low battery's threshold, in % of the state of charge.
+const (
+	BatteryLowMin     = 5
+	BatteryLowMax     = 50
+	BatteryLowDefault = 20
 )
 
 // Spec declares a kind: its level, whether it is on when the user chose nothing, and
@@ -76,6 +100,9 @@ type Spec struct {
 	// Always: the user cannot turn it off (a message about the account itself). Its
 	// Default is then true.
 	Always bool
+	// Threshold is the setting of a kind that has one, which the user sets for every
+	// vehicle and for each vehicle; nil: the kind has none.
+	Threshold *Threshold
 }
 
 // CoreKinds are the core's kinds, in the order they are listed.
@@ -91,6 +118,12 @@ func CoreKinds() []Spec {
 		{Kind: ChargeStarted, Level: VehicleLevel},
 		{Kind: TripEnded, Level: VehicleLevel},
 		{Kind: ChargeLiveActivity, Level: VehicleLevel, Default: true},
+		{Kind: NotCharged, Level: VehicleLevel, Default: true},
+		{
+			Kind: BatteryLow, Level: VehicleLevel, Default: true,
+			Threshold: &Threshold{Min: BatteryLowMin, Max: BatteryLowMax, Default: BatteryLowDefault},
+		},
+		{Kind: LeftOpen, Level: VehicleLevel},
 	}
 }
 
@@ -119,6 +152,12 @@ func (r *Registry) Register(s Spec) error {
 	}
 	if s.Level != AccountLevel && s.Level != VehicleLevel {
 		return fmt.Errorf("notification kind %q: unknown level %q", s.Kind, s.Level)
+	}
+	if t := s.Threshold; t != nil {
+		if s.Level != VehicleLevel || t.Min > t.Default || t.Default > t.Max {
+			return fmt.Errorf("notification kind %q: a threshold of a vehicle's kind, min <= default <= max", s.Kind)
+		}
+		s.Threshold = &Threshold{Min: t.Min, Max: t.Max, Default: t.Default}
 	}
 	if s.Always {
 		s.Default = true

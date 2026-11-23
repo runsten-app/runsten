@@ -14,8 +14,9 @@ import (
 )
 
 // notifying derives each vehicle the collector read, then tells the account's devices of
-// what the derivation found: a charge started, finished or interrupted, a trip ended; and
-// the Live Activities of its charge in progress.
+// what the derivation found: a charge started, finished or interrupted, a trip ended; the
+// Live Activities of its charge in progress; and the alerts of its state (a low battery, a
+// vehicle left open).
 // Without a PushSender, the derivation alone runs: nothing more is read.
 type notifying struct {
 	// update derives the vehicle and returns what it found (derive.Deriver.UpdateResult).
@@ -25,8 +26,10 @@ type notifying struct {
 	// purposes gives the purpose of each trip, its mark else the places' rules.
 	purposes func(ctx context.Context, accountID, vehicleID string, trips []core.Trip) ([]core.Value[core.TripPurpose], error)
 	notifier *notify.Notifier
-	clk      clock.Clock
-	log      *slog.Logger
+	// alerts evaluates the vehicle's state after each reading; nil: none.
+	alerts *stateAlerts
+	clk    clock.Clock
+	log    *slog.Logger
 }
 
 // Update implements collector.Deriver: the derivation, then its notifications, whose
@@ -41,6 +44,11 @@ func (n notifying) Update(ctx context.Context, accountID, vehicleID string) erro
 	}
 	if err := n.notifier.Live(ctx, accountID, vehicleID, res); err != nil && ctx.Err() == nil {
 		n.log.Warn("vehicle's live activities", "account", accountID, "vehicle", vehicleID, "err", err)
+	}
+	if n.alerts != nil {
+		if err := n.alerts.observe(ctx, accountID, vehicleID); err != nil && ctx.Err() == nil {
+			n.log.Warn("vehicle's alerts", "account", accountID, "vehicle", vehicleID, "err", err)
+		}
 	}
 	return nil
 }

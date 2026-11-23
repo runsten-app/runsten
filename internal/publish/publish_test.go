@@ -232,3 +232,25 @@ func TestLeftOpen(t *testing.T) {
 		t.Errorf("Openings = %v, want the lock alone", got)
 	}
 }
+
+// TestAlertStates: the states of a low battery and of a night not charged, on or off, empty
+// when unknown, on their own topics.
+func TestAlertStates(t *testing.T) {
+	for _, tt := range []struct {
+		v    core.Value[bool]
+		want string
+	}{
+		{core.Value[bool]{V: true, OK: true}, "on"},
+		{core.Value[bool]{V: false, OK: true}, "off"},
+		{core.Value[bool]{}, ""},
+	} {
+		b := broker(true)
+		for topic, msg := range map[string]Message{
+			"battery_low": BatteryLowState(b, vehicle, tt.v), "not_charged": NotChargedState(b, vehicle, tt.v),
+		} {
+			if msg.Payload != tt.want || !msg.Retained || msg.Topic != "runsten/vehicles/"+vehicle+"/"+topic {
+				t.Errorf("%s of %+v = %+v", topic, tt.v, msg)
+			}
+		}
+	}
+}

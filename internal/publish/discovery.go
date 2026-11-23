@@ -157,6 +157,9 @@ func entities() []entity {
 	}
 	leftOpen := binary("left_open", "Left open", "left_open", "problem", onOff(On, Off))
 	leftOpen.openings = true
+	// The alerts' states, as the notifications of the same names tell them.
+	batteryLow := binary("battery_low", "Battery low", "battery_low", "battery", onOff(On, Off))
+	notCharged := binary("not_charged", "Not charged", "not_charged", "problem", onOff(On, Off))
 	openingsReadAt := sensor("openings_read_at", "Doors last read", "openings_read_at", "timestamp", "", "")
 	openingsReadAt.config.EntityCategory, openingsReadAt.openings = "diagnostic", true
 	es := []entity{
@@ -200,6 +203,8 @@ func entities() []entity {
 		climate(binary("battery_heater", "Battery heater", "battery_heater", "running", onOff(On, Off))),
 		climate(sensor("climate_setpoint", "Climate setpoint", "climate_setpoint_c", "temperature", "°C", "")),
 		leftOpen,
+		batteryLow,
+		notCharged,
 		openingsReadAt,
 		// Its position from the attributes of the location's JSON; an empty location
 		// makes it unknown.
@@ -317,7 +322,8 @@ func RemoveDiscovery(b Broker, vehicleID string) []Message {
 // RemoveState empties the vehicle's state topics, its health's and its credential's
 // included: the broker keeps none of its values.
 func RemoveState(b Broker, vehicleID string) []Message {
-	msgs := append(State(b, vehicleID, core.Current{}), LeftOpenState(b, vehicleID, core.Value[bool]{}))
+	msgs := append(State(b, vehicleID, core.Current{}), LeftOpenState(b, vehicleID, core.Value[bool]{}),
+		BatteryLowState(b, vehicleID, core.Value[bool]{}), NotChargedState(b, vehicleID, core.Value[bool]{}))
 	msgs = append(msgs, Health(b, vehicleID, core.CurrentHealth{})...)
 	for i := range msgs {
 		msgs[i].Payload = ""

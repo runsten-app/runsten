@@ -67,6 +67,15 @@ type States interface {
 	Health(ctx context.Context, accountID, vehicleID string, at time.Time) (core.CurrentHealth, error)
 }
 
+// Alerts reads what the states of the alerts rest on: the notifications' rules, shared.
+type Alerts interface {
+	// BatteryLowThreshold returns the vehicle's threshold of a low battery, in % of the
+	// state of charge, as its notification preferences set it.
+	BatteryLowThreshold(ctx context.Context, accountID, vehicleID string) (int, error)
+	// NightCheck judges the vehicle's latest night (core.NotCharged) as of at.
+	NightCheck(ctx context.Context, accountID, vehicleID string, at time.Time) (core.Value[core.NightCheck], error)
+}
+
 // Models tells what a vehicle is, from its current state, for its device in Home
 // Assistant: the binary knows the catalog, the publisher does not.
 type Models interface {
@@ -107,6 +116,7 @@ type Publisher struct {
 	st         Store
 	states     States
 	models     Models
+	alerts     Alerts
 	clk        clock.Clock
 	publicOnly bool
 	log        *slog.Logger
@@ -229,6 +239,10 @@ func (p *Publisher) Sync(ctx context.Context, vehicles map[string][]string, with
 	return nil
 }
 
+// WithAlerts has the publisher state a low battery and a night not charged, which it
+// publishes unknown without it.
+func (p *Publisher) WithAlerts(a Alerts) { p.alerts = a }
+
 // Publish implements collector.Publisher: the vehicle's values that changed since the
 // broker acknowledged them, or all of them on a new connection. Without a connection
 // open, its state waits for one.
@@ -252,15 +266,24 @@ func (p *Publisher) Publish(ctx context.Context, accountID, vehicleID string) er
 	// published before, and never holds the state back.
 	prev := c.values[vehicleID]
 	values := publish.State(c.b, vehicleID, cur)
-	since, openErr := p.states.OpenSince(ctx, accountID, vehicleID, now.Add(-publish.LeftOpenAfter))
-	switch {
-	case openErr == nil:
-		values = append(values, publish.LeftOpenState(c.b, vehicleID, publish.LeftOpen(cur, since, now)))
-	case len(prev) > len(values):
-		values = append(values, prev[len(values)])
-	default:
-		values = append(values, publish.LeftOpenState(c.b, vehicleID, core.Value[bool]{}))
+	// keep appends the message of a state read apart, or on its failure the one published
+	// before, else an unknown one: a failure never holds the rest back.
+	keep := func(msg, unknown publish.Message, err error) {
+		switch {
+		case err == nil:
+			values = append(values, msg)
+		case len(prev) > len(values):
+			values = append(values, prev[len(values)])
+		default:
+			values = append(values, unknown)
+		}
 	}
+	since, openErr := p.states.OpenSince(ctx, accountID, vehicleID, now.Add(-publish.LeftOpenAfter))
+	keep(publish.LeftOpenState(c.b, vehicleID, publish.LeftOpen(cur, since, now)), publish.LeftOpenState(c.b, vehicleID, core.Value[bool]{}), openErr)
+	low, lowErr := p.batteryLow(ctx, accountID, vehicleID, cur)
+	keep(publish.BatteryLowState(c.b, vehicleID, low), publish.BatteryLowState(c.b, vehicleID, core.Value[bool]{}), lowErr)
+	night, nightErr := p.notCharged(ctx, accountID, vehicleID, cur, now)
+	keep(publish.NotChargedState(c.b, vehicleID, night), publish.NotChargedState(c.b, vehicleID, core.Value[bool]{}), nightErr)
 	health, healthErr := p.states.Health(ctx, accountID, vehicleID, p.clk.Now())
 	switch {
 	case healthErr == nil:
@@ -280,10 +303,41 @@ func (p *Publisher) Publish(ctx context.Context, accountID, vehicleID string) er
 	if openErr != nil {
 		return fmt.Errorf("doors of vehicle %s: %w", vehicleID, openErr)
 	}
+	if lowErr != nil {
+		return fmt.Errorf("battery threshold of vehicle %s: %w", vehicleID, lowErr)
+	}
+	if nightErr != nil {
+		return fmt.Errorf("night of vehicle %s: %w", vehicleID, nightErr)
+	}
 	if healthErr != nil {
 		return fmt.Errorf("health of vehicle %s: %w", vehicleID, healthErr)
 	}
 	return nil
+}
+
+// batteryLow is the state of the vehicle parked under its threshold: unknown without Alerts.
+func (p *Publisher) batteryLow(ctx context.Context, accountID, vehicleID string, cur core.Current) (core.Value[bool], error) {
+	if p.alerts == nil {
+		return core.Value[bool]{}, nil
+	}
+	threshold, err := p.alerts.BatteryLowThreshold(ctx, accountID, vehicleID)
+	if err != nil {
+		return core.Value[bool]{}, err //nolint:wrapcheck // wrapped by its caller
+	}
+	return core.BatteryLow(cur.Snapshot, float64(threshold)), nil
+}
+
+// notCharged is the state of the night not charged, while the vehicle stands as it judged
+// it: unknown without Alerts.
+func (p *Publisher) notCharged(ctx context.Context, accountID, vehicleID string, cur core.Current, now time.Time) (core.Value[bool], error) {
+	if p.alerts == nil {
+		return core.Value[bool]{}, nil
+	}
+	night, err := p.alerts.NightCheck(ctx, accountID, vehicleID, now)
+	if err != nil || !night.OK {
+		return core.Value[bool]{}, err //nolint:wrapcheck // wrapped by its caller
+	}
+	return night.V.Standing(cur, now), nil
 }
 
 // Close publishes the availability offline on every connection, and closes them: the

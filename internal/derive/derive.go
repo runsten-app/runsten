@@ -240,6 +240,18 @@ func (d *Deriver) OpenSince(ctx context.Context, accountID, vehicleID string, fr
 	return core.OpenSince(d.normalize(vehicleID, snaps)), nil
 }
 
+// Records returns the vehicle's records since from, as OpenSince reads them: those of the
+// snapshots fetched after from, with the latest before it of each endpoint, the doors and
+// windows included. The rules of the vehicle's state (core.LowSince, core.NotCharged) read
+// them.
+func (d *Deriver) Records(ctx context.Context, accountID, vehicleID string, from time.Time) ([]core.Record, error) {
+	snaps, err := d.st.SnapshotsSince(ctx, accountID, vehicleID, from, append(d.norm.Kinds(), d.norm.StateKinds()...))
+	if err != nil {
+		return nil, fmt.Errorf("snapshots: %w", err)
+	}
+	return d.normalize(vehicleID, snaps), nil
+}
+
 // InProgress returns the charge still open at the vehicle's latest reading, if any: the
 // derivation replayed from the vehicle's cursor, as Update would, nothing saved. net is
 // the vehicle's net capacity, as Capacities would give it; nil when it is unknown.

@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"runsten/internal/core"
 	"runsten/internal/notify"
 )
 
@@ -123,9 +124,15 @@ func (m *memNotifications) NotificationPreferences(_ context.Context, accountID 
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	p := m.prefs[accountID]
-	out := notify.Preferences{Account: maps.Clone(p.Account), VehiclesDefault: maps.Clone(p.VehiclesDefault), Vehicles: map[string]map[notify.Kind]bool{}}
+	out := notify.Preferences{
+		Account: maps.Clone(p.Account), VehiclesDefault: maps.Clone(p.VehiclesDefault), Vehicles: map[string]map[notify.Kind]bool{},
+		VehiclesDefaultThreshold: maps.Clone(p.VehiclesDefaultThreshold), VehicleThresholds: map[string]map[notify.Kind]int{},
+	}
 	for v, kinds := range p.Vehicles {
 		out.Vehicles[v] = maps.Clone(kinds)
+	}
+	for v, kinds := range p.VehicleThresholds {
+		out.VehicleThresholds[v] = maps.Clone(kinds)
 	}
 	return out, m.fail
 }
@@ -138,7 +145,29 @@ func (m *memNotifications) SetNotificationPreferences(_ context.Context, account
 	}
 	p := m.prefs[accountID]
 	if p.Account == nil {
-		p = notify.Preferences{Account: map[notify.Kind]bool{}, VehiclesDefault: map[notify.Kind]bool{}, Vehicles: map[string]map[notify.Kind]bool{}}
+		p = notify.Preferences{
+			Account: map[notify.Kind]bool{}, VehiclesDefault: map[notify.Kind]bool{}, Vehicles: map[string]map[notify.Kind]bool{},
+			VehiclesDefaultThreshold: map[notify.Kind]int{}, VehicleThresholds: map[string]map[notify.Kind]int{},
+		}
+	}
+	for k, v := range c.VehiclesDefaultThreshold {
+		if v == nil {
+			delete(p.VehiclesDefaultThreshold, k)
+		} else {
+			p.VehiclesDefaultThreshold[k] = *v
+		}
+	}
+	for vehicle, kinds := range c.VehicleThresholds {
+		if p.VehicleThresholds[vehicle] == nil {
+			p.VehicleThresholds[vehicle] = map[notify.Kind]int{}
+		}
+		for k, v := range kinds {
+			if v == nil {
+				delete(p.VehicleThresholds[vehicle], k)
+			} else {
+				p.VehicleThresholds[vehicle][k] = *v
+			}
+		}
 	}
 	maps.Copy(p.Account, c.Account)
 	maps.Copy(p.VehiclesDefault, c.VehiclesDefault)
@@ -495,7 +524,7 @@ func TestNotificationPreferences(t *testing.T) {
 	// The vehicle's trips follow the default again; nothing else changes.
 	resp, body = put(t, `{"account":[],"vehicles_default":[],"vehicles":[{"vehicle":"`+car+`","kinds":[{"kind":"trip_ended","choice":"default"}]}]}`)
 	if resp.status != http.StatusOK || !strings.Contains(body, `{"kind":"access_granted","enabled":false,"default":true,"always":false}`) ||
-		!strings.Contains(body, `"vehicle":"`+car+`","kinds":[{"kind":"charge_interrupted","enabled":true,"choice":"default"},{"kind":"charge_finished","enabled":false,"choice":"off"},{"kind":"trip_to_classify","enabled":false,"choice":"default"},{"kind":"charge_started","enabled":false,"choice":"default"},{"kind":"trip_ended","enabled":true,"choice":"default"},{"kind":"charge_live_activity","enabled":true,"choice":"default"}]`) {
+		!strings.Contains(body, `"vehicle":"`+car+`","kinds":[{"kind":"charge_interrupted","enabled":true,"choice":"default"},{"kind":"charge_finished","enabled":false,"choice":"off"},{"kind":"trip_to_classify","enabled":false,"choice":"default"},{"kind":"charge_started","enabled":false,"choice":"default"},{"kind":"trip_ended","enabled":true,"choice":"default"},{"kind":"charge_live_activity","enabled":true,"choice":"default"},{"kind":"not_charged","enabled":true,"choice":"default"},{"kind":"battery_low","enabled":true,"choice":"default","threshold":null}]`) {
 		t.Errorf("back to the default: %d %s", resp.status, body)
 	}
 
@@ -547,6 +576,139 @@ func TestNotificationPreferences(t *testing.T) {
 				t.Errorf("vehicle %s: %d %s", id, resp.status, body)
 			}
 			wantError(t, body, "not_found")
+		}
+	})
+}
+
+// TestBatteryLowThreshold: the threshold of battery_low, for every vehicle and for each,
+// set apart from the on or off choice, and its limits.
+func TestBatteryLowThreshold(t *testing.T) {
+	e, c := readerEnv(t)
+	u := e.api.URL + "/api/v1/notification-preferences"
+	put := func(choices string) (reply, string) {
+		return do(t, noFollow(), http.MethodPut, u, jsonType, choices, c)
+	}
+	vehicle := `"vehicle":"` + car + `"`
+	// The default for every vehicle, alone: the kind's choice is left as it is.
+	resp, body := put(`{"account":[],"vehicles_default":[{"kind":"battery_low","threshold":30}],"vehicles":[]}`)
+	if resp.status != http.StatusOK || !strings.Contains(body, `{"kind":"battery_low","enabled":true,"default":true,"always":false,"threshold":30}`) ||
+		!strings.Contains(body, `{"kind":"battery_low","enabled":true,"choice":"default","threshold":null}`) {
+		t.Fatalf("default threshold: %d %s", resp.status, body)
+	}
+	// A vehicle's own, with its choice turned off, then the choice alone, then the threshold
+	// alone: each leaves the other.
+	resp, body = put(`{"account":[],"vehicles_default":[],"vehicles":[{` + vehicle + `,"kinds":[{"kind":"battery_low","choice":"off","threshold":10}]}]}`)
+	if resp.status != http.StatusOK || !strings.Contains(body, `{"kind":"battery_low","enabled":false,"choice":"off","threshold":10}`) {
+		t.Fatalf("vehicle's threshold: %d %s", resp.status, body)
+	}
+	resp, body = put(`{"account":[],"vehicles_default":[],"vehicles":[{` + vehicle + `,"kinds":[{"kind":"battery_low","choice":"on"}]}]}`)
+	if resp.status != http.StatusOK || !strings.Contains(body, `{"kind":"battery_low","enabled":true,"choice":"on","threshold":10}`) {
+		t.Fatalf("choice alone: %d %s", resp.status, body)
+	}
+	resp, body = put(`{"account":[],"vehicles_default":[],"vehicles":[{` + vehicle + `,"kinds":[{"kind":"battery_low","threshold":45}]}]}`)
+	if resp.status != http.StatusOK || !strings.Contains(body, `{"kind":"battery_low","enabled":true,"choice":"on","threshold":45}`) {
+		t.Fatalf("threshold alone: %d %s", resp.status, body)
+	}
+	// Null: it follows the default again, whose own stays.
+	resp, body = put(`{"account":[],"vehicles_default":[],"vehicles":[{` + vehicle + `,"kinds":[{"kind":"battery_low","threshold":null}]}]}`)
+	if resp.status != http.StatusOK || !strings.Contains(body, `{"kind":"battery_low","enabled":true,"choice":"on","threshold":null}`) ||
+		!strings.Contains(body, `"always":false,"threshold":30}`) {
+		t.Fatalf("reset: %d %s", resp.status, body)
+	}
+	// The default's null is the kind's.
+	if resp, body = put(`{"account":[],"vehicles_default":[{"kind":"battery_low","threshold":null}],"vehicles":[]}`); resp.status != http.StatusOK ||
+		!strings.Contains(body, `"always":false,"threshold":20}`) {
+		t.Fatalf("default reset: %d %s", resp.status, body)
+	}
+	for choices, message := range map[string]string{
+		`{"account":[],"vehicles_default":[{"kind":"battery_low","threshold":4}],"vehicles":[]}`:                                          "body.vehicles_default[0].threshold: from 5 to 50",
+		`{"account":[],"vehicles_default":[{"kind":"battery_low","enabled":true,"threshold":51}],"vehicles":[]}`:                          "body.vehicles_default[0].threshold: from 5 to 50",
+		`{"account":[],"vehicles_default":[],"vehicles":[{` + vehicle + `,"kinds":[{"kind":"battery_low","threshold":0}]}]}`:              "body.vehicles[0].kinds[0].threshold",
+		`{"account":[],"vehicles_default":[],"vehicles":[{` + vehicle + `,"kinds":[{"kind":"battery_low","threshold":90}]}]}`:             "body.vehicles[0].kinds[0].threshold: from 5 to 50",
+		`{"account":[],"vehicles_default":[{"kind":"trip_ended","threshold":20}],"vehicles":[]}`:                                          "body.vehicles_default[0].threshold: this kind has no threshold",
+		`{"account":[],"vehicles_default":[],"vehicles":[{` + vehicle + `,"kinds":[{"kind":"left_open","choice":"on","threshold":20}]}]}`: "body.vehicles[0].kinds[0].threshold: this kind has no threshold",
+		`{"account":[{"kind":"access_granted","threshold":20}],"vehicles_default":[],"vehicles":[]}`:                                      "body.account[0].threshold: this kind has no threshold",
+		`{"account":[],"vehicles_default":[{"kind":"battery_low"}],"vehicles":[]}`:                                                        "body.vehicles_default[0]: enabled or threshold is required",
+		`{"account":[],"vehicles_default":[],"vehicles":[{` + vehicle + `,"kinds":[{"kind":"battery_low"}]}]}`:                            "body.vehicles[0].kinds[0]: choice or threshold is required",
+		`{"account":[],"vehicles_default":[{"kind":"battery_low","threshold":"low"}],"vehicles":[]}`:                                      "",
+		`{"account":[],"vehicles_default":[{"kind":"battery_low","threshold":20.5}],"vehicles":[]}`:                                       "",
+	} {
+		resp, body := put(choices)
+		if resp.status != http.StatusBadRequest || !strings.Contains(body, message) {
+			t.Errorf("%s: %d %s", choices, resp.status, body)
+		}
+		wantError(t, body, "invalid_body")
+	}
+	// Refused all or none: nothing of a refused request was set.
+	if _, body := get(t, noFollow(), u, c); !strings.Contains(body, `"always":false,"threshold":20}`) {
+		t.Errorf("after the refusals: %s", body)
+	}
+}
+
+// TestLeftOpenApplies: left_open is listed for the vehicles whose state covers the doors or
+// the windows only; an extension hides kinds from an account.
+func TestLeftOpenApplies(t *testing.T) {
+	e, c := readerEnv(t)
+	u := e.api.URL + "/api/v1/notification-preferences"
+	doors := core.Snapshot{Covers: core.FieldDoors, Doors: core.Some(core.Doors{Locked: core.Some(true, time.Time{})}, time.Time{})}
+	e.reader.current[car] = append(e.reader.current[car], core.Record{FetchedAt: h(5, 0), CheckedAt: h(5, 30), Snapshot: doors})
+	left := `{"kind":"left_open","enabled":false,"choice":"default"}`
+	var listing struct {
+		Default  []struct{ Kind string } `json:"vehicles_default"`
+		Vehicles []struct {
+			Vehicle string
+			Kinds   []struct{ Kind string }
+		}
+	}
+	read := func() {
+		t.Helper()
+		_, body := get(t, noFollow(), u, c)
+		listing.Default, listing.Vehicles = nil, nil
+		if err := json.Unmarshal([]byte(body), &listing); err != nil {
+			t.Fatal(err)
+		}
+	}
+	has := func(kinds []struct{ Kind string }, k string) bool {
+		return slices.ContainsFunc(kinds, func(o struct{ Kind string }) bool { return o.Kind == k })
+	}
+	read()
+	if !has(listing.Default, "left_open") {
+		t.Error("vehicles_default lacks left_open")
+	}
+	for _, v := range listing.Vehicles {
+		if got, want := has(v.Kinds, "left_open"), v.Vehicle == car; got != want {
+			t.Errorf("vehicle %s: left_open listed %v, want %v", v.Vehicle, got, want)
+		}
+	}
+	if _, body := get(t, noFollow(), u, c); !strings.Contains(body, left) {
+		t.Errorf("the car's left_open: %s", body)
+	}
+
+	t.Run("hidden by an extension", func(t *testing.T) {
+		sending(e)
+		defer func() { e.server.Notifier = nil }()
+		e.server.Notifier.SetHiddenKinds(func(context.Context, string) []notify.Kind { return []notify.Kind{notify.LeftOpen, notify.TripEnded} })
+		read()
+		if has(listing.Default, "left_open") || has(listing.Default, "trip_ended") || !has(listing.Default, "battery_low") {
+			t.Errorf("vehicles_default: %+v", listing.Default)
+		}
+		for _, v := range listing.Vehicles {
+			if has(v.Kinds, "left_open") || has(v.Kinds, "trip_ended") {
+				t.Errorf("vehicle %s: %+v", v.Vehicle, v.Kinds)
+			}
+		}
+		for _, choices := range []string{
+			`{"account":[],"vehicles_default":[{"kind":"left_open","enabled":true}],"vehicles":[]}`,
+			`{"account":[],"vehicles_default":[],"vehicles":[{"vehicle":"` + car + `","kinds":[{"kind":"left_open","choice":"on"}]}]}`,
+		} {
+			resp, body := do(t, noFollow(), http.MethodPut, u, jsonType, choices, c)
+			if resp.status != http.StatusBadRequest || !strings.Contains(body, "unknown notification kind") {
+				t.Errorf("%s: %d %s", choices, resp.status, body)
+			}
+		}
+		// A kind not hidden is still set.
+		if resp, _ := do(t, noFollow(), http.MethodPut, u, jsonType, `{"account":[],"vehicles_default":[{"kind":"battery_low","enabled":false}],"vehicles":[]}`, c); resp.status != http.StatusOK {
+			t.Errorf("another kind: %d", resp.status)
 		}
 	})
 }

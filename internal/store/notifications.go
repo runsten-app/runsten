@@ -104,27 +104,42 @@ func (s *Store) Devices(ctx context.Context, accountID string) ([]notify.Device,
 func (s *Store) NotificationPreferences(ctx context.Context, accountID string) (notify.Preferences, error) {
 	p := notify.Preferences{
 		Account: map[notify.Kind]bool{}, VehiclesDefault: map[notify.Kind]bool{}, Vehicles: map[string]map[notify.Kind]bool{},
+		VehiclesDefaultThreshold: map[notify.Kind]int{}, VehicleThresholds: map[string]map[notify.Kind]int{},
 	}
 	err := s.readInAccount(ctx, accountID, func(tx pgx.Tx) error {
-		rows, err := tx.Query(ctx, "SELECT vehicle_id, kind, enabled FROM notification_preferences")
+		rows, err := tx.Query(ctx, "SELECT vehicle_id, kind, enabled, threshold FROM notification_preferences")
 		if err != nil {
 			return err //nolint:wrapcheck // wrapped by inAccount
 		}
 		var vehicle *string
 		var kind string
-		var enabled bool
-		_, err = pgx.ForEachRow(rows, []any{&vehicle, &kind, &enabled}, func() error {
+		var enabled *bool
+		var threshold *int16
+		_, err = pgx.ForEachRow(rows, []any{&vehicle, &kind, &enabled, &threshold}, func() error {
 			k := notify.Kind(kind)
 			if vehicle == nil {
 				// Both levels in one map each: a kind belongs to one level.
-				p.Account[k] = enabled
-				p.VehiclesDefault[k] = enabled
+				if enabled != nil {
+					p.Account[k] = *enabled
+					p.VehiclesDefault[k] = *enabled
+				}
+				if threshold != nil {
+					p.VehiclesDefaultThreshold[k] = int(*threshold)
+				}
 				return nil
 			}
-			if p.Vehicles[*vehicle] == nil {
-				p.Vehicles[*vehicle] = map[notify.Kind]bool{}
+			if enabled != nil {
+				if p.Vehicles[*vehicle] == nil {
+					p.Vehicles[*vehicle] = map[notify.Kind]bool{}
+				}
+				p.Vehicles[*vehicle][k] = *enabled
 			}
-			p.Vehicles[*vehicle][k] = enabled
+			if threshold != nil {
+				if p.VehicleThresholds[*vehicle] == nil {
+					p.VehicleThresholds[*vehicle] = map[notify.Kind]int{}
+				}
+				p.VehicleThresholds[*vehicle][k] = int(*threshold)
+			}
 			return nil
 		})
 		return err //nolint:wrapcheck // wrapped by inAccount
@@ -132,31 +147,67 @@ func (s *Store) NotificationPreferences(ctx context.Context, accountID string) (
 	return p, err
 }
 
-// SetNotificationPreferences implements api.Notifications, in one transaction.
+// SetNotificationPreferences implements api.Notifications, in one transaction. A row
+// holds a kind's choice of on or off and its threshold, each apart: setting one leaves the
+// other, and the row goes once it holds neither.
 func (s *Store) SetNotificationPreferences(ctx context.Context, accountID string, c api.NotificationChoices) error {
 	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
-		set := func(vehicle *string, k notify.Kind, enabled *bool) error {
-			if enabled == nil {
+		// set writes one column of the row of the kind (the account's, the vehicles' default
+		// or a vehicle's): the value, or NULL, which deletes the row when other, the other
+		// column, is NULL too. Both are constants.
+		set := func(vehicle *string, k notify.Kind, column, other string, value any, none bool) error {
+			if none {
 				_, err := tx.Exec(ctx, `
-					DELETE FROM notification_preferences WHERE vehicle_id IS NOT DISTINCT FROM $1 AND kind = $2`, vehicle, string(k))
+					DELETE FROM notification_preferences
+					WHERE vehicle_id IS NOT DISTINCT FROM $1 AND kind = $2 AND `+other+` IS NULL`, vehicle, string(k))
+				if err != nil {
+					return err //nolint:wrapcheck // wrapped by inAccount
+				}
+				_, err = tx.Exec(ctx, `
+					UPDATE notification_preferences SET `+column+` = NULL
+					WHERE vehicle_id IS NOT DISTINCT FROM $1 AND kind = $2`, vehicle, string(k))
 				return err //nolint:wrapcheck // wrapped by inAccount
 			}
 			_, err := tx.Exec(ctx, `
-				INSERT INTO notification_preferences (account_id, vehicle_id, kind, enabled) VALUES ($1, $2, $3, $4)
-				ON CONFLICT (account_id, vehicle_id, kind) DO UPDATE SET enabled = excluded.enabled`,
-				accountID, vehicle, string(k), *enabled)
+				INSERT INTO notification_preferences (account_id, vehicle_id, kind, `+column+`) VALUES ($1, $2, $3, $4)
+				ON CONFLICT (account_id, vehicle_id, kind) DO UPDATE SET `+column+` = excluded.`+column,
+				accountID, vehicle, string(k), value)
 			return err //nolint:wrapcheck // wrapped by inAccount
+		}
+		enabled := func(vehicle *string, k notify.Kind, on *bool) error {
+			if on == nil {
+				return set(vehicle, k, "enabled", "threshold", nil, true)
+			}
+			return set(vehicle, k, "enabled", "threshold", *on, false)
+		}
+		threshold := func(vehicle *string, k notify.Kind, v *int) error {
+			if v == nil {
+				return set(vehicle, k, "threshold", "enabled", nil, true)
+			}
+			return set(vehicle, k, "threshold", "enabled", int16(*v), false) //nolint:gosec // bounded by the kind's range, at most 100
 		}
 		for _, level := range []map[notify.Kind]bool{c.Account, c.VehiclesDefault} {
 			for k, on := range level {
-				if err := set(nil, k, &on); err != nil {
+				if err := enabled(nil, k, &on); err != nil {
 					return err
 				}
 			}
 		}
+		for k, v := range c.VehiclesDefaultThreshold {
+			if err := threshold(nil, k, v); err != nil {
+				return err
+			}
+		}
 		for vehicle, kinds := range c.Vehicles {
 			for k, on := range kinds {
-				if err := set(&vehicle, k, on); err != nil {
+				if err := enabled(&vehicle, k, on); err != nil {
+					return err
+				}
+			}
+		}
+		for vehicle, kinds := range c.VehicleThresholds {
+			for k, v := range kinds {
+				if err := threshold(&vehicle, k, v); err != nil {
 					return err
 				}
 			}

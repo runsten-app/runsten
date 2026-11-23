@@ -290,7 +290,7 @@ func TestRegistry(t *testing.T) {
 	if want := []Kind{CredentialExpiring, CredentialRefused, AccessGranted, ImportFinished, "payment_failed"}; !slices.Equal(account, want) {
 		t.Errorf("account's kinds %v", account)
 	}
-	if want := []Kind{ChargeInterrupted, ChargeFinished, TripToClassify, ChargeStarted, TripEnded, ChargeLiveActivity}; !slices.Equal(vehicle, want) {
+	if want := []Kind{ChargeInterrupted, ChargeFinished, TripToClassify, ChargeStarted, TripEnded, ChargeLiveActivity, NotCharged, BatteryLow, LeftOpen}; !slices.Equal(vehicle, want) {
 		t.Errorf("vehicle's kinds %v", vehicle)
 	}
 	if _, ok := r.Spec("nothing"); ok {

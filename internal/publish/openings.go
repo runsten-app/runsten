@@ -13,8 +13,9 @@ const (
 )
 
 // LeftOpenAfter is how long the vehicle stands parked and open (core.OpenSince) before it
-// is said left open: long enough to carry the shopping in.
-const LeftOpenAfter = 10 * time.Minute
+// is said left open, here and by the notification of that name: long enough to carry the
+// shopping in.
+const LeftOpenAfter = 15 * time.Minute
 
 // part is the lock, a door, a lid, a window or Sentry Mode, as published: its topic, its
 // Home Assistant entity, and its value in a snapshot, unknown when it does not tell it.
@@ -139,4 +140,17 @@ func onOffWord(b bool) string {
 		return On
 	}
 	return Off
+}
+
+// BatteryLowState is the message of the vehicle parked with its state of charge under its
+// threshold (core.BatteryLow): on or off, empty when unknown.
+func BatteryLowState(b Broker, vehicleID string, v core.Value[bool]) Message {
+	return Message{Topic: b.TopicPrefix + "/vehicles/" + vehicleID + "/battery_low", Payload: text(v, onOffWord), Retained: true}
+}
+
+// NotChargedState is the message of the vehicle plugged in at a place in the evening, whose
+// state of charge has not risen by the morning (core.NotCharged), as long as it stands so
+// (core.NightCheck.Standing): on or off, empty when unknown.
+func NotChargedState(b Broker, vehicleID string, v core.Value[bool]) Message {
+	return Message{Topic: b.TopicPrefix + "/vehicles/" + vehicleID + "/not_charged", Payload: text(v, onOffWord), Retained: true}
 }

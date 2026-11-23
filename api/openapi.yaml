@@ -2541,15 +2541,21 @@ components:
       additionalProperties: false
       properties:
         enabled:
-          description: On or off; a kind always on cannot be turned off.
+          description: "On or off; a kind always on cannot be turned off. Left out: unchanged, for an item that sets a threshold alone."
           type: boolean
         kind:
           description: A kind of the level.
           pattern: ^[a-z][a-z0-9_]{0,63}$
           type: string
+        threshold:
+          description: "Only for a kind with a setting (battery_low: from 5 to 50, in % of the state of charge): the value for every vehicle without one of its own; null: the kind's default again. The kind's own choice stays as it is when the item has no enabled."
+          maximum: 100
+          minimum: 1
+          type:
+            - integer
+            - "null"
       required:
         - kind
-        - enabled
       type: object
     KindPreference:
       additionalProperties: false
@@ -2567,6 +2573,13 @@ components:
           description: The kind of notification, as charge_finished. The instance may have kinds of its own beyond those the document names.
           pattern: ^[a-z][a-z0-9_]{0,63}$
           type: string
+        threshold:
+          description: "Only for a kind with a setting, left out for the others. battery_low: the state of charge, in %, under which a parked vehicle is told, from 5 to 50: the value for the vehicles that have none of their own, 20 unless the user set another."
+          maximum: 100
+          minimum: 1
+          type:
+            - integer
+            - "null"
       required:
         - kind
         - enabled
@@ -3064,12 +3077,12 @@ components:
             $ref: "#/components/schemas/KindPreference"
           type: array
         vehicles:
-          description: Each vehicle of the account, with its own choices.
+          description: "Each vehicle of the account, with its own choices. A vehicle's kinds are those that apply to it: left_open is not listed for a vehicle whose maker reports neither its locks nor its windows."
           items:
             $ref: "#/components/schemas/VehiclePreferences"
           type: array
         vehicles_default:
-          description: "The vehicles' kinds, for every vehicle without a choice of its own: charge_interrupted (a charge stopped below its limit, the cable connected), charge_finished (it reached its limit), trip_to_classify (a trip ended without a purpose), charge_started, trip_ended, charge_live_activity (the charge in progress shown on the lock screen as it goes on, PUT /devices/{device}/live-activity-token)."
+          description: "The vehicles' kinds, for every vehicle without a choice of its own: charge_interrupted (a charge stopped below its limit, the cable connected), charge_finished (it reached its limit), trip_to_classify (a trip ended without a purpose), charge_started, trip_ended, charge_live_activity (the charge in progress shown on the lock screen as it goes on, PUT /devices/{device}/live-activity-token), not_charged (plugged in at one of the account's places in the evening, and by the morning the state of charge has not risen: told once a night), battery_low (parked with the state of charge under a threshold, 20 % unless set: told once, again only after the state of charge went back to the threshold or above), left_open (parked and unlocked, or with a window open, for more than 15 minutes: told once; off by default). An extension may hide kinds from an account: they are then not listed."
           items:
             $ref: "#/components/schemas/KindPreference"
           type: array
@@ -6418,7 +6431,7 @@ components:
       additionalProperties: false
       properties:
         choice:
-          description: "On or off for this vehicle; default: it follows vehicles_default again."
+          description: "On or off for this vehicle; default: it follows vehicles_default again. Left out: unchanged, for an item that sets a threshold alone."
           enum:
             - "on"
             - "off"
@@ -6428,9 +6441,15 @@ components:
           description: A vehicle's kind.
           pattern: ^[a-z][a-z0-9_]{0,63}$
           type: string
+        threshold:
+          description: "Only for a kind with a setting (battery_low: from 5 to 50, in % of the state of charge): this vehicle's own value; null: it follows the threshold of vehicles_default again. The vehicle's choice stays as it is when the item has no choice."
+          maximum: 100
+          minimum: 1
+          type:
+            - integer
+            - "null"
       required:
         - kind
-        - choice
       type: object
     VehicleChoices:
       additionalProperties: false
@@ -6464,6 +6483,13 @@ components:
           description: A vehicle's kind of notification.
           pattern: ^[a-z][a-z0-9_]{0,63}$
           type: string
+        threshold:
+          description: "Only for a kind with a setting, left out for the others. battery_low: the vehicle's own threshold, in %; null when it follows the threshold of vehicles_default."
+          maximum: 100
+          minimum: 1
+          type:
+            - integer
+            - "null"
       required:
         - kind
         - enabled
@@ -8618,7 +8644,7 @@ paths:
         - mqtt
   /notification-preferences:
     get:
-      description: "Each kind of notification and whether the user is told of it: the account's, the vehicles' default, and each vehicle's own choices. A value the vehicle does not tell triggers nothing: without a charge limit, no charge is told interrupted."
+      description: "Each kind of notification and whether the user is told of it: the account's, the vehicles' default, and each vehicle's own choices. A vehicle's kinds are those that apply to it, and an instance may hide kinds from an account. battery_low carries its threshold, in % of the state of charge: the vehicles' default in vehicles_default, the vehicle's own (null: it follows the default) in each vehicle. A value the vehicle does not tell triggers nothing: without a charge limit, no charge is told interrupted, without a state of charge no battery is told low, without a lock or a window no vehicle is told left open."
       operationId: getNotificationPreferences
       responses:
         "200":
@@ -8660,7 +8686,7 @@ paths:
       tags:
         - notifications
     put:
-      description: "Sets the kinds it lists, and leaves the others as they are: an app that does not know a kind of the instance never changes it. All or none."
+      description: "Sets the kinds it lists, and leaves the others as they are: an app that does not know a kind of the instance never changes it. An item may carry the threshold of battery_low (from 5 to 50, in % of the state of charge) with or without its enabled or choice: a threshold alone leaves the choice as it is, and the choice alone leaves the threshold. A null threshold resets it: the vehicle's follows the vehicles' default again, the default's the kind's own, 20. All or none."
       operationId: putNotificationPreferences
       requestBody:
         content:
@@ -8680,7 +8706,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. Also a kind the instance does not know, of another level, or that cannot be turned off."
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. Also a kind the instance does not know or hides from the account, of another level, or that cannot be turned off, a threshold out of its range or on a kind that has none, an item with neither a choice nor a threshold."
         "401":
           content:
             application/json:

@@ -336,10 +336,10 @@ func TestPublish(t *testing.T) {
 	if w := cl.Properties.Will; w.TopicName != "runsten/status" || string(w.Payload) != "offline" || !w.Retain || w.Qos != 1 {
 		t.Errorf("testament = %+v", w)
 	}
-	// online, and the 33 values of the state, the doors' included, and the 15 of the
-	// health, the unknown ones empty
-	if n := len(b.takeAtLeast(t, 49)); n != 49 {
-		t.Errorf("%d messages on connection, want 49", n)
+	// online, and the 33 values of the state, the doors' included, the 3 states of the
+	// alerts, and the 15 of the health, the unknown ones empty
+	if n := len(b.takeAtLeast(t, 51)); n != 51 {
+		t.Errorf("%d messages on connection, want 51", n)
 	}
 
 	// Only the value that changed.
@@ -411,8 +411,8 @@ func TestPublishDiscovery(t *testing.T) {
 		t.Errorf("device = %q", got)
 	}
 	// Neither the credential's nor the climate's: the vehicle tells neither.
-	if n := len(b.retainedUnder("homeassistant/#")); n != 27 {
-		t.Errorf("%d configurations, want 27", n)
+	if n := len(b.retainedUnder("homeassistant/#")); n != 29 {
+		t.Errorf("%d configurations, want 29", n)
 	}
 	// Once it tells its climate, its 6 entities.
 	climate := core.Latest([]core.Record{{FetchedAt: t0, CheckedAt: t0, Snapshot: core.Snapshot{
@@ -425,7 +425,7 @@ func TestPublishDiscovery(t *testing.T) {
 	if err := p.Publish(context.Background(), account, vehicle); err != nil {
 		t.Fatal(err)
 	}
-	eventually(t, "climate configured", func() bool { return len(b.retainedUnder("homeassistant/#")) == 33 })
+	eventually(t, "climate configured", func() bool { return len(b.retainedUnder("homeassistant/#")) == 35 })
 	if got := b.retained()[state+"outside_temp_c"]; got != "4.5" {
 		t.Errorf("outside_temp_c = %q", got)
 	}
@@ -491,9 +491,9 @@ func TestPublishOpenings(t *testing.T) {
 			t.Errorf("%s = %q, want %q", topic, got, v)
 		}
 	}
-	// The 27 of every vehicle, the 3 it tells, the warning and the doors' reading.
-	if n := len(b.retainedUnder("homeassistant/#")); n != 32 {
-		t.Errorf("%d configurations, want 32", n)
+	// The 29 of every vehicle, the 3 it tells, the warning and the doors' reading.
+	if n := len(b.retainedUnder("homeassistant/#")); n != 34 {
+		t.Errorf("%d configurations, want 34", n)
 	}
 
 	sts.openSince[vehicle] = t0.Add(-publish.LeftOpenAfter + time.Second)
@@ -573,7 +573,7 @@ func TestPublishCredential(t *testing.T) {
 		}
 	}
 	credentialConfig := "homeassistant/binary_sensor/runsten_" + vehicle + "/credential/config"
-	eventually(t, "configured", func() bool { return len(b.retainedUnder("homeassistant/#")) == 26+2*15 })
+	eventually(t, "configured", func() bool { return len(b.retainedUnder("homeassistant/#")) == 26+2*15+4 })
 	if b.retainedUnder("homeassistant/#")[credentialConfig] == "" {
 		t.Error("the credential's entity is not configured")
 	}
@@ -930,4 +930,82 @@ func selfSigned(t *testing.T) (*x509.Certificate, *tls.Config) {
 	}
 	cert := tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key}
 	return parsed, &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS12}
+}
+
+// alerts gives the vehicle's threshold of a low battery and its night.
+type alerts struct {
+	threshold    int
+	thresholdErr error
+	night        core.Value[core.NightCheck]
+	nightErr     error
+}
+
+func (a *alerts) BatteryLowThreshold(context.Context, string, string) (int, error) {
+	return a.threshold, a.thresholdErr
+}
+
+func (a *alerts) NightCheck(context.Context, string, string, time.Time) (core.Value[core.NightCheck], error) {
+	return a.night, a.nightErr
+}
+
+// TestPublishAlerts: battery_low is on while the parked vehicle is under its own
+// threshold, not_charged while the night judged it so still stands; a failure keeps the
+// state published before.
+func TestPublishAlerts(t *testing.T) {
+	b := startBroker(t, nil, nil)
+	st := newStore(brokerAt("mqtt://" + b.addr))
+	// 20 %, parked, the cable plugged in.
+	cur := core.Latest([]core.Record{{FetchedAt: t0, CheckedAt: t0, Snapshot: core.Snapshot{
+		Covers: core.FieldSoC | core.FieldEngine | core.FieldConnection | core.FieldCharging,
+		SoC:    core.Some(20.0, t0), Engine: core.Some(core.EngineStopped, t0),
+		Connection: core.Some(core.Connected, t0), Charging: core.Some(core.ChargingScheduled, t0),
+	}}})
+	sts := &states{current: map[string]core.Current{vehicle: cur}}
+	al := &alerts{threshold: 20, night: core.Value[core.NightCheck]{OK: true, V: core.NightCheck{
+		Date: t0.Truncate(24 * time.Hour), NotCharged: true, EveningSoC: 20,
+	}}}
+	p := New(st, sts, models{vehicle: ex30}, clock.NewManual(t0), false, quiet)
+	p.WithAlerts(al)
+	defer p.Close()
+	connected(t, p, st)
+	publish1 := func() error { return p.Publish(context.Background(), account, vehicle) }
+	if err := publish1(); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "not charged, not low at its threshold", func() bool {
+		r := b.retained()
+		return r[state+"not_charged"] == "on" && r[state+"battery_low"] == "off"
+	})
+	// Its own threshold raised above the state of charge.
+	al.threshold = 25
+	if err := publish1(); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "low", func() bool { return b.retained()[state+"battery_low"] == "on" })
+	// A night that was fine, and a night unknown.
+	al.night.V.NotCharged = false
+	if err := publish1(); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "night fine", func() bool { return b.retained()[state+"not_charged"] == "off" })
+	al.night = core.Value[core.NightCheck]{}
+	if err := publish1(); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "night unknown", func() bool { _, ok := b.retained()[state+"not_charged"]; return !ok })
+	// Neither read: the state goes out, the two alerts stay as they were.
+	al.night = core.Value[core.NightCheck]{OK: true, V: core.NightCheck{Date: t0.Truncate(24 * time.Hour), NotCharged: true, EveningSoC: 20}}
+	if err := publish1(); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, "night again", func() bool { return b.retained()[state+"not_charged"] == "on" })
+	al.thresholdErr, al.nightErr = errors.New("database down"), errors.New("database down")
+	sts.current[vehicle] = currentWith(70)
+	if err := publish1(); err == nil {
+		t.Error("the alerts' failure is not told")
+	}
+	eventually(t, "state published", func() bool { return b.retained()[state+"battery_level"] == "70" })
+	if r := b.retained(); r[state+"battery_low"] != "on" || r[state+"not_charged"] != "on" {
+		t.Errorf("alerts after the failure: %q, %q, want the previous on", r[state+"battery_low"], r[state+"not_charged"])
+	}
 }
