@@ -185,7 +185,9 @@ func judgeNight(ps []point, places []Place, pl Place, date time.Time) Value[Nigh
 		pluggedIn               *plug
 		risen, delivered, cable bool
 	)
-	eligible := func(at time.Time) {
+	// eligible takes the evening's first reading of the cable plugged in, charging told by
+	// the reading itself (told: none for the state at the start of the evening).
+	eligible := func(at time.Time, told Snapshot) {
 		s := st.snap
 		if pluggedIn != nil || !s.Connection.OK || s.Connection.V != Connected || !s.Position.OK || !s.SoC.OK || !s.TargetSoC.OK {
 			return
@@ -196,14 +198,14 @@ func judgeNight(ps []point, places []Place, pl Place, date time.Time) Value[Nigh
 		pluggedIn = &plug{at: at, soc: s.SoC.V, target: s.TargetSoC.V}
 		// A charge in progress at the reading that finds the cable plugged in is one
 		// delivering.
-		delivered = s.Charging.OK && s.Charging.V == ChargingActive
+		delivered = told.Covers&FieldCharging != 0 && told.Charging.OK && told.Charging.V == ChargingActive
 	}
 	// The state at the start of the evening, before the first reading after it: a cable
 	// plugged in earlier and left stands in it.
 	atStart := false
 	for _, p := range ps {
 		if !atStart && p.at.After(from) {
-			eligible(from)
+			eligible(from, Snapshot{})
 			atStart = true
 		}
 		if p.at.After(morning) {
@@ -213,15 +215,16 @@ func judgeNight(ps []point, places []Place, pl Place, date time.Time) Value[Nigh
 		last = p.at
 		cable = cable || st.snap.Connection.OK
 		if pluggedIn != nil && p.at.After(pluggedIn.at) {
-			risen = risen || st.snap.SoC.OK && st.snap.SoC.V > pluggedIn.soc
-			delivered = delivered || st.snap.Charging.OK && st.snap.Charging.V == ChargingActive
+			// Only what this reading tells: a value carried from an earlier one is not seen now.
+			risen = risen || p.snap.Covers&FieldSoC != 0 && p.snap.SoC.OK && p.snap.SoC.V > pluggedIn.soc
+			delivered = delivered || p.snap.Covers&FieldCharging != 0 && p.snap.Charging.OK && p.snap.Charging.V == ChargingActive
 		}
 		if !p.at.Before(from) && p.at.Before(until) {
-			eligible(p.at)
+			eligible(p.at, p.snap)
 		}
 	}
 	if !atStart {
-		eligible(from)
+		eligible(from, Snapshot{})
 	}
 	if !cable || last.Before(morning.Add(-nightStale)) {
 		return Value[NightCheck]{}
