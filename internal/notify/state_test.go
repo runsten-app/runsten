@@ -243,3 +243,27 @@ func TestMorningCheckDue(t *testing.T) {
 		}
 	}
 }
+
+// TestLeftOpenStaleOpenings: a stale part of the doors and windows is ignored; the vehicle is
+// told open only by what was read since.
+func TestLeftOpenStaleOpenings(t *testing.T) {
+	now := t0.Add(5 * time.Hour)
+	since := now.Add(-30 * time.Minute)
+	recent, stale := now.Add(-10*time.Minute), t0
+	engine := read(recent, core.Snapshot{Covers: core.FieldEngine, Engine: core.Some(core.EngineStopped, time.Time{})})
+	doors := func(locked bool, at time.Time) core.Record {
+		return read(at, core.Snapshot{Covers: core.FieldDoors, Doors: core.Some(core.Doors{Locked: core.Some(locked, time.Time{})}, time.Time{})})
+	}
+	window := func(o core.Opening, at time.Time) core.Record {
+		return read(at, core.Snapshot{Covers: core.FieldWindows, Windows: core.Some(core.Windows{FrontLeft: core.Some(o, time.Time{})}, time.Time{})})
+	}
+	if _, ok := LeftOpenEvent("a", "v", core.Latest([]core.Record{engine, doors(false, recent), window(core.Closed, stale)}), since, now); !ok {
+		t.Error("fresh unlocked doors, stale windows: no event")
+	}
+	if _, ok := LeftOpenEvent("a", "v", core.Latest([]core.Record{engine, doors(true, recent), window(core.Open, stale)}), since, now); ok {
+		t.Error("only a stale open window: an event")
+	}
+	if _, ok := LeftOpenEvent("a", "v", core.Latest([]core.Record{engine, doors(true, recent), window(core.Open, recent)}), since, now); !ok {
+		t.Error("a fresh open window: no event")
+	}
+}

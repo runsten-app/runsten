@@ -280,3 +280,79 @@ func TestNotChargedFirstReadingCharging(t *testing.T) {
 		t.Errorf("NotCharged = %+v, want charged", got)
 	}
 }
+
+// TestNotChargedStaleCharging: a charge told hours before the plug-in, carried by the state,
+// is not a charge of the night; one told by the plug-in reading itself is.
+func TestNotChargedStaleCharging(t *testing.T) {
+	places := []Place{nightHome}
+	// The plug-in reading tells the cable, the state of charge and the limit, not the charge.
+	cable := Snapshot{
+		Covers: FieldSoC | FieldConnection | FieldTargetSoC,
+		SoC:    Some(30.0, time.Time{}), Connection: Some(Connected, time.Time{}), TargetSoC: Some(80.0, time.Time{}),
+	}
+	records := []Record{
+		parkedAt(home, at(22, 12, 0)), night(at(22, 14, 0), plugged(30, ChargingActive)),
+		night(at(22, 19, 0), cable), night(at(23, 6, 30), cable),
+	}
+	if got := NotCharged(records, places, at(23, 7, 5)); !got.OK || !got.V.NotCharged {
+		t.Errorf("a charge of the afternoon: %+v, want not charged", got)
+	}
+	// The same, charging told on the plug-in reading: delivering.
+	records[2] = night(at(22, 19, 0), plugged(40, ChargingActive))
+	if got := NotCharged(records, places, at(23, 7, 5)); !got.OK || got.V.NotCharged {
+		t.Errorf("a charge on the plug-in reading: %+v, want charged", got)
+	}
+}
+
+// TestOpenSinceFresh: a run rests on fresh readings only: a window read open long before is
+// unknown, and no start is taken from it.
+func TestOpenSinceFresh(t *testing.T) {
+	windowOpen := windows(Open)
+	const maxAge = 120 * time.Minute
+	for _, tt := range []struct {
+		name    string
+		records []Record
+		want    time.Time
+	}{
+		{
+			"fresh, as OpenSince",
+			[]Record{rec(0, 60, engine(EngineStopped)), rec(10, 60, windowOpen)},
+			m(10),
+		},
+		{
+			"unlocked doors read after a stale open window: the run starts there",
+			[]Record{rec(0, 310, engine(EngineStopped)), rec(10, 10, windowOpen), rec(300, 300, doors(false, Closed))},
+			m(300),
+		},
+		{
+			"only a stale open window",
+			[]Record{rec(0, 310, engine(EngineStopped)), rec(10, 10, windowOpen), rec(300, 300, doors(true, Closed))},
+			time.Time{},
+		},
+		{
+			"a window confirmed later: the run starts at the confirmation",
+			[]Record{rec(0, 410, engine(EngineStopped)), rec(10, 400, windowOpen), rec(300, 300, doors(true, Closed))},
+			m(400),
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := OpenSinceFresh(tt.records, maxAge); !got.Equal(tt.want) {
+				t.Errorf("OpenSinceFresh = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCurrentOpenReadSince(t *testing.T) {
+	c := Latest([]Record{rec(0, 0, doors(false, Closed)), rec(100, 100, windows(Closed))})
+	if !c.OpenReadSince(m(-10)) {
+		t.Error("fresh unlocked doors: not open")
+	}
+	if c.OpenReadSince(m(50)) {
+		t.Error("the unlocked doors were read before the limit: still open")
+	}
+	w := Latest([]Record{rec(0, 0, doors(true, Closed)), rec(100, 100, windows(Open))})
+	if !w.OpenReadSince(m(50)) || w.OpenReadSince(m(150)) {
+		t.Error("a window open: by what was read since only")
+	}
+}

@@ -169,7 +169,7 @@ func (s *stateAlerts) batteryLow(ctx context.Context, accountID, vehicleID strin
 // per episode. A vehicle whose maker reports neither locks nor windows is never open.
 func (s *stateAlerts) leftOpen(ctx context.Context, accountID, vehicleID string, cur core.Current, now time.Time) error {
 	snap := cur.Snapshot
-	open := snap.Covers&(core.FieldDoors|core.FieldWindows) != 0 && snap.Engine.OK && snap.Engine.V == core.EngineStopped && snap.Open()
+	open := snap.Covers&(core.FieldDoors|core.FieldWindows) != 0 && snap.Engine.OK && snap.Engine.V == core.EngineStopped && cur.OpenReadSince(now.Add(-notify.OpeningsFresh))
 	wants := false
 	if open {
 		var err error
@@ -192,7 +192,7 @@ func (s *stateAlerts) leftOpen(ctx context.Context, accountID, vehicleID string,
 		if err != nil {
 			return fmt.Errorf("history: %w", err)
 		}
-		since = core.OpenSince(records)
+		since = core.OpenSinceFresh(records, notify.OpeningsFresh)
 		s.mu.Lock()
 		ep.open = since
 		s.mu.Unlock()

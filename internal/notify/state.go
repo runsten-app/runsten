@@ -33,17 +33,6 @@ func readSince(c core.Current, from time.Time, fields ...core.Field) bool {
 	return true
 }
 
-// openingFields are the fields of the doors and the windows the vehicle tells.
-func openingFields(s core.Snapshot) []core.Field {
-	var out []core.Field
-	for _, f := range []core.Field{core.FieldDoors, core.FieldWindows} {
-		if s.Covers&f != 0 {
-			out = append(out, f)
-		}
-	}
-	return out
-}
-
 // NotChargedWithin is how long after the morning's check a night not charged is still
 // told: the check runs every few minutes, and a collector restarted at that time must
 // not tell the night after the owner left.
@@ -89,8 +78,9 @@ func LeftOpenEvent(accountID, vehicleID string, c core.Current, since, now time.
 		return Event{}, false
 	}
 	// A value read long ago is unknown: no episode rests on it. The doors and windows of
-	// some makers are told once an hour, so theirs may be older.
-	if !readSince(c, now.Add(-Fresh), core.FieldEngine) || !readSince(c, now.Add(-OpeningsFresh), openingFields(c.Snapshot)...) {
+	// some makers are told once an hour, so theirs may be older; one read before that is
+	// ignored, and the vehicle is open only by what was read since.
+	if !readSince(c, now.Add(-Fresh), core.FieldEngine) || !c.OpenReadSince(now.Add(-OpeningsFresh)) {
 		return Event{}, false
 	}
 	return Event{
