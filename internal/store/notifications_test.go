@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"strings"
 	"testing"
 	"time"
 
@@ -324,12 +325,25 @@ func TestNotificationThresholds(t *testing.T) {
 	if !p.Enabled(low, v) || p.Threshold(low, v) != 20 {
 		t.Errorf("all reset: %+v", p)
 	}
-	var rows int
-	if err := s.pool.QueryRow(ctx, "SELECT count(*) FROM notification_preferences").Scan(&rows); err != nil || rows != 0 {
-		t.Errorf("rows left: %d, %v", rows, err)
+	err := s.readInAccount(ctx, a, func(tx pgx.Tx) error {
+		var rows int
+		if err := tx.QueryRow(ctx, "SELECT count(*) FROM notification_preferences").Scan(&rows); err != nil {
+			return err //nolint:wrapcheck // the test's
+		}
+		if rows != 0 {
+			t.Errorf("rows left: %d", rows)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 	// The database refuses a row with neither.
-	if _, err := s.pool.Exec(ctx, "INSERT INTO notification_preferences (account_id, kind) VALUES ($1, 'battery_low')", a); err == nil {
-		t.Error("a row with neither a choice nor a threshold")
+	err = s.inAccount(ctx, a, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, "INSERT INTO notification_preferences (account_id, kind) VALUES ($1, 'battery_low')", a)
+		return err //nolint:wrapcheck // the test's
+	})
+	if err == nil || !strings.Contains(err.Error(), "notification_preferences_something") {
+		t.Errorf("a row with neither a choice nor a threshold: %v", err)
 	}
 }
