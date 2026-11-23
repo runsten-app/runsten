@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sync"
 	"time"
 
@@ -71,6 +72,35 @@ type Preferences struct {
 	// Vehicles holds, by vehicle ID, the vehicles' kinds turned on or off for that vehicle,
 	// whatever VehiclesDefault says.
 	Vehicles map[string]map[Kind]bool
+	// VehiclesDefaultThreshold holds the thresholds set for every vehicle, by kind.
+	VehiclesDefaultThreshold map[Kind]int
+	// VehicleThresholds holds, by vehicle ID, the thresholds set for that vehicle, whatever
+	// VehiclesDefaultThreshold says.
+	VehicleThresholds map[string]map[Kind]int
+}
+
+// Threshold returns the setting of s for the vehicle: its own, else the one set for every
+// vehicle, else the kind's default; zero for a kind without a threshold.
+func (p Preferences) Threshold(s Spec, vehicleID string) int {
+	if s.Threshold == nil {
+		return 0
+	}
+	if v, ok := p.VehicleThresholds[vehicleID][s.Kind]; ok {
+		return v
+	}
+	return p.DefaultThreshold(s)
+}
+
+// DefaultThreshold returns the setting of s for the vehicles that have none of their own:
+// the one set for every vehicle, else the kind's default; zero for a kind without one.
+func (p Preferences) DefaultThreshold(s Spec) int {
+	if s.Threshold == nil {
+		return 0
+	}
+	if v, ok := p.VehiclesDefaultThreshold[s.Kind]; ok {
+		return v
+	}
+	return s.Threshold.Default
 }
 
 // Enabled tells whether the user is to be told of s, about the vehicle vehicleID for a
@@ -147,6 +177,7 @@ type Notifier struct {
 
 	mu     sync.RWMutex
 	sender PushSender
+	hidden HiddenKinds
 	// timeout is Timeout, shorter in the tests.
 	timeout time.Duration
 }
@@ -166,6 +197,40 @@ func (n *Notifier) SetSender(s PushSender) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 	n.sender = s
+}
+
+// HiddenKinds tells, for an account, the kinds of notification an extension hides from it:
+// they are not listed in its preferences, cannot be chosen, and are never told. It is
+// consulted for every listing and every event: it must be quick, and return nil to hide
+// nothing.
+type HiddenKinds func(ctx context.Context, accountID string) []Kind
+
+// SetHiddenKinds has f tell the kinds hidden from each account, such as one an instance
+// cannot evaluate for it (an account read too rarely to tell a vehicle left open). Call it
+// before the binary serves. Without it nothing is hidden.
+func (n *Notifier) SetHiddenKinds(f HiddenKinds) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	n.hidden = f
+}
+
+// Hidden returns the kinds hidden from the account.
+func (n *Notifier) Hidden(ctx context.Context, accountID string) []Kind {
+	if n == nil {
+		return nil
+	}
+	n.mu.RLock()
+	f := n.hidden
+	n.mu.RUnlock()
+	if f == nil {
+		return nil
+	}
+	return f(ctx, accountID)
+}
+
+// IsHidden tells whether the kind is hidden from the account.
+func (n *Notifier) IsHidden(ctx context.Context, accountID string, k Kind) bool {
+	return slices.Contains(n.Hidden(ctx, accountID), k)
 }
 
 // Sends tells whether the Notifier has a PushSender: without one, the instance serves no
@@ -189,6 +254,9 @@ func (n *Notifier) Wants(ctx context.Context, accountID, vehicleID string, k Kin
 	s, ok := n.reg.Spec(k)
 	if !ok {
 		return false, fmt.Errorf("%w: %s", ErrUnknownKind, k)
+	}
+	if n.IsHidden(ctx, accountID, k) {
+		return false, nil
 	}
 	p, err := n.st.NotificationPreferences(ctx, accountID)
 	if err != nil {
@@ -226,6 +294,9 @@ func (n *Notifier) Notify(ctx context.Context, e Event) error {
 	caller := ctx
 	ctx, cancel := context.WithTimeout(ctx, n.timeout)
 	defer cancel()
+	if n.IsHidden(ctx, e.AccountID, e.Kind) {
+		return nil
+	}
 	p, err := n.st.NotificationPreferences(ctx, e.AccountID)
 	if err != nil {
 		return fmt.Errorf("notification preferences: %w", err)
@@ -255,6 +326,20 @@ func (n *Notifier) Notify(ctx context.Context, e Event) error {
 	}
 	n.log.Info("notification sent", "kind", string(e.Kind), "account", e.AccountID, "delivery", id, "devices", len(devices))
 	return nil
+}
+
+// Threshold returns the setting of the kind for the vehicle, as the user's preferences
+// stand: its own, else the one set for every vehicle, else the kind's default.
+func (n *Notifier) Threshold(ctx context.Context, accountID, vehicleID string, k Kind) (int, error) {
+	s, ok := n.reg.Spec(k)
+	if !ok || s.Threshold == nil {
+		return 0, fmt.Errorf("%w with a threshold: %s", ErrUnknownKind, k)
+	}
+	p, err := n.st.NotificationPreferences(ctx, accountID)
+	if err != nil {
+		return 0, fmt.Errorf("notification preferences: %w", err)
+	}
+	return p.Threshold(s, vehicleID), nil
 }
 
 // NotifyAll tells each event, and returns their errors joined.

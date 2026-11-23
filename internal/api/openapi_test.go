@@ -388,10 +388,10 @@ func mutate(v any, wrap func(any) any, at string, out *[]mutation) {
 		for k, child := range x {
 			rest := with(x, k, nil)
 			delete(rest, k)
-			*out = append(*out,
-				mutation{at + "." + k + " removed", wrap(rest)},
-				mutation{at + "." + k + " renamed", wrap(with(rest, k+"_renamed", child))},
-			)
+			*out = append(*out, mutation{at + "." + k + " renamed", wrap(with(rest, k+"_renamed", child))})
+			if k != "threshold" { // left out of the items of a kind that has none (optionalKeys)
+				*out = append(*out, mutation{at + "." + k + " removed", wrap(rest)})
+			}
 			mutate(child, func(c any) any { return wrap(with(x, k, c)) }, at+"."+k, out)
 		}
 	case []any:
@@ -425,6 +425,16 @@ func otherType(v any) any {
 	}
 }
 
+// optionalKeys are the keys of an object that may be left out, by schema: the threshold of
+// a kind that has none, and, in a request, what a PUT leaves as it is (a threshold set
+// alone leaves the choice).
+var optionalKeys = map[string][]string{
+	"KindPreference": {"threshold"},
+	"VehicleKind":    {"threshold"},
+	"KindChoice":     {"enabled", "threshold"},
+	"VehicleChoice":  {"choice", "threshold"},
+}
+
 // TestSpecIsStrict checks the conventions every object of the spec follows: no field
 // other than those described (additionalProperties: false), and every key always
 // present (required lists every property), null standing for an unknown value. A
@@ -451,7 +461,13 @@ func TestSpecIsStrict(t *testing.T) {
 				}
 				slices.Sort(required)
 				form := strings.Contains(at, "multipart/form-data")
-				if keys := slices.Sorted(maps.Keys(props)); !form && !slices.Equal(required, keys) {
+				keys := slices.Sorted(maps.Keys(props))
+				for schema, left := range optionalKeys {
+					if strings.HasSuffix(at, ".schemas."+schema) {
+						keys = slices.DeleteFunc(keys, func(k string) bool { return slices.Contains(left, k) })
+					}
+				}
+				if !form && !slices.Equal(required, keys) {
 					t.Errorf("%s: required %v, want every property %v", at, required, keys)
 				}
 			}

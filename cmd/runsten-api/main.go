@@ -489,7 +489,8 @@ func run(args []string) error {
 // may give flags a provider of their own (eval.Evaluator.Use), in place of
 // RUNSTEN_FLAGS's. They give notifier its PushSender (notify.Notifier.SetSender), and
 // register their own kinds of notification (Registry().Register), which the API then
-// lists and tells.
+// lists and tells. They may hide kinds from an account (notify.Notifier.SetHiddenKinds):
+// the API then neither lists them in its preferences nor lets it choose them.
 type extensions struct {
 	mux         *http.ServeMux
 	getenv      func(string) string

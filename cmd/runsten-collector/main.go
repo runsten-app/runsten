@@ -382,10 +382,16 @@ func run(args []string) error {
 	// gives it a PushSender: each derivation tells of its charges and trips, a check of
 	// the connections of their credentials.
 	notifier := notify.New(notify.NewRegistry(), st, clk, log)
+	// The alerts on a vehicle's state, evaluated on each reading and every few minutes, and
+	// stated to MQTT's binary sensors.
+	alerts := &stateAlerts{
+		current: deriver.Current, records: deriver.Records, places: st.Places, targets: st.Targets,
+		notifier: notifier, clk: clk, log: log,
+	}
 	der := variants{
 		Deriver: notifying{
 			update: deriver.UpdateResult, current: deriver.Current, purposes: tripPurposes(st),
-			notifier: notifier, clk: clk, log: log,
+			notifier: notifier, alerts: alerts, clk: clk, log: log,
 		},
 		capacities: capacities{catalog: cat, vehicle: vehicleOf(st)},
 		current:    deriver.Current, set: st.SetVariantInEffect, clk: clk,
@@ -451,6 +457,7 @@ func run(args []string) error {
 	})
 	pub := mqtt.New(st, deriver, models{catalog: cat, vehicle: vehicleOf(st)}, clk, !cfg.privateBrokers, log)
 	defer pub.Close()
+	pub.WithAlerts(&alertStates{notifier: notifier, records: deriver.Records, places: st.Places})
 	c.SetPublisher(pub)
 	if err := registerExtensions(ctx, extensions{
 		getenv: os.Getenv, databaseURL: cfg.databaseURL, collector: c, flags: features, notifier: notifier, log: log,
@@ -464,6 +471,10 @@ func run(args []string) error {
 		},
 		connections: st.NotifyConnections, purge: st.PurgeDeliveries, notifier: notifier, clk: clk, log: log,
 	}
+	alertsCtx, stopAlerts := context.WithCancel(ctx)
+	alertsDone := make(chan struct{})
+	go func() { defer close(alertsDone); alerts.run(alertsCtx) }()
+	defer func() { stopAlerts(); <-alertsDone }()
 	credsCtx, stopCreds := context.WithCancel(ctx)
 	credsDone := make(chan struct{})
 	go func() { defer close(credsDone); creds.run(credsCtx) }()
@@ -532,8 +543,9 @@ func (b bmwStore) SetBMWContainer(ctx context.Context, accountID, connectionID s
 // extensions is what registerExtensions gets: the premium build's modules set the
 // collector's read policy, and read their own configuration with getenv. They may give
 // flags a provider of their own (eval.Evaluator.Use), in place of RUNSTEN_FLAGS's. They
-// give notifier its PushSender (notify.Notifier.SetSender), and register their own kinds
-// of notification.
+// give notifier its PushSender (notify.Notifier.SetSender), register their own kinds
+// of notification, and hide kinds from an account (notify.Notifier.SetHiddenKinds): a
+// kind hidden from it is never evaluated nor told for it.
 type extensions struct {
 	getenv      func(string) string
 	databaseURL string

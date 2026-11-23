@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"strings"
 	"testing"
 	"time"
 
@@ -276,5 +277,73 @@ func TestNotifyConnections(t *testing.T) {
 	}
 	if conns, err := s.NotifyConnections(ctx, "00000000-0000-4000-8000-000000000000"); err != nil || len(conns) != 0 {
 		t.Errorf("another account: %+v, %v", conns, err)
+	}
+}
+
+// TestNotificationThresholds: a threshold is kept apart from the choice of on or off, each
+// set without touching the other, and a row goes once it holds neither.
+func TestNotificationThresholds(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, v := newVehicle(t, s, "token-a", "YV1AAAAAAAAAAAAA1")
+	ptr := func(n int) *int { return &n }
+	off := false
+	set := func(c api.NotificationChoices) notify.Preferences {
+		t.Helper()
+		if err := s.SetNotificationPreferences(ctx, a, c); err != nil {
+			t.Fatal(err)
+		}
+		p, err := s.NotificationPreferences(ctx, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	low, _ := notify.NewRegistry().Spec(notify.BatteryLow)
+	// A threshold alone: no choice, the kind keeps its default.
+	p := set(api.NotificationChoices{
+		VehiclesDefaultThreshold: map[notify.Kind]*int{notify.BatteryLow: ptr(30)},
+		VehicleThresholds:        map[string]map[notify.Kind]*int{v: {notify.BatteryLow: ptr(10)}},
+	})
+	if !p.Enabled(low, v) || p.Threshold(low, v) != 10 || p.DefaultThreshold(low) != 30 || len(p.VehiclesDefault)+len(p.Vehicles[v]) != 0 {
+		t.Errorf("thresholds alone: %+v", p)
+	}
+	// A choice beside it, then the vehicle's threshold reset: its choice stays.
+	p = set(api.NotificationChoices{Vehicles: map[string]map[notify.Kind]*bool{v: {notify.BatteryLow: &off}}})
+	if p.Enabled(low, v) || p.Threshold(low, v) != 10 {
+		t.Errorf("a choice beside the threshold: %+v", p)
+	}
+	p = set(api.NotificationChoices{VehicleThresholds: map[string]map[notify.Kind]*int{v: {notify.BatteryLow: nil}}})
+	if p.Enabled(low, v) || p.Threshold(low, v) != 30 || len(p.VehicleThresholds[v]) != 0 {
+		t.Errorf("threshold reset: %+v", p)
+	}
+	// The choice back to the default and the default's threshold reset: no row is left.
+	p = set(api.NotificationChoices{
+		Vehicles:                 map[string]map[notify.Kind]*bool{v: {notify.BatteryLow: nil}},
+		VehiclesDefaultThreshold: map[notify.Kind]*int{notify.BatteryLow: nil},
+	})
+	if !p.Enabled(low, v) || p.Threshold(low, v) != 20 {
+		t.Errorf("all reset: %+v", p)
+	}
+	err := s.readInAccount(ctx, a, func(tx pgx.Tx) error {
+		var rows int
+		if err := tx.QueryRow(ctx, "SELECT count(*) FROM notification_preferences").Scan(&rows); err != nil {
+			return err //nolint:wrapcheck // the test's
+		}
+		if rows != 0 {
+			t.Errorf("rows left: %d", rows)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The database refuses a row with neither.
+	err = s.inAccount(ctx, a, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, "INSERT INTO notification_preferences (account_id, kind) VALUES ($1, 'battery_low')", a)
+		return err //nolint:wrapcheck // the test's
+	})
+	if err == nil || !strings.Contains(err.Error(), "notification_preferences_something") {
+		t.Errorf("a row with neither a choice nor a threshold: %v", err)
 	}
 }

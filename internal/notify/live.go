@@ -275,6 +275,9 @@ func (n *Notifier) liveWanted(ctx context.Context, accountID, vehicleID string) 
 	if !ok {
 		return true, nil
 	}
+	if n.IsHidden(ctx, accountID, ChargeLiveActivity) {
+		return false, nil
+	}
 	p, err := n.st.NotificationPreferences(ctx, accountID)
 	if err != nil {
 		return false, fmt.Errorf("notification preferences: %w", err)
