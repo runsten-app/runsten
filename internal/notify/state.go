@@ -19,6 +19,31 @@ import (
 // Retention, the key of its delivery may notify again.
 const EpisodeLookBack = Retention
 
+// OpeningsFresh is how old the reading of the doors and the windows may be for a vehicle
+// to be told left open: a Volvo and a Polestar tell them once an hour.
+const OpeningsFresh = 2 * time.Hour
+
+// readSince tells whether each field was last read at or after from.
+func readSince(c core.Current, from time.Time, fields ...core.Field) bool {
+	for _, f := range fields {
+		if _, checked := c.Read(f); checked.Before(from) {
+			return false
+		}
+	}
+	return true
+}
+
+// openingFields are the fields of the doors and the windows the vehicle tells.
+func openingFields(s core.Snapshot) []core.Field {
+	var out []core.Field
+	for _, f := range []core.Field{core.FieldDoors, core.FieldWindows} {
+		if s.Covers&f != 0 {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
 // NotChargedWithin is how long after the morning's check a night not charged is still
 // told: the check runs every few minutes, and a collector restarted at that time must
 // not tell the night after the owner left.
@@ -35,7 +60,16 @@ func BatteryLowEvent(accountID, vehicleID string, c core.Current, threshold int,
 	if low := core.BatteryLow(c.Snapshot, float64(threshold)); !low.OK || !low.V {
 		return Event{}, false
 	}
-	if _, checked := c.Read(core.FieldSoC); checked.Before(now.Add(-Fresh)) {
+	// Every reading the rule rests on is recent: the state of charge, the engine, and
+	// the charge, else the cable (read disconnected, it tells the vehicle does not charge).
+	s := c.Snapshot
+	needed := []core.Field{core.FieldSoC, core.FieldEngine}
+	if s.Charging.OK {
+		needed = append(needed, core.FieldCharging)
+	} else {
+		needed = append(needed, core.FieldConnection)
+	}
+	if !readSince(c, now.Add(-Fresh), needed...) {
 		return Event{}, false
 	}
 	return Event{
@@ -52,6 +86,11 @@ func BatteryLowEvent(accountID, vehicleID string, c core.Current, threshold int,
 // Its key is the episode's start: closed, then opened again, is a new one.
 func LeftOpenEvent(accountID, vehicleID string, c core.Current, since, now time.Time) (Event, bool) {
 	if open := publish.LeftOpen(c, since, now); !open.OK || !open.V {
+		return Event{}, false
+	}
+	// A value read long ago is unknown: no episode rests on it. The doors and windows of
+	// some makers are told once an hour, so theirs may be older.
+	if !readSince(c, now.Add(-Fresh), core.FieldEngine) || !readSince(c, now.Add(-OpeningsFresh), openingFields(c.Snapshot)...) {
 		return Event{}, false
 	}
 	return Event{
@@ -85,8 +124,10 @@ func MorningCheckDue(places []core.Place, now time.Time) bool {
 			loc = time.UTC
 		}
 		l := now.In(loc)
-		since := l.Sub(time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, loc)) - core.MorningAt
-		if since >= 0 && since <= NotChargedWithin {
+		// 07:00 on the wall clock, which a change of daylight saving time that day moves
+		// no more than the clock.
+		morning := time.Date(l.Year(), l.Month(), l.Day(), int(core.MorningAt/time.Hour), int(core.MorningAt%time.Hour/time.Minute), 0, 0, loc)
+		if !l.Before(morning) && !l.After(morning.Add(NotChargedWithin)) {
 			return true
 		}
 	}

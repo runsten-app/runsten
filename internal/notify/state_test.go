@@ -60,7 +60,7 @@ func TestBatteryLowEvent(t *testing.T) {
 
 func TestLeftOpenEvent(t *testing.T) {
 	now := t0.Add(time.Hour)
-	open := core.Snapshot{Covers: core.FieldDoors, Doors: core.Some(core.Doors{Locked: core.Some(false, time.Time{})}, time.Time{})}
+	open := core.Snapshot{Covers: core.FieldDoors | core.FieldEngine, Engine: core.Some(core.EngineStopped, time.Time{}), Doors: core.Some(core.Doors{Locked: core.Some(false, time.Time{})}, time.Time{})}
 	cur := core.Latest([]core.Record{read(t0, open)})
 	since := now.Add(-20 * time.Minute)
 	e, ok := LeftOpenEvent("a", "v", cur, since, now)
@@ -161,5 +161,85 @@ func TestHiddenKinds(t *testing.T) {
 	}
 	if (*Notifier)(nil).Hidden(t.Context(), "a") != nil || n.IsHidden(t.Context(), "b", LeftOpen) {
 		t.Error("hidden for no one")
+	}
+}
+
+// TestStaleReadings: a reading older than Fresh is unknown, whichever the rule rests on.
+func TestStaleReadings(t *testing.T) {
+	now := t0.Add(3 * time.Hour)
+	since := t0.Add(-time.Hour)
+	stale := t0                         // 3 hours old
+	recent := now.Add(-5 * time.Minute) // fresh
+	lowAt := func(soc, engine, charging time.Time) core.Current {
+		return core.Latest([]core.Record{
+			read(soc, core.Snapshot{Covers: core.FieldSoC, SoC: core.Some(15.0, time.Time{})}),
+			read(engine, core.Snapshot{Covers: core.FieldEngine, Engine: core.Some(core.EngineStopped, time.Time{})}),
+			read(charging, core.Snapshot{Covers: core.FieldCharging, Charging: core.Some(core.ChargingIdle, time.Time{})}),
+		})
+	}
+	if _, ok := BatteryLowEvent("a", "v", lowAt(recent, recent, recent), 20, since, now); !ok {
+		t.Fatal("all recent: no event")
+	}
+	for name, c := range map[string]core.Current{
+		"state of charge": lowAt(stale, recent, recent), "engine": lowAt(recent, stale, recent), "charging": lowAt(recent, recent, stale),
+	} {
+		if _, ok := BatteryLowEvent("a", "v", c, 20, since, now); ok {
+			t.Errorf("a stale %s still tells", name)
+		}
+	}
+	// Without the charge, the cable read disconnected stands for it, and must be recent too.
+	cable := func(at time.Time) core.Current {
+		return core.Latest([]core.Record{
+			read(recent, core.Snapshot{Covers: core.FieldSoC | core.FieldEngine, SoC: core.Some(15.0, time.Time{}), Engine: core.Some(core.EngineStopped, time.Time{})}),
+			read(at, core.Snapshot{Covers: core.FieldConnection, Connection: core.Some(core.Disconnected, time.Time{})}),
+		})
+	}
+	if _, ok := BatteryLowEvent("a", "v", cable(recent), 20, since, now); !ok {
+		t.Error("a recent cable read disconnected: no event")
+	}
+	if _, ok := BatteryLowEvent("a", "v", cable(stale), 20, since, now); ok {
+		t.Error("a stale cable still tells")
+	}
+
+	open := func(engine, doors time.Time) core.Current {
+		return core.Latest([]core.Record{
+			read(engine, core.Snapshot{Covers: core.FieldEngine, Engine: core.Some(core.EngineStopped, time.Time{})}),
+			read(doors, core.Snapshot{Covers: core.FieldDoors, Doors: core.Some(core.Doors{Locked: core.Some(false, time.Time{})}, time.Time{})}),
+		})
+	}
+	if _, ok := LeftOpenEvent("a", "v", open(recent, now.Add(-90*time.Minute)), since, now); !ok {
+		t.Error("doors read an hour and a half ago (told hourly): no event")
+	}
+	if _, ok := LeftOpenEvent("a", "v", open(stale, recent), since, now); ok {
+		t.Error("a stale engine still tells")
+	}
+	if _, ok := LeftOpenEvent("a", "v", open(recent, stale), since, now); ok {
+		t.Error("stale doors still tell")
+	}
+}
+
+// TestMorningCheckDue: 07:00 to 09:00 on the wall clock of a place, on the days the clocks
+// change too.
+func TestMorningCheckDue(t *testing.T) {
+	paris, err := time.LoadLocation("Europe/Paris")
+	if err != nil {
+		t.Skip(err)
+	}
+	places := []core.Place{{ID: "home", Location: paris}}
+	for _, day := range []struct {
+		name    string
+		y, m, d int
+	}{
+		{"an ordinary day", 2026, 11, 23}, {"clocks forward", 2026, 3, 29}, {"clocks back", 2026, 10, 25},
+	} {
+		at := func(h, min int) time.Time { return time.Date(day.y, time.Month(day.m), day.d, h, min, 0, 0, paris) }
+		for _, c := range []struct {
+			h, m int
+			due  bool
+		}{{6, 59, false}, {7, 0, true}, {8, 30, true}, {9, 0, true}, {9, 1, false}, {6, 0, false}, {8, 0, true}} {
+			if got := MorningCheckDue(places, at(c.h, c.m)); got != c.due {
+				t.Errorf("%s at %02d:%02d: %v, want %v", day.name, c.h, c.m, got, c.due)
+			}
+		}
 	}
 }
