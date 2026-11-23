@@ -58,6 +58,9 @@ type episode struct {
 	lowThreshold int
 	// open is since when the vehicle stands parked and open, zero when it does not.
 	open time.Time
+	// lowGen and openGen count the resets of each: an evaluation reads the history outside
+	// the lock, and writes what it found only if none happened since.
+	lowGen, openGen int
 }
 
 // episode returns the vehicle's, to be used with mu held.
@@ -94,8 +97,20 @@ func wrap(what string, err error) error {
 	return fmt.Errorf("%s: %w", what, err)
 }
 
+// resetLow and resetOpen forget the episode in progress, to be used with mu held; they
+// advance the generation, so that an evaluation that read the history before does not
+// write what it found, which may be older.
+func (ep *episode) resetLow() {
+	ep.low, ep.lowGen = time.Time{}, ep.lowGen+1
+}
+
+func (ep *episode) resetOpen() {
+	ep.open, ep.openGen = time.Time{}, ep.openGen+1
+}
+
 // batteryLow tells of the vehicle parked under its threshold, once per episode: from the
-// first reading under it, until one at or above it.
+// first reading under it, until one at or above it. The episode is only followed while the
+// user wants the kind: re-enabled, it is found again in the history.
 func (s *stateAlerts) batteryLow(ctx context.Context, accountID, vehicleID string, cur core.Current, now time.Time) error {
 	soc := cur.Snapshot.SoC
 	if !soc.OK {
@@ -103,7 +118,17 @@ func (s *stateAlerts) batteryLow(ctx context.Context, accountID, vehicleID strin
 	}
 	if soc.V >= notify.BatteryLowMax {
 		s.mu.Lock()
-		s.episode(vehicleID).low = time.Time{} // above every threshold: no episode
+		s.episode(vehicleID).resetLow() // above every threshold: no episode
+		s.mu.Unlock()
+		return nil
+	}
+	wants, err := s.notifier.Wants(ctx, accountID, vehicleID, notify.BatteryLow)
+	if err != nil {
+		return err //nolint:wrapcheck // the notifier's, which says what failed
+	}
+	if !wants {
+		s.mu.Lock()
+		s.episode(vehicleID).resetLow()
 		s.mu.Unlock()
 		return nil
 	}
@@ -114,11 +139,11 @@ func (s *stateAlerts) batteryLow(ctx context.Context, accountID, vehicleID strin
 	s.mu.Lock()
 	ep := s.episode(vehicleID)
 	if soc.V >= float64(threshold) {
-		ep.low = time.Time{}
+		ep.resetLow()
 		s.mu.Unlock()
 		return nil
 	}
-	since, known := ep.low, ep.lowThreshold == threshold
+	since, known, gen := ep.low, ep.lowThreshold == threshold, ep.lowGen
 	s.mu.Unlock()
 	if since.IsZero() || !known {
 		// Under the threshold, the start of the episode not known yet (first evaluation,
@@ -129,6 +154,10 @@ func (s *stateAlerts) batteryLow(ctx context.Context, accountID, vehicleID strin
 		}
 		since = core.LowSince(records, float64(threshold))
 		s.mu.Lock()
+		if ep.lowGen != gen { // a reading ended the episode meanwhile: what was found is stale
+			s.mu.Unlock()
+			return nil
+		}
 		ep.low, ep.lowThreshold = since, threshold
 		s.mu.Unlock()
 	}
@@ -144,19 +173,22 @@ func (s *stateAlerts) batteryLow(ctx context.Context, accountID, vehicleID strin
 func (s *stateAlerts) leftOpen(ctx context.Context, accountID, vehicleID string, cur core.Current, now time.Time) error {
 	snap := cur.Snapshot
 	open := snap.Covers&(core.FieldDoors|core.FieldWindows) != 0 && snap.Engine.OK && snap.Engine.V == core.EngineStopped && snap.Open()
+	wants := false
+	if open {
+		var err error
+		if wants, err = s.notifier.Wants(ctx, accountID, vehicleID, notify.LeftOpen); err != nil {
+			return err //nolint:wrapcheck // the notifier's, which says what failed
+		}
+	}
 	s.mu.Lock()
 	ep := s.episode(vehicleID)
-	if !open {
-		ep.open = time.Time{}
+	if !open || !wants {
+		ep.resetOpen()
 	}
-	since := ep.open
+	since, gen := ep.open, ep.openGen
 	s.mu.Unlock()
-	if !open {
+	if !open || !wants {
 		return nil
-	}
-	wants, err := s.notifier.Wants(ctx, accountID, vehicleID, notify.LeftOpen)
-	if err != nil || !wants {
-		return err //nolint:wrapcheck // the notifier's, which says what failed
 	}
 	if since.IsZero() {
 		records, err := s.records(ctx, accountID, vehicleID, now.Add(-openLookBack))
@@ -165,6 +197,10 @@ func (s *stateAlerts) leftOpen(ctx context.Context, accountID, vehicleID string,
 		}
 		since = core.OpenSince(records)
 		s.mu.Lock()
+		if ep.openGen != gen { // a reading closed the vehicle meanwhile
+			s.mu.Unlock()
+			return nil
+		}
 		ep.open = since
 		s.mu.Unlock()
 	}

@@ -377,3 +377,71 @@ func TestAlertStates(t *testing.T) {
 
 // to moves the clock to t.
 func to(c *clock.Manual, t time.Time) { c.Advance(t.Sub(c.Now())) }
+
+// TestBatteryLowStaleHistory: a history read that an episode's end overtakes writes nothing,
+// and tells nothing.
+func TestBatteryLowStaleHistory(t *testing.T) {
+	f := &fleet{clk: clock.NewManual(now)}
+	a, s := f.alerts(notify.Preferences{})
+	f.read(now.Add(-time.Hour), parked(15, core.ChargingIdle, core.Disconnected))
+	read := a.records
+	a.records = func(ctx context.Context, account, vehicle string, from time.Time) ([]core.Record, error) {
+		// A reading at or above the threshold arrives while the history is read.
+		a.mu.Lock()
+		a.episode(vehicle).resetLow()
+		a.mu.Unlock()
+		return read(ctx, account, vehicle, from)
+	}
+	if err := a.observe(t.Context(), "a", "v"); err != nil {
+		t.Fatal(err)
+	}
+	a.mu.Lock()
+	ep := a.episode("v")
+	low := ep.low
+	a.mu.Unlock()
+	if !low.IsZero() || len(s.sorted()) != 0 {
+		t.Errorf("stale write: low %s, sent %v", low, s.sorted())
+	}
+	// Same for the stay open.
+	a, s = f.alerts(notify.Preferences{VehiclesDefault: map[notify.Kind]bool{notify.LeftOpen: true}})
+	f.records = nil
+	f.read(now.Add(-time.Hour), doors(false))
+	read = a.records
+	a.records = func(ctx context.Context, account, vehicle string, from time.Time) ([]core.Record, error) {
+		a.mu.Lock()
+		a.episode(vehicle).resetOpen()
+		a.mu.Unlock()
+		return read(ctx, account, vehicle, from)
+	}
+	if err := a.observe(t.Context(), "a", "v"); err != nil {
+		t.Fatal(err)
+	}
+	a.mu.Lock()
+	open := a.episode("v").open
+	a.mu.Unlock()
+	if !open.IsZero() || len(s.sorted()) != 0 {
+		t.Errorf("stale write: open %s, sent %v", open, s.sorted())
+	}
+}
+
+// TestBatteryLowDisabled: a kind off or hidden loads nothing and keeps no episode; turned on
+// again, the episode is found again, and told.
+func TestBatteryLowDisabled(t *testing.T) {
+	f := &fleet{clk: clock.NewManual(now)}
+	a, s := f.alerts(notify.Preferences{VehiclesDefault: map[notify.Kind]bool{notify.BatteryLow: false}})
+	f.read(now.Add(-time.Hour), parked(15, core.ChargingIdle, core.Disconnected))
+	a.notifier.SetHiddenKinds(func(context.Context, string) []notify.Kind { return nil })
+	if err := a.observe(t.Context(), "a", "v"); err != nil || f.historyReads != 0 || len(s.sorted()) != 0 {
+		t.Fatalf("off: %v, %d reads, sent %v", err, f.historyReads, s.sorted())
+	}
+	// Hidden by an extension, though on.
+	a, s = f.alerts(notify.Preferences{})
+	a.notifier.SetHiddenKinds(func(context.Context, string) []notify.Kind { return []notify.Kind{notify.BatteryLow} })
+	if err := a.observe(t.Context(), "a", "v"); err != nil || f.historyReads != 0 || len(s.sorted()) != 0 {
+		t.Fatalf("hidden: %v, %d reads, sent %v", err, f.historyReads, s.sorted())
+	}
+	a.notifier.SetHiddenKinds(nil)
+	if err := a.observe(t.Context(), "a", "v"); err != nil || len(s.sorted()) != 1 || f.historyReads != 1 {
+		t.Errorf("shown again: %v, %d reads, sent %v", err, f.historyReads, s.sorted())
+	}
+}
