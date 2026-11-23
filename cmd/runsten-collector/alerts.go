@@ -58,9 +58,10 @@ type episode struct {
 	lowThreshold int
 	// open is since when the vehicle stands parked and open, zero when it does not.
 	open time.Time
-	// lowGen and openGen count the resets of each: an evaluation reads the history outside
-	// the lock, and writes what it found only if none happened since.
-	lowGen, openGen int
+	// run serializes the vehicle's evaluations: the one after a reading and the timer's may
+	// meet. It is held from the first read to the notification, so that an episode's end
+	// never comes between the check that an alert is due and its delivery.
+	run sync.Mutex
 }
 
 // episode returns the vehicle's, to be used with mu held.
@@ -79,6 +80,13 @@ func (s *stateAlerts) episode(vehicleID string) *episode {
 // observe evaluates the alerts that a reading may start: a low battery and a vehicle
 // left open. Their failures are joined; one never holds the other back.
 func (s *stateAlerts) observe(ctx context.Context, accountID, vehicleID string) error {
+	// One evaluation of a vehicle at a time, history reads and notification included; the
+	// global lock only guards the map and the fields, never a read or a send.
+	s.mu.Lock()
+	run := &s.episode(vehicleID).run
+	s.mu.Unlock()
+	run.Lock()
+	defer run.Unlock()
 	now := s.clk.Now()
 	cur, err := s.current(ctx, accountID, vehicleID, now)
 	if err != nil {
@@ -97,16 +105,9 @@ func wrap(what string, err error) error {
 	return fmt.Errorf("%s: %w", what, err)
 }
 
-// resetLow and resetOpen forget the episode in progress, to be used with mu held; they
-// advance the generation, so that an evaluation that read the history before does not
-// write what it found, which may be older.
-func (ep *episode) resetLow() {
-	ep.low, ep.lowGen = time.Time{}, ep.lowGen+1
-}
-
-func (ep *episode) resetOpen() {
-	ep.open, ep.openGen = time.Time{}, ep.openGen+1
-}
+// resetLow and resetOpen forget the episode in progress, to be used with mu held.
+func (ep *episode) resetLow()  { ep.low = time.Time{} }
+func (ep *episode) resetOpen() { ep.open = time.Time{} }
 
 // batteryLow tells of the vehicle parked under its threshold, once per episode: from the
 // first reading under it, until one at or above it. The episode is only followed while the
@@ -143,7 +144,7 @@ func (s *stateAlerts) batteryLow(ctx context.Context, accountID, vehicleID strin
 		s.mu.Unlock()
 		return nil
 	}
-	since, known, gen := ep.low, ep.lowThreshold == threshold, ep.lowGen
+	since, known := ep.low, ep.lowThreshold == threshold
 	s.mu.Unlock()
 	if since.IsZero() || !known {
 		// Under the threshold, the start of the episode not known yet (first evaluation,
@@ -154,10 +155,6 @@ func (s *stateAlerts) batteryLow(ctx context.Context, accountID, vehicleID strin
 		}
 		since = core.LowSince(records, float64(threshold))
 		s.mu.Lock()
-		if ep.lowGen != gen { // a reading ended the episode meanwhile: what was found is stale
-			s.mu.Unlock()
-			return nil
-		}
 		ep.low, ep.lowThreshold = since, threshold
 		s.mu.Unlock()
 	}
@@ -185,7 +182,7 @@ func (s *stateAlerts) leftOpen(ctx context.Context, accountID, vehicleID string,
 	if !open || !wants {
 		ep.resetOpen()
 	}
-	since, gen := ep.open, ep.openGen
+	since := ep.open
 	s.mu.Unlock()
 	if !open || !wants {
 		return nil
@@ -197,10 +194,6 @@ func (s *stateAlerts) leftOpen(ctx context.Context, accountID, vehicleID string,
 		}
 		since = core.OpenSince(records)
 		s.mu.Lock()
-		if ep.openGen != gen { // a reading closed the vehicle meanwhile
-			s.mu.Unlock()
-			return nil
-		}
 		ep.open = since
 		s.mu.Unlock()
 	}

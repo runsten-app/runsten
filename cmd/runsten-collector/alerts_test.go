@@ -378,49 +378,55 @@ func TestAlertStates(t *testing.T) {
 // to moves the clock to t.
 func to(c *clock.Manual, t time.Time) { c.Advance(t.Sub(c.Now())) }
 
-// TestBatteryLowStaleHistory: a history read that an episode's end overtakes writes nothing,
-// and tells nothing.
-func TestBatteryLowStaleHistory(t *testing.T) {
+// blocking is a sender that holds the first delivery until released.
+type blocking struct {
+	sent
+	started chan struct{}
+	release chan struct{}
+}
+
+func (b *blocking) Send(ctx context.Context, d notify.Delivery) error {
+	close(b.started)
+	<-b.release
+	return b.sent.Send(ctx, d)
+}
+
+// TestAlertsSerialized: the evaluation after a reading and the timer's meet for the same
+// vehicle; the second waits for the first, delivery included, so that the end of an
+// episode never comes between the check that an alert is due and its delivery.
+func TestAlertsSerialized(t *testing.T) {
 	f := &fleet{clk: clock.NewManual(now)}
-	a, s := f.alerts(notify.Preferences{})
+	a, _ := f.alerts(notify.Preferences{})
+	b := &blocking{started: make(chan struct{}), release: make(chan struct{})}
+	a.notifier = notifierOf(notify.Preferences{}, b)
 	f.read(now.Add(-time.Hour), parked(15, core.ChargingIdle, core.Disconnected))
-	read := a.records
-	a.records = func(ctx context.Context, account, vehicle string, from time.Time) ([]core.Record, error) {
-		// A reading at or above the threshold arrives while the history is read.
-		a.mu.Lock()
-		a.episode(vehicle).resetLow()
-		a.mu.Unlock()
-		return read(ctx, account, vehicle, from)
+	first := make(chan error, 1)
+	go func() { first <- a.observe(t.Context(), "a", "v") }()
+	<-b.started // the first is about to deliver, its check passed
+	// A charge above the threshold arrives; the second evaluation sees it.
+	f.read(now.Add(-time.Minute), parked(60, core.ChargingDone, core.Connected))
+	second := make(chan error, 1)
+	go func() { second <- a.observe(t.Context(), "a", "v") }()
+	select {
+	case <-second:
+		t.Fatal("the second evaluation ran while the first was delivering")
+	case <-time.After(100 * time.Millisecond):
 	}
-	if err := a.observe(t.Context(), "a", "v"); err != nil {
-		t.Fatal(err)
-	}
-	a.mu.Lock()
-	ep := a.episode("v")
-	low := ep.low
-	a.mu.Unlock()
-	if !low.IsZero() || len(s.sorted()) != 0 {
-		t.Errorf("stale write: low %s, sent %v", low, s.sorted())
-	}
-	// Same for the stay open.
-	a, s = f.alerts(notify.Preferences{VehiclesDefault: map[notify.Kind]bool{notify.LeftOpen: true}})
-	f.records = nil
-	f.read(now.Add(-time.Hour), doors(false))
-	read = a.records
-	a.records = func(ctx context.Context, account, vehicle string, from time.Time) ([]core.Record, error) {
-		a.mu.Lock()
-		a.episode(vehicle).resetOpen()
-		a.mu.Unlock()
-		return read(ctx, account, vehicle, from)
-	}
-	if err := a.observe(t.Context(), "a", "v"); err != nil {
-		t.Fatal(err)
+	close(b.release)
+	for _, c := range []chan error{first, second} {
+		if err := <-c; err != nil {
+			t.Fatal(err)
+		}
 	}
 	a.mu.Lock()
-	open := a.episode("v").open
+	low := a.episode("v").low
 	a.mu.Unlock()
-	if !open.IsZero() || len(s.sorted()) != 0 {
-		t.Errorf("stale write: open %s, sent %v", open, s.sorted())
+	if !low.IsZero() || len(b.sorted()) != 1 {
+		t.Errorf("after both: low %s, sent %v", low, b.sorted())
+	}
+	// Another vehicle is not held back.
+	if err := a.observe(t.Context(), "a", "other"); err != nil {
+		t.Fatal(err)
 	}
 }
 
