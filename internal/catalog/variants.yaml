@@ -769,21 +769,29 @@
       level: secondary
       for: [gross_kwh, net_kwh]
 
-# The Plus pack is said to bring a 22 kW charger, but no source at hand says so: no
-# ac_option_kw yet.
+# The 22 kW onboard charger is a single option, not part of the Plus pack, and depends on
+# the market: Polestar's German pages offer it, its British one states 11 kW only. The SUV
+# sells as Rear Motor and Dual Motor, with the coupé's battery and chargers: one entry.
 - id: ps4-2024
   brand: polestar
   family: Polestar 4
-  name: Polestar 4 Long Range Single Motor / Dual Motor
+  name: Polestar 4 Long Range Single Motor / Dual Motor (coupé and SUV)
   years: [2024] # the coupé, and the SUV from 2026: one battery
   gross_kwh: 100
   net_kwh: 94
   ac_max_kw: 11
+  ac_option_kw: 22
   dc_max_kw: 200
   sources:
     - url: https://www.polestar.com/uk/polestar-4/specifications/
       level: manufacturer
       for: [gross_kwh, ac_max_kw, dc_max_kw]
+    - url: https://www.polestar.com/de/polestar-4/specifications/
+      level: manufacturer
+      for: [gross_kwh, ac_max_kw, ac_option_kw, dc_max_kw]
+    - url: https://www.polestar.com/de/polestar-4-models/polestar-4-suv/specifications/
+      level: manufacturer
+      for: [gross_kwh, ac_max_kw, ac_option_kw]
     - url: https://ev-database.org/car/1842/Polestar-4-Long-Range-Dual-Motor
       level: secondary
       for: [gross_kwh, net_kwh]
