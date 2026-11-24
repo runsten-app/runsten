@@ -8,7 +8,7 @@
 # The build stages run on the builder's platform and cross-compile for the target one
 # (--platform linux/arm64 on an amd64 machine, for a Raspberry Pi): no emulation needed.
 
-FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:0a5f7fe796599ff487605987432e7619ae45beeb2fba4c2ce0b907879932aebf AS build
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
@@ -40,7 +40,7 @@ COPY api/openapi.yaml /src/api/openapi.yaml
 COPY web ./
 RUN npm run build
 
-FROM gcr.io/distroless/static-debian13:nonroot@sha256:25ac8f0c3b2334a9eb05452266bd4697864a8c8ef0ef71e5e6480d7f92868329 AS runtime
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:8ce6dd87e9823c5b48dcfb2c8604714ccb351ce59607327bcc4957448da279b5 AS runtime
 # A release adds its version and commit (scripts/release-images.sh).
 LABEL org.opencontainers.image.source="https://github.com/runsten-app/runsten" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later"
