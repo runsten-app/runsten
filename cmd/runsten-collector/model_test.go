@@ -24,23 +24,32 @@ func TestModel(t *testing.T) {
 		name   string
 		vin    string
 		chosen string
+		alias  string
 		snap   core.Snapshot
 		want   publish.Model
 	}{
-		{"recognized", "YV12ZEL9XRS000001", "", ex30, publish.Model{Variant: er.Name, Family: "EX30", Brand: "Volvo", Year: 2024}},
-		{"several fit: the family", "YV1SMLT0000DT0001", "", ex30, publish.Model{Family: "EX30", Year: 2024}},
-		{"chosen", "YV1SMLT0000DT0001", "ex30-er-2024", ex30, publish.Model{Variant: er.Name, Family: "EX30", Brand: "Volvo", Year: 2024}},
-		{"details never read", "YV12ZEL9XRS000001", "", core.Snapshot{}, publish.Model{}},
+		{"recognized", "YV12ZEL9XRS000001", "", "", ex30, publish.Model{Variant: er.Name, Family: "EX30", Brand: "Volvo", Year: 2024}},
+		{"several fit: the family", "YV1SMLT0000DT0001", "", "", ex30, publish.Model{Family: "EX30", Year: 2024}},
+		{"chosen", "YV1SMLT0000DT0001", "ex30-er-2024", "", ex30, publish.Model{Variant: er.Name, Family: "EX30", Brand: "Volvo", Year: 2024}},
+		{"details never read", "YV12ZEL9XRS000001", "", "", core.Snapshot{}, publish.Model{}},
 		{
-			"named by its owner", "YV1SMLT0000DT0001", "",
+			"named by its owner", "YV1SMLT0000DT0001", "", "",
 			core.Snapshot{Covers: core.FieldSheet, Sheet: some(core.Sheet{Name: "Blixt"})},
 			publish.Model{Name: "Blixt"},
 		},
+		{
+			"an alias outranks the owner's name", "YV1SMLT0000DT0001", "", "Pool car 3",
+			core.Snapshot{Covers: core.FieldSheet, Sheet: some(core.Sheet{Name: "Blixt"})},
+			publish.Model{Name: "Pool car 3"},
+		},
+		{"an alias, the model kept", "YV12ZEL9XRS000001", "", "Pool car 3", ex30, publish.Model{
+			Name: "Pool car 3", Variant: er.Name, Family: "EX30", Brand: "Volvo", Year: 2024,
+		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := models{catalog: cat, vehicle: func(context.Context, string, string) (string, string, string, bool, error) {
-				return tt.vin, "volvo", tt.chosen, true, nil
+			m := models{catalog: cat, vehicle: func(context.Context, string, string) (vehicleRow, bool, error) {
+				return vehicleRow{VIN: tt.vin, Provider: "volvo", Chosen: tt.chosen, Alias: tt.alias}, true, nil
 			}}
 			got, err := m.Model(context.Background(), "a", "v", core.Latest([]core.Record{{Snapshot: tt.snap}}))
 			if err != nil || got != tt.want {
@@ -50,12 +59,12 @@ func TestModel(t *testing.T) {
 	}
 
 	boom := errors.New("boom")
-	for name, vehicle := range map[string]func(context.Context, string, string) (string, string, string, bool, error){
-		"store error": func(context.Context, string, string) (string, string, string, bool, error) {
-			return "", "", "", false, boom
+	for name, vehicle := range map[string]func(context.Context, string, string) (vehicleRow, bool, error){
+		"store error": func(context.Context, string, string) (vehicleRow, bool, error) {
+			return vehicleRow{}, false, boom
 		},
-		"vehicle gone": func(context.Context, string, string) (string, string, string, bool, error) {
-			return "", "", "", false, nil
+		"vehicle gone": func(context.Context, string, string) (vehicleRow, bool, error) {
+			return vehicleRow{}, false, nil
 		},
 	} {
 		if _, err := (models{catalog: cat, vehicle: vehicle}).Model(context.Background(), "a", "v", core.Current{}); err == nil {
