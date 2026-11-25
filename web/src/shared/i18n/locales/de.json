@@ -1204,7 +1204,8 @@
   },
   "vehicleSheet": {
     "title": "Datenblatt",
-    "name": "Name in der Hersteller-App",
+    "name": "Name",
+    "nameInApp": "Name in der {app}-App",
     "colour": "Farbe",
     "drive": "Antrieb",
     "fwd": "Frontantrieb",

@@ -1204,7 +1204,8 @@
   },
   "vehicleSheet": {
     "title": "Specifications",
-    "name": "Name in the maker's app",
+    "name": "Name",
+    "nameInApp": "Name in the {app} app",
     "colour": "Colour",
     "drive": "Drive",
     "fwd": "Front-wheel drive",

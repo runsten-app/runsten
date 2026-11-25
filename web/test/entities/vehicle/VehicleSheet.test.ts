@@ -20,8 +20,13 @@ const none: Sheet = {
   picture: false,
 }
 
-function sheet(s: Sheet | null) {
-  return mountWith(VehicleSheet, { props: { vehicle: { id: xc40.id, sheet: s } } }).wrapper
+function sheet(
+  s: Sheet | null,
+  provider: NonNullable<Vehicle['connection']>['provider'] = 'volvo',
+) {
+  const connection = xc40.connection && { ...xc40.connection, provider }
+  return mountWith(VehicleSheet, { props: { vehicle: { id: xc40.id, sheet: s, connection } } })
+    .wrapper
 }
 
 const facts = (w: ReturnType<typeof sheet>) =>
@@ -55,19 +60,28 @@ describe('VehicleSheet', () => {
     ])
   })
 
+  it('names the app a name comes from, when its source has one', () => {
+    const named = { ...none, name: 'Demo EX30' }
+    expect(facts(sheet(named, 'skoda'))).toEqual(['Name in the MyŠkoda app: Demo EX30'])
+    expect(facts(sheet(named, 'demo'))).toEqual(['Name: Demo EX30'])
+  })
+
   it("shows a Tesla's own words, its name first", async () => {
-    const w = sheet({
-      ...none,
-      name: 'Blixt',
-      colour: 'Deep Blue',
-      roof_colour: 'Glass',
-      wheels: 'HelixV220Dark',
-      steering: 'right',
-      third_row: true,
-      performance: true,
-    })
+    const w = sheet(
+      {
+        ...none,
+        name: 'Blixt',
+        colour: 'Deep Blue',
+        roof_colour: 'Glass',
+        wheels: 'HelixV220Dark',
+        steering: 'right',
+        third_row: true,
+        performance: true,
+      },
+      'tesla',
+    )
     expect(w.find('img').exists()).toBe(false)
-    expect(facts(w)).toEqual(["Name in the maker's app: Blixt", 'Colour: Deep Blue'])
+    expect(facts(w)).toEqual(['Name in the Tesla app: Blixt', 'Colour: Deep Blue'])
     await w.find('.more-toggle').trigger('click')
     expect(facts(w).slice(2)).toEqual([
       'Steering wheel: On the right',

@@ -1204,7 +1204,8 @@
   },
   "vehicleSheet": {
     "title": "Scheda",
-    "name": "Nome nell’app del costruttore",
+    "name": "Nome",
+    "nameInApp": "Nome nell’app {app}",
     "colour": "Colore",
     "drive": "Trazione",
     "fwd": "Trazione anteriore",

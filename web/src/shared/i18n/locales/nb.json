@@ -1204,7 +1204,8 @@
   },
   "vehicleSheet": {
     "title": "Datablad",
-    "name": "Navn i produsentens app",
+    "name": "Navn",
+    "nameInApp": "Navn i {app}-appen",
     "colour": "Farge",
     "drive": "Drift",
     "fwd": "Forhjulsdrift",
