@@ -23,15 +23,13 @@ import (
 	"runsten/internal/volvo"
 )
 
-// fordCalls counts the calls the simulated FordConnect Query answers, per simulated
-// minute, and its 429s.
+// fordCalls records when the simulated FordConnect Query was read, and counts its 429s.
 type fordCalls struct {
-	mu        sync.Mutex
-	clk       clock.Clock
-	perMinute map[time.Time]int
-	total     int
-	limited   int
-	next      http.Handler
+	mu      sync.Mutex
+	clk     clock.Clock
+	reads   []time.Time
+	limited int
+	next    http.Handler
 }
 
 func (c *fordCalls) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -42,8 +40,7 @@ func (c *fordCalls) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.perMinute[c.clk.Now().Truncate(time.Minute)]++
-	c.total++
+	c.reads = append(c.reads, c.clk.Now())
 	if rec.status == http.StatusTooManyRequests {
 		c.limited++
 	}
@@ -96,7 +93,7 @@ func playFord(t *testing.T, until time.Duration, file string) (*memStore, *Deriv
 	}
 	clk := clock.NewManual(t0)
 	calls := &fordCalls{
-		clk: clk, perMinute: map[time.Time]int{},
+		clk:  clk,
 		next: fordapi.NewHandler([]fordapi.Source{sim}, clk, fordapi.DevApplication(), fordapi.DefaultBehavior()),
 	}
 	mux := http.NewServeMux()
@@ -128,7 +125,7 @@ func playFord(t *testing.T, until time.Duration, file string) (*memStore, *Deriv
 		t.Fatal(err)
 	}
 	calls.mu.Lock()
-	calls.perMinute, calls.total = map[time.Time]int{}, 0 // the sign-in's own request
+	calls.reads = nil // the sign-in's own request
 	calls.mu.Unlock()
 
 	st := newMemStore(target)
@@ -159,22 +156,22 @@ func (fordCatalog) NetCapacity(context.Context, string, string) (core.NetCapacit
 // TestFordDays: the demonstration Puma's two days, read through FordConnect Query: home →
 // work and back, an AC charge at home, then a trip to the mountain with a DC charge on
 // the way. The ignition tells each drive, read every minute then; the charges have their
-// power, from the charger's voltage and current. No call is answered 429, two calls are
-// never in the same minute, and the incremental derivation matches a rebuild.
+// power, from the charger's voltage and current. No call is answered 429, two reads are
+// never within twenty seconds, and the incremental derivation matches a rebuild.
 func TestFordDays(t *testing.T) {
 	st, d, day, calls := playFord(t, 36*time.Hour, "puma.yaml")
 	v := st.vehicle("f")
 	if calls.limited > 0 {
 		t.Errorf("%d calls answered 429", calls.limited)
 	}
-	for minute, n := range calls.perMinute {
-		if n > 2 {
-			t.Errorf("%d calls in the minute of %v", n, minute)
+	for i := 1; i < len(calls.reads); i++ {
+		if gap := calls.reads[i].Sub(calls.reads[i-1]); gap < 20*time.Second {
+			t.Errorf("two reads %v apart, at %v", gap, calls.reads[i])
 		}
 	}
 	// A read every 5 minutes parked and every minute driving or charging, over 36 hours.
-	if calls.total > 1100 {
-		t.Errorf("%d calls in 36 hours", calls.total)
+	if n := len(calls.reads); n > 1100 {
+		t.Errorf("%d calls in 36 hours", n)
 	}
 	home, work := core.Position{Lat: 45.7640, Lon: 4.8357}, core.Position{Lat: 45.7980, Lon: 4.8300}
 	if len(v.trips) != 4 {
