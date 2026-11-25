@@ -5,6 +5,7 @@ export {
   fetchVehicles,
   fetchVehicleState,
   readingsCsvPath,
+  setVehicleAlias,
   setVehicleModel,
   vehiclePicturePath,
 } from './api/vehicleApi'
@@ -42,6 +43,7 @@ export {
 } from './model/openings'
 export { vehicleKeys } from './model/queryKeys'
 export type {
+  AliasChoice,
   Cable,
   ChargingStatus,
   CurrentChargeType,

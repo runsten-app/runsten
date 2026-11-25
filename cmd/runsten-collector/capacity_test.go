@@ -67,8 +67,8 @@ func TestNetCapacity(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := capacities{catalog: cat, vehicle: func(context.Context, string, string) (string, string, string, bool, error) {
-				return tt.vin, tt.provider, tt.chosen, true, nil
+			c := capacities{catalog: cat, vehicle: func(context.Context, string, string) (vehicleRow, bool, error) {
+				return vehicleRow{VIN: tt.vin, Provider: tt.provider, Chosen: tt.chosen}, true, nil
 			}}
 			net, err := c.NetCapacity(context.Background(), "a", "v")
 			if err != nil {
@@ -81,12 +81,12 @@ func TestNetCapacity(t *testing.T) {
 	}
 
 	boom := errors.New("boom")
-	for name, vehicle := range map[string]func(context.Context, string, string) (string, string, string, bool, error){
-		"store error": func(context.Context, string, string) (string, string, string, bool, error) {
-			return "", "", "", false, boom
+	for name, vehicle := range map[string]func(context.Context, string, string) (vehicleRow, bool, error){
+		"store error": func(context.Context, string, string) (vehicleRow, bool, error) {
+			return vehicleRow{}, false, boom
 		},
-		"vehicle gone": func(context.Context, string, string) (string, string, string, bool, error) {
-			return "", "", "", false, nil
+		"vehicle gone": func(context.Context, string, string) (vehicleRow, bool, error) {
+			return vehicleRow{}, false, nil
 		},
 	} {
 		if _, err := (capacities{catalog: cat, vehicle: vehicle}).NetCapacity(context.Background(), "a", "v"); err == nil {

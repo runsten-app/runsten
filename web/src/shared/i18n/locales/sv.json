@@ -1169,6 +1169,24 @@
       "internal": "Något gick fel. Försök igen senare."
     }
   },
+  "vehicleAlias": {
+    "title": "Alias",
+    "help": "Ett kort namn på det här fordonet, till exempel för att skilja två likadana bilar åt. Det ersätter {label} i Runsten och i Home Assistant.",
+    "field": "Alias",
+    "save": "Spara aliaset",
+    "remove": "Ta bort aliaset",
+    "saved": "Aliaset har sparats.",
+    "removed": "Aliaset har tagits bort.",
+    "error": {
+      "summary": "Aliaset kunde inte sparas",
+      "tooLong": "Högst {max} tecken.",
+      "control": "Ett alias får inte innehålla radbrytning eller tabb.",
+      "invalidBody": "Runsten avvisade aliaset: {message}",
+      "notFound": "Det här fordonet finns inte längre.",
+      "unavailable": "Runsten kan inte nås. Försök igen om en stund.",
+      "internal": "Något gick fel. Försök igen senare."
+    }
+  },
   "vehicleSettings": {
     "open": "Fordonsinställningar",
     "title": "Fordonsinställningar",
@@ -1186,7 +1204,8 @@
   },
   "vehicleSheet": {
     "title": "Faktablad",
-    "name": "Namn i appen",
+    "name": "Namn",
+    "nameInApp": "Namn i {app}-appen",
     "colour": "Färg",
     "drive": "Drivning",
     "fwd": "Framhjulsdrift",

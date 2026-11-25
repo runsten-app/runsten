@@ -144,6 +144,8 @@ type Vehicle struct {
 	// what was written: effectiveModel decides whether they still apply.
 	VariantID string
 	ACMaxKW   core.Value[float64]
+	// Alias is the name the user gave the vehicle; empty: none.
+	Alias string
 }
 
 // Collection is what the collector wrote of a vehicle after its latest pass: whether
@@ -221,6 +223,7 @@ type Config struct {
 	Charging Charging
 	Settings Settings
 	Models   VehicleModels
+	Aliases  VehicleAliases
 	Deletion VehicleDeletion
 	Costs    ChargeCosts
 	// Marks are the purposes the user marked the trips with.
@@ -402,6 +405,7 @@ func New(cfg Config) *Server {
 	s.registerFileImports(s.api)
 	s.registerTeslaMate(s.api)
 	s.registerModel(s.api)
+	s.registerAlias(s.api)
 	s.registerSheet(s.api)
 	s.registerDeletion(s.api)
 	s.registerStats(s.api)

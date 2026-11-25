@@ -3,6 +3,7 @@
     {
       "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a01",
       "vin": "YV1SMLT0000DT0001",
+      "alias": null,
       "model": {
         "family": "XC40",
         "model_year": 2021,
@@ -76,6 +77,7 @@
     {
       "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a02",
       "vin": "YV1SMLT0000DT0002",
+      "alias": null,
       "model": {
         "family": null,
         "model_year": null,
@@ -115,6 +117,7 @@
     {
       "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a04",
       "vin": "YV1SMLT0000DT0004",
+      "alias": null,
       "model": {
         "family": "EX30",
         "model_year": 2024,
@@ -166,6 +169,7 @@
     {
       "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a05",
       "vin": "YV1SMLT0000DT0005",
+      "alias": null,
       "model": {
         "family": null,
         "model_year": null,
@@ -205,6 +209,7 @@
     {
       "id": "0b5c6c3e-3f0e-4a57-9d3b-2f4f9e8d1a06",
       "vin": "LPSVSEDE5RL000001",
+      "alias": null,
       "model": {
         "family": "Polestar 2",
         "model_year": 2024,

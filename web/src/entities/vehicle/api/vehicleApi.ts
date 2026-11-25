@@ -1,5 +1,5 @@
 import { api, downloadPath, unwrap } from '@/shared/api'
-import type { ModelChoice, State, VariantOption, Vehicle } from '../model/Vehicle'
+import type { AliasChoice, ModelChoice, State, VariantOption, Vehicle } from '../model/Vehicle'
 
 export async function fetchVehicles(): Promise<Vehicle[]> {
   return (await unwrap(api.GET('/vehicles'))).items
@@ -21,6 +21,12 @@ export async function fetchVariants(vehicle: string): Promise<VariantOption[]> {
 export function setVehicleModel(vehicle: string, choice: ModelChoice): Promise<Vehicle> {
   return unwrap(
     api.PUT('/vehicles/{vehicle}/model', { params: { path: { vehicle } }, body: choice }),
+  )
+}
+
+export function setVehicleAlias(vehicle: string, alias: AliasChoice): Promise<Vehicle> {
+  return unwrap(
+    api.PUT('/vehicles/{vehicle}/alias', { params: { path: { vehicle } }, body: alias }),
   )
 }
 

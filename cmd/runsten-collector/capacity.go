@@ -15,21 +15,28 @@ import (
 // catalog (derive.Capacities): derive and core know nothing of the catalog.
 type capacities struct {
 	catalog *catalog.Catalog
-	// vehicle returns the VIN of the account's vehicle, its connection's provider and
-	// the variant its user chose (empty: none); found is false when it is gone.
-	vehicle func(ctx context.Context, accountID, vehicleID string) (vin, provider, chosen string, found bool, err error)
+	// vehicle returns what the store has of the account's vehicle; found is false when
+	// it is gone.
+	vehicle func(ctx context.Context, accountID, vehicleID string) (v vehicleRow, found bool, err error)
+}
+
+// vehicleRow is what the user and the connection tell of a vehicle.
+type vehicleRow struct {
+	VIN, Provider string
+	Chosen        string // the variant its user chose; empty: none
+	Alias         string // the name its user gave it; empty: none
 }
 
 var errNoVehicle = errors.New("no such vehicle")
 
-// vehicleOf reads the VINs, providers and chosen variants from the store.
-func vehicleOf(st *store.Store) func(ctx context.Context, accountID, vehicleID string) (string, string, string, bool, error) {
-	return func(ctx context.Context, accountID, vehicleID string) (string, string, string, bool, error) {
+// vehicleOf reads the VINs, providers, chosen variants and aliases from the store.
+func vehicleOf(st *store.Store) func(ctx context.Context, accountID, vehicleID string) (vehicleRow, bool, error) {
+	return func(ctx context.Context, accountID, vehicleID string) (vehicleRow, bool, error) {
 		v, found, err := st.Vehicle(ctx, accountID, vehicleID)
 		if err != nil {
-			return "", "", "", false, fmt.Errorf("vehicle: %w", err)
+			return vehicleRow{}, false, fmt.Errorf("vehicle: %w", err)
 		}
-		return v.VIN, v.Provider, v.VariantID, found, nil
+		return vehicleRow{VIN: v.VIN, Provider: v.Provider, Chosen: v.VariantID, Alias: v.Alias}, found, nil
 	}
 }
 
@@ -38,7 +45,7 @@ func vehicleOf(st *store.Store) func(ctx context.Context, accountID, vehicleID s
 // details of each snapshot, the capacity depends on the readings alone, as an incremental
 // derivation and a rebuild require.
 func (c capacities) NetCapacity(ctx context.Context, accountID, vehicleID string) (core.NetCapacity, error) {
-	vin, provider, chosen, found, err := c.vehicle(ctx, accountID, vehicleID)
+	row, found, err := c.vehicle(ctx, accountID, vehicleID)
 	switch {
 	case err != nil:
 		return nil, err
@@ -46,7 +53,7 @@ func (c capacities) NetCapacity(ctx context.Context, accountID, vehicleID string
 		return nil, errNoVehicle
 	}
 	return func(n core.Snapshot) (float64, bool) {
-		v, ok := c.effective(chosen, vin, provider, n)
+		v, ok := c.effective(row.Chosen, row.VIN, row.Provider, n)
 		if !ok || v.NetKWh == nil {
 			return 0, false
 		}

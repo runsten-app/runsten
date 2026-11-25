@@ -1169,6 +1169,24 @@
       "internal": "Algo salió mal. Inténtelo de nuevo más tarde."
     }
   },
+  "vehicleAlias": {
+    "title": "Alias",
+    "help": "Un nombre corto para este vehículo, por ejemplo para distinguir dos coches idénticos. Sustituye a {label} en Runsten y en Home Assistant.",
+    "field": "Alias",
+    "save": "Guardar el alias",
+    "remove": "Quitar el alias",
+    "saved": "Alias guardado.",
+    "removed": "Alias eliminado.",
+    "error": {
+      "summary": "No se ha podido guardar el alias",
+      "tooLong": "Como máximo {max} caracteres.",
+      "control": "Un alias no puede contener un salto de línea ni un tabulador.",
+      "invalidBody": "Runsten ha rechazado el alias: {message}",
+      "notFound": "Este vehículo ya no existe.",
+      "unavailable": "No se puede contactar con Runsten. Inténtelo de nuevo en un momento.",
+      "internal": "Algo ha fallado. Inténtelo de nuevo más tarde."
+    }
+  },
   "vehicleSettings": {
     "open": "Configuración del vehículo",
     "title": "Configuración del vehículo",
@@ -1186,7 +1204,8 @@
   },
   "vehicleSheet": {
     "title": "Ficha",
-    "name": "Nombre en la aplicación",
+    "name": "Nombre",
+    "nameInApp": "Nombre en la app {app}",
     "colour": "Color",
     "drive": "Tracción",
     "fwd": "Tracción delantera",

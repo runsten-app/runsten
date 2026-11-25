@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -189,5 +190,59 @@ func TestVehicleModelResetsDerivation(t *testing.T) {
 		if got := cursor(); got != tt.kept {
 			t.Errorf("%s: cursor kept %v, want %v", tt.name, got, tt.kept)
 		}
+	}
+}
+
+// TestVehicleAlias checks the alias: written, read with the vehicle and the list,
+// removed, refused when no name, and confined to the account.
+func TestVehicleAlias(t *testing.T) {
+	s, _ := testStore(t)
+	ctx := context.Background()
+	a, va := newVehicle(t, s, "token-a", "YV1AAAAAAAAAAAAA1")
+	b, vb := newVehicle(t, s, "token-b", "YV1BBBBBBBBBBBBB1")
+	alias := func(account, vehicle string) string {
+		t.Helper()
+		v, ok, err := s.Vehicle(ctx, account, vehicle)
+		if err != nil || !ok {
+			t.Fatalf("vehicle %s: %v, %v", vehicle, ok, err)
+		}
+		return v.Alias
+	}
+
+	if got := alias(a, va); got != "" {
+		t.Errorf("a new vehicle: %q", got)
+	}
+	for _, want := range []string{"Fleet car 12", "Été", ""} {
+		if err := s.SetVehicleAlias(ctx, a, va, want); err != nil {
+			t.Fatalf("%q: %v", want, err)
+		}
+		if got := alias(a, va); got != want {
+			t.Errorf("read %q, want %q", got, want)
+		}
+	}
+	if err := s.SetVehicleAlias(ctx, a, va, "Pool car"); err != nil {
+		t.Fatal(err)
+	}
+	if vs, err := s.Vehicles(ctx, a); err != nil || len(vs) != 1 || vs[0].Alias != "Pool car" {
+		t.Errorf("vehicles = %+v, %v", vs, err)
+	}
+
+	if err := s.SetVehicleAlias(ctx, a, vb, "Theirs"); !errors.Is(err, api.ErrNotFound) {
+		t.Errorf("write to B's vehicle: %v", err)
+	}
+	if got := alias(b, vb); got != "" {
+		t.Errorf("B's vehicle written: %q", got)
+	}
+	for _, bad := range []string{"", " padded", strings.Repeat("a", api.MaxAlias+1)} {
+		err := s.inAccount(ctx, a, func(tx pgx.Tx) error {
+			_, err := tx.Exec(ctx, "UPDATE vehicles SET alias = $2 WHERE id = $1", va, bad)
+			return err
+		})
+		if err == nil {
+			t.Errorf("alias %q stored", bad)
+		}
+	}
+	if err := s.SetVehicleAlias(ctx, a, va, strings.Repeat("é", api.MaxAlias)); err != nil {
+		t.Errorf("forty characters: %v", err)
 	}
 }

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { vehicleLabel, VehicleSheet } from '@/entities/vehicle'
 import { DeleteVehicle } from '@/features/delete-vehicle'
 import { VehicleModelForm } from '@/features/edit-vehicle-model'
+import { VehicleAliasForm } from '@/features/name-vehicle'
 import { ImportList, ImportSources } from '@/features/manage-imports'
 import { useVehicle } from '@/features/select-vehicle'
 import { isApiError } from '@/shared/api'
@@ -11,7 +12,8 @@ import { SubNav } from '@/shared/ui'
 import { AppShell } from '@/widgets/app-shell'
 
 // VehicleSettingsPage is one vehicle's, in two areas, each a route: the vehicle (the variant
-// and onboard charger the energies and costs rest on, its sheet, then its deletion, last),
+// and onboard charger the energies and costs rest on, the name the user gives it, its sheet,
+// then its deletion, last),
 // and the
 // history imported from other applications (what it holds, then how to add to it). What
 // the account shares (currency, places, tariffs) stays in the settings.
@@ -65,6 +67,7 @@ const titleId = computed(() => `vehicle-settings-${props.area}-title`)
               <VehicleModelForm :vehicle="current" :label />
             </v-card-text>
           </v-card>
+          <VehicleAliasForm :key="current.id" :vehicle="current" />
           <!-- What the vehicle's source tells of it beyond its model; nothing when it tells none. -->
           <VehicleSheet :vehicle="current" />
           <!-- Destructive, so last, on a tile of its own. -->

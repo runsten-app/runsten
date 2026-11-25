@@ -11,13 +11,21 @@ import VehiclePicture from './VehiclePicture.vue'
 // vehicle's settings: its picture, then only the values told, never an empty one. What a
 // driver knows the car by comes first; the rest folds under a toggle. Nothing at all for a
 // source that tells none of it (a Polestar of the Data Portal).
-const props = defineProps<{ vehicle: Pick<Vehicle, 'id' | 'sheet'> }>()
+const props = defineProps<{ vehicle: Pick<Vehicle, 'id' | 'sheet' | 'connection'> }>()
 const { t } = useI18n()
 const f = useFormat()
 const id = useId()
 const titleId = `${id}-title`
 const moreId = `${id}-more`
 const open = ref(false)
+
+// The apps a vehicle's name comes from, by its connection's provider: their own names, the
+// same in every language. A source without one (the demo vehicle) has a plain name.
+const apps: Record<string, string> = { tesla: 'Tesla', tesla_fleet: 'Tesla', skoda: 'MyŠkoda' }
+const nameLabel = computed(() => {
+  const app = apps[props.vehicle.connection?.provider ?? '']
+  return app ? t('vehicleSheet.nameInApp', { app }) : t('vehicleSheet.name')
+})
 
 type Fact = { key: string; label: string; value: string }
 
@@ -35,7 +43,7 @@ const facts = computed(() => {
   const sides = { left: t('vehicleSheet.left'), right: t('vehicleSheet.right') }
   return {
     main: [
-      ...fact('name', t('vehicleSheet.name'), s.name),
+      ...fact('name', nameLabel.value, s.name),
       ...fact('colour', t('vehicleSheet.colour'), s.colour),
       ...fact('drive', t('vehicleSheet.drive'), s.drive && drives[s.drive]),
       ...fact(

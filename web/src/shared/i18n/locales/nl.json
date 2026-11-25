@@ -1169,6 +1169,24 @@
       "internal": "Er is iets misgegaan. Probeer het later opnieuw."
     }
   },
+  "vehicleAlias": {
+    "title": "Alias",
+    "help": "Een korte naam voor dit voertuig, bijvoorbeeld om twee dezelfde auto's uit elkaar te houden. Hij vervangt {label} in Runsten en in Home Assistant.",
+    "field": "Alias",
+    "save": "Alias opslaan",
+    "remove": "Alias verwijderen",
+    "saved": "Alias opgeslagen.",
+    "removed": "Alias verwijderd.",
+    "error": {
+      "summary": "De alias kon niet worden opgeslagen",
+      "tooLong": "Hoogstens {max} tekens.",
+      "control": "Een alias mag geen regeleinde of tab bevatten.",
+      "invalidBody": "Runsten heeft de alias geweigerd: {message}",
+      "notFound": "Dit voertuig bestaat niet meer.",
+      "unavailable": "Runsten is niet bereikbaar. Probeer het zo meteen opnieuw.",
+      "internal": "Er is iets misgegaan. Probeer het later opnieuw."
+    }
+  },
   "vehicleSettings": {
     "open": "Voertuiginstellingen",
     "title": "Voertuiginstellingen",
@@ -1186,7 +1204,8 @@
   },
   "vehicleSheet": {
     "title": "Gegevens",
-    "name": "Naam in de app",
+    "name": "Naam",
+    "nameInApp": "Naam in de {app}-app",
     "colour": "Kleur",
     "drive": "Aandrijving",
     "fwd": "Voorwielaandrijving",

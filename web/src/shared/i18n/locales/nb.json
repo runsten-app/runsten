@@ -1169,6 +1169,24 @@
       "internal": "Noe gikk galt. Prøv igjen senere."
     }
   },
+  "vehicleAlias": {
+    "title": "Alias",
+    "help": "Et kort navn på dette kjøretøyet, for eksempel for å skille to like biler. Det erstatter {label} i Runsten og i Home Assistant.",
+    "field": "Alias",
+    "save": "Lagre aliaset",
+    "remove": "Fjern aliaset",
+    "saved": "Aliaset er lagret.",
+    "removed": "Aliaset er fjernet.",
+    "error": {
+      "summary": "Aliaset kunne ikke lagres",
+      "tooLong": "Høyst {max} tegn.",
+      "control": "Et alias kan ikke inneholde linjeskift eller tabulator.",
+      "invalidBody": "Runsten avviste aliaset: {message}",
+      "notFound": "Dette kjøretøyet finnes ikke lenger.",
+      "unavailable": "Runsten kan ikke nås. Prøv igjen om litt.",
+      "internal": "Noe gikk galt. Prøv igjen senere."
+    }
+  },
   "vehicleSettings": {
     "open": "Bilinnstillinger",
     "title": "Bilinnstillinger",
@@ -1186,7 +1204,8 @@
   },
   "vehicleSheet": {
     "title": "Datablad",
-    "name": "Navn i appen",
+    "name": "Navn",
+    "nameInApp": "Navn i {app}-appen",
     "colour": "Farge",
     "drive": "Drift",
     "fwd": "Forhjulsdrift",

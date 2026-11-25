@@ -1169,6 +1169,24 @@
       "internal": "Etwas ist schiefgelaufen. Versuchen Sie es später erneut."
     }
   },
+  "vehicleAlias": {
+    "title": "Alias",
+    "help": "Ein kurzer Name für dieses Fahrzeug, zum Beispiel um zwei gleiche Autos zu unterscheiden. Er ersetzt {label} in Runsten und in Home Assistant.",
+    "field": "Alias",
+    "save": "Alias speichern",
+    "remove": "Alias entfernen",
+    "saved": "Alias gespeichert.",
+    "removed": "Alias entfernt.",
+    "error": {
+      "summary": "Der Alias konnte nicht gespeichert werden",
+      "tooLong": "Höchstens {max} Zeichen.",
+      "control": "Ein Alias darf weder Zeilenumbruch noch Tabulator enthalten.",
+      "invalidBody": "Runsten hat den Alias abgelehnt: {message}",
+      "notFound": "Dieses Fahrzeug existiert nicht mehr.",
+      "unavailable": "Runsten ist nicht erreichbar. Versuchen Sie es gleich noch einmal.",
+      "internal": "Etwas ist schiefgelaufen. Versuchen Sie es später noch einmal."
+    }
+  },
   "vehicleSettings": {
     "open": "Fahrzeugeinstellungen",
     "title": "Fahrzeugeinstellungen",
@@ -1186,7 +1204,8 @@
   },
   "vehicleSheet": {
     "title": "Datenblatt",
-    "name": "Name in der App",
+    "name": "Name",
+    "nameInApp": "Name in der {app}-App",
     "colour": "Farbe",
     "drive": "Antrieb",
     "fwd": "Frontantrieb",

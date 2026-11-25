@@ -6382,6 +6382,11 @@ components:
     Vehicle:
       additionalProperties: false
       properties:
+        alias:
+          description: "The alias the user gave the vehicle (PUT /vehicles/{vehicle}/alias), used in place of its other names; null: none."
+          type:
+            - string
+            - "null"
         collection:
           description: What the collector wrote of the vehicle after its latest pass; null before the first one.
           oneOf:
@@ -6420,12 +6425,24 @@ components:
       required:
         - id
         - vin
+        - alias
         - model
         - sheet
         - connection
         - market_refused_at
         - unshared_at
         - collection
+      type: object
+    VehicleAlias:
+      additionalProperties: false
+      properties:
+        alias:
+          description: "The alias: a name the user chooses for the vehicle, used in place of its model's. Spaces around it are removed; it must keep a character and at most 40 once trimmed, and holds no control character. null removes it."
+          type:
+            - string
+            - "null"
+      required:
+        - alias
       type: object
     VehicleChoice:
       additionalProperties: false
@@ -9602,6 +9619,73 @@ paths:
         - sessionSecure: []
         - accessToken: []
       summary: A vehicle
+      tags:
+        - vehicles
+  /vehicles/{vehicle}/alias:
+    put:
+      description: "The alias is a name the user chooses for the vehicle. It replaces the name derived from the model, and the one the owner gave the car in its vendor's app: in the web interface, and as the name of the vehicle's device in Home Assistant, from the vehicle's next reading. null removes it."
+      operationId: putVehicleAlias
+      parameters:
+        - description: The vehicle ID.
+          in: path
+          name: vehicle
+          required: true
+          schema:
+            description: The vehicle ID.
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleAlias"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+          description: The vehicle, with its alias.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. Also: an `alias` empty once trimmed, longer than 40 characters, or holding a control character."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`not_found`: no such vehicle in the account. Another account's vehicle is not found either."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Set a vehicle's alias
       tags:
         - vehicles
   /vehicles/{vehicle}/aximote-vehicles:
