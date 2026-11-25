@@ -127,13 +127,15 @@ func TestNormalizeCharging(t *testing.T) {
 	}
 }
 
-// TestNormalizeTolerant: a metric of another shape, or a word this does not know, is
-// left out, never the whole response; a position without a fix is unknown.
+// TestNormalizeTolerant: a metric of another shape is left out, never the whole response;
+// a word this does not know is told unknown, the previous value no longer holding; a
+// position without a fix is unknown.
 func TestNormalizeTolerant(t *testing.T) {
 	raw := []byte(`{"metrics": {
 		"odometer": {"updateTime": "2026-03-11T07:55:07Z", "value": "many"},
 		"ignitionStatus": {"updateTime": "2026-03-11T07:55:07Z", "value": "UNRECOGNIZED"},
 		"xevBatteryChargeDisplayStatus": {"value": "SOMETHING_NEW"},
+		"xevPlugChargerStatus": {"updateTime": "2026-03-11T07:55:07Z", "value": "UNRECOGNIZED"},
 		"xevBatteryStateOfCharge": {"updateTime": "2026-03-11T07:55:07Z", "value": 40},
 		"position": {"updateTime": "2026-03-11T07:55:07Z", "value": {"location": {"lat": 0, "lon": 0}, "gpsDimension": "NONE"}},
 		"doorStatus": "none"
@@ -142,11 +144,17 @@ func TestNormalizeTolerant(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.OdometerKm.OK || s.Covers&core.FieldOdometer != 0 || s.Covers&core.FieldEngine != 0 {
-		t.Errorf("odometer %+v, covers %b", s.OdometerKm, s.Covers)
+	if s.OdometerKm.OK || s.Covers&core.FieldOdometer != 0 {
+		t.Errorf("odometer %+v, covers %b: another shape is left out", s.OdometerKm, s.Covers)
+	}
+	if s.Covers&core.FieldEngine == 0 || s.Engine.OK {
+		t.Errorf("engine %+v: an unknown word is unknown", s.Engine)
 	}
 	if s.Covers&core.FieldCharging == 0 || s.Charging.OK {
 		t.Errorf("charging %+v: an unknown word is unknown", s.Charging)
+	}
+	if s.Covers&core.FieldConnection == 0 || s.Connection.OK {
+		t.Errorf("connection %+v: an unknown word is unknown", s.Connection)
 	}
 	if !s.SoC.OK || s.SoC.V != 40 {
 		t.Errorf("soc %+v", s.SoC)
@@ -262,6 +270,11 @@ func TestFingerprintAndUpload(t *testing.T) {
 	u, err := UploadOf(Telemetry, a)
 	if err != nil || !u.At.Equal(ts("2026-03-11T08:01:00Z")) || len(u.Fields) != 2 || u.Fields[0] != "odometer" {
 		t.Errorf("upload %+v, %v", u, err)
+	}
+	// A list's entries carry their own sends: the latest of them counts.
+	list := []byte(`{"updateTime":"2026-03-11T08:00:00Z","metrics":{"odometer":{"updateTime":"2026-03-11T07:55:07Z","value":4804},"tirePressureStatus":[{"updateTime":"2026-03-11T08:10:00Z","value":"NORMAL","vehicleWheel":"FRONT_LEFT"},{"value":"NORMAL","vehicleWheel":"REAR_LEFT"}],"oddity":"text"}}`)
+	if u, err := UploadOf(Telemetry, list); err != nil || !u.At.Equal(ts("2026-03-11T08:10:00Z")) || len(u.Fields) != 3 {
+		t.Errorf("upload of a list %+v, %v", u, err)
 	}
 	if u, err := UploadOf(Garage, []byte(`{"vin":"WF0TESTPUMA000001"}`)); err != nil || !u.At.IsZero() {
 		t.Errorf("garage upload %+v, %v", u, err)

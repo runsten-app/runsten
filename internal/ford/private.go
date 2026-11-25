@@ -53,13 +53,22 @@ func UploadOf(ep Endpoint, raw []byte) (Upload, error) {
 		return Upload{}, fmt.Errorf("upload: %w", err)
 	}
 	u := Upload{At: r.At.UTC()}
+	type sent struct {
+		At time.Time `json:"updateTime"`
+	}
 	for name, raw := range r.Metrics {
 		u.Fields = append(u.Fields, name)
-		var m struct {
-			At time.Time `json:"updateTime"`
+		// A metric of one value, or a list of entries (the doors, the tyres), each with
+		// its own send.
+		var one sent
+		var many []sent
+		if json.Unmarshal(raw, &one) != nil && json.Unmarshal(raw, &many) != nil {
+			continue
 		}
-		if json.Unmarshal(raw, &m) == nil && m.At.After(u.At) {
-			u.At = m.At.UTC()
+		for _, m := range append(many, one) {
+			if m.At.After(u.At) {
+				u.At = m.At.UTC()
+			}
 		}
 	}
 	slices.Sort(u.Fields)

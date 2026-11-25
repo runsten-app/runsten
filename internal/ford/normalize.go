@@ -35,8 +35,11 @@ const (
 // metric: Ford returns the last value the car sent of each, without waking it, and the
 // metrics of one response may be of different ages (core.Params.VehicleTimestamps). A
 // metric the response lacks is left out of Covers, so that it keeps its previous value:
-// which metrics a model tells differs from one to another. A value of an enumeration
-// this does not know is left out (it stays in the raw response, on the debug page).
+// which metrics a model tells differs from one to another. A metric the car sent with a
+// word this does not know (a value new to the enumeration, UNKNOWN, UNRECOGNIZED) is
+// covered and absent: the car said something else than before, so the previous value no
+// longer holds, and a charge or a drive must not go on for a word not understood. The
+// word stays in the raw response, on the debug page.
 type Normalizer struct{}
 
 // Kinds returns the kinds of response Normalize reads.
@@ -167,8 +170,8 @@ var ignitions = map[string]core.EngineState{
 // temperature.
 func normalizeDrive(m metrics, s *core.Snapshot) {
 	if v, at, ok := word(m, "ignitionStatus"); ok {
+		s.Covers |= core.FieldEngine
 		if e, known := ignitions[v]; known {
-			s.Covers |= core.FieldEngine
 			s.Engine = core.Some(e, at)
 		}
 	}
