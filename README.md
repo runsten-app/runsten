@@ -3,6 +3,7 @@
 [![ci](https://github.com/runsten-app/runsten/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/runsten-app/runsten/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/runsten-app/runsten?include_prereleases&sort=semver)](https://github.com/runsten-app/runsten/releases)
 [![licence](https://img.shields.io/github/license/runsten-app/runsten)](LICENSE)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-support-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/runstenapp)
 
 > Open source data logger for electric cars: Volvo, Polestar, Tesla, BMW and Mini, with more makes to come.
 
