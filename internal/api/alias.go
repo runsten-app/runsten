@@ -23,7 +23,7 @@ type VehicleAliases interface {
 }
 
 type vehicleAliasJSON struct {
-	Alias *string `json:"alias" maxLength:"40" doc:"The alias: a name the user chooses for the vehicle, used in place of its model's. Spaces around it are removed; it must keep a character, and holds no control character. null removes it."`
+	Alias *string `json:"alias" doc:"The alias: a name the user chooses for the vehicle, used in place of its model's. Spaces around it are removed; it must keep a character and at most 40 once trimmed, and holds no control character. null removes it."`
 }
 
 type vehicleAliasInput struct {

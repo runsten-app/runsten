@@ -59,6 +59,7 @@ func TestPutVehicleAlias(t *testing.T) {
 
 	for _, tt := range []struct{ name, body, want string }{
 		{"trimmed", `{"alias":"  Long-range car  "}`, "Long-range car"},
+		{"forty characters once trimmed", `{"alias":" ` + strings.Repeat("a", MaxAlias) + ` "}`, strings.Repeat("a", MaxAlias)},
 		{"forty characters, accented", `{"alias":"` + strings.Repeat("é", MaxAlias) + `"}`, strings.Repeat("é", MaxAlias)},
 		{"removed", `{"alias":null}`, "<null>"},
 	} {

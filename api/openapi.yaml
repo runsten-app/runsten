@@ -6437,8 +6437,7 @@ components:
       additionalProperties: false
       properties:
         alias:
-          description: "The alias: a name the user chooses for the vehicle, used in place of its model's. Spaces around it are removed; it must keep a character, and holds no control character. null removes it."
-          maxLength: 40
+          description: "The alias: a name the user chooses for the vehicle, used in place of its model's. Spaces around it are removed; it must keep a character and at most 40 once trimmed, and holds no control character. null removes it."
           type:
             - string
             - "null"
