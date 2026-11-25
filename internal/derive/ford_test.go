@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -28,6 +29,7 @@ type fordCalls struct {
 	mu      sync.Mutex
 	clk     clock.Clock
 	reads   []time.Time
+	garages []time.Time // those of the garage
 	limited int
 	next    http.Handler
 }
@@ -41,6 +43,9 @@ func (c *fordCalls) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.reads = append(c.reads, c.clk.Now())
+	if strings.HasSuffix(r.URL.Path, "/garage") {
+		c.garages = append(c.garages, c.clk.Now())
+	}
 	if rec.status == http.StatusTooManyRequests {
 		c.limited++
 	}
@@ -125,7 +130,7 @@ func playFord(t *testing.T, until time.Duration, file string) (*memStore, *Deriv
 		t.Fatal(err)
 	}
 	calls.mu.Lock()
-	calls.reads = nil // the sign-in's own request
+	calls.reads, calls.garages = nil, nil // the sign-in's own request
 	calls.mu.Unlock()
 
 	st := newMemStore(target)
@@ -168,6 +173,11 @@ func TestFordDays(t *testing.T) {
 		if gap := calls.reads[i].Sub(calls.reads[i-1]); gap < 20*time.Second {
 			t.Errorf("two reads %v apart, at %v", gap, calls.reads[i])
 		}
+	}
+	// The garage, due with the telemetry at the first pass, is read once the gap is over,
+	// not a day later, then daily.
+	if len(calls.garages) != 2 || calls.garages[0].Sub(calls.reads[0]) > time.Minute {
+		t.Errorf("the garage read at %v, the first telemetry at %v", calls.garages, calls.reads[0])
 	}
 	// A read every 5 minutes parked and every minute driving or charging, over 36 hours.
 	if n := len(calls.reads); n > 1100 {

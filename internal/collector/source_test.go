@@ -685,6 +685,48 @@ func TestSourceVehicleLimit(t *testing.T) {
 	}
 }
 
+// TestSourceHeldWithinAPass: a source that holds its vehicle back after each call (a
+// provider that wants its calls apart) has one endpoint read per pass; the others stay
+// due, and are read once the hold ends, not an interval later.
+func TestSourceHeldWithinAPass(t *testing.T) {
+	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+	tg := sourceTarget()
+	src := limitedSource{newFakeSource(clk), map[string]time.Time{}}
+	src.answer = func(Endpoint, int, time.Time) ([]byte, error) {
+		src.held[tg.VIN] = clk.Now().Add(20 * time.Second)
+		return []byte("parked"), nil
+	}
+	st := &sourceStore{memStore: memStore{targets: []Target{tg}}}
+	c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+	c.AddSource(src, st)
+	due := len(src.Spec().Endpoints)
+	if due < 2 {
+		t.Fatalf("the fake source has %d endpoints: the test needs several", due)
+	}
+	poll(t, c)
+	if len(src.vins) != 1 {
+		t.Fatalf("%d calls in the first pass, want one: the vehicle is held after it", len(src.vins))
+	}
+	// Within the hold, nothing; past it, the next endpoint due, one per hold.
+	clk.Advance(10 * time.Second)
+	poll(t, c)
+	if len(src.vins) != 1 {
+		t.Errorf("%d calls within the hold", len(src.vins))
+	}
+	for n := 2; n <= due; n++ {
+		clk.Advance(20 * time.Second)
+		poll(t, c)
+		if len(src.vins) != n {
+			t.Fatalf("%d calls after %d holds, want %d: an endpoint held back stays due", len(src.vins), n-1, n)
+		}
+	}
+	for _, s := range st.statuses {
+		if s.Failure.Kind != "" || !s.PausedUntil.IsZero() {
+			t.Errorf("a hold told or paused: %+v", s)
+		}
+	}
+}
+
 // TestSourceQuota: a Source's calls count on its connection's credential, at its own
 // daily quota, apart from the Volvo API's; a restart replays them onto the credential.
 func TestSourceQuota(t *testing.T) {

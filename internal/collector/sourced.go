@@ -63,6 +63,11 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 		if c.resting(t, vs, src, spec, now) || !c.due(t, vs, spec, now) {
 			continue
 		}
+		if c.held(t, src) {
+			// Held back by a read of this pass (a provider that wants its calls apart):
+			// what is still due stays so, and is read once the hold ends.
+			return saved
+		}
 		if sess == nil {
 			var err error
 			if sess, err = c.session(ctx, t, src, now); err != nil {
