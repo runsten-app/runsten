@@ -177,7 +177,11 @@ const helpKey = '?'
         <span class="mark" aria-hidden="true"><span /><span /><span /><span /></span>
         <span class="wordmark" :class="{ 'd-sr-only': xs && shown }">Runsten</span>
       </router-link>
-      <VehicleMenu v-if="shown" :vehicle="shown" :garage class="picker" />
+      <!-- The menu's root is a v-menu, whose attributes go to its overlay: the bound needs an
+           element of its own, or a long label pushes the account's menu out of the bar. -->
+      <div v-if="shown" class="picker">
+        <VehicleMenu :vehicle="shown" :garage />
+      </div>
       <v-spacer />
       <UserMenu :attention>
         <div role="listitem">
