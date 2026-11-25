@@ -67,7 +67,7 @@ describe('VehicleSheet', () => {
       performance: true,
     })
     expect(w.find('img').exists()).toBe(false)
-    expect(facts(w)).toEqual(['Name in the app: Blixt', 'Colour: Deep Blue'])
+    expect(facts(w)).toEqual(["Name in the maker's app: Blixt", 'Colour: Deep Blue'])
     await w.find('.more-toggle').trigger('click')
     expect(facts(w).slice(2)).toEqual([
       'Steering wheel: On the right',

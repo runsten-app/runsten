@@ -1204,7 +1204,7 @@
   },
   "vehicleSheet": {
     "title": "Faktablad",
-    "name": "Namn i appen",
+    "name": "Namn i tillverkarens app",
     "colour": "Färg",
     "drive": "Drivning",
     "fwd": "Framhjulsdrift",

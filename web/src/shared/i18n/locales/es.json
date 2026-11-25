@@ -1204,7 +1204,7 @@
   },
   "vehicleSheet": {
     "title": "Ficha",
-    "name": "Nombre en la aplicación",
+    "name": "Nombre en la app del fabricante",
     "colour": "Color",
     "drive": "Tracción",
     "fwd": "Tracción delantera",

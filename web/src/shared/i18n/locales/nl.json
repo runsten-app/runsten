@@ -1204,7 +1204,7 @@
   },
   "vehicleSheet": {
     "title": "Gegevens",
-    "name": "Naam in de app",
+    "name": "Naam in de app van de fabrikant",
     "colour": "Kleur",
     "drive": "Aandrijving",
     "fwd": "Voorwielaandrijving",
