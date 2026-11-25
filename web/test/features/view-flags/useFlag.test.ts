@@ -28,6 +28,7 @@ describe('useFlag', () => {
         'source.pleos': false,
         'source.skoda': false,
         'source.renault': false,
+        'source.ford': false,
         'source.demo': false,
       },
     })
