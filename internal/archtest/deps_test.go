@@ -169,7 +169,9 @@ var allowed = map[string][]string{
 	"internal/simulator/skodaapi": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
 	// The fake My Renault API, the same; it never imports the client.
 	"internal/simulator/renaultapi": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
-	"internal/simulator/control":    {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
+	// The fake FordConnect Query, the same; it never imports the client.
+	"internal/simulator/fordapi": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
+	"internal/simulator/control": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
 	// The fake Aximote writes its API's JSON on its own: it never imports the client.
 	"internal/simulator/aximoteapi": {"net/http", "encoding/json"},
 	// The simulated Volvo ID's grants, kept across restarts.

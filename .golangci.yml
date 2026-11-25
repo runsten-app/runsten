@@ -49,6 +49,8 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/renaultapi
               desc: outward dependency forbidden
+            - pkg: runsten/internal/simulator/fordapi
+              desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/scenario
               desc: outward dependency forbidden
         # The scenario engine drives the vehicle, without knowing HTTP or the API.
@@ -72,6 +74,8 @@ linters:
             - pkg: runsten/internal/simulator/skodaapi
               desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/renaultapi
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/simulator/fordapi
               desc: outward dependency forbidden
         # The simulated API declares its Ledger: pgledger keeps the grants in PostgreSQL.
         volvoapi-without-database:
@@ -120,6 +124,8 @@ linters:
             - pkg: runsten/internal/simulator/skodaapi
               desc: the demo vehicle uses the simulator's models, never a provider's handler
             - pkg: runsten/internal/simulator/renaultapi
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/fordapi
               desc: the demo vehicle uses the simulator's models, never a provider's handler
             - pkg: runsten/internal/simulator/aximoteapi
               desc: the demo vehicle uses the simulator's models, never a provider's handler

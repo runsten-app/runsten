@@ -1,0 +1,44 @@
+# The Ford of demonstration: a Puma Gen-E of 2025, served on FordConnect Query (brand
+# ford), read with the simulator's application (fordapi.DevApplication), the one its owner
+# creates on Ford's developer portal and signs in to Ford with. Home to work and back, an
+# AC charge at home, then a trip on the motorway with a DC charge on the way.
+#
+# What the API gives differs from the other sources: one telemetry with every metric the
+# car sent, each dated from its own send, never woken for a read; the ignition tells a
+# trip, the charge's status a charge, the charger's voltage and current its power. The
+# odometer comes in whole kilometres, the position when the ignition goes off. Two calls
+# closer than ten seconds are answered 429 (SIM_FORD_MIN_GAP).
+#
+# The VIN is fictitious: WF0, the WMI of Ford in Europe. Fictitious coordinates (Lyon).
+brand: ford
+vin: WF0TESTPUMA000001
+start: 2026-09-28T05:00:00Z
+vehicle:
+  profile: bev-generic
+  model: Puma
+  modelYear: 2025
+  batteryKWh: 46
+  usableKWh: 43
+  consumptionKWhPer100km: 14
+  chargingCurrentLimitA: 16
+  soc: 62
+  targetSoc: 80
+  odometerKm: 4804
+  place: home
+places:
+  home: { lat: 45.7640, lon: 4.8357 }
+  work: { lat: 45.7980, lon: 4.8300 }
+  station: { lat: 45.1885, lon: 5.7245 }
+  mountain: { lat: 45.0646, lon: 6.0322 }
+steps:
+  - park: { duration: 2h }
+  - drive: { to: work, distanceKm: 8, duration: 25m }
+  - park: { duration: 9h }
+  - drive: { to: home, distanceKm: 8, duration: 25m }
+  - park: { duration: 1h }
+  - charge: { type: AC, powerKW: 11, untilSoc: 90 }
+  - park: { duration: 10h }
+  - drive: { to: station, distanceKm: 110, duration: 1h20m }
+  - charge: { type: DC, powerKW: 80, untilSoc: 80 }
+  - drive: { to: mountain, distanceKm: 60, duration: 1h10m }
+  - park: { duration: 12h }

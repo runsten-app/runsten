@@ -11,7 +11,9 @@
 // skodaapi.DevAPIKey), the My Renault app's API (Gigya under renaultapi.GigyaPrefix and
 // Kamereon under renaultapi.KamereonPrefix, its faults under renaultapi.ControlPrefix, for
 // the scenarios of brand renault, dacia or alpine, signed in as renaultapi.DevEmail with the
-// keys renaultapi.DevGigyaKey and DevKamereonKey), the Polestar app's API read with the Polestar ID (under
+// keys renaultapi.DevGigyaKey and DevKamereonKey), FordConnect Query (its sign-in, its token
+// endpoint and its API under fordapi.Prefix, its faults under fordapi.ControlPrefix, for the
+// scenarios of brand ford, with the application fordapi.DevApplication), the Polestar app's API read with the Polestar ID (under
 // polestaridapi.Prefix, its faults under polestaridapi.ControlPrefix, its gRPC services at
 // their paths over HTTP/2 without TLS, for the scenarios of brand polestar with source
 // polestar_id, signed in as polestaridapi.DevEmail), BMW CarData (its device flow and
@@ -80,6 +82,13 @@
 //	                        expiry rides in X-API-Key-Expires-At
 //	SIM_SKODA_SEND_EVERY    how often at most a Škoda sends its state while it drives or
 //	                        charges (default 5m; 0 = only at a change, in simulated time)
+//	SIM_FORD_CLIENT_ID      the application FordConnect Query accepts (default
+//	                        fordapi.DevApplication's); SIM_FORD_CLIENT_SECRET, its secret
+//	SIM_FORD_MIN_GAP        least time between two calls of a grant, a call sooner
+//	                        answered 429 (default 10s; 0 = no limit), in simulated time
+//	SIM_FORD_ACCESS_TTL     lifetime of the Ford accesses issued (default 20m)
+//	SIM_FORD_SEND_EVERY     how often at most a Ford sends its state while it drives or
+//	                        charges (default 1m; 0 = only at a change, in simulated time)
 //	SIM_RENAULT_GIGYA_KEY   the key of Renault's apps that Gigya accepts (default
 //	                        renaultapi.DevGigyaKey); SIM_RENAULT_KAMEREON_KEY, Kamereon's
 //	                        (default renaultapi.DevKamereonKey)
@@ -129,6 +138,7 @@ import (
 	"runsten/internal/simulator/aximoteapi"
 	"runsten/internal/simulator/bmwapi"
 	"runsten/internal/simulator/control"
+	"runsten/internal/simulator/fordapi"
 	"runsten/internal/simulator/pgledger"
 	"runsten/internal/simulator/pleosapi"
 	"runsten/internal/simulator/polestarapi"
@@ -166,6 +176,8 @@ type config struct {
 	skodaBehavior    skodaapi.Behavior
 	renaultKeys      renaultapi.Keys
 	renaultBehavior  renaultapi.Behavior
+	fordApp          fordapi.Application
+	fordBehavior     fordapi.Behavior
 	tesla            teslaapi.Behavior
 	polestarID       polestaridapi.Behavior
 	bmw              bmwapi.Behavior
@@ -197,6 +209,7 @@ func run() error {
 		pleos      []pleosapi.Source
 		skoda      []skodaapi.Source
 		renault    []renaultapi.Source
+		ford       []fordapi.Source
 		tesla      []teslaapi.Source
 		bmw        []bmwapi.Source
 	)
@@ -219,6 +232,8 @@ func run() error {
 		case sim.Brand() == scenario.BrandRenault || sim.Brand() == scenario.BrandDacia ||
 			sim.Brand() == scenario.BrandAlpine:
 			renault = append(renault, sim)
+		case sim.Brand() == scenario.BrandFord:
+			ford = append(ford, sim)
 		default:
 			srcs = append(srcs, sim)
 		}
@@ -259,6 +274,10 @@ func run() error {
 	renaultHandler := renaultapi.NewHandler(renault, clk, cfg.renaultKeys, cfg.renaultBehavior)
 	for _, prefix := range []string{renaultapi.Prefix, renaultapi.ControlPrefix} {
 		mux.Handle(prefix, renaultHandler)
+	}
+	fordHandler := fordapi.NewHandler(ford, clk, cfg.fordApp, cfg.fordBehavior)
+	for _, prefix := range []string{fordapi.Prefix, fordapi.ControlPrefix} {
+		mux.Handle(prefix, fordHandler)
 	}
 	th := teslaapi.NewHandler(tesla, clk, cfg.tesla)
 	for _, prefix := range []string{teslaapi.APIPrefix, teslaapi.AuthPrefix, teslaapi.ControlPrefix} {
@@ -303,6 +322,8 @@ func run() error {
 		"skoda_key_expires_at", skodaHandler.ExpiresAt(), "skoda_send_every", cfg.skodaBehavior.SendEvery.String(),
 		"renault_vehicles", len(renault), "renault_per_hour", cfg.renaultBehavior.PerHour,
 		"renault_tfa", cfg.renaultBehavior.TFA, "renault_send_every", cfg.renaultBehavior.SendEvery.String(),
+		"ford_vehicles", len(ford), "ford_client_id", cfg.fordApp.ClientID, "ford_min_gap", cfg.fordBehavior.MinGap.String(),
+		"ford_access_ttl", cfg.fordBehavior.AccessTTL.String(), "ford_send_every", cfg.fordBehavior.SendEvery.String(),
 		"tesla_vehicles", len(tesla), "tesla_sleep_after", cfg.tesla.SleepAfter.String(), "tesla_token_ttl", cfg.tesla.TokenTTL.String(),
 		"bmw_vehicles", len(bmw), "bmw_stream_addr", cfg.bmwStreamAddr, "bmw_token_ttl", cfg.bmw.TokenTTL.String(),
 		"polestar_id_vehicles", len(polestarID), "polestar_id_token_ttl", cfg.polestarID.AccessTokenTTL.String())
@@ -352,6 +373,8 @@ func loadConfig(getenv func(string) string) (config, error) {
 		skodaBehavior:    skodaapi.DefaultBehavior(),
 		renaultKeys:      renaultapi.DevKeys(),
 		renaultBehavior:  renaultapi.DefaultBehavior(),
+		fordApp:          fordapi.DevApplication(),
+		fordBehavior:     fordapi.DefaultBehavior(),
 		tesla:            teslaapi.DefaultBehavior(),
 		bmw:              bmwapi.DefaultBehavior(),
 		bmwStreamAddr:    ":9000",
@@ -439,6 +462,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		"SIM_PLEOS_CLIENT_ID":     &cfg.pleos.ClientID, "SIM_PLEOS_CLIENT_SECRET": &cfg.pleos.ClientSecret,
 		"SIM_SKODA_API_KEY":     &cfg.skodaKey,
 		"SIM_RENAULT_GIGYA_KEY": &cfg.renaultKeys.Gigya, "SIM_RENAULT_KAMEREON_KEY": &cfg.renaultKeys.Kamereon,
+		"SIM_FORD_CLIENT_ID": &cfg.fordApp.ClientID, "SIM_FORD_CLIENT_SECRET": &cfg.fordApp.ClientSecret,
 	} {
 		if v := getenv(name); v != "" {
 			*dst = v
@@ -449,6 +473,8 @@ func loadConfig(getenv func(string) string) (config, error) {
 		"SIM_PLEOS_SEND_EVERY": &cfg.pleosBehavior.SendEvery, "SIM_PLEOS_TOKEN_TTL": &cfg.pleosBehavior.TokenTTL,
 		"SIM_SKODA_KEY_LIFETIME": &cfg.skodaBehavior.KeyLifetime, "SIM_SKODA_SEND_EVERY": &cfg.skodaBehavior.SendEvery,
 		"SIM_RENAULT_SEND_EVERY": &cfg.renaultBehavior.SendEvery,
+		"SIM_FORD_MIN_GAP":       &cfg.fordBehavior.MinGap, "SIM_FORD_ACCESS_TTL": &cfg.fordBehavior.AccessTTL,
+		"SIM_FORD_SEND_EVERY": &cfg.fordBehavior.SendEvery,
 	} {
 		if v := getenv(name); v != "" {
 			d, err := time.ParseDuration(v)
