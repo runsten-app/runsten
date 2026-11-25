@@ -11,12 +11,18 @@ import (
 
 // Revoke withdraws the grants of vehicle vin, or every grant when empty, as an owner
 // who removes the application's access at Ford: the refresh is refused (invalid_grant),
-// the access no longer reads.
+// the access no longer reads, and a code not exchanged yet no longer is. A sign-in made
+// after it reads again.
 func (h *Handler) Revoke(vin string) {
 	h.mu.Lock()
 	for _, g := range h.grants {
 		if vin == "" || g.vin == vin {
 			g.revoked = true
+		}
+	}
+	for code, g := range h.codes {
+		if vin == "" || g.vin == vin {
+			delete(h.codes, code)
 		}
 	}
 	h.mu.Unlock()

@@ -10,9 +10,33 @@ import (
 	"runsten/internal/simulator/vehicle"
 )
 
-// sparse are the models reported to tell much less than the others: no speed, no
-// temperature, no charger current nor voltage, no tyre pressure.
-var sparse = map[string]bool{"Explorer": true, "Capri": true}
+// sparse reports whether the model is one reported to tell much less than the others:
+// no speed, no temperature, no charger current nor voltage, no tyre pressure.
+func sparse(model string) bool { return model == "Explorer" || model == "Capri" }
+
+// sends are when the car last sent its status (the ignition, the odometer, the doors)
+// and its energy (the level, the charge).
+type sends struct {
+	status, energy time.Time
+}
+
+// sendsOf are the sends of the report r read at now: each at its last change, and every
+// SendEvery while the car drives or charges.
+func sendsOf(r vehicle.Report, b Behavior, now time.Time) sends {
+	active := r.Status.Driving || r.Energy.Charging == vehicle.Charging
+	return sends{status: sendAt(b, r.StatusAt, active, now), energy: sendAt(b, r.EnergyAt, active, now)}
+}
+
+// after returns the later of each send.
+func (s sends) after(o sends) sends {
+	if o.status.After(s.status) {
+		s.status = o.status
+	}
+	if o.energy.After(s.energy) {
+		s.energy = o.energy
+	}
+	return s
+}
 
 // garageOf is the car as the garage tells it: one object, the grant's car.
 func garageOf(vin string, r vehicle.Report) map[string]any {
@@ -28,14 +52,12 @@ func garageOf(vin string, r vehicle.Report) map[string]any {
 	}
 }
 
-// telemetryOf is the car's state: each metric with the time the car last sent it. The
-// position is the one of the last trip's end, as a car that sends it when its ignition
-// goes off.
-func telemetryOf(vin string, r vehicle.Report, b Behavior, now time.Time) map[string]any {
-	active := r.Status.Driving || r.Energy.Charging == vehicle.Charging
-	statusAt := sendAt(b, r.StatusAt, active, now)
-	energyAt := sendAt(b, r.EnergyAt, active, now)
-	rich := !sparse[r.Spec.Model]
+// telemetryOf is the car's state: each metric with the time the car last sent it, sent.
+// The position is the one of the last trip's end, as a car that sends it when its
+// ignition goes off.
+func telemetryOf(vin string, r vehicle.Report, sent sends) map[string]any {
+	statusAt, energyAt := sent.status, sent.energy
+	rich := !sparse(r.Spec.Model)
 	e, s := r.Energy, r.Status
 
 	m := map[string]any{}
@@ -56,7 +78,9 @@ func telemetryOf(vin string, r vehicle.Report, b Behavior, now time.Time) map[st
 	})
 	set("heading", r.LocationAt, map[string]any{"heading": r.Location.Heading, "uncertainty": 0.0, "detectionType": "HEADING_RAW_GNSS"})
 
-	usable := r.Spec.UsableKWhAt(now)
+	// The battery as it was at the send: a read later tells the same values, though the
+	// pack fades meanwhile.
+	usable := r.Spec.UsableKWhAt(energyAt)
 	set("xevBatteryStateOfCharge", energyAt, math.Round(e.SoC*2)/2)
 	// The actual level, below the displayed one by the buffers the car hides.
 	set("xevBatteryActualStateOfCharge", energyAt, math.Round((5+e.SoC*0.9)*100)/100)

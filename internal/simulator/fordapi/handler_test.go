@@ -190,6 +190,13 @@ func TestTokens(t *testing.T) {
 	if status, _, _ := s.post(tokenForm("refresh_token", "refresh_token", first)); status != http.StatusBadRequest {
 		t.Errorf("the refresh token rotated away still refreshes: %d", status)
 	}
+	// The one given in its place refreshes, and gives the next.
+	second := body["refresh_token"].(string)
+	status, _, body = s.post(tokenForm("refresh_token", "refresh_token", second))
+	if status != http.StatusOK || body["refresh_token"] == second {
+		t.Fatalf("the refresh token given does not refresh: %d %v", status, body)
+	}
+	latest := body["refresh_token"].(string)
 	// Another redirect address than the sign-in's.
 	_, _, back = s.signIn(signInQuery())
 	other := tokenForm("authorization_code", "code", back.Get("code"))
@@ -197,10 +204,55 @@ func TestTokens(t *testing.T) {
 	if status, _, body := s.post(other); status != http.StatusBadRequest || body["error"] != "invalid_grant" {
 		t.Errorf("another redirect address: %d %v", status, body)
 	}
+	// A code left there is no longer exchanged.
+	_, _, back = s.signIn(signInQuery())
+	s.clk.Advance(codeLife)
+	if status, _, body := s.post(tokenForm("authorization_code", "code", back.Get("code"))); status != http.StatusBadRequest || body["error"] != "invalid_grant" {
+		t.Errorf("a code %v old: %d %v", codeLife, status, body)
+	}
 	// The grant's year over.
 	s.clk.Advance(366 * 24 * time.Hour)
-	if status, _, body := s.post(tokenForm("refresh_token", "refresh_token", body["refresh_token"].(string))); status != http.StatusBadRequest || body["error"] != "invalid_grant" {
+	if status, _, body := s.post(tokenForm("refresh_token", "refresh_token", latest)); status != http.StatusBadRequest || body["error"] != "invalid_grant" {
 		t.Errorf("a grant a year old: %d %v", status, body)
+	}
+}
+
+// TestSendsNeverGoBack: a car that stops driving keeps the time of its last send, and
+// its battery's values are those of that send, whenever they are read.
+func TestSendsNeverGoBack(t *testing.T) {
+	s := newSim(t)
+	access, refresh := s.grant()
+	sent := func(name string) (any, any) {
+		t.Helper()
+		status, _, tel := s.get("telemetry", access)
+		if status != http.StatusOK {
+			t.Fatalf("telemetry: %d", status)
+		}
+		m := tel["metrics"].(map[string]any)[name].(map[string]any)
+		return m["updateTime"], m["value"]
+	}
+	// Driving, the level unchanged since 17:59: sent again each minute.
+	s.rep.Status.Driving = true
+	s.clk.Advance(10*time.Minute + 30*time.Second)
+	if at, _ := sent("xevBatteryStateOfCharge"); at != "2026-11-11T18:10:00Z" {
+		t.Fatalf("driving, the level sent at %v", at)
+	}
+	// Parked: the last send stands, however long after it is read.
+	s.rep.Status.Driving = false
+	s.rep.Spec.FadeStart, s.rep.Spec.FadePerYear = s.clk.Now(), 0.5
+	s.clk.Advance(time.Minute)
+	at, first := sent("xevBatteryRange")
+	if at != "2026-11-11T18:10:00Z" {
+		t.Errorf("parked, the range sent at %v: a send told is not taken back", at)
+	}
+	s.clk.Advance(90 * 24 * time.Hour)
+	status, _, body := s.post(tokenForm("refresh_token", "refresh_token", refresh))
+	if status != http.StatusOK {
+		t.Fatalf("refresh: %d %v", status, body)
+	}
+	access = body["access_token"].(string)
+	if at, later := sent("xevBatteryRange"); at != "2026-11-11T18:10:00Z" || later != first {
+		t.Errorf("three months later: sent at %v, range %v then %v", at, first, later)
 	}
 }
 
@@ -280,6 +332,12 @@ func TestLimits(t *testing.T) {
 	if status, _, _ := s.get("telemetry", access); status != http.StatusOK {
 		t.Fatalf("telemetry: %d", status)
 	}
+	// The access without its scheme is no access.
+	bare, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, s.srv.URL+Prefix+"v1/telemetry", http.NoBody)
+	bare.Header.Set("Authorization", access)
+	if status, _, _ := s.do(bare); status != http.StatusUnauthorized {
+		t.Errorf("an access without the Bearer scheme: %d", status)
+	}
 	s.clk.Advance(4 * time.Second)
 	status, header, _ := s.get("garage", access)
 	if status != http.StatusTooManyRequests || header.Get("Retry-After") != "6" {
@@ -318,7 +376,17 @@ func TestLimits(t *testing.T) {
 	}
 	access, refresh = body["access_token"].(string), body["refresh_token"].(string)
 
+	// A sign-in whose code is not exchanged yet is withdrawn with the rest; the other
+	// car's is not.
+	_, _, explorer := s.signIn(signInQuery()) // the second sign-in's car
+	_, _, puma := s.signIn(signInQuery())     // the third's: the first car again
 	s.h.Revoke("WF0TESTPUMA000001")
+	if status, _, body := s.post(tokenForm("authorization_code", "code", puma.Get("code"))); status != http.StatusBadRequest || body["error"] != "invalid_grant" {
+		t.Errorf("a code of a grant withdrawn: %d %v", status, body)
+	}
+	if status, _, body := s.post(tokenForm("authorization_code", "code", explorer.Get("code"))); status != http.StatusOK {
+		t.Errorf("the other car's code: %d %v", status, body)
+	}
 	if status, _, _ := s.get("telemetry", access); status != http.StatusUnauthorized {
 		t.Errorf("a grant withdrawn reads: %d", status)
 	}

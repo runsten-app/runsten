@@ -7,8 +7,9 @@
 // checked on a real car yet.
 //
 // The application is DevApplication. A grant reads one car, as Ford's: each sign-in is
-// given the next vehicle of the scenarios of brand ford. Two calls of a grant closer than
-// Behavior.MinGap are answered 429, as reported of the real API. Faults are set on demand
+// given the next vehicle of the scenarios of brand ford. Two reads of a grant closer than
+// Behavior.MinGap are answered 429, as reported of the real API; the token endpoint,
+// another service behind Ford's gateway, is not held to it. Faults are set on demand
 // under ControlPrefix: a grant withdrawn, the sign-in's outage, a limit of calls.
 package fordapi
 
@@ -43,7 +44,8 @@ type Application struct {
 }
 
 // DevApplication is the application the simulator accepts by default, development only:
-// connect-sim and the Compose stack give it to runsten-api.
+// it stands for the one an owner creates on Ford's developer portal, and is the one to
+// sign in with against the simulator.
 func DevApplication() Application {
 	return Application{ClientID: "runsten-dev-ford", ClientSecret: "runsten-dev-ford-secret"} //nolint:gosec // the simulator's, never a real one
 }
@@ -57,9 +59,9 @@ type Behavior struct {
 	// Rotate has each refresh give a new refresh token, the previous one no longer
 	// accepted (assumption: Azure AD B2C's default).
 	Rotate bool
-	// MinGap is the least time between two calls of a grant; a call sooner is answered
-	// 429 (assumption: reports tell of a 429 for two calls close together). Zero: no
-	// limit.
+	// MinGap is the least time between two reads of the API by a grant; a read sooner
+	// is answered 429 (assumption: reports tell of a 429 for two calls close together,
+	// none of the token endpoint's). Zero: no limit.
 	MinGap time.Duration
 	// SendEvery is how often a car sends its state while it drives or charges; parked,
 	// only at a change (assumption, to measure on a real car). Zero: only at a change.
@@ -79,6 +81,10 @@ type Source interface {
 	VIN() string
 	ReportAt(at time.Time) vehicle.Report
 }
+
+// codeLife is how long an authorization code is exchanged after the sign-in
+// (assumption: minutes, as OAuth asks of a code).
+const codeLife = 10 * time.Minute
 
 // grant is a sign-in: the car it reads, when the owner consented, and its tokens.
 type grant struct {
@@ -102,18 +108,22 @@ type Handler struct {
 	mux      *http.ServeMux
 
 	mu           sync.Mutex
-	codes        map[string]*grant // by authorization code, used once
+	codes        map[string]*grant // by authorization code, used once, for codeLife
 	grants       []*grant
-	next         int       // the vehicle the next sign-in is given
-	outageUntil  time.Time // the token endpoint fails until
-	limitedUntil time.Time // the API answers 429 until
+	sent         map[string]sends // by VIN: the latest sends a read was told
+	next         int              // the vehicle the next sign-in is given
+	outageUntil  time.Time        // the token endpoint fails until
+	limitedUntil time.Time        // the API answers 429 until
 }
 
 // NewHandler creates the simulated service for the vehicles srcs, with the application
 // app and the simulated clock clk. Their VINs must be distinct (scenario.NewFleet checks
 // it): NewHandler panics otherwise.
 func NewHandler(srcs []Source, clk clock.Clock, app Application, behavior Behavior) *Handler {
-	h := &Handler{clk: clk, behavior: behavior, app: app, byVIN: make(map[string]Source, len(srcs)), codes: map[string]*grant{}}
+	h := &Handler{
+		clk: clk, behavior: behavior, app: app, byVIN: make(map[string]Source, len(srcs)),
+		codes: map[string]*grant{}, sent: map[string]sends{},
+	}
 	for _, src := range srcs {
 		if _, dup := h.byVIN[src.VIN()]; dup {
 			panic("fordapi: duplicate VIN " + src.VIN())
@@ -177,10 +187,17 @@ func (h *Handler) authorize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No vehicle in this account.", http.StatusBadRequest)
 		return
 	}
+	now := h.clk.Now()
+	// The codes of the sign-ins left there go.
+	for c, g := range h.codes {
+		if !now.Before(g.authAt.Add(codeLife)) {
+			delete(h.codes, c)
+		}
+	}
 	vin := h.vins[h.next%len(h.vins)]
 	h.next++
 	code := rand.Text()
-	h.codes[code] = &grant{vin: vin, authAt: h.clk.Now(), redirect: redirect}
+	h.codes[code] = &grant{vin: vin, authAt: now, redirect: redirect}
 	h.mu.Unlock()
 
 	u, _ := url.Parse(redirect) // parsed by redirectAllowed
@@ -201,9 +218,9 @@ func (h *Handler) token(w http.ResponseWriter, r *http.Request) {
 		writeOAuthError(w, http.StatusBadRequest, "invalid_request", "AADB2C90083: The request is missing required parameter.")
 		return
 	}
-	now := h.clk.Now()
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	now := h.clk.Now()
 	switch {
 	case now.Before(h.limitedUntil):
 		w.Header().Set("Retry-After", retryAfter(h.limitedUntil.Sub(now)))
@@ -224,7 +241,7 @@ func (h *Handler) token(w http.ResponseWriter, r *http.Request) {
 		code := r.PostForm.Get("code")
 		g = h.codes[code]
 		delete(h.codes, code)
-		if g == nil {
+		if g == nil || !now.Before(g.authAt.Add(codeLife)) {
 			writeOAuthError(w, http.StatusBadRequest, "invalid_grant", "AADB2C90080: The provided grant has expired. Please re-authenticate and try again.")
 			return
 		}
@@ -273,13 +290,13 @@ func idToken(authAt, now time.Time, ttl time.Duration) string {
 // the grant's car.
 func (h *Handler) api(serve func(w http.ResponseWriter, g *grant, now time.Time)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		now := h.clk.Now()
-		access, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+		access, bearer := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 		h.mu.Lock()
 		defer h.mu.Unlock()
+		now := h.clk.Now()
 		var g *grant
 		for _, c := range h.grants {
-			if access != "" && c.access == access {
+			if bearer && access != "" && c.access == access {
 				g = c
 			}
 		}
@@ -306,8 +323,14 @@ func (h *Handler) garage(w http.ResponseWriter, g *grant, now time.Time) {
 	writeJSON(w, http.StatusOK, garageOf(g.vin, h.byVIN[g.vin].ReportAt(now)))
 }
 
+// telemetry answers the car's state. A send a read was told is never taken back: a car
+// that stops driving keeps the time of its last send, though the model behind dates its
+// values from their last change.
 func (h *Handler) telemetry(w http.ResponseWriter, g *grant, now time.Time) {
-	writeJSON(w, http.StatusOK, telemetryOf(g.vin, h.byVIN[g.vin].ReportAt(now), h.behavior, now))
+	r := h.byVIN[g.vin].ReportAt(now)
+	s := h.sent[g.vin].after(sendsOf(r, h.behavior, now))
+	h.sent[g.vin] = s
+	writeJSON(w, http.StatusOK, telemetryOf(g.vin, r, s))
 }
 
 // retryAfter writes a wait in whole seconds, rounded up: a wait left is never told as

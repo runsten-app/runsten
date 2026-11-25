@@ -86,7 +86,8 @@
 //	                        fordapi.DevApplication's); SIM_FORD_CLIENT_SECRET, its secret
 //	SIM_FORD_MIN_GAP        least time between two calls of a grant, a call sooner
 //	                        answered 429 (default 10s; 0 = no limit), in simulated time
-//	SIM_FORD_ACCESS_TTL     lifetime of the Ford accesses issued (default 20m)
+//	SIM_FORD_ACCESS_TTL     lifetime of the Ford accesses issued (default 20m; a second
+//	                        at least)
 //	SIM_FORD_SEND_EVERY     how often at most a Ford sends its state while it drives or
 //	                        charges (default 1m; 0 = only at a change, in simulated time)
 //	SIM_RENAULT_GIGYA_KEY   the key of Renault's apps that Gigya accepts (default
@@ -483,6 +484,11 @@ func loadConfig(getenv func(string) string) (config, error) {
 			}
 			*dst = d
 		}
+	}
+	// An access of less than a second would be told to last none, which a client takes
+	// for a lifetime untold.
+	if v := getenv("SIM_FORD_ACCESS_TTL"); v != "" && cfg.fordBehavior.AccessTTL < time.Second {
+		errs = append(errs, fmt.Errorf("SIM_FORD_ACCESS_TTL %q: a duration of a second at least expected", v))
 	}
 	if v := getenv("SIM_SKODA_PER_HOUR"); v != "" {
 		n, err := strconv.Atoi(v)
