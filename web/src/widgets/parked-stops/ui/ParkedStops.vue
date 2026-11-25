@@ -101,8 +101,7 @@ const errorMessage = computed(() =>
                   <router-link
                     :to="{ name: s.before.kind, params: { vehicle, id: s.before.id } }"
                     class="text-primary"
-                    >{{ afterEvent(s.before.kind) }}</router-link
-                  >{{ ' · '
+                    >{{ afterEvent(s.before.kind) }}</router-link>{{ ' · '
                   }}<router-link
                     :to="{ name: s.after.kind, params: { vehicle, id: s.after.id } }"
                     class="text-primary"

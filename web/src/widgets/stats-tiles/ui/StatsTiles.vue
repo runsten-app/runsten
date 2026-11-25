@@ -231,14 +231,12 @@ const errorMessage = computed(() => {
       <dd>
         <span v-if="tile.range" class="value range">
           <span class="bound">
-            <span class="caption">{{ t('common.atLeast') }}</span
-            >{{ ' ' }}
+            <span class="caption">{{ t('common.atLeast') }}</span>{{ ' ' }}
             <TileFigure :text="tile.range.min" size="kpi" />
           </span>
           {{ ' ' }}
           <span class="bound">
-            <span class="caption">{{ t('common.atMost') }}</span
-            >{{ ' ' }}
+            <span class="caption">{{ t('common.atMost') }}</span>{{ ' ' }}
             <TileFigure :text="tile.range.max" size="kpi" />
           </span>
         </span>

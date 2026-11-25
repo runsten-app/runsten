@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { PeriodPicker, usePeriod } from '@/features/filter-period'
@@ -20,8 +20,13 @@ const { days, period, setPeriod } = usePeriod()
 const route = useRoute()
 const router = useRouter()
 const all = computed(() => route.query.short === '1')
-const setAll = (v: boolean) =>
-  router.replace({ query: { ...route.query, short: v ? '1' : undefined } })
+// The switch shows the click at once: the URL it writes follows a moment later.
+const allShown = ref(all.value)
+watch(all, (v) => (allShown.value = v))
+const setAll = (v: boolean) => {
+  allShown.value = v
+  return router.replace({ query: { ...route.query, short: v ? '1' : undefined } })
+}
 const { lacks } = useLimits()
 const noStats = computed(() => lacks('stats'))
 const chosen = computed(() => !!(days.value.from || days.value.to))
@@ -71,7 +76,7 @@ const rate = computed(() => {
         <!-- A switch: its state shows by itself, its label stays the same. -->
         <v-switch
           v-if="shown && shortCount"
-          :model-value="all"
+          :model-value="allShown"
           :label="t('parked.includeShort', { n: shortCount, min: minStop }, shortCount)"
           color="primary"
           density="compact"
