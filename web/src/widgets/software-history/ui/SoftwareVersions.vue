@@ -53,8 +53,7 @@ const ran = (r: VersionRun) => f.days(r.ran)
           <tr v-for="r in runs" :key="r.version.id" class="version">
             <th scope="row">
               <!-- The spaces are text: the words stay apart once the spans are read out. -->
-              <span class="name">{{ r.version.version }}</span
-              >{{ ' ' }}
+              <span class="name">{{ r.version.version }}</span>{{ ' ' }}
               <span v-if="r.current" class="current">{{ t('software.running') }}{{ ' ' }}</span>
               <span class="when d-block">{{ installed(r) }}</span>
             </th>

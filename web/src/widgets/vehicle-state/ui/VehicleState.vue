@@ -369,8 +369,7 @@ const update = computed(() => {
         >
         <span v-if="sleep" class="sleep" role="status">
           <span v-if="mode" aria-hidden="true" class="sep"> · </span>
-          <strong>{{ sleepLabels[sleep.value] }}</strong
-          >{{ ' '
+          <strong>{{ sleepLabels[sleep.value] }}</strong>{{ ' '
           }}<time :datetime="sleep.fetched_at">{{
             t('reading.since', { time: f.dateTime(sleep.fetched_at, now) })
           }}</time>
