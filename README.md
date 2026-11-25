@@ -45,6 +45,10 @@ tilt up              # the whole stack on the simulator: http://127.0.0.1:5173 (
 task unit            # format, lint, tests and build, before a pull request
 ```
 
+## Support
+
+Runsten is free software. If it is useful to you, you can [buy us a coffee on Ko-fi](https://ko-fi.com/runstenapp): it helps keep the self-hosted version free and pays for the work on new makes.
+
 ## Licence
 
 [AGPL-3.0-or-later](LICENSE).
