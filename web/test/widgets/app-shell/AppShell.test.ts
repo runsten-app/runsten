@@ -243,6 +243,14 @@ describe('AppShell', () => {
     expect(connection.wrapper.find('button.vehicle-menu').text()).toBe(second?.vin)
   })
 
+  // A long label (a Polestar 4's variant) truncates within the bound, rather than pushing
+  // the account's menu out of the bar: the v-menu gives its class to its overlay, so the
+  // bound is an element of its own around the button.
+  it('bounds the vehicle menu, whatever its label', async () => {
+    const { wrapper } = await shell()
+    expect(wrapper.find('.picker button.vehicle-menu').exists()).toBe(true)
+  })
+
   it('names no vehicle without one', async () => {
     fetchVehicles.mockResolvedValue([])
     const { wrapper } = await shell()
