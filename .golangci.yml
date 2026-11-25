@@ -396,6 +396,19 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/derive
               desc: outward dependency forbidden
+        # The FordConnect Query client depends on neither storage nor the collector, nor on
+        # another vendor's client.
+        ford-is-a-client:
+          files: ["**/internal/ford/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: the client stores nothing
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/derive
+              desc: outward dependency forbidden
         # The MyŠkoda client depends on neither storage nor the collector, nor on another
         # vendor's client.
         skoda-is-a-client:

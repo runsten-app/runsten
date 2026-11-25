@@ -105,6 +105,8 @@ var allowed = map[string][]string{
 	"internal/pleos": {"net/http", "encoding/json", "internal/core"},
 	// The reader of the MyŠkoda Public API.
 	"internal/skoda": {"net/http", "encoding/json", "internal/core"},
+	// The reader of FordConnect Query: its sign-in, its token endpoint and its API.
+	"internal/ford": {"net/http", "encoding/json", "internal/core"},
 	// The reader of the My Renault app's API: Gigya and Kamereon.
 	"internal/renault": {"net/http", "encoding/json", "internal/core"},
 	// CarData's REST and its MQTT stream; the YAML decoder for its embedded paints' names.
