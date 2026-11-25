@@ -15,7 +15,7 @@ beforeEach(() => {
 })
 
 describe('useSetVehicleAlias', () => {
-  it('writes the alias, caches the vehicle and refreshes the list', async () => {
+  it('writes the alias, caches the vehicle and refreshes the list and the detail', async () => {
     api.setVehicleAlias.mockResolvedValue(named)
     const { result, queryClient } = withSetup(useSetVehicleAlias)
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
@@ -25,6 +25,7 @@ describe('useSetVehicleAlias', () => {
     expect(queryClient.getQueryData(vehicleKeys.detail(named.id))).toEqual(named)
     expect(invalidate.mock.calls.map(([f]) => (f as { queryKey?: unknown })?.queryKey)).toEqual([
       vehicleKeys.list(),
+      vehicleKeys.detail(named.id),
     ])
   })
 })

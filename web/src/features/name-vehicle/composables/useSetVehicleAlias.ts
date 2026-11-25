@@ -9,7 +9,13 @@ export function useSetVehicleAlias() {
     mutationFn: (p: { vehicle: string; alias: AliasChoice }) => setVehicleAlias(p.vehicle, p.alias),
     onSuccess: async (vehicle) => {
       queryClient.setQueryData(vehicleKeys.detail(vehicle.id), vehicle)
-      await queryClient.invalidateQueries({ queryKey: vehicleKeys.list() })
+      // The detail too: of two saves that overlap, the last response is not always the
+      // last write.
+      await Promise.all(
+        [vehicleKeys.list(), vehicleKeys.detail(vehicle.id)].map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey }),
+        ),
+      )
     },
   })
   return { setVehicleAlias: mutateAsync, isPending, error, reset }

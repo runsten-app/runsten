@@ -24,9 +24,11 @@ const derived = computed(() => vehicleLabel({ ...props.vehicle, alias: null }))
 
 const text = ref(props.vehicle.alias ?? '')
 const status = ref('')
+// A change clears what the last save said. A save still running is left to finish, so
+// that its failure is told: reset() would stop observing it.
 watch(text, () => {
   status.value = ''
-  reset()
+  if (!isPending.value) reset()
 })
 
 // Errors show once the form was sent, then follow the changes.
@@ -59,9 +61,11 @@ async function focusSummary() {
 }
 
 async function send(body: AliasChoice) {
+  const draft = text.value
   try {
     await setVehicleAlias({ vehicle: props.vehicle.id, alias: body })
-    text.value = body.alias ?? ''
+    // The field takes the alias as saved (trimmed), unless it was edited meanwhile.
+    if (text.value === draft) text.value = body.alias ?? ''
     // Said after the field's own watcher has cleared the previous status.
     await nextTick()
     status.value = body.alias ? t('vehicleAlias.saved') : t('vehicleAlias.removed')
@@ -110,7 +114,7 @@ async function remove() {
           :counter="maxAlias"
           :error-messages="fieldError"
           :aria-invalid="fieldError ? 'true' : undefined"
-          :aria-describedby="hintId"
+          :aria-describedby="`${hintId} ${id}-messages`"
           autocomplete="off"
           class="alias mb-2"
         />

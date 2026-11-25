@@ -105,11 +105,41 @@ describe('VehicleAliasForm', () => {
     expect(summary.text()).toContain('The alias could not be saved')
     expect(summary.find('li').text()).toBe('At most 40 characters.')
     expect(input(w).attributes('aria-invalid')).toBe('true')
+    // The error is read with the field, after its hint.
+    const described = input(w).attributes('aria-describedby')?.split(' ') ?? []
+    expect(described).toHaveLength(2)
+    expect(w.find(`#${described[1]}`).text()).toContain('At most 40 characters.')
     await summary.find('a').trigger('click')
     expect(document.activeElement).toBe(input(w).element)
     // Shortened, the error goes.
     await type(w, 'a'.repeat(40))
     expect(w.find('.error-summary').exists()).toBe(false)
+  })
+
+  it('keeps an edit made while the save runs, and still tells its failure', async () => {
+    let fail: (e: unknown) => void = () => {}
+    api.setVehicleAlias.mockReturnValue(new Promise((_, reject) => (fail = reject)))
+    const w = form(xc40)
+    await type(w, ' Pool ')
+    await w.find('form').trigger('submit')
+    await type(w, 'Pool north')
+    fail(new ApiError(500, 'internal', ''))
+    await flushPromises()
+    expect(input(w).element.value).toBe('Pool north')
+    expect(w.find('.error-summary li').text()).toBe('Something went wrong. Try again later.')
+  })
+
+  it('keeps an edit made while the save runs, when it succeeds', async () => {
+    let done: (v: unknown) => void = () => {}
+    api.setVehicleAlias.mockReturnValue(new Promise((resolve) => (done = resolve)))
+    const w = form(xc40)
+    await type(w, ' Pool ')
+    await w.find('form').trigger('submit')
+    await type(w, 'Pool north')
+    done(named)
+    await flushPromises()
+    expect(input(w).element.value).toBe('Pool north')
+    expect(w.find('[role="status"]').text()).toBe('Alias saved.')
   })
 
   it('refuses a control character', async () => {
