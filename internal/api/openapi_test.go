@@ -291,6 +291,7 @@ var goldenRequests = map[string]string{
 	"orphans.json":                      "GET /api/v1/charge-costs/orphans",
 	"variants.json":                     "GET /api/v1/vehicles/" + chosen + "/variants",
 	"vehicle-model.json":                "PUT /api/v1/vehicles/" + chosen + "/model",
+	"vehicle-alias.json":                "PUT /api/v1/vehicles/" + car + "/alias",
 	"mqtt-none.json":                    "GET /api/v1/mqtt",
 	"mqtt.json":                         "GET /api/v1/mqtt",
 	"instance.json":                     "GET /api/v1/instance",

@@ -222,7 +222,7 @@ func (s *Server) vehicleOf(ctx context.Context, v Vehicle) (vehicleJSON, error) 
 		return vehicleJSON{}, err
 	}
 	return vehicleJSON{
-		ID: v.ID, VIN: v.VIN, Model: modelOf(m), Sheet: sheet, Connection: s.connectionOf(v), MarketRefusedAt: timeOrNil(v.MarketRefusedAt),
+		ID: v.ID, VIN: v.VIN, Alias: nonEmpty(v.Alias), Model: modelOf(m), Sheet: sheet, Connection: s.connectionOf(v), MarketRefusedAt: timeOrNil(v.MarketRefusedAt),
 		UnsharedAt: timeOrNil(v.UnsharedAt),
 		Collection: collectionOf(v),
 	}, nil
@@ -370,7 +370,7 @@ func (s *Server) putModel(ctx context.Context, in *vehicleModelInput) (*body[veh
 		}
 		return nil, s.internal("vehicle model not written", err)
 	}
-	return respond(vehicleJSON{ID: v.ID, VIN: v.VIN, Model: modelOf(after), Connection: s.connectionOf(v)}), nil
+	return respond(vehicleJSON{ID: v.ID, VIN: v.VIN, Alias: nonEmpty(v.Alias), Model: modelOf(after), Connection: s.connectionOf(v)}), nil
 }
 
 // registerModel registers the variants offered for a vehicle, and the user's choice.

@@ -370,6 +370,7 @@ func run(args []string) error {
 		Reader:           st,
 		Settings:         st,
 		Models:           st,
+		Aliases:          st,
 		Deletion:         st,
 		Costs:            st,
 		Marks:            st,

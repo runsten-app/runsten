@@ -223,7 +223,7 @@ func (s *Store) queryVehicles(ctx context.Context, accountID, clause string, arg
 			SELECT v.id, v.vin, c.authorized_at, c.refreshed_at, c.reauth_at, coalesce(c.reauth_reason, ''),
 				c.api_key IS NOT NULL, c.api_key_refused_at IS NOT NULL, coalesce(v.variant_id, ''), v.ac_max_kw,
 				v.market_refused_at, c.provider, c.provider <> 'volvo' AND c.credential IS NULL,
-				c.credential_refused_at IS NOT NULL, v.unshared_at, `+statusColumns+`
+				c.credential_refused_at IS NOT NULL, v.unshared_at, coalesce(v.alias, ''), `+statusColumns+`
 			FROM vehicles v JOIN connections c ON c.account_id = v.account_id AND c.id = v.connection_id
 			LEFT JOIN collector_status s ON s.vehicle_id = v.id `+clause, args...)
 		if err != nil {
@@ -237,6 +237,7 @@ func (s *Store) queryVehicles(ctx context.Context, accountID, clause string, arg
 		dest := append([]any{
 			&v.ID, &v.VIN, &authorized, &refreshed, &reauth, &v.ReauthReason, &v.OwnKey, &v.KeyRefused,
 			&v.VariantID, &acMaxKW, &marketRefused, &v.Provider, &v.CredentialMissing, &v.CredentialRefused, &unshared,
+			&v.Alias,
 		}, st.dest()...)
 		_, err = pgx.ForEachRow(rows, dest, func() error {
 			v.AuthorizedAt, v.RefreshedAt, v.ReauthAt = utcOrZero(authorized), utcOrZero(refreshed), utcOrZero(reauth)
@@ -285,6 +286,25 @@ func (s *Store) SetVehicleModel(ctx context.Context, accountID, vehicleID, varia
 			if _, err := tx.Exec(ctx, "DELETE FROM derivation_cursors WHERE vehicle_id = $1", vehicleID); err != nil {
 				return fmt.Errorf("derivation cursor: %w", err)
 			}
+		}
+		return nil
+	})
+}
+
+// SetVehicleAlias implements api.VehicleAliases: the name the user gave the vehicle
+// (empty: none), checked by the API.
+func (s *Store) SetVehicleAlias(ctx context.Context, accountID, vehicleID, alias string) error {
+	var value *string
+	if alias != "" {
+		value = &alias
+	}
+	return s.inAccount(ctx, accountID, func(tx pgx.Tx) error {
+		tag, err := tx.Exec(ctx, "UPDATE vehicles SET alias = $2 WHERE id = $1", vehicleID, value)
+		if err != nil {
+			return fmt.Errorf("vehicle alias: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			return api.ErrNotFound
 		}
 		return nil
 	})

@@ -689,7 +689,7 @@ func TestVehiclesJSON(t *testing.T) {
 	}
 	// No vehicle yet: an empty list, not null.
 	_, body = get(t, noFollow(), e.api.URL+"/api/v1/vehicles", e.session(t, "other"))
-	if body != `{"items":[{"id":"`+foreign+`","vin":"YV1SMLT0000DT0003",`+
+	if body != `{"items":[{"id":"`+foreign+`","vin":"YV1SMLT0000DT0003","alias":null,`+
 		`"model":{"family":null,"model_year":null,"variant":null,"variant_source":null,"ac_max_kw":null,"powertrain":null},"sheet":null,"connection":{"provider":"volvo","status":"active","api_key":"instance","credential":null,"authorized_at":null,"refreshed_at":null,"reauth_at":null,"reauth_reason":null},`+
 		`"market_refused_at":null,"unshared_at":null,"collection":null}]}`+"\n" {
 		t.Errorf("other account: %s", body)
