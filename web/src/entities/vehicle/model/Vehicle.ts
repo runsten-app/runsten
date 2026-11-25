@@ -11,6 +11,8 @@ export type VariantOption = components['schemas']['VariantOption']
 export type SourceLevel = VariantOption['levels']['gross_kwh']
 // ModelChoice is what the user says of the model: null goes back to the recognition.
 export type ModelChoice = components['schemas']['VehicleModelUpdate']
+// AliasChoice is the name the user gives the vehicle: null removes it.
+export type AliasChoice = components['schemas']['VehicleAlias']
 
 // Reading is one value of the state and when it was read: it held at fetched_at and again
 // at checked_at.

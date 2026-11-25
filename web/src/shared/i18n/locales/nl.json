@@ -1169,6 +1169,23 @@
       "internal": "Er is iets misgegaan. Probeer het later opnieuw."
     }
   },
+  "vehicleAlias": {
+    "title": "Naam",
+    "help": "Een eigen naam, getoond overal waar het voertuig wordt genoemd en naar MQTT en Home Assistant gestuurd. Laat leeg om terug te gaan naar {label}.",
+    "field": "Naam",
+    "save": "Naam opslaan",
+    "saved": "Naam opgeslagen.",
+    "removed": "Naam verwijderd.",
+    "error": {
+      "summary": "De naam kon niet worden opgeslagen",
+      "tooLong": "Hoogstens {max} tekens.",
+      "control": "De naam mag geen regeleinde of tab bevatten.",
+      "invalidBody": "Runsten heeft de naam geweigerd: {message}",
+      "notFound": "Dit voertuig bestaat niet meer.",
+      "unavailable": "Runsten is niet bereikbaar. Probeer het zo meteen opnieuw.",
+      "internal": "Er is iets misgegaan. Probeer het later opnieuw."
+    }
+  },
   "vehicleSettings": {
     "open": "Voertuiginstellingen",
     "title": "Voertuiginstellingen",

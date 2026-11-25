@@ -1169,6 +1169,23 @@
       "internal": "Etwas ist schiefgelaufen. Versuchen Sie es später erneut."
     }
   },
+  "vehicleAlias": {
+    "title": "Name",
+    "help": "Ein eigener Name, überall angezeigt, wo das Fahrzeug genannt wird, und an MQTT und Home Assistant gesendet. Leer lassen, um zu {label} zurückzukehren.",
+    "field": "Name",
+    "save": "Namen speichern",
+    "saved": "Name gespeichert.",
+    "removed": "Name entfernt.",
+    "error": {
+      "summary": "Der Name konnte nicht gespeichert werden",
+      "tooLong": "Höchstens {max} Zeichen.",
+      "control": "Der Name darf weder Zeilenumbruch noch Tabulator enthalten.",
+      "invalidBody": "Runsten hat den Namen abgelehnt: {message}",
+      "notFound": "Dieses Fahrzeug existiert nicht mehr.",
+      "unavailable": "Runsten ist nicht erreichbar. Versuchen Sie es gleich noch einmal.",
+      "internal": "Etwas ist schiefgelaufen. Versuchen Sie es später noch einmal."
+    }
+  },
   "vehicleSettings": {
     "open": "Fahrzeugeinstellungen",
     "title": "Fahrzeugeinstellungen",

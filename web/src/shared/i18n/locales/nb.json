@@ -1169,6 +1169,23 @@
       "internal": "Noe gikk galt. Prøv igjen senere."
     }
   },
+  "vehicleAlias": {
+    "title": "Navn",
+    "help": "Et eget navn, vist overalt der kjøretøyet nevnes, og sendt til MQTT og Home Assistant. La feltet stå tomt for å gå tilbake til {label}.",
+    "field": "Navn",
+    "save": "Lagre navnet",
+    "saved": "Navnet er lagret.",
+    "removed": "Navnet er fjernet.",
+    "error": {
+      "summary": "Navnet kunne ikke lagres",
+      "tooLong": "Høyst {max} tegn.",
+      "control": "Navnet kan ikke inneholde linjeskift eller tabulator.",
+      "invalidBody": "Runsten avviste navnet: {message}",
+      "notFound": "Dette kjøretøyet finnes ikke lenger.",
+      "unavailable": "Runsten kan ikke nås. Prøv igjen om litt.",
+      "internal": "Noe gikk galt. Prøv igjen senere."
+    }
+  },
   "vehicleSettings": {
     "open": "Bilinnstillinger",
     "title": "Bilinnstillinger",

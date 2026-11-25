@@ -1169,6 +1169,23 @@
       "internal": "Une erreur s'est produite. Réessayez plus tard."
     }
   },
+  "vehicleAlias": {
+    "title": "Nom",
+    "help": "Un nom de votre choix, affiché partout où le véhicule est nommé et envoyé à MQTT et Home Assistant. Laissez-le vide pour revenir à {label}.",
+    "field": "Nom",
+    "save": "Enregistrer le nom",
+    "saved": "Nom enregistré.",
+    "removed": "Nom retiré.",
+    "error": {
+      "summary": "Le nom n'a pas pu être enregistré",
+      "tooLong": "{max} caractères au plus.",
+      "control": "Le nom ne peut contenir ni saut de ligne ni tabulation.",
+      "invalidBody": "Runsten a refusé le nom : {message}",
+      "notFound": "Ce véhicule n'existe plus.",
+      "unavailable": "Runsten est injoignable. Réessayez dans un instant.",
+      "internal": "Une erreur s'est produite. Réessayez plus tard."
+    }
+  },
   "vehicleSettings": {
     "open": "Réglages du véhicule",
     "title": "Réglages du véhicule",

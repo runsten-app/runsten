@@ -16,7 +16,7 @@ const unknown: Model = {
 const ex30: Model = { ...unknown, family: 'EX30', model_year: 2024 }
 
 function car(id: string, vin: string, model: Model) {
-  return { id, vin, model, sheet: null }
+  return { id, vin, alias: null, model, sheet: null }
 }
 
 // sheet is a Volvo's, which tells no name.
@@ -29,14 +29,27 @@ describe('vehicleLabel', () => {
     ['the family alone', { ...ex30, model_year: null }, 'EX30'],
     ['the VIN before the details are read', reauth.model as Model, 'YV1SMLT0000DT0002'],
   ])('names %s', (_, model, want) => {
-    expect(vehicleLabel({ vin: 'YV1SMLT0000DT0002', model, sheet: null })).toBe(want)
+    expect(vehicleLabel({ vin: 'YV1SMLT0000DT0002', alias: null, model, sheet: null })).toBe(want)
   })
 
   it('names a vehicle by the name its owner gave it, over its model', () => {
     const sheet = named && { ...named, name: 'Blixt' }
-    expect(vehicleLabel({ vin: 'LRWYGCEK1MC000001', model: ex30, sheet })).toBe('Blixt')
+    expect(vehicleLabel({ vin: 'LRWYGCEK1MC000001', alias: null, model: ex30, sheet })).toBe(
+      'Blixt',
+    )
     // A sheet without a name changes nothing.
-    expect(vehicleLabel({ vin: 'LRWYGCEK1MC000001', model: ex30, sheet: named })).toBe(
+    expect(vehicleLabel({ vin: 'LRWYGCEK1MC000001', alias: null, model: ex30, sheet: named })).toBe(
+      'EX30 · 2024',
+    )
+  })
+
+  it('names a vehicle by the alias its user gave it, over all else', () => {
+    const sheet = named && { ...named, name: 'Blixt' }
+    expect(
+      vehicleLabel({ vin: 'LRWYGCEK1MC000001', alias: 'Pool car 3', model: ex30, sheet }),
+    ).toBe('Pool car 3')
+    // An empty alias is none.
+    expect(vehicleLabel({ vin: 'LRWYGCEK1MC000001', alias: '', model: ex30, sheet: null })).toBe(
       'EX30 · 2024',
     )
   })
@@ -61,6 +74,19 @@ describe('vehicleLabels', () => {
       { ...car('b', 'LRWYGCEK1MC000002', ex30), sheet },
     ])
     expect(Object.fromEntries(labels)).toEqual({ a: 'Blixt · 000001', b: 'Blixt · 000002' })
+  })
+
+  it('tells identical vehicles apart by their aliases', () => {
+    const labels = vehicleLabels([
+      { ...car('a', 'YV1EL3AV0R2000741', ex30), alias: 'Pool car 1' },
+      { ...car('b', 'YV1EL3AV0R2000742', ex30), alias: 'Pool car 2' },
+      car('c', 'YV1EL3AV0R2000743', ex30),
+    ])
+    expect(Object.fromEntries(labels)).toEqual({
+      a: 'Pool car 1',
+      b: 'Pool car 2',
+      c: 'EX30 · 2024',
+    })
   })
 
   it('ends two alike labels with their serial number', () => {

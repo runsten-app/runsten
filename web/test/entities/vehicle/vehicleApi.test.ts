@@ -4,11 +4,13 @@ import {
   fetchVehicle,
   fetchVehicles,
   fetchVehicleState,
+  setVehicleAlias,
   setVehicleModel,
   vehicleKeys,
 } from '@/entities/vehicle'
 import state from '@fixtures/state.json'
 import variants from '@fixtures/variants.json'
+import named from '@fixtures/vehicle-alias.json'
 import chosen from '@fixtures/vehicle-model.json'
 import reauth from '@fixtures/vehicle-reauth-required.json'
 import vehicles from '@fixtures/vehicles.json'
@@ -39,6 +41,12 @@ describe('vehicle API', () => {
     const choice = { variant_id: 'ex30-er-2024', ac_max_kw: 11 }
     expect(await setVehicleModel(chosen.id, choice)).toEqual(chosen)
     expect(await requests[1]?.json()).toEqual(choice)
+  })
+
+  it('writes the alias', async () => {
+    const requests = stubFetch({ [`PUT /vehicles/${named.id}/alias`]: () => json(named) })
+    expect(await setVehicleAlias(named.id, { alias: 'Fleet car 12' })).toEqual(named)
+    expect(await requests[0]?.json()).toEqual({ alias: 'Fleet car 12' })
   })
 
   it('fails with the code of the contract', async () => {

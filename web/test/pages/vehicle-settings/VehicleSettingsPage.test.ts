@@ -40,11 +40,16 @@ describe('VehicleSettingsPage', () => {
     expect(w.find('.v-main h1').text()).toBe('Vehicle settings')
     expect(w.find('.area h2').text()).toBe('Vehicle')
     expect(w.find('.vehicle-model form').exists()).toBe(true)
-    // Its sheet after the model; the deletion last, on a tile of its own.
+    // Its name and sheet after the model; the deletion last, on a tile of its own.
     const tiles = w.findAll('.tiles > *')
-    expect(
-      tiles.map((t) => t.classes().find((c) => c === 'vehicle-sheet' || c === 'delete-vehicle')),
-    ).toEqual([undefined, 'vehicle-sheet', 'delete-vehicle'])
+    const named = ['vehicle-alias', 'vehicle-sheet', 'delete-vehicle']
+    expect(tiles.map((t) => t.classes().find((c) => named.includes(c)))).toEqual([
+      undefined,
+      'vehicle-alias',
+      'vehicle-sheet',
+      'delete-vehicle',
+    ])
+    expect(w.find('.vehicle-alias h3').text()).toBe('Name')
     expect(w.find('.vehicle-sheet h3').text()).toBe('Specifications')
     expect(w.find('.import-list').exists()).toBe(false)
     expect(mocks.fetchVariants).toHaveBeenCalledWith(ex30?.id)
