@@ -77,7 +77,7 @@ The Owner API gives the car's model (Model 3, Model Y, Model S, Model X), its tr
 
 ## Its name
 
-Runsten calls the car by the name you gave it in Tesla's app, in the menu and in [Home Assistant](./mqtt.md), rather than by its model; a [name of your own](./vehicle-models.md#its-name), in the vehicle's settings, outranks it. Its [specifications](./vehicle-models.md#its-specifications), in the vehicle's settings, tells its colour, its wheels and its roof as Tesla names them.
+Runsten calls the car by the name you gave it in Tesla's app, in the menu and in [Home Assistant](./mqtt.md), rather than by its model; an [alias](./vehicle-models.md#its-alias), in the vehicle's settings, replaces it. Its [specifications](./vehicle-models.md#its-specifications), in the vehicle's settings, tells its colour, its wheels and its roof as Tesla names them.
 
 ## When it is not read
 

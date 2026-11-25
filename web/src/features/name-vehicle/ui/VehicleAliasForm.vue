@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { mdiContentSave } from '@mdi/js'
+import { mdiClose, mdiContentSave } from '@mdi/js'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { vehicleLabel, type Vehicle } from '@/entities/vehicle'
+import { vehicleLabel, type AliasChoice, type Vehicle } from '@/entities/vehicle'
 import { isApiError } from '@/shared/api'
 import { ErrorSummary } from '@/shared/ui'
 import { useSetVehicleAlias } from '../composables/useSetVehicleAlias'
 import { aliasField, maxAlias, validate, type AliasIssue } from '../model/alias'
 
-// VehicleAliasForm is the name the user gives a vehicle, on its settings page: shown
-// wherever the vehicle is named, and published to MQTT as its device's name. An empty
-// field removes it, and the vehicle is named after its model again. Saved on request; the
+// VehicleAliasForm is the alias the user gives a vehicle, on its settings page: it
+// replaces the vehicle's label, here and as its device's name in Home Assistant. An
+// empty field, or the button that removes it, names the vehicle after its model again. Saved on request; the
 // save keeps the focus where it is and says so in a status region.
 const props = defineProps<{ vehicle: Vehicle }>()
 const { t } = useI18n()
@@ -58,19 +58,31 @@ async function focusSummary() {
   summaryRef.value?.focus()
 }
 
-async function submit() {
-  sent.value = true
-  const body = checked.value.body
-  if (!body) return focusSummary()
+async function send(body: AliasChoice) {
   try {
     await setVehicleAlias({ vehicle: props.vehicle.id, alias: body })
     text.value = body.alias ?? ''
     // Said after the field's own watcher has cleared the previous status.
     await nextTick()
     status.value = body.alias ? t('vehicleAlias.saved') : t('vehicleAlias.removed')
+    return true
   } catch {
     await focusSummary()
+    return false
   }
+}
+
+async function submit() {
+  sent.value = true
+  const body = checked.value.body
+  if (!body) return focusSummary()
+  await send(body)
+}
+
+// Removing the alias takes its button away: the focus goes to the field.
+async function remove() {
+  sent.value = false
+  if (await send({ alias: null })) document.getElementById(id.value)?.focus()
 }
 </script>
 
@@ -110,6 +122,15 @@ async function submit() {
           class="save"
         >
           {{ t('vehicleAlias.save') }}
+        </v-btn>
+        <v-btn
+          v-if="vehicle.alias"
+          variant="text"
+          :prepend-icon="mdiClose"
+          class="remove ms-2"
+          @click="remove"
+        >
+          {{ t('vehicleAlias.remove') }}
         </v-btn>
       </v-form>
       <p role="status" class="status text-body-medium mt-2">{{ status }}</p>

@@ -49,10 +49,10 @@ async function save(w: VueWrapper) {
 describe('VehicleAliasForm', () => {
   it('is a tile with its heading, the label without an alias in its hint', () => {
     const w = form(pool)
-    expect(w.find('h3').text()).toBe('Name')
+    expect(w.find('h3').text()).toBe('Alias')
     expect(input(w).element.value).toBe('Fleet car 12')
     const hint = w.find(`#${input(w).attributes('aria-describedby')?.split(' ')[0]}`)
-    expect(hint.text()).toContain('Leave it empty to go back to XC40 Recharge Twin · 2021.')
+    expect(hint.text()).toContain('It replaces XC40 Recharge Twin · 2021 in Runsten')
   })
 
   it('sends the alias trimmed, and says so where the focus stays', async () => {
@@ -63,7 +63,7 @@ describe('VehicleAliasForm', () => {
     const button = await save(w)
     expect(api.setVehicleAlias).toHaveBeenCalledWith(xc40.id, { alias: 'Fleet car 12' })
     expect(input(w).element.value).toBe('Fleet car 12')
-    expect(w.find('[role="status"]').text()).toBe('Name saved.')
+    expect(w.find('[role="status"]').text()).toBe('Alias saved.')
     expect(document.activeElement).toBe(button)
     // A change clears the message.
     await type(w, 'Fleet car 13')
@@ -76,17 +76,33 @@ describe('VehicleAliasForm', () => {
     await type(w, ' ')
     await save(w)
     expect(api.setVehicleAlias).toHaveBeenCalledWith(pool.id, { alias: null })
-    expect(w.find('[role="status"]').text()).toBe('Name removed.')
+    expect(w.find('[role="status"]').text()).toBe('Alias removed.')
   })
 
-  it('refuses a name too long, in a summary that leads to it', async () => {
+  it('removes the alias by its button, shown only with an alias', async () => {
+    const without = form(xc40)
+    expect(without.find('button.remove').exists()).toBe(false)
+    // The two forms are the same vehicle's: one field of its ID at a time.
+    without.unmount()
+    api.setVehicleAlias.mockResolvedValue(xc40)
+    const w = form(pool)
+    expect(w.find('button.remove').text()).toBe('Remove the alias')
+    await w.find('button.remove').trigger('click')
+    await flushPromises()
+    expect(api.setVehicleAlias).toHaveBeenCalledWith(pool.id, { alias: null })
+    expect(input(w).element.value).toBe('')
+    expect(w.find('[role="status"]').text()).toBe('Alias removed.')
+    expect(document.activeElement).toBe(input(w).element)
+  })
+
+  it('refuses an alias too long, in a summary that leads to it', async () => {
     const w = form(xc40)
     await type(w, 'a'.repeat(41))
     await save(w)
     expect(api.setVehicleAlias).not.toHaveBeenCalled()
     const summary = w.find('.error-summary')
     expect(document.activeElement).toBe(summary.element)
-    expect(summary.text()).toContain('The name could not be saved')
+    expect(summary.text()).toContain('The alias could not be saved')
     expect(summary.find('li').text()).toBe('At most 40 characters.')
     expect(input(w).attributes('aria-invalid')).toBe('true')
     await summary.find('a').trigger('click')
@@ -100,13 +116,15 @@ describe('VehicleAliasForm', () => {
     const w = form(xc40)
     await type(w, 'Pool\tcar')
     await save(w)
-    expect(w.find('.error-summary li').text()).toBe('The name cannot hold a line break or a tab.')
+    expect(w.find('.error-summary li').text()).toBe(
+      'An alias cannot contain a line break or a tab.',
+    )
   })
 
   it.each([
     [
       new ApiError(400, 'invalid_body', 'body.alias: too long'),
-      'Runsten refused the name: body.alias: too long',
+      'Runsten refused the alias: body.alias: too long',
     ],
     [new ApiError(404, 'not_found', ''), 'This vehicle no longer exists.'],
     [new ApiError(0, 'network', ''), 'Runsten cannot be reached. Try again in a moment.'],

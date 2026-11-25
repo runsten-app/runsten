@@ -1170,17 +1170,18 @@
     }
   },
   "vehicleAlias": {
-    "title": "Namn",
-    "help": "Ett eget namn, som visas överallt där fordonet nämns och skickas till MQTT och Home Assistant. Lämna tomt för att gå tillbaka till {label}.",
-    "field": "Namn",
-    "save": "Spara namnet",
-    "saved": "Namnet har sparats.",
-    "removed": "Namnet har tagits bort.",
+    "title": "Alias",
+    "help": "Ett kort namn på det här fordonet, till exempel för att skilja två likadana bilar åt. Det ersätter {label} i Runsten och i Home Assistant.",
+    "field": "Alias",
+    "save": "Spara aliaset",
+    "remove": "Ta bort aliaset",
+    "saved": "Aliaset har sparats.",
+    "removed": "Aliaset har tagits bort.",
     "error": {
-      "summary": "Namnet kunde inte sparas",
+      "summary": "Aliaset kunde inte sparas",
       "tooLong": "Högst {max} tecken.",
-      "control": "Namnet får inte innehålla radbrytning eller tabb.",
-      "invalidBody": "Runsten avvisade namnet: {message}",
+      "control": "Ett alias får inte innehålla radbrytning eller tabb.",
+      "invalidBody": "Runsten avvisade aliaset: {message}",
       "notFound": "Det här fordonet finns inte längre.",
       "unavailable": "Runsten kan inte nås. Försök igen om en stund.",
       "internal": "Något gick fel. Försök igen senare."

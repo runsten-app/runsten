@@ -1170,17 +1170,18 @@
     }
   },
   "vehicleAlias": {
-    "title": "Naam",
-    "help": "Een eigen naam, getoond overal waar het voertuig wordt genoemd en naar MQTT en Home Assistant gestuurd. Laat leeg om terug te gaan naar {label}.",
-    "field": "Naam",
-    "save": "Naam opslaan",
-    "saved": "Naam opgeslagen.",
-    "removed": "Naam verwijderd.",
+    "title": "Alias",
+    "help": "Een korte naam voor dit voertuig, bijvoorbeeld om twee dezelfde auto's uit elkaar te houden. Hij vervangt {label} in Runsten en in Home Assistant.",
+    "field": "Alias",
+    "save": "Alias opslaan",
+    "remove": "Alias verwijderen",
+    "saved": "Alias opgeslagen.",
+    "removed": "Alias verwijderd.",
     "error": {
-      "summary": "De naam kon niet worden opgeslagen",
+      "summary": "De alias kon niet worden opgeslagen",
       "tooLong": "Hoogstens {max} tekens.",
-      "control": "De naam mag geen regeleinde of tab bevatten.",
-      "invalidBody": "Runsten heeft de naam geweigerd: {message}",
+      "control": "Een alias mag geen regeleinde of tab bevatten.",
+      "invalidBody": "Runsten heeft de alias geweigerd: {message}",
       "notFound": "Dit voertuig bestaat niet meer.",
       "unavailable": "Runsten is niet bereikbaar. Probeer het zo meteen opnieuw.",
       "internal": "Er is iets misgegaan. Probeer het later opnieuw."

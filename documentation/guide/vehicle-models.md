@@ -43,11 +43,13 @@ When the variant offers a 22 kW onboard charger as an option, state which one th
 - **A charger** applies at once: costs are computed on each reading.
 - **A variant** changes the energies, and with them consumptions and costs. The collector works out the vehicle's trips and charges again after its next reading (within 10 minutes while parked), keeping the entered costs.
 
-## Its name
+## Its alias
 
-Runsten calls a vehicle by its model and model year (`EX30 · 2024`), or by the name you gave a Tesla in Tesla's app. To call it otherwise, give it a **Name** of your own in the vehicle's settings: up to 40 characters, such as `Pool car 3` for one of several identical company cars, or `PS4` for a Polestar 4 whose variant's name is long. It then names the vehicle everywhere: the menu of its name in the bar, the Garage, the settings, the trip report, and the device of [Home Assistant](./mqtt.md#home-assistant-entities), from the vehicle's next reading. Empty the field and save to name it after its model again.
+Runsten calls a vehicle by its model and model year (`EX30 · 2024`), or by the name you gave a Tesla in Tesla's app. An **Alias**, in the vehicle's settings, replaces that name with one you choose, up to 40 characters: `Pool car 3` to tell identical company cars apart, or `PS4` instead of a Polestar 4's long variant name.
 
-The name is yours alone: the car and its maker's app never see it. Two vehicles of the same name end with the last digits of their VIN, as two of the same model do.
+Runsten then shows the alias in place of the model: in the menu in the bar, the Garage, the settings and the trip report. [Home Assistant](./mqtt.md#home-assistant-entities) names the vehicle's device after it from the vehicle's next reading. **Remove the alias** gives the vehicle its model's name again.
+
+The alias stays in Runsten: the car and its maker's app never see it. Two vehicles with the same alias end with the last digits of their VIN, as two of the same model do.
 
 ## Its specifications
 

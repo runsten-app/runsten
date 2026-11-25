@@ -167,7 +167,7 @@ type connectionJSON struct {
 type vehicleJSON struct {
 	ID         string          `json:"id" format:"uuid"`
 	VIN        string          `json:"vin"`
-	Alias      *string         `json:"alias" doc:"The name the user gave the vehicle (PUT /vehicles/{vehicle}/alias); null: none, the vehicle is named after its sheet's name or its model."`
+	Alias      *string         `json:"alias" doc:"The alias the user gave the vehicle (PUT /vehicles/{vehicle}/alias), used in place of its other names; null: none."`
 	Model      modelJSON       `json:"model" doc:"What the vehicle is, from its latest details."`
 	Sheet      null[sheetJSON] `json:"sheet" doc:"What the vehicle is beyond its model, from its latest details: its colour, its specifications, its picture, the name its owner gave it. Each value is null when the source does not tell it; the sheet is null when it tells none (Polestar's Data Portal), and until the details are read."`
 	Connection connectionJSON  `json:"connection" doc:"The state of the provider connection (Volvo ID) that reads the vehicle."`

@@ -1170,17 +1170,18 @@
     }
   },
   "vehicleAlias": {
-    "title": "Name",
-    "help": "A name of your own, shown wherever the vehicle is named and sent to MQTT and Home Assistant. Leave it empty to go back to {label}.",
-    "field": "Name",
-    "save": "Save the name",
-    "saved": "Name saved.",
-    "removed": "Name removed.",
+    "title": "Alias",
+    "help": "A short name for this vehicle, for example to tell two identical cars apart. It replaces {label} in Runsten and in Home Assistant.",
+    "field": "Alias",
+    "save": "Save the alias",
+    "remove": "Remove the alias",
+    "saved": "Alias saved.",
+    "removed": "Alias removed.",
     "error": {
-      "summary": "The name could not be saved",
+      "summary": "The alias could not be saved",
       "tooLong": "At most {max} characters.",
-      "control": "The name cannot hold a line break or a tab.",
-      "invalidBody": "Runsten refused the name: {message}",
+      "control": "An alias cannot contain a line break or a tab.",
+      "invalidBody": "Runsten refused the alias: {message}",
       "notFound": "This vehicle no longer exists.",
       "unavailable": "Runsten cannot be reached. Try again in a moment.",
       "internal": "Something went wrong. Try again later."

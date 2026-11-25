@@ -35,7 +35,7 @@ A request body is sent as `application/json`, but the files of an import, as `mu
 | `GET /api/v1/vehicles/{id}/picture` | the vehicle's picture, relayed from its maker (a Volvo's) or read by the collector and stored (a BMW's), when its `sheet.picture` is true |
 | `GET /api/v1/vehicles/{id}/variants` | the catalog's variants of the vehicle's family (of its brand, for a Polestar of the Data Portal), the candidates of the recognition first |
 | `PUT /api/v1/vehicles/{id}/model` | choose the variant and the onboard charger (`null` for the recognition, and for a charger not stated) |
-| `PUT /api/v1/vehicles/{id}/alias` | name the vehicle (`{"alias": "Pool car 3"}`, 40 characters at most; `null` removes the name) |
+| `PUT /api/v1/vehicles/{id}/alias` | set the vehicle's alias (`{"alias": "Pool car 3"}`, 40 characters at most; `null` removes it) |
 | `GET /api/v1/vehicles/{id}/state` | the latest known values: SoC, range, odometer, position, charging, each with when it was read |
 | `GET /api/v1/vehicles/{id}/trips`, `…/charges` | newest first, by pages (`limit`, `cursor`), within a period (`from`, `to`) |
 | `GET /api/v1/vehicles/{id}/trips/{trip}`, `…/charges/{charge}` | one trip or charge |

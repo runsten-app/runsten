@@ -15,7 +15,7 @@ import (
 // it too): a label of the menu and of Home Assistant's device, not a description.
 const MaxAlias = 40
 
-// VehicleAliases writes the name the user gives a vehicle (*store.Store).
+// VehicleAliases writes the alias the user gives a vehicle (*store.Store).
 type VehicleAliases interface {
 	// SetVehicleAlias writes the vehicle's alias, empty to remove it; ErrNotFound without
 	// such a vehicle in the account.
@@ -23,7 +23,7 @@ type VehicleAliases interface {
 }
 
 type vehicleAliasJSON struct {
-	Alias *string `json:"alias" maxLength:"40" doc:"The vehicle's name of the user's own, shown wherever the vehicle is named and published to MQTT as its device's name. Spaces around it are removed; it must keep a character, and holds no control character. null removes it: the vehicle is named after its model again."`
+	Alias *string `json:"alias" maxLength:"40" doc:"The alias: a name the user chooses for the vehicle, used in place of its model's. Spaces around it are removed; it must keep a character, and holds no control character. null removes it."`
 }
 
 type vehicleAliasInput struct {
@@ -75,11 +75,10 @@ func (s *Server) putAlias(ctx context.Context, in *vehicleAliasInput) (*body[veh
 func (s *Server) registerAlias(api huma.API) {
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "putVehicleAlias", Method: http.MethodPut, Path: "/vehicles/{vehicle}/alias", Tags: []string{"vehicles"},
-		Summary: "Name a vehicle",
-		Description: "A name of the user's own for the vehicle, which outranks the one derived from its model and the " +
-			"name its owner gave it in its vendor's app: the web interface shows it wherever the vehicle is named, and " +
-			"the collector publishes it to MQTT as the name of the vehicle's device in Home Assistant, from the " +
-			"vehicle's next reading. null removes it.",
+		Summary: "Set a vehicle's alias",
+		Description: "The alias is a name the user chooses for the vehicle. It replaces the name derived from the " +
+			"model, and the one the owner gave the car in its vendor's app: in the web interface, and as the name of " +
+			"the vehicle's device in Home Assistant, from the vehicle's next reading. null removes it.",
 		Middlewares: huma.Middlewares{s.requireJSON},
 	}, "The vehicle, with its alias.", writeErrors(map[int]string{
 		http.StatusBadRequest: errBody + " Also: an `alias` empty once trimmed, longer than 40 characters, or holding a " +

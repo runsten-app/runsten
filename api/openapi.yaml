@@ -6383,7 +6383,7 @@ components:
       additionalProperties: false
       properties:
         alias:
-          description: "The name the user gave the vehicle (PUT /vehicles/{vehicle}/alias); null: none, the vehicle is named after its sheet's name or its model."
+          description: "The alias the user gave the vehicle (PUT /vehicles/{vehicle}/alias), used in place of its other names; null: none."
           type:
             - string
             - "null"
@@ -6437,7 +6437,7 @@ components:
       additionalProperties: false
       properties:
         alias:
-          description: "The vehicle's name of the user's own, shown wherever the vehicle is named and published to MQTT as its device's name. Spaces around it are removed; it must keep a character, and holds no control character. null removes it: the vehicle is named after its model again."
+          description: "The alias: a name the user chooses for the vehicle, used in place of its model's. Spaces around it are removed; it must keep a character, and holds no control character. null removes it."
           maxLength: 40
           type:
             - string
@@ -9624,7 +9624,7 @@ paths:
         - vehicles
   /vehicles/{vehicle}/alias:
     put:
-      description: "A name of the user's own for the vehicle, which outranks the one derived from its model and the name its owner gave it in its vendor's app: the web interface shows it wherever the vehicle is named, and the collector publishes it to MQTT as the name of the vehicle's device in Home Assistant, from the vehicle's next reading. null removes it."
+      description: "The alias is a name the user chooses for the vehicle. It replaces the name derived from the model, and the one the owner gave the car in its vendor's app: in the web interface, and as the name of the vehicle's device in Home Assistant, from the vehicle's next reading. null removes it."
       operationId: putVehicleAlias
       parameters:
         - description: The vehicle ID.
@@ -9686,7 +9686,7 @@ paths:
       security:
         - session: []
         - sessionSecure: []
-      summary: Name a vehicle
+      summary: Set a vehicle's alias
       tags:
         - vehicles
   /vehicles/{vehicle}/aximote-vehicles:
