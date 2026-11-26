@@ -50,9 +50,6 @@ type Store interface {
 const Daily = 2_000
 
 const (
-	// GrantLife is how long a sign-in reads before Ford asks for another: a year from
-	// the owner's consent (Ford's answer to a user of another client, to check).
-	GrantLife = 365 * 24 * time.Hour
 	// accessMargin is taken off an access's lifetime.
 	accessMargin = time.Minute
 	// minGap is the least time between two calls of a connection (assumption: reports
@@ -147,7 +144,7 @@ func (s *Source) Login(ctx context.Context, accountID, connectionID string) (col
 	if ttl <= 0 {
 		ttl = tok.ExpiresIn
 	}
-	return &session{src: s, access: tok.Access}, ttl, nil
+	return &session{src: s, access: tok.Access, setAt: cred.SetAt}, ttl, nil
 }
 
 // refreshToken returns the refresh token to use: the one a refresh gave and the store
@@ -174,12 +171,12 @@ func (s *Source) keep(connectionID string, r rotation) {
 	s.rotated[connectionID] = r
 }
 
-// expire records the grant's end, GrantLife after the owner's sign-in, when it changed.
+// expire records the grant's end, ford.GrantLife after the owner's sign-in, when it changed.
 func (s *Source) expire(ctx context.Context, accountID, connectionID string, setAt, authTime time.Time) error {
 	if authTime.IsZero() {
 		return nil
 	}
-	at := authTime.Add(GrantLife)
+	at := authTime.Add(ford.GrantLife)
 	s.mu.Lock()
 	same := s.expiries[connectionID].Equal(at)
 	s.mu.Unlock()
@@ -201,6 +198,15 @@ func (s *Source) HeldUntil(vin string) time.Time {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.held[vin]
+}
+
+// hold keeps the vehicle from being called before until.
+func (s *Source) hold(vin string, until time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if until.After(s.held[vin]) {
+		s.held[vin] = until
+	}
 }
 
 // reserve reports whether the vehicle may be called now, and holds it for minGap if so;
@@ -254,14 +260,19 @@ func (*Source) Upload(ep collector.Endpoint, raw []byte) (collector.Upload, erro
 type session struct {
 	src    *Source
 	access string
+	// setAt is when the owner connected: the sign-in itself read the garage then.
+	setAt time.Time
 }
 
 // errTooSoon is a call held back, the connection's last one too recent.
 var errTooSoon = errors.New("ford: held back, the last call too recent")
 
-// Fetch implements collector.Session: the grant's car, whatever the VIN, which the API
-// does not take; never within minGap of the connection's last call.
+// Fetch implements collector.Session: the grant's car, the API taking no VIN, which must
+// be the vehicle's; never within minGap of the connection's last call.
 func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) ([]byte, error) {
+	// The sign-in read the garage with this grant, in another process: the first read
+	// keeps its distance from it too.
+	s.src.hold(vin, s.setAt.Add(minGap))
 	if wait, ok := s.src.reserve(vin); !ok {
 		return nil, &collector.SourceError{Kind: collector.KindVehicleLimited, RetryIn: wait, Err: errTooSoon}
 	}
@@ -269,8 +280,16 @@ func (s *session) Fetch(ctx context.Context, vin string, ep collector.Endpoint) 
 	if err != nil {
 		return nil, sourceError(err)
 	}
+	// The grant reads one car, whichever is asked for: another's values are never kept
+	// as this vehicle's (the owner signed in again and chose another car).
+	if told := ford.VINOf(ford.Endpoint(ep), raw); told != "" && told != vin {
+		return nil, &collector.SourceError{Kind: collector.KindUnshared, Err: errOtherCar}
+	}
 	return raw, nil
 }
+
+// errOtherCar is a response about another car than the vehicle read.
+var errOtherCar = errors.New("ford: the grant reads another car")
 
 // sourceError tells the collector what a refusal of Ford means.
 func sourceError(err error) error {

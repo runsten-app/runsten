@@ -44,6 +44,10 @@ const maxBody = 4 << 20
 // scope is asked of the sign-in: the ID token, and a refresh token.
 const scope = "openid offline_access"
 
+// GrantLife is how long a sign-in reads before Ford asks for another: a year from the
+// owner's consent (Ford's answer to a user of another client, to check).
+const GrantLife = 365 * 24 * time.Hour
+
 // MaxState is the longest state the sign-in carries back whole (Home Assistant's
 // integration: 16 characters; a longer one came back "invalid state").
 const MaxState = 16

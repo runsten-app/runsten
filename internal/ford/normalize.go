@@ -500,6 +500,27 @@ func VehicleOf(raw []byte) (GarageVehicle, error) {
 	return GarageVehicle{VIN: vin}, nil
 }
 
+// VINOf returns the VIN of the car a response of ep is about, upper-cased; empty when it
+// tells none. A grant reads one car, and neither endpoint is asked for one: this is how
+// a reader knows whose values it holds.
+func VINOf(ep Endpoint, raw []byte) string {
+	vin := ""
+	switch ep {
+	case Telemetry:
+		var r struct {
+			VIN string `json:"vin"`
+		}
+		if json.Unmarshal(raw, &r) == nil {
+			vin = r.VIN
+		}
+	case Garage:
+		if g, err := garageOf(raw); err == nil {
+			vin = g.VIN
+		}
+	}
+	return strings.ToUpper(strings.TrimSpace(vin))
+}
+
 // garageOf reads a garage response: the car as an object, which the specification and
 // the other clients show; a list of cars, or an object holding one under vehicles, is
 // read too, its first car taken (a grant reads one).
