@@ -11,6 +11,7 @@ import { DemoForm } from '@/features/manage-demo'
 import { PleosForm, renewalDue as pleosRenewalDue } from '@/features/manage-pleos'
 import { PolestarForm, renewalDue } from '@/features/manage-polestar'
 import { PolestarIdForm } from '@/features/manage-polestar-id'
+import { FordForm, renewalDue as fordRenewalDue } from '@/features/manage-ford'
 import { RenaultForm, renewalDue as renaultRenewalDue } from '@/features/manage-renault'
 import { SkodaForm, renewalDue as skodaRenewalDue } from '@/features/manage-skoda'
 import { TeslaForm } from '@/features/manage-tesla'
@@ -41,7 +42,7 @@ import VehicleCollection from './VehicleCollection.vue'
 //
 // One tab per brand, each with its connection and its vehicles: a brand added later is a
 // tab more. The tab is the URL's hash (#volvo, #polestar, #tesla, #bmw, #hyundai, #kia,
-// #genesis, #skoda, #renault, #demo: the home's choice of a brand opens its tab; #pleos, of an older link, the first
+// #genesis, #skoda, #renault, #ford, #demo: the home's choice of a brand opens its tab; #pleos, of an older link, the first
 // of Hyundai, Kia and Genesis the account reads, else Hyundai's); without one, that of the vehicle the page was opened from, else the
 // first brand the account has a vehicle of, else Volvo's. A dot marks a tab whose vehicles need the user,
 // or whose credential is to be renewed (Polestar's, a Pleos key, Škoda's).
@@ -57,7 +58,10 @@ import VehicleCollection from './VehicleCollection.vue'
 // the flag source.pleos is on, unless the brand has a key or vehicles from before. Škoda's
 // is there while the flag source.skoda is on, unless it has a key or Škodas from before.
 // Renault's (with Dacia's and Alpine's) while source.renault is on (off by default: an
-// unofficial API), unless it has a sign-in or Renaults from before. The demo vehicle's, the
+// unofficial API), unless it has a sign-in or Renaults from before. Ford's while source.ford
+// is on (off by default: not checked on a real car yet), unless it has a connection or a
+// Ford from before; its sign-in comes back to the page with its own outcomes (ford=denied,
+// expired, application_refused, unavailable, not_offered). The demo vehicle's, the
 // last, while source.demo is on (off by default: no one's car), unless it is connected.
 // A brand's section an extension sets (extensionBrandSections) takes the place of the
 // core's, and shows its tab whatever the above.
@@ -72,8 +76,25 @@ const outcomes = [
   'short_session',
   'no_vehicle',
   'too_many_vehicles',
+  'denied',
+  'expired',
+  'application_refused',
+  'unavailable',
+  'not_offered',
 ] as const
 type Outcome = (typeof outcomes)[number]
+// What only one brand's sign-in may come back with: Volvo's, a key refused or a short
+// session; Ford's, a consent refused, a sign-in over, an application Ford refuses, Ford
+// out of reach, or the make not offered to the account.
+const ownOutcomes: Partial<Record<Outcome, Brand>> = {
+  key_refused: 'volvo',
+  short_session: 'volvo',
+  denied: 'ford',
+  expired: 'ford',
+  application_refused: 'ford',
+  unavailable: 'ford',
+  not_offered: 'ford',
+}
 // The brand whose sign-in came back, by its parameter, read whenever the query brings one
 // (the page stays mounted through a navigation to itself). Volvo's key is the only one a
 // sign-in may refuse, and its connection the only one that may be short ("Remember me" not
@@ -87,9 +108,7 @@ watch(
     if (!b) return
     const value = route.query[b]
     outcomeBrand.value = b
-    outcome.value = outcomes.find(
-      (o) => o === value && ((o !== 'key_refused' && o !== 'short_session') || b === 'volvo'),
-    )
+    outcome.value = outcomes.find((o) => o === value && (ownOutcomes[o] ?? b) === b)
     const dropped = Object.fromEntries(brands.map((x) => [x, undefined]))
     void router.replace({ query: { ...route.query, ...dropped }, hash: route.hash || `#${b}` })
   },
@@ -110,6 +129,16 @@ const outcomeText = (o: Outcome) => {
         return t('connection.outcome.brand.connected', { brand })
       case 'no_vehicle':
         return t('connection.outcome.brand.noVehicle', { brand })
+      case 'denied':
+        return t('connection.outcome.ford.denied')
+      case 'expired':
+        return t('connection.outcome.ford.expired')
+      case 'application_refused':
+        return t('connection.outcome.ford.applicationRefused')
+      case 'unavailable':
+        return t('connection.outcome.ford.unavailable')
+      case 'not_offered':
+        return t('connection.outcome.ford.notOffered')
       default:
         return t('connection.outcome.brand.tooManyVehicles', { brand })
     }
@@ -123,7 +152,7 @@ const outcomeText = (o: Outcome) => {
       return t('connection.outcome.shortSession', { button: t('connection.volvoId.reconnect') })
     case 'no_vehicle':
       return t('connection.outcome.noVehicle', { button: connectLabel.value })
-    case 'too_many_vehicles':
+    default:
       return t('connection.outcome.tooManyVehicles')
   }
 }
@@ -160,6 +189,7 @@ const brandLabels = computed<Record<Brand, string>>(() => ({
   genesis: t('pleos.brand.genesis'),
   skoda: t('connection.brand.skoda'),
   renault: t('connection.brand.renault'),
+  ford: t('connection.brand.ford'),
   demo: t('connection.brand.demo'),
 }))
 // A Polestar read with the Polestar ID is a Polestar's: one tab. A Hyundai, a Kia or a
@@ -187,6 +217,7 @@ const pleosOn = useFlag('source.pleos')
 const pleosKey = (b: Brand) => isPleos(b) && settings.value?.pleos?.[b] != null
 const skodaOn = useFlag('source.skoda')
 const renaultOn = useFlag('source.renault')
+const fordOn = useFlag('source.ford')
 const demoOn = useFlag('source.demo')
 // The VINs of the account's Škodas: a new key is given with them.
 const skodaVins = computed(() => ofBrand('skoda').map((v) => v.vin))
@@ -211,9 +242,11 @@ const shown = computed(() =>
               ? skodaOn.value || !!settings.value?.skoda || ofBrand(b).length
               : b === 'renault'
                 ? renaultOn.value || !!settings.value?.renault || ofBrand(b).length
-                : b === 'demo'
-                  ? demoOn.value || !!settings.value?.demo || ofBrand(b).length
-                  : b !== 'bmw' || bmwOn.value || !!settings.value?.bmw || ofBrand(b).length),
+                : b === 'ford'
+                  ? fordOn.value || !!settings.value?.ford || ofBrand(b).length
+                  : b === 'demo'
+                    ? demoOn.value || !!settings.value?.demo || ofBrand(b).length
+                    : b !== 'bmw' || bmwOn.value || !!settings.value?.bmw || ofBrand(b).length),
   ),
 )
 // #pleos, the tab of the three makes before each had its own: the first the account
@@ -282,6 +315,7 @@ const alerted = computed(
           (b === 'polestar' && renewalDue(settings.value?.polestar, now.value)) ||
           (b === 'skoda' && skodaRenewalDue(settings.value?.skoda, now.value)) ||
           (b === 'renault' && renaultRenewalDue(settings.value?.renault)) ||
+          (b === 'ford' && fordRenewalDue(settings.value?.ford, now.value)) ||
           (isPleos(b) && pleosRenewalDue(settings.value?.pleos?.[b], now.value)),
       ),
     ),
@@ -354,7 +388,7 @@ const alerted = computed(
         >
           {{ brandLabels[b] }}
           <v-chip
-            v-if="isPleos(b) || b === 'skoda' || b === 'renault'"
+            v-if="isPleos(b) || b === 'skoda' || b === 'renault' || b === 'ford'"
             size="x-small"
             variant="tonal"
             color="primary"
@@ -559,6 +593,16 @@ const alerted = computed(
               :connection="settings"
               :off="!renaultOn"
             />
+          </section>
+          <section v-else-if="b === 'ford'" class="mb-8" aria-labelledby="connection-ford-title">
+            <h2 id="connection-ford-title" class="text-title-large mb-3">
+              {{ t('connection.ford.title') }}
+            </h2>
+            <p v-if="!fordOn" class="text-body-medium ford-off">
+              {{ t('connection.ford.off') }}
+            </p>
+            <!-- Off, a connection made before stays told, and can be removed. -->
+            <FordForm v-if="fordOn || settings.ford" :connection="settings" :off="!fordOn" />
           </section>
           <section v-else-if="b === 'demo'" class="mb-8" aria-labelledby="connection-demo-title">
             <h2 id="connection-demo-title" class="text-title-large mb-3">

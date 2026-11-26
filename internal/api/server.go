@@ -315,6 +315,10 @@ type Config struct {
 	// owner in.
 	Renault         RenaultCredentials
 	RenaultAccounts RenaultAccounts
+	// Ford keeps the account's FordConnect Query connection, and FordAccounts builds
+	// its sign-in's address and completes it.
+	Ford         FordCredentials
+	FordAccounts FordAccounts
 	// Demo keeps the account's demo connection, and DemoVehicle is the vehicle it
 	// simulates, which writes its history.
 	Demo        DemoConnections
@@ -371,6 +375,8 @@ type Server struct {
 	aaosLogging teslaMateImports
 	// bmwFlows are BMW's device flows pending.
 	bmwFlows bmwFlows
+	// fordFlows are Ford's sign-ins pending.
+	fordFlows fordFlows
 	// renaultPending are the Renault sign-ins waiting for their one-time code.
 	renaultPending renaultPending
 	errorSchema    *huma.Schema // the body of the errors
@@ -387,6 +393,7 @@ func New(cfg Config) *Server {
 	mux.HandleFunc("POST /logout", s.logoutForm)
 	mux.HandleFunc("GET /auth/volvo/start", s.page(s.start))
 	mux.HandleFunc("GET /auth/volvo/callback", s.page(s.callback))
+	mux.HandleFunc("GET /"+fordCallbackPath, s.page(s.fordCallback))
 	// runsten-api alone, without the web interface: where the flow comes back to.
 	mux.HandleFunc("GET /connection", s.page(s.connectionPage))
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
@@ -428,6 +435,7 @@ func New(cfg Config) *Server {
 	s.registerPleos(s.api)
 	s.registerSkoda(s.api)
 	s.registerRenault(s.api)
+	s.registerFord(s.api)
 	s.registerDemo(s.api)
 	s.registerAccount(s.api)
 	s.registerAccountExport(s.api)

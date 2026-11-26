@@ -117,7 +117,8 @@ func newSim(t *testing.T) *sim {
 	if err != nil {
 		t.Fatal(err)
 	}
-	st := &memStore{cred: Credential{Application: app, Refresh: tok.Refresh, SetAt: sc.Start}}
+	// Connected an hour ago: the sign-in's own read of the garage is far behind.
+	st := &memStore{cred: Credential{Application: app, Refresh: tok.Refresh, SetAt: sc.Start.Add(-time.Hour)}}
 	return &sim{src: New(client, st, clk), h: h, clk: clk, st: st, calls: &calls}
 }
 
@@ -161,7 +162,7 @@ func TestLoginKeepsTheTokenGiven(t *testing.T) {
 	if s.st.rotations != 1 || s.st.cred.Refresh == first {
 		t.Errorf("the refresh token given was not kept: %d rotations", s.st.rotations)
 	}
-	if len(s.st.expiries) != 1 || !s.st.expiries[0].Equal(s.clk.Now().Add(GrantLife)) {
+	if len(s.st.expiries) != 1 || !s.st.expiries[0].Equal(s.clk.Now().Add(ford.GrantLife)) {
 		t.Errorf("expiries %v", s.st.expiries)
 	}
 	if _, err := sess.Fetch(t.Context(), simVIN, collector.Endpoint(ford.Telemetry)); err != nil {
@@ -228,6 +229,46 @@ func TestGap(t *testing.T) {
 	}
 	if v, err := ford.VehicleOf(raw); err != nil || v.VIN != simVIN {
 		t.Errorf("garage %s, %v", raw, err)
+	}
+}
+
+// TestFirstReadAfterTheSignIn: the sign-in read the garage with the grant, in another
+// process: the first read keeps its distance from it, held back without a call.
+func TestFirstReadAfterTheSignIn(t *testing.T) {
+	s := newSim(t)
+	s.st.cred.SetAt = s.clk.Now().Add(-5 * time.Second)
+	sess, _, err := s.src.Login(t.Context(), "a", "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := *s.calls
+	_, err = sess.Fetch(t.Context(), simVIN, collector.Endpoint(ford.Telemetry))
+	if kindOf(t, err) != collector.KindVehicleLimited || *s.calls != before {
+		t.Errorf("a read 5 s after the sign-in: %v, %d calls made", err, *s.calls-before)
+	}
+	if until := s.src.HeldUntil(simVIN); !until.Equal(s.st.cred.SetAt.Add(minGap)) {
+		t.Errorf("held until %v", until)
+	}
+	s.clk.Advance(15 * time.Second)
+	if _, err := sess.Fetch(t.Context(), simVIN, collector.Endpoint(ford.Telemetry)); err != nil {
+		t.Errorf("past the gap: %v", err)
+	}
+}
+
+// TestOtherCar: a vehicle the grant no longer reads, the owner having signed in again
+// for another car, is told unshared: the other car's values are never kept as its own.
+func TestOtherCar(t *testing.T) {
+	s := newSim(t)
+	sess, _, err := s.src.Login(t.Context(), "a", "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := sess.Fetch(t.Context(), "WF0TESTEXPL000002", collector.Endpoint(ford.Telemetry)); kindOf(t, err) != collector.KindUnshared {
+		t.Errorf("another car's telemetry: %v", err)
+	}
+	s.clk.Advance(minGap)
+	if _, err := sess.Fetch(t.Context(), "WF0TESTEXPL000002", collector.Endpoint(ford.Garage)); kindOf(t, err) != collector.KindUnshared {
+		t.Errorf("another car's garage: %v", err)
 	}
 }
 

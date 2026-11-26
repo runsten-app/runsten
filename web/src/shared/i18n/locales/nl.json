@@ -49,7 +49,8 @@
       "kia": "Kia",
       "genesis": "Genesis",
       "skoda": "Škoda",
-      "renault": "Renault, Dacia, Alpine"
+      "renault": "Renault, Dacia, Alpine",
+      "ford": "Ford"
     },
     "beta": "Bèta"
   },
@@ -1419,6 +1420,7 @@
       "bmw": "BMW",
       "skoda": "Škoda",
       "renault": "Renault",
+      "ford": "Ford",
       "demo": "Demo"
     },
     "brandAttention": "vraagt uw aandacht",
@@ -1432,6 +1434,13 @@
         "connected": "Aangemeld bij {brand}: de collector leest uw voertuigen uit vanaf zijn volgende ronde.",
         "noVehicle": "Uw {brand}-account heeft geen voertuig dat Runsten kan uitlezen: het is niet gekoppeld.",
         "tooManyVehicles": "Met de voertuigen van uw {brand}-account zou uw account meer voertuigen hebben dan toegestaan: het is niet gekoppeld."
+      },
+      "ford": {
+        "denied": "De aanmelding werd niet voltooid op de pagina van Ford: uw Ford werd niet gekoppeld. Begin opnieuw en ga daar akkoord.",
+        "expired": "Deze aanmelding bij Ford is verlopen of werd al gebruikt: uw Ford werd niet gekoppeld. Begin opnieuw.",
+        "applicationRefused": "Ford weigerde de client ID of het secret van de toepassing: uw Ford werd niet gekoppeld. Controleer ze op het ontwikkelaarsportaal van Ford en begin dan opnieuw.",
+        "unavailable": "Ford antwoordde niet: uw Ford werd niet gekoppeld. Probeer het zo meteen opnieuw.",
+        "notOffered": "Ford wordt niet aangeboden aan uw account: er werd niets gekoppeld."
       }
     },
     "volvoId": {
@@ -1489,22 +1498,27 @@
       "credentialRefusedPleos": "Niet uitgelezen: Pleos heeft de sleutel geweigerd",
       "credentialRefusedSkoda": "Niet gelezen: Škoda weigerde de sleutel",
       "credentialRefusedRenault": "Niet gelezen: Renault weigerde de aanmelding",
+      "credentialRefusedFord": "Niet gelezen: Ford weigerde de verbinding",
       "credentialMissingBmw": "Niet uitgelezen: geen BMW gekoppeld",
       "credentialMissingPleos": "Niet uitgelezen: geen Pleos-sleutel opgegeven",
       "credentialMissingSkoda": "Niet gelezen: geen MyŠkoda-sleutel opgegeven",
       "credentialMissingRenault": "Niet gelezen: niet aangemeld bij My Renault",
+      "credentialMissingFord": "Niet gelezen: niet aangemeld bij Ford",
       "unsharedBmw": "Niet uitgelezen: het BMW-account is niet langer hoofdgebruiker van de auto",
       "unsharedPleos": "Niet uitgelezen: de auto deelt zijn gegevens niet langer met de sleutel",
       "unsharedSkoda": "Niet gelezen: de sleutel dekt deze auto niet meer",
       "unsharedRenault": "Niet gelezen: de auto staat niet meer in het My Renault-account",
+      "unsharedFord": "Niet gelezen: de aanmelding leest een andere auto",
       "pausedBmw": "Door BMW gepauzeerd tot {time}",
       "pausedPleos": "Door Pleos gepauzeerd tot {time}",
       "pausedSkoda": "Gepauzeerd door Škoda tot {time}",
       "pausedRenault": "Gepauzeerd door Renault tot {time}",
+      "pausedFord": "Gepauzeerd door Ford tot {time}",
       "quotaBmw": "Dagelijks aantal aanroepen naar BMW bereikt tot {time}",
       "quotaPleos": "Dagelijks aantal aanroepen naar Pleos bereikt tot {time}",
       "quotaSkoda": "Dagelijkse aanroepen naar Škoda bereikt tot {time}",
-      "quotaRenault": "Dagelijkse aanroepen naar Renault bereikt tot {time}"
+      "quotaRenault": "Dagelijkse aanroepen naar Renault bereikt tot {time}",
+      "quotaFord": "Dagelijkse aanroepen naar Ford bereikt tot {time}"
     },
     "notice": {
       "reauth": {
@@ -1549,19 +1563,24 @@
       "pausedPleos": "Pleos heeft het aantal aanroepen beperkt. Het uitlezen wordt vanzelf hervat.",
       "pausedSkoda": "Škoda heeft het aantal aanroepen beperkt. Het uitlezen wordt vanzelf hervat.",
       "pausedRenault": "Renault beperkte het aantal aanroepen: het account wordt misschien ook door een andere toepassing gelezen, bijvoorbeeld Home Assistant. Het lezen hervat vanzelf.",
+      "pausedFord": "Ford beperkte het aantal aanroepen: de auto wordt misschien ook door een andere toepassing gelezen, bijvoorbeeld Home Assistant of evcc. Het lezen hervat vanzelf.",
       "credentialRefusedPleos": "Pleos heeft de sleutel geweigerd waarmee deze auto wordt uitgelezen: ingetrokken of vervangen in het Playground, of verlopen. Maak daar een nieuwe aan en geef die op de koppelingspagina: wat al is uitgelezen, blijft bewaard.",
       "credentialRefusedSkoda": "Škoda weigerde de sleutel waarmee deze auto wordt gelezen: verlopen, of verwijderd in de MyŠkoda-app. Maak er daar een nieuwe aan en geef die op de verbindingspagina: wat gelezen is, blijft.",
       "credentialRefusedRenault": "Renault weigerde de aanmelding waarmee deze auto wordt gelezen: wachtwoord gewijzigd, of sessie beëindigd. Meld u opnieuw aan op de verbindingspagina: wat gelezen is, blijft.",
+      "credentialRefusedFord": "Ford weigerde de verbinding waarmee deze auto wordt gelezen: de toestemming is ingetrokken, het jaar is verstreken, of het secret van de toepassing is gewijzigd. Meld u opnieuw aan bij Ford op de verbindingspagina: wat gelezen is, blijft.",
       "credentialMissingPleos": "Runsten leest deze auto uit met uw Pleos-sleutel, maar die is verwijderd: geef een nieuwe op de koppelingspagina.",
       "credentialMissingSkoda": "Runsten leest deze auto met uw MyŠkoda-sleutel, die werd verwijderd: geef een nieuwe op de verbindingspagina.",
       "credentialMissingRenault": "Runsten leest deze auto met uw aanmelding bij My Renault, die werd verwijderd: meld u opnieuw aan op de verbindingspagina.",
+      "credentialMissingFord": "Runsten leest deze auto met uw aanmelding bij Ford, die werd verwijderd: meld u opnieuw aan op de verbindingspagina.",
       "unsharedPleos": "Pleos antwoordde dat deze auto zijn gegevens niet langer deelt met de sleutel: het delen uitgeschakeld in de verbonden diensten, of de auto uitgeschreven. Deelt de auto opnieuw, geef de sleutel dan opnieuw op de koppelingspagina: de auto wordt dan weer uitgelezen.",
       "unsharedSkoda": "Škoda antwoordde dat de sleutel deze auto niet meer leest: hij werd bij de sleutel uitgevinkt in de MyŠkoda-app. Maak een sleutel aan met deze auto aangevinkt en geef hem op de verbindingspagina: de auto wordt weer gelezen.",
       "unsharedRenault": "Uw My Renault-account vermeldt deze auto niet meer als elektrisch: verkocht, uit het account gehaald of naar een ander verplaatst. Komt hij terug, meld u dan opnieuw aan op de verbindingspagina: de auto wordt weer gelezen.",
+      "unsharedFord": "Uw aanmelding bij Ford leest nu een andere auto: een aanmelding leest één auto, die u op de pagina van Ford koos. Wilt u deze weer laten lezen, meld u dan opnieuw aan op de verbindingspagina en kies hem.",
       "quotaBmw": "Runsten doet hoogstens 40 aanroepen per dag naar de API van BMW per koppeling, om u enkele van de 50 van BMW te laten: die zijn op. De stream, die geen limiet heeft, wordt nog steeds gelezen; de rest wordt vanzelf hervat.",
       "quotaPleos": "Runsten doet hoogstens 2000 aanroepen per dag naar de Pleos Vehicle Data API per sleutel, een eigen plafond (Pleos publiceert er geen): die zijn op. Het uitlezen wordt vanzelf hervat.",
       "quotaSkoda": "Runsten doet hoogstens 2400 aanroepen per dag naar de MyŠkoda Public API per sleutel, boven Škoda’s eigen limiet van 20 per uur per auto: die zijn op. Het uitlezen wordt vanzelf hervat.",
-      "quotaRenault": "Runsten doet hooguit 1.200 aanroepen per dag naar de API van de My Renault-app per account, om ver onder Renaults niet-gepubliceerde grenzen te blijven: ze zijn opgebruikt. Het lezen hervat vanzelf."
+      "quotaRenault": "Runsten doet hooguit 1.200 aanroepen per dag naar de API van de My Renault-app per account, om ver onder Renaults niet-gepubliceerde grenzen te blijven: ze zijn opgebruikt. Het lezen hervat vanzelf.",
+      "quotaFord": "Runsten doet hooguit 2.000 aanroepen per dag naar FordConnect Query per auto, aangezien Ford zelf geen limiet publiceert: ze zijn opgebruikt. Het lezen hervat vanzelf."
     },
     "facts": {
       "mode": "Uitleesmodus",
@@ -1589,10 +1608,12 @@
       "noneDuePleos": "Geen, tot er een Pleos-sleutel is opgegeven",
       "noneDueSkoda": "Geen, tot er een MyŠkoda-sleutel is opgegeven",
       "noneDueRenault": "Geen, tot u zich opnieuw aanmeldt bij My Renault",
+      "noneDueFord": "Geen, tot u zich opnieuw aanmeldt bij Ford",
       "noneDueUnsharedBmw": "Geen: het BMW-account is niet langer hoofdgebruiker van de auto",
       "noneDueUnsharedPleos": "Geen: de auto deelt zijn gegevens niet langer met de sleutel",
       "noneDueUnsharedSkoda": "Geen: de sleutel dekt de auto niet meer",
-      "noneDueUnsharedRenault": "Geen: de auto staat niet meer in het My Renault-account"
+      "noneDueUnsharedRenault": "Geen: de auto staat niet meer in het My Renault-account",
+      "noneDueUnsharedFord": "Geen: de aanmelding leest een andere auto"
     },
     "api": {
       "connectedVehicle": "voertuiggegevens",
@@ -1606,6 +1627,7 @@
       "pleos": "de Pleos Vehicle Data API",
       "skoda": "de MyŠkoda Public API",
       "renault": "de API van de My Renault-app",
+      "ford": "FordConnect Query",
       "demo": "het demovoertuig"
     },
     "failure": {
@@ -1636,18 +1658,22 @@
       "notFoundPleos": "Voertuig onbekend bij Pleos",
       "notFoundSkoda": "Voertuig onbekend bij Škoda",
       "notFoundRenault": "Voertuig onbekend bij Renault",
+      "notFoundFord": "Voertuig onbekend bij Ford",
       "unavailableBmw": "BMW onbereikbaar",
       "unavailablePleos": "Pleos onbereikbaar",
       "unavailableSkoda": "Škoda onbereikbaar",
       "unavailableRenault": "Renault onbereikbaar",
+      "unavailableFord": "Ford onbereikbaar",
       "tokenBmw": "Geen token van BMW",
       "tokenPleos": "Geen token van Pleos",
       "tokenSkoda": "MyŠkoda-sleutel niet gelezen",
       "tokenRenault": "My Renault-sessie niet gelezen",
+      "tokenFord": "Toegang tot Ford niet vernieuwd",
       "credentialRefusedBmw": "BMW-koppeling geweigerd",
       "credentialRefusedPleos": "Pleos-sleutel geweigerd",
       "credentialRefusedSkoda": "MyŠkoda-sleutel geweigerd",
       "credentialRefusedRenault": "Aanmelding bij My Renault geweigerd",
+      "credentialRefusedFord": "Verbinding met Ford geweigerd",
       "keyShared": "Sleutel gedeeld met een andere toepassing"
     },
     "key": {
@@ -1694,6 +1720,10 @@
     "renault": {
       "title": "Uw My Renault-account",
       "off": "Renault staat uit op deze instantie (de vlag source.renault)."
+    },
+    "ford": {
+      "title": "Uw Ford-toepassing",
+      "off": "Ford staat uit op deze instantie (de vlag source.ford)."
     },
     "demo": {
       "title": "Demovoertuig",
@@ -2590,6 +2620,85 @@
       "sourceUnavailable": "My Renault antwoordde niet: er werd niets opgeslagen. Probeer het zo meteen opnieuw.",
       "unavailable": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
       "internal": "De aanmelding kon niet worden opgeslagen. Probeer het zo meteen opnieuw."
+    }
+  },
+  "ford": {
+    "intro": "Runsten leest uw Ford uit via FordConnect Query, Fords eigen toegang tot de gegevens van uw auto. U maakt een toepassing aan op het ontwikkelaarsportaal van Ford, meldt u daarmee aan bij Ford en kiest uw auto.",
+    "beta": "In bèta: geschreven op basis van Fords documentatie, nog niet getest op een echte auto.",
+    "guide": "Lees de handleiding",
+    "newTab": "(opent in een nieuw tabblad)",
+    "refused": {
+      "title": "Ford weigerde de verbinding",
+      "body": "Ford weigerde die op {time}: de toestemming is ingetrokken, of het secret van de toepassing is gewijzigd. Uw auto wordt niet meer gelezen tot u zich opnieuw aanmeldt; wat gelezen is, blijft."
+    },
+    "expired": {
+      "title": "Uw aanmelding bij Ford is afgelopen",
+      "body": "Ze eindigde op {date}: Ford vraagt elk jaar een nieuwe aanmelding. Uw auto wordt niet meer gelezen tot u zich opnieuw aanmeldt; wat gelezen is, blijft."
+    },
+    "renew": {
+      "title": "Meld u opnieuw aan bij Ford",
+      "body": "Ford vraagt elk jaar een nieuwe aanmelding: deze eindigt op {date}. Meld u vóór die datum opnieuw aan, anders wordt uw auto niet meer gelezen."
+    },
+    "current": "Uw toepassing",
+    "last4": "Client ID eindigend op {last4}",
+    "setAt": "Gekoppeld",
+    "expiresAt": "Opnieuw aanmelden vóór",
+    "expiresUnknown": "Niet opgegeven door Ford",
+    "reconnect": "Opnieuw aanmelden",
+    "delete": {
+      "button": "Verbinding verwijderen",
+      "title": "Uw Ford-verbinding verwijderen?",
+      "text": "Uw Ford blijft, met zijn geschiedenis, maar wordt niet meer gelezen tot u zich opnieuw aanmeldt. De client ID en het secret worden gewist.",
+      "error": "De verbinding kon niet worden verwijderd. Probeer het zo meteen opnieuw.",
+      "cancel": "Annuleren",
+      "confirm": "Verwijderen"
+    },
+    "steps": {
+      "title": "Maak uw toepassing aan",
+      "create": "Maak op het ontwikkelaarsportaal van Ford een toepassing aan voor persoonlijk gebruik, met hetzelfde e-mailadres als uw Ford-account en elke gegevenscategorie aangevinkt:",
+      "portal": "Ontwikkelaarsportaal van Ford",
+      "redirect": "Geef haar dit omleidingsadres:",
+      "wait": "Ford kan tot twee uur nodig hebben om een nieuwe toepassing klaar te maken: toont de aanmeldpagina een fout, probeer het dan later opnieuw.",
+      "credentials": "Kopieer hieronder de client ID en het secret van de toepassing."
+    },
+    "redirect": "Omleidingsadres",
+    "clientId": "Client ID",
+    "clientSecret": "Client secret",
+    "secretHelp": "Runsten bewaart ze verzegeld, om uw auto te lezen: ze worden nooit meer getoond.",
+    "start": "Aanmelden bij Ford",
+    "paste": {
+      "title": "Rond af op de pagina van Ford",
+      "open": "Open de pagina van Ford, meld u aan, kies uw auto en ga akkoord:",
+      "page": "Aanmeldpagina van Ford",
+      "explain": "Ford stuurt uw browser daarna naar een adres dat begint met {redirect} en waarvan de pagina niet laadt: dat is normaal, want Ford aanvaardt voor deze instantie geen ander adres.",
+      "copy": "Kopieer het volledige adres uit de adresbalk van de browser en plak het hieronder."
+    },
+    "callback": "Adres waarnaar Ford u doorstuurde",
+    "save": "Koppelen",
+    "startAgain": "Opnieuw beginnen",
+    "cancel": "Annuleren",
+    "saved": "Uw Ford is gekoppeld: de collector leest hem vanaf zijn volgende ronde.",
+    "deleted": "De Ford-verbinding is verwijderd.",
+    "error": {
+      "summary": "Uw Ford kon niet worden gekoppeld",
+      "clientIdRequired": "Vul de client ID van de toepassing in.",
+      "clientSecretRequired": "Vul het secret van de toepassing in.",
+      "callbackRequired": "Plak het adres waarnaar Ford u doorstuurde.",
+      "characters": "Het bevat een spatie of een teken dat geen client ID of secret bevat: kopieer het opnieuw van het portaal van Ford.",
+      "tooShort": "Te kort: minstens {min} tekens.",
+      "tooLong": "Te lang: hooguit {max} tekens.",
+      "noCode": "Dit adres bevat geen code: kopieer het volledige adres van de pagina waarnaar Ford u doorstuurde.",
+      "invalidBody": "De client ID of het secret van Ford heeft niet de verwachte vorm: kopieer ze opnieuw van het portaal van Ford.",
+      "expired": "Deze aanmelding is verlopen, werd al gebruikt, of Ford weigerde de code ervan: begin opnieuw.",
+      "applicationRefused": "Ford weigerde de client ID of het secret: controleer ze op het ontwikkelaarsportaal van Ford en begin dan opnieuw.",
+      "noVehicle": "Deze aanmelding leest geen auto: voeg uw auto toe aan uw Ford-account en begin dan opnieuw.",
+      "tooManyVehicles": "Met deze auto zou uw account meer voertuigen hebben dan toegestaan: hij werd niet gekoppeld.",
+      "notAdmitted": "Er moet nog iets gebeuren op uw account voordat een auto kan worden gekoppeld: laad de pagina opnieuw.",
+      "notOffered": "Ford wordt niet aangeboden aan uw account.",
+      "tooManyPending": "Te veel aanmeldingen wachten op deze instantie: probeer het over enkele minuten opnieuw.",
+      "fordUnavailable": "Ford antwoordde niet: er werd niets opgeslagen. Begin zo meteen opnieuw.",
+      "unavailable": "Runsten was niet bereikbaar. Probeer het zo meteen opnieuw.",
+      "internal": "Er ging iets mis aan de kant van Runsten. Probeer het zo meteen opnieuw."
     }
   },
   "demo": {

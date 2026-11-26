@@ -245,6 +245,9 @@ type env struct {
 	// renault keeps the My Renault sign-in; renaults signs an owner in.
 	renault  *memRenault
 	renaults *fakeRenault
+	// ford keeps the Ford connection; fords completes a sign-in.
+	ford  *memFord
+	fords *fakeFord
 	// demo keeps the demo connection, and shows its vehicle to the reader; demoVehicle
 	// writes the history.
 	demo        *memDemo
@@ -276,7 +279,7 @@ func newEnv(t *testing.T, maxFlows int) *env {
 // the simulator accepts (nil: any).
 func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []string) *env {
 	t.Helper()
-	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, bmw: &memBMW{}, bmws: &fakeBMW{}, pleos: &memPleos{}, pleosVehicles: pleosVehicles{}, skoda: &memSkoda{}, renault: &memRenault{}, renaults: &fakeRenault{}, demo: &memDemo{}, demoVehicle: &fakeDemoVehicle{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, exports: &memAccountExports{}, archives: &memArchives{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}, stored: &fakeStoredPictures{}, notifications: newMemNotifications()}
+	e := &env{store: &enrollStore{}, polestar: &memPolestar{}, tesla: &memTesla{}, polestarID: &memPolestarID{}, polestarIDs: &fakePolestarID{vins: []string{polestarIDVIN}}, bmw: &memBMW{}, bmws: &fakeBMW{}, pleos: &memPleos{}, pleosVehicles: pleosVehicles{}, skoda: &memSkoda{}, renault: &memRenault{}, renaults: &fakeRenault{}, ford: &memFord{}, fords: &fakeFord{}, demo: &memDemo{}, demoVehicle: &fakeDemoVehicle{}, settings: newMemSettings(), brokers: newMemBrokers(), jobs: &memImportJobs{}, exports: &memAccountExports{}, archives: &memArchives{}, aximote: &fakeAximote{}, files: &fakeFileImports{}, pictures: &fakePictures{}, stored: &fakeStoredPictures{}, notifications: newMemNotifications()}
 	e.reader = newMemReader(e.settings)
 	e.demo.reader = e.reader
 	t.Cleanup(func() {
@@ -330,6 +333,7 @@ func newEnvKeys(t *testing.T, maxFlows int, instanceKey string, accepted []strin
 		Pleos: e.pleos, PleosVehicles: e.pleosVehicles,
 		Skoda: e.skoda, SkodaVehicles: skodaDown{err: errors.New("no Škoda in this test")},
 		Renault: e.renault, RenaultAccounts: e.renaults,
+		Ford: e.ford, FordAccounts: e.fords,
 		Demo: e.demo, DemoVehicle: e.demoVehicle,
 		InstanceKeyLast4: instanceKey[max(0, len(instanceKey)-4):], Brokers: e.brokers, ImportJobs: e.jobs, AccountExports: e.exports, ExportArchives: e.archives, Aximote: e.aximote, FileImports: e.files,
 		Pictures: e.pictures, StoredPictures: e.stored, Params: readerParams(), CostParams: core.DefaultCostParams(), CapacityParams: core.DefaultCapacityParams(),

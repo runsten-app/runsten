@@ -78,6 +78,8 @@ type connectionSettingsJSON struct {
 	Pleos       null[pleosKeysJSON]          `json:"pleos" doc:"The account's keys of the Pleos Vehicle Data API, one per brand — Hyundai, Kia, Genesis —, which read its cars of each (the flag source.pleos); null: none."`
 	Skoda       null[skodaKeyJSON]           `json:"skoda" doc:"The account's key of the MyŠkoda Public API, which reads its Škodas (the flag source.skoda); null: none."`
 	Renault     null[renaultJSON]            `json:"renault" doc:"The account's sign-in to My Renault, which reads its Renaults, Dacias and Alpines through the My Renault app's API (the flag source.renault); null: none."`
+	Ford        null[fordJSON]               `json:"ford" doc:"The account's FordConnect Query connection, which reads its Ford with the application its owner created on Ford's developer portal (the flag source.ford); null: none."`
+	FordApp     fordApplicationJSON          `json:"ford_application" doc:"What the owner's application on Ford's developer portal must declare for this instance."`
 	Demo        null[demoJSON]               `json:"demo" doc:"The account's demo vehicle, simulated by the instance (the flag source.demo); null: none."`
 }
 
@@ -146,6 +148,12 @@ func (s *Server) connectionSettings(ctx context.Context, account string) (connec
 		return connectionSettingsJSON{}, s.internal("Renault connection not read", err)
 	}
 	out.Renault = renaultOf(rc)
+	fc, err := s.Ford.FordConnection(ctx, account)
+	if err != nil {
+		return connectionSettingsJSON{}, s.internal("Ford connection not read", err)
+	}
+	out.Ford = fordOf(fc)
+	out.FordApp.RedirectURI, out.FordApp.Callback = s.fordRedirect()
 	dc, err := s.Demo.DemoConnection(ctx, account)
 	if err != nil {
 		return connectionSettingsJSON{}, s.internal("demo connection not read", err)

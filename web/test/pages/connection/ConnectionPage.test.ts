@@ -18,7 +18,7 @@ vi.mock('@/entities/session/extensions', () => ({
 }))
 
 // The flags, as the session gives them: source.tesla on, source.polestar-id, source.bmw,
-// source.pleos, source.skoda, source.renault and source.demo off (BMW's, Pleos's and Škoda's are on in
+// source.pleos, source.skoda, source.renault, source.ford and source.demo off (BMW's, Pleos's and Škoda's are on in
 // the app, but the other tests have three tabs), unless a test turns them over.
 const flag = vi.hoisted(() => ({
   tesla: true,
@@ -27,6 +27,7 @@ const flag = vi.hoisted(() => ({
   pleos: false,
   skoda: false,
   renault: false,
+  ford: false,
   demo: false,
 }))
 vi.mock('@/features/view-flags', async () => {
@@ -44,9 +45,11 @@ vi.mock('@/features/view-flags', async () => {
                 ? flag.skoda
                 : name === 'source.renault'
                   ? flag.renault
-                  : name === 'source.demo'
-                    ? flag.demo
-                    : flag.tesla,
+                  : name === 'source.ford'
+                    ? flag.ford
+                    : name === 'source.demo'
+                      ? flag.demo
+                      : flag.tesla,
       ),
   }
 })
@@ -88,6 +91,8 @@ const selfHosted: ConnectionSettings = {
   pleos: null,
   skoda: null,
   renault: null,
+  ford: null,
+  ford_application: { redirect_uri: 'http://localhost/auth/ford/callback', callback: false },
   demo: null,
 }
 // The hosted offer: no instance key, the account gives its own.
@@ -104,6 +109,8 @@ const hosted: ConnectionSettings = {
   pleos: null,
   skoda: null,
   renault: null,
+  ford: null,
+  ford_application: { redirect_uri: 'http://localhost/auth/ford/callback', callback: false },
   demo: null,
 }
 
@@ -117,6 +124,7 @@ beforeEach(() => {
   flag.pleos = false
   flag.skoda = false
   flag.renault = false
+  flag.ford = false
   flag.demo = false
   mocks.fetchVehicles.mockReset()
   mocks.fetchVehicles.mockResolvedValue(items)
@@ -1192,6 +1200,91 @@ describe('ConnectionPage', () => {
       const panel = w.find('#connection-panel-renault')
       expect(panel.find('.delete-connection').exists()).toBe(true)
       expect(panel.find('.toggle').exists()).toBe(false)
+    })
+  })
+  describe('Ford', () => {
+    const fordConnection = (k: Partial<NonNullable<ConnectionSettings['ford']>> = {}) => ({
+      last4: 'abcd',
+      set_at: '2026-09-28T05:00:00Z',
+      expires_at: '2027-09-28T05:00:00Z',
+      refused_at: null,
+      ...k,
+    })
+
+    it('has a tab marked beta while its flag is on, with its form and no dot', async () => {
+      flag.ford = true
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toEqual([
+        'Volvo needs your attention',
+        'Polestar needs your attention',
+        'Tesla',
+        'Ford Beta',
+      ])
+      await w.find('#connection-tab-ford').trigger('click')
+      await vi.waitFor(() =>
+        expect(w.find('#connection-panel-ford .ford-form').exists()).toBe(true),
+      )
+      const panel = w.find('#connection-panel-ford')
+      expect(panel.findAll('h2').map((h) => plain(h.text()))).toEqual(['Your Ford application'])
+      expect(panel.find('#ford-client-id').exists()).toBe(true)
+      expect(panel.find<HTMLInputElement>('#ford-redirect').element.value).toBe(
+        'http://localhost/auth/ford/callback',
+      )
+      expect(panel.find('.ford-off').exists()).toBe(false)
+    })
+
+    it('has no tab while its flag is off, without a connection nor a Ford', async () => {
+      const w = await page()
+      expect(w.find('#connection-tab-ford').exists()).toBe(false)
+    })
+
+    it('puts a dot on its tab once Ford refused the connection, or its year nears its end', async () => {
+      flag.ford = true
+      for (const k of [
+        { refused_at: '2026-09-28T05:30:00Z' },
+        { expires_at: '2026-10-05T00:00:00Z' },
+      ]) {
+        mocks.fetchConnection.mockResolvedValue({ ...selfHosted, ford: fordConnection(k) })
+        const w = await page()
+        expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toContain(
+          'Ford Beta needs your attention',
+        )
+        w.unmount()
+      }
+    })
+
+    it('keeps its tab while its flag is off for an account that has a connection', async () => {
+      mocks.fetchConnection.mockResolvedValue({ ...selfHosted, ford: fordConnection() })
+      const w = await page()
+      expect(w.findAll('[role="tab"]').map((t) => plain(t.text()))).toContain('Ford Beta')
+      await w.find('#connection-tab-ford').trigger('click')
+      await vi.waitFor(() => expect(w.find('#connection-panel-ford .ford-off').exists()).toBe(true))
+      const panel = w.find('#connection-panel-ford')
+      expect(panel.find('.delete-connection').exists()).toBe(true)
+      expect(panel.find('.toggle').exists()).toBe(false)
+    })
+
+    it("tells what Ford's sign-in came back with, in its tab, once", async () => {
+      flag.ford = true
+      for (const [outcome, text] of [
+        ['connected', 'Signed in with Ford: the collector reads your vehicles from its next pass.'],
+        ['denied', 'The sign-in was not completed on Ford’s page'],
+        ['expired', 'This sign-in to Ford expired or was already used'],
+        ['application_refused', 'Ford refused the application’s client ID or secret'],
+        ['unavailable', 'Ford did not answer'],
+        ['not_offered', 'Ford is not offered to your account'],
+        ['no_vehicle', 'Your Ford account has no vehicle Runsten can read'],
+      ] as const) {
+        const { w, router } = await pageAt(`/connection?ford=${outcome}`)
+        await vi.waitFor(() => expect(router.currentRoute.value.hash).toBe('#ford'))
+        expect(router.currentRoute.value.query.ford).toBeUndefined()
+        expect(w.find('.v-alert').text()).toContain(text)
+        w.unmount()
+      }
+      // An outcome of Ford's alone says nothing of another brand's sign-in.
+      const { w } = await pageAt('/connection?tesla=application_refused')
+      await flushPromises()
+      expect(w.text()).not.toContain('Ford refused the application')
     })
   })
   describe('Demo vehicle', () => {

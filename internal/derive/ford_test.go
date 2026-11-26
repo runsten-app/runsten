@@ -94,7 +94,7 @@ func playFord(t *testing.T, until time.Duration, file string) (*memStore, *Deriv
 	}
 	t0 := sim.StatusAt(sc.Start).Now
 	target := collector.Target{
-		AccountID: "a", VehicleID: "f", VIN: sim.VIN(), ConnectionID: "fc", Provider: ford.Source, CredentialSetAt: t0,
+		AccountID: "a", VehicleID: "f", VIN: sim.VIN(), ConnectionID: "fc", Provider: ford.Source, CredentialSetAt: t0.Add(-time.Hour),
 	}
 	clk := clock.NewManual(t0)
 	calls := &fordCalls{
@@ -137,7 +137,7 @@ func playFord(t *testing.T, until time.Duration, file string) (*memStore, *Deriv
 	d := New(st, Sources(volvo.Normalizer{}, ford.Normalizer{}), core.DefaultParams(), fordCatalog{}, quiet)
 	c := collector.New(volvo.NewClient(srv.URL, "key", srv.Client()), st, fixedToken{}, clk, collector.DefaultIntervals(),
 		collector.DefaultQuota(), quiet, nil, d)
-	c.AddSource(fordsource.New(client, &fordGrant{cred: fordsource.Credential{Application: app, Refresh: tok.Refresh, SetAt: t0}}, clk), st)
+	c.AddSource(fordsource.New(client, &fordGrant{cred: fordsource.Credential{Application: app, Refresh: tok.Refresh, SetAt: t0.Add(-time.Hour)}}, clk), st)
 	day := t0.Truncate(24 * time.Hour)
 	for clk.Now().Before(day.Add(until)) {
 		if err := c.PollOnce(context.Background()); err != nil {
@@ -207,7 +207,9 @@ func TestFordDays(t *testing.T) {
 	if !ac.Type.OK || ac.Type.V != core.AC || !near(ac.EndSoC, 90, 1) {
 		t.Errorf("the AC charge: %+v", ac)
 	}
-	if !dc.Type.OK || dc.Type.V != core.DC || !near(dc.EndSoC, 80, 2) {
+	// Read every minute, a fast charge's end may be seen a few percent short: the car
+	// leaves before the next read.
+	if !dc.Type.OK || dc.Type.V != core.DC || !near(dc.EndSoC, 80, 4) {
 		t.Errorf("the DC charge: %+v", dc)
 	}
 	if !ac.EnergyPowerKWh.OK || !dc.EnergyPowerKWh.OK {

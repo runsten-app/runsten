@@ -30,6 +30,8 @@ const none: ConnectionSettings = {
   pleos: null,
   skoda: null,
   renault: null,
+  ford: null,
+  ford_application: { redirect_uri: 'http://localhost/auth/ford/callback', callback: false },
   demo: null,
 }
 const renault = { last4: '1a2b', set_at: '2026-09-28T05:00:00Z', refused_at: null }
