@@ -154,7 +154,7 @@ type fordCatalog struct{}
 
 func (fordCatalog) NetCapacity(context.Context, string, string) (core.NetCapacity, error) {
 	return func(n core.Snapshot) (float64, bool) {
-		return 43, n.Family.V == "Puma"
+		return 43, n.Family.V == "Puma Gen-E"
 	}, nil
 }
 
