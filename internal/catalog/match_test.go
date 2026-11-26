@@ -61,6 +61,11 @@ func TestMatch(t *testing.T) {
 		{"VIN with an unknown code", "EX30", 2024, 69.0, vin("ZZ"), []string{"ex30-er-2024", "ex30-twin-2024"}, false},
 		{"XC40 2024, its model code before the motor's", "XC40", 2024, 81.608, "YV1XZEHR0R2000001", []string{"xc40-er-2024"}, true},
 		{"a code at positions 4-5 is not the motor's", "EX30", 2024, 69.0, "YV1EL3AV0R2000001", []string{"ex30-er-2024", "ex30-twin-2024"}, false},
+		// A Ford's capacity is not read: it is recognized when one variant alone is of its year.
+		{"a Puma Gen-E of 2025", "Puma Gen-E", 2025, 0, "", []string{"puma-gen-e-2025"}, true},
+		{"an E-Transit of 2023", "E-Transit", 2023, 0, "", []string{"e-transit-68-2022"}, true},
+		{"a Mustang Mach-E of 2023: two batteries", "Mustang Mach-E", 2023, 0, "", []string{"mach-e-sr-2022", "mach-e-er-2022"}, false},
+		{"an Explorer of 2026: three", "Explorer", 2026, 0, "", []string{"explorer-sr-lfp-2026", "explorer-er-rwd-2026", "explorer-er-awd-2026"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

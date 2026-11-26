@@ -1,5 +1,5 @@
 // Package catalog is the data sheet of the electric and plug-in hybrid Volvo, Polestar,
-// Tesla, BMW, Mini, Hyundai, Kia, Genesis, Škoda, Renault, Dacia and Alpine variants: battery
+// Tesla, BMW, Mini, Hyundai, Kia, Genesis, Škoda, Renault, Dacia, Alpine and Ford variants: battery
 // capacities and charging powers, read from a sourced YAML file embedded in the binary,
 // and the recognition of a vehicle's variant from what the vendor API says of it.
 //
@@ -40,12 +40,15 @@ const (
 	Renault Brand = "renault"
 	Dacia   Brand = "dacia"
 	Alpine  Brand = "alpine"
+	// Ford is read through FordConnect Query, whose garage names the make.
+	Ford Brand = "ford"
 )
 
 // readsCapacity reports whether the brand's sources tell the battery's capacity, which
-// Match compares: Tesla's Owner API tells none, nor the MyŠkoda Public API.
+// Match compares: Tesla's Owner API tells none, nor the MyŠkoda Public API, nor Kamereon;
+// FordConnect Query tells one whose meaning is not known, which is not read.
 func (b Brand) readsCapacity() bool {
-	return !slices.Contains([]Brand{Tesla, Skoda, Renault, Dacia, Alpine}, b)
+	return !slices.Contains([]Brand{Tesla, Skoda, Renault, Dacia, Alpine, Ford}, b)
 }
 
 // Powertrain is what moves the vehicles of a variant, as core.Powertrain names it.
