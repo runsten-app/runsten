@@ -1,4 +1,4 @@
-# Electric and plug-in hybrid variants of Volvo, Polestar, Tesla, BMW, Mini, Hyundai, Kia, Genesis, Škoda, Renault, Dacia and Alpine vehicles.
+# Electric and plug-in hybrid variants of Volvo, Polestar, Tesla, BMW, Mini, Hyundai, Kia, Genesis, Škoda, Renault, Dacia, Alpine and Ford vehicles.
 #
 # One entry per variant: a powertrain and battery over a range of model years. Its id is
 # stored by users once they choose it, so it never changes: correcting a figure keeps the
@@ -10,7 +10,8 @@
 #   normalizer names it (Model 3, Model Y). Škoda's: the model's name, which the MyŠkoda
 #   Public API gives when the owner did not rename the car (Enyaq, Enyaq Coupé, Elroq). Renault's, Dacia's
 #   and Alpine's: the model's name as internal/renault/models.go writes it from the model
-#   code (Renault 5 E-Tech, Zoe, Spring, Alpine A290).
+#   code (Renault 5 E-Tech, Zoe, Spring, Alpine A290). Ford's: the model's name as the garage
+#   of FordConnect Query tells it (Mustang Mach-E), assumed for the others.
 # - trims: values of a vendor's trim badge (Tesla's trim_badging), lower case, sourced as
 #   a figure: like the motor codes, they only rule out the variants that list others.
 #   BMW's: the model's name after its family, its spaces dropped (iX3 50 xDrive: 50xdrive),
@@ -34,8 +35,8 @@
 #
 # Variants that no reading can separate (same family, overlapping years, capacities within
 # the tolerances, no motor code apart) must name each other in ambiguous_with: Match then
-# offers both, and the user chooses. Tesla's, Škoda's, Renault's, Dacia's and Alpine's are exempt: neither the Owner
-# API, the MyŠkoda Public API nor Kamereon tells a capacity, ambiguity is the rule there.
+# offers both, and the user chooses. Tesla's, Škoda's, Renault's, Dacia's, Alpine's and Ford's are exempt: neither the Owner
+# API, the MyŠkoda Public API nor Kamereon tells a capacity, and FordConnect Query's is not read: ambiguity is the rule there.
 
 # --- Volvo XC40 and C40 (CMA) ---------------------------------------------------------
 
@@ -4648,3 +4649,644 @@
     - url: https://en.wikipedia.org/wiki/Renault_5_E-Tech
       level: secondary
       for: [chemistry]
+
+# --- Ford (FordConnect Query) ------------------------------------------------------------
+#
+# FordConnect Query tells a capacity (xevBatteryCapacity) whose meaning is not known, and
+# which is not read: capacity does not separate these variants (see readsCapacity), Ford is
+# exempted like Tesla and Škoda, no ambiguous_with. A variant is recognized only when it is
+# alone for its family and model year; otherwise its user chooses, so each name tells the
+# usable capacity.
+# family: the model's name as the garage tells it (modelName). Only "Mustang Mach-E" was
+# seen in another client's capture; the others are the names Ford sells the cars under,
+# not verified on a real reading. A name the catalog does not know leaves every Ford to
+# choose from (the readers' rule, as for the Pleos Vehicle Data API).
+# Ford publishes usable (net) capacities only: the gross ones are ev-database's "nominal"
+# capacity or Wikipedia's, as for Renault. Ford's press pages moved to fromtheroad.ford.com.
+# Left out, to add: the E-Transit's 96 kWh battery of late 2026 (reported by the press
+# alone, its AC power not told), and the F-150 Lightning sold in Norway (no European
+# figures but a press page's).
+
+# --- Ford Puma Gen-E ---
+
+# Gross: ev-database's 53 kWh nominal; Wikipedia says 46 kWh (43.6 usable), which the 2026
+# car's usable capacity would exceed. ev-database gives 43.6 kWh usable, Ford's factsheet 43.
+
+- id: puma-gen-e-2025
+  brand: ford
+  family: Puma Gen-E
+  name: Puma Gen-E (43 kWh)
+  years: [2025, 2026]
+  gross_kwh: 53
+  net_kwh: 43
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 100
+  sources:
+    - url: https://www.fromtheroad.ford.com/content/dam/fordmediasite/eur/en/library/2025/tech-specs/2025%20Go%20Electric%20Puma%20Gen-E%20factsheet%20ENG.pdf
+      level: manufacturer
+      for: [net_kwh, chemistry, dc_max_kw]
+    - url: https://ev-database.org/car/3073/Ford-Puma-Gen-E
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# The car updated in 2026: Ford tells its range (417 km instead of 376, "an optimised battery
+# design") and no capacity. The usable 46.8 kWh is ev-database's alone; Ford gives 46 kWh for
+# the E-Transit Courier, which got the same update. To check against a Ford sheet.
+- id: puma-gen-e-2026
+  brand: ford
+  family: Puma Gen-E
+  name: Puma Gen-E (46.8 kWh, from 2026)
+  years: [2026]
+  gross_kwh: 53
+  net_kwh: 46.8
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 100
+  sources:
+    - url: https://ev-database.org/car/3597/Ford-Puma-Gen-E
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# --- Ford Explorer and Capri (MEB) ---
+#
+# Ford's 2025 factsheets give the same table for both: usable 52, 77 and 79 kWh, AC 11 kW,
+# DC 145, 135 and 185 kW. From model year 2026 the Standard Range has an LFP battery, and
+# the two Extended Range swap their packs: 79 kWh for the RWD, 77 kWh for the AWD (Ford's
+# 2026 news page and ev-database agree). Model years: the 2026 cars were ordered from
+# January 2026, the earlier ones until April 2026 in some markets.
+
+- id: explorer-sr-2024
+  brand: ford
+  family: Explorer
+  name: Explorer Standard Range RWD (52 kWh)
+  years: [2024, 2025]
+  gross_kwh: 55
+  net_kwh: 52
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 145
+  sources:
+    - url: https://www.fromtheroad.ford.com/content/dam/fordmediasite/eur/en/library/2025/tech-specs/2025%20Go%20Electric%20Explorer%20factsheet%20ENG.pdf
+      level: manufacturer
+      for: [net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/2167/Ford-Explorer-Standard-Range-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# Wikipedia gives 170 kW DC for the 82 kWh pack, without a source: Ford's factsheet and
+# ev-database say 135 kW.
+- id: explorer-er-rwd-2024
+  brand: ford
+  family: Explorer
+  name: Explorer Extended Range RWD (77 kWh)
+  years: [2024, 2025]
+  gross_kwh: 82
+  net_kwh: 77
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 135
+  sources:
+    - url: https://www.fromtheroad.ford.com/content/dam/fordmediasite/eur/en/library/2025/tech-specs/2025%20Go%20Electric%20Explorer%20factsheet%20ENG.pdf
+      level: manufacturer
+      for: [net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/2168/Ford-Explorer-Extended-Range-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: explorer-er-awd-2024
+  brand: ford
+  family: Explorer
+  name: Explorer Extended Range AWD (79 kWh)
+  years: [2024, 2025]
+  gross_kwh: 84
+  net_kwh: 79
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 185
+  sources:
+    - url: https://www.fromtheroad.ford.com/content/dam/fordmediasite/eur/en/library/2025/tech-specs/2025%20Go%20Electric%20Explorer%20factsheet%20ENG.pdf
+      level: manufacturer
+      for: [net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/2169/Ford-Explorer-Extended-Range-AWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# Conflict (dc_max_kw): electrive says 110 kW, ev-database 105 kW; no Ford page tells it. The
+# highest is kept.
+- id: explorer-sr-lfp-2026
+  brand: ford
+  family: Explorer
+  name: Explorer Standard Range RWD (58 kWh, LFP)
+  years: [2026]
+  gross_kwh: 61
+  net_kwh: 58
+  chemistry: lfp
+  ac_max_kw: 11
+  dc_max_kw: 110
+  sources:
+    - url: https://www.at.ford.com/us/en/home/news-media/news/2026/5/explorer-capri-towing-capacity-boost.html
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://www.fromtheroad.ford.com/eur/en/articles/2026/capri-and-explorer-recharged-what-s-new-for-ford-s-electric-icon
+      level: manufacturer
+      for: [chemistry]
+    - url: https://www.electrive.com/2026/01/28/ford-explorer-and-capri-receive-new-lfp-battery-option/
+      level: secondary
+      for: [net_kwh, chemistry, dc_max_kw]
+    - url: https://ev-database.org/car/3446/Ford-Explorer-Standard-Range-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw]
+
+- id: explorer-er-rwd-2026
+  brand: ford
+  family: Explorer
+  name: Explorer Extended Range RWD (79 kWh)
+  years: [2026]
+  gross_kwh: 84
+  net_kwh: 79
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 183
+  sources:
+    - url: https://www.at.ford.com/us/en/home/news-media/news/2026/5/explorer-capri-towing-capacity-boost.html
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://ev-database.org/car/3454/Ford-Explorer-Extended-Range-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: explorer-er-awd-2026
+  brand: ford
+  family: Explorer
+  name: Explorer Extended Range AWD (77 kWh)
+  years: [2026]
+  gross_kwh: 82
+  net_kwh: 77
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 185
+  sources:
+    - url: https://www.at.ford.com/us/en/home/news-media/news/2026/5/explorer-capri-towing-capacity-boost.html
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://ev-database.org/car/3455/Ford-Explorer-Extended-Range-AWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: capri-sr-2024
+  brand: ford
+  family: Capri
+  name: Capri Standard Range RWD (52 kWh)
+  years: [2024, 2025]
+  gross_kwh: 55
+  net_kwh: 52
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 145
+  sources:
+    - url: https://www.fromtheroad.ford.com/content/dam/fordmediasite/eur/en/library/2025/tech-specs/2025%20Go%20Electric%20Capri%20factsheet%20ENG.pdf
+      level: manufacturer
+      for: [net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/2240/Ford-Capri-Standard-Range-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: capri-er-rwd-2024
+  brand: ford
+  family: Capri
+  name: Capri Extended Range RWD (77 kWh)
+  years: [2024, 2025]
+  gross_kwh: 82
+  net_kwh: 77
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 135
+  sources:
+    - url: https://www.fromtheroad.ford.com/content/dam/fordmediasite/eur/en/library/2025/tech-specs/2025%20Go%20Electric%20Capri%20factsheet%20ENG.pdf
+      level: manufacturer
+      for: [net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/2241/Ford-Capri-Extended-Range-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: capri-er-awd-2024
+  brand: ford
+  family: Capri
+  name: Capri Extended Range AWD (79 kWh)
+  years: [2024, 2025]
+  gross_kwh: 84
+  net_kwh: 79
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 185
+  sources:
+    - url: https://www.fromtheroad.ford.com/content/dam/fordmediasite/eur/en/library/2025/tech-specs/2025%20Go%20Electric%20Capri%20factsheet%20ENG.pdf
+      level: manufacturer
+      for: [net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/2242/Ford-Capri-Extended-Range-AWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# The Explorer's battery: its gross capacity is from the Explorer's page at ev-database.
+# Conflict (dc_max_kw): as the Explorer's, 110 kW kept over 105 kW.
+- id: capri-sr-lfp-2026
+  brand: ford
+  family: Capri
+  name: Capri Standard Range RWD (58 kWh, LFP)
+  years: [2026]
+  gross_kwh: 61
+  net_kwh: 58
+  chemistry: lfp
+  ac_max_kw: 11
+  dc_max_kw: 110
+  sources:
+    - url: https://www.at.ford.com/us/en/home/news-media/news/2026/5/explorer-capri-towing-capacity-boost.html
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://www.fromtheroad.ford.com/eur/en/articles/2026/capri-and-explorer-recharged-what-s-new-for-ford-s-electric-icon
+      level: manufacturer
+      for: [chemistry]
+    - url: https://www.electrive.com/2026/01/28/ford-explorer-and-capri-receive-new-lfp-battery-option/
+      level: secondary
+      for: [net_kwh, chemistry, dc_max_kw]
+    - url: https://ev-database.org/car/3446/Ford-Explorer-Standard-Range-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw]
+
+- id: capri-er-rwd-2026
+  brand: ford
+  family: Capri
+  name: Capri Extended Range RWD (79 kWh)
+  years: [2026]
+  gross_kwh: 84
+  net_kwh: 79
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 183
+  sources:
+    - url: https://www.at.ford.com/us/en/home/news-media/news/2026/5/explorer-capri-towing-capacity-boost.html
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://ev-database.org/car/3452/Ford-Capri-Extended-Range-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: capri-er-awd-2026
+  brand: ford
+  family: Capri
+  name: Capri Extended Range AWD (77 kWh)
+  years: [2026]
+  gross_kwh: 82
+  net_kwh: 77
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 185
+  sources:
+    - url: https://www.at.ford.com/us/en/home/news-media/news/2026/5/explorer-capri-towing-capacity-boost.html
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://ev-database.org/car/3453/Ford-Capri-Extended-Range-AWD
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# --- Ford Mustang Mach-E (Europe) ---
+#
+# The RWD and AWD cars of a range share their battery: one entry for both. Usable
+# capacities over the years: Standard Range 68 kWh (2021), 70 kWh (2022-2023), then the LFP
+# battery (late 2023 on); Extended Range and GT 88 kWh (2021), 91 kWh (2022-2024), then 88 kWh
+# for the Extended Range and 91 kWh for the GT (2025 on, Ford's Austrian sheet).
+# Conflicts: the gross capacity of the larger pack is 98.7 kWh at ev-database and the German
+# Wikipedia, 98.8 kWh at the English one: the most cited is kept. dc_max_kw: Ford's launch
+# press kit says "up to 150 kW", ev-database 107 to 109 kW for the first years, Wikipedia
+# 115 kW for the first Standard Range: the highest is kept. ac_max_kw: 11 kW at ev-database
+# and Wikipedia, 10.5 kW in a Ford sheet of another market: the highest is kept.
+
+- id: mach-e-sr-2021
+  brand: ford
+  family: Mustang Mach-E
+  name: Mustang Mach-E Standard Range (68 kWh)
+  years: [2021, 2021]
+  gross_kwh: 75.7
+  net_kwh: 68
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 150
+  sources:
+    - url: https://www.mynewsdesk.com/se/ford/pressreleases/ford-presenterar-sammanstaelld-information-om-nya-mustang-mach-e-3057694
+      level: manufacturer
+      for: [net_kwh, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/Ford_Mustang_Mach-E
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw]
+    - url: https://ev-database.org/car/1242/Ford-Mustang-Mach-E-SR-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+- id: mach-e-er-2021
+  brand: ford
+  family: Mustang Mach-E
+  name: Mustang Mach-E Extended Range and GT (88 kWh)
+  years: [2021, 2021]
+  gross_kwh: 98.7
+  net_kwh: 88
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 150
+  sources:
+    - url: https://www.mynewsdesk.com/se/ford/pressreleases/ford-presenterar-sammanstaelld-information-om-nya-mustang-mach-e-3057694
+      level: manufacturer
+      for: [net_kwh, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/Ford_Mustang_Mach-E
+      level: secondary
+      for: [net_kwh, chemistry, ac_max_kw]
+    - url: https://ev-database.org/car/1243/Ford-Mustang-Mach-E-ER-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw]
+
+- id: mach-e-sr-2022
+  brand: ford
+  family: Mustang Mach-E
+  name: Mustang Mach-E Standard Range (70 kWh)
+  years: [2022, 2023]
+  gross_kwh: 75.7
+  net_kwh: 70
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 150
+  sources:
+    - url: https://en.wikipedia.org/wiki/Ford_Mustang_Mach-E
+      level: secondary
+      for: [gross_kwh, net_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# The Rally came in 2024. Gross: the same pack as the 2025 GT's, whose page at ev-database
+# tells 98.7 kWh for 91 kWh usable.
+- id: mach-e-er-2022
+  brand: ford
+  family: Mustang Mach-E
+  name: Mustang Mach-E Extended Range, GT and Rally (91 kWh)
+  years: [2022, 2024]
+  gross_kwh: 98.7
+  net_kwh: 91
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 150
+  sources:
+    - url: https://en.wikipedia.org/wiki/Ford_Mustang_Mach-E
+      level: secondary
+      for: [net_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3190/Ford-Mustang-Mach-E-GT
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+# Ordered from October 2023. Net: Ford's sheet says 73 kWh, ev-database and Wikipedia 72.6 kWh:
+# the manufacturer's is kept.
+- id: mach-e-sr-lfp-2024
+  brand: ford
+  family: Mustang Mach-E
+  name: Mustang Mach-E Standard Range (73 kWh, LFP)
+  years: [2024]
+  gross_kwh: 78
+  net_kwh: 73
+  chemistry: lfp
+  ac_max_kw: 11
+  dc_max_kw: 150
+  sources:
+    - url: https://www.ford.at/content/dam/guxeu/at/de_at/documents/technical-data/Technische_Daten_Ford_Mustang_Mach-E_MY26.00_zur_Preisliste_vom_16.01.2026_s.pdf
+      level: manufacturer
+      for: [net_kwh, chemistry, dc_max_kw]
+    - url: https://ev-database.org/car/2034/Ford-Mustang-Mach-E-SR-RWD
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3187/Ford-Mustang-Mach-E-SR-RWD
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: mach-e-er-2025
+  brand: ford
+  family: Mustang Mach-E
+  name: Mustang Mach-E Extended Range (88 kWh)
+  years: [2025]
+  gross_kwh: 98.7
+  net_kwh: 88
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 150
+  sources:
+    - url: https://www.ford.at/content/dam/guxeu/at/de_at/documents/technical-data/Technische_Daten_Ford_Mustang_Mach-E_MY26.00_zur_Preisliste_vom_16.01.2026_s.pdf
+      level: manufacturer
+      for: [net_kwh, chemistry, dc_max_kw]
+    - url: https://ev-database.org/car/3188/Ford-Mustang-Mach-E-ER-RWD
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+- id: mach-e-gt-2025
+  brand: ford
+  family: Mustang Mach-E
+  name: Mustang Mach-E GT (91 kWh)
+  years: [2025]
+  gross_kwh: 98.7
+  net_kwh: 91
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 150
+  sources:
+    - url: https://www.ford.at/content/dam/guxeu/at/de_at/documents/technical-data/Technische_Daten_Ford_Mustang_Mach-E_MY26.00_zur_Preisliste_vom_16.01.2026_s.pdf
+      level: manufacturer
+      for: [net_kwh, chemistry, dc_max_kw]
+    - url: https://ev-database.org/car/3190/Ford-Mustang-Mach-E-GT
+      level: secondary
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+# --- Ford E-Transit, E-Transit Custom, E-Tourneo Custom and the Couriers ---
+
+# ac_max_kw: 11.3 kW in Ford's launch sheet, 11 kW in its later texts: the highest is kept.
+- id: e-transit-68-2022
+  brand: ford
+  family: E-Transit
+  name: E-Transit (68 kWh)
+  years: [2022]
+  gross_kwh: 77
+  net_kwh: 68
+  ac_max_kw: 11.3
+  dc_max_kw: 115
+  sources:
+    - url: https://www.fordpers.be/editor/files/e_transit_eu_4.pdf
+      level: manufacturer
+      for: [net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://en.wikipedia.org/wiki/Ford_Transit
+      level: secondary
+      for: [gross_kwh, net_kwh]
+
+# Ford tells its usable capacity alone and no source the gross one: the usable capacity
+# stands for it until one does. Its AC charging goes "from 11 kW to 22 kW" on every extended
+# range van, by Ford's text: taken as its standard charger.
+- id: e-transit-89-2025
+  brand: ford
+  family: E-Transit
+  name: E-Transit Extended Range (89 kWh)
+  years: [2025]
+  gross_kwh: 89
+  net_kwh: 89
+  ac_max_kw: 22
+  dc_max_kw: 180
+  sources:
+    - url: https://www.fromtheroad.ford.com/eur/en/articles/2024/go-further--charge-faster--ford-pro-boosts-segment-leading-e-tra
+      level: manufacturer
+      for: [gross_kwh, net_kwh, ac_max_kw, dc_max_kw]
+
+# Gross: ev-database's 82.5 kWh nominal, which it gives for the 64 kWh and the 71 kWh
+# batteries alike (on the E-Tourneo Custom's and the Kombi's pages); no Ford figure.
+- id: e-transit-custom-64-2024
+  brand: ford
+  family: E-Transit Custom
+  name: E-Transit Custom (64 kWh)
+  years: [2024, 2026]
+  gross_kwh: 82.5
+  net_kwh: 64
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 125
+  sources:
+    - url: https://www.fromtheroad.ford.com/eur/en/articles/2024/all-new--all-electric-e-transit-custom-van-ready-to-electrify-sm
+      level: manufacturer
+      for: [net_kwh, dc_max_kw]
+    - url: https://ev-database.org/car/3162/Ford-e-Tourneo-Custom-L1-160-kW
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: e-transit-custom-71-2026
+  brand: ford
+  family: E-Transit Custom
+  name: E-Transit Custom (71 kWh)
+  years: [2026]
+  gross_kwh: 82.5
+  net_kwh: 71
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 125
+  sources:
+    - url: https://www.fromtheroad.ford.com/content/dam/fordmediasite/eur/en/library/2026/tech-specs/E-Transit_Custom_AWD_2026_tech_spec_EU.pdf
+      level: manufacturer
+      for: [net_kwh, chemistry, dc_max_kw]
+    - url: https://www.fromtheroad.ford.com/eur/en/articles/2025/e-transit-custom-battery-upgrade
+      level: manufacturer
+      for: [net_kwh, dc_max_kw]
+    - url: https://ev-database.org/car/3691/Ford-e-Transit-Custom-Kombi-L1-160-kW-71-kWh
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# The E-Transit Custom's powertrain and battery, by Ford's text on their 2026 upgrade.
+- id: e-tourneo-custom-64-2024
+  brand: ford
+  family: E-Tourneo Custom
+  name: E-Tourneo Custom (64 kWh)
+  years: [2024, 2026]
+  gross_kwh: 82.5
+  net_kwh: 64
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 125
+  sources:
+    - url: https://www.fromtheroad.ford.com/eur/en/articles/2025/e-transit-custom-battery-upgrade
+      level: manufacturer
+      for: [net_kwh, dc_max_kw]
+    - url: https://ev-database.org/car/3162/Ford-e-Tourneo-Custom-L1-160-kW
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: e-tourneo-custom-71-2026
+  brand: ford
+  family: E-Tourneo Custom
+  name: E-Tourneo Custom (71 kWh)
+  years: [2026]
+  gross_kwh: 82.5
+  net_kwh: 71
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 125
+  sources:
+    - url: https://www.fromtheroad.ford.com/eur/en/articles/2025/e-transit-custom-battery-upgrade
+      level: manufacturer
+      for: [net_kwh, dc_max_kw]
+    - url: https://ev-database.org/car/3691/Ford-e-Transit-Custom-Kombi-L1-160-kW-71-kWh
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+# The Couriers share their battery: the gross capacity and the chemistry are from the
+# E-Tourneo Courier's pages at ev-database, which give 43.6 and 46.8 kWh usable where Ford
+# says 43 and 46 kWh.
+- id: e-transit-courier-43-2024
+  brand: ford
+  family: E-Transit Courier
+  name: E-Transit Courier (43 kWh)
+  years: [2024, 2026]
+  gross_kwh: 53
+  net_kwh: 43
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 100
+  sources:
+    - url: https://www.fromtheroad.ford.com/eur/en/articles/2026/whats-new-e-transit-courier
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://evfleetworld.co.uk/ford-confirms-specs-for-all-new-e-transit-courier-at-iaa-reveal/
+      level: secondary
+      for: [net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3166/Ford-e-Tourneo-Courier
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: e-transit-courier-46-2026
+  brand: ford
+  family: E-Transit Courier
+  name: E-Transit Courier (46 kWh)
+  years: [2026]
+  gross_kwh: 53
+  net_kwh: 46
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 100
+  sources:
+    - url: https://www.fromtheroad.ford.com/eur/en/articles/2026/whats-new-e-transit-courier
+      level: manufacturer
+      for: [net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3846/Ford-e-Tourneo-Courier
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: e-tourneo-courier-43-2024
+  brand: ford
+  family: E-Tourneo Courier
+  name: E-Tourneo Courier (43 kWh)
+  years: [2024, 2026]
+  gross_kwh: 53
+  net_kwh: 43
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 100
+  sources:
+    - url: https://www.fromtheroad.ford.com/eur/en/articles/2026/whats-new-e-transit-courier
+      level: manufacturer
+      for: [net_kwh]
+    - url: https://ev-database.org/car/3166/Ford-e-Tourneo-Courier
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]
+
+- id: e-tourneo-courier-46-2026
+  brand: ford
+  family: E-Tourneo Courier
+  name: E-Tourneo Courier (46 kWh)
+  years: [2026]
+  gross_kwh: 53
+  net_kwh: 46
+  chemistry: nmc
+  ac_max_kw: 11
+  dc_max_kw: 100
+  sources:
+    - url: https://www.fromtheroad.ford.com/eur/en/articles/2026/whats-new-e-transit-courier
+      level: manufacturer
+      for: [net_kwh, ac_max_kw, dc_max_kw]
+    - url: https://ev-database.org/car/3846/Ford-e-Tourneo-Courier
+      level: secondary
+      for: [gross_kwh, chemistry, ac_max_kw, dc_max_kw]

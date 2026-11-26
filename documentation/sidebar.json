@@ -36,6 +36,7 @@
       },
       { "text": "Škoda (beta)", "link": "/docs/guide/skoda" },
       { "text": "Renault, Dacia and Alpine (beta)", "link": "/docs/guide/renault" },
+      { "text": "Ford (beta)", "link": "/docs/guide/ford" },
       { "text": "Demo vehicle", "link": "/docs/guide/demo" }
     ]
   },

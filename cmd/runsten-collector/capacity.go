@@ -7,6 +7,7 @@ import (
 
 	"runsten/internal/catalog"
 	"runsten/internal/core"
+	"runsten/internal/ford"
 	"runsten/internal/pleos"
 	"runsten/internal/store"
 )
@@ -65,7 +66,8 @@ func (c capacities) NetCapacity(ctx context.Context, accountID, vehicleID string
 // (empty: none), from the details n: catalog.Effective, the one rule. A car of the Pleos
 // Vehicle Data API keeps the brand its provider names, and a family the catalog knows no
 // variant of (the consent may spell it otherwise than the catalog) gives way to the
-// brand, as a family the details do not read.
+// brand, as a family the details do not read. So does a Ford's: its family is the model's
+// name as Ford's garage writes it, which no real car has told yet for most models.
 func (c capacities) effective(chosen, vin, provider string, n core.Snapshot) (catalog.Variant, bool) {
 	r := catalog.Reading{
 		Brand: catalog.Brand(n.Brand.V), Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: vin,
@@ -78,6 +80,9 @@ func (c capacities) effective(chosen, vin, provider string, n core.Snapshot) (ca
 		if r.Family != "" && len(c.catalog.Offer(r)) == 0 {
 			r.Family = ""
 		}
+	}
+	if provider == ford.Source && r.Brand == catalog.Ford && r.Family != "" && len(c.catalog.Offer(r)) == 0 {
+		r.Family = ""
 	}
 	return c.catalog.Effective(chosen, r)
 }

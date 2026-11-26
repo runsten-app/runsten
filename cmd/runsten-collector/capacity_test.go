@@ -40,6 +40,13 @@ func TestNetCapacity(t *testing.T) {
 	kiaUnknown := ev6Consent
 	kiaUnknown.Family, kiaUnknown.CapacityKWh = some("PV5"), core.Value[float64]{}
 	kiaUnknown.Covers = core.FieldModel
+	// The garage of FordConnect Query: the make, the model's name and its year, no
+	// capacity. The name may be one the catalog does not know.
+	puma := core.Snapshot{
+		Covers: core.FieldModel, Brand: some("ford"), Family: some("Puma Gen-E"), ModelYear: some(2025), Powertrain: some(core.Electric),
+	}
+	fordRenamed := puma
+	fordRenamed.Family, fordRenamed.ModelYear = some("Explorer EV"), some(2026)
 	tests := []struct {
 		name     string
 		vin      string
@@ -64,6 +71,10 @@ func TestNetCapacity(t *testing.T) {
 		{"recognized by the consent's family", "KNAPC81ABPP000001", "pleos_kia", "", ev6Consent, 74},
 		{"a family the catalog knows no variant of: several of the brand's fit, none recognized", "KNAPC81ABPP000001", "pleos_kia", "", kiaMisspelt, 0},
 		{"a family unknown: a variant of another brand", "KNAPC81ABPP000001", "pleos_kia", "", kiaUnknown, 0},
+		// A Ford: no capacity read, one variant alone of its model and year.
+		{"a Ford alone of its year", "WF0TESTPUMA000001", "ford", "", puma, 43},
+		{"a Ford named otherwise than the catalog: the brand's variant chosen", "WF0TESTPUMA000001", "ford", "explorer-sr-lfp-2026", fordRenamed, 58},
+		{"a Ford named otherwise, nothing chosen", "WF0TESTPUMA000001", "ford", "", fordRenamed, 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

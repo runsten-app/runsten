@@ -15,7 +15,7 @@ vin: WF0TESTPUMA000001
 start: 2026-09-28T05:00:00Z
 vehicle:
   profile: bev-generic
-  model: Puma
+  model: Puma Gen-E
   modelYear: 2025
   batteryKWh: 46
   usableKWh: 43

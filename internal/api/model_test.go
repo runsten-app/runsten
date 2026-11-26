@@ -45,6 +45,15 @@ func TestEffectiveModel(t *testing.T) {
 		Family: some("EV-6"), ModelYear: kiaConsent.ModelYear, Powertrain: kiaConsent.Powertrain,
 	}
 	ioniqEV := core.Snapshot{Covers: core.FieldModel, Family: some("IONIQ"), Powertrain: some(core.Electric)}
+	// The garage of FordConnect Query: the make, the model's name and its year, no
+	// capacity. fordRenamed is a name the catalog does not know, as Ford may write it.
+	fordVIN := "WF0TESTPUMA000001"
+	ford := func(family string, year int) core.Snapshot {
+		return core.Snapshot{
+			Covers: core.FieldModel, Brand: some("ford"), Family: some(family), ModelYear: some(year), Powertrain: some(core.Electric),
+		}
+	}
+	fordRenamed := ford("Explorer EV", 2026)
 	sorento := core.Snapshot{Covers: core.FieldModel, Family: some("Sorento"), Powertrain: some(core.OtherPowertrain)}
 	tests := []struct {
 		name        string
@@ -90,6 +99,14 @@ func TestEffectiveModel(t *testing.T) {
 		{"a 2022 Ioniq 5 of 77.4 kWh", details("IONIQ 5", 2022, 77.4, true), "KMHKN81ABNU000001", "", core.Value[float64]{}, "pleos_hyundai", "ioniq5-long-2021", variantDetected, core.Value[float64]{}, some(11.0)},
 		{"the doc's Ioniq Electric: no year, no capacity", ioniqEV, "TMAPJ81ABPP000001", "", core.Value[float64]{}, "pleos_hyundai", "ioniq-electric-2016", variantDetected, core.Value[float64]{}, some(6.6)},
 		{"the doc's Sorento: a combustion car, told by nothing", sorento, "TEST111111111TEST", "", core.Value[float64]{}, "pleos_kia", "", "", core.Value[float64]{}, core.Value[float64]{}},
+		// A Ford: recognized when one variant alone is of its model and year, its
+		// capacity not being read.
+		{"a Ford alone of its year", ford("Puma Gen-E", 2025), fordVIN, "", core.Value[float64]{}, "ford", "puma-gen-e-2025", variantDetected, core.Value[float64]{}, some(11.0)},
+		{"a Ford, several of its year: none", ford("Explorer", 2026), fordVIN, "", core.Value[float64]{}, "ford", "", "", core.Value[float64]{}, core.Value[float64]{}},
+		{"a Ford, one of them chosen", ford("Explorer", 2026), fordVIN, "explorer-er-awd-2026", core.Value[float64]{}, "ford", "explorer-er-awd-2026", variantChosen, core.Value[float64]{}, some(11.0)},
+		{"a Ford named otherwise: the brand's variant chosen", fordRenamed, fordVIN, "explorer-sr-lfp-2026", core.Value[float64]{}, "ford", "explorer-sr-lfp-2026", variantChosen, core.Value[float64]{}, some(11.0)},
+		{"a Ford named otherwise, nothing chosen: none", fordRenamed, fordVIN, "", core.Value[float64]{}, "ford", "", "", core.Value[float64]{}, core.Value[float64]{}},
+		{"a name the catalog does not know, of another provider: none", fordRenamed, fordVIN, "explorer-sr-lfp-2026", core.Value[float64]{}, "volvo", "", "", core.Value[float64]{}, core.Value[float64]{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

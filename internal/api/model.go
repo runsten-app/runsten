@@ -127,7 +127,9 @@ func effectiveModel(c *catalog.Catalog, n core.Snapshot, v Vehicle) vehicleModel
 // or powertrain: zero, which they do not filter on, or, for the powertrain, never match.
 // A car of the Pleos Vehicle Data API keeps the brand its provider names, and a family
 // the catalog knows no variant of (the consent may spell it otherwise than the catalog)
-// gives way to the brand, as a family the details do not read.
+// gives way to the brand, as a family the details do not read. So does a Ford's: its
+// family is the model's name as Ford's garage writes it, which no real car has told yet
+// for most models.
 func catalogReading(c *catalog.Catalog, n core.Snapshot, v Vehicle) catalog.Reading {
 	r := catalog.Reading{
 		Family: n.Family.V, ModelYear: n.ModelYear.V, CapacityKWh: n.CapacityKWh.V, VIN: v.VIN,
@@ -148,6 +150,9 @@ func catalogReading(c *catalog.Catalog, n core.Snapshot, v Vehicle) catalog.Read
 		if r.Family != "" && len(c.Offer(r)) == 0 {
 			r.Family = ""
 		}
+	}
+	if providerJSON(v.Provider) == providerFord && r.Brand == catalog.Ford && r.Family != "" && len(c.Offer(r)) == 0 {
+		r.Family = ""
 	}
 	return r
 }

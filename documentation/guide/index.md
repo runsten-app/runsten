@@ -15,6 +15,7 @@ Runsten reads your car from its manufacturer:
 - **Hyundai, Kia and Genesis** (beta), through the Pleos Vehicle Data API: a key of your own per brand, created in the Pleos Playground ([Your Hyundai, Kia or Genesis](./hyundai-kia.md)).
 - **Škoda** (beta), through the MyŠkoda Public API: a key of your own, created in the MyŠkoda app, and the VIN of each car ([Your Škoda](./skoda.md)).
 - **Renault, Dacia and Alpine**, on a self-hosted instance, through the My Renault app's unofficial API (beta): the email and password of your account, with a one-time code for some ([Your Renault, Dacia or Alpine](./renault.md)).
+- **Ford** (beta), on an instance that turned it on, through FordConnect Query: an application of your own, created on Ford's developer portal, then a sign-in to Ford ([Your Ford](./ford.md)).
 
 No car at hand? An instance may offer **a demo vehicle** it simulates itself ([The demo vehicle](./demo.md)).
 
@@ -53,6 +54,7 @@ The **Connection** page (in the menu under your name) tells whether Runsten read
 - **Pleos refused the key**, **no Pleos key given**, or **the car no longer shares its data with the key**: a Hyundai's, Kia's or Genesis's key must be given again ([When it is not read](./hyundai-kia.md#when-it-is-not-read)); and **key shared with another application**: only one application reads with a Pleos key at a time ([One key, one application](./hyundai-kia.md#one-key-one-application)).
 - **Škoda refused the key**, **no MyŠkoda key given**, or **the key no longer covers this car**: a Škoda's key expired, was removed, or no longer reads the car ([When it is not read](./skoda.md#when-it-is-not-read)).
 - **Renault refused the sign-in**, or **Renault refused the email or the password**: the sign-in of a Renault, a Dacia or an Alpine must be made again ([When it is not read](./renault.md#when-it-is-not-read)).
+- **Ford refused the connection**, **not signed in to Ford**, or **the sign-in reads another car**: a Ford's sign-in must be made again ([When it is not read](./ford.md#when-it-is-not-read)).
 - **The collector seems stopped**: nothing is read on the instance's side. Whoever runs the instance looks into it ([Troubleshooting](../self-hosting/troubleshooting.md#nothing-new-is-read)).
 
 ### Your Volvo key
