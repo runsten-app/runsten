@@ -685,6 +685,36 @@ func TestSourceVehicleLimit(t *testing.T) {
 	}
 }
 
+// TestSourceVehicleLimitStaysDue: an endpoint refused on its vehicle's own limit stays
+// due, and is read once the source no longer holds the vehicle, not an interval later.
+func TestSourceVehicleLimitStaysDue(t *testing.T) {
+	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+	tg := sourceTarget()
+	src := limitedSource{newFakeSource(clk), map[string]time.Time{}}
+	limited := true
+	src.answer = func(Endpoint, int, time.Time) ([]byte, error) {
+		if limited {
+			src.held[tg.VIN] = clk.Now().Add(30 * time.Second)
+			return nil, &SourceError{Kind: KindVehicleLimited, RetryIn: 30 * time.Second, Err: errors.New("too soon")}
+		}
+		return []byte("parked"), nil
+	}
+	st := &sourceStore{memStore: memStore{targets: []Target{tg}}}
+	c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+	c.AddSource(src, st)
+	poll(t, c)
+	refused := len(src.vins)
+	if refused == 0 {
+		t.Fatal("nothing was asked")
+	}
+	limited = false
+	clk.Advance(31 * time.Second)
+	poll(t, c)
+	if len(src.vins) != refused+len(src.Spec().Endpoints) {
+		t.Errorf("%d calls past the hold, %d before: every endpoint refused was to be read again", len(src.vins)-refused, refused)
+	}
+}
+
 // TestSourceHeldWithinAPass: a source that holds its vehicle back after each call (a
 // provider that wants its calls apart) has one endpoint read per pass; the others stay
 // due, and are read once the hold ends, not an interval later.

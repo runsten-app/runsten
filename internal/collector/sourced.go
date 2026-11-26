@@ -75,6 +75,7 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 				return saved
 			}
 		}
+		due, wasDue := vs.next[spec.Endpoint]
 		vs.next[spec.Endpoint] = now.Add(c.interval(t, src, vs.mode, spec))
 		raw, err := c.fetchSource(ctx, t, src, sess, spec, now)
 		var se *SourceError
@@ -95,6 +96,15 @@ func (c *Collector) pollSource(ctx context.Context, t Target, vs *vehicleState, 
 			raw, err = c.fetchSource(ctx, t, src, sess, spec, now)
 		}
 		if err != nil {
+			if errors.As(err, &se) && se.Kind == KindVehicleLimited {
+				// The vehicle waits on its own limit: what was due stays so, read once
+				// its Limiter no longer holds it, not an interval later.
+				if wasDue {
+					vs.next[spec.Endpoint] = due
+				} else {
+					delete(vs.next, spec.Endpoint)
+				}
+			}
 			c.sourceFailed(ctx, t, vs, src, spec.Endpoint, now, err)
 			continue
 		}
