@@ -57,6 +57,10 @@ type fakeFord struct {
 	err     error
 	expires time.Time
 	asked   []FordCredential
+	// noRefresh: the grant comes without a refresh token.
+	noRefresh bool
+	// during runs while Ford answers a code.
+	during func()
 }
 
 func (f *fakeFord) AuthorizeURL(c FordCredential, state string) (string, error) {
@@ -66,6 +70,12 @@ func (f *fakeFord) AuthorizeURL(c FordCredential, state string) (string, error) 
 
 func (f *fakeFord) Connect(_ context.Context, c FordCredential, code string) (FordGrant, error) {
 	f.mu.Lock()
+	during := f.during
+	f.mu.Unlock()
+	if during != nil {
+		during()
+	}
+	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.asked = append(f.asked, c)
 	switch {
@@ -73,6 +83,9 @@ func (f *fakeFord) Connect(_ context.Context, c FordCredential, code string) (Fo
 		return FordGrant{}, f.err
 	case code != "good":
 		return FordGrant{}, &FordError{Outcome: FordCodeRefused, Err: errors.New("token: HTTP 400 invalid_grant")}
+	}
+	if f.noRefresh {
+		return FordGrant{VIN: fordVIN, ExpiresAt: f.expires}, nil
 	}
 	return FordGrant{Refresh: fordRefresh, VIN: fordVIN, ExpiresAt: f.expires}, nil
 }
@@ -220,13 +233,21 @@ func TestFordCodeErrors(t *testing.T) {
 		wantError(t, body, tc.want)
 	}
 	e.fords.err = nil
+	e.fords.noRefresh = true
+	a := fordStart(t, u, c)
+	resp, body := do(t, noFollow(), http.MethodPut, u+"/ford/code", jsonType, fordCode(a.State, "good"), c)
+	if resp.status != http.StatusBadGateway {
+		t.Errorf("a grant without a refresh token: %d %s", resp.status, body)
+	}
+	wantError(t, body, codeSourceUnavailable)
+	e.fords.noRefresh = false
 	if !e.ford.set.IsZero() || len(e.store.vehicles) != 0 {
 		t.Errorf("a refused sign-in stored something: %+v %v", e.ford.cred, e.store.vehicles)
 	}
 
 	old := fordStart(t, u, c)
 	e.clk.Advance(fordFlowTTL)
-	resp, body := do(t, noFollow(), http.MethodPut, u+"/ford/code", jsonType, fordCode(old.State, "good"), c)
+	resp, body = do(t, noFollow(), http.MethodPut, u+"/ford/code", jsonType, fordCode(old.State, "good"), c)
 	if resp.status != http.StatusBadRequest {
 		t.Errorf("a sign-in %v old: %d %s", fordFlowTTL, resp.status, body)
 	}
@@ -343,6 +364,50 @@ func TestFordCodeOf(t *testing.T) {
 		if code, state := fordCodeOf(pasted); code != want[0] || state != want[1] {
 			t.Errorf("%q: %q, %q", pasted, code, state)
 		}
+	}
+}
+
+// TestFordEndedMeanwhile: a connection removed, or another sign-in started, while Ford
+// answers a sign-in's code: that sign-in stores nothing, and the removal holds.
+func TestFordEndedMeanwhile(t *testing.T) {
+	e, c, u := fordEnv(t)
+	for name, during := range map[string]func(){
+		"the connection removed": func() {
+			if resp, body := do(t, noFollow(), http.MethodDelete, u+"/ford", "", "", c); resp.status != http.StatusNoContent {
+				t.Errorf("delete: %d %s", resp.status, body)
+			}
+		},
+		"another sign-in started": func() {
+			resp, body := do(t, noFollow(), http.MethodPost, u+"/ford/authorization", jsonType,
+				`{"client_id":"`+fordClientID+`","client_secret":"`+fordSecret+`"}`, c)
+			if resp.status != http.StatusOK {
+				t.Errorf("start: %d %s", resp.status, body)
+			}
+		},
+	} {
+		a := fordStart(t, u, c)
+		e.fords.mu.Lock()
+		e.fords.during = during
+		e.fords.mu.Unlock()
+		resp, body := do(t, noFollow(), http.MethodPut, u+"/ford/code", jsonType, fordCode(a.State, "good"), c)
+		e.fords.mu.Lock()
+		e.fords.during = nil
+		e.fords.mu.Unlock()
+		if resp.status != http.StatusBadRequest {
+			t.Errorf("%s: %d %s", name, resp.status, body)
+		}
+		wantError(t, body, codeAuthorizationExpired)
+		if !e.ford.set.IsZero() || len(e.store.vehicles) != 0 {
+			t.Errorf("%s: something was stored: %+v %v", name, e.ford.cred, e.store.vehicles)
+		}
+	}
+	// Nothing ended meanwhile: the sign-in is stored.
+	a := fordStart(t, u, c)
+	if resp, body := do(t, noFollow(), http.MethodPut, u+"/ford/code", jsonType, fordCode(a.State, "good"), c); resp.status != http.StatusOK {
+		t.Errorf("a sign-in left alone: %d %s", resp.status, body)
+	}
+	if e.ford.set.IsZero() {
+		t.Error("the sign-in left alone was not stored")
 	}
 }
 

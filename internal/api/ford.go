@@ -124,6 +124,10 @@ type fordFlow struct {
 type fordFlows struct {
 	mu      sync.Mutex
 	pending map[string]fordFlow
+	// completing is the state of the sign-in each account is ending, its code being
+	// exchanged: one whose connection was removed meanwhile, or that another sign-in
+	// replaced, is not stored.
+	completing map[string]string
 }
 
 // start keeps a sign-in of account with the application cred, and returns its state;
@@ -139,6 +143,7 @@ func (f *fordFlows) start(account string, cred FordCredential, now time.Time) (s
 			delete(f.pending, s)
 		}
 	}
+	delete(f.completing, account)
 	if len(f.pending) >= fordMaxFlows {
 		return "", false
 	}
@@ -147,16 +152,50 @@ func (f *fordFlows) start(account string, cred FordCredential, now time.Time) (s
 	return state, true
 }
 
-// finish consumes the sign-in of state: it is used once, even if what follows fails.
-func (f *fordFlows) finish(state string, now time.Time) (fordFlow, bool) {
+// finish consumes the sign-in of state, which account started: it is used once, even if
+// what follows fails. It is the one the account is ending from then on, until done.
+func (f *fordFlows) finish(account, state string, now time.Time) (fordFlow, bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	p, ok := f.pending[state]
 	delete(f.pending, state)
-	return p, ok && now.Before(p.expires)
+	if !ok || p.account != account || !now.Before(p.expires) {
+		return fordFlow{}, false
+	}
+	if f.completing == nil {
+		f.completing = map[string]string{}
+	}
+	f.completing[account] = state
+	return p, true
 }
 
-// drop forgets the sign-in pending of account, its connection removed meanwhile.
+// cancel forgets the sign-in of state, refused on Ford's page.
+func (f *fordFlows) cancel(state string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	delete(f.pending, state)
+}
+
+// completes reports whether the sign-in of state is still the one account is ending:
+// neither its connection removed nor another sign-in started since finish.
+func (f *fordFlows) completes(account, state string) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	s, ok := f.completing[account]
+	return ok && s == state
+}
+
+// done ends what finish started, stored or not.
+func (f *fordFlows) done(account, state string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.completing[account] == state {
+		delete(f.completing, account)
+	}
+}
+
+// drop forgets the sign-in of account, pending or ending, its connection removed
+// meanwhile.
 func (f *fordFlows) drop(account string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -165,6 +204,7 @@ func (f *fordFlows) drop(account string) {
 			delete(f.pending, s)
 		}
 	}
+	delete(f.completing, account)
 }
 
 // fordRedirect is the redirect address the owner declares for their application at
@@ -299,12 +339,15 @@ func (s *Server) putFordCode(ctx context.Context, in *fordCodeInput) (*body[conn
 
 // connectFord exchanges the code of the sign-in state names, which is spent even when
 // the exchange fails, then stores the connection and adds the grant's car to the
-// account. A sign-in that cannot be checked is not stored.
+// account. A sign-in that cannot be checked is not stored, nor one without a refresh
+// token, nor one whose connection was removed, or that another sign-in replaced, while
+// Ford answered: the check and the store are under the account's lock, as the removal.
 func (s *Server) connectFord(ctx context.Context, account, state, code string) error {
-	fl, ok := s.fordFlows.finish(state, s.Clock.Now())
-	if !ok || fl.account != account {
+	fl, ok := s.fordFlows.finish(account, state, s.Clock.Now())
+	if !ok {
 		return apiError(http.StatusBadRequest, codeAuthorizationExpired, "this sign-in expired or was already used: start again")
 	}
+	defer s.fordFlows.done(account, state)
 	check, cancel := context.WithTimeout(ctx, keyCheckTimeout)
 	defer cancel()
 	grant, err := s.FordAccounts.Connect(check, fl.cred, code)
@@ -324,12 +367,31 @@ func (s *Server) connectFord(ctx context.Context, account, state, code string) e
 		s.Log.Warn("Ford sign-in not completed", "err", err)
 		return apiError(http.StatusBadGateway, codeSourceUnavailable, "Ford did not answer, try again later")
 	}
+	if grant.Refresh == "" {
+		// Nothing to read the car with once the access is over: a connection that would
+		// be refused at its first refresh is not stored.
+		s.Log.Warn("Ford sign-in not completed: no refresh token given")
+		return apiError(http.StatusBadGateway, codeSourceUnavailable, "Ford gave no refresh token, try again later")
+	}
 	cred := fl.cred
 	cred.Refresh = grant.Refresh
-	if err := s.enroll(ctx, account, []string{grant.VIN}, "Ford connection not stored", func(ctx context.Context) (string, error) {
-		return s.Ford.SetFord(ctx, account, cred, grant.ExpiresAt, s.Clock.Now()) //nolint:wrapcheck // wrapped by enroll
-	}); err != nil {
-		return err
+	var refused error
+	err = s.Locks.WithAccountLock(ctx, account, func(ctx context.Context) error {
+		if !s.fordFlows.completes(account, state) {
+			refused = apiError(http.StatusBadRequest, codeAuthorizationExpired,
+				"the connection was removed, or another sign-in started, meanwhile: start again")
+			return refused
+		}
+		refused = s.enrollLocked(ctx, account, []string{grant.VIN}, "Ford connection not stored", func(ctx context.Context) (string, error) {
+			return s.Ford.SetFord(ctx, account, cred, grant.ExpiresAt, s.Clock.Now()) //nolint:wrapcheck // wrapped by enrollLocked
+		})
+		return refused
+	})
+	if refused != nil {
+		return refused
+	}
+	if err != nil {
+		return s.internal("account not locked", err)
 	}
 	s.Log.Info("Ford connected", "account", account)
 	return nil
@@ -363,7 +425,7 @@ func (s *Server) fordCallback(w http.ResponseWriter, r *http.Request, sess auth.
 	if refusal := q.Get("error"); refusal != "" {
 		// The owner refused the consent, or Ford's page failed: the sign-in is spent.
 		s.Log.Warn("Ford sign-in refused on Ford's page", "error", truncate(refusal, 64))
-		s.fordFlows.finish(q.Get("state"), s.Clock.Now())
+		s.fordFlows.cancel(q.Get("state"))
 		back(fordOutcomeDenied)
 		return
 	}
@@ -396,9 +458,19 @@ func (s *Server) fordCallback(w http.ResponseWriter, r *http.Request, sess auth.
 
 func (s *Server) deleteFord(ctx context.Context, _ *struct{}) (*struct{}, error) {
 	account := sessionFrom(ctx).AccountID
-	s.fordFlows.drop(account)
-	if err := s.Ford.DeleteFord(ctx, account); err != nil {
-		return nil, s.internal("Ford connection not deleted", err)
+	// Under the account's lock, as a sign-in's store: one ending meanwhile either is
+	// dropped here before it stores, or stored first and removed here.
+	var failed error
+	err := s.Locks.WithAccountLock(ctx, account, func(ctx context.Context) error {
+		s.fordFlows.drop(account)
+		failed = s.Ford.DeleteFord(ctx, account)
+		return failed //nolint:wrapcheck // told below
+	})
+	if failed != nil {
+		return nil, s.internal("Ford connection not deleted", failed)
+	}
+	if err != nil {
+		return nil, s.internal("account not locked", err)
 	}
 	s.Log.Info("Ford connection deleted", "account", account)
 	return &struct{}{}, nil
@@ -433,11 +505,12 @@ func (s *Server) registerFord(api huma.API) {
 		Middlewares: huma.Middlewares{s.requireJSON},
 	}, "The connection.", writeErrors(map[int]string{
 		http.StatusBadRequest: errBody + " `authorization_expired`: the sign-in expired, was already used, is not the " +
-			"address's, or Ford refused its code. `credential_refused`: Ford refused the application's client ID or secret.",
+			"address's, Ford refused its code, or the connection was removed or another sign-in started while Ford " +
+			"answered. `credential_refused`: Ford refused the application's client ID or secret.",
 		http.StatusForbidden: offered,
 		http.StatusConflict: "`no_vehicle`: the sign-in reads no car. `too_many_vehicles`: the account would have more " +
 			"vehicles than the instance lets it have. Nothing is stored.",
-		http.StatusBadGateway: "`source_unavailable`: Ford did not answer; nothing is stored.",
+		http.StatusBadGateway: "`source_unavailable`: Ford did not answer, or gave no refresh token; nothing is stored.",
 	})), s.putFordCode)
 	huma.Register(api, s.operation(huma.Operation{
 		OperationID: "deleteFord", Method: http.MethodDelete, Path: "/connection/ford", Tags: []string{"connection"},

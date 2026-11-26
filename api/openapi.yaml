@@ -7660,7 +7660,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `authorization_expired`: the sign-in expired, was already used, is not the address's, or Ford refused its code. `credential_refused`: Ford refused the application's client ID or secret."
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `authorization_expired`: the sign-in expired, was already used, is not the address's, Ford refused its code, or the connection was removed or another sign-in started while Ford answered. `credential_refused`: Ford refused the application's client ID or secret."
         "401":
           content:
             application/json:
@@ -7696,7 +7696,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-          description: "`source_unavailable`: Ford did not answer; nothing is stored."
+          description: "`source_unavailable`: Ford did not answer, or gave no refresh token; nothing is stored."
       security:
         - session: []
         - sessionSecure: []
