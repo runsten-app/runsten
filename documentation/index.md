@@ -18,6 +18,10 @@ Runsten works end to end, but is young: expect changes between versions. For tho
 - **Polestar**, through Polestar's Data Portal: [Your Polestar](./guide/polestar.md); outside the EU and the EEA, on a self-hosted instance, through the Polestar app's API (beta): [Your Polestar, with the Polestar ID](./guide/polestar-id.md).
 - **Tesla**, through the Owner API of the Tesla app, as TeslaMate reads it: [Your Tesla](./guide/tesla.md).
 - **BMW and Mini**, through BMW CarData, with a client ID of your own: [Your BMW or Mini](./guide/bmw.md).
+- **Hyundai, Kia and Genesis** (beta), through the Pleos Vehicle Data API, with a key of your own per brand: [Your Hyundai, Kia or Genesis](./guide/hyundai-kia.md).
+- **Škoda** (beta), through the MyŠkoda Public API, with a key of your own: [Your Škoda](./guide/skoda.md).
+- **Renault, Dacia and Alpine** (beta), through the My Renault app's unofficial API, once the instance turns it on: [Your Renault, Dacia or Alpine](./guide/renault.md).
+- **Ford** (beta), through FordConnect Query, with an application of your own, once the instance turns it on: [Your Ford](./guide/ford.md).
 
 ## How it works
 
