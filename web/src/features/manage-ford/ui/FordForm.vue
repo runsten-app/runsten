@@ -131,7 +131,11 @@ async function focusSummary() {
 }
 
 const toggleId = 'ford-toggle'
+// attempt counts the times the form was emptied: a sign-in asked for before, and
+// answered after, is no longer the owner's.
+let attempt = 0
 function clear() {
+  attempt++
   clientId.value = clientSecret.value = callback.value = ''
   sent.value = false
   signIn.reset()
@@ -188,8 +192,11 @@ async function submit() {
   const { app } = validateApplication(clientId.value, clientSecret.value)
   if (!app) return await focusSummary()
   reset()
+  const mine = attempt
   try {
     const started = await signIn.start(app)
+    // The form closed meanwhile: the browser stays here.
+    if (mine !== attempt) return
     sent.value = false
     if (started.callback) {
       // Ford comes back to this instance, which ends the sign-in and tells its outcome.
@@ -199,7 +206,7 @@ async function submit() {
     await nextTick()
     document.getElementById(callbackId)?.focus()
   } catch {
-    await focusSummary()
+    if (mine === attempt) await focusSummary()
   }
 }
 
@@ -226,7 +233,9 @@ async function confirmDelete() {
 }
 
 // Once the dialog closes, the focus goes back to its button; once removed, that button is
-// gone, and the form open: to its first field.
+// gone, and the form open: to its first field, or, the source turned off and no form
+// shown, to the status that tells the removal.
+const statusRef = ref<HTMLElement | null>(null)
 watch(confirming, async (v) => {
   if (v) return
   await nextTick()
@@ -235,7 +244,7 @@ watch(confirming, async (v) => {
     return
   }
   deletedNow.value = false
-  document.getElementById(clientIdId)?.focus()
+  ;(document.getElementById(clientIdId) ?? statusRef.value)?.focus()
   status.value = t('ford.deleted')
 })
 
@@ -458,7 +467,9 @@ const portal = new URL('https://developer.ford.com/developer-eu')
         </div>
       </template>
     </v-form>
-    <p role="status" class="status text-body-medium mt-2">{{ status }}</p>
+    <p ref="statusRef" role="status" tabindex="-1" class="status text-body-medium mt-2">
+      {{ status }}
+    </p>
   </div>
 </template>
 

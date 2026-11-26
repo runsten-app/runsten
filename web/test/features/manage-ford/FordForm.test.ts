@@ -5,6 +5,7 @@ import type { ConnectionSettings } from '@/entities/connection'
 import { FordForm } from '@/features/manage-ford'
 import { ApiError } from '@/shared/api'
 import { i18n } from '@/shared/i18n'
+import connection from '@fixtures/connection.json'
 import { mountWith } from '@test/utils'
 
 const api = vi.hoisted(() => ({
@@ -20,22 +21,12 @@ const nav = vi.hoisted(() => ({ leave: vi.fn() }))
 vi.mock('@/features/manage-ford/model/leave', () => nav)
 
 const pasteRedirect = 'http://localhost/auth/ford/callback'
+// The golden connection is an instance Ford cannot return to, without a Ford connection:
+// both are stated here, the tests below depending on them.
 const none: ConnectionSettings = {
-  volvo: true,
-  connected: false,
-  client_id: 'runsten-dev',
-  instance_key: null,
-  api_key: null,
-  polestar: null,
-  tesla: null,
-  polestar_id: null,
-  bmw: null,
-  pleos: null,
-  skoda: null,
-  renault: null,
+  ...(connection as ConnectionSettings),
   ford: null,
   ford_application: { redirect_uri: pasteRedirect, callback: false },
-  demo: null,
 }
 const ford = {
   last4: 'abcd',
@@ -126,6 +117,22 @@ describe('FordForm', () => {
     expect(nav.leave).toHaveBeenCalledWith(signInPage)
     expect(callbackField().exists()).toBe(false)
     expect(api.setFordCode).not.toHaveBeenCalled()
+  })
+
+  it('stays here when the form was closed before the sign-in page was told', async () => {
+    const own = 'https://runsten.example/auth/ford/callback'
+    form({ ...given, ford_application: { redirect_uri: own, callback: true } })
+    await w().find('.toggle').trigger('click')
+    await flushPromises()
+    let tell: (a: unknown) => void = () => undefined
+    api.startFordSignIn.mockReturnValue(new Promise((resolve) => (tell = resolve)))
+    await fill()
+    await submit()
+    await w().find('.cancel').trigger('click')
+    tell({ ...paste, redirect_uri: own, callback: true })
+    await flushPromises()
+    expect(nav.leave).not.toHaveBeenCalled()
+    expect(w().find('form').exists()).toBe(false)
   })
 
   it('elsewhere, has the sign-in opened in another tab and its address pasted back', async () => {
@@ -297,11 +304,21 @@ describe('FordForm', () => {
     expect(w().find('form').exists()).toBe(true)
   })
 
-  it('turned off, tells a connection made before and lets it be removed, without a form', () => {
+  it('turned off, tells a connection made before and lets it be removed, without a form', async () => {
     form(given, { off: true })
     expect(facts()).toHaveLength(3)
     expect(w().find('.toggle').exists()).toBe(false)
     expect(w().find('form').exists()).toBe(false)
-    expect(w().find('.delete-connection').exists()).toBe(true)
+    await w().find('.delete-connection').trigger('click')
+    await flushPromises()
+    api.deleteFord.mockResolvedValue(undefined)
+    document.querySelector<HTMLButtonElement>('.v-dialog .confirm-delete')?.click()
+    await flushPromises()
+    props.connection = none
+    await flushPromises()
+    // No form to go to: the focus is given to the status, which tells the removal.
+    expect(w().find('form').exists()).toBe(false)
+    expect(document.activeElement).toBe(w().find('[role="status"]').element)
+    expect(status()).toBe('The Ford connection is removed.')
   })
 })
