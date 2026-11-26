@@ -49,7 +49,8 @@
       "kia": "Kia",
       "genesis": "Genesis",
       "skoda": "Škoda",
-      "renault": "Renault, Dacia, Alpine"
+      "renault": "Renault, Dacia, Alpine",
+      "ford": "Ford"
     },
     "beta": "Beta"
   },
@@ -1419,6 +1420,7 @@
       "bmw": "BMW",
       "skoda": "Škoda",
       "renault": "Renault",
+      "ford": "Ford",
       "demo": "Demo"
     },
     "brandAttention": "needs your attention",
@@ -1432,6 +1434,13 @@
         "connected": "Signed in with {brand}: the collector reads your vehicles from its next pass.",
         "noVehicle": "Your {brand} account has no vehicle Runsten can read: it was not connected.",
         "tooManyVehicles": "With your {brand} account's vehicles, your account would have more vehicles than it may: it was not connected."
+      },
+      "ford": {
+        "denied": "The sign-in was not completed on Ford’s page: your Ford was not connected. Start again, and accept there.",
+        "expired": "This sign-in to Ford expired or was already used: your Ford was not connected. Start again.",
+        "applicationRefused": "Ford refused the application’s client ID or secret: your Ford was not connected. Check them on Ford’s developer portal, then start again.",
+        "unavailable": "Ford did not answer: your Ford was not connected. Try again in a moment.",
+        "notOffered": "Ford is not offered to your account: it was not connected."
       }
     },
     "volvoId": {
@@ -1489,22 +1498,27 @@
       "credentialRefusedPleos": "Not read: Pleos refused the key",
       "credentialRefusedSkoda": "Not read: Škoda refused the key",
       "credentialRefusedRenault": "Not read: Renault refused the sign-in",
+      "credentialRefusedFord": "Not read: Ford refused the connection",
       "credentialMissingBmw": "Not read: no BMW connected",
       "credentialMissingPleos": "Not read: no Pleos key given",
       "credentialMissingSkoda": "Not read: no MyŠkoda key given",
       "credentialMissingRenault": "Not read: not signed in to My Renault",
+      "credentialMissingFord": "Not read: not signed in to Ford",
       "unsharedBmw": "Not read: the BMW account is no longer the car's main user",
       "unsharedPleos": "Not read: the car no longer shares its data with the key",
       "unsharedSkoda": "Not read: the key no longer covers this car",
       "unsharedRenault": "Not read: the car is no longer in the My Renault account",
+      "unsharedFord": "Not read: the sign-in reads another car",
       "pausedBmw": "Paused by BMW until {time}",
       "pausedPleos": "Paused by Pleos until {time}",
       "pausedSkoda": "Paused by Škoda until {time}",
       "pausedRenault": "Paused by Renault until {time}",
+      "pausedFord": "Paused by Ford until {time}",
       "quotaBmw": "Daily calls to BMW reached until {time}",
       "quotaPleos": "Daily calls to Pleos reached until {time}",
       "quotaSkoda": "Daily calls to Škoda reached until {time}",
-      "quotaRenault": "Daily calls to Renault reached until {time}"
+      "quotaRenault": "Daily calls to Renault reached until {time}",
+      "quotaFord": "Daily calls to Ford reached until {time}"
     },
     "notice": {
       "reauth": {
@@ -1549,19 +1563,24 @@
       "pausedPleos": "Pleos limited the number of calls. Reading resumes by itself.",
       "pausedSkoda": "Škoda limited the number of calls. Reading resumes by itself.",
       "pausedRenault": "Renault limited the number of calls: the account may also be read by another application, Home Assistant for instance. Reading resumes by itself.",
+      "pausedFord": "Ford limited the number of calls: the car may also be read by another application, Home Assistant or evcc for instance. Reading resumes by itself.",
       "credentialRefusedPleos": "Pleos refused the key this car is read with: revoked or replaced in the Playground, or expired. Issue a new one there and give it on the connection page: what was read stays.",
       "credentialRefusedSkoda": "Škoda refused the key this car is read with: expired, or deleted in the MyŠkoda app. Create a new one there and give it on the connection page: what was read stays.",
       "credentialRefusedRenault": "Renault refused the sign-in this car is read with: password changed, or session ended. Sign in again on the connection page: what was read stays.",
+      "credentialRefusedFord": "Ford refused the connection this car is read with: the consent was withdrawn, its year is over, or the application’s secret changed. Sign in to Ford again on the connection page: what was read stays.",
       "credentialMissingPleos": "Runsten reads this car with your Pleos key, which was removed: give a new one on the connection page.",
       "credentialMissingSkoda": "Runsten reads this car with your MyŠkoda key, which was removed: give a new one on the connection page.",
       "credentialMissingRenault": "Runsten reads this car through your My Renault sign-in, which was removed: sign in again on the connection page.",
+      "credentialMissingFord": "Runsten reads this car through your sign-in to Ford, which was removed: sign in again on the connection page.",
       "unsharedPleos": "Pleos answered that this car no longer shares its data with the key: the sharing was turned off in its connected services, or the car was unregistered. Should it share again, give the key again on the connection page: the car is read again.",
       "unsharedSkoda": "Škoda answered that the key no longer reads this car: it was unticked from the key in the MyŠkoda app. Create a key with this car ticked and give it on the connection page: the car is read again.",
       "unsharedRenault": "Your My Renault account no longer lists this car as electric: sold, removed from the account, or moved to another. Should it come back, sign in again on the connection page: the car is read again.",
+      "unsharedFord": "Your sign-in to Ford now reads another car: a sign-in reads one car, the one chosen on Ford’s page. To read this one again, sign in again on the connection page and choose it.",
       "quotaBmw": "Runsten makes at most 40 calls a day to BMW's API per connection, to leave a few of BMW's 50 to you: they are used up. The stream, which has no limit, is still read; the rest resumes by itself.",
       "quotaPleos": "Runsten makes at most 2,000 calls a day to the Pleos Vehicle Data API per key, a cap of its own (Pleos publishes none): they are used up. Reading resumes by itself.",
       "quotaSkoda": "Runsten makes at most 2,400 calls a day to the MyŠkoda Public API per key, above Škoda’s own limit of 20 an hour per car: they are used up. Reading resumes by itself.",
-      "quotaRenault": "Runsten makes at most 1,200 calls a day to the My Renault app's API per account, to stay clear of Renault's unpublished limits: they are used up. Reading resumes by itself."
+      "quotaRenault": "Runsten makes at most 1,200 calls a day to the My Renault app's API per account, to stay clear of Renault's unpublished limits: they are used up. Reading resumes by itself.",
+      "quotaFord": "Runsten makes at most 2,000 calls a day to FordConnect Query per car, Ford publishing no limit of its own: they are used up. Reading resumes by itself."
     },
     "facts": {
       "mode": "Polling mode",
@@ -1589,10 +1608,12 @@
       "noneDuePleos": "None until a Pleos key is given",
       "noneDueSkoda": "None until a MyŠkoda key is given",
       "noneDueRenault": "None until you sign in to My Renault again",
+      "noneDueFord": "None until you sign in to Ford again",
       "noneDueUnsharedBmw": "None: the BMW account is no longer the car's main user",
       "noneDueUnsharedPleos": "None: the car is no longer shared with the key",
       "noneDueUnsharedSkoda": "None: the key no longer covers the car",
-      "noneDueUnsharedRenault": "None: the car is no longer in the My Renault account"
+      "noneDueUnsharedRenault": "None: the car is no longer in the My Renault account",
+      "noneDueUnsharedFord": "None: the sign-in reads another car"
     },
     "api": {
       "connectedVehicle": "vehicle data",
@@ -1606,6 +1627,7 @@
       "pleos": "the Pleos Vehicle Data API",
       "skoda": "the MyŠkoda Public API",
       "renault": "the My Renault app's API",
+      "ford": "FordConnect Query",
       "demo": "the demo vehicle"
     },
     "failure": {
@@ -1636,18 +1658,22 @@
       "notFoundPleos": "Vehicle unknown to Pleos",
       "notFoundSkoda": "Vehicle unknown to Škoda",
       "notFoundRenault": "Vehicle unknown to Renault",
+      "notFoundFord": "Vehicle unknown to Ford",
       "unavailableBmw": "BMW unreachable",
       "unavailablePleos": "Pleos unreachable",
       "unavailableSkoda": "Škoda unreachable",
       "unavailableRenault": "Renault unreachable",
+      "unavailableFord": "Ford unreachable",
       "tokenBmw": "No token from BMW",
       "tokenPleos": "No token from Pleos",
       "tokenSkoda": "MyŠkoda key not read",
       "tokenRenault": "My Renault session not read",
+      "tokenFord": "Ford access not renewed",
       "credentialRefusedBmw": "BMW connection refused",
       "credentialRefusedPleos": "Pleos key refused",
       "credentialRefusedSkoda": "MyŠkoda key refused",
       "credentialRefusedRenault": "My Renault sign-in refused",
+      "credentialRefusedFord": "Ford connection refused",
       "keyShared": "Key shared with another application"
     },
     "key": {
@@ -1694,6 +1720,10 @@
     "renault": {
       "title": "Your My Renault account",
       "off": "Renault is turned off on this instance (the flag source.renault)."
+    },
+    "ford": {
+      "title": "Your Ford application",
+      "off": "Ford is turned off on this instance (the flag source.ford)."
     },
     "demo": {
       "title": "Demo vehicle",
@@ -2590,6 +2620,85 @@
       "sourceUnavailable": "My Renault did not answer: nothing was saved. Try again in a moment.",
       "unavailable": "Runsten could not be reached. Try again in a moment.",
       "internal": "The sign-in could not be saved. Try again in a moment."
+    }
+  },
+  "ford": {
+    "intro": "Runsten reads your Ford through FordConnect Query, Ford’s own access to your car’s data. You create an application on Ford’s developer portal, then sign in to Ford with it and choose your car.",
+    "beta": "In beta: written from Ford’s documentation, not checked on a real car yet.",
+    "guide": "Read the guide",
+    "newTab": "(opens in a new tab)",
+    "refused": {
+      "title": "Ford refused the connection",
+      "body": "Ford refused it on {time}: the consent was withdrawn, or the application’s secret changed. Your car is not read until you sign in again; what was read stays."
+    },
+    "expired": {
+      "title": "Your sign-in to Ford is over",
+      "body": "It ended on {date}: Ford asks for a new sign-in every year. Your car is not read until you sign in again; what was read stays."
+    },
+    "renew": {
+      "title": "Sign in to Ford again",
+      "body": "Ford asks for a new sign-in every year: this one ends on {date}. Sign in again before then, or your car will no longer be read."
+    },
+    "current": "Your application",
+    "last4": "Client ID ending in {last4}",
+    "setAt": "Connected",
+    "expiresAt": "Sign in again before",
+    "expiresUnknown": "Not told by Ford",
+    "reconnect": "Sign in again",
+    "delete": {
+      "button": "Remove the connection",
+      "title": "Remove your Ford connection?",
+      "text": "Your Ford stays, with its history, but is no longer read until you sign in again. The client ID and the secret are erased.",
+      "error": "The connection could not be removed. Try again in a moment.",
+      "cancel": "Cancel",
+      "confirm": "Remove"
+    },
+    "steps": {
+      "title": "Create your application",
+      "create": "On Ford’s developer portal, create an application for your personal use, with the same email address as your Ford account and every category of data ticked:",
+      "portal": "Ford’s developer portal",
+      "redirect": "Give it this redirect address:",
+      "wait": "Ford may take up to two hours to make a new application ready: if its sign-in page shows an error, try again later.",
+      "credentials": "Copy the application’s client ID and secret below."
+    },
+    "redirect": "Redirect address",
+    "clientId": "Client ID",
+    "clientSecret": "Client secret",
+    "secretHelp": "Runsten keeps them sealed, to read your car: they are never shown again.",
+    "start": "Sign in to Ford",
+    "paste": {
+      "title": "Finish on Ford’s page",
+      "open": "Open Ford’s page, sign in, choose your car and accept:",
+      "page": "Ford’s sign-in page",
+      "explain": "Ford then sends your browser to an address starting with {redirect}, whose page does not load: that is expected, Ford accepting no other address for this instance.",
+      "copy": "Copy the whole address from the browser’s address bar, and paste it below."
+    },
+    "callback": "Address Ford sent you to",
+    "save": "Connect",
+    "startAgain": "Start again",
+    "cancel": "Cancel",
+    "saved": "Your Ford is connected: the collector reads it from its next pass.",
+    "deleted": "The Ford connection is removed.",
+    "error": {
+      "summary": "Your Ford could not be connected",
+      "clientIdRequired": "Enter the application’s client ID.",
+      "clientSecretRequired": "Enter the application’s secret.",
+      "callbackRequired": "Paste the address Ford sent you to.",
+      "characters": "It holds a space or a character no client ID or secret has: copy it again from Ford’s portal.",
+      "tooShort": "Too short: at least {min} characters.",
+      "tooLong": "Too long: at most {max} characters.",
+      "noCode": "This address holds no code: copy the whole address of the page Ford sent you to.",
+      "invalidBody": "Ford’s client ID or secret is not of the expected form: copy them again from Ford’s portal.",
+      "expired": "This sign-in expired, was already used, or Ford refused its code: start again.",
+      "applicationRefused": "Ford refused the client ID or the secret: check them on Ford’s developer portal, then start again.",
+      "noVehicle": "This sign-in reads no car: add your car to your Ford account, then start again.",
+      "tooManyVehicles": "With this car, your account would have more vehicles than it may: it was not connected.",
+      "notAdmitted": "Something is left to do on your account before connecting a car: reload the page.",
+      "notOffered": "Ford is not offered to your account.",
+      "tooManyPending": "Too many sign-ins are waiting on this instance: try again in a few minutes.",
+      "fordUnavailable": "Ford did not answer: nothing was stored. Start again in a moment.",
+      "unavailable": "Runsten could not be reached. Try again in a moment.",
+      "internal": "Something went wrong on Runsten’s side. Try again in a moment."
     }
   },
   "demo": {

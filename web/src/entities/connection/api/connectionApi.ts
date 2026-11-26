@@ -2,6 +2,7 @@ import { api, unwrap } from '@/shared/api'
 import type {
   BmwDevice,
   ConnectionSettings,
+  FordAuthorization,
   PleosBrand,
   PleosCredentialUpdate,
   PolestarCredentialUpdate,
@@ -87,6 +88,25 @@ export function setRenaultCode(code: string): Promise<RenaultSignIn> {
 
 export async function deleteRenault(): Promise<void> {
   await unwrap(api.DELETE('/connection/renault'))
+}
+
+export function startFordSignIn(
+  clientId: string,
+  clientSecret: string,
+): Promise<FordAuthorization> {
+  return unwrap(
+    api.POST('/connection/ford/authorization', {
+      body: { client_id: clientId, client_secret: clientSecret },
+    }),
+  )
+}
+
+export function setFordCode(state: string, callback: string): Promise<ConnectionSettings> {
+  return unwrap(api.PUT('/connection/ford/code', { body: { state, callback } }))
+}
+
+export async function deleteFord(): Promise<void> {
+  await unwrap(api.DELETE('/connection/ford'))
 }
 
 export function connectDemo(): Promise<ConnectionSettings> {

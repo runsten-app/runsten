@@ -37,6 +37,7 @@ const flag = vi.hoisted(() => ({
   pleos: true,
   skoda: true,
   renault: true,
+  ford: false,
 }))
 vi.mock('@/features/view-flags', async () => {
   const { computed } = await import('vue')
@@ -51,7 +52,9 @@ vi.mock('@/features/view-flags', async () => {
               ? flag.skoda
               : name === 'source.renault'
                 ? flag.renault
-                : flag.tesla,
+                : name === 'source.ford'
+                  ? flag.ford
+                  : flag.tesla,
       ),
   }
 })
@@ -80,6 +83,7 @@ beforeEach(() => {
   flag.pleos = true
   flag.skoda = true
   flag.renault = true
+  flag.ford = false
   fetchVehicles.mockReset()
   fetchConnection.mockReset()
   // Self-hosting: the instance's key reads the vehicles.
@@ -255,6 +259,18 @@ describe('HomePage', () => {
     const { wrapper } = await home()
     expect(wrapper.find('a.skoda').exists()).toBe(true)
     expect(wrapper.find('a.renault').exists()).toBe(false)
+  })
+
+  it('offers the Ford, in beta, while its flag is on', async () => {
+    fetchVehicles.mockResolvedValue([])
+    const off = await home()
+    expect(off.wrapper.find('a.ford').exists()).toBe(false)
+    off.wrapper.unmount()
+    flag.ford = true
+    const { wrapper } = await home()
+    const ford = wrapper.find('a.ford')
+    expect(ford.attributes('href')).toBe('/connection#ford')
+    expect(ford.text()).toBe('Ford, Beta')
   })
 
   it("shows the extensions' choices after the makes, and their mentions", async () => {

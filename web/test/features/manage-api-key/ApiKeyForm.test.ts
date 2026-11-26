@@ -28,6 +28,8 @@ const hosted: ConnectionSettings = {
   pleos: { hyundai: null, kia: null, genesis: null },
   skoda: null,
   renault: null,
+  ford: null,
+  ford_application: { redirect_uri: 'http://localhost/auth/ford/callback', callback: false },
   demo: null,
 }
 const withKey = connection as ConnectionSettings

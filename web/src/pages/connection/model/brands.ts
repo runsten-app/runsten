@@ -3,8 +3,9 @@
 // Hyundai, Kia and Genesis are read through the same API, Pleos's, each with its own
 // key: the owner looks for their make, so each has its own tab. Škoda's is read through
 // the MyŠkoda Public API, with the owner's key; Renault's (with Dacia and Alpine) through
-// the My Renault app's API, with the owner's sign-in. The last tab is the demo vehicle, which
-// no brand makes: the instance simulates it.
+// the My Renault app's API, with the owner's sign-in; Ford's through FordConnect Query, with
+// the application its owner created. The last tab is the demo vehicle, which no brand makes:
+// the instance simulates it.
 export const brands = [
   'volvo',
   'polestar',
@@ -15,6 +16,7 @@ export const brands = [
   'genesis',
   'skoda',
   'renault',
+  'ford',
   'demo',
 ] as const
 export const pleosProviders = ['pleos_hyundai', 'pleos_kia', 'pleos_genesis'] as const

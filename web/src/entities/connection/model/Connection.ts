@@ -44,6 +44,14 @@ export type SkodaCredentialUpdate = components['schemas']['SkodaCredentialUpdate
 export type Renault = components['schemas']['Renault']
 export type RenaultSignIn = components['schemas']['RenaultSignIn']
 export type RenaultSignInBody = components['schemas']['RenaultSignInBody']
+// Ford is what the user is shown again of the account's FordConnect Query connection: the
+// last four characters of the application's client ID, when the owner connected, when the
+// grant ends and whether Ford refused it since; never the secret nor a token.
+// FordApplication is what the owner's application on Ford's developer portal must declare
+// for this instance; FordAuthorization a sign-in started on Ford's page.
+export type Ford = components['schemas']['Ford']
+export type FordApplication = components['schemas']['FordApplication']
+export type FordAuthorization = components['schemas']['FordAuthorization']
 // Demo is what the user is shown again of the account's demo vehicle, the one the instance
 // simulates: when it was connected. It has no secret.
 export type Demo = components['schemas']['Demo']

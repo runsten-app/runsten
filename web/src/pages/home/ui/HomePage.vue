@@ -32,6 +32,7 @@ const bmwOn = useFlag('source.bmw')
 const pleosOn = useFlag('source.pleos')
 const skodaOn = useFlag('source.skoda')
 const renaultOn = useFlag('source.renault')
+const fordOn = useFlag('source.ford')
 const keyMissing = computed(
   () => !!connection.value && !connection.value.instance_key && !connection.value.api_key,
 )
@@ -74,6 +75,9 @@ const tiles = computed<Tile[]>(() => [
   ...(renaultOn.value
     ? [{ make: 'renault' as const, to: { name: 'connection', hash: '#renault' }, beta: true }]
     : []),
+  ...(fordOn.value
+    ? [{ make: 'ford' as const, to: { name: 'connection', hash: '#ford' }, beta: true }]
+    : []),
 ])
 // The makes, written out: an interpolated key is invisible to the unused-key rule.
 const names = computed<Record<HomeMake, string>>(() => ({
@@ -87,6 +91,7 @@ const names = computed<Record<HomeMake, string>>(() => ({
   genesis: t('home.make.genesis'),
   skoda: t('home.make.skoda'),
   renault: t('home.make.renault'),
+  ford: t('home.make.ford'),
 }))
 const note = (tile: Tile) => mentions.value[tile.make] ?? (tile.beta ? t('home.beta') : undefined)
 

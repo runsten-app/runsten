@@ -49,7 +49,8 @@
       "kia": "Kia",
       "genesis": "Genesis",
       "skoda": "Škoda",
-      "renault": "Renault, Dacia, Alpine"
+      "renault": "Renault, Dacia, Alpine",
+      "ford": "Ford"
     },
     "beta": "Beta"
   },
@@ -1419,6 +1420,7 @@
       "bmw": "BMW",
       "skoda": "Škoda",
       "renault": "Renault",
+      "ford": "Ford",
       "demo": "Demo"
     },
     "brandAttention": "behöver din uppmärksamhet",
@@ -1432,6 +1434,13 @@
         "connected": "Inloggad med {brand}: insamlaren läser dina fordon från sitt nästa varv.",
         "noVehicle": "Ditt {brand}-konto har inget fordon som Runsten kan läsa: det anslöts inte.",
         "tooManyVehicles": "Med ditt {brand}-kontos fordon skulle ditt konto få fler fordon än det tillåter: det anslöts inte."
+      },
+      "ford": {
+        "denied": "Inloggningen slutfördes inte på Fords sida: din Ford anslöts inte. Börja om och godkänn där.",
+        "expired": "Den här inloggningen hos Ford har gått ut eller användes redan: din Ford anslöts inte. Börja om.",
+        "applicationRefused": "Ford nekade programmets client ID eller secret: din Ford anslöts inte. Kontrollera dem på Fords utvecklarportal och börja sedan om.",
+        "unavailable": "Ford svarade inte: din Ford anslöts inte. Försök igen om en stund.",
+        "notOffered": "Ford erbjuds inte för ditt konto: inget anslöts."
       }
     },
     "volvoId": {
@@ -1489,22 +1498,27 @@
       "credentialRefusedPleos": "Läses inte: Pleos vägrade nyckeln",
       "credentialRefusedSkoda": "Läses inte: Škoda nekade nyckeln",
       "credentialRefusedRenault": "Läses inte: Renault nekade inloggningen",
+      "credentialRefusedFord": "Läses inte: Ford nekade anslutningen",
       "credentialMissingBmw": "Läses inte: ingen BMW-anslutning",
       "credentialMissingPleos": "Läses inte: ingen Pleos-nyckel given",
       "credentialMissingSkoda": "Läses inte: ingen MyŠkoda-nyckel angiven",
       "credentialMissingRenault": "Läses inte: inte inloggad i My Renault",
+      "credentialMissingFord": "Läses inte: inte inloggad hos Ford",
       "unsharedBmw": "Läses inte: BMW-kontot är inte längre bilens huvudanvändare",
       "unsharedPleos": "Läses inte: bilen delar inte längre sina data med nyckeln",
       "unsharedSkoda": "Läses inte: nyckeln omfattar inte längre bilen",
       "unsharedRenault": "Läses inte: bilen finns inte längre i My Renault-kontot",
+      "unsharedFord": "Läses inte: inloggningen läser en annan bil",
       "pausedBmw": "Pausad av BMW till {time}",
       "pausedPleos": "Pausad av Pleos till {time}",
       "pausedSkoda": "Pausad av Škoda till {time}",
       "pausedRenault": "Pausad av Renault till {time}",
+      "pausedFord": "Pausad av Ford till {time}",
       "quotaBmw": "Dagens anrop till BMW förbrukade till {time}",
       "quotaPleos": "Dagens anrop till Pleos förbrukade till {time}",
       "quotaSkoda": "Dagens anrop till Škoda förbrukade till {time}",
-      "quotaRenault": "Dagens anrop till Renault förbrukade till {time}"
+      "quotaRenault": "Dagens anrop till Renault förbrukade till {time}",
+      "quotaFord": "Dagens anrop till Ford förbrukade till {time}"
     },
     "notice": {
       "reauth": {
@@ -1549,19 +1563,24 @@
       "pausedPleos": "Pleos begränsade antalet anrop. Läsningen återupptas av sig själv.",
       "pausedSkoda": "Škoda begränsade antalet anrop. Läsningen återupptas av sig själv.",
       "pausedRenault": "Renault begränsade antalet anrop: kontot kan också läsas av ett annat program, till exempel Home Assistant. Läsningen återupptas av sig själv.",
+      "pausedFord": "Ford begränsade antalet anrop: bilen kan också läsas av ett annat program, till exempel Home Assistant eller evcc. Läsningen återupptas av sig själv.",
       "credentialRefusedPleos": "Pleos vägrade nyckeln som den här bilen läses med: återkallad eller utbytt i Playground, eller utgången. Skapa en ny där och ge den på anslutningssidan: det som redan lästs finns kvar.",
       "credentialRefusedSkoda": "Škoda nekade nyckeln som den här bilen läses med: utgången, eller borttagen i MyŠkoda-appen. Skapa en ny där och ange den på anslutningssidan: det som lästs finns kvar.",
       "credentialRefusedRenault": "Renault nekade inloggningen som den här bilen läses med: lösenordet har ändrats, eller sessionen har avslutats. Logga in igen på anslutningssidan: det som lästs finns kvar.",
+      "credentialRefusedFord": "Ford nekade anslutningen som den här bilen läses med: samtycket har återkallats, året har gått ut, eller programmets secret har ändrats. Logga in hos Ford igen på anslutningssidan: det som lästs finns kvar.",
       "credentialMissingPleos": "Runsten läser den här bilen med din Pleos-nyckel, som har tagits bort: ge en ny på anslutningssidan.",
       "credentialMissingSkoda": "Runsten läser den här bilen med din MyŠkoda-nyckel, som har tagits bort: ange en ny på anslutningssidan.",
       "credentialMissingRenault": "Runsten läser den här bilen med din My Renault-inloggning, som har tagits bort: logga in igen på anslutningssidan.",
+      "credentialMissingFord": "Runsten läser den här bilen med din inloggning hos Ford, som har tagits bort: logga in igen på anslutningssidan.",
       "unsharedPleos": "Pleos svarade att den här bilen inte längre delar sina data med nyckeln: delningen avstängd i de uppkopplade tjänsterna, eller bilen avregistrerad. Delar bilen igen, ge nyckeln på nytt på anslutningssidan: bilen läses igen.",
       "unsharedSkoda": "Škoda svarade att nyckeln inte längre läser den här bilen: den avmarkerades för nyckeln i MyŠkoda-appen. Skapa en nyckel med bilen markerad och ange den på anslutningssidan: bilen läses igen.",
       "unsharedRenault": "Ditt My Renault-konto listar inte längre den här bilen som elbil: såld, borttagen från kontot eller flyttad till ett annat. Om den kommer tillbaka, logga in igen på anslutningssidan: bilen läses igen.",
+      "unsharedFord": "Din inloggning hos Ford läser nu en annan bil: en inloggning läser en bil, den som valdes på Fords sida. För att läsa den här igen, logga in igen på anslutningssidan och välj den.",
       "quotaBmw": "Runsten gör högst 40 anrop om dagen till BMW:s API per anslutning, för att lämna några av BMW:s 50 åt dig: de är förbrukade. Flödet, som saknar gräns, läses fortfarande; resten återupptas av sig själv.",
       "quotaPleos": "Runsten gör högst 2000 anrop om dagen till Pleos Vehicle Data API per nyckel, ett eget tak (Pleos publicerar inget): de är förbrukade. Läsningen återupptas av sig själv.",
       "quotaSkoda": "Runsten gör högst 2 400 anrop om dagen till MyŠkoda Public API per nyckel, över Škodas egen gräns på 20 i timmen per bil: de är förbrukade. Läsningen återupptas av sig själv.",
-      "quotaRenault": "Runsten gör högst 1 200 anrop per dygn till API:et i My Renault-appen per konto, för att hålla sig undan Renaults opublicerade gränser: de är förbrukade. Läsningen återupptas av sig själv."
+      "quotaRenault": "Runsten gör högst 1 200 anrop per dygn till API:et i My Renault-appen per konto, för att hålla sig undan Renaults opublicerade gränser: de är förbrukade. Läsningen återupptas av sig själv.",
+      "quotaFord": "Runsten gör högst 2 000 anrop om dagen till FordConnect Query per bil, eftersom Ford inte publicerar någon egen gräns: de är förbrukade. Läsningen återupptas av sig själv."
     },
     "facts": {
       "mode": "Läsläge",
@@ -1589,10 +1608,12 @@
       "noneDuePleos": "Ingen förrän en Pleos-nyckel anges",
       "noneDueSkoda": "Ingen förrän en MyŠkoda-nyckel anges",
       "noneDueRenault": "Ingen förrän du loggar in i My Renault igen",
+      "noneDueFord": "Ingen förrän du loggar in hos Ford igen",
       "noneDueUnsharedBmw": "Ingen: BMW-kontot är inte längre bilens huvudanvändare",
       "noneDueUnsharedPleos": "Ingen: bilen delar inte längre sina data med nyckeln",
       "noneDueUnsharedSkoda": "Ingen: nyckeln omfattar inte längre bilen",
-      "noneDueUnsharedRenault": "Ingen: bilen finns inte längre i My Renault-kontot"
+      "noneDueUnsharedRenault": "Ingen: bilen finns inte längre i My Renault-kontot",
+      "noneDueUnsharedFord": "Ingen: inloggningen läser en annan bil"
     },
     "api": {
       "connectedVehicle": "fordonsdata",
@@ -1606,6 +1627,7 @@
       "pleos": "Pleos Vehicle Data API",
       "skoda": "MyŠkoda Public API",
       "renault": "API:et i My Renault-appen",
+      "ford": "FordConnect Query",
       "demo": "demofordonet"
     },
     "failure": {
@@ -1636,18 +1658,22 @@
       "notFoundPleos": "Fordonet okänt för Pleos",
       "notFoundSkoda": "Fordonet okänt för Škoda",
       "notFoundRenault": "Fordonet är okänt för Renault",
+      "notFoundFord": "Fordonet okänt för Ford",
       "unavailableBmw": "BMW nås inte",
       "unavailablePleos": "Pleos nås inte",
       "unavailableSkoda": "Škoda kan inte nås",
       "unavailableRenault": "Renault kan inte nås",
+      "unavailableFord": "Ford kan inte nås",
       "tokenBmw": "Ingen token från BMW",
       "tokenPleos": "Ingen token från Pleos",
       "tokenSkoda": "MyŠkoda-nyckeln lästes inte",
       "tokenRenault": "My Renault-sessionen lästes inte",
+      "tokenFord": "Åtkomsten till Ford förnyades inte",
       "credentialRefusedBmw": "BMW-anslutning avvisad",
       "credentialRefusedPleos": "Pleos-nyckel avvisad",
       "credentialRefusedSkoda": "MyŠkoda-nyckeln nekades",
       "credentialRefusedRenault": "Inloggningen i My Renault nekades",
+      "credentialRefusedFord": "Anslutningen till Ford nekades",
       "keyShared": "Nyckel delad med ett annat program"
     },
     "key": {
@@ -1694,6 +1720,10 @@
     "renault": {
       "title": "Ditt My Renault-konto",
       "off": "Renault är avstängt på den här instansen (flaggan source.renault)."
+    },
+    "ford": {
+      "title": "Ditt program hos Ford",
+      "off": "Ford är avstängt på den här instansen (flaggan source.ford)."
     },
     "demo": {
       "title": "Demofordon",
@@ -2590,6 +2620,85 @@
       "sourceUnavailable": "My Renault svarade inte: inget sparades. Försök igen om en stund.",
       "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
       "internal": "Inloggningen kunde inte sparas. Försök igen om en stund."
+    }
+  },
+  "ford": {
+    "intro": "Runsten läser din Ford via FordConnect Query, Fords egen åtkomst till din bils data. Du skapar ett program på Fords utvecklarportal, loggar sedan in hos Ford med det och väljer din bil.",
+    "beta": "I beta: skrivet utifrån Fords dokumentation, ännu inte prövat på en riktig bil.",
+    "guide": "Läs guiden",
+    "newTab": "(öppnas i en ny flik)",
+    "refused": {
+      "title": "Ford nekade anslutningen",
+      "body": "Ford nekade den {time}: samtycket har återkallats, eller programmets secret har ändrats. Din bil läses inte förrän du loggar in igen; det som lästs finns kvar."
+    },
+    "expired": {
+      "title": "Din inloggning hos Ford är slut",
+      "body": "Den tog slut {date}: Ford kräver en ny inloggning varje år. Din bil läses inte förrän du loggar in igen; det som lästs finns kvar."
+    },
+    "renew": {
+      "title": "Logga in hos Ford igen",
+      "body": "Ford kräver en ny inloggning varje år: den här tar slut {date}. Logga in igen före dess, annars läses din bil inte längre."
+    },
+    "current": "Ditt program",
+    "last4": "Client ID som slutar på {last4}",
+    "setAt": "Ansluten",
+    "expiresAt": "Logga in igen före",
+    "expiresUnknown": "Anges inte av Ford",
+    "reconnect": "Logga in igen",
+    "delete": {
+      "button": "Ta bort anslutningen",
+      "title": "Ta bort din Ford-anslutning?",
+      "text": "Din Ford finns kvar, med sin historik, men läses inte förrän du loggar in igen. Client ID och secret raderas.",
+      "error": "Anslutningen kunde inte tas bort. Försök igen om en stund.",
+      "cancel": "Avbryt",
+      "confirm": "Ta bort"
+    },
+    "steps": {
+      "title": "Skapa ditt program",
+      "create": "Skapa ett program för personligt bruk på Fords utvecklarportal, med samma e-postadress som ditt Ford-konto och alla datakategorier ikryssade:",
+      "portal": "Fords utvecklarportal",
+      "redirect": "Ge det den här omdirigeringsadressen:",
+      "wait": "Ford kan behöva upp till två timmar för att göra ett nytt program klart: visar inloggningssidan ett fel, försök igen senare.",
+      "credentials": "Kopiera programmets client ID och secret nedan."
+    },
+    "redirect": "Omdirigeringsadress",
+    "clientId": "Client ID",
+    "clientSecret": "Client secret",
+    "secretHelp": "Runsten förvarar dem förseglade, för att läsa din bil: de visas aldrig igen.",
+    "start": "Logga in hos Ford",
+    "paste": {
+      "title": "Slutför på Fords sida",
+      "open": "Öppna Fords sida, logga in, välj din bil och godkänn:",
+      "page": "Fords inloggningssida",
+      "explain": "Ford skickar sedan din webbläsare till en adress som börjar med {redirect}, vars sida inte laddas: det är väntat, eftersom Ford inte godtar någon annan adress för den här instansen.",
+      "copy": "Kopiera hela adressen från webbläsarens adressfält och klistra in den nedan."
+    },
+    "callback": "Adressen som Ford skickade dig till",
+    "save": "Anslut",
+    "startAgain": "Börja om",
+    "cancel": "Avbryt",
+    "saved": "Din Ford är ansluten: insamlaren läser den från nästa omgång.",
+    "deleted": "Ford-anslutningen är borttagen.",
+    "error": {
+      "summary": "Din Ford kunde inte anslutas",
+      "clientIdRequired": "Ange programmets client ID.",
+      "clientSecretRequired": "Ange programmets secret.",
+      "callbackRequired": "Klistra in adressen som Ford skickade dig till.",
+      "characters": "Den har ett mellanslag eller ett tecken som inget client ID eller secret har: kopiera den igen från Fords portal.",
+      "tooShort": "För kort: minst {min} tecken.",
+      "tooLong": "För lång: högst {max} tecken.",
+      "noCode": "Den här adressen har ingen kod: kopiera hela adressen till sidan som Ford skickade dig till.",
+      "invalidBody": "Fords client ID eller secret har inte den förväntade formen: kopiera dem igen från Fords portal.",
+      "expired": "Den här inloggningen har gått ut, användes redan, eller Ford nekade dess kod: börja om.",
+      "applicationRefused": "Ford nekade client ID eller secret: kontrollera dem på Fords utvecklarportal och börja sedan om.",
+      "noVehicle": "Den här inloggningen läser ingen bil: lägg till din bil i ditt Ford-konto och börja sedan om.",
+      "tooManyVehicles": "Med den här bilen skulle ditt konto ha fler fordon än det får: den anslöts inte.",
+      "notAdmitted": "Ditt konto måste ta ett steg innan en bil kan anslutas: ladda om sidan.",
+      "notOffered": "Ford erbjuds inte för ditt konto.",
+      "tooManyPending": "För många inloggningar väntar på den här instansen: försök igen om några minuter.",
+      "fordUnavailable": "Ford svarade inte: inget sparades. Börja om om en stund.",
+      "unavailable": "Runsten kunde inte nås. Försök igen om en stund.",
+      "internal": "Något gick fel hos Runsten. Försök igen om en stund."
     }
   },
   "demo": {
