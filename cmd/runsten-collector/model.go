@@ -16,6 +16,8 @@ type models capacities
 var brands = map[catalog.Brand]string{
 	catalog.Volvo: "Volvo", catalog.Polestar: "Polestar", catalog.Tesla: "Tesla", catalog.BMW: "BMW", catalog.Mini: "MINI",
 	catalog.Hyundai: "Hyundai", catalog.Kia: "Kia", catalog.Genesis: "Genesis",
+	catalog.Skoda: "Škoda", catalog.Renault: "Renault", catalog.Dacia: "Dacia", catalog.Alpine: "Alpine",
+	catalog.Ford: "Ford",
 }
 
 // Model implements mqtt.Models.

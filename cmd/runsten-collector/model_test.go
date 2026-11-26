@@ -72,3 +72,17 @@ func TestModel(t *testing.T) {
 		}
 	}
 }
+
+// TestBrands: every brand of the catalog is written as its maker does, for the device's
+// manufacturer in Home Assistant.
+func TestBrands(t *testing.T) {
+	cat, err := catalog.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, v := range cat.Variants() {
+		if brands[v.Brand] == "" {
+			t.Fatalf("brand %q of variant %s has no name", v.Brand, v.ID)
+		}
+	}
+}
