@@ -31,6 +31,9 @@ const (
 	// SourceRenault: a Renault, a Dacia or an Alpine is read through the My Renault
 	// app's API, with its owner's sign-in (ADR 0050).
 	SourceRenault Name = "source.renault"
+	// SourceFord: a Ford is read through FordConnect Query, with the application its
+	// owner created on Ford's developer portal.
+	SourceFord Name = "source.ford"
 	// SourceDemo: a vehicle simulated by the instance, with weeks of history and readings
 	// that keep coming: no car, no maker's account.
 	SourceDemo Name = "source.demo"
@@ -92,6 +95,13 @@ func All() []Flag {
 				"and its reads. Off by default: the API is unofficial, against the app's terms, and many accounts read " +
 				"from one instance's addresses could have them blocked; a self-hosted instance turns it on.",
 			Remove: "when Renault opens an official API to its owners, or the source is offered everywhere",
+		},
+		{
+			Name: SourceFord, Default: false, Web: true,
+			Purpose: "FordConnect Query as a source, for the Fords: its connection and its reads, through the application " +
+				"the owner creates on Ford's developer portal. Off by default: written from Ford's specification, it is " +
+				"not checked on a real car yet; an instance turns it on to try it.",
+			Remove: "once the source is checked on a real car and out of beta",
 		},
 		{
 			Name: SourceDemo, Default: false, Web: true,

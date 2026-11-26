@@ -1,0 +1,22 @@
+{
+  "updateTime": "2026-03-11T19:10:00Z",
+  "vin": "WF0TESTPUMA000001",
+  "metrics": {
+    "odometer": {"updateTime": "2026-03-11T18:02:00Z", "value": 4812.0},
+    "xevBatteryStateOfCharge": {"updateTime": "2026-03-11T19:10:00Z", "value": 71.0},
+    "xevPlugChargerStatus": {"updateTime": "2026-03-11T18:05:00Z", "value": "CONNECTED"},
+    "xevBatteryChargeDisplayStatus": {"updateTime": "2026-03-11T18:06:00Z", "value": "IN_PROGRESS"},
+    "xevChargeStationPowerType": {"updateTime": "2026-03-11T18:06:00Z", "value": "AC_BASIC"},
+    "xevBatteryChargerVoltageOutput": {"updateTime": "2026-03-11T19:10:00Z", "value": 350.0},
+    "xevBatteryChargerCurrentOutput": {"updateTime": "2026-03-11T19:09:00Z", "value": 30.0},
+    "xevBatteryTimeToFullCharge": {"updateTime": "2026-03-11T19:10:00Z", "value": 95.0},
+    "ignitionStatus": {"updateTime": "2026-03-11T18:02:00Z", "value": "Run"},
+    "doorStatus": [
+      {"updateTime": "2026-03-11T18:03:00Z", "value": "AJAR", "vehicleDoor": "UNSPECIFIED_FRONT", "vehicleSide": "DRIVER"},
+      {"updateTime": "2026-03-11T18:03:00Z", "value": "CLOSED", "vehicleDoor": "REAR_LEFT"}
+    ],
+    "doorLockStatus": [
+      {"updateTime": "2026-03-11T18:04:00Z", "value": "DOUBLE_LOCKED", "vehicleDoor": "ALL_DOORS"}
+    ]
+  }
+}

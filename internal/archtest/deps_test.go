@@ -27,13 +27,13 @@ var allowed = map[string][]string{
 	// The binaries wire the adapters together. Only runsten-simulator knows the simulator.
 	"cmd/runsten-api": {
 		"net/http", "golang.org/x/term", "internal/api", "internal/auth", "internal/aximote", "internal/bmw", "internal/catalog", "internal/core",
-		"internal/archive", "internal/demo", "internal/derive", "internal/exporter", "internal/flags", "internal/geocode", "internal/importer", "internal/notify", "internal/oauth", "internal/picture",
+		"internal/archive", "internal/demo", "internal/derive", "internal/exporter", "internal/flags", "internal/ford", "internal/geocode", "internal/importer", "internal/notify", "internal/oauth", "internal/picture",
 		"internal/platform", "internal/pleos", "internal/polestar", "internal/polestarid", "internal/release", "internal/renault", "internal/skoda", "internal/store",
 		"internal/tesla", "internal/teslamate", "internal/volvo", "internal/volvoportal", "internal/aaoslogging",
 	},
 	"cmd/runsten-collector": {
 		"net/http", "internal/bmw", "internal/catalog", "internal/collector", "internal/core", "internal/debugui", "internal/demo", "internal/derive",
-		"internal/flags", "internal/notify", "internal/oauth", "internal/platform", "internal/pleos", "internal/polestar", "internal/polestarid",
+		"internal/flags", "internal/ford", "internal/notify", "internal/oauth", "internal/platform", "internal/pleos", "internal/polestar", "internal/polestarid",
 		"internal/publish", "internal/renault", "internal/skoda",
 		"internal/store", "internal/tesla", "internal/volvo",
 	},
@@ -65,6 +65,9 @@ var allowed = map[string][]string{
 	"internal/collector/skodasource": {"internal/collector", "internal/core", "internal/platform/clock", "internal/skoda"},
 	// The My Renault app's: the client, adapted, which lists each account's vehicles.
 	"internal/collector/renaultsource": {"internal/collector", "internal/core", "internal/platform/clock", "internal/renault"},
+	// FordConnect Query's: the client, adapted, which keeps the refresh token Ford gives
+	// and never makes two calls of a connection close together.
+	"internal/collector/fordsource": {"internal/collector", "internal/core", "internal/ford", "internal/platform/clock"},
 	// The demo vehicle's: the simulation, read at the collector's time.
 	"internal/collector/demosource": {"internal/collector", "internal/demo", "internal/platform/clock"},
 	"internal/derive":               {"internal/core"},
@@ -105,6 +108,8 @@ var allowed = map[string][]string{
 	"internal/pleos": {"net/http", "encoding/json", "internal/core"},
 	// The reader of the MyŠkoda Public API.
 	"internal/skoda": {"net/http", "encoding/json", "internal/core"},
+	// The reader of FordConnect Query: its sign-in, its token endpoint and its API.
+	"internal/ford": {"net/http", "encoding/json", "internal/core"},
 	// The reader of the My Renault app's API: Gigya and Kamereon.
 	"internal/renault": {"net/http", "encoding/json", "internal/core"},
 	// CarData's REST and its MQTT stream; the YAML decoder for its embedded paints' names.
@@ -167,7 +172,9 @@ var allowed = map[string][]string{
 	"internal/simulator/skodaapi": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
 	// The fake My Renault API, the same; it never imports the client.
 	"internal/simulator/renaultapi": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
-	"internal/simulator/control":    {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
+	// The fake FordConnect Query, the same; it never imports the client.
+	"internal/simulator/fordapi": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/vehicle"},
+	"internal/simulator/control": {"net/http", "encoding/json", "internal/platform/clock", "internal/simulator/scenario"},
 	// The fake Aximote writes its API's JSON on its own: it never imports the client.
 	"internal/simulator/aximoteapi": {"net/http", "encoding/json"},
 	// The simulated Volvo ID's grants, kept across restarts.

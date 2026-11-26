@@ -49,6 +49,8 @@ linters:
               desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/renaultapi
               desc: outward dependency forbidden
+            - pkg: runsten/internal/simulator/fordapi
+              desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/scenario
               desc: outward dependency forbidden
         # The scenario engine drives the vehicle, without knowing HTTP or the API.
@@ -72,6 +74,8 @@ linters:
             - pkg: runsten/internal/simulator/skodaapi
               desc: outward dependency forbidden
             - pkg: runsten/internal/simulator/renaultapi
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/simulator/fordapi
               desc: outward dependency forbidden
         # The simulated API declares its Ledger: pgledger keeps the grants in PostgreSQL.
         volvoapi-without-database:
@@ -121,6 +125,8 @@ linters:
               desc: the demo vehicle uses the simulator's models, never a provider's handler
             - pkg: runsten/internal/simulator/renaultapi
               desc: the demo vehicle uses the simulator's models, never a provider's handler
+            - pkg: runsten/internal/simulator/fordapi
+              desc: the demo vehicle uses the simulator's models, never a provider's handler
             - pkg: runsten/internal/simulator/aximoteapi
               desc: the demo vehicle uses the simulator's models, never a provider's handler
             - pkg: runsten/internal/simulator/control
@@ -163,6 +169,8 @@ linters:
               desc: the collector declares its own Source, which collector/skodasource adapts the MyŠkoda client to
             - pkg: runsten/internal/renault
               desc: the collector declares its own Source, which collector/renaultsource adapts the My Renault client to
+            - pkg: runsten/internal/ford
+              desc: the collector declares its own Source, which collector/fordsource adapts the FordConnect Query client to
             - pkg: runsten/internal/demo
               desc: the collector declares its own Source, which collector/demosource adapts the demo vehicle to
         # The collector's Polestar source adapts the client: no transport, no storage.
@@ -225,6 +233,16 @@ linters:
               desc: storage belongs to store
             - pkg: runsten/internal/store
               desc: the binary reads the credential from the store
+        # The collector's Ford source adapts the client: no transport, no storage.
+        fordsource-adapts:
+          files: ["**/internal/collector/fordsource/**", "!$test"]
+          deny:
+            - pkg: net/http
+              desc: the transport belongs to the ford client
+            - pkg: github.com/jackc/pgx
+              desc: storage belongs to store
+            - pkg: runsten/internal/store
+              desc: fordsource declares its own Store, which the store implements
         # The collector's demo source adapts the demo vehicle: no transport, no storage.
         demosource-adapts:
           files: ["**/internal/collector/demosource/**", "!$test"]
@@ -387,6 +405,19 @@ linters:
         # vendor's client.
         renault-is-a-client:
           files: ["**/internal/renault/**"]
+          deny:
+            - pkg: github.com/jackc/pgx
+              desc: the client stores nothing
+            - pkg: runsten/internal/collector
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/store
+              desc: outward dependency forbidden
+            - pkg: runsten/internal/derive
+              desc: outward dependency forbidden
+        # The FordConnect Query client depends on neither storage nor the collector, nor on
+        # another vendor's client.
+        ford-is-a-client:
+          files: ["**/internal/ford/**"]
           deny:
             - pkg: github.com/jackc/pgx
               desc: the client stores nothing

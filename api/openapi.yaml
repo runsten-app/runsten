@@ -4978,6 +4978,9 @@ components:
             source.demo:
               description: "A demo vehicle as a source: its connection and its reads. Off by default, the vehicle being no one's: an instance or an account turns it on to try Runsten before connecting a car, to show it, or to develop a client against a real instance."
               type: boolean
+            source.ford:
+              description: "FordConnect Query as a source, for the Fords: its connection and its reads, through the application the owner creates on Ford's developer portal. Off by default: written from Ford's specification, it is not checked on a real car yet; an instance turns it on to try it."
+              type: boolean
             source.pleos:
               description: "The Pleos Vehicle Data API as a source, for the Hyundais, the Kias and the Genesises: its connection and its reads. On by default, the API being the EU Data Act's own; an instance may turn it off while the source is in beta, not seen yet on a real car."
               type: boolean
@@ -5000,6 +5003,7 @@ components:
             - source.pleos
             - source.skoda
             - source.renault
+            - source.ford
             - source.demo
           type: object
         limits:

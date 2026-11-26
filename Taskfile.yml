@@ -59,7 +59,9 @@ vars:
   # Vehicle Data API under /pleos (its key below, its faults under /sim/pleos); the MyŠkoda
   # Public API under /skoda (its key below, its faults under /sim/skoda); the My Renault
   # app's API under /renault (Gigya under /renault/gigya, Kamereon under /renault/kamereon,
-  # their keys the simulator's, its faults under /sim/renault), its flag on.
+  # their keys the simulator's, its faults under /sim/renault), its flag on; FordConnect
+  # Query under /ford (its sign-in, its token endpoint and its API, its faults under
+  # /sim/ford), its flag on.
   # Development-only encryption key (32 zero bytes).
   DEV_ENV: >-
     RUNSTEN_DATABASE_URL="{{.DB_DEV}}"
@@ -77,7 +79,8 @@ vars:
     RUNSTEN_SKODA_API_URL=http://localhost:8080/skoda
     RUNSTEN_RENAULT_GIGYA_URL=http://localhost:8080/renault/gigya RUNSTEN_RENAULT_GIGYA_KEY=runsten-dev-gigya-key
     RUNSTEN_RENAULT_KAMEREON_URL=http://localhost:8080/renault/kamereon RUNSTEN_RENAULT_KAMEREON_KEY=runsten-dev-kamereon-key
-    RUNSTEN_FLAGS=source.polestar-id=true,source.renault=true
+    RUNSTEN_FORD_TOKEN_URL=http://localhost:8080/ford/token RUNSTEN_FORD_API_URL=http://localhost:8080/ford
+    RUNSTEN_FLAGS=source.polestar-id=true,source.renault=true,source.ford=true
 
   # The simulator's Polestar ID (polestaridapi.DevEmail and DevPassword), development
   # only, as the body of PUT /api/v1/connection/polestar-id/password.

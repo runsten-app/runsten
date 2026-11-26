@@ -177,6 +177,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"SIM_POLESTAR_CREDENTIAL_TTL": "-1h", "SIM_POLESTAR_PARKED_UPLOAD": "often",
 		"SIM_TESLA_SLEEP_AFTER": "-1m", "SIM_TESLA_TOKEN_TTL": "0s",
 		"SIM_BMW_TOKEN_TTL": "0s", "SIM_BMW_SEND_EVERY": "-1s",
+		"SIM_FORD_ACCESS_TTL": "500ms", "SIM_FORD_MIN_GAP": "-1s",
 	}))
 	if err == nil {
 		t.Fatal("expected error")
@@ -186,6 +187,7 @@ func TestLoadConfigErrors(t *testing.T) {
 		"SIM_TOKEN_TTL", "SIM_ERROR_RATE", "SIM_LATENCY", "SIM_GRANT_TTL",
 		"SIM_POLESTAR_CREDENTIAL_TTL", "SIM_POLESTAR_PARKED_UPLOAD",
 		"SIM_TESLA_SLEEP_AFTER", "SIM_TESLA_TOKEN_TTL", "SIM_BMW_TOKEN_TTL", "SIM_BMW_SEND_EVERY",
+		"SIM_FORD_ACCESS_TTL", "SIM_FORD_MIN_GAP",
 	} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error should mention %s: %v", want, err)

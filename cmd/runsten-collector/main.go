@@ -43,6 +43,11 @@
 //	RUNSTEN_SKODA_API_URL       the MyŠkoda Public API, which reads the Škodas of the
 //	                            connections with a key when the flag source.skoda is on
 //	                            (default https://public.api.connect.skoda-auto.cz)
+//	RUNSTEN_FORD_TOKEN_URL      Ford's token endpoint, which refreshes the accesses of the
+//	                            connections with an owner's application when the flag
+//	                            source.ford is on (default ford.DefaultTokenURL)
+//	RUNSTEN_FORD_API_URL        FordConnect Query, which reads their cars (default
+//	                            https://api.vehicle.ford.com/fcon-query)
 //	RUNSTEN_RENAULT_GIGYA_URL   Renault's Gigya and Kamereon, and the keys of its apps,
 //	RUNSTEN_RENAULT_GIGYA_KEY   which read the Renaults, Dacias and Alpines of the
 //	RUNSTEN_RENAULT_KAMEREON_URL connections with a sign-in when the flag source.renault
@@ -136,6 +141,7 @@ import (
 	"runsten/internal/collector"
 	"runsten/internal/collector/bmwsource"
 	"runsten/internal/collector/demosource"
+	"runsten/internal/collector/fordsource"
 	"runsten/internal/collector/pleossource"
 	"runsten/internal/collector/polestaridsource"
 	"runsten/internal/collector/polestarsource"
@@ -148,6 +154,7 @@ import (
 	"runsten/internal/derive"
 	"runsten/internal/flags"
 	"runsten/internal/flags/eval"
+	"runsten/internal/ford"
 	"runsten/internal/notify"
 	"runsten/internal/oauth"
 	"runsten/internal/platform/clock"
@@ -175,6 +182,7 @@ type config struct {
 	pleosURL     string
 	skodaURL     string
 	renault      renault.Config
+	ford         ford.Hosts
 	tesla        tesla.Hosts
 	polestarID   polestarid.Hosts
 	bmw          bmw.Hosts
@@ -372,6 +380,7 @@ func run(args []string) error {
 	log.Info("collector started", "version", version, "tick", cfg.tick.String(), "base_url", cfg.baseURL, "auth_url", cfg.authURL,
 		"polestar_base_url", cfg.polestarURL, "pleos_api_url", cfg.pleosURL, "skoda_api_url", cfg.skodaURL,
 		"renault_gigya_url", cfg.renault.GigyaURL, "renault_kamereon_url", cfg.renault.KamereonURL,
+		"ford_token_url", cfg.ford.Token, "ford_api_url", cfg.ford.API,
 		"tesla_api_url", cfg.tesla.API, "tesla_auth_url", cfg.tesla.Auth,
 		"polestar_id_auth_url", cfg.polestarID.Auth, "polestar_id_api_url", cfg.polestarID.API,
 		"polestar_id_discovery_url", cfg.polestarID.Discovery, "polestar_id_pccs_url", cfg.polestarID.PCCS,
@@ -442,6 +451,11 @@ func run(args []string) error {
 		return features.Enabled(ctx, flags.SourceSkoda, account)
 	})
 	c.AddSource(renaultsource.New(renault.NewClient(cfg.renault, hc), renaultCredential(st), clk), st)
+	// Ford's, off by default: not checked on a real car yet.
+	c.AddSource(fordsource.New(ford.NewClient(cfg.ford, hc), fordStore{st}, clk), st)
+	c.SetGate(ford.Source, func(ctx context.Context, account string) bool {
+		return features.Enabled(ctx, flags.SourceFord, account)
+	})
 	// Renault's, off by default: the My Renault app's API is unofficial (ADR 0050 §8).
 	c.SetGate(renault.Source, func(ctx context.Context, account string) bool {
 		return features.Enabled(ctx, flags.SourceRenault, account)
@@ -605,6 +619,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		pleosURL:    pleos.DefaultBaseURL,
 		skodaURL:    skoda.DefaultBaseURL,
 		renault:     renault.DefaultConfig(),
+		ford:        ford.DefaultHosts(),
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		polestarID: polestarid.Hosts{
 			Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL,
@@ -682,6 +697,7 @@ func loadConfig(getenv func(string) string, cmd command) (config, error) {
 		"RUNSTEN_VOLVO_BASE_URL": &cfg.baseURL, "RUNSTEN_VOLVO_AUTH_URL": &cfg.authURL, "RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL,
 		"RUNSTEN_PLEOS_API_URL": &cfg.pleosURL, "RUNSTEN_SKODA_API_URL": &cfg.skodaURL,
 		"RUNSTEN_RENAULT_GIGYA_URL": &cfg.renault.GigyaURL, "RUNSTEN_RENAULT_KAMEREON_URL": &cfg.renault.KamereonURL,
+		"RUNSTEN_FORD_TOKEN_URL": &cfg.ford.Token, "RUNSTEN_FORD_API_URL": &cfg.ford.API,
 		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
 		"RUNSTEN_POLESTAR_ID_DISCOVERY_URL": &cfg.polestarID.Discovery, "RUNSTEN_POLESTAR_ID_PCCS_URL": &cfg.polestarID.PCCS,
@@ -766,6 +782,28 @@ func pleosCredential(st *store.Store) func(ctx context.Context, accountID, conne
 	}
 }
 
+// fordStore keeps the Ford connections' credentials in the store.
+type fordStore struct{ st *store.Store }
+
+func (f fordStore) FordCredential(ctx context.Context, accountID, connectionID string) (fordsource.Credential, error) {
+	c, setAt, err := f.st.FordCredential(ctx, accountID, connectionID)
+	if err != nil {
+		return fordsource.Credential{}, fmt.Errorf("ford credential: %w", err)
+	}
+	return fordsource.Credential{
+		Application: ford.Application{ClientID: c.ClientID, ClientSecret: c.ClientSecret, RedirectURI: c.RedirectURI},
+		Refresh:     c.Refresh, SetAt: setAt,
+	}, nil
+}
+
+func (f fordStore) RotateFordToken(ctx context.Context, accountID, connectionID string, setAt time.Time, token string) error {
+	return f.st.RotateFordToken(ctx, accountID, connectionID, setAt, token) //nolint:wrapcheck // the store's, with its context
+}
+
+func (f fordStore) SetCredentialExpiry(ctx context.Context, accountID, connectionID string, setAt, expiresAt time.Time) error {
+	return f.st.SetCredentialExpiry(ctx, accountID, connectionID, setAt, expiresAt) //nolint:wrapcheck // the store's, with its context
+}
+
 // renaultCredential reads the sign-in of a Renault connection from the store.
 func renaultCredential(st *store.Store) func(ctx context.Context, accountID, connectionID string) (renaultsource.Credential, error) {
 	return func(ctx context.Context, accountID, connectionID string) (renaultsource.Credential, error) {
@@ -803,6 +841,7 @@ func normalizers() derive.Normalizer {
 		pleos.Normalizer{},
 		skoda.Normalizer{},
 		renault.Normalizer{},
+		ford.Normalizer{},
 		demo.Normalizer{},
 	}, extensionNormalizers()...)...)
 }

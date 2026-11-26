@@ -166,6 +166,7 @@ import (
 	"runsten/internal/exporter"
 	"runsten/internal/flags"
 	"runsten/internal/flags/eval"
+	"runsten/internal/ford"
 	"runsten/internal/geocode"
 	"runsten/internal/geocode/nominatim"
 	"runsten/internal/importer"
@@ -1055,6 +1056,7 @@ func normalizers() derive.Normalizer {
 		pleos.Normalizer{},
 		skoda.Normalizer{},
 		renault.Normalizer{},
+		ford.Normalizer{},
 		demo.Normalizer{},
 	}, extensionNormalizers()...)...)
 }
