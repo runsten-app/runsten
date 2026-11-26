@@ -686,32 +686,48 @@ func TestSourceVehicleLimit(t *testing.T) {
 }
 
 // TestSourceVehicleLimitStaysDue: an endpoint refused on its vehicle's own limit stays
-// due, and is read once the source no longer holds the vehicle, not an interval later.
+// due, and is read once the source no longer holds the vehicle, not an interval later:
+// one never read yet, as one read before and due again.
 func TestSourceVehicleLimitStaysDue(t *testing.T) {
-	clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
-	tg := sourceTarget()
-	src := limitedSource{newFakeSource(clk), map[string]time.Time{}}
-	limited := true
-	src.answer = func(Endpoint, int, time.Time) ([]byte, error) {
-		if limited {
-			src.held[tg.VIN] = clk.Now().Add(30 * time.Second)
-			return nil, &SourceError{Kind: KindVehicleLimited, RetryIn: 30 * time.Second, Err: errors.New("too soon")}
-		}
-		return []byte("parked"), nil
-	}
-	st := &sourceStore{memStore: memStore{targets: []Target{tg}}}
-	c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
-	c.AddSource(src, st)
-	poll(t, c)
-	refused := len(src.vins)
-	if refused == 0 {
-		t.Fatal("nothing was asked")
-	}
-	limited = false
-	clk.Advance(31 * time.Second)
-	poll(t, c)
-	if len(src.vins) != refused+len(src.Spec().Endpoints) {
-		t.Errorf("%d calls past the hold, %d before: every endpoint refused was to be read again", len(src.vins)-refused, refused)
+	for name, readBefore := range map[string]bool{"never read": false, "read before, due again": true} {
+		t.Run(name, func(t *testing.T) {
+			clk := clock.NewManual(time.Date(2026, 9, 28, 6, 0, 0, 0, time.UTC))
+			tg := sourceTarget()
+			src := limitedSource{newFakeSource(clk), map[string]time.Time{}}
+			limited := !readBefore
+			src.answer = func(Endpoint, int, time.Time) ([]byte, error) {
+				if limited {
+					src.held[tg.VIN] = clk.Now().Add(30 * time.Second)
+					return nil, &SourceError{Kind: KindVehicleLimited, RetryIn: 30 * time.Second, Err: errors.New("too soon")}
+				}
+				return []byte("parked"), nil
+			}
+			st := &sourceStore{memStore: memStore{targets: []Target{tg}}}
+			c := New(&scriptedAPI{}, st, fixedToken{}, clk, DefaultIntervals(), DefaultQuota(), quiet, nil, nil)
+			c.AddSource(src, st)
+			every := len(src.Spec().Endpoints)
+			if readBefore {
+				// Every endpoint read once, then due again: past the longest interval.
+				poll(t, c)
+				if len(src.vins) != every {
+					t.Fatalf("%d calls in the first pass, want %d", len(src.vins), every)
+				}
+				clk.Advance(48 * time.Hour)
+				limited = true
+			}
+			before := len(src.vins)
+			poll(t, c)
+			refused := len(src.vins) - before
+			if refused == 0 {
+				t.Fatal("nothing was asked")
+			}
+			limited = false
+			clk.Advance(31 * time.Second)
+			poll(t, c)
+			if got := len(src.vins) - before - refused; got != every {
+				t.Errorf("%d calls past the hold, want %d: every endpoint refused or held back was to be read", got, every)
+			}
+		})
 	}
 }
 
