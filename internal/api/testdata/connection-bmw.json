@@ -21,5 +21,10 @@
   },
   "skoda": null,
   "renault": null,
+  "ford": null,
+  "ford_application": {
+    "redirect_uri": "http://localhost/auth/ford/callback",
+    "callback": false
+  },
   "demo": null
 }

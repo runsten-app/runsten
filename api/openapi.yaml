@@ -1488,7 +1488,7 @@ components:
               type: string
             - type: "null"
         provider:
-          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis; skoda: the owner's key of the MyŠkoda Public API; renault: the owner's sign-in to My Renault, for a Renault, a Dacia or an Alpine; demo: the vehicle the instance simulates (the flag source.demo)."
+          description: "volvo: a Volvo ID and an application key read the vehicle; polestar: a credential of Polestar's Data Portal; tesla: a refresh token of Tesla's Owner API; polestar_id: the owner's Polestar ID, which reads the Polestar app's API; tesla_fleet: the owner's sign-in to Tesla's Fleet API, through an application the instance's operator registered, read where the instance adds a source for it; bmw: the owner's client ID of BMW CarData; pleos_hyundai, pleos_kia and pleos_genesis: the owner's key of the Pleos Vehicle Data API, per brand, for a Hyundai, a Kia or a Genesis; skoda: the owner's key of the MyŠkoda Public API; renault: the owner's sign-in to My Renault, for a Renault, a Dacia or an Alpine; ford: the owner's application of FordConnect Query, and their sign-in to Ford with it; demo: the vehicle the instance simulates (the flag source.demo)."
           enum:
             - volvo
             - polestar
@@ -1501,6 +1501,7 @@ components:
             - pleos_genesis
             - skoda
             - renault
+            - ford
             - demo
           type: string
         reauth_at:
@@ -1563,6 +1564,14 @@ components:
           oneOf:
             - $ref: "#/components/schemas/Demo"
             - type: "null"
+        ford:
+          description: "The account's FordConnect Query connection, which reads its Ford with the application its owner created on Ford's developer portal (the flag source.ford); null: none."
+          oneOf:
+            - $ref: "#/components/schemas/Ford"
+            - type: "null"
+        ford_application:
+          $ref: "#/components/schemas/FordApplication"
+          description: What the owner's application on Ford's developer portal must declare for this instance.
         instance_key:
           description: "The instance's own application key, which reads every vehicle: an account may not give one. null: none, the account's key is required, before connecting a Volvo ID."
           oneOf:
@@ -1614,6 +1623,8 @@ components:
         - pleos
         - skoda
         - renault
+        - ford
+        - ford_application
         - demo
       type: object
     Cost:
@@ -2263,6 +2274,111 @@ components:
         - skipped
         - invalid
         - cutoff
+      type: object
+    Ford:
+      additionalProperties: false
+      properties:
+        expires_at:
+          description: "When the grant ends: Ford asks for a new sign-in a year after the owner's. null: not told."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        last4:
+          description: "The last four characters of the application's client ID, to tell it apart on Ford's developer portal: neither it, its secret nor a token is returned."
+          type: string
+        refused_at:
+          description: "When Ford refused the connection (the consent withdrawn, its year over, the application's secret changed): the car is not read until the owner connects again. null: not refused."
+          format: date-time
+          pattern: Z$
+          type:
+            - string
+            - "null"
+        set_at:
+          description: When the owner connected.
+          format: date-time
+          pattern: Z$
+          type: string
+      required:
+        - last4
+        - set_at
+        - expires_at
+        - refused_at
+      type: object
+    FordApplication:
+      additionalProperties: false
+      properties:
+        callback:
+          description: "true: the redirect address is this instance's, and the sign-in ends here by itself. false: Ford accepts https, or http on localhost, which this instance's address is not; the redirect address is a localhost one whose page does not load, and the owner pastes its address back (PUT /connection/ford/code)."
+          type: boolean
+        redirect_uri:
+          description: "The redirect address to declare for the application on Ford's developer portal: Ford sends the owner back to it after the sign-in."
+          format: uri
+          type: string
+      required:
+        - redirect_uri
+        - callback
+      type: object
+    FordAuthorization:
+      additionalProperties: false
+      properties:
+        callback:
+          description: "true: Ford sends the owner back to this instance, which ends the sign-in. false: the owner pastes back the address Ford sent them to."
+          type: boolean
+        redirect_uri:
+          description: "The redirect address the sign-in was asked with: the application must declare it."
+          format: uri
+          type: string
+        state:
+          description: The sign-in's state, to send back with the address pasted when callback is false, within 15 minutes.
+          minLength: 1
+          type: string
+        url:
+          description: "Ford's sign-in page, to open in a browser: the owner signs in to Ford, chooses the car and consents."
+          format: uri
+          type: string
+      required:
+        - url
+        - state
+        - redirect_uri
+        - callback
+      type: object
+    FordAuthorizationUpdate:
+      additionalProperties: false
+      properties:
+        client_id:
+          description: The client ID of the application the owner created on Ford's developer portal.
+          maxLength: 128
+          minLength: 8
+          pattern: ^[!-~]+$
+          type: string
+        client_secret:
+          description: Its secret, kept sealed to refresh the access. It is never returned.
+          maxLength: 512
+          minLength: 8
+          pattern: ^[!-~]+$
+          type: string
+      required:
+        - client_id
+        - client_secret
+      type: object
+    FordCode:
+      additionalProperties: false
+      properties:
+        callback:
+          description: The address Ford sent the owner to after the sign-in (http://localhost/auth/ford/callback?code=…), or its code alone.
+          maxLength: 8192
+          minLength: 1
+          type: string
+        state:
+          description: The state POST /connection/ford/authorization gave.
+          maxLength: 64
+          minLength: 1
+          type: string
+      required:
+        - state
+        - callback
       type: object
     Health:
       additionalProperties: false
@@ -7430,6 +7546,161 @@ paths:
         - session: []
         - sessionSecure: []
       summary: Connect the demo vehicle
+      tags:
+        - connection
+  /connection/ford:
+    delete:
+      description: The application's client ID and secret and the refresh token are erased. The car stays, with its history, and is no longer read until the owner connects again.
+      operationId: deleteFord
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`cross_origin`: a request that changes state, from another origin. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Remove the account's Ford connection
+      tags:
+        - connection
+  /connection/ford/authorization:
+    post:
+      description: "The address of Ford's sign-in page, for the application the owner created on Ford's developer portal (FordConnect Query): its client ID and secret are kept by Runsten for 15 minutes, in memory, with the sign-in's state. The owner signs in to Ford there, chooses the car and consents; Ford then sends them to the redirect address, which the application must declare (GET /connection tells it). With callback true it is this instance's, which ends the sign-in and comes back to the web interface's Connection page (connection?ford=connected, or denied, expired, application_refused, no_vehicle, too_many_vehicles, unavailable, not_offered). With callback false the page does not load, and the owner pastes its address back (PUT /connection/ford/code). A new sign-in replaces the account's previous one."
+      operationId: postFordAuthorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FordAuthorizationUpdate"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FordAuthorization"
+          description: The sign-in page.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: Ford is not offered to the account (the flag `source.ford`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: too many sign-ins are pending on the instance."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Start a sign-in to Ford with the owner's application
+      tags:
+        - connection
+  /connection/ford/code:
+    put:
+      description: The code of the address pasted back is exchanged for the tokens, with the application of the sign-in its state names, which is spent. The garage then tells the car the grant reads, which is added to the account. The client ID, the secret and the refresh token are kept, sealed, never returned; they replace a previous connection, whose car stays with its history.
+      operationId: putFordCode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FordCode"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionSettings"
+          description: The connection.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`invalid_body`: not a single JSON object of the schema, a value out of its bounds, an unknown field, or more than 1 MiB; the message names the field, never its value. `authorization_expired`: the sign-in expired, was already used, is not the address's, or Ford refused its code. `credential_refused`: Ford refused the application's client ID or secret."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unauthorized`: no valid session, or an invalid or expired access token (with a `WWW-Authenticate` header)."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`feature_unavailable`: Ford is not offered to the account (the flag `source.ford`). `cross_origin`: a request that changes state, from another origin. `not_admitted`: the account must first go to a page of the web interface, such as terms to accept, which the message names; nothing is stored. `insufficient_scope`: an access token only reads, but for the writes of its scopes; this operation requires a session."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`no_vehicle`: the sign-in reads no car. `too_many_vehicles`: the account would have more vehicles than the instance lets it have. Nothing is stored."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`unsupported_media_type`: the body is not `application/json`."
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`internal`: an internal failure, without detail; the cause is logged."
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "`source_unavailable`: Ford did not answer; nothing is stored."
+      security:
+        - session: []
+        - sessionSecure: []
+      summary: Connect the account's Ford with the code of a sign-in
       tags:
         - connection
   /connection/pleos/{brand}:

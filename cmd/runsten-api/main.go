@@ -73,6 +73,13 @@
 //	RUNSTEN_SKODA_API_URL        the MyŠkoda Public API, which checks a key on each VIN
 //	                             when the flag source.skoda is on (default
 //	                             https://public.api.connect.skoda-auto.cz)
+//	RUNSTEN_FORD_AUTH_URL        Ford's sign-in page, where an owner signs in with their
+//	                             application of FordConnect Query when the flag source.ford
+//	                             is on (default ford.DefaultAuthURL),
+//	RUNSTEN_FORD_TOKEN_URL       its token endpoint, which exchanges the sign-in's code
+//	                             (default ford.DefaultTokenURL), and
+//	RUNSTEN_FORD_API_URL         FordConnect Query, whose garage tells the car the sign-in
+//	                             reads (default https://api.vehicle.ford.com/fcon-query)
 //	RUNSTEN_RENAULT_GIGYA_URL    Renault's Gigya, which signs an owner in to My Renault when
 //	                             the flag source.renault is on (default
 //	                             https://accounts.eu1.gigya.com), and
@@ -226,6 +233,7 @@ type config struct {
 	polestarURL string
 	pleosURL    string
 	skodaURL    string
+	ford        ford.Hosts
 	renault     renault.Config
 	tesla       tesla.Hosts
 	polestarID  polestarid.Hosts
@@ -423,6 +431,8 @@ func run(args []string) error {
 		SkodaVehicles:      skodaVehicles{skoda.NewClient(cfg.skodaURL, hc)},
 		Renault:            st,
 		RenaultAccounts:    renaultAccounts{renault.NewClient(cfg.renault, hc)},
+		Ford:               st,
+		FordAccounts:       fordAccounts{ford.NewClient(cfg.ford, hc)},
 		Demo:               st,
 		DemoVehicle:        demoVehicle{week: demoWeek, store: st, deriver: deriver},
 		InstanceKey:        cfg.apiKey != "",
@@ -613,6 +623,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		polestarURL: polestar.DefaultBaseURL,
 		pleosURL:    pleos.DefaultBaseURL,
 		skodaURL:    skoda.DefaultBaseURL,
+		ford:        ford.DefaultHosts(),
 		renault:     renault.DefaultConfig(),
 		tesla:       tesla.Hosts{API: tesla.DefaultAPIURL, Auth: tesla.DefaultAuthURL},
 		polestarID:  polestarid.Hosts{Auth: polestarid.DefaultAuthURL, API: polestarid.DefaultAPIURL},
@@ -657,6 +668,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		"RUNSTEN_POLESTAR_BASE_URL": &cfg.polestarURL, "RUNSTEN_PLEOS_API_URL": &cfg.pleosURL,
 		"RUNSTEN_SKODA_API_URL":     &cfg.skodaURL,
 		"RUNSTEN_RENAULT_GIGYA_URL": &cfg.renault.GigyaURL, "RUNSTEN_RENAULT_KAMEREON_URL": &cfg.renault.KamereonURL,
+		"RUNSTEN_FORD_AUTH_URL": &cfg.ford.Auth, "RUNSTEN_FORD_TOKEN_URL": &cfg.ford.Token, "RUNSTEN_FORD_API_URL": &cfg.ford.API,
 		"RUNSTEN_TESLA_API_URL": &cfg.tesla.API, "RUNSTEN_TESLA_AUTH_URL": &cfg.tesla.Auth,
 		"RUNSTEN_POLESTAR_ID_AUTH_URL": &cfg.polestarID.Auth, "RUNSTEN_POLESTAR_ID_API_URL": &cfg.polestarID.API,
 		"RUNSTEN_BMW_AUTH_URL": &cfg.bmw.Auth, "RUNSTEN_BMW_API_URL": &cfg.bmw.API,
@@ -894,6 +906,60 @@ func (p pleosVehicles) PleosVehicles(ctx context.Context, brand string, cred api
 		return nil, err //nolint:wrapcheck // the client's, with its context
 	}
 	return p.c.Vehicles(ctx, tok.Value, pleos.Brand(brand)) //nolint:wrapcheck // the client's, with its context
+}
+
+// fordAccounts builds Ford's sign-in address and completes a sign-in for the API: the
+// code exchanged with the owner's application, then the garage, which tells the one car
+// the grant reads.
+type fordAccounts struct{ c *ford.Client }
+
+func fordApplication(c api.FordCredential) ford.Application {
+	return ford.Application{ClientID: c.ClientID, ClientSecret: c.ClientSecret, RedirectURI: c.RedirectURI}
+}
+
+func (f fordAccounts) AuthorizeURL(c api.FordCredential, state string) (string, error) {
+	return f.c.AuthorizationURL(fordApplication(c), state) //nolint:wrapcheck // the client's, which says what failed
+}
+
+func (f fordAccounts) Connect(ctx context.Context, c api.FordCredential, code string) (api.FordGrant, error) {
+	tok, err := f.c.Exchange(ctx, fordApplication(c), code)
+	if err != nil {
+		return api.FordGrant{}, fordError(err)
+	}
+	raw, err := f.c.Garage(ctx, tok.Access)
+	if err != nil {
+		// Exchanged already: the code is spent, and nothing is stored without the car.
+		// The owner signs in again.
+		return api.FordGrant{}, fordError(err)
+	}
+	v, err := ford.VehicleOf(raw)
+	if err != nil {
+		return api.FordGrant{}, &api.FordError{Outcome: api.FordNoVehicle, Err: err}
+	}
+	g := api.FordGrant{Refresh: tok.Refresh, VIN: v.VIN}
+	if !tok.AuthTime.IsZero() {
+		g.ExpiresAt = tok.AuthTime.Add(ford.GrantLife)
+	}
+	return g, nil
+}
+
+// fordError tells the API what a refusal of Ford means for a sign-in.
+func fordError(err error) error {
+	var e *ford.APIError
+	if !errors.As(err, &e) {
+		return err
+	}
+	switch e.Kind {
+	case ford.KindGrantRefused:
+		return &api.FordError{Outcome: api.FordCodeRefused, Err: err}
+	case ford.KindClientRefused:
+		return &api.FordError{Outcome: api.FordApplicationRefused, Err: err}
+	case ford.KindNotFound:
+		// Assumption: a garage Ford does not find is a grant that reads no car.
+		return &api.FordError{Outcome: api.FordNoVehicle, Err: err}
+	case ford.KindUnauthorized, ford.KindForbidden, ford.KindRateLimited, ford.KindOther:
+	}
+	return &api.FordError{Outcome: api.FordUnavailable, Err: err}
 }
 
 // skodaVehicles checks a MyŠkoda key on a VIN for the API: a read of the vehicle's basic

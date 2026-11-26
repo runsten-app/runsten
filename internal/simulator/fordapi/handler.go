@@ -44,8 +44,8 @@ type Application struct {
 }
 
 // DevApplication is the application the simulator accepts by default, development only:
-// it stands for the one an owner creates on Ford's developer portal, and is the one to
-// sign in with against the simulator.
+// it stands for the one an owner creates on Ford's developer portal, and is the one
+// connect-sim, or the Connection page, signs in with against the simulator.
 func DevApplication() Application {
 	return Application{ClientID: "runsten-dev-ford", ClientSecret: "runsten-dev-ford-secret"} //nolint:gosec // the simulator's, never a real one
 }

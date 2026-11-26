@@ -79,6 +79,7 @@ vars:
     RUNSTEN_SKODA_API_URL=http://localhost:8080/skoda
     RUNSTEN_RENAULT_GIGYA_URL=http://localhost:8080/renault/gigya RUNSTEN_RENAULT_GIGYA_KEY=runsten-dev-gigya-key
     RUNSTEN_RENAULT_KAMEREON_URL=http://localhost:8080/renault/kamereon RUNSTEN_RENAULT_KAMEREON_KEY=runsten-dev-kamereon-key
+    RUNSTEN_FORD_AUTH_URL=http://localhost:8080/ford/auth/init
     RUNSTEN_FORD_TOKEN_URL=http://localhost:8080/ford/token RUNSTEN_FORD_API_URL=http://localhost:8080/ford
     RUNSTEN_FLAGS=source.polestar-id=true,source.renault=true,source.ford=true
 
@@ -107,6 +108,12 @@ vars:
   DEV_RENAULT_EMAIL: driver@runsten.test
   DEV_RENAULT_PASSWORD: runsten-dev-password
   DEV_RENAULT_CODE: "123456"
+
+  # The simulator's Ford application (fordapi.DevApplication), development only: a sign-in
+  # is started with POST /api/v1/connection/ford/authorization, and the address the
+  # simulator's sign-in sends back to is given to PUT /api/v1/connection/ford/code.
+  DEV_FORD_CLIENT_ID: runsten-dev-ford
+  DEV_FORD_CLIENT_SECRET: runsten-dev-ford-secret
 
 tasks:
   default:
@@ -405,10 +412,11 @@ tasks:
   # source polestar_id, and its Pleos key, per brand, which reads those of brand hyundai,
   # kia or genesis, and its MyŠkoda key with the VINs it covers, which reads those of
   # brand skoda, and its My Renault account (and its one-time code when asked), which reads
-  # those of brand renault, dacia or alpine. A scenario without one of them connects the
-  # others only.
+  # those of brand renault, dacia or alpine, and signs in to its Ford with its
+  # application, which reads the next of brand ford. A scenario without one of them
+  # connects the others only.
   connect-sim:
-    desc: Sign in as the development user, connect the simulated Volvo ID as a browser would (curl), and give the simulated Polestar credential, Tesla refresh token, Polestar ID, Pleos key, MyŠkoda key and My Renault account
+    desc: Sign in as the development user, connect the simulated Volvo ID as a browser would (curl), and give the simulated Polestar credential, Tesla refresh token, Polestar ID, Pleos key, MyŠkoda key, My Renault account and Ford sign-in
     silent: true
     cmds:
       - |
@@ -483,6 +491,29 @@ tasks:
           403) echo "My Renault account: not offered (the flag source.renault is off)" ;;
           *) echo "My Renault account refused: HTTP $status" >&2; exit 1 ;;
         esac
+        fords=$(curl -fsS http://127.0.0.1:8080/sim/ford/vehicles | sed -n 's/.*"vins":\(\[[^]]*\]\).*/\1/p') || exit 1
+        if [ "$fords" = "[]" ]; then
+          echo "Ford sign-in: no Ford in the scenario"
+        else
+          status=$(curl -sS -b "$jar" -X POST -H 'Content-Type: application/json' -o "$reply" -w '%{http_code}' \
+            -d '{"client_id":"{{.DEV_FORD_CLIENT_ID}}","client_secret":"{{.DEV_FORD_CLIENT_SECRET}}"}' \
+            http://127.0.0.1:8081/api/v1/connection/ford/authorization) || exit 1
+          if [ "$status" = 200 ]; then
+            # The sign-in's address, which the simulator answers with a redirect to the
+            # application's redirect address: the address a browser would be sent to is
+            # given back as the owner would paste it.
+            url=$(sed -n 's/.*"url":"\([^"]*\)".*/\1/p' "$reply" | sed 's/\\u0026/\&/g')
+            state=$(sed -n 's/.*"state":"\([^"]*\)".*/\1/p' "$reply")
+            back=$(curl -sS -o /dev/null -w '%{redirect_url}' "$url") || exit 1
+            status=$(curl -sS -b "$jar" -X PUT -H 'Content-Type: application/json' -o /dev/null -w '%{http_code}' \
+              -d "{\"state\":\"$state\",\"callback\":\"$back\"}" http://127.0.0.1:8081/api/v1/connection/ford/code) || exit 1
+          fi
+          case "$status" in
+            200) echo "Ford signed in"; connected=1 ;;
+            403) echo "Ford sign-in: not offered (the flag source.ford is off)" ;;
+            *) echo "Ford sign-in refused: HTTP $status" >&2; exit 1 ;;
+          esac
+        fi
         [ "$connected" = 1 ] || { echo "no vehicle connected" >&2; exit 1; }
 
   # In the foreground, removed when it stops: tilt up runs it as a service.
